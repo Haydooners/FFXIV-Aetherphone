@@ -316,6 +316,7 @@ internal sealed partial class AethergramApp : IResumableApp
 
     public void OnClosed()
     {
+        store.FlushFeedSignals();
         threadView.OnAppClosed();
         stories.Close();
     }
@@ -691,6 +692,8 @@ internal sealed partial class AethergramApp : IResumableApp
             {
                 ImGui.Dummy(new Vector2(0f, 4f * UiScale.Current));
                 feedVirtualizer.BeginFrame(store.FeedSource(scope));
+                var viewportTop = ImGui.GetWindowPos().Y;
+                store.BeginImpressions(viewportTop, viewportTop + ImGui.GetWindowSize().Y, ImGui.GetIO().DeltaTime);
                 for (var index = 0; index < snapshot.Length; index++)
                 {
                     var post = snapshot[index];
@@ -705,7 +708,9 @@ internal sealed partial class AethergramApp : IResumableApp
                         continue;
                     }
 
+                    var rowTop = ImGui.GetCursorScreenPos().Y;
                     DrawGramCard(post);
+                    store.ObserveImpression(post.Id, rowTop, ImGui.GetCursorScreenPos().Y);
                     feedVirtualizer.Record(post.Id, revision);
                 }
 
@@ -813,7 +818,7 @@ internal sealed partial class AethergramApp : IResumableApp
         else if (!overRing && UiInteract.HoverClick(new Vector2(innerX, headerTop),
                      new Vector2(headerTextRight, headerTop + headerBlock)))
         {
-            OpenProfile(post.AuthorId);
+            OpenProfileFromPost(post.AuthorId, post.Id);
         }
 
         var moreExtent = new Vector2(moreRadius, moreRadius);
@@ -1293,6 +1298,12 @@ internal sealed partial class AethergramApp : IResumableApp
         router.Push(AethergramRoute.Profile(userId));
     }
 
+    private void OpenProfileFromPost(string userId, string postId)
+    {
+        store.ReportFeedSignal(postId, FeedSignalKinds.ProfileOpen);
+        OpenProfile(userId);
+    }
+
     private void DrawRichBody(ImDrawListPtr drawList, RichTextLayout layout, Vector2 origin)
     {
         var ink = new RichTextInk(Ink.BodyInk, Ink.AccentLink, Ink.AccentLink);
@@ -1315,6 +1326,7 @@ internal sealed partial class AethergramApp : IResumableApp
 
     private void OpenDetail(PostDto post, bool focusComment = false)
     {
+        store.ReportFeedSignal(post.Id, FeedSignalKinds.DetailOpen);
         store.OpenDetail(post);
         commentDraft = string.Empty;
         commentFocusPending = focusComment;

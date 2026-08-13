@@ -228,6 +228,10 @@ internal sealed record PostDto(
 
 internal sealed record FeedPage(PostDto[] Items, string? NextCursor);
 
+internal sealed record FeedSeenRequest(string[] PostIds);
+
+internal sealed record FeedSignalRequest(string PostId, int Kind);
+
 internal sealed record UserSearchResult(UserDto[] Users);
 
 internal sealed record TagSummaryDto(string Tag, int Posts, int PostsToday);

@@ -356,6 +356,7 @@ internal sealed partial class ChirperApp : IResumableApp
 
     public void OnClosed()
     {
+        store.FlushFeedSignals();
     }
 
     public void Draw(in PhoneContext context)
@@ -921,6 +922,8 @@ internal sealed partial class ChirperApp : IResumableApp
             {
                 ImGui.Dummy(new Vector2(0f, FeedTopPadding * UiScale.Current));
                 feedVirtualizer.BeginFrame(store.FeedSource(scope));
+                var viewportTop = ImGui.GetWindowPos().Y;
+                store.BeginImpressions(viewportTop, viewportTop + ImGui.GetWindowSize().Y, ImGui.GetIO().DeltaTime);
                 renderedUnderlyingIds.Clear();
                 for (var index = 0; index < snapshot.Length; index++)
                 {
@@ -940,7 +943,9 @@ internal sealed partial class ChirperApp : IResumableApp
                         continue;
                     }
 
+                    var rowTop = ImGui.GetCursorScreenPos().Y;
                     DrawPost(post);
+                    store.ObserveImpression(post.RepostOfId ?? post.Id, rowTop, ImGui.GetCursorScreenPos().Y);
                     feedVirtualizer.Record(post.Id);
                 }
 
@@ -1040,7 +1045,7 @@ internal sealed partial class ChirperApp : IResumableApp
         if (UiInteract.HoverClick(avatarCenter - new Vector2(avatarRadius, avatarRadius),
                 avatarCenter + new Vector2(avatarRadius, avatarRadius)))
         {
-            OpenProfile(post.AuthorId);
+            OpenProfileFromPost(post.AuthorId, post.Id);
         }
 
         var rawDisplayName = SocialIdentity.Name(post.AuthorDisplayName, post.AuthorHandle);
@@ -1057,7 +1062,7 @@ internal sealed partial class ChirperApp : IResumableApp
 
         if (UiInteract.HoverClick(nameMin, nameMax))
         {
-            OpenProfile(post.AuthorId);
+            OpenProfileFromPost(post.AuthorId, post.Id);
         }
 
         var meta = SocialIdentity.FeedMeta(post.AuthorHandle, TimeText.Short(post.CreatedAtUnix));
@@ -2156,6 +2161,12 @@ internal sealed partial class ChirperApp : IResumableApp
         router.Push(ChirperRoute.Profile(userId));
     }
 
+    private void OpenProfileFromPost(string userId, string postId)
+    {
+        store.ReportFeedSignal(postId, FeedSignalKinds.ProfileOpen);
+        OpenProfile(userId);
+    }
+
     private void DrawRichBody(ImDrawListPtr drawList, RichTextLayout layout, Vector2 origin)
     {
         var ink = new RichTextInk(ChirperInk.BodyInk, ChirperInk.AccentLink, ChirperInk.AccentLink);
@@ -2180,6 +2191,7 @@ internal sealed partial class ChirperApp : IResumableApp
     {
         actions.Reset();
         commentDraft = string.Empty;
+        store.ReportFeedSignal(post.Id, FeedSignalKinds.DetailOpen);
         store.OpenDetail(post);
         router.Push(ChirperRoute.Thread(post.Id));
     }

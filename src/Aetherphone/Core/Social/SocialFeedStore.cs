@@ -33,6 +33,8 @@ internal abstract class SocialFeedStore : IDisposable
     protected readonly MediaClient media;
     protected readonly RealtimeSignalBus signals;
     protected readonly StoreWork work;
+    private readonly FeedImpressions impressions = new();
+    private readonly FeedSignalQueue feedSignals;
     private readonly RetryGate meGate = new(TimeSpan.FromSeconds(30));
     private volatile UserDto? me;
     private volatile AvatarUploadOutcome avatarFailure = AvatarUploadOutcome.Unreachable;
@@ -100,6 +102,7 @@ internal abstract class SocialFeedStore : IDisposable
         this.media = media;
         this.signals = signals;
         work = new StoreWork(logTag);
+        feedSignals = new FeedSignalQueue(client.ReportSeenAsync, client.ReportSignalAsync, work);
         session.Changed += OnSessionChanged;
         signals.ContentRemoved += OnContentRemoved;
     }
@@ -156,8 +159,34 @@ internal abstract class SocialFeedStore : IDisposable
         followRequests = Array.Empty<UserDto>();
         followRequestsCursor = null;
         followRequestsLoaded = false;
+        impressions.Reset();
+        feedSignals.Reset();
         ClearTagged();
         ClearHashtag();
+    }
+
+    public void BeginImpressions(float windowTop, float windowBottom, float deltaSeconds)
+    {
+        impressions.BeginFrame(windowTop, windowBottom, deltaSeconds);
+        feedSignals.Tick(DateTime.UtcNow);
+    }
+
+    public void ObserveImpression(string postId, float rowTop, float rowBottom)
+    {
+        if (impressions.Observe(postId, rowTop, rowBottom))
+        {
+            feedSignals.MarkSeen(postId);
+        }
+    }
+
+    public void ReportFeedSignal(string postId, int kind)
+    {
+        feedSignals.Signal(postId, kind);
+    }
+
+    public void FlushFeedSignals()
+    {
+        feedSignals.Flush(DateTime.UtcNow);
     }
 
     public MentionSuggestions NewMentionSuggestions() => new(account, work);
