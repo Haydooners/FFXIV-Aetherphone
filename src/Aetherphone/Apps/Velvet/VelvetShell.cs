@@ -297,9 +297,10 @@ internal sealed partial class VelvetShell : IResumableApp
             return;
         }
 
+        var appArea = SceneChrome.AppAreaFrom(context.Content, theme, UiScale.Current);
         using (InputShield.Engage(avatarLightbox.Expanded))
         {
-            router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+            router.Draw(appArea, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
         }
 
         if (avatarLightbox.Active)
