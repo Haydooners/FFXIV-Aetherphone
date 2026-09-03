@@ -325,21 +325,25 @@ internal sealed partial class VelvetShell
             }
         }
 
-        DrawAboutSection(L.Velvet.CardGender, VelvetGender.Labels(user.Gender), VChipStyle.Tint, VelvetTheme.Rose);
+        DrawAboutSection(L.Velvet.CardGender, VelvetGender.Labels(user.Gender), VChipStyle.Tint, VelvetTheme.Rose,
+            innerWidth);
         DrawAboutSection(L.Velvet.CardSexuality, VelvetSexuality.Labels(user.Sexuality), VChipStyle.Tint,
-            VelvetTheme.Rose);
+            VelvetTheme.Rose, innerWidth);
         if (VelvetIntent.IncludesErp(user.LookingFor))
         {
-            DrawAboutSection(L.Velvet.CardRole, VelvetTags.Parse(user.Dynamic), VChipStyle.Tint, RoleTone);
-            DrawAboutSection(L.Velvet.CardKinks, user.Kinks ?? Array.Empty<string>(), VChipStyle.Tint, KinkTone);
+            DrawAboutSection(L.Velvet.CardRole, VelvetTags.Parse(user.Dynamic), VChipStyle.Tint, RoleTone,
+                innerWidth);
+            DrawAboutSection(L.Velvet.CardKinks, user.Kinks ?? Array.Empty<string>(), VChipStyle.Tint, KinkTone,
+                innerWidth);
         }
 
-        DrawAboutSection(L.Velvet.CardTags, user.Tags, VChipStyle.Tint, VelvetTheme.Rose);
-        DrawAboutSection(L.Velvet.CardLimits, user.Limits, VChipStyle.Outline, VelvetTheme.Gold);
+        DrawAboutSection(L.Velvet.CardTags, user.Tags, VChipStyle.Tint, VelvetTheme.Rose, innerWidth);
+        DrawAboutSection(L.Velvet.CardLimits, user.Limits, VChipStyle.Outline, VelvetTheme.Gold, innerWidth);
         ImGui.Unindent(pad);
     }
 
-    private void DrawAboutSection(LocString title, string[] tokens, VChipStyle style, Vector4 tone)
+    private void DrawAboutSection(LocString title, string[] tokens, VChipStyle style, Vector4 tone,
+        float sectionWidth)
     {
         if (tokens.Length == 0)
         {
@@ -349,7 +353,7 @@ internal sealed partial class VelvetShell
         Gap(16f);
         VSectionHeader.Bar(Loc.T(title));
         Gap(4f);
-        DrawDisplayTokens(tokens, style, tone);
+        DrawDisplayTokens(tokens, style, tone, sectionWidth);
     }
 
     private void AskDisconnect(string userId)
@@ -493,7 +497,7 @@ internal sealed partial class VelvetShell
         Gap(34f);
     }
 
-    private void DrawDisplayTokens(string[] tokens, VChipStyle style, Vector4 tone)
+    private void DrawDisplayTokens(string[] tokens, VChipStyle style, Vector4 tone, float width = 0f)
     {
         if (tokens.Length == 0)
         {
@@ -501,7 +505,11 @@ internal sealed partial class VelvetShell
         }
 
         var scale = UiScale.Current;
-        var width = ImGui.GetContentRegionAvail().X;
+        if (width <= 0f)
+        {
+            width = ImGui.GetContentRegionAvail().X;
+        }
+
         chipModels.Clear();
         for (var index = 0; index < tokens.Length; index++)
         {
