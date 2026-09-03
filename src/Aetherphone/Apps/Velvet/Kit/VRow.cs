@@ -212,7 +212,8 @@ internal static class VRow
 
         if (model.Badge > 0)
         {
-            VBadge.Count(drawList, new Vector2(rightEdge, max.Y - 16f * scale), model.Badge);
+            SocialChrome.DrawCountBadge(drawList, new Vector2(rightEdge - 10f * scale, max.Y - 16f * scale),
+                model.Badge, VelvetInk.Shared);
         }
 
         var textRight = rightEdge - Metrics.Space.Sm * scale;

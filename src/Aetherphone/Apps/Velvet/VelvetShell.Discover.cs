@@ -46,7 +46,8 @@ internal sealed partial class VelvetShell
         var buttonGap = 8f * scale;
         var searchRect = new Rect(new Vector2(area.Min.X + pad, searchTop),
             new Vector2(area.Max.X - pad - buttonSize - buttonGap, searchTop + rowHeight));
-        DrawSearchField(searchRect, ref discoverQuery, Loc.T(L.Velvet.SearchPeopleHint));
+        SearchField.Draw(searchRect, "##velvetSearch", Loc.T(L.Velvet.SearchPeopleHint), ref discoverQuery,
+            VelvetTheme.Palette, 64);
         var filterRect = new Rect(new Vector2(area.Max.X - pad - buttonSize, searchTop),
             new Vector2(area.Max.X - pad, searchTop + rowHeight));
         DrawFilterButton(filterRect, VelvetPage.Discover);
@@ -572,36 +573,6 @@ internal sealed partial class VelvetShell
         discoverApplied = discoverQuery;
         discoverDebounce = 0f;
         ApplyDiscoverFilters();
-    }
-
-    private void DrawSearchField(Rect rect, ref string value, string hint)
-    {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, rect.Min, rect.Max, Metrics.Radius.Field * scale, VelvetTheme.PlumWell.Packed());
-        PhoneIcon.Draw(drawList, new Vector2(rect.Min.X + 16f * scale, rect.Center.Y), PhoneIcons.Search,
-            VelvetTheme.MutedInk, VIcon.Field * scale);
-        if (value.Length == 0)
-        {
-            Typography.Draw(new Vector2(rect.Min.X + 30f * scale, rect.Center.Y - 8f * scale),
-                Typography.FitText(hint, rect.Width - 56f * scale, TextStyles.Subheadline), VelvetTheme.Faint,
-                TextStyles.Subheadline);
-        }
-
-        ImGui.SetCursorScreenPos(new Vector2(rect.Min.X + 30f * scale, rect.Center.Y - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(rect.Width - 56f * scale);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
-        using (ImRaii.PushColor(ImGuiCol.Text, VelvetTheme.TitleInk))
-        {
-            ImGui.InputText("##velvetSearch", ref value, 64, ImGuiInputTextFlags.None);
-        }
-
-        if (value.Length > 0 &&
-            VIcon.Button(new Vector2(rect.Max.X - 16f * scale, rect.Center.Y), 12f * scale, PhoneIcons.X,
-                VIcon.Chip, VelvetTheme.MutedInk))
-        {
-            value = string.Empty;
-        }
     }
 
     private ReadOnlySpan<VelvetProfileDto> FilterDiscoverByRegion(VelvetProfileDto[] source)

@@ -52,7 +52,8 @@ internal static class VTabBar
                 (isActive ? VIcon.TabActive : VIcon.TabIdle) * scale);
             if (tabs[index].Badge > 0)
             {
-                VBadge.Count(drawList, new Vector2(centerX + 20f * scale, centerY - 12f * scale), tabs[index].Badge);
+                SocialChrome.DrawCountBadge(drawList, new Vector2(centerX + 13f * scale, centerY - 12f * scale),
+                    tabs[index].Badge, VelvetInk.Shared);
             }
 
             if (hovered)
