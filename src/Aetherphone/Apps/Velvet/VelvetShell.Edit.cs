@@ -78,7 +78,7 @@ internal sealed partial class VelvetShell
             return;
         }
 
-        if (VHeader.Push(area, Loc.T(L.Velvet.EditProfile), theme))
+        if (VHeader.Push(area, Loc.T(L.Velvet.EditProfile)))
         {
             if (!HasUnsavedEdits())
             {

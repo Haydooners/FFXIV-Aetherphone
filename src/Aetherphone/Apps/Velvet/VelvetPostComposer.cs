@@ -33,6 +33,9 @@ internal sealed class VelvetPostComposer
     private readonly EmojiComposer captionEmoji = new();
     private readonly PhotoComposeSession session;
     private readonly Action openTags;
+    private readonly Action requestClose;
+    private readonly Action cropBack;
+    private readonly Action captionBack;
     private readonly List<string> tags = new();
     private readonly string[] audienceLabels = new string[2];
     private string tagsLabel = string.Empty;
@@ -54,6 +57,9 @@ internal sealed class VelvetPostComposer
         this.openTags = openTags;
         captionMentions = new MentionAutocomplete(store.NewMentionSuggestions());
         session = new PhotoComposeSession(library, wallpaperImages);
+        requestClose = () => closeRequested = true;
+        cropBack = session.CropBack;
+        captionBack = () => session.LoadCropStage(session.SelectedCount - 1);
     }
 
     public int TagCount => tags.Count;
@@ -167,7 +173,7 @@ internal sealed class VelvetPostComposer
         var nextReserve = showNext
             ? Typography.Measure(nextLabel, 0.9f, FontWeight.SemiBold).X + 34f * scale + 20f * scale
             : 0f;
-        AppHeader.Draw(context, string.Empty, () => closeRequested = true);
+        AppHeader.Draw(context, string.Empty, requestClose);
         AppHeader.DrawTitleWithReserve(area, "velvet.compose.pick.title", Title, nextReserve, context.Theme.TextStrong,
             scale);
         if (showNext && ui.HeaderAction(area, nextLabel, session.HasSelection))
@@ -213,7 +219,7 @@ internal sealed class VelvetPostComposer
             : Loc.T(L.Velvet.MoveAndScale);
         var nextLabel = Loc.T(L.Common.Next);
         var nextReserve = Typography.Measure(nextLabel, 0.9f, FontWeight.SemiBold).X + 34f * scale + 20f * scale;
-        AppHeader.Draw(context, string.Empty, session.CropBack);
+        AppHeader.Draw(context, string.Empty, cropBack);
         AppHeader.DrawTitleWithReserve(area, "velvet.compose.crop.title", title, nextReserve, context.Theme.TextStrong,
             scale);
         if (ui.HeaderAction(area, nextLabel, true))
@@ -255,7 +261,7 @@ internal sealed class VelvetPostComposer
         var busy = Posting;
         var actionLabel = busy ? Loc.T(L.Velvet.Saving) : Loc.T(L.Velvet.Share);
         var actionReserve = Typography.Measure(actionLabel, 0.9f, FontWeight.SemiBold).X + 34f * scale + 20f * scale;
-        AppHeader.Draw(context, string.Empty, () => session.LoadCropStage(session.SelectedCount - 1));
+        AppHeader.Draw(context, string.Empty, captionBack);
         AppHeader.DrawTitleWithReserve(area, "velvet.compose.caption.title", Title, actionReserve,
             context.Theme.TextStrong, scale);
         if (ui.HeaderAction(area, actionLabel, !busy))

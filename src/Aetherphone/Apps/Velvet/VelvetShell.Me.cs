@@ -29,7 +29,7 @@ internal sealed partial class VelvetShell
     private void DrawSettings(Rect area)
     {
         var scale = UiScale.Current;
-        if (VHeader.Push(area, Loc.T(L.Velvet.Settings), theme))
+        if (VHeader.Push(area, Loc.T(L.Velvet.Settings)))
         {
             router.Pop();
             return;
@@ -117,7 +117,7 @@ internal sealed partial class VelvetShell
     private void DrawBlocked(Rect area)
     {
         var scale = UiScale.Current;
-        if (VHeader.Push(area, Loc.T(L.Velvet.Blocked), theme))
+        if (VHeader.Push(area, Loc.T(L.Velvet.Blocked)))
         {
             router.Pop();
             return;
@@ -178,7 +178,7 @@ internal sealed partial class VelvetShell
     private void DrawNotInterested(Rect area)
     {
         var scale = UiScale.Current;
-        if (VHeader.Push(area, Loc.T(L.Velvet.NotInterested), theme))
+        if (VHeader.Push(area, Loc.T(L.Velvet.NotInterested)))
         {
             router.Pop();
             return;

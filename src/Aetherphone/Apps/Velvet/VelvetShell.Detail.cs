@@ -20,11 +20,14 @@ internal sealed partial class VelvetShell
 
     private void DrawPostDetail(Rect area, string postId)
     {
-        var context = new PhoneContext(area, theme, navigation);
-        AppHeader.Draw(context, Loc.T(L.Velvet.Post), back);
         var scale = UiScale.Current;
-        var top = area.Min.Y + AppHeader.Height * scale;
-        var body = new Rect(new Vector2(area.Min.X, top), area.Max);
+        if (VHeader.Push(area, Loc.T(L.Velvet.Post)))
+        {
+            router.Pop();
+            return;
+        }
+
+        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + VHeader.Height * scale), area.Max);
         var feed = store.Feed;
         VelvetPostDto? found = null;
         for (var index = 0; index < feed.Length; index++)
@@ -417,7 +420,7 @@ internal sealed partial class VelvetShell
     private void DrawLikers(Rect area, string postId)
     {
         var scale = UiScale.Current;
-        if (VHeader.Push(area, Loc.T(L.Velvet.LikesTitle), theme))
+        if (VHeader.Push(area, Loc.T(L.Velvet.LikesTitle)))
         {
             router.Pop();
             return;

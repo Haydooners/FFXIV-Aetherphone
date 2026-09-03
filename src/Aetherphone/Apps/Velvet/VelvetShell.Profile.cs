@@ -22,7 +22,7 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var user = store.ProfileUserId == userId ? store.ProfileUser : null;
         var title = user != null ? DisplayNameOf(user.DisplayName, user.Handle) : Loc.T(L.Velvet.ProfileTitle);
-        if (VHeader.Push(area, title, theme))
+        if (VHeader.Push(area, title))
         {
             router.Pop();
             return;

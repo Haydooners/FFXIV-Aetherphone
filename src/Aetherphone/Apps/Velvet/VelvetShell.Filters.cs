@@ -59,7 +59,7 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var surface = filterSurface;
         var include = IncludeFor(surface);
-        if (VHeader.Push(area, Loc.T(L.Velvet.FiltersTitle), theme))
+        if (VHeader.Push(area, Loc.T(L.Velvet.FiltersTitle)))
         {
             router.Pop();
             return;

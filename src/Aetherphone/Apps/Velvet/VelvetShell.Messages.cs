@@ -309,7 +309,7 @@ internal sealed partial class VelvetShell
     {
         var request = FindRequest(userId);
         var name = request is { } found ? DisplayNameOf(found.DisplayName, found.Handle) : Loc.T(L.Velvet.Requests);
-        if (VHeader.Push(area, name, theme))
+        if (VHeader.Push(area, name))
         {
             router.Pop();
             return;
@@ -408,7 +408,7 @@ internal sealed partial class VelvetShell
     private void DrawIntro(Rect area, string userId)
     {
         var scale = UiScale.Current;
-        if (VHeader.Push(area, Loc.T(L.Velvet.IntroTitle), theme))
+        if (VHeader.Push(area, Loc.T(L.Velvet.IntroTitle)))
         {
             router.Pop();
             return;

@@ -13,7 +13,7 @@ internal sealed partial class VelvetShell
     private void DrawPostTags(Rect area)
     {
         var scale = UiScale.Current;
-        if (VHeader.Push(area, Loc.T(L.Velvet.PostTagsTitle), theme))
+        if (VHeader.Push(area, Loc.T(L.Velvet.PostTagsTitle)))
         {
             router.Pop();
             return;
