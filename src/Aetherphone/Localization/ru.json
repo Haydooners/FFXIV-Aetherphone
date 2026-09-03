@@ -2429,8 +2429,6 @@
   "velvet.filterSelectedCount": "Выбрано: {0}",
   "velvet.filterPickHint": "Выберите, что хотите видеть. Не трогайте строку, чтобы видеть всё.",
   "velvet.hiddenTitle": "Скрытое",
-  "velvet.filterHasPhoto": "Есть фото",
-  "velvet.filterActiveRecently": "Активен на этой неделе",
   "velvet.filterShowResults": "Показать",
   "velvet.hiddenHint": "Всё, что вы выберете здесь, исчезнет во всём Velvet, в Discover и в ленте, пока вы не снимете выбор.",
   "velvet.filterShownHidden": "Показано: {0}, скрыто: {1}",

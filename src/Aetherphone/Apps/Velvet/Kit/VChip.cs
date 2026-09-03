@@ -103,6 +103,29 @@ internal static class VChip
 
 internal static class VChipFlow
 {
+    public static float Measure(ReadOnlySpan<VChipModel> chips, float availableWidth, float scale)
+    {
+        var height = VChip.Height * scale;
+        var rowGap = Metrics.Space.Sm * scale;
+        var chipGap = Metrics.Space.Sm * scale;
+        var x = 0f;
+        var rows = 1;
+        for (var index = 0; index < chips.Length; index++)
+        {
+            var chip = chips[index];
+            var width = VChip.Width(chip.Label, chip.Glyph is not null, chip.Removable, scale);
+            if (x + width > availableWidth && x > 0f)
+            {
+                x = 0f;
+                rows++;
+            }
+
+            x += width + chipGap;
+        }
+
+        return chips.Length == 0 ? 0f : rows * height + (rows - 1) * rowGap;
+    }
+
     public static int Draw(ReadOnlySpan<VChipModel> chips, float availableWidth, float scale)
     {
         var origin = ImGui.GetCursorScreenPos();

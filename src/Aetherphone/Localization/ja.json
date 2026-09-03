@@ -2429,8 +2429,6 @@
   "velvet.filterSelectedCount": "{0}件選択",
   "velvet.filterPickHint": "見たいものを選んでください。触らない行はすべて表示されます。",
   "velvet.hiddenTitle": "非表示",
-  "velvet.filterHasPhoto": "写真あり",
-  "velvet.filterActiveRecently": "今週アクティブ",
   "velvet.filterShowResults": "結果を見る",
   "velvet.hiddenHint": "ここで選んだものは、Discover もフィードも含めて Velvet 全体から消えます。選択を外すまで続きます。",
   "velvet.filterShownHidden": "{0}件表示、{1}件非表示",

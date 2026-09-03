@@ -2429,8 +2429,6 @@
   "velvet.filterSelectedCount": "已选 {0} 项",
   "velvet.filterPickHint": "选择你想看到的内容。不动某一行就会显示全部。",
   "velvet.hiddenTitle": "已隐藏",
-  "velvet.filterHasPhoto": "有照片",
-  "velvet.filterActiveRecently": "本周活跃",
   "velvet.filterShowResults": "查看结果",
   "velvet.hiddenHint": "你在这里选择的内容会从整个 Velvet 中消失，包括 Discover 和动态，直到你取消选择。",
   "velvet.filterShownHidden": "显示 {0} 项，隐藏 {1} 项",
