@@ -131,6 +131,68 @@ internal sealed partial class VelvetShell
         router.Push(VelvetView.Compose);
     }
 
+    private const float CardActionInset = 12f;
+    private const float CardActionGap = 18f;
+    private const float CardCountGap = 6f;
+
+    private static readonly TextStyle CardCountStyle = TextStyles.SubheadlineEmphasized;
+
+    private enum CardActionTap
+    {
+        None,
+        Icon,
+        Count,
+    }
+
+    private static CardActionTap DrawCardAction(ImDrawListPtr drawList, ref float x, float centerY, string glyph,
+        Vector4 ink, int count, string tooltip, string? countTooltip = null)
+    {
+        var scale = UiScale.Current;
+        var iconSize = VIcon.CardAction * scale;
+        var halfHeight = PostCardMetrics.ActionsHeight * scale * 0.5f;
+        var label = count > 0 ? CountText.Compact(count) : string.Empty;
+        var labelWidth = label.Length > 0 ? Typography.Measure(label, CardCountStyle).X : 0f;
+        var contentWidth = iconSize + (label.Length > 0 ? CardCountGap * scale + labelWidth : 0f);
+        var min = new Vector2(x - 6f * scale, centerY - halfHeight);
+        var max = new Vector2(x + contentWidth + 6f * scale, centerY + halfHeight);
+        var splitCount = countTooltip is not null && label.Length > 0;
+        var iconMax = splitCount ? new Vector2(x + iconSize + CardCountGap * scale * 0.5f, max.Y) : max;
+        var countMin = new Vector2(iconMax.X, min.Y);
+        var iconHovered = UiInteract.Hover(min, iconMax);
+        var countHovered = splitCount && UiInteract.Hover(countMin, max);
+        if (iconHovered || countHovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        PhoneIcon.Draw(drawList, new Vector2(x + iconSize * 0.5f, centerY), glyph, ink, iconSize);
+        if (label.Length > 0)
+        {
+            var labelSize = Typography.Measure(label, CardCountStyle);
+            Typography.Draw(drawList, new Vector2(x + iconSize + CardCountGap * scale, centerY - labelSize.Y * 0.5f),
+                label, VelvetTheme.TitleInk, CardCountStyle);
+        }
+
+        HoverTooltip.Show(new Rect(min, iconMax), tooltip, HoverLabelSide.Above);
+        if (splitCount)
+        {
+            HoverTooltip.Show(new Rect(countMin, max), countTooltip!, HoverLabelSide.Above);
+        }
+
+        x += contentWidth + CardActionGap * scale;
+        if (UiInteract.Click(min, iconMax, iconHovered))
+        {
+            return CardActionTap.Icon;
+        }
+
+        if (splitCount && UiInteract.Click(countMin, max, countHovered))
+        {
+            return CardActionTap.Count;
+        }
+
+        return CardActionTap.None;
+    }
+
     private void DrawPostCard(VelvetPostDto entry, float width)
     {
         var scale = UiScale.Current;
@@ -234,43 +296,27 @@ internal sealed partial class VelvetShell
         }
 
         var actionCenterY = actionsTop + actionsHeight * 0.5f;
-        var iconRadius = PostCardMetrics.ActionIconRadius * scale;
-        var countTop = actionCenterY - 8f * scale;
         var liked = entry.MyReaction >= 0;
-        var heartCenter = new Vector2(innerX + PostCardMetrics.ActionIconInset * scale, actionCenterY);
-        if (VIcon.Button(heartCenter, iconRadius, liked ? PhoneIcons.HeartFilled : PhoneIcons.Heart,
-                VIcon.CardAction, liked ? VelvetTheme.Rose : VelvetTheme.BodyInk, Loc.T(L.Velvet.Like)))
+        var actionX = innerX + CardActionInset * scale - VIcon.CardAction * scale * 0.5f;
+        var likeTap = DrawCardAction(drawList, ref actionX, actionCenterY,
+            liked ? PhoneIcons.HeartFilled : PhoneIcons.Heart, liked ? VelvetInk.Shared.LikeRed : VelvetTheme.TitleInk,
+            entry.TotalReactions, Loc.T(L.Velvet.Like), Loc.T(L.Velvet.LikesTitle));
+        if (likeTap == CardActionTap.Icon)
         {
             store.ToggleReaction(entry, 0);
         }
-
-        var cursorX = heartCenter.X + PostCardMetrics.ActionCountGap * scale;
-        if (entry.TotalReactions > 0)
+        else if (likeTap == CardActionTap.Count)
         {
-            var likeText = entry.TotalReactions.ToString(Loc.Culture);
-            Typography.Draw(new Vector2(cursorX, countTop), likeText, VelvetTheme.BodyInk, TextStyles.SubheadlineEmphasized);
-            cursorX += Typography.Measure(likeText, TextStyles.SubheadlineEmphasized).X + 14f * scale;
-        }
-        else
-        {
-            cursorX += 6f * scale;
+            OpenLikers(entry.Id);
         }
 
-        var commentCenter = new Vector2(cursorX + 6f * scale, actionCenterY);
-        if (VIcon.Button(commentCenter, iconRadius, PhoneIcons.MessageCircle, VIcon.CardAction,
-                VelvetTheme.BodyInk, Loc.T(L.Velvet.Comments)))
+        if (DrawCardAction(drawList, ref actionX, actionCenterY, PhoneIcons.MessageCircle, VelvetTheme.TitleInk,
+                entry.CommentCount, Loc.T(L.Velvet.Comments)) != CardActionTap.None)
         {
             OpenPostDetail(entry.Id);
         }
 
-        var actionsRight = commentCenter.X + PostCardMetrics.ActionCountGap * scale;
-        if (entry.CommentCount > 0)
-        {
-            var commentText = entry.CommentCount.ToString(Loc.Culture);
-            Typography.Draw(new Vector2(actionsRight, countTop), commentText, VelvetTheme.BodyInk,
-                TextStyles.SubheadlineEmphasized);
-            actionsRight += Typography.Measure(commentText, TextStyles.SubheadlineEmphasized).X;
-        }
+        var actionsRight = actionX;
 
         if (photos.Length > 1)
         {
