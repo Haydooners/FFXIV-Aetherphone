@@ -15,6 +15,8 @@ namespace Aetherphone.Apps.Velvet;
 internal sealed partial class VelvetShell
 {
     private readonly FeedVirtualizer feedVirtualizer = new(400f);
+    private readonly string[] feedScopeLabels = new string[2];
+    private readonly Dictionary<string, string> feedTagLines = new(StringComparer.Ordinal);
     private bool feedScrollTopPending;
 
     private void DrawFeed(Rect area)
@@ -47,8 +49,9 @@ internal sealed partial class VelvetShell
                 new Vector2(scopeRow.Max.X - filterSize - filterGap, scopeRow.Max.Y));
             var filterRect = new Rect(new Vector2(scopeRow.Max.X - filterSize, scopeRow.Min.Y), scopeRow.Max);
             var activeScope = (int)store.FeedScope;
-            var pickedScope = VSegmented.Draw("velvetFeedScope", scopeRect,
-                new[] { Loc.T(L.Velvet.FeedScopeAll), Loc.T(L.Velvet.FeedScopeConnections) }, activeScope, scale);
+            feedScopeLabels[0] = Loc.T(L.Velvet.FeedScopeAll);
+            feedScopeLabels[1] = Loc.T(L.Velvet.FeedScopeConnections);
+            var pickedScope = VSegmented.Draw("velvetFeedScope", scopeRect, feedScopeLabels, activeScope, scale);
             if (pickedScope >= 0 && pickedScope != activeScope)
             {
                 store.SetFeedScope((VelvetFeedScope)pickedScope);
@@ -120,8 +123,26 @@ internal sealed partial class VelvetShell
 
     private void RefreshFeedContent()
     {
+        feedTagLines.Clear();
         store.RefreshFeed();
         stories.RefreshTray();
+    }
+
+    private string TagLineFor(VelvetPostDto entry)
+    {
+        if (entry.Tags.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        if (feedTagLines.TryGetValue(entry.Id, out var cached))
+        {
+            return cached;
+        }
+
+        var line = "#" + string.Join("  #", entry.Tags);
+        feedTagLines[entry.Id] = line;
+        return line;
     }
 
     private void StartStoryCompose()
@@ -161,7 +182,7 @@ internal sealed partial class VelvetShell
         var captionHeight = captionText.Length == 0
             ? 0f
             : captionTextHeight + translateHeight + PostCardMetrics.CaptionGap * scale;
-        var tagsLine = entry.Tags.Length > 0 ? "#" + string.Join("  #", entry.Tags) : string.Empty;
+        var tagsLine = TagLineFor(entry);
         var tagsHeight = tagsLine.Length == 0
             ? 0f
             : Typography.MeasureWrappedBlock(tagsLine, TextStyles.Footnote, innerWidth).Y;

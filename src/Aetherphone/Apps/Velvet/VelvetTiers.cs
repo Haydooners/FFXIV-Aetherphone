@@ -2,6 +2,62 @@ using Aetherphone.Core.Localization;
 
 namespace Aetherphone.Apps.Velvet;
 
+internal sealed class VelvetMaskLabels
+{
+    private readonly int[] flags;
+    private readonly Func<int, string> labelOf;
+    private string[] labels = Array.Empty<string>();
+    private int cachedMask = -1;
+    private LanguageInfo? cachedLanguage;
+
+    public VelvetMaskLabels(int[] flags, Func<int, string> labelOf)
+    {
+        this.flags = flags;
+        this.labelOf = labelOf;
+    }
+
+    public string[] Of(int mask)
+    {
+        if (mask == cachedMask && ReferenceEquals(cachedLanguage, Loc.Current))
+        {
+            return labels;
+        }
+
+        cachedMask = mask;
+        cachedLanguage = Loc.Current;
+        var count = 0;
+        for (var index = 0; index < flags.Length; index++)
+        {
+            if ((mask & flags[index]) != 0)
+            {
+                count++;
+            }
+        }
+
+        if (count == 0)
+        {
+            labels = Array.Empty<string>();
+            return labels;
+        }
+
+        if (labels.Length != count)
+        {
+            labels = new string[count];
+        }
+
+        var cursor = 0;
+        for (var index = 0; index < flags.Length; index++)
+        {
+            if ((mask & flags[index]) != 0)
+            {
+                labels[cursor++] = labelOf(flags[index]);
+            }
+        }
+
+        return labels;
+    }
+}
+
 internal static class VelvetPresence
 {
     public const int Offline = 0;
@@ -73,25 +129,9 @@ internal static class VelvetGender
 
     public static int Sanitize(int mask) => mask & Mask;
 
-    public static string[] Labels(int mask)
-    {
-        mask = Sanitize(mask);
-        if (mask == None)
-        {
-            return Array.Empty<string>();
-        }
+    private static readonly VelvetMaskLabels LabelCache = new(All, Label);
 
-        var labels = new List<string>(All.Length);
-        for (var index = 0; index < All.Length; index++)
-        {
-            if ((mask & All[index]) != 0)
-            {
-                labels.Add(Label(All[index]));
-            }
-        }
-
-        return labels.ToArray();
-    }
+    public static string[] Labels(int mask) => LabelCache.Of(Sanitize(mask));
 
     public static string Label(int flag) =>
         flag switch
@@ -129,25 +169,9 @@ internal static class VelvetSexuality
 
     public static int Sanitize(int mask) => mask & Mask;
 
-    public static string[] Labels(int mask)
-    {
-        mask = Sanitize(mask);
-        if (mask == None)
-        {
-            return Array.Empty<string>();
-        }
+    private static readonly VelvetMaskLabels LabelCache = new(All, Label);
 
-        var labels = new List<string>(All.Length);
-        for (var index = 0; index < All.Length; index++)
-        {
-            if ((mask & All[index]) != 0)
-            {
-                labels.Add(Label(All[index]));
-            }
-        }
-
-        return labels.ToArray();
-    }
+    public static string[] Labels(int mask) => LabelCache.Of(Sanitize(mask));
 
     public static string Label(int flag) =>
         flag switch
@@ -180,6 +204,9 @@ internal static class VelvetPostAudience
 
 internal static class VelvetTags
 {
+    private static string cachedRaw = string.Empty;
+    private static string[] cachedTags = Array.Empty<string>();
+
     public static string[] Parse(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
@@ -187,12 +214,12 @@ internal static class VelvetTags
             return Array.Empty<string>();
         }
 
-        var parts = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (parts.Length == 0)
+        if (string.Equals(raw, cachedRaw, StringComparison.Ordinal))
         {
-            return Array.Empty<string>();
+            return cachedTags;
         }
 
+        var parts = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var result = new List<string>(parts.Length);
         for (var index = 0; index < parts.Length; index++)
         {
@@ -203,7 +230,9 @@ internal static class VelvetTags
             }
         }
 
-        return result.ToArray();
+        cachedRaw = raw;
+        cachedTags = result.Count == 0 ? Array.Empty<string>() : result.ToArray();
+        return cachedTags;
     }
 
     public static string Join(string[] tags) => tags.Length == 0 ? string.Empty : string.Join(", ", tags);

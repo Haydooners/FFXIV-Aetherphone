@@ -35,6 +35,7 @@ internal sealed partial class VelvetShell
     private readonly List<int> activeFilterFlags = new();
     private readonly List<string> activeFilterTokens = new();
     private readonly List<bool> activeFilterExcluded = new();
+    private readonly List<VelvetProfileDto> regionFiltered = new();
 
     private void DrawDiscover(Rect area)
     {
@@ -478,20 +479,20 @@ internal sealed partial class VelvetShell
             nameMaxWidth, TextStyles.Title2, VelvetTheme.TitleInk, nameHovered, false);
 
         var metaY = card.Max.Y - pad - 34f * scale;
-        var metaSize = Typography.Measure(SocialIdentity.ProfileMeta(profile.Handle, region), TextStyles.Subheadline);
+        var meta = SocialIdentity.ProfileMeta(profile.Handle, region);
+        var metaSize = Typography.Measure(meta, TextStyles.Subheadline);
         var metaHovered = UiInteract.Hover(new Vector2(textLeft, metaY),
             new Vector2(textLeft + textWidth, metaY + metaSize.Y));
-        Marquee.DrawLeft(new MarqueeId("velvet.discover.meta.", profile.UserId), SocialIdentity.ProfileMeta(profile.Handle, region),
-            textLeft, metaY, textWidth, TextStyles.Subheadline, VelvetTheme.BodyInk,
-            metaHovered);
+        Marquee.DrawLeft(new MarqueeId("velvet.discover.meta.", profile.UserId), meta, textLeft, metaY, textWidth,
+            TextStyles.Subheadline, VelvetTheme.BodyInk, metaHovered);
 
         var summaryY = card.Max.Y - pad - 15f * scale;
-        var summarySize = Typography.Measure(VelvetIntent.Summary(mask), TextStyles.SubheadlineEmphasized);
+        var summary = VelvetIntent.Summary(mask);
+        var summarySize = Typography.Measure(summary, TextStyles.SubheadlineEmphasized);
         var summaryHovered = UiInteract.Hover(new Vector2(textLeft, summaryY),
             new Vector2(textLeft + textWidth, summaryY + summarySize.Y));
-        Marquee.DrawLeft(new MarqueeId("velvet.discover.summary.", profile.UserId), VelvetIntent.Summary(mask), textLeft,
-            summaryY, textWidth, TextStyles.SubheadlineEmphasized, VelvetTheme.RoseInk,
-            summaryHovered);
+        Marquee.DrawLeft(new MarqueeId("velvet.discover.summary.", profile.UserId), summary, textLeft, summaryY,
+            textWidth, TextStyles.SubheadlineEmphasized, VelvetTheme.RoseInk, summaryHovered);
 
         var cardHovered = !pillClicked && UiInteract.Hover(card.Min, card.Max) &&
             !UiInteract.Hover(pillRect.Min, pillRect.Max);
@@ -615,7 +616,7 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private VelvetProfileDto[] FilterDiscoverByRegion(VelvetProfileDto[] source)
+    private ReadOnlySpan<VelvetProfileDto> FilterDiscoverByRegion(VelvetProfileDto[] source)
     {
         var region = discoverInclude.Region;
         if (region.Length == 0)
@@ -623,31 +624,16 @@ internal sealed partial class VelvetShell
             return source;
         }
 
-        var count = 0;
+        regionFiltered.Clear();
         for (var index = 0; index < source.Length; index++)
         {
             if (string.Equals(RegionCodeOf(source[index]), region, StringComparison.Ordinal))
             {
-                count++;
+                regionFiltered.Add(source[index]);
             }
         }
 
-        if (count == source.Length)
-        {
-            return source;
-        }
-
-        var filtered = new VelvetProfileDto[count];
-        var cursor = 0;
-        for (var index = 0; index < source.Length; index++)
-        {
-            if (string.Equals(RegionCodeOf(source[index]), region, StringComparison.Ordinal))
-            {
-                filtered[cursor++] = source[index];
-            }
-        }
-
-        return filtered;
+        return System.Runtime.InteropServices.CollectionsMarshal.AsSpan(regionFiltered);
     }
 
     private string RegionCodeOf(VelvetProfileDto profile) =>

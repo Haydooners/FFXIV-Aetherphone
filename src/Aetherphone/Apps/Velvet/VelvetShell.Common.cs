@@ -24,6 +24,13 @@ internal sealed partial class VelvetShell
     private static Rect Inset(Rect rect, float inset) =>
         new(new Vector2(rect.Min.X + inset, rect.Min.Y), new Vector2(rect.Max.X - inset, rect.Max.Y));
 
+    private void FillWhoLabels()
+    {
+        whoLabels[0] = Loc.T(L.Velvet.WhoEveryone);
+        whoLabels[1] = Loc.T(L.Velvet.WhoFriends);
+        whoLabels[2] = Loc.T(L.Velvet.WhoNoOne);
+    }
+
     private static void Gap(float pixels)
     {
         ImGui.Dummy(new Vector2(0f, pixels * UiScale.Current));

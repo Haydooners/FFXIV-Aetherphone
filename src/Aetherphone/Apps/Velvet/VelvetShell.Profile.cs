@@ -16,6 +16,8 @@ internal sealed partial class VelvetShell
 {
     private const float HeroTextInset = 12f;
 
+    private readonly List<VelvetPostDto> galleryPosts = new();
+
     private void DrawProfile(Rect area, string userId)
     {
         var scale = UiScale.Current;
@@ -280,13 +282,12 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         store.EnsureUserPosts(user.UserId);
         var serverGallery = store.UserPostsUserId == user.UserId && store.UserPostsLoaded;
-        List<VelvetPostDto> owned;
+        var owned = galleryPosts;
+        owned.Clear();
         int totalCount;
         if (serverGallery)
         {
-            var posts = store.UserPosts;
-            owned = new List<VelvetPostDto>(posts.Length);
-            owned.AddRange(posts);
+            owned.AddRange(store.UserPosts);
             totalCount = store.UserPostsTotal;
         }
         else
@@ -297,7 +298,6 @@ internal sealed partial class VelvetShell
             }
 
             var feed = store.Feed;
-            owned = new List<VelvetPostDto>();
             for (var index = 0; index < feed.Length; index++)
             {
                 if (feed[index].OwnerId == user.UserId)

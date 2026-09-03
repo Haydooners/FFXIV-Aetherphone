@@ -275,7 +275,7 @@ internal sealed partial class VelvetShell
         {
             var category = categories[index];
             var headerOrigin = ImGui.GetCursorScreenPos();
-            Typography.Draw(headerOrigin, Loc.Culture.TextInfo.ToUpper(Loc.T(category.Title)),
+            Typography.Draw(headerOrigin, Loc.Upper(Loc.T(category.Title)),
                 VelvetTheme.Lerp(category.Hue, VelvetTheme.OnAccent, 0.30f), TextStyles.SubheadlineEmphasized);
             ImGui.SetCursorScreenPos(headerOrigin);
             ImGui.Dummy(new Vector2(width, 24f * scale));

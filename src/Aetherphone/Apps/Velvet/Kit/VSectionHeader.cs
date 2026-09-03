@@ -24,7 +24,7 @@ internal static class VSectionHeader
         }
 
         Typography.Draw(new Vector2(left, origin.Y),
-            Typography.FitText(Loc.Culture.TextInfo.ToUpper(label), overlineMaxWidth, TextStyles.FootnoteEmphasized),
+            Typography.FitText(Loc.Upper(label), overlineMaxWidth, TextStyles.FootnoteEmphasized),
             VelvetTheme.HeaderInk, TextStyles.FootnoteEmphasized);
 
         ImGui.SetCursorScreenPos(origin);

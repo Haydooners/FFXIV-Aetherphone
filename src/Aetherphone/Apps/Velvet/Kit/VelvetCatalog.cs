@@ -106,8 +106,27 @@ internal static class VelvetIntent
         return builder.ToString();
     }
 
-    public static string Summary(int mask) =>
-        Sanitize(mask) == 0 ? Loc.T(L.Velvet.OpenToAnything) : Loc.T(L.Velvet.LookingForOne, Describe(mask));
+    private static readonly Dictionary<int, string> Summaries = new();
+    private static LanguageInfo? summaryLanguage;
+
+    public static string Summary(int mask)
+    {
+        mask = Sanitize(mask);
+        if (!ReferenceEquals(summaryLanguage, Loc.Current))
+        {
+            summaryLanguage = Loc.Current;
+            Summaries.Clear();
+        }
+
+        if (Summaries.TryGetValue(mask, out var cached))
+        {
+            return cached;
+        }
+
+        var summary = mask == 0 ? Loc.T(L.Velvet.OpenToAnything) : Loc.T(L.Velvet.LookingForOne, Describe(mask));
+        Summaries[mask] = summary;
+        return summary;
+    }
 
     public static int Primary(int mask)
     {

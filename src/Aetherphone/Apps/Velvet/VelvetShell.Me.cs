@@ -67,9 +67,8 @@ internal sealed partial class VelvetShell
                 }
 
                 var whoRect = Reserve(34f);
-                var who = VSegmented.Draw("velvetWho", whoRect,
-                    new[] { Loc.T(L.Velvet.WhoEveryone), Loc.T(L.Velvet.WhoFriends), Loc.T(L.Velvet.WhoNoOne) },
-                    settingsWho, scale);
+                FillWhoLabels();
+                var who = VSegmented.Draw("velvetWho", whoRect, whoLabels, settingsWho, scale);
                 if (who >= 0 && who != settingsWho)
                 {
                     settingsWho = who;

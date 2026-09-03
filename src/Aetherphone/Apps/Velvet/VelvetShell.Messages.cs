@@ -10,6 +10,7 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetShell
 {
+    private readonly string[] messagesTabLabels = new string[2];
     private string introName = string.Empty;
     private string introText = string.Empty;
 
@@ -20,12 +21,11 @@ internal sealed partial class VelvetShell
         var segRect = new Rect(new Vector2(area.Min.X + pad, area.Min.Y + 8f * scale),
             new Vector2(area.Max.X - pad, area.Min.Y + 8f * scale + 32f * scale));
         var requestCount = store.RequestCount;
-        var labels = new[]
-        {
-            Loc.T(L.Velvet.ChatsTab),
-            requestCount > 0 ? Loc.T(L.Velvet.RequestsCount, requestCount) : Loc.T(L.Velvet.Requests),
-        };
-        var picked = VSegmented.Draw("velvetMessages", segRect, labels, (int)messagesTab, scale);
+        messagesTabLabels[0] = Loc.T(L.Velvet.ChatsTab);
+        messagesTabLabels[1] = requestCount > 0
+            ? Loc.T(L.Velvet.RequestsCount, requestCount)
+            : Loc.T(L.Velvet.Requests);
+        var picked = VSegmented.Draw("velvetMessages", segRect, messagesTabLabels, (int)messagesTab, scale);
         if (picked >= 0)
         {
             messagesTab = (VelvetMessagesTab)picked;

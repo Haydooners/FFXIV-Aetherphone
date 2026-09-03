@@ -86,6 +86,8 @@ internal sealed partial class VelvetShell : IResumableApp
     private ulong raceContentId;
     private readonly VelvetFilterSelection discoverInclude = new();
     private readonly VelvetFilterSelection feedInclude = new();
+    private readonly VTabDef[] rootTabs = new VTabDef[4];
+    private readonly string[] whoLabels = new string[3];
     private readonly ActionSheet postSheet = new();
     private readonly ActionSheet threadSheet = new();
     private VelvetMessagesTab messagesTab = VelvetMessagesTab.Chats;
@@ -515,13 +517,10 @@ internal sealed partial class VelvetShell : IResumableApp
         }
 
         var messageBadge = store.UnreadCount + store.RequestCount;
-        var tabs = new[]
-        {
-            new VTabDef(FontAwesomeIcon.Compass, Loc.T(L.Velvet.TabDiscover)),
-            new VTabDef(FontAwesomeIcon.Image, Loc.T(L.Velvet.TabFeed)),
-            new VTabDef(FontAwesomeIcon.Comment, Loc.T(L.Velvet.Messages), messageBadge),
-            new VTabDef(FontAwesomeIcon.User, Loc.T(L.Velvet.TabMe)),
-        };
+        rootTabs[0] = new VTabDef(FontAwesomeIcon.Compass, Loc.T(L.Velvet.TabDiscover));
+        rootTabs[1] = new VTabDef(FontAwesomeIcon.Image, Loc.T(L.Velvet.TabFeed));
+        rootTabs[2] = new VTabDef(FontAwesomeIcon.Comment, Loc.T(L.Velvet.Messages), messageBadge);
+        rootTabs[3] = new VTabDef(FontAwesomeIcon.User, Loc.T(L.Velvet.TabMe));
         var tabMargin = 12f * scale;
         var cellWidth = (tabRect.Width - tabMargin * 2f) / 4f;
         var tabLeft = tabRect.Min.X + tabMargin;
@@ -531,7 +530,7 @@ internal sealed partial class VelvetShell : IResumableApp
         UiAnchors.Report("velvet.tab.messages", AnchorBox(new Vector2(tabLeft + cellWidth * 2.5f, tabMidY), 22f * scale));
         UiAnchors.Report("velvet.tab.me", AnchorBox(new Vector2(tabLeft + cellWidth * 3.5f, tabMidY), 22f * scale));
 
-        var picked = VTabBar.Draw(tabRect, tabs, (int)activeTab, scale);
+        var picked = VTabBar.Draw(tabRect, rootTabs, (int)activeTab, scale);
         if (picked >= 0)
         {
             if (picked == (int)VelvetPage.Feed && activeTab == VelvetPage.Feed)

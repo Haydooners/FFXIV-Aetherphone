@@ -35,6 +35,8 @@ internal sealed class VelvetPostComposer
     private readonly PhotoComposeSession session;
     private readonly Action openTags;
     private readonly List<string> tags = new();
+    private readonly string[] audienceLabels = new string[2];
+    private string tagsLabel = string.Empty;
     private bool storyMode;
     private readonly string[] aspectLabels = new string[PostAspects.All.Length];
     private volatile int outcome;
@@ -61,18 +63,19 @@ internal sealed class VelvetPostComposer
 
     public void ToggleTag(string token)
     {
-        if (tags.Remove(token))
-        {
-            return;
-        }
-
-        if (tags.Count < MaxPostTags)
+        if (!tags.Remove(token) && tags.Count < MaxPostTags)
         {
             tags.Add(token);
         }
+
+        tagsLabel = tags.Count == 0 ? string.Empty : string.Join(", ", tags);
     }
 
-    public void ClearTags() => tags.Clear();
+    public void ClearTags()
+    {
+        tags.Clear();
+        tagsLabel = string.Empty;
+    }
 
     private static PhotoComposeStyle Style => new(AppPalettes.Velvet.Accent, AppPalettes.Velvet.MutedInk,
         new Vector4(1f, 1f, 1f, 0.10f), AppPalettes.Velvet.Accent, AppPalettes.Velvet.MutedInk, false);
@@ -115,7 +118,7 @@ internal sealed class VelvetPostComposer
         caption = string.Empty;
         status = string.Empty;
         audience = VelvetPostAudience.Connections;
-        tags.Clear();
+        ClearTags();
         captionEmoji.Close();
         session.Open(story);
     }
@@ -299,8 +302,9 @@ internal sealed class VelvetPostComposer
         {
             var audienceRect = new Rect(new Vector2(area.Min.X + 16f * scale, audienceTop),
                 new Vector2(area.Max.X - 16f * scale, audienceTop + audienceHeight));
-            var pickedAudience = VSegmented.Draw("velvetAudience", audienceRect,
-                new[] { Loc.T(L.Velvet.AudienceConnections), Loc.T(L.Velvet.AudiencePublic) }, audience, scale);
+            audienceLabels[0] = Loc.T(L.Velvet.AudienceConnections);
+            audienceLabels[1] = Loc.T(L.Velvet.AudiencePublic);
+            var pickedAudience = VSegmented.Draw("velvetAudience", audienceRect, audienceLabels, audience, scale);
             if (pickedAudience >= 0)
             {
                 audience = pickedAudience;
@@ -352,7 +356,7 @@ internal sealed class VelvetPostComposer
 
         var textLeft = rect.Min.X + 34f * scale;
         var textWidth = rect.Max.X - textLeft - 14f * scale;
-        var label = tags.Count == 0 ? Loc.T(L.Velvet.PostTagsEmpty) : string.Join(", ", tags);
+        var label = tags.Count == 0 ? Loc.T(L.Velvet.PostTagsEmpty) : tagsLabel;
         Typography.Draw(new Vector2(textLeft, rect.Center.Y - 8f * scale),
             Typography.FitText(label, textWidth, TextStyles.Subheadline),
             tags.Count == 0 ? AppPalettes.Velvet.MutedInk : AppPalettes.Velvet.TitleInk, TextStyles.Subheadline);
