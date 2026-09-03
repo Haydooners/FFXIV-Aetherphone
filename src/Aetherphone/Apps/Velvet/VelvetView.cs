@@ -35,7 +35,6 @@ internal enum VelvetScreenId
     Filters,
     PostTags,
     EditCaption,
-    FilterFacet,
     Hidden,
     HiddenFacet,
     Encryption,
@@ -61,8 +60,6 @@ internal readonly record struct VelvetView(VelvetScreenId Screen, string? Arg = 
     public static VelvetView Likers(string postId) => new(VelvetScreenId.Likers, postId);
 
     public static VelvetView EditCaption(string postId) => new(VelvetScreenId.EditCaption, postId);
-
-    public static VelvetView FilterFacet(string facet) => new(VelvetScreenId.FilterFacet, facet);
 
     public static VelvetView HiddenFacet(string facet) => new(VelvetScreenId.HiddenFacet, facet);
     public static VelvetView ChatImage(string userId) => new(VelvetScreenId.ChatImage, userId);

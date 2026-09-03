@@ -4169,6 +4169,9 @@ internal static class L
         public static readonly LocString FilterSelectedCount = new("velvet.filterSelectedCount", "{0} selected");
         public static readonly LocString FilterPickHint =
             new("velvet.filterPickHint", "Pick what you want to see. Leave a row alone to see everything.");
+        public static readonly LocString FilterHasPhoto = new("velvet.filterHasPhoto", "Has a photo");
+        public static readonly LocString FilterActiveRecently = new("velvet.filterActiveRecently", "Active this week");
+        public static readonly LocString FilterShowResults = new("velvet.filterShowResults", "Show results");
         public static readonly LocString HiddenTitle = new("velvet.hiddenTitle", "Hidden");
         public static readonly LocString HiddenHint =
             new("velvet.hiddenHint",

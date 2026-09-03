@@ -12,6 +12,8 @@ internal sealed class VelvetFilterSelection
     public int Sexuality;
     public int Relationship;
     public int Race;
+    public int ActiveWithinDays;
+    public bool HasPhoto;
     public string Region = string.Empty;
 
     public readonly HashSet<string> Roles = new();
@@ -21,6 +23,7 @@ internal sealed class VelvetFilterSelection
 
     public bool Any =>
         Intent != 0 || Gender != 0 || Sexuality != 0 || Relationship != 0 || Race != 0
+        || ActiveWithinDays != 0 || HasPhoto
         || Roles.Count > 0 || Kinks.Count > 0 || Limits.Count > 0 || Tags.Count > 0
         || Region.Length > 0;
 
@@ -31,6 +34,8 @@ internal sealed class VelvetFilterSelection
         Sexuality = 0;
         Relationship = 0;
         Race = 0;
+        ActiveWithinDays = 0;
+        HasPhoto = false;
         Region = string.Empty;
         Roles.Clear();
         Kinks.Clear();
@@ -46,6 +51,8 @@ internal sealed class VelvetFilterSelection
         Sexuality = stored.Sexuality;
         Relationship = stored.Relationship;
         Race = VelvetRace.Sanitize(stored.Race);
+        ActiveWithinDays = stored.ActiveWithinDays;
+        HasPhoto = stored.HasPhoto;
         CopyInto(stored.Roles, Roles);
         CopyInto(stored.Kinks, Kinks);
         CopyInto(stored.Limits, Limits);
@@ -59,6 +66,8 @@ internal sealed class VelvetFilterSelection
         stored.Sexuality = Sexuality;
         stored.Relationship = Relationship;
         stored.Race = Race;
+        stored.ActiveWithinDays = ActiveWithinDays;
+        stored.HasPhoto = HasPhoto;
         stored.Roles = new List<string>(Roles);
         stored.Kinks = new List<string>(Kinks);
         stored.Limits = new List<string>(Limits);
@@ -74,7 +83,8 @@ internal sealed class VelvetFilterSelection
             include.Kinks.ToArray(), exclude.Kinks.ToArray(),
             include.Limits.ToArray(), exclude.Limits.ToArray(),
             include.Tags.ToArray(), exclude.Tags.ToArray(),
-            VelvetRace.Sanitize(include.Race), VelvetRace.Sanitize(exclude.Race));
+            VelvetRace.Sanitize(include.Race), VelvetRace.Sanitize(exclude.Race),
+            include.ActiveWithinDays, include.HasPhoto);
 
     private static void CopyInto(List<string> source, HashSet<string> target)
     {

@@ -70,6 +70,11 @@ internal sealed class VelvetClient
         AppendCsv(path, "profileTagsExclude", TokenCsv(filter.TagsExclude));
         AppendMask(path, "race", filter.RaceInclude);
         AppendMask(path, "raceExclude", filter.RaceExclude);
+        AppendMask(path, "activeWithinDays", filter.ActiveWithinDays);
+        if (filter.HasPhoto)
+        {
+            path.Append("&hasPhoto=true");
+        }
         if (region.Length > 0)
         {
             path.Append("&region=").Append(Uri.EscapeDataString(region));

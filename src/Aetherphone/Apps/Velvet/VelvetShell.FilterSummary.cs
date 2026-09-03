@@ -5,7 +5,8 @@ namespace Aetherphone.Apps.Velvet;
 
 internal enum VelvetFilterFacet
 {
-    Region,
+    None = -1,
+    Region = 0,
     Race,
     Intent,
     Gender,
