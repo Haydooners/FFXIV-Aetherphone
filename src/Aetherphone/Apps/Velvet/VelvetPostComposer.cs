@@ -77,8 +77,8 @@ internal sealed class VelvetPostComposer
         tagsLabel = string.Empty;
     }
 
-    private static PhotoComposeStyle Style => new(AppPalettes.Velvet.Accent, AppPalettes.Velvet.MutedInk,
-        new Vector4(1f, 1f, 1f, 0.10f), AppPalettes.Velvet.Accent, AppPalettes.Velvet.MutedInk, false);
+    private static PhotoComposeStyle Style => new(VelvetTheme.Rose, VelvetTheme.MutedInk,
+        new Vector4(1f, 1f, 1f, 0.10f), VelvetTheme.Rose, VelvetTheme.MutedInk, false);
 
     private const float AspectPickerReserve = 42f;
 
@@ -189,7 +189,7 @@ internal sealed class VelvetPostComposer
         if (noticeHeight > 0f)
         {
             Typography.DrawCentered(new Vector2(area.Center.X, importRect.Max.Y + 8f * scale), session.Notice,
-                AppPalettes.Velvet.MutedInk, TextStyles.Footnote);
+                VelvetTheme.MutedInk, TextStyles.Footnote);
         }
 
         var gridRect = new Rect(new Vector2(area.Min.X, importRect.Max.Y + 12f * scale + noticeHeight), area.Max);
@@ -198,7 +198,7 @@ internal sealed class VelvetPostComposer
             if (session.PickerCount == 0)
             {
                 Typography.DrawCentered(new Vector2(gridRect.Center.X, gridRect.Min.Y + 60f * scale),
-                    Loc.T(L.Velvet.NoPhotos), AppPalettes.Velvet.MutedInk);
+                    Loc.T(L.Velvet.NoPhotos), VelvetTheme.MutedInk);
                 return;
             }
 
@@ -317,13 +317,13 @@ internal sealed class VelvetPostComposer
             ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.10f)));
         var emojiRadius = 13f * scale;
         var emojiCenter = new Vector2(captionRect.Min.X + 10f * scale + emojiRadius, captionRect.Center.Y);
-        captionEmoji.DrawToggle(ui, emojiCenter, emojiRadius, AppPalettes.Velvet.Accent, AppPalettes.Velvet.MutedInk,
+        captionEmoji.DrawToggle(ui, emojiCenter, emojiRadius, VelvetTheme.Rose, VelvetTheme.MutedInk,
             Loc.T(L.Common.Emoji));
         var textLeft = emojiCenter.X + emojiRadius + 6f * scale;
         ImGui.SetCursorScreenPos(new Vector2(textLeft, captionRect.Center.Y - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(captionRect.Max.X - textLeft - 12f * scale);
         using (ImRaii.PushColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0f, 0f)))
-        using (ImRaii.PushColor(ImGuiCol.Text, AppPalettes.Velvet.TitleInk))
+        using (ImRaii.PushColor(ImGuiCol.Text, VelvetTheme.TitleInk))
         {
             MentionField.SingleLineWithHint("##velvetCaption", Loc.T(L.Velvet.CaptionHint), ref caption, 500,
                 captionMentions);
@@ -352,14 +352,14 @@ internal sealed class VelvetPostComposer
         Squircle.Fill(drawList, rect.Min, rect.Max, 9f * scale,
             ImGui.GetColorU32(new Vector4(1f, 1f, 1f, hovered ? 0.16f : 0.10f)));
         AppSkin.Icon(new Vector2(rect.Min.X + 18f * scale, rect.Center.Y), IconGlyph.Of(FontAwesomeIcon.Hashtag),
-            tags.Count > 0 ? AppPalettes.Velvet.Accent : AppPalettes.Velvet.MutedInk, 0.78f);
+            tags.Count > 0 ? VelvetTheme.Rose : VelvetTheme.MutedInk, 0.78f);
 
         var textLeft = rect.Min.X + 34f * scale;
         var textWidth = rect.Max.X - textLeft - 14f * scale;
         var label = tags.Count == 0 ? Loc.T(L.Velvet.PostTagsEmpty) : tagsLabel;
         Typography.Draw(new Vector2(textLeft, rect.Center.Y - 8f * scale),
             Typography.FitText(label, textWidth, TextStyles.Subheadline),
-            tags.Count == 0 ? AppPalettes.Velvet.MutedInk : AppPalettes.Velvet.TitleInk, TextStyles.Subheadline);
+            tags.Count == 0 ? VelvetTheme.MutedInk : VelvetTheme.TitleInk, TextStyles.Subheadline);
 
         if (UiInteract.Click(rect.Min, rect.Max, hovered))
         {
@@ -381,7 +381,7 @@ internal sealed class VelvetPostComposer
         {
             Squircle.Fill(drawList, preview.Min, preview.Max, rounding,
                 ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.10f)));
-            Typography.DrawCentered(preview.Center, Loc.T(L.Common.Loading), AppPalettes.Velvet.MutedInk);
+            Typography.DrawCentered(preview.Center, Loc.T(L.Common.Loading), VelvetTheme.MutedInk);
             return;
         }
 
