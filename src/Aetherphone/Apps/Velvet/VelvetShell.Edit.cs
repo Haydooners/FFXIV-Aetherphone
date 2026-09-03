@@ -212,16 +212,16 @@ internal sealed partial class VelvetShell
     {
         var scale = UiScale.Current;
         var width = ImGui.GetContentRegionAvail().X;
-        var models = new VChipModel[VelvetIntent.All.Length];
-        for (var index = 0; index < models.Length; index++)
+        chipModels.Clear();
+        for (var index = 0; index < VelvetIntent.All.Length; index++)
         {
             var def = VelvetIntent.All[index];
             var selected = VelvetIntent.Has(editIntent, def.Flag);
-            models[index] = new VChipModel(Loc.T(def.Label), selected ? VChipStyle.Solid : VChipStyle.Ghost,
-                selected ? def.Hue : VelvetTheme.Moonlight, def.Glyph);
+            chipModels.Add(new VChipModel(Loc.T(def.Label), selected ? VChipStyle.Solid : VChipStyle.Ghost,
+                selected ? def.Hue : VelvetTheme.Moonlight, def.Glyph));
         }
 
-        var clicked = VChipFlow.Draw(models, width, scale);
+        var clicked = DrawChipFlow(width, scale);
         if (clicked >= 0)
         {
             editIntent = VelvetIntent.Toggle(editIntent, VelvetIntent.All[clicked].Flag);
@@ -233,16 +233,16 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var width = ImGui.GetContentRegionAvail().X;
         var options = VelvetGender.All;
-        var models = new VChipModel[options.Length];
+        chipModels.Clear();
         for (var index = 0; index < options.Length; index++)
         {
             var value = options[index];
             var selected = VelvetGender.Has(gender, value);
-            models[index] = new VChipModel(VelvetGender.Label(value), selected ? VChipStyle.Solid : VChipStyle.Ghost,
-                selected ? VelvetTheme.Rose : VelvetTheme.Moonlight);
+            chipModels.Add(new VChipModel(VelvetGender.Label(value), selected ? VChipStyle.Solid : VChipStyle.Ghost,
+                selected ? VelvetTheme.Rose : VelvetTheme.Moonlight));
         }
 
-        var clicked = VChipFlow.Draw(models, width, scale);
+        var clicked = DrawChipFlow(width, scale);
         if (clicked >= 0)
         {
             gender = VelvetGender.Toggle(gender, options[clicked]);
@@ -254,16 +254,16 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var width = ImGui.GetContentRegionAvail().X;
         var options = VelvetSexuality.All;
-        var models = new VChipModel[options.Length];
+        chipModels.Clear();
         for (var index = 0; index < options.Length; index++)
         {
             var value = options[index];
             var selected = VelvetSexuality.Has(sexuality, value);
-            models[index] = new VChipModel(VelvetSexuality.Label(value), selected ? VChipStyle.Solid : VChipStyle.Ghost,
-                selected ? VelvetTheme.Rose : VelvetTheme.Moonlight);
+            chipModels.Add(new VChipModel(VelvetSexuality.Label(value), selected ? VChipStyle.Solid : VChipStyle.Ghost,
+                selected ? VelvetTheme.Rose : VelvetTheme.Moonlight));
         }
 
-        var clicked = VChipFlow.Draw(models, width, scale);
+        var clicked = DrawChipFlow(width, scale);
         if (clicked >= 0)
         {
             sexuality = VelvetSexuality.Toggle(sexuality, options[clicked]);
@@ -275,16 +275,16 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var width = ImGui.GetContentRegionAvail().X;
         var options = VelvetRelationship.All;
-        var models = new VChipModel[options.Length];
+        chipModels.Clear();
         for (var index = 0; index < options.Length; index++)
         {
             var value = options[index];
             var selected = editRelationship == value;
-            models[index] = new VChipModel(VelvetRelationship.Label(value), selected ? VChipStyle.Solid : VChipStyle.Ghost,
-                selected ? VelvetTheme.Rose : VelvetTheme.Moonlight);
+            chipModels.Add(new VChipModel(VelvetRelationship.Label(value), selected ? VChipStyle.Solid : VChipStyle.Ghost,
+                selected ? VelvetTheme.Rose : VelvetTheme.Moonlight));
         }
 
-        var clicked = VChipFlow.Draw(models, width, scale);
+        var clicked = DrawChipFlow(width, scale);
         if (clicked >= 0)
         {
             editRelationship = options[clicked];

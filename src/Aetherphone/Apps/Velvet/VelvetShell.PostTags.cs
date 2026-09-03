@@ -56,16 +56,16 @@ internal sealed partial class VelvetShell
 
     private void DrawPostTagChips(string[] options, Vector4 accent, float width, float scale)
     {
-        var models = new VChipModel[options.Length];
+        chipModels.Clear();
         for (var index = 0; index < options.Length; index++)
         {
             var token = options[index];
-            models[index] = post.HasTag(token)
+            chipModels.Add(post.HasTag(token)
                 ? new VChipModel(token, VChipStyle.Solid, accent, PhoneIcons.Check)
-                : new VChipModel(token, VChipStyle.Ghost, VelvetTheme.Moonlight);
+                : new VChipModel(token, VChipStyle.Ghost, VelvetTheme.Moonlight));
         }
 
-        var clicked = VChipFlow.Draw(models, width, scale);
+        var clicked = DrawChipFlow(width, scale);
         if (clicked < 0)
         {
             return;

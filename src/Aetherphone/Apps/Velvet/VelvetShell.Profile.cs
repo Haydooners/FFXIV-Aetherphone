@@ -467,12 +467,12 @@ internal sealed partial class VelvetShell
 
         var scale = UiScale.Current;
         var width = ImGui.GetContentRegionAvail().X;
-        var models = new VChipModel[tokens.Length];
+        chipModels.Clear();
         for (var index = 0; index < tokens.Length; index++)
         {
-            models[index] = new VChipModel(tokens[index], style, tone);
+            chipModels.Add(new VChipModel(tokens[index], style, tone));
         }
 
-        VChipFlow.Draw(models, width, scale);
+        DrawChipFlow(width, scale);
     }
 }

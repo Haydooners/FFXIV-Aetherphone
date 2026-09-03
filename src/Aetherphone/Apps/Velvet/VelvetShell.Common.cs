@@ -25,6 +25,11 @@ internal sealed partial class VelvetShell
     private static Rect Inset(Rect rect, float inset) =>
         new(new Vector2(rect.Min.X + inset, rect.Min.Y), new Vector2(rect.Max.X - inset, rect.Max.Y));
 
+    private readonly List<VChipModel> chipModels = new();
+
+    private int DrawChipFlow(float width, float scale) =>
+        VChipFlow.Draw(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(chipModels), width, scale);
+
     private const float EmptyStateTop = 76f;
     private const float EmptyStateGap = 8f;
 

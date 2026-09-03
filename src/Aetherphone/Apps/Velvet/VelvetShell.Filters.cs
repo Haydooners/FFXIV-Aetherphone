@@ -10,6 +10,7 @@ namespace Aetherphone.Apps.Velvet;
 internal sealed partial class VelvetShell
 {
     private readonly VelvetFilterSelection mutes = new();
+    private readonly string[] regionLabels = new string[SocialRegion.Codes.Length + 1];
     private VelvetPage filterSurface = VelvetPage.Discover;
 
     private VelvetFilterSelection IncludeFor(VelvetPage surface) =>
@@ -155,7 +156,7 @@ internal sealed partial class VelvetShell
     {
         var scale = UiScale.Current;
         var codes = SocialRegion.Codes;
-        var labels = new string[codes.Length + 1];
+        var labels = regionLabels;
         labels[0] = Loc.T(L.Velvet.RegionAny);
         var current = 0;
         for (var index = 0; index < codes.Length; index++)
@@ -182,14 +183,14 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var width = ImGui.GetContentRegionAvail().X;
         var defs = VelvetIntent.All;
-        var models = new VChipModel[defs.Length];
+        chipModels.Clear();
         for (var index = 0; index < defs.Length; index++)
         {
             var def = defs[index];
-            models[index] = TriStateChip(Loc.T(def.Label), def.Hue, include.Intent, mutes.Intent, def.Flag);
+            chipModels.Add(TriStateChip(Loc.T(def.Label), def.Hue, include.Intent, mutes.Intent, def.Flag));
         }
 
-        var clicked = VChipFlow.Draw(models, width, scale);
+        var clicked = DrawChipFlow(width, scale);
         if (clicked < 0)
         {
             return;
@@ -203,14 +204,14 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var width = ImGui.GetContentRegionAvail().X;
         var options = VelvetGender.All;
-        var models = new VChipModel[options.Length];
+        chipModels.Clear();
         for (var index = 0; index < options.Length; index++)
         {
-            models[index] = TriStateChip(VelvetGender.Label(options[index]), VelvetTheme.Rose, include.Gender,
-                mutes.Gender, options[index]);
+            chipModels.Add(TriStateChip(VelvetGender.Label(options[index]), VelvetTheme.Rose, include.Gender,
+                mutes.Gender, options[index]));
         }
 
-        var clicked = VChipFlow.Draw(models, width, scale);
+        var clicked = DrawChipFlow(width, scale);
         if (clicked < 0)
         {
             return;
@@ -225,14 +226,14 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var width = ImGui.GetContentRegionAvail().X;
         var options = VelvetSexuality.All;
-        var models = new VChipModel[options.Length];
+        chipModels.Clear();
         for (var index = 0; index < options.Length; index++)
         {
-            models[index] = TriStateChip(VelvetSexuality.Label(options[index]), VelvetTheme.Rose, include.Sexuality,
-                mutes.Sexuality, options[index]);
+            chipModels.Add(TriStateChip(VelvetSexuality.Label(options[index]), VelvetTheme.Rose, include.Sexuality,
+                mutes.Sexuality, options[index]));
         }
 
-        var clicked = VChipFlow.Draw(models, width, scale);
+        var clicked = DrawChipFlow(width, scale);
         if (clicked < 0)
         {
             return;
@@ -248,14 +249,14 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var width = ImGui.GetContentRegionAvail().X;
         var statuses = VelvetRelationship.All;
-        var models = new VChipModel[statuses.Length];
+        chipModels.Clear();
         for (var index = 0; index < statuses.Length; index++)
         {
-            models[index] = TriStateChip(VelvetRelationship.Label(statuses[index]), VelvetTheme.Rose,
-                include.Relationship, mutes.Relationship, 1 << statuses[index]);
+            chipModels.Add(TriStateChip(VelvetRelationship.Label(statuses[index]), VelvetTheme.Rose,
+                include.Relationship, mutes.Relationship, 1 << statuses[index]));
         }
 
-        var clicked = VChipFlow.Draw(models, width, scale);
+        var clicked = DrawChipFlow(width, scale);
         if (clicked < 0)
         {
             return;
@@ -292,25 +293,25 @@ internal sealed partial class VelvetShell
     {
         var scale = UiScale.Current;
         var width = ImGui.GetContentRegionAvail().X;
-        var models = new VChipModel[options.Length];
+        chipModels.Clear();
         for (var index = 0; index < options.Length; index++)
         {
             var token = options[index];
             if (include.Contains(token))
             {
-                models[index] = new VChipModel(token, VChipStyle.Solid, accent, PhoneIcons.Check);
+                chipModels.Add(new VChipModel(token, VChipStyle.Solid, accent, PhoneIcons.Check));
             }
             else if (exclude.Contains(token))
             {
-                models[index] = new VChipModel(token, VChipStyle.Solid, VelvetTheme.Danger, PhoneIcons.Ban);
+                chipModels.Add(new VChipModel(token, VChipStyle.Solid, VelvetTheme.Danger, PhoneIcons.Ban));
             }
             else
             {
-                models[index] = new VChipModel(token, VChipStyle.Ghost, VelvetTheme.Moonlight);
+                chipModels.Add(new VChipModel(token, VChipStyle.Ghost, VelvetTheme.Moonlight));
             }
         }
 
-        var clicked = VChipFlow.Draw(models, width, scale);
+        var clicked = DrawChipFlow(width, scale);
         if (clicked < 0)
         {
             return;
