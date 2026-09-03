@@ -160,7 +160,7 @@ internal sealed partial class VelvetShell
         var innerWidth = width - inset * 2f;
         var headerBlock = PostCardMetrics.HeaderBlock * scale;
         var avatarRadius = PostCardMetrics.AvatarRadius * scale;
-        var mediaHeight = PostAspects.DisplayHeight(width, entry.MediaWidth, entry.MediaHeight);
+        var mediaHeight = PostAspects.TallDisplayHeight(width, entry.MediaWidth, entry.MediaHeight);
         var actionsHeight = PostCardMetrics.ActionsHeight * scale;
         RichTextLayout? captionLayout = null;
         var translateKey = new TranslationKey(TranslationSurface.Post, entry.Id);
@@ -350,7 +350,7 @@ internal sealed partial class VelvetShell
         var veiled = SensitiveReveals.ShouldVeil(entry.Sensitive, entry.Id, configuration.ShowSensitiveContent);
         var result = carousel.Draw(drawList, rect, entry.Id, photos, rounding,
             (list, min, max, radius, url) => DrawMedia(list, min, max, url ?? string.Empty, radius, scanStatus,
-                contain: true, veiled));
+                veiled));
         if (!veiled || !result.Tapped)
         {
             return result;
@@ -360,9 +360,8 @@ internal sealed partial class VelvetShell
         return result with { Tapped = false };
     }
 
-    // The profile grid leaves contain false: it wants its forced square cover crop, like Instagram's.
     private void DrawMedia(ImDrawListPtr drawList, Vector2 min, Vector2 max, string url, float rounding,
-        string? scanStatus = null, bool contain = false, bool veiled = false)
+        string? scanStatus = null, bool veiled = false)
     {
         if (veiled)
         {
@@ -377,10 +376,6 @@ internal sealed partial class VelvetShell
             Typography.DrawCentered(new Vector2((min.X + max.X) * 0.5f, (min.Y + max.Y) * 0.5f),
                 images.Failed(url) ? Loc.T(L.Velvet.ImageUnavailable) : Loc.T(L.Common.Loading), VelvetTheme.MutedInk,
                 TextStyles.Footnote);
-        }
-        else if (contain)
-        {
-            ImageFit.DrawLetterboxed(drawList, texture, new Rect(min, max), Vector2.Zero, Vector2.One, rounding);
         }
         else
         {
