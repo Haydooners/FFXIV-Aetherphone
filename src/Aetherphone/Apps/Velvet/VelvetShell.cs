@@ -462,8 +462,9 @@ internal sealed partial class VelvetShell : IResumableApp
             activeTab = VelvetPage.Discover;
         }
 
-        var bellCenter = new Vector2(headerRect.Max.X - 20f * scale, headerRect.Min.Y + headerHeight * 0.5f);
-        UiAnchors.Report("velvet.activity", AnchorBox(bellCenter, 18f * scale));
+        var showRefresh = activeTab == VelvetPage.Feed;
+        var headerSlots = showRefresh ? 3 : 2;
+        UiAnchors.Report("velvet.activity", AnchorBox(VHeader.Slot(headerRect, 0), 18f * scale));
 
         var title = activeTab switch
         {
@@ -472,15 +473,21 @@ internal sealed partial class VelvetShell : IResumableApp
             VelvetPage.Me => Loc.T(L.Velvet.TabMe),
             _ => Loc.T(L.Velvet.TabDiscover),
         };
-        if (VHeader.Root(headerRect, title, theme, 0))
+        if (VHeader.Root(headerRect, title, theme, 0, headerSlots))
         {
             activityFeed.Invalidate();
             router.Push(VelvetView.Activity);
         }
 
-        if (activeTab == VelvetPage.Feed)
+        if (ui.IconButton(VHeader.Slot(headerRect, 1), 16f * scale, IconGlyph.Of(FontAwesomeIcon.QuestionCircle),
+                VelvetTheme.MutedInk, AppSkin.Transparent, 0.9f, Loc.T(L.Conduct.Eyebrow), HoverLabelSide.Below))
         {
-            var refreshCenter = new Vector2(headerRect.Max.X - 92f * scale, headerRect.Min.Y + headerHeight * 0.5f);
+            conduct.ShowRules(Id);
+        }
+
+        if (showRefresh)
+        {
+            var refreshCenter = VHeader.Slot(headerRect, 2);
             if (store.LoadingFeed)
             {
                 LoadingPulse.Spinner(refreshCenter, 8f * scale, ui.Accent);
@@ -491,13 +498,6 @@ internal sealed partial class VelvetShell : IResumableApp
             {
                 RefreshFeed();
             }
-        }
-
-        var rulesCenter = new Vector2(headerRect.Max.X - 56f * scale, headerRect.Min.Y + headerHeight * 0.5f);
-        if (ui.IconButton(rulesCenter, 16f * scale, IconGlyph.Of(FontAwesomeIcon.QuestionCircle),
-                VelvetTheme.MutedInk, AppSkin.Transparent, 0.9f, Loc.T(L.Conduct.Eyebrow), HoverLabelSide.Below))
-        {
-            conduct.ShowRules(Id);
         }
 
         switch (activeTab)
