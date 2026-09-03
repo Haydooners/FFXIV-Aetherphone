@@ -27,7 +27,23 @@ internal sealed partial class VelvetShell
     private VelvetFilterSelection IncludeFor(VelvetPage surface) =>
         surface == VelvetPage.Feed ? feedInclude : discoverInclude;
 
-    private void LoadMutes() => mutes.LoadFrom(configuration.VelvetMutes);
+    private void LoadMutes()
+    {
+        mutes.LoadFrom(configuration.VelvetMutes);
+        if (mutes.Intent == 0 && mutes.Gender == 0 && mutes.Sexuality == 0 && mutes.Relationship == 0
+            && mutes.Race == 0 && mutes.Roles.Count == 0)
+        {
+            return;
+        }
+
+        mutes.Intent = 0;
+        mutes.Gender = 0;
+        mutes.Sexuality = 0;
+        mutes.Relationship = 0;
+        mutes.Race = 0;
+        mutes.Roles.Clear();
+        SaveMutes();
+    }
 
     private void SaveMutes()
     {
@@ -95,14 +111,6 @@ internal sealed partial class VelvetShell
             for (var index = 0; index < FilterFacets.Length; index++)
             {
                 changed |= DrawFacetSection(FilterFacets[index], include);
-            }
-
-            Gap(18f);
-            VSectionHeader.Overline(Loc.T(L.Velvet.SafetyHeader), string.Empty, SocialChrome.CellPadX * scale);
-            if (DrawFacetRow(L.Velvet.HiddenTitle, HiddenSummary(), PhoneIcons.EyeOff))
-            {
-                RefreshHiddenSummaries();
-                router.Push(VelvetView.Hidden);
             }
 
             Gap(30f);

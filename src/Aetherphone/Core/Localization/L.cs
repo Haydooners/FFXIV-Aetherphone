@@ -4170,10 +4170,10 @@ internal static class L
         public static readonly LocString FilterPickHint =
             new("velvet.filterPickHint", "Pick what you want to see. Leave a row alone to see everything.");
         public static readonly LocString FilterShowResults = new("velvet.filterShowResults", "Show results");
-        public static readonly LocString HiddenTitle = new("velvet.hiddenTitle", "Hidden");
+        public static readonly LocString HiddenTitle = new("velvet.hiddenTitle", "Muted");
         public static readonly LocString HiddenHint =
             new("velvet.hiddenHint",
-                "Anything you pick here disappears everywhere in Velvet, in Discover and in the feed, until you unpick it.");
+                "Mute anything you never want to meet. Muted words hide matching people and posts everywhere in Velvet, in Discover and in the feed.");
         public static readonly LocString CardRace = new("velvet.cardRace", "Race");
         public static readonly LocString FiltersTitle = new("velvet.filtersTitle", "Filters");
         public static readonly LocString PostTagsTitle = new("velvet.postTagsTitle", "Tags");

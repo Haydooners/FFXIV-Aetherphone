@@ -36,12 +36,6 @@ internal sealed partial class VelvetShell
 
     private static readonly VelvetFilterFacet[] HiddenFacets =
     {
-        VelvetFilterFacet.Race,
-        VelvetFilterFacet.Intent,
-        VelvetFilterFacet.Gender,
-        VelvetFilterFacet.Sexuality,
-        VelvetFilterFacet.Relationship,
-        VelvetFilterFacet.Role,
         VelvetFilterFacet.Kinks,
         VelvetFilterFacet.Limits,
         VelvetFilterFacet.Tags,
