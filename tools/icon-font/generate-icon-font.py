@@ -76,6 +76,18 @@ OUTLINE = [
     ("LockOpen", "lock-open"),
     ("Microphone", "microphone"),
     ("MapPin", "map-pin"),
+    ("Compass", "compass"),
+    ("CloudDownload", "cloud-download"),
+    ("Gamepad", "device-gamepad-2"),
+    ("Flame", "flame"),
+    ("Gender", "gender-bigender"),
+    ("Hash", "hash"),
+    ("HeartHandshake", "heart-handshake"),
+    ("HelpCircle", "help-circle"),
+    ("Moon", "moon"),
+    ("Rainbow", "rainbow"),
+    ("Shield", "shield"),
+    ("Users", "users"),
 ]
 
 FILLED = [
