@@ -63,7 +63,7 @@ internal sealed partial class VelvetShell
             DrawActiveFilters(width - inset * 2f, VelvetPage.Discover, inset);
 
             var results = FilterDiscoverByRegion(store.DiscoverResults);
-            if (discoverInclude.Region.Length > 0 && results.Length < RegionFilterFill && store.HasMoreDiscover
+            if (discoverInclude.RegionMask != 0 && results.Length < RegionFilterFill && store.HasMoreDiscover
                 && !store.LoadingDiscover && !store.LoadingMoreDiscover)
             {
                 store.LoadMoreDiscover();
@@ -72,7 +72,7 @@ internal sealed partial class VelvetShell
             if (results.Length == 0)
             {
                 var paging = store.LoadingDiscover || store.LoadingMoreDiscover
-                    || (discoverInclude.Region.Length > 0 && store.HasMoreDiscover);
+                    || (discoverInclude.RegionMask != 0 && store.HasMoreDiscover);
                 var failed = !paging && store.DiscoverFailed;
                 if (failed)
                 {
@@ -159,10 +159,13 @@ internal sealed partial class VelvetShell
         activeFilterTokens.Clear();
         activeFilterExcluded.Clear();
 
-        if (include.Region.Length > 0)
+        for (var index = 0; index < SocialRegion.Codes.Length; index++)
         {
-            AddActiveFilterChip(new VChipModel(include.Region, VChipStyle.Tint, VelvetTheme.RegionAccent,
-                PhoneIcons.World, true), RegionChipKind, 0, string.Empty, false);
+            if ((include.RegionMask & (1 << index)) != 0)
+            {
+                AddActiveFilterChip(new VChipModel(SocialRegion.Codes[index], VChipStyle.Tint,
+                    VelvetTheme.RegionAccent, PhoneIcons.World, true), RegionChipKind, index, string.Empty, false);
+            }
         }
 
         var intentDefs = VelvetIntent.All;
@@ -319,7 +322,7 @@ internal sealed partial class VelvetShell
         switch (kind)
         {
             case RegionChipKind:
-                include.Region = string.Empty;
+                include.RegionMask = SocialRegion.ToggleMask(include.RegionMask, flag);
                 break;
             case IntentChipKind:
                 target.Intent &= ~flag;
@@ -562,8 +565,8 @@ internal sealed partial class VelvetShell
 
     private ReadOnlySpan<VelvetProfileDto> FilterDiscoverByRegion(VelvetProfileDto[] source)
     {
-        var region = discoverInclude.Region;
-        if (region.Length == 0)
+        var mask = discoverInclude.RegionMask;
+        if (mask == 0)
         {
             return source;
         }
@@ -571,7 +574,8 @@ internal sealed partial class VelvetShell
         regionFiltered.Clear();
         for (var index = 0; index < source.Length; index++)
         {
-            if (string.Equals(RegionCodeOf(source[index]), region, StringComparison.Ordinal))
+            var regionIndex = Array.IndexOf(SocialRegion.Codes, RegionCodeOf(source[index]));
+            if (regionIndex >= 0 && (mask & (1 << regionIndex)) != 0)
             {
                 regionFiltered.Add(source[index]);
             }

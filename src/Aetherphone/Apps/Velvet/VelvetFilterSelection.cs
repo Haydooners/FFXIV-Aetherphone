@@ -12,7 +12,7 @@ internal sealed class VelvetFilterSelection
     public int Sexuality;
     public int Relationship;
     public int Race;
-    public string Region = string.Empty;
+    public int RegionMask;
 
     public readonly HashSet<string> Roles = new();
     public readonly HashSet<string> Kinks = new();
@@ -20,9 +20,8 @@ internal sealed class VelvetFilterSelection
     public readonly HashSet<string> Tags = new();
 
     public bool Any =>
-        Intent != 0 || Gender != 0 || Sexuality != 0 || Relationship != 0 || Race != 0
-        || Roles.Count > 0 || Kinks.Count > 0 || Limits.Count > 0 || Tags.Count > 0
-        || Region.Length > 0;
+        Intent != 0 || Gender != 0 || Sexuality != 0 || Relationship != 0 || Race != 0 || RegionMask != 0
+        || Roles.Count > 0 || Kinks.Count > 0 || Limits.Count > 0 || Tags.Count > 0;
 
     public void Clear()
     {
@@ -31,7 +30,7 @@ internal sealed class VelvetFilterSelection
         Sexuality = 0;
         Relationship = 0;
         Race = 0;
-        Region = string.Empty;
+        RegionMask = 0;
         Roles.Clear();
         Kinks.Clear();
         Limits.Clear();

@@ -1,5 +1,6 @@
 using Aetherphone.Apps.Velvet.Kit;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Social;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -91,7 +92,8 @@ internal sealed partial class VelvetShell
     {
         if (facet == VelvetFilterFacet.Region)
         {
-            return target.Region.Length > 0 ? target.Region : Loc.T(L.Velvet.FilterAny);
+            var regions = RegionCount(target.RegionMask);
+            return regions == 0 ? Loc.T(L.Velvet.FilterAny) : Loc.T(L.Velvet.FilterSelectedCount, regions);
         }
 
         var count = CountFor(facet, target);
@@ -117,6 +119,25 @@ internal sealed partial class VelvetShell
             VelvetFilterFacet.Tags => target.Tags.Count,
             _ => 0,
         };
+
+    private static int RegionCount(int mask)
+    {
+        if (mask == 0)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        for (var index = 0; index < SocialRegion.Codes.Length; index++)
+        {
+            if ((mask & (1 << index)) != 0)
+            {
+                count++;
+            }
+        }
+
+        return count == SocialRegion.Codes.Length ? 0 : count;
+    }
 
     private static int MaskCount(int mask)
     {

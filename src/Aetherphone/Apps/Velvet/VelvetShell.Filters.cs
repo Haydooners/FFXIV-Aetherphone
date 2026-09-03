@@ -13,7 +13,6 @@ internal sealed partial class VelvetShell
     private const float FilterFooterHeight = 64f;
     private const float FilterToggleRowHeight = 52f;
     private const float FilterSectionHeaderHeight = 52f;
-    private const float FilterRegionRowHeight = 46f;
     private const float FacetRevealSmoothTime = 0.14f;
     private const float FacetRevealPadY = 14f;
     private const float TagCategoryHeaderHeight = 24f;
@@ -21,7 +20,6 @@ internal sealed partial class VelvetShell
     private readonly VelvetFilterSelection mutes = new();
     private VelvetFilterFacet expandedFacet = VelvetFilterFacet.None;
     private readonly Spring[] facetReveal = new Spring[FilterFacets.Length];
-    private readonly string[] regionLabels = new string[SocialRegion.Codes.Length + 1];
     private VelvetPage filterSurface = VelvetPage.Discover;
 
     private VelvetFilterSelection IncludeFor(VelvetPage surface) =>
@@ -53,10 +51,11 @@ internal sealed partial class VelvetShell
 
     private void ApplyDiscoverFilters() =>
         store.RefreshDiscover(VelvetFilterSelection.Combine(discoverInclude, mutes), discoverApplied.Trim(),
-            discoverInclude.Region);
+            SocialRegion.FilterCsv(discoverInclude.RegionMask) ?? string.Empty);
 
     private void ApplyFeedFilters() =>
-        store.SetFeedFilter(VelvetFilterSelection.Combine(feedInclude, mutes), feedInclude.Region);
+        store.SetFeedFilter(VelvetFilterSelection.Combine(feedInclude, mutes),
+            SocialRegion.FilterCsv(feedInclude.RegionMask) ?? string.Empty);
 
     private void ApplyFilters(VelvetPage surface)
     {
@@ -175,12 +174,7 @@ internal sealed partial class VelvetShell
         if (reveal > 0.001f)
         {
             var innerWidth = MathF.Max(1f, header.Width - pad * 2f);
-            chipModels.Clear();
-            FillFacetChips(facet, include, false);
-            var full = facet == VelvetFilterFacet.Region
-                ? FilterRegionRowHeight * scale
-                : VChipFlow.Measure(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(chipModels), innerWidth,
-                    scale) + FacetRevealPadY * scale;
+            var full = FacetContentHeight(facet, include, false, innerWidth);
             var visible = full * reveal;
             var origin = ImGui.GetCursorScreenPos();
             ImGui.PushClipRect(new Vector2(header.Min.X, origin.Y),
@@ -283,6 +277,17 @@ internal sealed partial class VelvetShell
         }
     }
 
+    private void FillRegionChips(VelvetFilterSelection target)
+    {
+        var codes = SocialRegion.Codes;
+        chipModels.Clear();
+        for (var index = 0; index < codes.Length; index++)
+        {
+            chipModels.Add(PickChip(codes[index], VelvetTheme.RegionAccent,
+                (target.RegionMask & (1 << index)) != 0, false));
+        }
+    }
+
     private void FillMaskChips(int[] options, Func<int, string> labelOf, int mask, Vector4 tone, bool hiding)
     {
         for (var index = 0; index < options.Length; index++)
@@ -304,7 +309,9 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         if (facet == VelvetFilterFacet.Region)
         {
-            return FilterRegionRowHeight * scale;
+            FillRegionChips(target);
+            return VChipFlow.Measure(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(chipModels), width,
+                scale) + FacetRevealPadY * scale;
         }
 
         if (facet == VelvetFilterFacet.Tags)
@@ -337,7 +344,7 @@ internal sealed partial class VelvetShell
     {
         if (facet == VelvetFilterFacet.Region)
         {
-            return DrawRegionFilterRow(target);
+            return DrawRegionChips(target, width);
         }
 
         if (facet == VelvetFilterFacet.Tags)
@@ -476,29 +483,23 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private bool DrawRegionFilterRow(VelvetFilterSelection target)
+    private bool DrawRegionChips(VelvetFilterSelection target, float width)
     {
-        var scale = UiScale.Current;
         var codes = SocialRegion.Codes;
-        var labels = regionLabels;
-        labels[0] = Loc.T(L.Velvet.RegionAny);
-        var current = 0;
+        chipModels.Clear();
         for (var index = 0; index < codes.Length; index++)
         {
-            labels[index + 1] = codes[index];
-            if (string.Equals(target.Region, codes[index], StringComparison.Ordinal))
-            {
-                current = index + 1;
-            }
+            chipModels.Add(PickChip(codes[index], VelvetTheme.RegionAccent,
+                (target.RegionMask & (1 << index)) != 0, false));
         }
 
-        var picked = VSegmented.Draw("velvetFilterRegion", Reserve(34f), labels, current, scale);
-        if (picked < 0 || picked == current)
+        var clicked = DrawChipFlow(width, UiScale.Current);
+        if (clicked < 0)
         {
             return false;
         }
 
-        target.Region = picked == 0 ? string.Empty : codes[picked - 1];
+        target.RegionMask = SocialRegion.ToggleMask(target.RegionMask, clicked);
         return true;
     }
 
