@@ -1,0 +1,337 @@
+using Aetherphone.Core;
+using Aetherphone.Core.Aethernet;
+using Aetherphone.Core.Aethernet.Clients;
+using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Crypto;
+using Aetherphone.Core.Home;
+using Aetherphone.Core.Localization;
+using Aetherphone.Core.Media;
+using Aetherphone.Core.Message;
+using Aetherphone.Core.Net;
+using Aetherphone.Core.Notifications;
+using Aetherphone.Core.Runtime;
+using Aetherphone.Core.Social;
+using Aetherphone.Core.Wallpapers;
+using Aetherphone.Windows.Components;
+
+namespace Aetherphone.Apps.Velvet;
+
+internal sealed partial class VelvetStore
+{
+    public void RefreshDiscover(VelvetDiscoverFilter filter, string tags, string region)
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        var epoch = ++discoverEpoch;
+        discoverFilter = filter;
+        discoverTags = tags;
+        discoverRegion = region;
+        discoverCursor = null;
+        loadingDiscover = true;
+        EnsureNotInterestedLoaded();
+        work.Run("discover", async token =>
+        {
+            var reported = AepFailure.None;
+            var page = await client.DiscoverAsync(filter, tags, region, null, token, failure => reported = failure)
+                .ConfigureAwait(false);
+            if (epoch != discoverEpoch)
+            {
+                return;
+            }
+
+            if (page is null)
+            {
+                discoverFailureBox = new AepFailureBox(reported.Failed
+                    ? reported
+                    : AepFailure.Transport(AepFailureKind.Offline));
+                AepLog.Warning($"Velvet discover failed: {discoverFailureBox.Failure.Describe()}");
+                return;
+            }
+
+            discoverFailureBox = null;
+            discoverResults = WithoutNotInterested(page.Users);
+            discoverCursor = page.NextCursor;
+        }, () =>
+        {
+            loadingDiscover = false;
+            discoverLoaded = true;
+        });
+    }
+
+    public void LoadMoreDiscover()
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        var cursor = discoverCursor;
+        if (cursor is null || loadingMoreDiscover || loadingDiscover)
+        {
+            return;
+        }
+
+        var epoch = discoverEpoch;
+        loadingMoreDiscover = true;
+        work.Run("discover more", async token =>
+        {
+            var page = await client.DiscoverAsync(discoverFilter, discoverTags, discoverRegion, cursor, token)
+                .ConfigureAwait(false);
+            if (page is not null && epoch == discoverEpoch)
+            {
+                discoverResults = AppendUniqueDiscover(discoverResults, WithoutNotInterested(page.Users));
+                discoverCursor = page.NextCursor;
+            }
+        }, () => loadingMoreDiscover = false);
+    }
+
+    private VelvetProfileDto[] WithoutNotInterested(VelvetProfileDto[] incoming)
+    {
+        var notInterested = notInterestedFromDiscover;
+        if (notInterested.Length == 0)
+        {
+            return incoming;
+        }
+
+        var kept = new VelvetProfileDto[incoming.Length];
+        var count = 0;
+        for (var index = 0; index < incoming.Length; index++)
+        {
+            if (Array.IndexOf(notInterested, incoming[index].UserId) < 0)
+            {
+                kept[count] = incoming[index];
+                count++;
+            }
+        }
+
+        if (count == incoming.Length)
+        {
+            return incoming;
+        }
+
+        var trimmed = new VelvetProfileDto[count];
+        Array.Copy(kept, trimmed, count);
+        return trimmed;
+    }
+
+    private static VelvetProfileDto[] AppendUniqueDiscover(VelvetProfileDto[] existing, VelvetProfileDto[] incoming)
+    {
+        if (incoming.Length == 0)
+        {
+            return existing;
+        }
+
+        var seen = new HashSet<string>(existing.Length + incoming.Length);
+        for (var index = 0; index < existing.Length; index++)
+        {
+            seen.Add(existing[index].UserId);
+        }
+
+        var picked = new VelvetProfileDto[incoming.Length];
+        var count = 0;
+        for (var index = 0; index < incoming.Length; index++)
+        {
+            if (seen.Add(incoming[index].UserId))
+            {
+                picked[count] = incoming[index];
+                count++;
+            }
+        }
+
+        if (count == 0)
+        {
+            return existing;
+        }
+
+        var merged = new VelvetProfileDto[existing.Length + count];
+        Array.Copy(existing, merged, existing.Length);
+        Array.Copy(picked, 0, merged, existing.Length, count);
+        return merged;
+    }
+
+    public void RefreshConnections()
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        loadingConnections = true;
+        work.Run("connections", async token =>
+        {
+            var page = await client.ConnectionsAsync(null, token).ConfigureAwait(false);
+            if (page is not null)
+            {
+                connections = page.Items;
+            }
+        }, () =>
+        {
+            loadingConnections = false;
+            connectionsLoaded = true;
+        });
+    }
+
+    public void Heartbeat(string region, bool? isLalafell)
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        var offset = SocialTimeZone.EffectiveOffsetMinutes(configuration);
+        work.Run("heartbeat", async token =>
+            await client.HeartbeatAsync(offset, region, isLalafell, token).ConfigureAwait(false));
+    }
+
+    public void EnsureUserPosts(string userId)
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        if (userPostsUserId == userId && (userPostsLoaded || userPostsLoading))
+        {
+            return;
+        }
+
+        if (userPostsUserId != userId)
+        {
+            userPostsGate.Reset();
+        }
+
+        if (!userPostsGate.TryPass())
+        {
+            return;
+        }
+
+        userPostsUserId = userId;
+        userPosts = Array.Empty<VelvetPostDto>();
+        userPostsTotal = 0;
+        userPostsCursor = null;
+        userPostsLoaded = false;
+        userPostsFailed = false;
+        userPostsLoading = true;
+        work.Run("user posts", async token =>
+        {
+            var page = await client.UserPostsAsync(userId, null, token).ConfigureAwait(false);
+            if (userPostsUserId != userId)
+            {
+                return;
+            }
+
+            if (page is null)
+            {
+                userPostsFailed = true;
+                return;
+            }
+
+            userPosts = page.Items;
+            userPostsTotal = page.TotalCount;
+            userPostsCursor = page.NextCursor;
+            userPostsLoaded = true;
+        }, () => userPostsLoading = false);
+    }
+
+    public void LoadMoreUserPosts()
+    {
+        var userId = userPostsUserId;
+        var cursor = userPostsCursor;
+        if (!session.IsSignedIn || userId is null || cursor is null || userPostsLoadingMore || userPostsLoading)
+        {
+            return;
+        }
+
+        userPostsLoadingMore = true;
+        work.Run("user posts more", async token =>
+        {
+            var page = await client.UserPostsAsync(userId, cursor, token).ConfigureAwait(false);
+            if (page is null || userPostsUserId != userId)
+            {
+                return;
+            }
+
+            userPosts = CopyOnWrite.AppendPageById(userPosts, page.Items);
+            userPostsTotal = page.TotalCount;
+            userPostsCursor = page.NextCursor;
+        }, () => userPostsLoadingMore = false);
+    }
+
+    public void RefreshRequests()
+    {
+        if (!session.IsSignedIn || loadingRequests)
+        {
+            return;
+        }
+
+        loadingRequests = true;
+        work.Run("requests", async token =>
+        {
+            var page = await client.RequestsAsync(token).ConfigureAwait(false);
+            if (page is not null)
+            {
+                requests = page.Items;
+            }
+        }, () =>
+        {
+            loadingRequests = false;
+            requestsLoaded = true;
+        });
+    }
+
+    public void RefreshSentRequests()
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        loadingSentRequests = true;
+        work.Run("sent requests", async token =>
+        {
+            var page = await client.SentRequestsAsync(token).ConfigureAwait(false);
+            if (page is not null)
+            {
+                sentRequests = page.Items;
+            }
+        }, () =>
+        {
+            loadingSentRequests = false;
+            sentRequestsLoaded = true;
+        });
+    }
+
+    public void AcceptRequest(string userId)
+    {
+        var index = Array.FindIndex(requests, item => item.UserId == userId);
+        var accepted = index >= 0 ? requests[index] : null;
+        requests = RemoveConnection(requests, userId);
+        if (accepted is not null)
+        {
+            connections = CopyOnWrite.Append(RemoveConnection(connections, userId),
+                accepted with { State = VelvetConnectionState.Connected });
+        }
+
+        connectionsLoaded = false;
+        SetConnectionStateEverywhere(userId, VelvetConnectionState.Connected);
+        work.Run("accept", async token => await client.ConnectAsync(userId, string.Empty, token).ConfigureAwait(false));
+    }
+
+    public void DeclineRequest(string userId)
+    {
+        requests = RemoveConnection(requests, userId);
+        SetConnectionStateEverywhere(userId, VelvetConnectionState.None);
+        work.Run("decline", async token => await client.DeclineRequestAsync(userId, token).ConfigureAwait(false));
+    }
+
+    public void CancelRequest(string userId)
+    {
+        sentRequests = RemoveConnection(sentRequests, userId);
+        SetConnectionStateEverywhere(userId, VelvetConnectionState.None);
+        work.Run("cancel request",
+            async token => await client.DisconnectAsync(userId, token).ConfigureAwait(false));
+    }
+}
