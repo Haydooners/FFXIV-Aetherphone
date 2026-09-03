@@ -371,7 +371,8 @@ internal sealed record VelvetProfileDto(
     string Region = "",
     string[]? BadgeIds = null,
     string FrameId = "",
-    string? IntroLang = null);
+    string? IntroLang = null,
+    int Race = 0);
 
 internal sealed record UpdateVelvetProfileRequest(
     string? Intro,

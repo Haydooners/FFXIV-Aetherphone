@@ -68,6 +68,8 @@ internal sealed class VelvetClient
         AppendCsv(path, "limitsExclude", TokenCsv(filter.LimitsExclude));
         AppendCsv(path, "profileTags", TokenCsv(filter.TagsInclude));
         AppendCsv(path, "profileTagsExclude", TokenCsv(filter.TagsExclude));
+        AppendMask(path, "race", filter.RaceInclude);
+        AppendMask(path, "raceExclude", filter.RaceExclude);
         if (region.Length > 0)
         {
             path.Append("&region=").Append(Uri.EscapeDataString(region));
@@ -337,7 +339,8 @@ internal sealed class VelvetClient
         return net.GetAsync($"/velvet/threads/{Uri.EscapeDataString(userId)}/typing", AethernetJsonContext.Default.VelvetTypingDto, token, null, onFailure);
     }
 
-    public Task<bool> HeartbeatAsync(int? utcOffsetMinutes, string region, bool? isLalafell, CancellationToken token,
+    public Task<bool> HeartbeatAsync(int? utcOffsetMinutes, string region, bool? isLalafell, int raceId,
+        CancellationToken token,
         Action<AepFailure>? onFailure = null)
     {
         var path = new System.Text.StringBuilder("/velvet/heartbeat?");
@@ -347,6 +350,11 @@ internal sealed class VelvetClient
         }
 
         path.Append("region=").Append(Uri.EscapeDataString(region));
+        if (raceId > 0)
+        {
+            path.Append("&race=").Append(raceId);
+        }
+
         if (isLalafell is { } reported)
         {
             path.Append("&lalafell=").Append(reported ? "true" : "false");

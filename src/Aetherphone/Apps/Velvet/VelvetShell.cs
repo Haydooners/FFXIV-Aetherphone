@@ -82,6 +82,7 @@ internal sealed partial class VelvetShell : IResumableApp
     private VelvetPage activeTab = VelvetPage.Discover;
     private float sinceHeartbeat = HeartbeatSeconds;
     private bool cachedLalafell;
+    private int localRaceId;
     private bool raceKnown;
     private ulong raceContentId;
     private readonly VelvetFilterSelection discoverInclude = new();
@@ -328,7 +329,7 @@ internal sealed partial class VelvetShell : IResumableApp
         if (sinceHeartbeat >= HeartbeatSeconds)
         {
             sinceHeartbeat = 0f;
-            store.Heartbeat(SocialRegion.EffectiveCode(configuration, gameData), LocalRaceIsLalafell);
+            store.Heartbeat(SocialRegion.EffectiveCode(configuration, gameData), LocalRaceIsLalafell, localRaceId);
         }
     }
 
@@ -345,6 +346,7 @@ internal sealed partial class VelvetShell : IResumableApp
             raceContentId = contentId;
             raceKnown = false;
             cachedLalafell = false;
+            localRaceId = 0;
         }
 
         if (raceKnown || contentId == 0)
@@ -365,7 +367,8 @@ internal sealed partial class VelvetShell : IResumableApp
             return;
         }
 
-        cachedLalafell = customize[raceIndex] == LalafellRaceId;
+        localRaceId = customize[raceIndex];
+        cachedLalafell = localRaceId == LalafellRaceId;
         raceKnown = true;
     }
 
@@ -426,6 +429,9 @@ internal sealed partial class VelvetShell : IResumableApp
                 break;
             case VelvetScreenId.Filters:
                 DrawFilters(area);
+                break;
+            case VelvetScreenId.FilterFacet:
+                DrawFilterFacet(area, view.Arg ?? string.Empty);
                 break;
             case VelvetScreenId.PostTags:
                 DrawPostTags(area);

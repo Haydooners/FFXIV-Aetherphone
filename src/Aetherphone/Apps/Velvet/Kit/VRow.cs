@@ -37,6 +37,7 @@ internal struct VRowModel
     public int Presence;
     public string TileIcon;
     public Vector4 TileTint;
+    public string? Value;
     public string? Pill;
     public bool PillFilled;
     public bool PillEnabled;
@@ -163,6 +164,16 @@ internal static class VRow
             PhoneIcon.Draw(drawList, new Vector2(rightEdge - 8f * scale, centerY), PhoneIcons.ChevronRight,
                 VelvetTheme.MutedInk, VIcon.Row * scale);
             rightEdge -= 22f * scale;
+        }
+
+        if (model.Value is { Length: > 0 } valueText)
+        {
+            var valueSize = Typography.Measure(valueText, TextStyles.Subheadline);
+            var valueWidth = MathF.Min(valueSize.X, (max.X - min.X) * 0.42f);
+            Typography.Draw(drawList, new Vector2(rightEdge - valueWidth, centerY - valueSize.Y * 0.5f),
+                Typography.FitText(valueText, valueWidth, TextStyles.Subheadline), VelvetTheme.MutedInk,
+                TextStyles.Subheadline);
+            rightEdge -= valueWidth + Metrics.Space.Sm * scale;
         }
 
         if (model.Decline)

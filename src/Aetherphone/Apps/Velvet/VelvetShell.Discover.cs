@@ -21,6 +21,7 @@ internal sealed partial class VelvetShell
     private const int KinkChipKind = 6;
     private const int LimitChipKind = 7;
     private const int TagChipKind = 8;
+    private const int RaceChipKind = 9;
     private const int RegionFilterFill = 8;
 
     private static readonly Func<int, string> GenderLabelOf = VelvetGender.Label;
@@ -223,6 +224,7 @@ internal sealed partial class VelvetShell
             }
         }
 
+        AddRaceFilterChips(include.Race, mutes.Race);
         AddMaskFilterChips(GenderChipKind, include.Gender, mutes.Gender, VelvetGender.All, GenderLabelOf,
             PhoneIcons.Gender);
         AddMaskFilterChips(SexualityChipKind, include.Sexuality, mutes.Sexuality, VelvetSexuality.All,
@@ -277,9 +279,31 @@ internal sealed partial class VelvetShell
             {
                 ApplyFilters(surface);
             }
+
+            RefreshFilterSummaries();
         }
 
         Gap(10f);
+    }
+
+    private void AddRaceFilterChips(int includeMask, int excludeMask)
+    {
+        var races = VelvetRace.All;
+        for (var index = 0; index < races.Length; index++)
+        {
+            var bit = VelvetRace.Bit(races[index]);
+            if ((includeMask & bit) != 0)
+            {
+                AddActiveFilterChip(new VChipModel(VelvetRace.Label(gameData, races[index]), VChipStyle.Tint,
+                    VelvetTheme.Moonlight, null, true), RaceChipKind, bit, string.Empty, false);
+            }
+
+            if ((excludeMask & bit) != 0)
+            {
+                AddActiveFilterChip(new VChipModel(VelvetRace.Label(gameData, races[index]), VChipStyle.Tint,
+                    VelvetTheme.Danger, PhoneIcons.Ban, true), RaceChipKind, bit, string.Empty, true);
+            }
+        }
     }
 
     private void AddMaskFilterChips(int kind, int includeMask, int excludeMask, int[] options,
@@ -341,6 +365,9 @@ internal sealed partial class VelvetShell
                 break;
             case IntentChipKind:
                 target.Intent &= ~flag;
+                break;
+            case RaceChipKind:
+                target.Race &= ~flag;
                 break;
             case GenderChipKind:
                 target.Gender &= ~flag;

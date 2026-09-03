@@ -4161,12 +4161,15 @@ internal static class L
         public static readonly LocPlural PhotoBadge = new("velvet.photoBadge", "{0} photo", "{0} photos");
         public static readonly LocString FilterClearAll = new("velvet.filterClearAll", "Clear all");
         public static readonly LocString FilterDone = new("velvet.filterDone", "Done");
+        public static readonly LocString FilterAny = new("velvet.filterAny", "Any");
+        public static readonly LocString FilterShownCount = new("velvet.filterShownCount", "{0} shown");
+        public static readonly LocString FilterHiddenCount = new("velvet.filterHiddenCount", "{0} hidden");
+        public static readonly LocString FilterShownHidden =
+            new("velvet.filterShownHidden", "{0} shown, {1} hidden");
+        public static readonly LocString FilterFacetHint =
+            new("velvet.filterFacetHint", "Tap once to show only these. Tap again to hide them everywhere in Velvet.");
+        public static readonly LocString CardRace = new("velvet.cardRace", "Race");
         public static readonly LocString FiltersTitle = new("velvet.filtersTitle", "Filters");
-        public static readonly LocString FilterHint =
-            new("velvet.filterHint", "Tap once to include, tap again to exclude.");
-        public static readonly LocString FilterMuteHint =
-            new("velvet.filterMuteHint",
-                "Excluded chips are saved and hide matching people and posts everywhere in Velvet.");
         public static readonly LocString PostTagsTitle = new("velvet.postTagsTitle", "Tags");
         public static readonly LocString PostTagsEmpty = new("velvet.postTagsEmpty", "Add tags");
         public static readonly LocString PostTagsHint =
