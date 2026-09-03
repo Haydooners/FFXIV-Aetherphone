@@ -4045,6 +4045,9 @@ internal static class L
         public static readonly LocString PresenceDnd = new("velvet.presenceDnd", "Do not disturb");
         public static readonly LocString PresenceOffline = new("velvet.presenceOffline", "Offline");
         public static readonly LocString EditProfile = new("velvet.editProfile", "Edit profile");
+        public static readonly LocString EditCaption = new("velvet.editCaption", "Edit caption");
+        public static readonly LocString EditCaptionFailed = new("velvet.editCaptionFailed", "Couldn't save the caption");
+        public static readonly LocString EditedStamp = new("velvet.editedStamp", "{0} · Edited");
         public static readonly LocString PronounsLabel = new("velvet.pronounsLabel", "Pronouns");
         public static readonly LocString DynamicLabel = new("velvet.dynamicLabel", "Your vibe");
         public static readonly LocString DiscoverableLabel = new("velvet.discoverableLabel", "Appear in Discover");

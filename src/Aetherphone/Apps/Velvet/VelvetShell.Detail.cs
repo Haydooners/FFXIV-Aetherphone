@@ -82,7 +82,7 @@ internal sealed partial class VelvetShell
                 images, lodestone, -1, null, Frames.Of(post.OwnerFrameId));
             var nameLeft = avatarCenter.X + avatarRadius + 10f * scale;
             var ownerSub = post.OwnerHandle.Length > 0 ? "@" + post.OwnerHandle : string.Empty;
-            var ownerTime = TimeText.Short(post.CreatedAtUnix);
+            var ownerTime = PostTimestamp(post);
             if (ownerTime.Length > 0)
             {
                 ownerSub = ownerSub.Length > 0 ? ownerSub + " · " + ownerTime : ownerTime;

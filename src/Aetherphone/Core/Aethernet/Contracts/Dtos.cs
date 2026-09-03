@@ -415,7 +415,8 @@ internal sealed record VelvetPostDto(
     string[]? OwnerBadgeIds = null,
     string OwnerFrameId = "",
     bool Sensitive = false,
-    string? Lang = null) : IIdentified;
+    string? Lang = null,
+    long? EditedAtUnix = null) : IIdentified;
 
 internal sealed record VelvetFeedPage(VelvetPostDto[] Items, string? NextCursor);
 
@@ -431,6 +432,8 @@ internal sealed record CreateVelvetPostRequest(
     int Audience = 0);
 
 internal sealed record UpdateVelvetPostAudienceRequest(int Audience);
+
+internal sealed record EditVelvetCaptionRequest(string Caption);
 
 internal sealed record VelvetCommentDto(
     string Id,

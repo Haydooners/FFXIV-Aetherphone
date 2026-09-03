@@ -9,6 +9,7 @@ internal sealed partial class VelvetShell
     private enum PostSheetAction
     {
         View,
+        Edit,
         Audience,
         Delete,
         Report,
@@ -24,8 +25,8 @@ internal sealed partial class VelvetShell
         Block,
     }
 
-    private readonly ActionSheet.Item[] postSheetItems = new ActionSheet.Item[3];
-    private readonly PostSheetAction[] postSheetActions = new PostSheetAction[3];
+    private readonly ActionSheet.Item[] postSheetItems = new ActionSheet.Item[4];
+    private readonly PostSheetAction[] postSheetActions = new PostSheetAction[4];
     private readonly ActionSheet.Item[] threadSheetItems = new ActionSheet.Item[1];
     private readonly ActionSheet profileMenu = new();
     private readonly ActionSheet.Item[] profileMenuItems = new ActionSheet.Item[4];

@@ -122,6 +122,12 @@ internal sealed partial class VelvetShell
         stories.RefreshTray();
     }
 
+    private static string PostTimestamp(VelvetPostDto post)
+    {
+        var time = TimeText.Short(post.CreatedAtUnix);
+        return post.EditedAtUnix is null ? time : Loc.T(L.Velvet.EditedStamp, time);
+    }
+
     private string TagLineFor(VelvetPostDto entry)
     {
         if (entry.Tags.Length == 0)
@@ -211,7 +217,7 @@ internal sealed partial class VelvetShell
             new Vector2(nameLeft + headerTextMaxWidth, nameTop + nameSize.Y));
         UserName.Draw("velvet.feed.author." + entry.Id, authorName, entry.OwnerBadges, entry.OwnerBadgeIds, nameLeft, nameTop,
             headerTextMaxWidth, TextStyles.Headline, VelvetTheme.TitleInk, nameHovering, false);
-        var ownerSub = SocialIdentity.FeedMeta(entry.OwnerHandle, TimeText.Short(entry.CreatedAtUnix));
+        var ownerSub = SocialIdentity.FeedMeta(entry.OwnerHandle, PostTimestamp(entry));
         var ownerSubY = nameTop + PostCardMetrics.SublineTop * scale;
         var ownerSubSize = Typography.Measure(ownerSub, TextStyles.Subheadline);
         var ownerSubHovering = UiInteract.Hover(new Vector2(nameLeft, ownerSubY),

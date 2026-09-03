@@ -369,6 +369,21 @@ internal sealed partial class VelvetStore
             async token => await client.DeletePostAsync(postId, token).ConfigureAwait(false));
     }
 
+    public void EditCaption(string postId, string caption, Action<bool> onComplete)
+    {
+        work.Run("edit caption", async token =>
+        {
+            var result = await client.EditCaptionAsync(postId, caption, token).ConfigureAwait(false);
+            if (result is null)
+            {
+                return false;
+            }
+
+            AcceptPostEverywhere(result);
+            return true;
+        }, onComplete);
+    }
+
     public void SetPostAudience(VelvetPostDto post, int audience)
     {
         AcceptPostEverywhere(post with { Audience = audience });
