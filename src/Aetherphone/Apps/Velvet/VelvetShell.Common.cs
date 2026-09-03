@@ -16,7 +16,7 @@ internal sealed partial class VelvetShell
     {
         var scale = UiScale.Current;
         var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
+        var width = ScrollLayout.StableContentWidth();
         var rect = new Rect(origin, new Vector2(origin.X + width, origin.Y + heightUnscaled * scale));
         ImGui.Dummy(new Vector2(width, heightUnscaled * scale));
         return rect;
