@@ -77,7 +77,7 @@ internal sealed partial class VelvetShell
         using (AppSurface.BeginEdgeToEdge(body))
         {
             Gap(10f);
-            ui.HelpText(Loc.T(L.Velvet.FilterPickHint));
+            DrawInsetHelpText(Loc.T(L.Velvet.FilterPickHint));
             Gap(10f);
             for (var index = 0; index < FilterFacets.Length; index++)
             {
@@ -119,7 +119,7 @@ internal sealed partial class VelvetShell
         using (AppSurface.BeginEdgeToEdge(body))
         {
             Gap(10f);
-            ui.HelpText(Loc.T(L.Velvet.HiddenHint));
+            DrawInsetHelpText(Loc.T(L.Velvet.HiddenHint));
             Gap(10f);
             for (var index = 0; index < HiddenFacets.Length; index++)
             {

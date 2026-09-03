@@ -27,6 +27,18 @@ internal sealed partial class VelvetShell
     private int DrawChipFlow(float width, float scale) =>
         VChipFlow.Draw(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(chipModels), width, scale);
 
+    private static void DrawInsetHelpText(string text)
+    {
+        var scale = UiScale.Current;
+        var pad = SocialChrome.CellPadX * scale;
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ScrollLayout.StableContentWidth();
+        var height = Typography.DrawWrappedLeft(new Vector2(origin.X + pad, origin.Y), text, VelvetTheme.MutedInk,
+            TextStyles.Footnote, MathF.Max(1f, width - pad * 2f));
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height));
+    }
+
     private const float EmptyStateTop = 76f;
     private const float EmptyStateGap = 8f;
 
