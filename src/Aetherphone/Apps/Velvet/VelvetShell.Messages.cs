@@ -61,10 +61,7 @@ internal sealed partial class VelvetShell
         var threads = store.Threads;
         if (threads.Length == 0)
         {
-            Typography.DrawCentered(new Vector2(listRect.Center.X, listRect.Min.Y + 80f * scale),
-                Loc.T(L.Velvet.MessagesEmpty), VelvetTheme.TitleInk, TextStyles.Headline);
-            Typography.DrawCentered(new Vector2(listRect.Center.X, listRect.Min.Y + 106f * scale),
-                Loc.T(L.Velvet.MessagesEmptyHint), VelvetTheme.MutedInk, TextStyles.Subheadline);
+            DrawEmpty(listRect, Loc.T(L.Velvet.MessagesEmpty), Loc.T(L.Velvet.MessagesEmptyHint));
             return;
         }
 
@@ -129,10 +126,7 @@ internal sealed partial class VelvetShell
         var sent = store.SentRequests;
         if (requests.Length == 0 && sent.Length == 0)
         {
-            Typography.DrawCentered(new Vector2(listRect.Center.X, listRect.Min.Y + 80f * scale),
-                Loc.T(L.Velvet.RequestsEmpty), VelvetTheme.TitleInk, TextStyles.Headline);
-            Typography.DrawCentered(new Vector2(listRect.Center.X, listRect.Min.Y + 106f * scale),
-                Loc.T(L.Velvet.RequestsEmptyHint), VelvetTheme.MutedInk, TextStyles.Subheadline);
+            DrawEmpty(listRect, Loc.T(L.Velvet.RequestsEmpty), Loc.T(L.Velvet.RequestsEmptyHint));
             return;
         }
 

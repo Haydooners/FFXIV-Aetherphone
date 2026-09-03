@@ -65,17 +65,12 @@ internal sealed partial class VelvetShell
             var feed = store.Feed;
             if (feed.Length == 0)
             {
-                var emptyY = ImGui.GetCursorScreenPos().Y + 60f * scale;
-                var message = store.LoadingFeed ? Loc.T(L.Common.Loading) : Loc.T(L.Velvet.FeedNone);
-                Typography.DrawCentered(new Vector2(area.Center.X, emptyY), message, VelvetTheme.TitleInk,
-                    TextStyles.Headline);
-                if (!store.LoadingFeed)
-                {
-                    var filtered = feedInclude.Any || mutes.Any;
-                    Typography.DrawCentered(new Vector2(area.Center.X, emptyY + 26f * scale),
-                        Loc.T(filtered ? L.Velvet.FeedNoneFiltered : L.Velvet.FeedNoneHint), VelvetTheme.MutedInk,
-                        TextStyles.Subheadline);
-                }
+                var emptyRect = new Rect(new Vector2(area.Min.X, ImGui.GetCursorScreenPos().Y), area.Max);
+                var filtered = feedInclude.Any || mutes.Any;
+                DrawEmpty(emptyRect, store.LoadingFeed ? Loc.T(L.Common.Loading) : Loc.T(L.Velvet.FeedNone),
+                    store.LoadingFeed
+                        ? string.Empty
+                        : Loc.T(filtered ? L.Velvet.FeedNoneFiltered : L.Velvet.FeedNoneHint));
             }
             else
             {

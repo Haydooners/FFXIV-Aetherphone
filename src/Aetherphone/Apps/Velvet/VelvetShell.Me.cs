@@ -135,8 +135,7 @@ internal sealed partial class VelvetShell
             var blocked = store.Blocked;
             if (blocked.Length == 0)
             {
-                Typography.DrawCentered(new Vector2(body.Center.X, body.Min.Y + 80f * scale), Loc.T(L.Velvet.BlockedNone),
-                    VelvetTheme.MutedInk, TextStyles.Callout);
+                DrawEmpty(body, Loc.T(L.Velvet.BlockedNone), string.Empty);
                 return;
             }
 
@@ -197,8 +196,7 @@ internal sealed partial class VelvetShell
             var notInterested = store.NotInterested;
             if (notInterested.Length == 0)
             {
-                Typography.DrawCentered(new Vector2(body.Center.X, body.Min.Y + 80f * scale), Loc.T(L.Velvet.NotInterestedNone),
-                    VelvetTheme.MutedInk, TextStyles.Callout);
+                DrawEmpty(body, Loc.T(L.Velvet.NotInterestedNone), string.Empty);
                 return;
             }
 

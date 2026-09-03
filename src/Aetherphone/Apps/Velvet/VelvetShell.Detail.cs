@@ -429,16 +429,14 @@ internal sealed partial class VelvetShell
         {
             if (store.LikersLoading)
             {
-                Typography.DrawCentered(new Vector2(body.Center.X, body.Min.Y + 70f * scale), Loc.T(L.Common.Loading),
-                    VelvetTheme.MutedInk, TextStyles.Callout);
+                DrawEmpty(body, Loc.T(L.Common.Loading), string.Empty);
                 return;
             }
 
             var likers = store.Likers;
             if (likers.Length == 0)
             {
-                Typography.DrawCentered(new Vector2(body.Center.X, body.Min.Y + 70f * scale), Loc.T(L.Velvet.NoLikes),
-                    VelvetTheme.MutedInk, TextStyles.Callout);
+                DrawEmpty(body, Loc.T(L.Velvet.NoLikes), string.Empty);
                 return;
             }
 

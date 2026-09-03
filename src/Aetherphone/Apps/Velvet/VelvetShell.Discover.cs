@@ -87,40 +87,29 @@ internal sealed partial class VelvetShell
                     failed ? Loc.T(L.Failure.CouldNotLoad) : Loc.T(L.Velvet.DiscoverNone);
                 var hint = paging ? string.Empty :
                     failed ? discoverFailure.Text() : Loc.T(L.Velvet.DiscoverNoneHint);
-                Typography.DrawCentered(new Vector2(width * 0.5f + listRect.Min.X, listRect.Min.Y + 90f * scale),
-                    message, VelvetTheme.TitleInk, TextStyles.Headline);
-                if (hint.Length > 0)
-                {
-                    Typography.DrawCentered(new Vector2(width * 0.5f + listRect.Min.X, listRect.Min.Y + 116f * scale),
-                        hint, VelvetTheme.MutedInk, TextStyles.Subheadline);
-                }
-
-                if (failed)
-                {
-                    var retryWidth = 168f * scale;
-                    var retryTop = listRect.Min.Y + 150f * scale;
-                    var retryRect = new Rect(
-                        new Vector2(width * 0.5f + listRect.Min.X - retryWidth * 0.5f, retryTop),
-                        new Vector2(width * 0.5f + listRect.Min.X + retryWidth * 0.5f, retryTop + 38f * scale));
-                    if (ConfirmDialog.DrawPillButton(retryRect, Loc.T(L.Common.Retry), true, theme, 1f, 1f,
-                            ConfirmButtonTone.Primary, "velvet.discover.retry"))
-                    {
-                        ApplyDiscoverFilters();
-                    }
-                }
-
-                if (!paging && !failed && discoverInclude.Any)
+                var emptyRect = new Rect(listRect.Min, new Vector2(listRect.Min.X + width, listRect.Max.Y));
+                var emptyBottom = DrawEmpty(emptyRect, message, hint);
+                var actionLabel = failed ? Loc.T(L.Common.Retry) :
+                    !paging && discoverInclude.Any ? Loc.T(L.Velvet.FilterClearAll) : string.Empty;
+                if (actionLabel.Length > 0)
                 {
                     var buttonWidth = 168f * scale;
-                    var buttonTop = listRect.Min.Y + 150f * scale;
+                    var buttonTop = emptyBottom + 22f * scale;
                     var buttonRect = new Rect(
-                        new Vector2(width * 0.5f + listRect.Min.X - buttonWidth * 0.5f, buttonTop),
-                        new Vector2(width * 0.5f + listRect.Min.X + buttonWidth * 0.5f, buttonTop + 38f * scale));
-                    if (ConfirmDialog.DrawPillButton(buttonRect, Loc.T(L.Velvet.FilterClearAll), true, theme, 1f, 1f,
-                            ConfirmButtonTone.Primary, "velvet.discover.clearFilters"))
+                        new Vector2(emptyRect.Center.X - buttonWidth * 0.5f, buttonTop),
+                        new Vector2(emptyRect.Center.X + buttonWidth * 0.5f, buttonTop + 38f * scale));
+                    if (ConfirmDialog.DrawPillButton(buttonRect, actionLabel, true, theme, 1f, 1f,
+                            ConfirmButtonTone.Primary, "velvet.discover.emptyAction"))
                     {
-                        discoverInclude.Clear();
-                        ApplyFilters(VelvetPage.Discover);
+                        if (failed)
+                        {
+                            ApplyDiscoverFilters();
+                        }
+                        else
+                        {
+                            discoverInclude.Clear();
+                            ApplyFilters(VelvetPage.Discover);
+                        }
                     }
                 }
 

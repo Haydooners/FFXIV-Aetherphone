@@ -1,3 +1,4 @@
+using Aetherphone.Apps.Velvet.Kit;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Confirm;
@@ -23,6 +24,27 @@ internal sealed partial class VelvetShell
 
     private static Rect Inset(Rect rect, float inset) =>
         new(new Vector2(rect.Min.X + inset, rect.Min.Y), new Vector2(rect.Max.X - inset, rect.Max.Y));
+
+    private const float EmptyStateTop = 76f;
+    private const float EmptyStateGap = 8f;
+
+    private static float DrawEmpty(Rect area, string title, string body)
+    {
+        var scale = UiScale.Current;
+        var drawList = ImGui.GetWindowDrawList();
+        var maxWidth = MathF.Max(1f, area.Width - FeedCell.PadX * 2f * scale);
+        var top = area.Min.Y + EmptyStateTop * scale;
+        var titleHeight = Typography.DrawWrappedCentered(drawList, title, TextStyles.Headline, VelvetTheme.TitleInk,
+            new Vector2(area.Center.X, top), maxWidth);
+        if (body.Length == 0)
+        {
+            return top + titleHeight;
+        }
+
+        var bodyTop = top + titleHeight + EmptyStateGap * scale;
+        return bodyTop + Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline, VelvetTheme.MutedInk,
+            new Vector2(area.Center.X, bodyTop), maxWidth);
+    }
 
     private void FillWhoLabels()
     {
