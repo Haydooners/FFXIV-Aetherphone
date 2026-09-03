@@ -14,7 +14,6 @@ namespace Aetherphone.Apps.Velvet;
 internal sealed partial class VelvetShell
 {
     private readonly FeedVirtualizer feedVirtualizer = new(400f);
-    private readonly string[] feedScopeLabels = new string[2];
     private readonly Dictionary<string, string> feedTagLines = new(StringComparer.Ordinal);
     private bool feedScrollTopPending;
 
@@ -40,25 +39,6 @@ internal sealed partial class VelvetShell
             stories.DrawTray(theme);
             var width = ScrollLayout.StableContentWidth();
             var inset = FeedCell.PadX * scale;
-            Gap(4f);
-            var scopeRow = Inset(Reserve(34f), inset);
-            var filterSize = 34f * scale;
-            var filterGap = 8f * scale;
-            var scopeRect = new Rect(scopeRow.Min,
-                new Vector2(scopeRow.Max.X - filterSize - filterGap, scopeRow.Max.Y));
-            var filterRect = new Rect(new Vector2(scopeRow.Max.X - filterSize, scopeRow.Min.Y), scopeRow.Max);
-            var activeScope = (int)store.FeedScope;
-            feedScopeLabels[0] = Loc.T(L.Velvet.FeedScopeAll);
-            feedScopeLabels[1] = Loc.T(L.Velvet.FeedScopeConnections);
-            var pickedScope = VSegmented.Draw("velvetFeedScope", scopeRect, feedScopeLabels, activeScope, scale);
-            if (pickedScope >= 0 && pickedScope != activeScope)
-            {
-                store.SetFeedScope((VelvetFeedScope)pickedScope);
-                feedScrollTopPending = true;
-            }
-
-            DrawFilterButton(filterRect, VelvetPage.Feed);
-            Gap(6f);
             DrawActiveFilters(width - inset * 2f, VelvetPage.Feed, inset);
 
             var feed = store.Feed;

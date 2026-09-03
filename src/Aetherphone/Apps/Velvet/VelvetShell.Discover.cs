@@ -40,19 +40,14 @@ internal sealed partial class VelvetShell
     private void DrawDiscover(Rect area)
     {
         var scale = UiScale.Current;
-        var pad = Metrics.Space.Lg * scale;
+        var pad = SocialChrome.CellPadX * scale;
         var searchTop = area.Min.Y + 8f * scale;
         var rowHeight = 36f * scale;
-        var buttonSize = 36f * scale;
-        var buttonGap = 8f * scale;
         var searchRect = new Rect(new Vector2(area.Min.X + pad, searchTop),
-            new Vector2(area.Max.X - pad - buttonSize - buttonGap, searchTop + rowHeight));
+            new Vector2(area.Max.X - pad, searchTop + rowHeight));
         SearchField.Draw(searchRect, "##velvetSearch", Loc.T(L.Velvet.SearchPeopleHint), ref discoverQuery,
             VelvetTheme.Palette, 64);
-        var filterRect = new Rect(new Vector2(area.Max.X - pad - buttonSize, searchTop),
-            new Vector2(area.Max.X - pad, searchTop + rowHeight));
-        DrawFilterButton(filterRect, VelvetPage.Discover);
-        UiAnchors.Report("velvet.discover.filter", filterRect);
+        UiAnchors.Report("velvet.discover.filter", searchRect);
         TickDiscoverSearch();
 
         if (!store.DiscoverLoaded && !store.LoadingDiscover)
@@ -144,43 +139,6 @@ internal sealed partial class VelvetShell
             if (InfiniteScroll.ReachedBottom() && store.HasMoreDiscover && !store.LoadingMoreDiscover)
             {
                 store.LoadMoreDiscover();
-            }
-        }
-    }
-
-    private void DrawFilterButton(Rect rect, VelvetPage surface)
-    {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var active = IncludeFor(surface).Any || mutes.Any;
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var radius = Metrics.Radius.Field * scale;
-        var fill = active
-            ? VelvetTheme.Alpha(VelvetTheme.Rose, hovered ? 0.34f : 0.26f)
-            : hovered ? VelvetTheme.Alpha(VelvetTheme.Moonlight, 0.10f) : VelvetTheme.PlumWell;
-        Squircle.Fill(drawList, rect.Min, rect.Max, radius, fill.Packed());
-        if (active)
-        {
-            Squircle.Stroke(drawList, rect.Min, rect.Max, radius, VelvetTheme.Alpha(VelvetTheme.Rose, 0.55f).Packed(),
-                1f * scale);
-        }
-
-        PhoneIcon.Draw(drawList, rect.Center, PhoneIcons.AdjustmentsHorizontal,
-            active ? VelvetTheme.RoseInk : VelvetTheme.MutedInk, VIcon.Overflow * scale);
-
-        if (active)
-        {
-            var dotCenter = new Vector2(rect.Max.X - 6f * scale, rect.Min.Y + 6f * scale);
-            drawList.AddCircleFilled(dotCenter, 4f * scale, VelvetTheme.RoseBright.Packed(), 16);
-            drawList.AddCircle(dotCenter, 4f * scale, VelvetTheme.CardHi.Packed(), 16, 1.4f * scale);
-        }
-
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-            {
-                OpenFilters(surface);
             }
         }
     }

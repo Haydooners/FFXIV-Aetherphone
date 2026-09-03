@@ -481,50 +481,44 @@ internal sealed partial class VelvetShell : IResumableApp
             activeTab = VelvetPage.Discover;
         }
 
-        var showRefresh = activeTab == VelvetPage.Feed;
-        var showProfileMenu = activeTab == VelvetPage.Me;
-        var headerSlots = showRefresh || showProfileMenu ? 3 : 2;
-        UiAnchors.Report("velvet.activity", AnchorBox(VHeader.Slot(headerRect, 0), 18f * scale));
-
-        var title = activeTab switch
+        if (activeTab == VelvetPage.Feed)
         {
-            VelvetPage.Feed => Loc.T(L.Velvet.TabFeed),
-            VelvetPage.Messages => Loc.T(L.Velvet.Messages),
-            VelvetPage.Me => Loc.T(L.Velvet.TabMe),
-            _ => Loc.T(L.Velvet.TabDiscover),
-        };
-        if (VHeader.Root(headerRect, title, 0, headerSlots))
-        {
-            activityFeed.Invalidate();
-            router.Push(VelvetView.Activity);
+            DrawHomeTopBar(headerRect, true);
+            bodyRect = DrawFeedScopeTabs(bodyRect);
         }
-
-        if (VIcon.Button(VHeader.Slot(headerRect, 1), 16f * scale, PhoneIcons.HelpCircle, VIcon.Header,
-                VelvetTheme.MutedInk, Loc.T(L.Conduct.Eyebrow), HoverLabelSide.Below))
+        else
         {
-            conduct.ShowRules(Id);
-        }
-
-        if (showProfileMenu && store.Me is { } profile &&
-            VIcon.Button(VHeader.Slot(headerRect, 2), VHeader.IconRadius, PhoneIcons.Dots, VIcon.Overflow,
-                VelvetTheme.TitleInk, Loc.T(L.Velvet.More), HoverLabelSide.Below))
-        {
-            OpenProfileMenu(profile);
-        }
-
-        if (showRefresh)
-        {
-            var refreshCenter = VHeader.Slot(headerRect, 2);
-            if (store.LoadingFeed)
+            var showProfileMenu = activeTab == VelvetPage.Me;
+            var showFilters = activeTab == VelvetPage.Discover;
+            var title = activeTab switch
             {
-                LoadingPulse.Spinner(refreshCenter, 8f * scale, ui.Accent);
+                VelvetPage.Messages => Loc.T(L.Velvet.Messages),
+                VelvetPage.Me => Loc.T(L.Velvet.TabMe),
+                _ => Loc.T(L.Velvet.TabDiscover),
+            };
+            UiAnchors.Report("velvet.activity", AnchorBox(VHeader.Slot(headerRect, 0), 18f * scale));
+            if (VHeader.Root(headerRect, title, social.UnseenCount(Id), showProfileMenu || showFilters ? 2 : 1))
+            {
+                activityFeed.Invalidate();
+                router.Push(VelvetView.Activity);
             }
-            else if (VIcon.Button(refreshCenter, 16f * scale, PhoneIcons.Refresh, VIcon.Header,
-                         VelvetTheme.TitleInk, Loc.T(L.Common.Refresh), HoverLabelSide.Below))
+
+            if (showFilters && VIcon.Button(VHeader.Slot(headerRect, 1), VHeader.IconRadius,
+                    PhoneIcons.AdjustmentsHorizontal, VIcon.Header,
+                    IncludeFor(VelvetPage.Discover).Any || mutes.Any ? VelvetTheme.RoseInk : VelvetTheme.MutedInk,
+                    Loc.T(L.Velvet.FiltersTitle), HoverLabelSide.Below))
             {
-                RefreshFeed();
+                OpenFilters(VelvetPage.Discover);
+            }
+
+            if (showProfileMenu && store.Me is { } profile && VIcon.Button(VHeader.Slot(headerRect, 1),
+                    VHeader.IconRadius, PhoneIcons.Dots, VIcon.Overflow, VelvetTheme.TitleInk, Loc.T(L.Velvet.More),
+                    HoverLabelSide.Below))
+            {
+                OpenProfileMenu(profile);
             }
         }
+
 
         switch (activeTab)
         {

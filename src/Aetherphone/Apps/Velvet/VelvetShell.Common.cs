@@ -22,9 +22,6 @@ internal sealed partial class VelvetShell
         return rect;
     }
 
-    private static Rect Inset(Rect rect, float inset) =>
-        new(new Vector2(rect.Min.X + inset, rect.Min.Y), new Vector2(rect.Max.X - inset, rect.Max.Y));
-
     private readonly List<VChipModel> chipModels = new();
 
     private int DrawChipFlow(float width, float scale) =>
@@ -182,6 +179,7 @@ internal sealed partial class VelvetShell
         if (store.Me?.UserId == user.UserId)
         {
             AddProfileMenuItem(ProfileMenuAction.Settings, Loc.T(L.Velvet.Settings), false);
+            AddProfileMenuItem(ProfileMenuAction.Rules, Loc.T(L.Conduct.Eyebrow), false);
         }
         else
         {
@@ -228,6 +226,9 @@ internal sealed partial class VelvetShell
             case ProfileMenuAction.Settings:
                 settingsLoaded = false;
                 router.Push(VelvetView.Settings);
+                break;
+            case ProfileMenuAction.Rules:
+                conduct.ShowRules(Id);
                 break;
             case ProfileMenuAction.Report:
                 OpenReport("velvet_profile", profileMenuUserId, Loc.T(L.Velvet.ReportProfile));

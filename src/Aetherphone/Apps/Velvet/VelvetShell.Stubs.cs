@@ -19,6 +19,7 @@ internal sealed partial class VelvetShell
     private enum ProfileMenuAction
     {
         Settings,
+        Rules,
         Report,
         NotInterested,
         Disconnect,
@@ -26,7 +27,7 @@ internal sealed partial class VelvetShell
     }
 
     private const int PostSheetMaxItems = 4;
-    private const int ProfileMenuMaxItems = 4;
+    private const int ProfileMenuMaxItems = 5;
 
     private readonly ActionSheet.Item[] postSheetItems = new ActionSheet.Item[PostSheetMaxItems];
     private readonly PostSheetAction[] postSheetActions = new PostSheetAction[PostSheetMaxItems];
