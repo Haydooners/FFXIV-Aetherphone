@@ -1,10 +1,10 @@
 using Aetherphone.Core.Localization;
-using Dalamud.Interface;
+using Aetherphone.Windows.Components;
 
 namespace Aetherphone.Apps.Velvet.Kit;
 
 internal readonly record struct VelvetIntentDef(int Flag, LocString Label, LocString Blurb, Vector4 Hue,
-    FontAwesomeIcon Icon);
+    string Glyph);
 
 internal static class VelvetIntent
 {
@@ -24,23 +24,23 @@ internal static class VelvetIntent
     public static readonly VelvetIntentDef[] All =
     {
         new(Erp, L.Velvet.IntentErp, L.Velvet.IntentErpBlurb, new Vector4(0.898f, 0.102f, 0.357f, 1f),
-            FontAwesomeIcon.Heart),
+            PhoneIcons.Heart),
         new(Gpose, L.Velvet.IntentGpose, L.Velvet.IntentGposeBlurb, new Vector4(0.722f, 0.612f, 0.878f, 1f),
-            FontAwesomeIcon.Camera),
+            PhoneIcons.Camera),
         new(Relationship, L.Velvet.IntentRelationship, L.Velvet.IntentRelationshipBlurb,
-            new Vector4(0.890f, 0.604f, 0.416f, 1f), FontAwesomeIcon.HandHoldingHeart),
+            new Vector4(0.890f, 0.604f, 0.416f, 1f), PhoneIcons.HeartHandshake),
         new(Collab, L.Velvet.IntentCollab, L.Velvet.IntentCollabBlurb, new Vector4(0.647f, 0.482f, 0.839f, 1f),
-            FontAwesomeIcon.Feather),
+            PhoneIcons.Feather),
         new(Friends, L.Velvet.IntentFriends, L.Velvet.IntentFriendsBlurb, new Vector4(0.420f, 0.780f, 0.753f, 1f),
-            FontAwesomeIcon.Users),
+            PhoneIcons.Users),
         new(Sharing, L.Velvet.IntentSharing, L.Velvet.IntentSharingBlurb, new Vector4(0.776f, 0.294f, 0.690f, 1f),
-            FontAwesomeIcon.Image),
+            PhoneIcons.Photo),
         new(Wandering, L.Velvet.IntentWandering, L.Velvet.IntentWanderingBlurb, new Vector4(0.549f, 0.627f, 0.878f, 1f),
-            FontAwesomeIcon.Compass),
+            PhoneIcons.Compass),
         new(Irl, L.Velvet.IntentIrl, L.Velvet.IntentIrlBlurb, new Vector4(0.427f, 0.757f, 0.549f, 1f),
-            FontAwesomeIcon.Globe),
+            PhoneIcons.World),
         new(NonIrl, L.Velvet.IntentNonIrl, L.Velvet.IntentNonIrlBlurb, new Vector4(0.502f, 0.588f, 0.851f, 1f),
-            FontAwesomeIcon.Gamepad),
+            PhoneIcons.Gamepad),
     };
 
     public static bool Has(int mask, int flag) => (mask & flag) != 0;

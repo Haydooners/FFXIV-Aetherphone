@@ -4,7 +4,6 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Social;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -84,50 +83,50 @@ internal sealed partial class VelvetShell
             ui.HelpText(Loc.T(L.Velvet.FilterMuteHint));
             Gap(14f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Globe, Loc.T(L.Velvet.RegionLabel));
+            VSectionHeader.Card(PhoneIcons.World, Loc.T(L.Velvet.RegionLabel));
             Gap(8f);
             changedInclude |= DrawRegionFilterRow(include);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Compass, Loc.T(L.Velvet.CardIntent));
+            VSectionHeader.Card(PhoneIcons.Compass, Loc.T(L.Velvet.CardIntent));
             Gap(6f);
             DrawIntentFilterChips(include, ref changedInclude, ref changedMutes);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.VenusMars, Loc.T(L.Velvet.CardGender));
+            VSectionHeader.Card(PhoneIcons.Gender, Loc.T(L.Velvet.CardGender));
             Gap(6f);
             DrawGenderFilterChips(include, ref changedInclude, ref changedMutes);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Rainbow, Loc.T(L.Velvet.CardSexuality));
+            VSectionHeader.Card(PhoneIcons.Rainbow, Loc.T(L.Velvet.CardSexuality));
             Gap(6f);
             DrawSexualityFilterChips(include, ref changedInclude, ref changedMutes);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Heart, Loc.T(L.Velvet.CardRole));
+            VSectionHeader.Card(PhoneIcons.Heart, Loc.T(L.Velvet.CardRole));
             Gap(6f);
             DrawTriStateTokenChips(VelvetSuggestions.Roles, VelvetTheme.Rose, include.Roles, mutes.Roles,
                 ref changedInclude, ref changedMutes);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Fire, Loc.T(L.Velvet.CardKinks));
+            VSectionHeader.Card(PhoneIcons.Flame, Loc.T(L.Velvet.CardKinks));
             Gap(6f);
             DrawTriStateTokenChips(VelvetSuggestions.Kinks, VelvetSuggestions.KinkHue, include.Kinks, mutes.Kinks,
                 ref changedInclude, ref changedMutes);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.ShieldAlt, Loc.T(L.Velvet.CardLimits));
+            VSectionHeader.Card(PhoneIcons.Shield, Loc.T(L.Velvet.CardLimits));
             Gap(6f);
             DrawTriStateTokenChips(VelvetSuggestions.Limits, VelvetTheme.Gold, include.Limits, mutes.Limits,
                 ref changedInclude, ref changedMutes);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.HandHoldingHeart, Loc.T(L.Velvet.CardRelationship));
+            VSectionHeader.Card(PhoneIcons.HeartHandshake, Loc.T(L.Velvet.CardRelationship));
             Gap(6f);
             DrawRelationshipFilterChips(include, ref changedInclude, ref changedMutes);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Hashtag, Loc.T(L.Velvet.CardTags));
+            VSectionHeader.Card(PhoneIcons.Hash, Loc.T(L.Velvet.CardTags));
             Gap(6f);
             DrawTagsFilterChips(include, ref changedInclude, ref changedMutes);
             Gap(24f);
@@ -299,11 +298,11 @@ internal sealed partial class VelvetShell
             var token = options[index];
             if (include.Contains(token))
             {
-                models[index] = new VChipModel(token, VChipStyle.Solid, accent, FontAwesomeIcon.Check);
+                models[index] = new VChipModel(token, VChipStyle.Solid, accent, PhoneIcons.Check);
             }
             else if (exclude.Contains(token))
             {
-                models[index] = new VChipModel(token, VChipStyle.Solid, VelvetTheme.Danger, FontAwesomeIcon.Ban);
+                models[index] = new VChipModel(token, VChipStyle.Solid, VelvetTheme.Danger, PhoneIcons.Ban);
             }
             else
             {
@@ -324,12 +323,12 @@ internal sealed partial class VelvetShell
     {
         if ((include & flag) != 0)
         {
-            return new VChipModel(label, VChipStyle.Solid, accent, FontAwesomeIcon.Check);
+            return new VChipModel(label, VChipStyle.Solid, accent, PhoneIcons.Check);
         }
 
         if ((exclude & flag) != 0)
         {
-            return new VChipModel(label, VChipStyle.Solid, VelvetTheme.Danger, FontAwesomeIcon.Ban);
+            return new VChipModel(label, VChipStyle.Solid, VelvetTheme.Danger, PhoneIcons.Ban);
         }
 
         return new VChipModel(label, VChipStyle.Ghost, VelvetTheme.Moonlight);

@@ -1,6 +1,5 @@
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet.Kit;
 
@@ -16,7 +15,7 @@ internal readonly record struct VChipModel(
     string Label,
     VChipStyle Style,
     Vector4 Tone,
-    FontAwesomeIcon? Icon = null,
+    string? Glyph = null,
     bool Removable = false);
 
 internal static class VChip
@@ -43,7 +42,7 @@ internal static class VChip
     public static bool Draw(Vector2 min, float height, in VChipModel chip, float scale)
     {
         var drawList = ImGui.GetWindowDrawList();
-        var width = Width(chip.Label, chip.Icon.HasValue, chip.Removable, scale);
+        var width = Width(chip.Label, chip.Glyph is not null, chip.Removable, scale);
         var max = new Vector2(min.X + width, min.Y + height);
         var radius = height * 0.5f;
         var centerY = (min.Y + max.Y) * 0.5f;
@@ -78,9 +77,9 @@ internal static class VChip
         }
 
         var cursorX = min.X + Metrics.Space.Md * scale;
-        if (chip.Icon.HasValue)
+        if (chip.Glyph is { } glyph)
         {
-            AppSkin.Icon(new Vector2(cursorX + 6f * scale, centerY), IconGlyph.Of(chip.Icon.Value), ink, 0.7f);
+            PhoneIcon.Draw(drawList, new Vector2(cursorX + 6f * scale, centerY), glyph, ink, VIcon.Chip * scale);
             cursorX += 20f * scale;
         }
 
@@ -90,7 +89,7 @@ internal static class VChip
 
         if (chip.Removable)
         {
-            AppSkin.Icon(new Vector2(max.X - 12f * scale, centerY), IconGlyph.Of(FontAwesomeIcon.Times), ink, 0.62f);
+            PhoneIcon.Draw(drawList, new Vector2(max.X - 12f * scale, centerY), PhoneIcons.X, ink, 12f * scale);
         }
 
         if (hovered)
@@ -117,7 +116,7 @@ internal static class VChipFlow
         for (var index = 0; index < chips.Length; index++)
         {
             var chip = chips[index];
-            var width = VChip.Width(chip.Label, chip.Icon.HasValue, chip.Removable, scale);
+            var width = VChip.Width(chip.Label, chip.Glyph is not null, chip.Removable, scale);
             if (x + width > origin.X + availableWidth && x > origin.X)
             {
                 x = origin.X;

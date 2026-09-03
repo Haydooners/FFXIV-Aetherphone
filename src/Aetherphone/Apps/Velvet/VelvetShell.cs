@@ -27,7 +27,6 @@ using Aetherphone.Windows;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -243,7 +242,7 @@ internal sealed partial class VelvetShell : IResumableApp
         if (!store.IsSignedIn)
         {
             TourHolds.Hold(Id);
-            EmptyState.Draw(context.Content, ui, FontAwesomeIcon.Moon, Loc.T(L.Velvet.SignedOutTitle),
+            EmptyState.Draw(context.Content, ui, PhoneIcons.Moon, Loc.T(L.Velvet.SignedOutTitle),
                 Loc.T(L.Velvet.SignedOutHint));
             return;
         }
@@ -254,7 +253,7 @@ internal sealed partial class VelvetShell : IResumableApp
             store.EnsureMe();
             TickHeartbeat();
             var reason = store.RegionBlocked ? L.Velvet.UnavailableRegionBody : L.Velvet.UnavailableBody;
-            EmptyState.Draw(context.Content, ui, FontAwesomeIcon.Ban, Loc.T(L.Velvet.UnavailableTitle),
+            EmptyState.Draw(context.Content, ui, PhoneIcons.Ban, Loc.T(L.Velvet.UnavailableTitle),
                 Loc.T(reason));
             return;
         }
@@ -473,14 +472,14 @@ internal sealed partial class VelvetShell : IResumableApp
             VelvetPage.Me => Loc.T(L.Velvet.TabMe),
             _ => Loc.T(L.Velvet.TabDiscover),
         };
-        if (VHeader.Root(headerRect, title, theme, 0, headerSlots))
+        if (VHeader.Root(headerRect, title, 0, headerSlots))
         {
             activityFeed.Invalidate();
             router.Push(VelvetView.Activity);
         }
 
-        if (ui.IconButton(VHeader.Slot(headerRect, 1), 16f * scale, IconGlyph.Of(FontAwesomeIcon.QuestionCircle),
-                VelvetTheme.MutedInk, AppSkin.Transparent, 0.9f, Loc.T(L.Conduct.Eyebrow), HoverLabelSide.Below))
+        if (VIcon.Button(VHeader.Slot(headerRect, 1), 16f * scale, PhoneIcons.HelpCircle, VIcon.Header,
+                VelvetTheme.MutedInk, Loc.T(L.Conduct.Eyebrow), HoverLabelSide.Below))
         {
             conduct.ShowRules(Id);
         }
@@ -492,9 +491,8 @@ internal sealed partial class VelvetShell : IResumableApp
             {
                 LoadingPulse.Spinner(refreshCenter, 8f * scale, ui.Accent);
             }
-            else if (ui.IconButton(refreshCenter, 16f * scale, IconGlyph.Of(FontAwesomeIcon.Sync),
-                         VelvetTheme.TitleInk, AppSkin.Transparent, 0.9f, Loc.T(L.Common.Refresh),
-                         HoverLabelSide.Below))
+            else if (VIcon.Button(refreshCenter, 16f * scale, PhoneIcons.Refresh, VIcon.Header,
+                         VelvetTheme.TitleInk, Loc.T(L.Common.Refresh), HoverLabelSide.Below))
             {
                 RefreshFeed();
             }
@@ -517,10 +515,10 @@ internal sealed partial class VelvetShell : IResumableApp
         }
 
         var messageBadge = store.UnreadCount + store.RequestCount;
-        rootTabs[0] = new VTabDef(FontAwesomeIcon.Compass, Loc.T(L.Velvet.TabDiscover));
-        rootTabs[1] = new VTabDef(FontAwesomeIcon.Image, Loc.T(L.Velvet.TabFeed));
-        rootTabs[2] = new VTabDef(FontAwesomeIcon.Comment, Loc.T(L.Velvet.Messages), messageBadge);
-        rootTabs[3] = new VTabDef(FontAwesomeIcon.User, Loc.T(L.Velvet.TabMe));
+        rootTabs[0] = new VTabDef(PhoneIcons.Compass, Loc.T(L.Velvet.TabDiscover));
+        rootTabs[1] = new VTabDef(PhoneIcons.Photo, Loc.T(L.Velvet.TabFeed));
+        rootTabs[2] = new VTabDef(PhoneIcons.MessageCircle, Loc.T(L.Velvet.Messages), messageBadge);
+        rootTabs[3] = new VTabDef(PhoneIcons.User, Loc.T(L.Velvet.TabMe));
         var tabMargin = 12f * scale;
         var cellWidth = (tabRect.Width - tabMargin * 2f) / 4f;
         var tabLeft = tabRect.Min.X + tabMargin;

@@ -4,7 +4,6 @@ using Aetherphone.Core.Media;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 using Aetherphone.Core.Social;
 
 namespace Aetherphone.Apps.Velvet.Kit;
@@ -36,7 +35,7 @@ internal struct VRowModel
     public string World;
     public string? AvatarUrl;
     public int Presence;
-    public FontAwesomeIcon TileIcon;
+    public string TileIcon;
     public Vector4 TileTint;
     public string? Pill;
     public bool PillFilled;
@@ -149,8 +148,8 @@ internal static class VRow
             var tileMax = new Vector2(tileMin.X + tile, centerY + tile * 0.5f);
             Squircle.Fill(drawList, tileMin, tileMax, Metrics.Radius.Sm * scale,
                 VelvetTheme.Alpha(model.TileTint, 0.20f).Packed());
-            AppSkin.Icon(new Vector2((tileMin.X + tileMax.X) * 0.5f, centerY), IconGlyph.Of(model.TileIcon),
-                model.TileTint, 0.8f);
+            PhoneIcon.Draw(drawList, new Vector2((tileMin.X + tileMax.X) * 0.5f, centerY), model.TileIcon,
+                model.TileTint, VIcon.Row * scale);
             textLeft = tileMax.X + Metrics.Space.Md * scale;
         }
         else
@@ -161,8 +160,8 @@ internal static class VRow
         var rightEdge = max.X - leftPad;
         if (model.Chevron)
         {
-            AppSkin.Icon(new Vector2(rightEdge - 8f * scale, centerY), IconGlyph.Of(FontAwesomeIcon.ChevronRight),
-                VelvetTheme.MutedInk, 0.78f);
+            PhoneIcon.Draw(drawList, new Vector2(rightEdge - 8f * scale, centerY), PhoneIcons.ChevronRight,
+                VelvetTheme.MutedInk, VIcon.Row * scale);
             rightEdge -= 22f * scale;
         }
 
@@ -172,8 +171,7 @@ internal static class VRow
             var declineRadius = 13f * scale;
             var declineHit = new Vector2(declineRadius, declineRadius);
             overControl |= UiInteract.Hover(declineCenter - declineHit, declineCenter + declineHit);
-            if (ui.IconButton(declineCenter, declineRadius,
-                    IconGlyph.Of(FontAwesomeIcon.Times), VelvetTheme.MutedInk, AppSkin.Transparent, 0.9f))
+            if (VIcon.Button(declineCenter, declineRadius, PhoneIcons.X, 16f, VelvetTheme.MutedInk))
             {
                 hit = VRowHit.Decline;
             }

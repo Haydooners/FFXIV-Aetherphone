@@ -9,7 +9,6 @@ using Aetherphone.Core.Social;
 using Aetherphone.Core.Translation;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Velvet;
@@ -110,8 +109,8 @@ internal sealed partial class VelvetShell
             var actionsY = imageRect.Max.Y + 22f * scale;
             var liked = post.MyReaction >= 0;
             var heartCenter = new Vector2(origin.X + 13f * scale, actionsY);
-            if (ui.IconButton(heartCenter, 15f * scale, IconGlyph.Of(FontAwesomeIcon.Heart),
-                    liked ? VelvetTheme.Rose : VelvetTheme.BodyInk, AppSkin.Transparent, 1.2f, Loc.T(L.Velvet.Like)))
+            if (VIcon.Button(heartCenter, 15f * scale, liked ? PhoneIcons.HeartFilled : PhoneIcons.Heart,
+                    VIcon.CardAction, liked ? VelvetTheme.Rose : VelvetTheme.BodyInk, Loc.T(L.Velvet.Like)))
             {
                 store.ToggleReaction(post, 0);
             }
@@ -143,7 +142,8 @@ internal sealed partial class VelvetShell
             }
 
             var commentCenter = new Vector2(actionCursorX + 13f * scale, actionsY);
-            AppSkin.Icon(commentCenter, IconGlyph.Of(FontAwesomeIcon.Comment), VelvetTheme.BodyInk, 1.1f);
+            PhoneIcon.Draw(drawList, commentCenter, PhoneIcons.MessageCircle, VelvetTheme.BodyInk,
+                VIcon.CardAction * scale);
             var actionsRight = commentCenter.X + 20f * scale;
             if (post.CommentCount > 0)
             {
@@ -164,8 +164,8 @@ internal sealed partial class VelvetShell
             }
 
             var trailingRadius = 14f * scale;
-            if (ui.IconButton(trailingCenter, trailingRadius, IconGlyph.Of(FontAwesomeIcon.EllipsisH),
-                    VelvetTheme.BodyInk, AppSkin.Transparent, 1f, Loc.T(L.Velvet.More)))
+            if (VIcon.Button(trailingCenter, trailingRadius, PhoneIcons.Dots, VIcon.Overflow,
+                    VelvetTheme.BodyInk, Loc.T(L.Velvet.More)))
             {
                 OpenPostSheet(post, false);
             }
@@ -346,8 +346,7 @@ internal sealed partial class VelvetShell
         if (mine || viewerOwnsPost)
         {
             var trashCenter = new Vector2(origin.X + width - 8f * scale, origin.Y + 8f * scale);
-            if (ui.IconButton(trashCenter, 10f * scale, IconGlyph.Of(FontAwesomeIcon.Times), VelvetTheme.MutedInk,
-                    AppSkin.Transparent, 0.7f))
+            if (VIcon.Button(trashCenter, 10f * scale, PhoneIcons.X, VIcon.Small, VelvetTheme.MutedInk))
             {
                 if (mine)
                 {

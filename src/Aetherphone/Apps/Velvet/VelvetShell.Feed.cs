@@ -8,7 +8,6 @@ using Aetherphone.Core.Social;
 using Aetherphone.Core.Translation;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -97,7 +96,7 @@ internal sealed partial class VelvetShell
             }
         }
 
-        if (ComposeFab.Draw(area, "velvetCompose", VelvetTheme.Rose, IconGlyph.Of(FontAwesomeIcon.Plus),
+        if (ComposeFab.Draw(area, "velvetCompose", VelvetTheme.Rose, PhoneIcons.Plus,
                 Loc.T(L.Velvet.Share), "velvet.compose"))
         {
             post.Open();
@@ -233,8 +232,8 @@ internal sealed partial class VelvetShell
 
         var moreCenter = new Vector2(origin.X + width - inset - 6f * scale, avatarCenter.Y);
         var moreRadius = 14f * scale;
-        if (ui.IconButton(moreCenter, moreRadius, IconGlyph.Of(FontAwesomeIcon.EllipsisH), VelvetTheme.BodyInk,
-                AppSkin.Transparent, 1f, Loc.T(L.Velvet.More)))
+        if (VIcon.Button(moreCenter, moreRadius, PhoneIcons.Dots, VIcon.Overflow, VelvetTheme.BodyInk,
+                Loc.T(L.Velvet.More)))
         {
             OpenPostSheet(entry, true);
         }
@@ -253,8 +252,8 @@ internal sealed partial class VelvetShell
         var countTop = actionCenterY - 8f * scale;
         var liked = entry.MyReaction >= 0;
         var heartCenter = new Vector2(innerX + PostCardMetrics.ActionIconInset * scale, actionCenterY);
-        if (ui.IconButton(heartCenter, iconRadius, IconGlyph.Of(FontAwesomeIcon.Heart),
-                liked ? VelvetTheme.Rose : VelvetTheme.BodyInk, AppSkin.Transparent, 1.25f))
+        if (VIcon.Button(heartCenter, iconRadius, liked ? PhoneIcons.HeartFilled : PhoneIcons.Heart,
+                VIcon.CardAction, liked ? VelvetTheme.Rose : VelvetTheme.BodyInk, Loc.T(L.Velvet.Like)))
         {
             store.ToggleReaction(entry, 0);
         }
@@ -272,8 +271,8 @@ internal sealed partial class VelvetShell
         }
 
         var commentCenter = new Vector2(cursorX + 6f * scale, actionCenterY);
-        if (ui.IconButton(commentCenter, iconRadius, IconGlyph.Of(FontAwesomeIcon.Comment), VelvetTheme.BodyInk,
-                AppSkin.Transparent, 1.2f))
+        if (VIcon.Button(commentCenter, iconRadius, PhoneIcons.MessageCircle, VIcon.CardAction,
+                VelvetTheme.BodyInk, Loc.T(L.Velvet.Comments)))
         {
             OpenPostDetail(entry.Id);
         }

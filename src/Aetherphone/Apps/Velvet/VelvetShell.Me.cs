@@ -5,7 +5,6 @@ using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Social;
 using Aetherphone.Windows.Components;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -87,7 +86,7 @@ internal sealed partial class VelvetShell
             {
                 Title = Loc.T(L.Velvet.NotInterested),
                 Leading = VRowLeading.IconTile,
-                TileIcon = FontAwesomeIcon.EyeSlash,
+                TileIcon = PhoneIcons.EyeOff,
                 TileTint = VelvetTheme.Gold,
                 Chevron = true,
                 Height = 52f,
@@ -101,7 +100,7 @@ internal sealed partial class VelvetShell
             {
                 Title = Loc.T(L.Velvet.Blocked),
                 Leading = VRowLeading.IconTile,
-                TileIcon = FontAwesomeIcon.ShieldAlt,
+                TileIcon = PhoneIcons.Shield,
                 TileTint = VelvetTheme.Gold,
                 Chevron = true,
                 Height = 52f,

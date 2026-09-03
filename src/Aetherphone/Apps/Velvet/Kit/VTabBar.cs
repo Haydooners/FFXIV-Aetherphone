@@ -1,11 +1,10 @@
 using Aetherphone.Core;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet.Kit;
 
-internal readonly record struct VTabDef(FontAwesomeIcon Icon, string Label, int Badge = 0);
+internal readonly record struct VTabDef(string Glyph, string Label, int Badge = 0);
 
 internal static class VTabBar
 {
@@ -49,7 +48,8 @@ internal static class VTabBar
             }
 
             var ink = isActive ? VelvetTheme.RoseInk : hovered ? VelvetTheme.TitleInk : VelvetTheme.MutedInk;
-            AppSkin.Icon(new Vector2(centerX, centerY), IconGlyph.Of(tabs[index].Icon), ink, isActive ? 1.1f : 0.98f);
+            PhoneIcon.Draw(drawList, new Vector2(centerX, centerY), tabs[index].Glyph, ink,
+                (isActive ? VIcon.TabActive : VIcon.TabIdle) * scale);
             if (tabs[index].Badge > 0)
             {
                 VBadge.Count(drawList, new Vector2(centerX + 20f * scale, centerY - 12f * scale), tabs[index].Badge);

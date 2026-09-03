@@ -6,7 +6,6 @@ using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -117,54 +116,54 @@ internal sealed partial class VelvetShell
             DrawEditAvatar();
             Gap(14f);
 
-            VSectionHeader.Card(FontAwesomeIcon.User, Loc.T(L.Velvet.CardIdentity));
+            VSectionHeader.Card(PhoneIcons.User, Loc.T(L.Velvet.CardIdentity));
             Gap(4f);
             ui.Field(Loc.T(L.Velvet.DisplayNameLabel), "##ed_name", ref editDisplayName, 40, false);
             ui.Field(Loc.T(L.Velvet.HandleLabel), "##ed_handle", ref editHandle, 15, false);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Feather, Loc.T(L.Velvet.CardAbout));
+            VSectionHeader.Card(PhoneIcons.Feather, Loc.T(L.Velvet.CardAbout));
             Gap(4f);
             ui.Field(Loc.T(L.Velvet.IntroduceYourself), "##ed_intro", ref editIntro, 400, true);
             ui.Field(Loc.T(L.Velvet.PronounsLabel), "##ed_pronouns", ref editPronouns, 40, false);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.VenusMars, Loc.T(L.Velvet.CardGender));
+            VSectionHeader.Card(PhoneIcons.Gender, Loc.T(L.Velvet.CardGender));
             Gap(6f);
             DrawGenderPicker(ref editGender);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Rainbow, Loc.T(L.Velvet.CardSexuality));
+            VSectionHeader.Card(PhoneIcons.Rainbow, Loc.T(L.Velvet.CardSexuality));
             Gap(6f);
             DrawSexualityPicker(ref editSexuality);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Compass, Loc.T(L.Velvet.CardIntent));
+            VSectionHeader.Card(PhoneIcons.Compass, Loc.T(L.Velvet.CardIntent));
             Gap(6f);
             DrawIntentEditor();
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Heart, Loc.T(L.Velvet.CardRole));
+            VSectionHeader.Card(PhoneIcons.Heart, Loc.T(L.Velvet.CardRole));
             Gap(6f);
             DrawTagFlow(VelvetSuggestions.Roles, editRole, VelvetTheme.Rose, true);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Fire, Loc.T(L.Velvet.CardKinks));
+            VSectionHeader.Card(PhoneIcons.Flame, Loc.T(L.Velvet.CardKinks));
             Gap(6f);
             DrawTagFlow(VelvetSuggestions.Kinks, editKinks, new Vector4(0.647f, 0.482f, 0.839f, 1f), true);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.ShieldAlt, Loc.T(L.Velvet.CardLimits));
+            VSectionHeader.Card(PhoneIcons.Shield, Loc.T(L.Velvet.CardLimits));
             Gap(6f);
             DrawTagFlow(VelvetSuggestions.Limits, editLimits, VelvetTheme.Gold, true);
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.HandHoldingHeart, Loc.T(L.Velvet.CardRelationship));
+            VSectionHeader.Card(PhoneIcons.HeartHandshake, Loc.T(L.Velvet.CardRelationship));
             Gap(6f);
             DrawRelationshipEditor();
             Gap(16f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Hashtag, Loc.T(L.Velvet.CardTags));
+            VSectionHeader.Card(PhoneIcons.Hash, Loc.T(L.Velvet.CardTags));
             Gap(6f);
             DrawCategoryPicker(VelvetSuggestions.TagCategories, editTags);
             Gap(16f);
@@ -187,7 +186,7 @@ internal sealed partial class VelvetShell
         var badgeCenter = new Vector2(center.X + radius * 0.70f, center.Y + radius * 0.70f);
         drawList.AddCircleFilled(badgeCenter, 14f * scale, VelvetTheme.GroundBottom.Packed(), 24);
         drawList.AddCircleFilled(badgeCenter, 12f * scale, VelvetTheme.Rose.Packed(), 24);
-        AppSkin.Icon(badgeCenter, IconGlyph.Of(FontAwesomeIcon.Camera), VelvetTheme.OnAccent, 0.58f);
+        PhoneIcon.Draw(drawList, badgeCenter, PhoneIcons.Camera, VelvetTheme.OnAccent, VIcon.Small * scale);
 
         var avatarMin = new Vector2(center.X - radius, center.Y - radius);
         var avatarMax = new Vector2(center.X + radius, center.Y + radius);
@@ -219,7 +218,7 @@ internal sealed partial class VelvetShell
             var def = VelvetIntent.All[index];
             var selected = VelvetIntent.Has(editIntent, def.Flag);
             models[index] = new VChipModel(Loc.T(def.Label), selected ? VChipStyle.Solid : VChipStyle.Ghost,
-                selected ? def.Hue : VelvetTheme.Moonlight, def.Icon);
+                selected ? def.Hue : VelvetTheme.Moonlight, def.Glyph);
         }
 
         var clicked = VChipFlow.Draw(models, width, scale);

@@ -3,7 +3,6 @@ using Aetherphone.Core;
 using Aetherphone.Core.Localization;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -39,7 +38,7 @@ internal sealed partial class VelvetShell
             for (var index = 0; index < categories.Length; index++)
             {
                 var category = categories[index];
-                VSectionHeader.Card(FontAwesomeIcon.Hashtag, Loc.T(category.Title));
+                VSectionHeader.Card(PhoneIcons.Hash, Loc.T(category.Title));
                 Gap(6f);
                 DrawPostTagChips(category.Tags, category.Hue, width, scale);
                 Gap(16f);
@@ -62,7 +61,7 @@ internal sealed partial class VelvetShell
         {
             var token = options[index];
             models[index] = post.HasTag(token)
-                ? new VChipModel(token, VChipStyle.Solid, accent, FontAwesomeIcon.Check)
+                ? new VChipModel(token, VChipStyle.Solid, accent, PhoneIcons.Check)
                 : new VChipModel(token, VChipStyle.Ghost, VelvetTheme.Moonlight);
         }
 

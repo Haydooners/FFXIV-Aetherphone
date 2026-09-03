@@ -3,7 +3,6 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet.Kit;
 
@@ -24,23 +23,15 @@ internal static class VHeader
 
     public static float Reserve(int slots) => slots <= 0 ? 0f : slots * IconPitch + TitleGap;
 
-    public static bool Root(Rect area, string title, PhoneTheme theme, int bellBadge, int trailingSlots)
+    public static bool Root(Rect area, string title, int bellBadge, int trailingSlots)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         var midY = area.Min.Y + Height * scale * 0.5f;
         Marquee.DrawLeftAuto(new MarqueeId("vheader.root.", title), title, area.Min.X + 4f * scale,
             midY - Typography.Measure(title, TextStyles.Title3).Y * 0.5f,
             MathF.Max(1f, area.Width - Reserve(trailingSlots) * scale), TextStyles.Title3, VelvetTheme.TitleInk);
-        var bellCenter = Slot(area, 0);
-        var clicked = AppSkin.IconButton(bellCenter, 16f * scale, IconGlyph.Of(FontAwesomeIcon.Bell),
-            VelvetTheme.TitleInk, AppSkin.Transparent, 0.9f, theme, Loc.T(L.Velvet.Activity), HoverLabelSide.Below);
-        if (bellBadge > 0)
-        {
-            VBadge.Count(drawList, new Vector2(bellCenter.X + 16f * scale, bellCenter.Y - 9f * scale), bellBadge);
-        }
-
-        return clicked;
+        return VIcon.Button(Slot(area, 0), 16f * scale, PhoneIcons.Bell, VIcon.Header, VelvetTheme.TitleInk,
+            Loc.T(L.Velvet.Activity), HoverLabelSide.Below, bellBadge);
     }
 
     public static bool Push(Rect area, string title, PhoneTheme theme)

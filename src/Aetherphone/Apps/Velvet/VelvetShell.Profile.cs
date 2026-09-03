@@ -8,7 +8,6 @@ using Aetherphone.Core.Media;
 using Aetherphone.Core.Social;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -32,8 +31,8 @@ internal sealed partial class VelvetShell
         if (user != null && store.Me?.UserId != user.UserId && !AlreadyReported(user.UserId))
         {
             var flagCenter = VHeader.Slot(area, 0);
-            if (ui.IconButton(flagCenter, 15f * scale, IconGlyph.Of(FontAwesomeIcon.Flag), VelvetTheme.MutedInk,
-                    AppSkin.Transparent, 0.82f, Loc.T(L.Velvet.Report)))
+            if (VIcon.Button(flagCenter, 15f * scale, PhoneIcons.Flag, VIcon.Row, VelvetTheme.MutedInk,
+                    Loc.T(L.Velvet.Report), HoverLabelSide.Below))
             {
                 OpenReport("velvet_profile", user.UserId, Loc.T(L.Velvet.ReportProfile));
             }
@@ -48,7 +47,7 @@ internal sealed partial class VelvetShell
             }
             else if (store.ProfileFailed)
             {
-                if (EmptyState.Draw(body, ui, FontAwesomeIcon.CloudDownloadAlt,
+                if (EmptyState.Draw(body, ui, PhoneIcons.CloudDownload,
                         Loc.T(L.Velvet.ProfileUnavailable), Loc.T(L.Velvet.ProfileUnavailableHint),
                         Loc.T(L.Common.Retry)))
                 {
@@ -57,7 +56,7 @@ internal sealed partial class VelvetShell
             }
             else
             {
-                EmptyState.Draw(body, ui, FontAwesomeIcon.User, Loc.T(L.Velvet.ProfileUnavailable),
+                EmptyState.Draw(body, ui, PhoneIcons.User, Loc.T(L.Velvet.ProfileUnavailable),
                     Loc.T(L.Velvet.ProfileUnavailableHint));
             }
 

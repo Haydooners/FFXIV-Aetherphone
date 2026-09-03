@@ -5,7 +5,6 @@ using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -104,8 +103,8 @@ internal sealed partial class VelvetShell
         if (onboardStep > 0)
         {
             var backCenter = new Vector2(area.Min.X + 24f * scale, area.Min.Y + 68f * scale);
-            if (ui.IconButton(backCenter, 16f * scale, IconGlyph.Of(FontAwesomeIcon.ChevronLeft), VelvetTheme.TitleInk,
-                    AppSkin.Transparent, 0.85f, Loc.T(L.Velvet.Back), HoverLabelSide.Below))
+            if (VIcon.Button(backCenter, 16f * scale, PhoneIcons.ChevronLeft, VIcon.Header,
+                    VelvetTheme.TitleInk, Loc.T(L.Velvet.Back), HoverLabelSide.Below))
             {
                 onboardStep--;
             }
@@ -209,7 +208,7 @@ internal sealed partial class VelvetShell
         var badgeCenter = new Vector2(center.X + radius * 0.70f, center.Y + radius * 0.70f);
         drawList.AddCircleFilled(badgeCenter, 15f * scale, VelvetTheme.GroundBottom.Packed(), 24);
         drawList.AddCircleFilled(badgeCenter, 13f * scale, VelvetTheme.Rose.Packed(), 24);
-        AppSkin.Icon(badgeCenter, IconGlyph.Of(FontAwesomeIcon.Camera), VelvetTheme.OnAccent, 0.6f);
+        PhoneIcon.Draw(drawList, badgeCenter, PhoneIcons.Camera, VelvetTheme.OnAccent, VIcon.Small * scale);
 
         var avatarMin = new Vector2(center.X - radius, center.Y - radius);
         var avatarMax = new Vector2(center.X + radius, center.Y + radius);
@@ -272,8 +271,8 @@ internal sealed partial class VelvetShell
         var tileMin = new Vector2(rect.Min.X + 14f * scale, rect.Center.Y - tileSize * 0.5f);
         var tileMax = new Vector2(tileMin.X + tileSize, tileMin.Y + tileSize);
         Squircle.Fill(drawList, tileMin, tileMax, tileSize * 0.32f, def.Hue.Packed());
-        AppSkin.Icon(new Vector2((tileMin.X + tileMax.X) * 0.5f, (tileMin.Y + tileMax.Y) * 0.5f),
-            IconGlyph.Of(def.Icon), VelvetTheme.OnAccent, 0.95f);
+        PhoneIcon.Draw(drawList, new Vector2((tileMin.X + tileMax.X) * 0.5f, (tileMin.Y + tileMax.Y) * 0.5f),
+            def.Glyph, VelvetTheme.OnAccent, 22f * scale);
 
         var textLeft = tileMax.X + 14f * scale;
         var textWidth = rect.Max.X - 46f * scale - textLeft;
@@ -323,32 +322,32 @@ internal sealed partial class VelvetShell
             ui.Field(Loc.T(L.Velvet.YourIntro), "##ob_intro", ref onboardIntro, 400, true, 120f);
             Gap(18f);
 
-            VSectionHeader.Card(FontAwesomeIcon.VenusMars, Loc.T(L.Velvet.CardGender));
+            VSectionHeader.Card(PhoneIcons.Gender, Loc.T(L.Velvet.CardGender));
             Gap(6f);
             DrawGenderPicker(ref onboardGender);
             Gap(18f);
 
-            VSectionHeader.Card(FontAwesomeIcon.Rainbow, Loc.T(L.Velvet.CardSexuality));
+            VSectionHeader.Card(PhoneIcons.Rainbow, Loc.T(L.Velvet.CardSexuality));
             Gap(6f);
             DrawSexualityPicker(ref onboardSexuality);
             Gap(18f);
 
             if (VelvetIntent.IncludesErp(onboardIntent))
             {
-                VSectionHeader.Card(FontAwesomeIcon.Heart, Loc.T(L.Velvet.YourRole));
+                VSectionHeader.Card(PhoneIcons.Heart, Loc.T(L.Velvet.YourRole));
                 Gap(4f);
                 ui.HelpText(Loc.T(L.Velvet.RoleErpHelp));
                 Gap(8f);
                 DrawTagFlow(VelvetSuggestions.Roles, onboardRole, VelvetTheme.Rose, true);
                 Gap(18f);
 
-                VSectionHeader.Card(FontAwesomeIcon.Fire, Loc.T(L.Velvet.CardKinks));
+                VSectionHeader.Card(PhoneIcons.Flame, Loc.T(L.Velvet.CardKinks));
                 Gap(8f);
                 DrawTagFlow(VelvetSuggestions.Kinks, onboardKinks, new Vector4(0.647f, 0.482f, 0.839f, 1f), true);
                 Gap(18f);
             }
 
-            VSectionHeader.Card(FontAwesomeIcon.Hashtag, Loc.T(L.Velvet.DynamicLabel));
+            VSectionHeader.Card(PhoneIcons.Hash, Loc.T(L.Velvet.DynamicLabel));
             Gap(4f);
             ui.HelpText(Loc.T(L.Velvet.VibeOptionalHelp));
             Gap(8f);

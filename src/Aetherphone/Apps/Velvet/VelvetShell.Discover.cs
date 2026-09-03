@@ -6,7 +6,6 @@ using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Social;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Velvet;
@@ -164,8 +163,8 @@ internal sealed partial class VelvetShell
                 1f * scale);
         }
 
-        AppSkin.Icon(rect.Center, IconGlyph.Of(FontAwesomeIcon.SlidersH),
-            active ? VelvetTheme.RoseInk : VelvetTheme.MutedInk, 0.86f);
+        PhoneIcon.Draw(drawList, rect.Center, PhoneIcons.AdjustmentsHorizontal,
+            active ? VelvetTheme.RoseInk : VelvetTheme.MutedInk, VIcon.Overflow * scale);
 
         if (active)
         {
@@ -203,7 +202,7 @@ internal sealed partial class VelvetShell
         if (include.Region.Length > 0)
         {
             AddActiveFilterChip(new VChipModel(include.Region, VChipStyle.Tint, VelvetTheme.RegionAccent,
-                FontAwesomeIcon.Globe, true), RegionChipKind, 0, string.Empty, false);
+                PhoneIcons.World, true), RegionChipKind, 0, string.Empty, false);
         }
 
         var intentDefs = VelvetIntent.All;
@@ -212,21 +211,21 @@ internal sealed partial class VelvetShell
             var def = intentDefs[index];
             if ((include.Intent & def.Flag) != 0)
             {
-                AddActiveFilterChip(new VChipModel(Loc.T(def.Label), VChipStyle.Tint, def.Hue, def.Icon, true),
+                AddActiveFilterChip(new VChipModel(Loc.T(def.Label), VChipStyle.Tint, def.Hue, def.Glyph, true),
                     IntentChipKind, def.Flag, string.Empty, false);
             }
 
             if ((mutes.Intent & def.Flag) != 0)
             {
                 AddActiveFilterChip(new VChipModel(Loc.T(def.Label), VChipStyle.Tint, VelvetTheme.Danger,
-                    FontAwesomeIcon.Ban, true), IntentChipKind, def.Flag, string.Empty, true);
+                    PhoneIcons.Ban, true), IntentChipKind, def.Flag, string.Empty, true);
             }
         }
 
         AddMaskFilterChips(GenderChipKind, include.Gender, mutes.Gender, VelvetGender.All, GenderLabelOf,
-            FontAwesomeIcon.VenusMars);
+            PhoneIcons.Gender);
         AddMaskFilterChips(SexualityChipKind, include.Sexuality, mutes.Sexuality, VelvetSexuality.All,
-            SexualityLabelOf, FontAwesomeIcon.Rainbow);
+            SexualityLabelOf, PhoneIcons.Rainbow);
 
         var statuses = VelvetRelationship.All;
         for (var index = 0; index < statuses.Length; index++)
@@ -235,14 +234,14 @@ internal sealed partial class VelvetShell
             if ((include.Relationship & flag) != 0)
             {
                 AddActiveFilterChip(new VChipModel(VelvetRelationship.Label(statuses[index]), VChipStyle.Tint,
-                    VelvetTheme.Rose, FontAwesomeIcon.HandHoldingHeart, true), RelationshipChipKind, flag,
+                    VelvetTheme.Rose, PhoneIcons.HeartHandshake, true), RelationshipChipKind, flag,
                     string.Empty, false);
             }
 
             if ((mutes.Relationship & flag) != 0)
             {
                 AddActiveFilterChip(new VChipModel(VelvetRelationship.Label(statuses[index]), VChipStyle.Tint,
-                    VelvetTheme.Danger, FontAwesomeIcon.Ban, true), RelationshipChipKind, flag, string.Empty, true);
+                    VelvetTheme.Danger, PhoneIcons.Ban, true), RelationshipChipKind, flag, string.Empty, true);
             }
         }
 
@@ -283,21 +282,21 @@ internal sealed partial class VelvetShell
     }
 
     private void AddMaskFilterChips(int kind, int includeMask, int excludeMask, int[] options,
-        Func<int, string> labelOf, FontAwesomeIcon icon)
+        Func<int, string> labelOf, string glyph)
     {
         for (var index = 0; index < options.Length; index++)
         {
             var flag = options[index];
             if ((includeMask & flag) != 0)
             {
-                AddActiveFilterChip(new VChipModel(labelOf(flag), VChipStyle.Tint, VelvetTheme.Rose, icon, true),
+                AddActiveFilterChip(new VChipModel(labelOf(flag), VChipStyle.Tint, VelvetTheme.Rose, glyph, true),
                     kind, flag, string.Empty, false);
             }
 
             if ((excludeMask & flag) != 0)
             {
                 AddActiveFilterChip(new VChipModel(labelOf(flag), VChipStyle.Tint, VelvetTheme.Danger,
-                    FontAwesomeIcon.Ban, true), kind, flag, string.Empty, true);
+                    PhoneIcons.Ban, true), kind, flag, string.Empty, true);
             }
         }
     }
@@ -316,7 +315,7 @@ internal sealed partial class VelvetShell
 
             if (exclude.Contains(token))
             {
-                AddActiveFilterChip(new VChipModel(token, VChipStyle.Tint, VelvetTheme.Danger, FontAwesomeIcon.Ban,
+                AddActiveFilterChip(new VChipModel(token, VChipStyle.Tint, VelvetTheme.Danger, PhoneIcons.Ban,
                     true), kind, 0, token, true);
             }
         }
@@ -433,8 +432,8 @@ internal sealed partial class VelvetShell
             var badgeMin = new Vector2(card.Min.X + pad, card.Min.Y + pad);
             var badgeMax = new Vector2(badgeMin.X + badgeWidth, badgeMin.Y + 24f * scale);
             Squircle.Fill(drawList, badgeMin, badgeMax, 12f * scale, new Vector4(0.03f, 0.01f, 0.06f, 0.55f).Packed());
-            AppSkin.Icon(new Vector2(badgeMin.X + 13f * scale, (badgeMin.Y + badgeMax.Y) * 0.5f),
-                IconGlyph.Of(FontAwesomeIcon.Lock), VelvetTheme.RoseInk, 0.52f);
+            PhoneIcon.Draw(drawList, new Vector2(badgeMin.X + 13f * scale, (badgeMin.Y + badgeMax.Y) * 0.5f),
+                PhoneIcons.Lock, VelvetTheme.RoseInk, VIcon.Small * scale);
             Typography.Draw(drawList, new Vector2(badgeMin.X + 23f * scale, badgeMin.Y + 5f * scale), badgeText,
                 VelvetTheme.OnAccent, TextStyles.Footnote);
         }
@@ -580,8 +579,8 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         Squircle.Fill(drawList, rect.Min, rect.Max, Metrics.Radius.Field * scale, VelvetTheme.PlumWell.Packed());
-        AppSkin.Icon(new Vector2(rect.Min.X + 16f * scale, rect.Center.Y), IconGlyph.Of(FontAwesomeIcon.Search),
-            VelvetTheme.MutedInk, 0.8f);
+        PhoneIcon.Draw(drawList, new Vector2(rect.Min.X + 16f * scale, rect.Center.Y), PhoneIcons.Search,
+            VelvetTheme.MutedInk, VIcon.Field * scale);
         if (value.Length == 0)
         {
             Typography.Draw(new Vector2(rect.Min.X + 30f * scale, rect.Center.Y - 8f * scale),
@@ -598,8 +597,8 @@ internal sealed partial class VelvetShell
         }
 
         if (value.Length > 0 &&
-            ui.IconButton(new Vector2(rect.Max.X - 16f * scale, rect.Center.Y), 12f * scale,
-                IconGlyph.Of(FontAwesomeIcon.Times), VelvetTheme.MutedInk, AppSkin.Transparent, 0.8f))
+            VIcon.Button(new Vector2(rect.Max.X - 16f * scale, rect.Center.Y), 12f * scale, PhoneIcons.X,
+                VIcon.Chip, VelvetTheme.MutedInk))
         {
             value = string.Empty;
         }

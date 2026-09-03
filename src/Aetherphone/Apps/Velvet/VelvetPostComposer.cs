@@ -9,7 +9,6 @@ using Aetherphone.Core.Social;
 using Aetherphone.Core.Wallpapers;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Velvet;
@@ -351,8 +350,8 @@ internal sealed class VelvetPostComposer
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
         Squircle.Fill(drawList, rect.Min, rect.Max, 9f * scale,
             ImGui.GetColorU32(new Vector4(1f, 1f, 1f, hovered ? 0.16f : 0.10f)));
-        AppSkin.Icon(new Vector2(rect.Min.X + 18f * scale, rect.Center.Y), IconGlyph.Of(FontAwesomeIcon.Hashtag),
-            tags.Count > 0 ? VelvetTheme.Rose : VelvetTheme.MutedInk, 0.78f);
+        PhoneIcon.Draw(drawList, new Vector2(rect.Min.X + 18f * scale, rect.Center.Y), PhoneIcons.Hash,
+            tags.Count > 0 ? VelvetTheme.Rose : VelvetTheme.MutedInk, VIcon.Field * scale);
 
         var textLeft = rect.Min.X + 34f * scale;
         var textWidth = rect.Max.X - textLeft - 14f * scale;
