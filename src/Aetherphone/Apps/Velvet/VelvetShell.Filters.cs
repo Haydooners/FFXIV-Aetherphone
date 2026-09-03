@@ -8,40 +8,62 @@ using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Apps.Velvet;
 
+internal enum VelvetFilterFacet
+{
+    Region,
+    Race,
+    Intent,
+    Gender,
+    Sexuality,
+    Relationship,
+    Role,
+    Kinks,
+    Limits,
+    Tags,
+}
+
+internal enum VelvetOptionState
+{
+    Any,
+    Shown,
+    Hidden,
+}
+
 internal sealed partial class VelvetShell
 {
     private const float FilterFooterHeight = 64f;
-    private const float FilterToggleRowHeight = 52f;
     private const float FilterSectionHeaderHeight = 52f;
-    private const float FacetRevealSmoothTime = 0.14f;
-    private const float FacetRevealPadY = 14f;
-    private const float TagCategoryHeaderHeight = 24f;
+    private const float FilterOptionRowHeight = 44f;
+    private const float FilterGroupHeaderHeight = 28f;
+    private const float FilterMarkRadius = 14f;
+    private const float FilterMarkGap = 8f;
+    private const float FilterRevealSmoothTime = 0.14f;
+    private const float FilterRevealPadY = 8f;
+
+    private static readonly VelvetFilterFacet[] FilterFacets =
+    {
+        VelvetFilterFacet.Region,
+        VelvetFilterFacet.Race,
+        VelvetFilterFacet.Intent,
+        VelvetFilterFacet.Gender,
+        VelvetFilterFacet.Sexuality,
+        VelvetFilterFacet.Relationship,
+        VelvetFilterFacet.Role,
+        VelvetFilterFacet.Kinks,
+        VelvetFilterFacet.Limits,
+        VelvetFilterFacet.Tags,
+    };
 
     private readonly VelvetFilterSelection mutes = new();
-    private VelvetFilterFacet expandedFacet = VelvetFilterFacet.None;
     private readonly Spring[] facetReveal = new Spring[FilterFacets.Length];
+    private readonly List<string> facetLabels = new();
+    private int expandedFacets;
     private VelvetPage filterSurface = VelvetPage.Discover;
 
     private VelvetFilterSelection IncludeFor(VelvetPage surface) =>
         surface == VelvetPage.Feed ? feedInclude : discoverInclude;
 
-    private void LoadMutes()
-    {
-        mutes.LoadFrom(configuration.VelvetMutes);
-        if (mutes.Intent == 0 && mutes.Gender == 0 && mutes.Sexuality == 0 && mutes.Relationship == 0
-            && mutes.Race == 0 && mutes.Roles.Count == 0)
-        {
-            return;
-        }
-
-        mutes.Intent = 0;
-        mutes.Gender = 0;
-        mutes.Sexuality = 0;
-        mutes.Relationship = 0;
-        mutes.Race = 0;
-        mutes.Roles.Clear();
-        SaveMutes();
-    }
+    private void LoadMutes() => mutes.LoadFrom(configuration.VelvetMutes);
 
     private void SaveMutes()
     {
@@ -78,7 +100,6 @@ internal sealed partial class VelvetShell
     private void OpenFilters(VelvetPage surface)
     {
         filterSurface = surface;
-        RefreshFilterSummaries();
         router.Push(VelvetView.Filters);
     }
 
@@ -92,119 +113,41 @@ internal sealed partial class VelvetShell
             return;
         }
 
-        if (include.Any && ui.HeaderAction(area, Loc.T(L.Velvet.FilterClearAll), true))
+        if ((include.Any || mutes.Any) && ui.HeaderAction(area, Loc.T(L.Velvet.FilterClearAll), true))
         {
             include.Clear();
-            ApplyFilters(filterSurface);
-            RefreshFilterSummaries();
+            mutes.Clear();
+            ApplyMutesEverywhere();
         }
 
         var footerHeight = FilterFooterHeight * scale;
         var body = new Rect(new Vector2(area.Min.X, area.Min.Y + VHeader.Height * scale),
             new Vector2(area.Max.X, area.Max.Y - footerHeight));
-        var changed = false;
+        var changedInclude = false;
+        var changedMutes = false;
         using (AppSurface.BeginEdgeToEdge(body))
         {
-            Gap(6f);
-            changed |= DrawAppliedFilterRail(include);
+            Gap(8f);
+            DrawInsetHelpText(Loc.T(L.Velvet.FilterPickHint));
+            Gap(8f);
             for (var index = 0; index < FilterFacets.Length; index++)
             {
-                changed |= DrawFacetSection(FilterFacets[index], include);
+                DrawFacetSection(FilterFacets[index], include, index, ref changedInclude, ref changedMutes);
             }
 
             Gap(30f);
         }
 
         DrawFilterFooter(new Rect(new Vector2(area.Min.X, area.Max.Y - footerHeight), area.Max));
-        if (changed)
+        if (changedMutes)
+        {
+            ApplyMutesEverywhere();
+            return;
+        }
+
+        if (changedInclude)
         {
             ApplyFilters(filterSurface);
-            RefreshFilterSummaries();
-        }
-    }
-
-    private bool DrawAppliedFilterRail(VelvetFilterSelection include)
-    {
-        var scale = UiScale.Current;
-        var inset = SocialChrome.CellPadX * scale;
-        if (!include.Any)
-        {
-            return false;
-        }
-
-        var width = ScrollLayout.StableContentWidth();
-        DrawActiveFilters(width - inset * 2f, filterSurface, inset);
-        return false;
-    }
-
-    private bool DrawFacetSection(VelvetFilterFacet facet, VelvetFilterSelection include)
-    {
-        var scale = UiScale.Current;
-        var pad = SocialChrome.CellPadX * scale;
-        var drawList = ImGui.GetWindowDrawList();
-        var slot = (int)facet;
-        var open = expandedFacet == facet;
-        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        var reveal = facetReveal[slot].Step(open ? 1f : 0f, FacetRevealSmoothTime, delta);
-        var header = Reserve(FilterSectionHeaderHeight);
-        var centerY = header.Center.Y;
-        var hovered = UiInteract.Hover(header.Min, header.Max);
-        if (hovered)
-        {
-            drawList.AddRectFilled(header.Min, header.Max, ImGui.GetColorU32(VelvetTheme.HoverWash));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        Typography.Draw(drawList, new Vector2(header.Min.X + pad,
-                centerY - Typography.LineHeight(TextStyles.BodyEmphasized) * 0.5f), Loc.T(FacetTitle(facet)),
-            VelvetTheme.TitleInk, TextStyles.BodyEmphasized);
-        var summary = SummaryFor(facet, include, false);
-        var summarySize = Typography.Measure(summary, TextStyles.Subheadline);
-        var chevronCenter = new Vector2(header.Max.X - pad - VIcon.Row * scale * 0.5f, centerY);
-        Typography.Draw(drawList,
-            new Vector2(chevronCenter.X - VIcon.Row * scale * 0.5f - 8f * scale - summarySize.X,
-                centerY - summarySize.Y * 0.5f), summary, VelvetTheme.MutedInk, TextStyles.Subheadline);
-        DrawFacetChevron(drawList, chevronCenter, reveal, scale);
-        if (UiInteract.Click(header.Min, header.Max, hovered))
-        {
-            expandedFacet = open ? VelvetFilterFacet.None : facet;
-        }
-
-        var changed = false;
-        if (reveal > 0.001f)
-        {
-            var innerWidth = MathF.Max(1f, header.Width - pad * 2f);
-            var full = FacetContentHeight(facet, include, false, innerWidth);
-            var visible = full * reveal;
-            var origin = ImGui.GetCursorScreenPos();
-            ImGui.PushClipRect(new Vector2(header.Min.X, origin.Y),
-                new Vector2(header.Max.X, origin.Y + visible), true);
-            ImGui.Indent(pad);
-            changed = DrawFacetChips(facet, include, false, innerWidth);
-            ImGui.Unindent(pad);
-            ImGui.PopClipRect();
-            ImGui.SetCursorScreenPos(origin);
-            ImGui.Dummy(new Vector2(header.Width, visible));
-        }
-
-        FeedCell.Hairline(drawList, header.Min.X + pad, header.Max.X - pad, ImGui.GetCursorScreenPos().Y,
-            VelvetTheme.Hairline);
-        return changed;
-    }
-
-    private static void DrawFacetChevron(ImDrawListPtr drawList, Vector2 center, float reveal, float scale)
-    {
-        var size = VIcon.Row * scale;
-        if (reveal < 0.999f)
-        {
-            PhoneIcon.Draw(drawList, center, PhoneIcons.ChevronRight,
-                VelvetTheme.Alpha(VelvetTheme.MutedInk, 1f - reveal), size);
-        }
-
-        if (reveal > 0.001f)
-        {
-            PhoneIcon.Draw(drawList, center, PhoneIcons.ChevronDown,
-                VelvetTheme.Alpha(VelvetTheme.RoseInk, reveal), size);
         }
     }
 
@@ -225,343 +168,179 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private void FillFacetChips(VelvetFilterFacet facet, VelvetFilterSelection target, bool hiding)
-    {
-        var tone = hiding ? VelvetTheme.Danger : VelvetTheme.Rose;
-        chipModels.Clear();
-        switch (facet)
-        {
-            case VelvetFilterFacet.Race:
-                var races = VelvetRace.All;
-                for (var index = 0; index < races.Length; index++)
-                {
-                    chipModels.Add(PickChip(VelvetRace.Label(gameData, races[index]), VelvetTheme.Moonlight,
-                        VelvetRace.Has(target.Race, races[index]), hiding));
-                }
-
-                break;
-            case VelvetFilterFacet.Intent:
-                var defs = VelvetIntent.All;
-                for (var index = 0; index < defs.Length; index++)
-                {
-                    chipModels.Add(PickChip(Loc.T(defs[index].Label), defs[index].Hue,
-                        (target.Intent & defs[index].Flag) != 0, hiding));
-                }
-
-                break;
-            case VelvetFilterFacet.Gender:
-                FillMaskChips(VelvetGender.All, GenderLabelOf, target.Gender, tone, hiding);
-                break;
-            case VelvetFilterFacet.Sexuality:
-                FillMaskChips(VelvetSexuality.All, SexualityLabelOf, target.Sexuality, tone, hiding);
-                break;
-            case VelvetFilterFacet.Relationship:
-                var statuses = VelvetRelationship.All;
-                for (var index = 0; index < statuses.Length; index++)
-                {
-                    chipModels.Add(PickChip(VelvetRelationship.Label(statuses[index]), tone,
-                        (target.Relationship & (1 << statuses[index])) != 0, hiding));
-                }
-
-                break;
-            case VelvetFilterFacet.Role:
-                FillTokenChips(VelvetSuggestions.Roles, target.Roles, tone, hiding);
-                break;
-            case VelvetFilterFacet.Kinks:
-                FillTokenChips(VelvetSuggestions.Kinks, target.Kinks, hiding ? tone : VelvetSuggestions.KinkHue,
-                    hiding);
-                break;
-            case VelvetFilterFacet.Limits:
-                FillTokenChips(VelvetSuggestions.Limits, target.Limits, hiding ? tone : VelvetTheme.Gold, hiding);
-                break;
-        }
-    }
-
-    private void FillRegionChips(VelvetFilterSelection target)
-    {
-        var codes = SocialRegion.Codes;
-        chipModels.Clear();
-        for (var index = 0; index < codes.Length; index++)
-        {
-            chipModels.Add(PickChip(codes[index], VelvetTheme.RegionAccent,
-                (target.RegionMask & (1 << index)) != 0, false));
-        }
-    }
-
-    private void FillMaskChips(int[] options, Func<int, string> labelOf, int mask, Vector4 tone, bool hiding)
-    {
-        for (var index = 0; index < options.Length; index++)
-        {
-            chipModels.Add(PickChip(labelOf(options[index]), tone, (mask & options[index]) != 0, hiding));
-        }
-    }
-
-    private void FillTokenChips(string[] options, HashSet<string> target, Vector4 tone, bool hiding)
-    {
-        for (var index = 0; index < options.Length; index++)
-        {
-            chipModels.Add(PickChip(options[index], tone, target.Contains(options[index]), hiding));
-        }
-    }
-
-    private float FacetContentHeight(VelvetFilterFacet facet, VelvetFilterSelection target, bool hiding, float width)
+    private void DrawFacetSection(VelvetFilterFacet facet, VelvetFilterSelection include, int slot,
+        ref bool changedInclude, ref bool changedMutes)
     {
         var scale = UiScale.Current;
-        if (facet == VelvetFilterFacet.Region)
+        var pad = SocialChrome.CellPadX * scale;
+        var drawList = ImGui.GetWindowDrawList();
+        var open = (expandedFacets & (1 << slot)) != 0;
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        var reveal = facetReveal[slot].Step(open ? 1f : 0f, FilterRevealSmoothTime, delta);
+        var header = Reserve(FilterSectionHeaderHeight);
+        var centerY = header.Center.Y;
+        var hovered = UiInteract.Hover(header.Min, header.Max);
+        if (hovered)
         {
-            FillRegionChips(target);
-            return VChipFlow.Measure(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(chipModels), width,
-                scale) + FacetRevealPadY * scale;
+            drawList.AddRectFilled(header.Min, header.Max, ImGui.GetColorU32(VelvetTheme.HoverWash));
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        if (facet == VelvetFilterFacet.Tags)
+        Typography.Draw(drawList, new Vector2(header.Min.X + pad,
+                centerY - Typography.LineHeight(TextStyles.BodyEmphasized) * 0.5f), Loc.T(FacetTitle(facet)),
+            VelvetTheme.TitleInk, TextStyles.BodyEmphasized);
+        var summary = FacetSummary(facet, include);
+        var summarySize = Typography.Measure(summary, TextStyles.Subheadline);
+        var chevronCenter = new Vector2(header.Max.X - pad - VIcon.Row * scale * 0.5f, centerY);
+        Typography.Draw(drawList,
+            new Vector2(chevronCenter.X - VIcon.Row * scale * 0.5f - 8f * scale - summarySize.X,
+                centerY - summarySize.Y * 0.5f), summary, VelvetTheme.MutedInk, TextStyles.Subheadline);
+        DrawFacetChevron(drawList, chevronCenter, reveal, scale);
+        if (UiInteract.Click(header.Min, header.Max, hovered))
         {
-            var categories = VelvetSuggestions.TagCategories;
-            var total = 0f;
-            for (var index = 0; index < categories.Length; index++)
+            expandedFacets ^= 1 << slot;
+        }
+
+        if (reveal > 0.001f)
+        {
+            var full = FacetContentHeight(facet) * scale;
+            var visible = full * reveal;
+            var origin = ImGui.GetCursorScreenPos();
+            ImGui.PushClipRect(new Vector2(header.Min.X, origin.Y),
+                new Vector2(header.Max.X, origin.Y + visible), true);
+            DrawFacetOptions(facet, include, header, reveal >= 0.999f, ref changedInclude, ref changedMutes);
+            ImGui.PopClipRect();
+            ImGui.SetCursorScreenPos(origin);
+            ImGui.Dummy(new Vector2(header.Width, visible));
+        }
+
+        FeedCell.Hairline(drawList, header.Min.X + pad, header.Max.X - pad, ImGui.GetCursorScreenPos().Y,
+            VelvetTheme.Hairline);
+    }
+
+    private static void DrawFacetChevron(ImDrawListPtr drawList, Vector2 center, float reveal, float scale)
+    {
+        var size = VIcon.Row * scale;
+        if (reveal < 0.999f)
+        {
+            PhoneIcon.Draw(drawList, center, PhoneIcons.ChevronRight,
+                VelvetTheme.Alpha(VelvetTheme.MutedInk, 1f - reveal), size);
+        }
+
+        if (reveal > 0.001f)
+        {
+            PhoneIcon.Draw(drawList, center, PhoneIcons.ChevronDown,
+                VelvetTheme.Alpha(VelvetTheme.RoseInk, reveal), size);
+        }
+    }
+
+    private void DrawFacetOptions(VelvetFilterFacet facet, VelvetFilterSelection include, Rect header, bool live,
+        ref bool changedInclude, ref bool changedMutes)
+    {
+        if (facet != VelvetFilterFacet.Tags)
+        {
+            FillFacetLabels(facet);
+            for (var index = 0; index < facetLabels.Count; index++)
             {
-                FillTokenChips(categories[index].Tags, target.Tags, hiding ? VelvetTheme.Danger : categories[index].Hue,
-                    hiding);
-                total += TagCategoryHeaderHeight * scale
-                    + VChipFlow.Measure(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(chipModels), width,
-                        scale);
-                chipModels.Clear();
-                if (index < categories.Length - 1)
-                {
-                    total += 12f * scale;
-                }
+                DrawOptionRow(facet, include, index, facetLabels[index], header, live, ref changedInclude,
+                    ref changedMutes);
             }
 
-            return total + FacetRevealPadY * scale;
-        }
-
-        FillFacetChips(facet, target, hiding);
-        return VChipFlow.Measure(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(chipModels), width, scale)
-            + FacetRevealPadY * scale;
-    }
-
-    private bool DrawFacetChips(VelvetFilterFacet facet, VelvetFilterSelection target, bool hiding, float width)
-    {
-        if (facet == VelvetFilterFacet.Region)
-        {
-            return DrawRegionChips(target, width);
-        }
-
-        if (facet == VelvetFilterFacet.Tags)
-        {
-            return DrawTagChips(target, hiding, width);
-        }
-
-        FillFacetChips(facet, target, hiding);
-        var clicked = DrawChipFlow(width, UiScale.Current);
-        return clicked >= 0 && ApplyFacetPick(facet, target, clicked);
-    }
-
-    private bool ApplyFacetPick(VelvetFilterFacet facet, VelvetFilterSelection target, int clicked)
-    {
-        switch (facet)
-        {
-            case VelvetFilterFacet.Race:
-                target.Race = VelvetRace.Toggle(target.Race, VelvetRace.All[clicked]);
-                return true;
-            case VelvetFilterFacet.Intent:
-                ToggleMask(ref target.Intent, VelvetIntent.All[clicked].Flag);
-                return true;
-            case VelvetFilterFacet.Gender:
-                ToggleMask(ref target.Gender, VelvetGender.All[clicked]);
-                return true;
-            case VelvetFilterFacet.Sexuality:
-                ToggleMask(ref target.Sexuality, VelvetSexuality.All[clicked]);
-                return true;
-            case VelvetFilterFacet.Relationship:
-                ToggleMask(ref target.Relationship, 1 << VelvetRelationship.All[clicked]);
-                return true;
-            case VelvetFilterFacet.Role:
-                return ToggleToken(target.Roles, VelvetSuggestions.Roles[clicked]);
-            case VelvetFilterFacet.Kinks:
-                return ToggleToken(target.Kinks, VelvetSuggestions.Kinks[clicked]);
-            case VelvetFilterFacet.Limits:
-                return ToggleToken(target.Limits, VelvetSuggestions.Limits[clicked]);
-            default:
-                return false;
-        }
-    }
-
-    private static bool ToggleToken(HashSet<string> target, string token)
-    {
-        if (!target.Remove(token))
-        {
-            target.Add(token);
-        }
-
-        return true;
-    }
-
-    private void DrawHidden(Rect area)
-    {
-        var scale = UiScale.Current;
-        if (VHeader.Push(area, Loc.T(L.Velvet.HiddenTitle), 2))
-        {
-            router.Pop();
+            Gap(FilterRevealPadY);
             return;
         }
 
-        if (mutes.Any && ui.HeaderAction(area, Loc.T(L.Velvet.FilterClearAll), true))
-        {
-            mutes.Clear();
-            ApplyMutesEverywhere();
-            RefreshHiddenSummaries();
-        }
-
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + VHeader.Height * scale), area.Max);
-        using (AppSurface.BeginEdgeToEdge(body))
-        {
-            Gap(10f);
-            DrawInsetHelpText(Loc.T(L.Velvet.HiddenHint));
-            Gap(10f);
-            for (var index = 0; index < HiddenFacets.Length; index++)
-            {
-                if (DrawFacetRow(HiddenFacets[index], hiddenSummaries[index]))
-                {
-                    router.Push(VelvetView.HiddenFacet(((int)HiddenFacets[index]).ToString(Loc.Culture)));
-                }
-            }
-
-            Gap(40f);
-        }
-    }
-
-    private bool DrawFacetRow(VelvetFilterFacet facet, string summary) =>
-        DrawFacetRow(FacetTitle(facet), summary, null);
-
-    private bool DrawFacetRow(LocString title, string summary, string? glyph)
-    {
-        var row = new VRowModel
-        {
-            Title = Loc.T(title),
-            Value = summary,
-            Height = 52f,
-            Leading = glyph is null ? VRowLeading.None : VRowLeading.IconTile,
-            TileIcon = glyph ?? string.Empty,
-            TileTint = VelvetTheme.Gold,
-            Chevron = true,
-        };
-        return VRow.Cell(in row, ui, theme, images, lodestone) == VRowHit.Body;
-    }
-
-    private void DrawHiddenFacet(Rect area, string argument)
-    {
-        var scale = UiScale.Current;
-        if (!int.TryParse(argument, out var raw) || !Enum.IsDefined(typeof(VelvetFilterFacet), raw))
-        {
-            router.Pop();
-            return;
-        }
-
-        var facet = (VelvetFilterFacet)raw;
-        if (VHeader.Push(area, Loc.T(FacetTitle(facet))))
-        {
-            router.Pop();
-            return;
-        }
-
-        var changed = false;
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + VHeader.Height * scale), area.Max);
-        using (AppSurface.Begin(body))
-        {
-            Gap(10f);
-            ui.HelpText(Loc.T(L.Velvet.HiddenHint));
-            Gap(14f);
-            changed = DrawFacetChips(facet, mutes, true, ImGui.GetContentRegionAvail().X);
-            Gap(40f);
-        }
-
-        if (changed)
-        {
-            ApplyMutesEverywhere();
-            RefreshHiddenSummaries();
-        }
-    }
-
-    private bool DrawRegionChips(VelvetFilterSelection target, float width)
-    {
-        var codes = SocialRegion.Codes;
-        chipModels.Clear();
-        for (var index = 0; index < codes.Length; index++)
-        {
-            chipModels.Add(PickChip(codes[index], VelvetTheme.RegionAccent,
-                (target.RegionMask & (1 << index)) != 0, false));
-        }
-
-        var clicked = DrawChipFlow(width, UiScale.Current);
-        if (clicked < 0)
-        {
-            return false;
-        }
-
-        target.RegionMask = SocialRegion.ToggleMask(target.RegionMask, clicked);
-        return true;
-    }
-
-    private bool DrawTagChips(VelvetFilterSelection target, bool hiding, float width)
-    {
-        var scale = UiScale.Current;
         var categories = VelvetSuggestions.TagCategories;
-        var changed = false;
+        var cursor = 0;
         for (var index = 0; index < categories.Length; index++)
         {
-            var category = categories[index];
-            var headerOrigin = ImGui.GetCursorScreenPos();
-            Typography.Draw(headerOrigin, Loc.Upper(Loc.T(category.Title)),
-                VelvetTheme.Lerp(category.Hue, VelvetTheme.OnAccent, 0.30f), TextStyles.SubheadlineEmphasized);
-            ImGui.SetCursorScreenPos(headerOrigin);
-            ImGui.Dummy(new Vector2(width, 24f * scale));
-            changed |= DrawTokenChips(category.Tags, target.Tags, hiding ? VelvetTheme.Danger : category.Hue,
-                hiding, width);
-            if (index < categories.Length - 1)
+            DrawGroupHeader(Loc.T(categories[index].Title), categories[index].Hue, header);
+            var tags = categories[index].Tags;
+            for (var tagIndex = 0; tagIndex < tags.Length; tagIndex++)
             {
-                Gap(12f);
+                DrawOptionRow(facet, include, cursor, tags[tagIndex], header, live, ref changedInclude,
+                    ref changedMutes);
+                cursor++;
             }
         }
 
-        return changed;
+        Gap(FilterRevealPadY);
     }
 
-    private bool DrawTokenChips(string[] options, HashSet<string> target, Vector4 tone, bool hiding,
-        float width)
+    private static void DrawGroupHeader(string label, Vector4 hue, Rect header)
     {
-        chipModels.Clear();
-        for (var index = 0; index < options.Length; index++)
-        {
-            chipModels.Add(PickChip(options[index], tone, target.Contains(options[index]), hiding));
-        }
-
-        var clicked = DrawChipFlow(width, UiScale.Current);
-        if (clicked < 0)
-        {
-            return false;
-        }
-
-        var token = options[clicked];
-        if (!target.Remove(token))
-        {
-            target.Add(token);
-        }
-
-        return true;
+        var scale = UiScale.Current;
+        var pad = SocialChrome.CellPadX * scale;
+        var row = Reserve(FilterGroupHeaderHeight);
+        Typography.Draw(ImGui.GetWindowDrawList(),
+            new Vector2(header.Min.X + pad, row.Center.Y - Typography.LineHeight(TextStyles.FootnoteEmphasized) * 0.5f),
+            Loc.Upper(label), VelvetTheme.Lerp(hue, VelvetTheme.OnAccent, 0.3f), TextStyles.FootnoteEmphasized);
     }
 
-    private static VChipModel PickChip(string label, Vector4 tone, bool picked, bool hiding)
+    private void DrawOptionRow(VelvetFilterFacet facet, VelvetFilterSelection include, int optionIndex, string label,
+        Rect header, bool live, ref bool changedInclude, ref bool changedMutes)
     {
-        if (!picked)
+        var scale = UiScale.Current;
+        var pad = SocialChrome.CellPadX * scale;
+        var drawList = ImGui.GetWindowDrawList();
+        var row = Reserve(FilterOptionRowHeight);
+        var centerY = row.Center.Y;
+        var state = OptionState(facet, include, optionIndex);
+        var radius = FilterMarkRadius * scale;
+        var hideCenter = new Vector2(header.Max.X - pad - radius, centerY);
+        var showCenter = new Vector2(hideCenter.X - radius * 2f - FilterMarkGap * scale, centerY);
+        var labelInk = state switch
         {
-            return new VChipModel(label, VChipStyle.Ghost, VelvetTheme.Moonlight);
+            VelvetOptionState.Shown => VelvetTheme.TitleInk,
+            VelvetOptionState.Hidden => VelvetTheme.Faint,
+            _ => VelvetTheme.BodyInk,
+        };
+        Typography.Draw(drawList,
+            new Vector2(header.Min.X + pad, centerY - Typography.LineHeight(TextStyles.Body) * 0.5f),
+            Typography.FitText(label, MathF.Max(1f, showCenter.X - radius - 12f * scale - header.Min.X - pad),
+                TextStyles.Body), labelInk, TextStyles.Body);
+
+        var showHit = DrawOptionMark(drawList, showCenter, radius, PhoneIcons.Check, VelvetTheme.Rose,
+            state == VelvetOptionState.Shown, live);
+        var hideHit = DrawOptionMark(drawList, hideCenter, radius, PhoneIcons.X, VelvetTheme.Danger,
+            state == VelvetOptionState.Hidden, live);
+        FeedCell.Hairline(drawList, header.Min.X + pad, header.Max.X - pad, row.Max.Y,
+            VelvetTheme.Alpha(VelvetTheme.Hairline, 0.55f));
+        if (!showHit && !hideHit)
+        {
+            return;
         }
 
-        return hiding
-            ? new VChipModel(label, VChipStyle.Solid, VelvetTheme.Danger, PhoneIcons.EyeOff)
-            : new VChipModel(label, VChipStyle.Solid, tone, PhoneIcons.Check);
+        var next = showHit
+            ? state == VelvetOptionState.Shown ? VelvetOptionState.Any : VelvetOptionState.Shown
+            : state == VelvetOptionState.Hidden ? VelvetOptionState.Any : VelvetOptionState.Hidden;
+        var touchedHidden = state == VelvetOptionState.Hidden || next == VelvetOptionState.Hidden;
+        SetOptionState(facet, include, optionIndex, next);
+        if (touchedHidden)
+        {
+            changedMutes = true;
+            return;
+        }
+
+        changedInclude = true;
     }
 
-    private static void ToggleMask(ref int mask, int flag) => mask = (mask & flag) != 0 ? mask & ~flag : mask | flag;
+    private static bool DrawOptionMark(ImDrawListPtr drawList, Vector2 center, float radius, string glyph,
+        Vector4 tone, bool active, bool live)
+    {
+        var scale = UiScale.Current;
+        var extent = new Vector2(radius, radius);
+        var hovered = live && UiInteract.Hover(center - extent, center + extent);
+        drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(active
+            ? tone
+            : hovered ? VelvetTheme.Alpha(tone, 0.28f) : VelvetInk.Shared.FieldFill), 28);
+        PhoneIcon.Draw(drawList, center, glyph, active ? VelvetTheme.OnAccent : VelvetTheme.MutedInk,
+            VIcon.Chip * scale);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        return live && UiInteract.Click(center - extent, center + extent, hovered);
+    }
 }

@@ -241,7 +241,6 @@ internal sealed partial class VelvetShell
                 ApplyFilters(surface);
             }
 
-            RefreshFilterSummaries();
         }
 
         Gap(10f);

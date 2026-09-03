@@ -431,12 +431,6 @@ internal sealed partial class VelvetShell : IResumableApp
             case VelvetScreenId.Filters:
                 DrawFilters(area);
                 break;
-            case VelvetScreenId.Hidden:
-                DrawHidden(area);
-                break;
-            case VelvetScreenId.HiddenFacet:
-                DrawHiddenFacet(area, view.Arg ?? string.Empty);
-                break;
             case VelvetScreenId.PostTags:
                 DrawPostTags(area);
                 break;
