@@ -77,6 +77,7 @@ internal sealed partial class VelvetShell : IResumableApp
     private readonly Action back;
 
     private PhoneTheme theme = PhoneTheme.Default;
+    private Rect screenRect;
     private INavigator navigation = null!;
     private VelvetPage activeTab = VelvetPage.Discover;
     private float sinceHeartbeat = HeartbeatSeconds;
@@ -85,7 +86,6 @@ internal sealed partial class VelvetShell : IResumableApp
     private ulong raceContentId;
     private readonly VelvetFilterSelection discoverInclude = new();
     private readonly VelvetFilterSelection feedInclude = new();
-    private readonly VTabDef[] rootTabs = new VTabDef[4];
     private readonly string[] whoLabels = new string[3];
     private readonly ActionSheet postSheet = new();
     private readonly ActionSheet threadSheet = new();
@@ -280,6 +280,7 @@ internal sealed partial class VelvetShell : IResumableApp
         TickHeartbeat();
         GateMenus();
         var screen = SceneChrome.ScreenFrom(context.Content, theme, UiScale.Current);
+        screenRect = screen;
         ui.Backdrop(screen);
         ConsumeSharedPhoto();
         stories.Advance();
@@ -445,7 +446,7 @@ internal sealed partial class VelvetShell : IResumableApp
     {
         var scale = UiScale.Current;
         var headerHeight = VHeader.Height * scale;
-        var tabHeight = VTabBar.Height * scale;
+        var tabHeight = TabBarHeight * scale;
         var headerRect = new Rect(area.Min, new Vector2(area.Max.X, area.Min.Y + headerHeight));
         var tabRect = new Rect(new Vector2(area.Min.X, area.Max.Y - tabHeight), area.Max);
         var bodyRect = new Rect(new Vector2(area.Min.X, headerRect.Max.Y),
@@ -529,37 +530,7 @@ internal sealed partial class VelvetShell : IResumableApp
                 break;
         }
 
-        var messageBadge = store.UnreadCount + store.RequestCount;
-        rootTabs[0] = new VTabDef(PhoneIcons.Compass, Loc.T(L.Velvet.TabDiscover));
-        rootTabs[1] = new VTabDef(PhoneIcons.Photo, Loc.T(L.Velvet.TabFeed));
-        rootTabs[2] = new VTabDef(PhoneIcons.MessageCircle, Loc.T(L.Velvet.Messages), messageBadge);
-        rootTabs[3] = new VTabDef(PhoneIcons.User, Loc.T(L.Velvet.TabMe));
-        var tabMargin = 12f * scale;
-        var cellWidth = (tabRect.Width - tabMargin * 2f) / 4f;
-        var tabLeft = tabRect.Min.X + tabMargin;
-        var tabMidY = (tabRect.Min.Y + 6f * scale + tabRect.Max.Y - 12f * scale) * 0.5f;
-        UiAnchors.Report("velvet.tab.discover", AnchorBox(new Vector2(tabLeft + cellWidth * 0.5f, tabMidY), 22f * scale));
-        UiAnchors.Report("velvet.tab.feed", AnchorBox(new Vector2(tabLeft + cellWidth * 1.5f, tabMidY), 22f * scale));
-        UiAnchors.Report("velvet.tab.messages", AnchorBox(new Vector2(tabLeft + cellWidth * 2.5f, tabMidY), 22f * scale));
-        UiAnchors.Report("velvet.tab.me", AnchorBox(new Vector2(tabLeft + cellWidth * 3.5f, tabMidY), 22f * scale));
-
-        var picked = VTabBar.Draw(tabRect, rootTabs, (int)activeTab, scale);
-        if (picked >= 0)
-        {
-            if (picked == (int)VelvetPage.Feed && activeTab == VelvetPage.Feed)
-            {
-                RefreshFeed();
-            }
-
-            if (picked != (int)activeTab)
-            {
-                postSheet.Close();
-                threadSheet.Close();
-                profileMenu.Close();
-            }
-
-            activeTab = (VelvetPage)picked;
-        }
+        DrawTabBar(tabRect);
     }
 
     private void DrawRichBody(ImDrawListPtr drawList, RichTextLayout layout, Vector2 origin)
