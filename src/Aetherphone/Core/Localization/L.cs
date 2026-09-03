@@ -4166,8 +4166,13 @@ internal static class L
         public static readonly LocString FilterHiddenCount = new("velvet.filterHiddenCount", "{0} hidden");
         public static readonly LocString FilterShownHidden =
             new("velvet.filterShownHidden", "{0} shown, {1} hidden");
-        public static readonly LocString FilterFacetHint =
-            new("velvet.filterFacetHint", "Tap once to show only these. Tap again to hide them everywhere in Velvet.");
+        public static readonly LocString FilterSelectedCount = new("velvet.filterSelectedCount", "{0} selected");
+        public static readonly LocString FilterPickHint =
+            new("velvet.filterPickHint", "Pick what you want to see. Leave a row alone to see everything.");
+        public static readonly LocString HiddenTitle = new("velvet.hiddenTitle", "Hidden");
+        public static readonly LocString HiddenHint =
+            new("velvet.hiddenHint",
+                "Anything you pick here disappears everywhere in Velvet, in Discover and in the feed, until you unpick it.");
         public static readonly LocString CardRace = new("velvet.cardRace", "Race");
         public static readonly LocString FiltersTitle = new("velvet.filtersTitle", "Filters");
         public static readonly LocString PostTagsTitle = new("velvet.postTagsTitle", "Tags");

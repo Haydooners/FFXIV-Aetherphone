@@ -96,6 +96,21 @@ internal sealed partial class VelvetShell
                 router.Push(VelvetView.NotInterested);
             }
 
+            var hiddenRow = new VRowModel
+            {
+                Title = Loc.T(L.Velvet.HiddenTitle),
+                Leading = VRowLeading.IconTile,
+                TileIcon = PhoneIcons.EyeOff,
+                TileTint = VelvetTheme.Gold,
+                Chevron = true,
+                Height = 52f,
+            };
+            if (VRow.Draw(in hiddenRow, ui, theme, images, lodestone) == VRowHit.Body)
+            {
+                RefreshHiddenSummaries();
+                router.Push(VelvetView.Hidden);
+            }
+
             var blockedRow = new VRowModel
             {
                 Title = Loc.T(L.Velvet.Blocked),

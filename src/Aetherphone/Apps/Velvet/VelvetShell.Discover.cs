@@ -220,7 +220,7 @@ internal sealed partial class VelvetShell
             if ((mutes.Intent & def.Flag) != 0)
             {
                 AddActiveFilterChip(new VChipModel(Loc.T(def.Label), VChipStyle.Tint, VelvetTheme.Danger,
-                    PhoneIcons.Ban, true), IntentChipKind, def.Flag, string.Empty, true);
+                    PhoneIcons.EyeOff, true), IntentChipKind, def.Flag, string.Empty, true);
             }
         }
 
@@ -244,7 +244,7 @@ internal sealed partial class VelvetShell
             if ((mutes.Relationship & flag) != 0)
             {
                 AddActiveFilterChip(new VChipModel(VelvetRelationship.Label(statuses[index]), VChipStyle.Tint,
-                    VelvetTheme.Danger, PhoneIcons.Ban, true), RelationshipChipKind, flag, string.Empty, true);
+                    VelvetTheme.Danger, PhoneIcons.EyeOff, true), RelationshipChipKind, flag, string.Empty, true);
             }
         }
 
@@ -301,7 +301,7 @@ internal sealed partial class VelvetShell
             if ((excludeMask & bit) != 0)
             {
                 AddActiveFilterChip(new VChipModel(VelvetRace.Label(gameData, races[index]), VChipStyle.Tint,
-                    VelvetTheme.Danger, PhoneIcons.Ban, true), RaceChipKind, bit, string.Empty, true);
+                    VelvetTheme.Danger, PhoneIcons.EyeOff, true), RaceChipKind, bit, string.Empty, true);
             }
         }
     }
@@ -321,7 +321,7 @@ internal sealed partial class VelvetShell
             if ((excludeMask & flag) != 0)
             {
                 AddActiveFilterChip(new VChipModel(labelOf(flag), VChipStyle.Tint, VelvetTheme.Danger,
-                    PhoneIcons.Ban, true), kind, flag, string.Empty, true);
+                    PhoneIcons.EyeOff, true), kind, flag, string.Empty, true);
             }
         }
     }
@@ -340,7 +340,7 @@ internal sealed partial class VelvetShell
 
             if (exclude.Contains(token))
             {
-                AddActiveFilterChip(new VChipModel(token, VChipStyle.Tint, VelvetTheme.Danger, PhoneIcons.Ban,
+                AddActiveFilterChip(new VChipModel(token, VChipStyle.Tint, VelvetTheme.Danger, PhoneIcons.EyeOff,
                     true), kind, 0, token, true);
             }
         }
