@@ -170,6 +170,77 @@ internal sealed partial class VelvetShell
         }
     }
 
+    private void OpenProfileMenu(VelvetProfileDto user)
+    {
+        profileMenuUserId = user.UserId;
+        profileMenuName = DisplayNameOf(user.DisplayName, user.Handle);
+        profileMenuCount = 0;
+        if (store.Me?.UserId == user.UserId)
+        {
+            AddProfileMenuItem(ProfileMenuAction.Settings, Loc.T(L.Velvet.Settings), false);
+        }
+        else
+        {
+            if (user.ConnectionState == VelvetConnectionState.Connected)
+            {
+                AddProfileMenuItem(ProfileMenuAction.Disconnect, Loc.T(L.Velvet.Disconnect), false);
+            }
+
+            AddProfileMenuItem(ProfileMenuAction.NotInterested, Loc.T(L.Velvet.NotInterested), false);
+            if (!AlreadyReported(user.UserId))
+            {
+                AddProfileMenuItem(ProfileMenuAction.Report, Loc.T(L.Velvet.Report), true);
+            }
+
+            AddProfileMenuItem(ProfileMenuAction.Block, Loc.T(L.Velvet.Block), true);
+        }
+
+        profileMenu.Open();
+    }
+
+    private void AddProfileMenuItem(ProfileMenuAction action, string label, bool danger)
+    {
+        profileMenuActions[profileMenuCount] = action;
+        profileMenuItems[profileMenuCount] = new ActionSheet.Item(label, string.Empty, danger);
+        profileMenuCount++;
+    }
+
+    private void DrawProfileMenu(Rect screen)
+    {
+        if (!profileMenu.CapturesPointer)
+        {
+            return;
+        }
+
+        var picked = profileMenu.Draw(screen, ActionSheetStyle.From(ui),
+            profileMenuItems.AsSpan(0, profileMenuCount), Loc.T(L.Common.Cancel), false, profileMenuName);
+        if (picked < 0)
+        {
+            return;
+        }
+
+        switch (profileMenuActions[picked])
+        {
+            case ProfileMenuAction.Settings:
+                settingsLoaded = false;
+                router.Push(VelvetView.Settings);
+                break;
+            case ProfileMenuAction.Report:
+                OpenReport("velvet_profile", profileMenuUserId, Loc.T(L.Velvet.ReportProfile));
+                break;
+            case ProfileMenuAction.NotInterested:
+                store.HideFromDiscover(profileMenuUserId);
+                router.Pop();
+                break;
+            case ProfileMenuAction.Disconnect:
+                AskDisconnect(profileMenuUserId);
+                break;
+            case ProfileMenuAction.Block:
+                AskBlock(profileMenuUserId, profileMenuName);
+                break;
+        }
+    }
+
     private void AskBlock(string userId, string displayName)
     {
         confirm.Ask(new ConfirmRequest

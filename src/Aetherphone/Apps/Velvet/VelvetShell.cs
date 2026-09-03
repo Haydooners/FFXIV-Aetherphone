@@ -181,6 +181,7 @@ internal sealed partial class VelvetShell : IResumableApp
         router.Reset();
         activeTab = VelvetPage.Discover;
         messagesTab = VelvetMessagesTab.Chats;
+        profileTab = VelvetProfileTab.About;
         avatarLightbox.Reset();
         store.ClearDiscover();
         discoverInclude.Clear();
@@ -229,6 +230,7 @@ internal sealed partial class VelvetShell : IResumableApp
     {
         postSheet.Close();
         threadSheet.Close();
+        profileMenu.Close();
         stories.Close();
     }
 
@@ -304,6 +306,7 @@ internal sealed partial class VelvetShell : IResumableApp
 
         DrawPostSheet(screen);
         DrawThreadSheet(screen);
+        DrawProfileMenu(screen);
     }
 
     public void Dispose()
@@ -462,7 +465,8 @@ internal sealed partial class VelvetShell : IResumableApp
         }
 
         var showRefresh = activeTab == VelvetPage.Feed;
-        var headerSlots = showRefresh ? 3 : 2;
+        var showProfileMenu = activeTab == VelvetPage.Me;
+        var headerSlots = showRefresh || showProfileMenu ? 3 : 2;
         UiAnchors.Report("velvet.activity", AnchorBox(VHeader.Slot(headerRect, 0), 18f * scale));
 
         var title = activeTab switch
@@ -482,6 +486,13 @@ internal sealed partial class VelvetShell : IResumableApp
                 VelvetTheme.MutedInk, Loc.T(L.Conduct.Eyebrow), HoverLabelSide.Below))
         {
             conduct.ShowRules(Id);
+        }
+
+        if (showProfileMenu && store.Me is { } profile &&
+            VIcon.Button(VHeader.Slot(headerRect, 2), VHeader.IconRadius, PhoneIcons.Dots, VIcon.Overflow,
+                VelvetTheme.TitleInk, Loc.T(L.Velvet.More), HoverLabelSide.Below))
+        {
+            OpenProfileMenu(profile);
         }
 
         if (showRefresh)
@@ -540,6 +551,7 @@ internal sealed partial class VelvetShell : IResumableApp
             {
                 postSheet.Close();
                 threadSheet.Close();
+                profileMenu.Close();
             }
 
             activeTab = (VelvetPage)picked;
@@ -568,6 +580,7 @@ internal sealed partial class VelvetShell : IResumableApp
             return;
         }
 
+        profileTab = VelvetProfileTab.About;
         store.OpenProfile(userId);
         router.Push(VelvetView.Profile(userId));
     }

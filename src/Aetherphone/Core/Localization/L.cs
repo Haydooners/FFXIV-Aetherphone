@@ -4117,6 +4117,7 @@ internal static class L
         public static readonly LocString LookingForOne = new("velvet.lookingForOne", "Looking for {0}");
         public static readonly LocString Photos = new("velvet.photos", "Photos");
         public static readonly LocString MyPhotos = new("velvet.myPhotos", "My photos");
+        public static readonly LocString ProfileConnections = new("velvet.profileConnections", "Connections");
         public static readonly LocString NoPhotosShared = new("velvet.noPhotosShared", "No photos shared yet.");
         public static readonly LocString NoPhotosMine = new("velvet.noPhotosMine", "You have not shared any photos yet.");
         public static readonly LocString ConnectToSeePhotos = new("velvet.connectToSeePhotos", "Connect with {0} to see their photos");
