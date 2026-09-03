@@ -10,40 +10,110 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetShell
 {
-    private readonly string[] messagesTabLabels = new string[2];
+    private const float MessagesSearchHeight = 52f;
+    private const float MessagesHeadingHeight = 44f;
+
+    private static readonly TextStyle MessagesHeadingStyle = TextStyles.Title3;
+    private static readonly TextStyle MessagesLinkStyle = TextStyles.SubheadlineEmphasized;
+
+    private readonly List<VelvetThreadDto> chatsFiltered = new();
+    private VelvetThreadDto[] chatsFilterSource = Array.Empty<VelvetThreadDto>();
+    private string chatsFilterQuery = string.Empty;
+    private string chatsDraft = string.Empty;
     private string introName = string.Empty;
     private string introText = string.Empty;
 
     private void DrawMessages(Rect area)
     {
         var scale = UiScale.Current;
-        var pad = Metrics.Space.Lg * scale;
-        var segRect = new Rect(new Vector2(area.Min.X + pad, area.Min.Y + 8f * scale),
-            new Vector2(area.Max.X - pad, area.Min.Y + 8f * scale + 32f * scale));
-        var requestCount = store.RequestCount;
-        messagesTabLabels[0] = Loc.T(L.Velvet.ChatsTab);
-        messagesTabLabels[1] = requestCount > 0
-            ? Loc.T(L.Velvet.RequestsCount, requestCount)
-            : Loc.T(L.Velvet.Requests);
-        var picked = VSegmented.Draw("velvetMessages", segRect, messagesTabLabels, (int)messagesTab, scale);
-        if (picked >= 0)
+        var pad = SocialChrome.CellPadX * scale;
+        using (AppSurface.BeginEdgeToEdge(area))
         {
-            messagesTab = (VelvetMessagesTab)picked;
-        }
-
-        var listRect = new Rect(new Vector2(area.Min.X, segRect.Max.Y + 8f * scale), area.Max);
-        using (AppSurface.BeginEdgeToEdge(listRect))
-        {
+            var width = ScrollLayout.StableContentWidth();
             if (messagesTab == VelvetMessagesTab.Chats)
             {
-                DrawChatsList(listRect);
+                var searchOrigin = ImGui.GetCursorScreenPos();
+                SearchField.Draw(new Rect(new Vector2(searchOrigin.X + pad, searchOrigin.Y),
+                        new Vector2(searchOrigin.X + width - pad, searchOrigin.Y + MessagesSearchHeight * scale)),
+                    "##velvetChatSearch", Loc.T(L.Common.Search), ref chatsDraft, VelvetTheme.Palette);
+                ImGui.SetCursorScreenPos(searchOrigin);
+                ImGui.Dummy(new Vector2(width, MessagesSearchHeight * scale));
+            }
+
+            DrawMessagesHeading(width, pad);
+            if (messagesTab == VelvetMessagesTab.Chats)
+            {
+                DrawChatsList(area);
             }
             else
             {
-                DrawRequestsList(listRect);
+                DrawRequestsList(area);
             }
         }
     }
+
+    private void DrawMessagesHeading(float width, float pad)
+    {
+        var scale = UiScale.Current;
+        var drawList = ImGui.GetWindowDrawList();
+        var origin = ImGui.GetCursorScreenPos();
+        var height = MessagesHeadingHeight * scale;
+        var centerY = origin.Y + height * 0.5f;
+        var showingRequests = messagesTab == VelvetMessagesTab.Requests;
+        var heading = Loc.T(showingRequests ? L.Velvet.Requests : L.Velvet.ChatsTab);
+        var requestCount = store.RequestCount;
+        var link = showingRequests
+            ? Loc.T(L.Velvet.ChatsTab)
+            : requestCount > 0 ? Loc.T(L.Velvet.RequestsCount, requestCount) : Loc.T(L.Velvet.Requests);
+        var linkSize = Typography.Measure(link, MessagesLinkStyle);
+        var linkMin = new Vector2(origin.X + width - pad - linkSize.X, centerY - linkSize.Y * 0.5f);
+        var linkMax = new Vector2(origin.X + width - pad, centerY + linkSize.Y * 0.5f);
+        var headingHeight = Typography.LineHeight(MessagesHeadingStyle);
+        Typography.Draw(drawList, new Vector2(origin.X + pad, centerY - headingHeight * 0.5f),
+            Typography.FitText(heading, MathF.Max(1f, linkMin.X - 12f * scale - origin.X - pad),
+                MessagesHeadingStyle), VelvetTheme.TitleInk, MessagesHeadingStyle);
+        var hovered = UiInteract.Hover(linkMin, linkMax);
+        Typography.Draw(drawList, linkMin, link, VelvetTheme.RoseInk, MessagesLinkStyle);
+        if (hovered)
+        {
+            drawList.AddLine(new Vector2(linkMin.X, linkMax.Y), linkMax, ImGui.GetColorU32(VelvetTheme.RoseInk), 1f);
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        if (UiInteract.Click(linkMin, linkMax, hovered))
+        {
+            messagesTab = showingRequests ? VelvetMessagesTab.Chats : VelvetMessagesTab.Requests;
+        }
+
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height));
+    }
+
+    private void RefreshChatsFilter(VelvetThreadDto[] threads)
+    {
+        var query = chatsDraft.Trim();
+        if (ReferenceEquals(threads, chatsFilterSource) &&
+            string.Equals(query, chatsFilterQuery, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        chatsFilterSource = threads;
+        chatsFilterQuery = query;
+        chatsFiltered.Clear();
+        for (var index = 0; index < threads.Length; index++)
+        {
+            var thread = threads[index];
+            if (query.Length == 0 || ChatRowMatches(thread, query))
+            {
+                chatsFiltered.Add(thread);
+            }
+        }
+    }
+
+    private static bool ChatRowMatches(VelvetThreadDto thread, string query) =>
+        thread.OtherDisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)
+        || thread.OtherHandle.Contains(query, StringComparison.OrdinalIgnoreCase);
 
     private void DrawChatsList(Rect listRect)
     {
@@ -59,16 +129,26 @@ internal sealed partial class VelvetShell
         }
 
         var threads = store.Threads;
-        if (threads.Length == 0)
+        RefreshChatsFilter(threads);
+        if (chatsFiltered.Count == 0)
         {
-            DrawEmpty(listRect, Loc.T(L.Velvet.MessagesEmpty), Loc.T(L.Velvet.MessagesEmptyHint));
+            var empty = new Rect(new Vector2(listRect.Min.X, ImGui.GetCursorScreenPos().Y), listRect.Max);
+            if (threads.Length > 0)
+            {
+                DrawEmpty(empty, Loc.T(L.Social.ListEmpty), string.Empty);
+            }
+            else
+            {
+                DrawEmpty(empty, Loc.T(L.Velvet.MessagesEmpty), Loc.T(L.Velvet.MessagesEmptyHint));
+            }
+
             return;
         }
 
-        Gap(6f);
-        for (var index = 0; index < threads.Length; index++)
+        Gap(2f);
+        for (var index = 0; index < chatsFiltered.Count; index++)
         {
-            var thread = threads[index];
+            var thread = chatsFiltered[index];
             var preview = string.IsNullOrEmpty(thread.LastMessagePreview)
                 ? Loc.T(L.Velvet.ThreadEmpty)
                 : ChatText.ListPreview(thread.LastMessagePreview);
@@ -126,11 +206,12 @@ internal sealed partial class VelvetShell
         var sent = store.SentRequests;
         if (requests.Length == 0 && sent.Length == 0)
         {
-            DrawEmpty(listRect, Loc.T(L.Velvet.RequestsEmpty), Loc.T(L.Velvet.RequestsEmptyHint));
+            DrawEmpty(new Rect(new Vector2(listRect.Min.X, ImGui.GetCursorScreenPos().Y), listRect.Max),
+                Loc.T(L.Velvet.RequestsEmpty), Loc.T(L.Velvet.RequestsEmptyHint));
             return;
         }
 
-        Gap(8f);
+        Gap(4f);
         if (requests.Length > 0)
         {
             VSectionHeader.Overline(Loc.T(L.Velvet.Requests), requests.Length.ToString(Loc.Culture),
