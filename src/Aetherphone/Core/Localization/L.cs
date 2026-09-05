@@ -1599,15 +1599,10 @@ internal static class L
         public static readonly LocString NativeFileDialog = new("settings.nativeFileDialog", "Windows file browser");
         public static readonly LocString NativeFileDialogHint = new("settings.nativeFileDialogHint", "Pick photos and sounds with the Windows file browser. Turn it off if importing a file crashes your game.");
         public static readonly LocString ChirperShowPhotos = new("settings.chirperShowPhotos", "Show photo chirps");
-        public static readonly LocString ChirperShowPhotosHint = new("settings.chirperShowPhotosHint", "Chirps that carry photos show up in your feeds on Chirper. Turn this off to hide photo chirps from your feeds.");
         public static readonly LocString ChirperShowGifs = new("settings.chirperShowGifs", "Show GIF chirps");
-        public static readonly LocString ChirperShowGifsHint = new("settings.chirperShowGifsHint", "Chirps that carry animated GIFs show up in your feeds on Chirper. Turn this off to hide GIF chirps from your feeds.");
         public static readonly LocString ChirperShowReplyMedia = new("settings.chirperShowReplyMedia", "Show media in chirp replies");
-        public static readonly LocString ChirperShowReplyMediaHint = new("settings.chirperShowReplyMediaHint", "Photos and GIFs attached to replies show under the reply text on Chirper. Turn this off to keep replies text only.");
         public static readonly LocString AethergramShowGifs = new("settings.aethergramShowGifs", "Show GIF grams");
-        public static readonly LocString AethergramShowGifsHint = new("settings.aethergramShowGifsHint", "Grams that carry an animated GIF show up in your feeds on Aethergram. Turn this off to keep your feeds photos only.");
         public static readonly LocString AethergramShowCommentMedia = new("settings.aethergramShowCommentMedia", "Show media in gram comments");
-        public static readonly LocString AethergramShowCommentMediaHint = new("settings.aethergramShowCommentMediaHint", "Photos and GIFs attached to comments show under the comment text on Aethergram. Turn this off to keep comments text only.");
         public static readonly LocString ShowSensitive = new("settings.showSensitive", "Always show sensitive photos");
         public static readonly LocString ShowSensitiveHint = new("settings.showSensitiveHint", "Photos marked sensitive stay covered until you tap them. Turn this on to see them straight away.");
         public static readonly LocString OpenOnStartup = new("settings.openOnStartup", "Open at startup");
