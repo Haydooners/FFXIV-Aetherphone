@@ -200,6 +200,7 @@ internal readonly ref struct ChatTranscriptModel
     public required Vector4 BodyInk { get; init; }
     public required string EmptyText { get; init; }
     public required string LoadingText { get; init; }
+    public required float SidePadding { get; init; }
     public bool OtherTyping { get; init; }
     public bool Loading { get; init; }
     public bool IsGroup { get; init; }
@@ -308,7 +309,7 @@ internal sealed class ChatTranscript
         var typingTarget = model.OtherTyping ? 1f : 0f;
         typingReveal += (typingTarget - typingReveal) * MathF.Min(1f, delta * 12f);
 
-        using (var surface = AppSurface.Begin(listRect))
+        using (var surface = AppSurface.Begin(listRect, model.SidePadding))
         {
             if (model.Messages.Length == 0 && typingReveal < 0.01f)
             {

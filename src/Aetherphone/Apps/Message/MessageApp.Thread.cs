@@ -25,6 +25,7 @@ internal sealed partial class MessageApp
     private const float ThreadHeaderAvatarGap = 6f;
     private const float ThreadHeaderNameGap = 10f;
     private const float BubbleRounding = 9f;
+    private const float ThreadSidePadding = 24f;
 
     private static readonly TextStyle ThreadNameStyle = TextStyles.Headline;
     private static readonly TextStyle ThreadSubStyle = new(0.76f, FontWeight.Regular);
@@ -69,6 +70,8 @@ internal sealed partial class MessageApp
 
         protected override ChatBubbleStyle BubbleStyle => new(app.activeTheme.OutgoingBubble,
             MessageThemes.OutgoingInk, MessageThemes.IncomingBubble, MessageThemes.IncomingInk, BubbleRounding, true);
+
+        protected override float TranscriptSidePadding => ThreadSidePadding;
 
         public bool SearchOpen => searchController.Open;
 

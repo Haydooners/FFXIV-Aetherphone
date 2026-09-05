@@ -161,6 +161,8 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
 
     protected virtual ChatBubbleStyle BubbleStyle => default;
 
+    protected virtual float TranscriptSidePadding => AppSurface.SidePadding;
+
     protected abstract void DrawHeader(Rect area, string threadId);
 
     protected virtual void PaintTranscriptBackdrop(Rect listRect)
@@ -333,6 +335,7 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
             Loading = store.LoadingThread || store.ThreadOpenPending,
             IsGroup = IsGroupThread,
             Bubbles = BubbleStyle,
+            SidePadding = TranscriptSidePadding,
             Media = this,
             Interactions = this,
             Voice = this,

@@ -17,6 +17,7 @@ internal sealed partial class MessageApp
     private const float EncryptionHeroGlyph = 34f;
     private const float EncryptionMemberRowHeight = 56f;
     private const float EncryptionMemberGlyph = 18f;
+    private const float EncryptionSidePadding = 32f;
 
     private static readonly TextStyle SecurityCodeStyle = new(1.02f, FontWeight.Medium);
 
@@ -42,7 +43,7 @@ internal sealed partial class MessageApp
 
         var top = area.Min.Y + AppHeader.Height * scale;
         var body = new Rect(new Vector2(area.Min.X, top), area.Max);
-        using (AppSurface.Begin(body))
+        using (AppSurface.Begin(body, EncryptionSidePadding))
         {
             var drawList = ImGui.GetWindowDrawList();
             var encrypted = store.EncryptingCurrent;
