@@ -214,7 +214,8 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         ui.Backdrop(screen);
         using (InputShield.Engage(avatarLightbox.Expanded))
         {
-            router.Draw(context.Content, AppSkin.Transparent, delta, drawView);
+            router.Draw(SceneChrome.AppAreaFrom(context.Content, theme, UiScale.Current), AppSkin.Transparent,
+                delta, drawView);
         }
 
         if (avatarLightbox.Active)

@@ -24,7 +24,6 @@ internal sealed partial class MessageApp
     private void DrawMessageInfo(Rect area, string messageId)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         DrawScreenHeader(area, Loc.T(L.Message.InfoTitle));
         var message = store.FindMessage(messageId);
         var conversation = store.Conversation;
@@ -38,6 +37,7 @@ internal sealed partial class MessageApp
         var body = new Rect(new Vector2(area.Min.X, top), area.Max);
         using (AppSurface.Begin(body))
         {
+            var drawList = ImGui.GetWindowDrawList();
             ImGui.Dummy(new Vector2(0f, 10f * scale));
             DrawInfoBubble(drawList, message, scale);
             if (conversation.IsGroup)

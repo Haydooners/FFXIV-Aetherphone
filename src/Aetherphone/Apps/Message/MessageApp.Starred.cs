@@ -18,7 +18,6 @@ internal sealed partial class MessageApp
     private void DrawStarred(Rect area, string? conversationId)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         starredRows.Clear();
         var starred = configuration.MessageStarredMessages;
         var subtitle = string.Empty;
@@ -45,6 +44,7 @@ internal sealed partial class MessageApp
 
         using (AppSurface.BeginEdgeToEdge(body))
         {
+            var drawList = ImGui.GetWindowDrawList();
             for (var index = 0; index < starredRows.Count; index++)
             {
                 DrawStarredRow(drawList, starredRows[index], conversationId is null);

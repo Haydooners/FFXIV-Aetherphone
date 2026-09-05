@@ -25,7 +25,6 @@ internal sealed partial class MessageApp
     private void DrawNewChat(Rect area)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         DrawScreenHeader(area, Loc.T(L.Message.NewChat));
         var top = area.Min.Y + AppHeader.Height * scale;
         var searchRect = new Rect(new Vector2(area.Min.X + CellPadX * scale, top),
@@ -36,6 +35,7 @@ internal sealed partial class MessageApp
         var query = filter.Trim();
         using (AppSurface.BeginEdgeToEdge(listRect))
         {
+            var drawList = ImGui.GetWindowDrawList();
             if (query.Length == 0)
             {
                 if (DrawActionRow(drawList, PhoneIcons.Users, Loc.T(L.Message.NewGroup)))
@@ -94,7 +94,6 @@ internal sealed partial class MessageApp
     private void DrawNewGroup(Rect area)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         CollectMutualContacts(composeRows, excludeMembers: false);
         var selectedCount = CountSelected(composeRows);
         DrawScreenHeader(area, Loc.T(L.Message.NewGroup),
@@ -113,18 +112,19 @@ internal sealed partial class MessageApp
         var actionHeight = selectedCount >= 1 ? ComposeGroupActionHeight * scale : 0f;
         var listRect = new Rect(new Vector2(area.Min.X, searchRect.Max.Y),
             new Vector2(area.Max.X, area.Max.Y - actionHeight));
-        DrawPickList(drawList, listRect, composeRows);
+        DrawPickList(listRect, composeRows);
         if (selectedCount >= 1)
         {
             DrawGroupCreateBar(area, actionHeight, scale);
         }
     }
 
-    private void DrawPickList(ImDrawListPtr drawList, Rect listRect, List<ContactDto> rows)
+    private void DrawPickList(Rect listRect, List<ContactDto> rows)
     {
         var scale = UiScale.Current;
         using (AppSurface.BeginEdgeToEdge(listRect))
         {
+            var drawList = ImGui.GetWindowDrawList();
             if (rows.Count == 0)
             {
                 DrawInlineEmpty(drawList, Loc.T(L.Phone.NoOneFound));

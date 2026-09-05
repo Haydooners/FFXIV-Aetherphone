@@ -37,7 +37,6 @@ internal sealed partial class MessageApp
     private ConversationDto? DrawConversationPicker(Rect area, string title, ref string filterText)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         DrawScreenHeader(area, title);
         var top = area.Min.Y + AppHeader.Height * scale;
         var searchRect = new Rect(new Vector2(area.Min.X + CellPadX * scale, top),
@@ -49,6 +48,7 @@ internal sealed partial class MessageApp
         ConversationDto? picked = null;
         using (AppSurface.BeginEdgeToEdge(listRect))
         {
+            var drawList = ImGui.GetWindowDrawList();
             var shown = 0;
             for (var index = 0; index < snapshot.Length; index++)
             {

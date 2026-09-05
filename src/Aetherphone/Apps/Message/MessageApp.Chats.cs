@@ -56,7 +56,6 @@ internal sealed partial class MessageApp
         }
 
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         var searchRect = new Rect(new Vector2(area.Min.X + CellPadX * scale, area.Min.Y),
             new Vector2(area.Max.X - CellPadX * scale, area.Min.Y + ChatSearchHeight * scale));
         SearchField.Draw(searchRect, "##messageFilter", Loc.T(L.Common.Search), ref filter, ui.Palette);
@@ -107,6 +106,7 @@ internal sealed partial class MessageApp
 
         using (AppSurface.BeginEdgeToEdge(listRect))
         {
+            var drawList = ImGui.GetWindowDrawList();
             if (query.Length == 0 && chatFilter == ChatFilterAll && configuration.MessageArchivedChats.Count > 0)
             {
                 DrawArchivedRow(drawList);
@@ -199,7 +199,6 @@ internal sealed partial class MessageApp
     private void DrawArchived(Rect area)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         DrawScreenHeader(area, Loc.T(L.Message.Archived));
         var top = area.Min.Y + AppHeader.Height * scale;
         var listRect = new Rect(new Vector2(area.Min.X, top), area.Max);
@@ -212,6 +211,7 @@ internal sealed partial class MessageApp
 
         using (AppSurface.BeginEdgeToEdge(listRect))
         {
+            var drawList = ImGui.GetWindowDrawList();
             for (var index = 0; index < regularChats.Count; index++)
             {
                 DrawConversationRow(drawList, regularChats[index], pinned: false);

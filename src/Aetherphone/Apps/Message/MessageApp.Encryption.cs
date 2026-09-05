@@ -27,7 +27,6 @@ internal sealed partial class MessageApp
     private void DrawEncryptionInfo(Rect area, string conversationId)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         DrawScreenHeader(area, Loc.T(L.Encryption.InfoTitle));
         var conversation = store.Conversation;
         if (conversation is null || conversation.Id != conversationId)
@@ -45,6 +44,7 @@ internal sealed partial class MessageApp
         var body = new Rect(new Vector2(area.Min.X, top), area.Max);
         using (AppSurface.Begin(body))
         {
+            var drawList = ImGui.GetWindowDrawList();
             var encrypted = store.EncryptingCurrent;
             DrawEncryptionHero(drawList, encrypted, scale);
             DrawEncryptionSummary(encrypted, scale);

@@ -90,7 +90,6 @@ internal sealed partial class MessageApp
     private void DrawCallsTab(Rect area)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         if (!session.IsSignedIn)
         {
             EmptyState.Draw(area, ui, PhoneIcons.Phone, Loc.T(L.Phone.SignInTitle), Loc.T(L.Phone.SignInPrompt));
@@ -109,6 +108,7 @@ internal sealed partial class MessageApp
         CollectFavorites(favoriteContacts);
         using (AppSurface.BeginEdgeToEdge(area))
         {
+            var drawList = ImGui.GetWindowDrawList();
             DrawSectionLabel(Loc.T(L.Message.Favorites));
             for (var index = 0; index < favoriteContacts.Count; index++)
             {
@@ -295,7 +295,6 @@ internal sealed partial class MessageApp
     private void DrawContactPicker(Rect body, bool addMode)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         var searchRect = new Rect(new Vector2(body.Min.X + CellPadX * scale, body.Min.Y),
             new Vector2(body.Max.X - CellPadX * scale, body.Min.Y + CallSearchHeight * scale));
         SearchField.Draw(searchRect, "##msgCallSearch", Loc.T(L.Phone.FilterHint), ref searchDraft, ui.Palette);
@@ -338,6 +337,7 @@ internal sealed partial class MessageApp
 
         using (AppSurface.BeginEdgeToEdge(listRect))
         {
+            var drawList = ImGui.GetWindowDrawList();
             ImGui.Dummy(new Vector2(0f, 4f * scale));
             var lastLetter = string.Empty;
             for (var index = 0; index < callableContacts.Count; index++)

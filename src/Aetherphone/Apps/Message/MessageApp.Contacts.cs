@@ -78,7 +78,6 @@ internal sealed partial class MessageApp
     private void DrawContactsTab(Rect area)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         if (!session.IsSignedIn)
         {
             EmptyState.Draw(area, ui, PhoneIcons.Users, Loc.T(L.Apps.Contacts), Loc.T(L.Message.SignInPrompt));
@@ -91,6 +90,7 @@ internal sealed partial class MessageApp
         var listRect = new Rect(new Vector2(area.Min.X, searchRect.Max.Y), area.Max);
         using (var surface = AppSurface.BeginEdgeToEdge(listRect))
         {
+            var drawList = ImGui.GetWindowDrawList();
             contactsRefresh.Draw(listRect, surface.Pull, surface.Dragging, contacts.Loading, ui.MutedInk,
                 refreshContacts);
             var query = filter.Trim();

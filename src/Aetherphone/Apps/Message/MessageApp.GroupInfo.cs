@@ -92,7 +92,7 @@ internal sealed partial class MessageApp
     private void DrawGroupInfo(Rect area, string conversationId)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
+        var headerDrawList = ImGui.GetWindowDrawList();
         var conversation = store.Conversation;
         var valid = conversation is not null && conversation.IsGroup && conversation.Id == conversationId;
         var canManage = valid && ChatRoles.CanManage(store.MyRole);
@@ -102,7 +102,7 @@ internal sealed partial class MessageApp
             return;
         }
 
-        if (canManage && DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 0), PhoneIcons.Pencil,
+        if (canManage && DrawHeaderIcon(headerDrawList, SocialChrome.HeaderSlot(area, 0), PhoneIcons.Pencil,
                 Loc.T(L.Message.EditGroup)))
         {
             OpenEditGroup(conversation);
@@ -113,6 +113,7 @@ internal sealed partial class MessageApp
         var title = DirectMessagesStore.DisplayTitle(conversation);
         using (AppSurface.Begin(body))
         {
+            var drawList = ImGui.GetWindowDrawList();
             var width = ScrollLayout.StableContentWidth();
             var origin = ImGui.GetCursorScreenPos();
             var centerX = origin.X + width * 0.5f;
@@ -627,7 +628,7 @@ internal sealed partial class MessageApp
         var actionHeight = selectedCount > 0 ? ComposeActionHeight * scale : 0f;
         var listRect = new Rect(new Vector2(area.Min.X, searchRect.Max.Y),
             new Vector2(area.Max.X, area.Max.Y - actionHeight));
-        DrawPickList(drawList, listRect, composeRows);
+        DrawPickList(listRect, composeRows);
         if (selectedCount == 0)
         {
             return;

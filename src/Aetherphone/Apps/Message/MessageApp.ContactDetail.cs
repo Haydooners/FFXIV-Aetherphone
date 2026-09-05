@@ -42,7 +42,7 @@ internal sealed partial class MessageApp
     private void DrawContactDetail(Rect area, string userId)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
+        var headerDrawList = ImGui.GetWindowDrawList();
         var contact = contacts.Find(userId);
         DrawScreenHeader(area, string.Empty, contact is null ? 0 : 1);
         if (contact is null)
@@ -50,7 +50,7 @@ internal sealed partial class MessageApp
             return;
         }
 
-        if (DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 0), PhoneIcons.Pencil, Loc.T(L.Friends.EditName),
+        if (DrawHeaderIcon(headerDrawList, SocialChrome.HeaderSlot(area, 0), PhoneIcons.Pencil, Loc.T(L.Friends.EditName),
                 editingContactName))
         {
             editingContactName = !editingContactName;
@@ -75,6 +75,7 @@ internal sealed partial class MessageApp
         var body = new Rect(new Vector2(area.Min.X, top), area.Max);
         using (AppSurface.Begin(body))
         {
+            var drawList = ImGui.GetWindowDrawList();
             var width = ScrollLayout.StableContentWidth();
             var origin = ImGui.GetCursorScreenPos();
             var centerX = origin.X + width * 0.5f;

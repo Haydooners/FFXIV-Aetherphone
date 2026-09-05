@@ -36,9 +36,9 @@ internal sealed partial class MessageApp
     private void DrawSettingsTab(Rect area)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         using (AppSurface.BeginEdgeToEdge(area))
         {
+            var drawList = ImGui.GetWindowDrawList();
             if (session.IsSignedIn)
             {
                 DrawMyProfileRow(drawList);
@@ -101,11 +101,11 @@ internal sealed partial class MessageApp
     private void DrawChatTheme(Rect area)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         DrawScreenHeader(area, Loc.T(L.Message.ChatTheme));
         var top = area.Min.Y + AppHeader.Height * scale;
         using (AppSurface.Begin(new Rect(new Vector2(area.Min.X, top), area.Max)))
         {
+            var drawList = ImGui.GetWindowDrawList();
             var width = ScrollLayout.StableContentWidth();
             DrawHintParagraph(Loc.T(L.Message.ChatThemeHint), width);
             var previewOrigin = ImGui.GetCursorScreenPos();
@@ -218,7 +218,6 @@ internal sealed partial class MessageApp
     private void DrawWallpaper(Rect area, string conversationId)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         var frame = ImGui.GetFrameCount();
         if (frame - lastWallpaperFrame > ScreenResumeFrameGap)
         {
@@ -233,6 +232,7 @@ internal sealed partial class MessageApp
         var hasOverride = scoped && configuration.MessageChatWallpapers.ContainsKey(conversationId);
         using (AppSurface.Begin(new Rect(new Vector2(area.Min.X, top), area.Max)))
         {
+            var drawList = ImGui.GetWindowDrawList();
             var width = ScrollLayout.StableContentWidth();
             DrawHintParagraph(Loc.T(scoped ? L.Message.WallpaperChatOnly : L.Message.WallpaperHint), width);
             var previewOrigin = ImGui.GetCursorScreenPos();
