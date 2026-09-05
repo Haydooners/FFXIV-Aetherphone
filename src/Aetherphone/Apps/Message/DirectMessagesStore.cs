@@ -320,6 +320,11 @@ internal sealed class DirectMessagesStore : ChatThreadStoreBase<ChatMessageDto, 
             }
 
             ThreadListItems = ApplyLocalMute(ThreadListItems, id, muted);
+            if (conversation is { } current && current.Id == id)
+            {
+                conversation = current with { Muted = muted };
+            }
+
             return true;
         }, onComplete);
     }
