@@ -77,6 +77,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
     private readonly MusterLauncher musterLauncher;
     private readonly SocialNotificationService socialNotifications;
     private readonly EncryptionSetupLauncher encryptionSetup;
+    private readonly SettingsLauncher settingsLauncher;
     private readonly AppSkin ui = new(AppPalettes.Message);
     private readonly AvatarLightbox avatarLightbox = new();
     private readonly ViewRouter<MessageRoute> router;
@@ -110,12 +111,13 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         ReportService report,
         WallpaperImageCache wallpaperImages, MusterStore musters, MusterLauncher musterLauncher,
         SocialNotificationService socialNotifications, EncryptionSetupLauncher encryptionSetup,
-        EncryptionHelpService encryptionHelp)
+        EncryptionHelpService encryptionHelp, SettingsLauncher settingsLauncher)
     {
         this.translation = translation;
         this.socialNotifications = socialNotifications;
         this.musterLauncher = musterLauncher;
         this.encryptionSetup = encryptionSetup;
+        this.settingsLauncher = settingsLauncher;
         this.store = store;
         this.contacts = contacts;
         this.calls = calls;

@@ -1,4 +1,5 @@
 using Aetherphone.Core;
+using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
@@ -73,17 +74,20 @@ internal sealed partial class MessageApp
             DrawSectionLabel(Loc.T(L.Settings.General));
             if (DrawSettingRow(drawList, PhoneIcons.Bell, TintRed, Loc.T(L.Settings.Notifications)))
             {
+                settingsLauncher.Request(SettingsPageKind.Notifications);
                 navigation.Open("settings");
             }
 
             if (DrawSettingRow(drawList, PhoneIcons.Shield, TintAzure, Loc.T(L.Settings.Privacy)))
             {
+                settingsLauncher.Request(SettingsPageKind.Privacy);
                 navigation.Open("settings");
             }
 
             if (DrawSettingRow(drawList, PhoneIcons.Phone, TintGreen, Loc.T(L.Phone.SettingsTitle),
                     Loc.T(calls.Enabled ? L.Common.On : L.Common.Off)))
             {
+                settingsLauncher.Request(SettingsPageKind.Calls);
                 navigation.Open("settings");
             }
 
