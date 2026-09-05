@@ -540,6 +540,7 @@
   "message.groupSubtitle": "Grup · {0} üye",
   "message.photoFailed": "Grup fotoğrafı kaydedilemedi.",
   "message.saveFailed": "Değişiklikler kaydedilemedi.",
+  "message.addedToGroup": "Bu gruba eklendin",
   "message.opensSettings": "Bildirimler, gizlilik ve aramalar Ayarlar uygulamasından yönetilir.",
   "findPeople.character": "Karakter",
   "findPeople.freeCompany": "Free Company",

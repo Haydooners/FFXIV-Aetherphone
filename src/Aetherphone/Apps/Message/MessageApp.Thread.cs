@@ -205,7 +205,7 @@ internal sealed partial class MessageApp
                 OnEdit = BeginEdit,
                 OnInfo = id =>
                 {
-                    app.store.RefreshDetail();
+                    app.store.RefreshThreadDetail();
                     app.router.Push(MessageRoute.MessageInfo(id));
                 },
                 OnDelete = AskDeleteMessage,
@@ -320,6 +320,7 @@ internal sealed partial class MessageApp
 
             if (isGroup)
             {
+                app.store.RefreshThreadDetail();
                 app.router.Push(MessageRoute.GroupInfo(conversation.Id));
             }
             else if (app.contacts.Find(conversation.OtherUserId) is not null)
@@ -552,6 +553,7 @@ internal sealed partial class MessageApp
             case ThreadActInfo:
                 if (conversation is { IsGroup: true })
                 {
+                    store.RefreshThreadDetail();
                     router.Push(MessageRoute.GroupInfo(conversationId));
                 }
                 else if (conversation is not null)

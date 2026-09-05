@@ -540,6 +540,7 @@
   "message.groupSubtitle": "群组 · {0} 位成员",
   "message.photoFailed": "群头像保存失败。",
   "message.saveFailed": "更改保存失败。",
+  "message.addedToGroup": "你已被加入此群组",
   "message.opensSettings": "通知、隐私和通话在“设置”应用中管理。",
   "findPeople.character": "角色",
   "findPeople.freeCompany": "部队",

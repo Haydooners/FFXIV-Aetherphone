@@ -540,6 +540,7 @@
   "message.groupSubtitle": "Groupe · {0} membres",
   "message.photoFailed": "La photo du groupe n'a pas pu être enregistrée.",
   "message.saveFailed": "Les modifications n'ont pas pu être enregistrées.",
+  "message.addedToGroup": "Vous avez été ajouté à ce groupe",
   "message.opensSettings": "Les notifications, la confidentialité et les appels se gèrent dans l'app Réglages.",
   "findPeople.character": "Personnage",
   "findPeople.freeCompany": "Compagnie libre",

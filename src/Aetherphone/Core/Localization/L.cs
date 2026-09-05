@@ -707,6 +707,7 @@ internal static class L
         public static readonly LocString GroupSubtitle = new("message.groupSubtitle", "Group · {0} members");
         public static readonly LocString PhotoFailed = new("message.photoFailed", "The group photo could not be saved.");
         public static readonly LocString SaveFailed = new("message.saveFailed", "The changes could not be saved.");
+        public static readonly LocString AddedToGroup = new("message.addedToGroup", "You were added to this group");
         public static readonly LocString OpensSettings = new("message.opensSettings", "Notifications, privacy and calls are managed in the Settings app.");
     }
 

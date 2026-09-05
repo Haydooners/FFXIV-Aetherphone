@@ -282,6 +282,7 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
         else if (resumed)
         {
             store.RequestThreadRefresh(threadId);
+            store.RefreshThreadDetail();
             sinceThreadPoll = 0f;
         }
 

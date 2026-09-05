@@ -17,6 +17,8 @@ namespace Aetherphone.Apps.Message;
 
 internal sealed class DirectMessagesStore : ChatThreadStoreBase<ChatMessageDto, ConversationDto>
 {
+    private const int SystemMessageKind = 2;
+
     private readonly ChatClient client;
     private readonly PeerKeyDirectory peers;
     private readonly RealtimeSignalBus signals;
@@ -55,6 +57,11 @@ internal sealed class DirectMessagesStore : ChatThreadStoreBase<ChatMessageDto, 
         {
             ApplyPushedMessage(pushed);
             return;
+        }
+
+        if (signal.Message is null && signal.ConversationId is { } changed && ConversationId == changed)
+        {
+            RefreshThreadDetail();
         }
 
         RequestThreadKeyRefresh();
@@ -224,7 +231,7 @@ internal sealed class DirectMessagesStore : ChatThreadStoreBase<ChatMessageDto, 
         };
     }
 
-    protected override bool ShouldRevealForReport(ChatMessageDto message) => message.Kind != 2;
+    protected override bool ShouldRevealForReport(ChatMessageDto message) => message.Kind != SystemMessageKind;
 
     protected override string ThreadKeyOf(ConversationDto thread) => thread.Id;
 
@@ -237,6 +244,17 @@ internal sealed class DirectMessagesStore : ChatThreadStoreBase<ChatMessageDto, 
     protected override PhoneNotification BuildInboxNotification(ConversationDto thread)
     {
         return new PhoneNotification("message", DisplayTitle(thread), PreviewText(thread), DateTime.Now,
+            AppPalettes.Message.Accent, thread.Id);
+    }
+
+    protected override PhoneNotification? BuildArrivalNotification(ConversationDto thread)
+    {
+        if (!thread.IsGroup || thread.LastMessageKind != SystemMessageKind || thread.LastMessageSenderId == MyUserId)
+        {
+            return null;
+        }
+
+        return new PhoneNotification("message", DisplayTitle(thread), Loc.T(L.Message.AddedToGroup), DateTime.Now,
             AppPalettes.Message.Accent, thread.Id);
     }
 
@@ -276,25 +294,6 @@ internal sealed class DirectMessagesStore : ChatThreadStoreBase<ChatMessageDto, 
             conversation = detail.Conversation;
             members = detail.Members;
         }
-    }
-
-    public void RefreshDetail()
-    {
-        var current = ConversationId;
-        if (current is null)
-        {
-            return;
-        }
-
-        work.Run("thread detail", async token =>
-        {
-            var detail = await client.ConversationAsync(current, token).ConfigureAwait(false);
-            if (ConversationId == current && detail is not null)
-            {
-                conversation = detail.Conversation;
-                members = detail.Members;
-            }
-        });
     }
 
     public byte[]? DecryptMedia(ChatMessageDto message, byte[] sealedBytes)

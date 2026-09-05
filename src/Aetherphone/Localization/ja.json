@@ -540,6 +540,7 @@
   "message.groupSubtitle": "グループ · {0}人",
   "message.photoFailed": "グループの写真を保存できませんでした。",
   "message.saveFailed": "変更を保存できませんでした。",
+  "message.addedToGroup": "このグループに追加されました",
   "message.opensSettings": "通知、プライバシー、通話は設定アプリで管理します。",
   "findPeople.character": "キャラクター",
   "findPeople.freeCompany": "フリーカンパニー",

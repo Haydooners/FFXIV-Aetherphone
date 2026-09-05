@@ -540,6 +540,7 @@
   "message.groupSubtitle": "Grupo · {0} miembros",
   "message.photoFailed": "No se pudo guardar la foto del grupo.",
   "message.saveFailed": "No se pudieron guardar los cambios.",
+  "message.addedToGroup": "Te han añadido a este grupo",
   "message.opensSettings": "Las notificaciones, la privacidad y las llamadas se gestionan en la app Ajustes.",
   "findPeople.character": "Personaje",
   "findPeople.freeCompany": "Free Company",

@@ -62,7 +62,7 @@ internal sealed partial class MessageApp
         }
 
         sinceInfoPoll = 0f;
-        store.RefreshDetail();
+        store.RefreshThreadDetail();
         store.RefreshThread();
     }
 

@@ -540,6 +540,7 @@
   "message.groupSubtitle": "Группа · участников: {0}",
   "message.photoFailed": "Не удалось сохранить фото группы.",
   "message.saveFailed": "Не удалось сохранить изменения.",
+  "message.addedToGroup": "Вас добавили в эту группу",
   "message.opensSettings": "Уведомления, приватность и звонки настраиваются в приложении «Настройки».",
   "findPeople.character": "Персонаж",
   "findPeople.freeCompany": "Свободная компания",

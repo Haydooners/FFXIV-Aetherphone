@@ -445,7 +445,7 @@ internal sealed partial class MessageApp
                 {
                     if (ok)
                     {
-                        store.RefreshDetail();
+                        store.RefreshThreadDetail();
                     }
 
                     NoteGroupOutcome(ok);

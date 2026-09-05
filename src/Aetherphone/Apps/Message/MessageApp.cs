@@ -268,7 +268,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
                 router.Pop();
             }
 
-            store.RefreshDetail();
+            store.RefreshThreadDetail();
         }
 
         if (removePending)

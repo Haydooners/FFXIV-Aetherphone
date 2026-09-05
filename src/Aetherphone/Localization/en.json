@@ -540,6 +540,7 @@
   "message.groupSubtitle": "Group · {0} members",
   "message.photoFailed": "The group photo could not be saved.",
   "message.saveFailed": "The changes could not be saved.",
+  "message.addedToGroup": "You were added to this group",
   "message.opensSettings": "Notifications, privacy and calls are managed in the Settings app.",
   "findPeople.character": "Character",
   "findPeople.freeCompany": "Free Company",
