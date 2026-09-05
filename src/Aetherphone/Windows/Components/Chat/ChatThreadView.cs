@@ -159,7 +159,13 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
 
     protected virtual IChatTranscriptStoryReplies? StoryReplies => null;
 
+    protected virtual ChatBubbleStyle BubbleStyle => default;
+
     protected abstract void DrawHeader(Rect area, string threadId);
+
+    protected virtual void PaintTranscriptBackdrop(Rect listRect)
+    {
+    }
 
     protected virtual void OpenEncryptionInfo(string threadId)
     {
@@ -223,7 +229,11 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
 
     protected ReadOnlySpan<TranscriptMessage> TranscriptMessages => transcriptCache;
 
-    public void GateMenus() => menuController.Gate();
+    public void GateMenus()
+    {
+        menuController.Gate();
+        composer.Gate();
+    }
 
     public void PrefillDraft(string body) => pendingPrefill = body;
 
@@ -307,6 +317,7 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
         DrawVaultBanner(ref listRect, threadId);
         DrawSyncBanner(ref listRect);
         DrawAboveTranscript(ref listRect, threadId);
+        PaintTranscriptBackdrop(listRect);
         var model = new ChatTranscriptModel
         {
             ThreadId = threadId,
@@ -321,6 +332,7 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
             OtherTyping = store.OtherTyping,
             Loading = store.LoadingThread || store.ThreadOpenPending,
             IsGroup = IsGroupThread,
+            Bubbles = BubbleStyle,
             Media = this,
             Interactions = this,
             Voice = this,
@@ -337,6 +349,7 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
         {
             Ui = ui,
             Style = composerStyle,
+            Screen = area,
             Hint = ComposerHint,
             ConversationId = threadId,
             MaxLength = MessageMax,
@@ -552,6 +565,17 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
         {
             SetConversationTranslated(scope, !translated);
         }
+    }
+
+    protected bool TranslationAvailable => translation.Enabled;
+
+    protected bool IsConversationTranslated(string threadId) =>
+        translation.Enabled && translation.IsConversationTranslated(ConversationScope(threadId));
+
+    protected void ToggleConversationTranslation(string threadId)
+    {
+        var scope = ConversationScope(threadId);
+        SetConversationTranslated(scope, !translation.IsConversationTranslated(scope));
     }
 
     private void SetConversationTranslated(string scope, bool translated)

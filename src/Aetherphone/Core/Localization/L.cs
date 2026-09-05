@@ -582,6 +582,10 @@ internal static class L
         public static readonly LocString SysRemoved = new("dm.sysRemoved", "{0} removed {1}");
         public static readonly LocString SysLeft = new("dm.sysLeft", "{0} left");
         public static readonly LocString SysRenamed = new("dm.sysRenamed", "{0} renamed the chat to {1}");
+        public static readonly LocString SysPromoted = new("dm.sysPromoted", "{0} made {1} a group admin");
+        public static readonly LocString SysDemoted = new("dm.sysDemoted", "{0} removed {1} as a group admin");
+        public static readonly LocString SysPhoto = new("dm.sysPhoto", "{0} changed the group photo");
+        public static readonly LocString SysDescription = new("dm.sysDescription", "{0} changed the group description");
         public static readonly LocString LocationPreview = new("dm.locationPreview", "Location");
         public static readonly LocString LocationShared = new("dm.locationShared", "Shared location");
         public static readonly LocString LocationOpenMap = new("dm.locationOpenMap", "Open map");
@@ -598,7 +602,6 @@ internal static class L
         public static readonly LocString Archive = new("message.archive", "Archive");
         public static readonly LocString Unarchive = new("message.unarchive", "Unarchive");
         public static readonly LocString NoArchived = new("message.noArchived", "No archived chats");
-        public static readonly LocString FilterDirect = new("message.filterDirect", "Direct");
         public static readonly LocString FilterGroups = new("message.filterGroups", "Groups");
         public static readonly LocString Favorites = new("message.favorites", "Favorites");
         public static readonly LocString AddFavorite = new("message.addFavorite", "Add to favorites");
@@ -654,6 +657,57 @@ internal static class L
         public static readonly LocString DraftPrefix = new("message.draftPrefix", "Draft:");
         public static readonly LocString PresenceOnline = new("message.presenceOnline", "online");
         public static readonly LocString PresenceLastSeen = new("message.presenceLastSeen", "last seen {0}");
+        public static readonly LocString Attach = new("message.attach", "Attach");
+        public static readonly LocString FilterUnread = new("message.filterUnread", "Unread");
+        public static readonly LocString NewChat = new("message.newChat", "New chat");
+        public static readonly LocString NewGroup = new("message.newGroup", "New group");
+        public static readonly LocString NewContact = new("message.newContact", "New contact");
+        public static readonly LocString ContactInfo = new("message.contactInfo", "Contact info");
+        public static readonly LocString GroupInfo = new("message.groupInfo", "Group info");
+        public static readonly LocString Wallpaper = new("message.wallpaper", "Wallpaper");
+        public static readonly LocString ChatTheme = new("message.chatTheme", "Chat theme");
+        public static readonly LocString ChatThemeHint = new("message.chatThemeHint", "The color of your messages, buttons and badges in ChocoChat.");
+        public static readonly LocString WallpaperHint = new("message.wallpaperHint", "The backdrop behind your chats. Pick a color, add the pattern, or use one of your photos.");
+        public static readonly LocString WallpaperChatOnly = new("message.wallpaperChatOnly", "This choice applies to this chat only.");
+        public static readonly LocString WallpaperUseDefault = new("message.wallpaperUseDefault", "Use default wallpaper");
+        public static readonly LocString WallpaperDefault = new("message.wallpaperDefault", "Default");
+        public static readonly LocString WallpaperColors = new("message.wallpaperColors", "Colors");
+        public static readonly LocString WallpaperPhotos = new("message.wallpaperPhotos", "My photos");
+        public static readonly LocString WallpaperPattern = new("message.wallpaperPattern", "Show pattern");
+        public static readonly LocString ThemeChocobo = new("message.themeChocobo", "Chocobo");
+        public static readonly LocString ThemeEmerald = new("message.themeEmerald", "Emerald");
+        public static readonly LocString ThemeOcean = new("message.themeOcean", "Ocean");
+        public static readonly LocString ThemeLavender = new("message.themeLavender", "Lavender");
+        public static readonly LocString ThemeRose = new("message.themeRose", "Rose");
+        public static readonly LocString ThemeSunset = new("message.themeSunset", "Sunset");
+        public static readonly LocString ThemeSky = new("message.themeSky", "Sky");
+        public static readonly LocString ThemeSlate = new("message.themeSlate", "Slate");
+        public static readonly LocString PreviewIncoming = new("message.previewIncoming", "Are you around for the raid tonight?");
+        public static readonly LocString PreviewOutgoing = new("message.previewOutgoing", "On my way, see you at the plaza!");
+        public static readonly LocString Recent = new("message.recent", "Recent");
+        public static readonly LocString SelectedCount = new("message.selectedCount", "{0} selected");
+        public static readonly LocString Admin = new("message.admin", "Admin");
+        public static readonly LocString MakeAdmin = new("message.makeAdmin", "Make group admin");
+        public static readonly LocString DismissAdmin = new("message.dismissAdmin", "Dismiss as admin");
+        public static readonly LocString RemoveFromGroup = new("message.removeFromGroup", "Remove from group");
+        public static readonly LocString ViewContact = new("message.viewContact", "View contact");
+        public static readonly LocString ExitGroup = new("message.exitGroup", "Exit group");
+        public static readonly LocString EditGroup = new("message.editGroup", "Edit group");
+        public static readonly LocString GroupDescription = new("message.groupDescription", "Group description");
+        public static readonly LocString AddDescription = new("message.addDescription", "Add a group description");
+        public static readonly LocString GroupPhoto = new("message.groupPhoto", "Group photo");
+        public static readonly LocString RemovePhoto = new("message.removePhoto", "Remove photo");
+        public static readonly LocString MuteNotifications = new("message.muteNotifications", "Mute notifications");
+        public static readonly LocString RemoveContact = new("message.removeContact", "Remove contact");
+        public static readonly LocString FavoriteLabel = new("message.favoriteLabel", "Favorite");
+        public static readonly LocString FavoritedLabel = new("message.favoritedLabel", "Favorited");
+        public static readonly LocString GroupMembersHint = new("message.groupMembersHint", "Admins can rename the group, change its photo and manage members.");
+        public static readonly LocString ProfileHint = new("message.profileHint", "Tap to copy your number");
+        public static readonly LocString MoreOptions = new("message.moreOptions", "More options");
+        public static readonly LocString GroupSubtitle = new("message.groupSubtitle", "Group · {0} members");
+        public static readonly LocString PhotoFailed = new("message.photoFailed", "The group photo could not be saved.");
+        public static readonly LocString SaveFailed = new("message.saveFailed", "The changes could not be saved.");
+        public static readonly LocString OpensSettings = new("message.opensSettings", "Notifications, privacy and calls are managed in the Settings app.");
     }
 
     internal static class FindPeople
@@ -4089,7 +4143,6 @@ internal static class L
             "This deletes the conversation for you. This can't be undone.");
         public static readonly LocString Disconnect = new("velvet.disconnect", "Disconnect");
         public static readonly LocString DisconnectConfirmMessage = new("velvet.disconnectConfirmMessage", "Remove this connection?");
-        public static readonly LocString PeopleToMeet = new("velvet.peopleToMeet", "People to meet");
         public static readonly LocString RelNotSaying = new("velvet.relNotSaying", "Rather not say");
         public static readonly LocString RelSingle = new("velvet.relSingle", "Single");
         public static readonly LocString RelTaken = new("velvet.relTaken", "Taken");
@@ -4169,6 +4222,23 @@ internal static class L
             new("velvet.filterPickHint",
                 "Tick a row to see only those, cross it out to never see it. Leave a row alone to see everything.");
         public static readonly LocString FilterShowResults = new("velvet.filterShowResults", "Show results");
+        public static readonly LocString FitTitle = new("velvet.fitTitle", "You two");
+        public static readonly LocString FitBoth = new("velvet.fitBoth", "Both {0}");
+        public static readonly LocString FitBothHereFor = new("velvet.fitBothHereFor", "Both here for {0}");
+        public static readonly LocString FitConflict = new("velvet.fitConflict", "Limit conflict: {0}");
+        public static readonly LocString FitNoConflicts = new("velvet.fitNoConflicts", "No limit conflicts");
+        public static readonly LocString DeckPass = new("velvet.deckPass", "Pass");
+        public static readonly LocString DeckSay = new("velvet.deckSay", "Say something");
+        public static readonly LocString DeckUndo = new("velvet.deckUndo", "Undo");
+        public static readonly LocString DeckEndTitle = new("velvet.deckEndTitle", "You have met everyone");
+        public static readonly LocString DeckEndHint =
+            new("velvet.deckEndHint", "Widen your filters or check again later. New people arrive every day.");
+        public static readonly LocString DeckWidenRegion = new("velvet.deckWidenRegion", "Widen region");
+        public static readonly LocString DeckCheckAgain = new("velvet.deckCheckAgain", "Check again");
+        public static readonly LocString SearchNone = new("velvet.searchNone", "No one matches");
+        public static readonly LocString SearchNoneHint = new("velvet.searchNoneHint", "Try a different name or tag.");
+        public static readonly LocPlural FitSharedKinks =
+            new("velvet.fitSharedKinks", "{0} shared kink", "{0} shared kinks");
         public static readonly LocString CardRace = new("velvet.cardRace", "Race");
         public static readonly LocString FiltersTitle = new("velvet.filtersTitle", "Filters");
         public static readonly LocString PostTagsTitle = new("velvet.postTagsTitle", "Tags");
@@ -4181,8 +4251,6 @@ internal static class L
         public static readonly LocString FeedNoneHint = new("velvet.feedNoneHint", "Be the first to post.");
         public static readonly LocString FeedNoneFiltered =
             new("velvet.feedNoneFiltered", "Your filters are hiding everything here.");
-        public static readonly LocString FeedScopeAll = new("velvet.feedScopeAll", "Everyone");
-        public static readonly LocString FeedScopeConnections = new("velvet.feedScopeConnections", "Connections");
         public static readonly LocString AudienceConnections = new("velvet.audienceConnections", "Connections only");
         public static readonly LocString AudiencePublic = new("velvet.audiencePublic", "Everyone on Velvet");
         public static readonly LocString MakePublic = new("velvet.makePublic", "Share with everyone");
@@ -7308,6 +7376,7 @@ internal static class L
         public static readonly LocString ChatNotMutualContact = new("failure.chatNotMutualContact", "You both need to add each other as contacts first.");
         public static readonly LocString ChatBlocked = new("failure.chatBlocked", "You can't message this person.");
         public static readonly LocString ChatNotOwner = new("failure.chatNotOwner", "Only the group owner can do that.");
+        public static readonly LocString ChatNotAdmin = new("failure.chatNotAdmin", "Only group admins can do that.");
         public static readonly LocString ChatGroupFull = new("failure.chatGroupFull", "This group is full at {0} people.");
         public static readonly LocString ChatHistoryOrphaned = new("failure.chatHistoryOrphaned", "Older messages can't be opened after a key reset.");
         public static readonly LocString ChatStoryUnavailable = new("failure.chatStoryUnavailable", "That story is no longer available.");

@@ -11,7 +11,6 @@ using Aetherphone.Core.Translation;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Textures.TextureWraps;
-using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Windows.Components;
 
@@ -167,6 +166,29 @@ internal interface IChatTranscriptTranslation
     void Activate(string messageId, string body);
 }
 
+internal readonly struct ChatBubbleStyle
+{
+    public readonly Vector4 OutgoingFill;
+    public readonly Vector4 OutgoingInk;
+    public readonly Vector4 IncomingFill;
+    public readonly Vector4 IncomingInk;
+    public readonly float Rounding;
+    public readonly bool Tails;
+
+    public ChatBubbleStyle(Vector4 outgoingFill, Vector4 outgoingInk, Vector4 incomingFill, Vector4 incomingInk,
+        float rounding, bool tails)
+    {
+        OutgoingFill = outgoingFill;
+        OutgoingInk = outgoingInk;
+        IncomingFill = incomingFill;
+        IncomingInk = incomingInk;
+        Rounding = rounding;
+        Tails = tails;
+    }
+
+    public bool IsSet => Rounding > 0f;
+}
+
 internal readonly ref struct ChatTranscriptModel
 {
     public required string ThreadId { get; init; }
@@ -182,6 +204,7 @@ internal readonly ref struct ChatTranscriptModel
     public bool Loading { get; init; }
     public bool IsGroup { get; init; }
     public bool LabelsOwnMessages { get; init; }
+    public ChatBubbleStyle Bubbles { get; init; }
     public IChatTranscriptMedia? Media { get; init; }
     public IChatTranscriptInteractions? Interactions { get; init; }
     public IChatTranscriptVoice? Voice { get; init; }
@@ -202,7 +225,10 @@ internal sealed class ChatTranscript
     private const int KindStoryReply = 5;
     private const int KindLocation = ChatText.LocationKind;
     private const float StampTextScale = 0.70f;
-    private const float StampTickScale = 0.58f;
+    private const float StampTickBox = 14f;
+    private const float StampTickGap = 3f;
+    private const float DefaultRounding = 14f;
+    private const float TailSize = 7f;
     private const float BubbleGap = 3f;
     private const float QuoteSenderScale = 0.75f;
     private const float QuotePreviewScale = 0.80f;
@@ -224,6 +250,7 @@ internal sealed class ChatTranscript
     private static readonly Vector4 ReactionCountInk = new(0.94f, 0.94f, 0.97f, 1f);
     private static readonly TextStyle ReactionCountStyle = TextStyles.FootnoteEmphasized;
     private static readonly Vector4 SeenTickColor = new(0.45f, 0.83f, 1f, 1f);
+    private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
 
     private const float FlashSeconds = 1.6f;
     private const float LoadOlderThreshold = 48f;
@@ -245,6 +272,7 @@ internal sealed class ChatTranscript
     private int scrollRequestFrame;
     private string? flashMessageId;
     private float flashElapsed;
+    private bool tailPending;
 
     public void RequestSnapToBottom() => snapToBottom = true;
 
@@ -319,6 +347,7 @@ internal sealed class ChatTranscript
                     continue;
                 }
 
+                tailPending = model.Bubbles.Tails && !grouped;
                 var ownMessage = message.SenderId == model.MyUserId;
                 if (!grouped && message.SenderName.Length > 0 &&
                     (ownMessage ? model.LabelsOwnMessages : model.IsGroup))
@@ -617,19 +646,17 @@ internal sealed class ChatTranscript
         var scaledMin = fx.Apply(bubbleMin);
         var scaledMax = fx.Apply(bubbleMax);
         var placeholder = (message.Flags & TranscriptFlags.Placeholder) != 0;
-        var fill = mine ? model.Accent : ChatInk.IncomingBubble(model.Theme);
-        var ink = message.BodyInk.W > 0f
-            ? message.BodyInk
-            : mine ? new Vector4(1f, 1f, 1f, 1f) : model.Theme.TextStrong;
+        var fill = BubbleFill(mine, model);
+        var ink = message.BodyInk.W > 0f ? message.BodyInk : BubbleInk(mine, model);
         if (placeholder || deleted)
         {
             fill = Palette.WithAlpha(fill, fill.W * 0.55f);
             ink = model.MutedInk;
         }
 
-        Squircle.Fill(drawList, scaledMin, scaledMax, 14f * scale * fx.Pop,
+        FillBubble(drawList, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine,
             ImGui.GetColorU32(Palette.WithAlpha(fill, fill.W * fx.Alpha)));
-        DrawFlash(drawList, message.Id, scaledMin, scaledMax, 14f * scale * fx.Pop, mine, model);
+        DrawFlash(drawList, message.Id, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine, model);
         var contentTop = bubbleMin.Y + paddingY;
         if (forwardBlock > 0f)
         {
@@ -775,8 +802,8 @@ internal sealed class ChatTranscript
         var fx = BubblePop.For(entrance, scale, new Vector2(mine ? bubbleMax.X : bubbleMin.X, bubbleMax.Y));
         var scaledMin = fx.Apply(bubbleMin);
         var scaledMax = fx.Apply(bubbleMax);
-        var fill = mine ? model.Accent : ChatInk.IncomingBubble(model.Theme);
-        var ink = mine ? new Vector4(1f, 1f, 1f, 1f) : model.Theme.TextStrong;
+        var fill = BubbleFill(mine, model);
+        var ink = BubbleInk(mine, model);
         var mutedInk = mine ? new Vector4(1f, 1f, 1f, 0.78f) : Palette.WithAlpha(model.MutedInk, 0.95f);
         if (!card.Available)
         {
@@ -784,9 +811,9 @@ internal sealed class ChatTranscript
             ink = model.MutedInk;
         }
 
-        Squircle.Fill(drawList, scaledMin, scaledMax, 14f * scale * fx.Pop,
+        FillBubble(drawList, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine,
             ImGui.GetColorU32(Palette.WithAlpha(fill, fill.W * fx.Alpha)));
-        DrawFlash(drawList, message.Id, scaledMin, scaledMax, 14f * scale * fx.Pop, mine, model);
+        DrawFlash(drawList, message.Id, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine, model);
         var contentTop = bubbleMin.Y + paddingY;
         if (card.Available)
         {
@@ -940,8 +967,8 @@ internal sealed class ChatTranscript
         var fx = BubblePop.For(entrance, scale, new Vector2(mine ? bubbleMax.X : bubbleMin.X, bubbleMax.Y));
         var scaledMin = fx.Apply(bubbleMin);
         var scaledMax = fx.Apply(bubbleMax);
-        var fill = mine ? model.Accent : ChatInk.IncomingBubble(model.Theme);
-        var ink = mine ? new Vector4(1f, 1f, 1f, 1f) : model.Theme.TextStrong;
+        var fill = BubbleFill(mine, model);
+        var ink = BubbleInk(mine, model);
         var mutedInk = mine ? new Vector4(1f, 1f, 1f, 0.78f) : Palette.WithAlpha(model.MutedInk, 0.95f);
         var accentInk = mine ? new Vector4(1f, 1f, 1f, 0.88f) : model.Accent;
         if (placeholder)
@@ -950,9 +977,9 @@ internal sealed class ChatTranscript
             ink = model.MutedInk;
         }
 
-        Squircle.Fill(drawList, scaledMin, scaledMax, 14f * scale * fx.Pop,
+        FillBubble(drawList, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine,
             ImGui.GetColorU32(Palette.WithAlpha(fill, fill.W * fx.Alpha)));
-        DrawFlash(drawList, message.Id, scaledMin, scaledMax, 14f * scale * fx.Pop, mine, model);
+        DrawFlash(drawList, message.Id, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine, model);
         var contentTop = bubbleMin.Y + paddingY;
         if (forwardBlock > 0f)
         {
@@ -1140,8 +1167,8 @@ internal sealed class ChatTranscript
         var fx = BubblePop.For(entrance, scale, new Vector2(mine ? bubbleMax.X : bubbleMin.X, bubbleMax.Y));
         var scaledMin = fx.Apply(bubbleMin);
         var scaledMax = fx.Apply(bubbleMax);
-        var fill = mine ? model.Accent : ChatInk.IncomingBubble(model.Theme);
-        var ink = mine ? new Vector4(1f, 1f, 1f, 1f) : model.Theme.TextStrong;
+        var fill = BubbleFill(mine, model);
+        var ink = BubbleInk(mine, model);
         var mutedInk = mine ? new Vector4(1f, 1f, 1f, 0.78f) : Palette.WithAlpha(model.MutedInk, 0.95f);
         var accentInk = mine ? new Vector4(1f, 1f, 1f, 0.88f) : model.Accent;
         if (placeholder)
@@ -1150,9 +1177,9 @@ internal sealed class ChatTranscript
             ink = model.MutedInk;
         }
 
-        Squircle.Fill(drawList, scaledMin, scaledMax, 14f * scale * fx.Pop,
+        FillBubble(drawList, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine,
             ImGui.GetColorU32(Palette.WithAlpha(fill, fill.W * fx.Alpha)));
-        DrawFlash(drawList, message.Id, scaledMin, scaledMax, 14f * scale * fx.Pop, mine, model);
+        DrawFlash(drawList, message.Id, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine, model);
         var contentTop = bubbleMin.Y + paddingY;
         if (forwardBlock > 0f)
         {
@@ -1292,8 +1319,8 @@ internal sealed class ChatTranscript
         var fx = BubblePop.For(entrance, scale, new Vector2(mine ? bubbleMax.X : bubbleMin.X, bubbleMax.Y));
         var scaledMin = fx.Apply(bubbleMin);
         var scaledMax = fx.Apply(bubbleMax);
-        var fill = mine ? model.Accent : ChatInk.IncomingBubble(model.Theme);
-        var ink = mine ? new Vector4(1f, 1f, 1f, 1f) : model.Theme.TextStrong;
+        var fill = BubbleFill(mine, model);
+        var ink = BubbleInk(mine, model);
         var mutedInk = mine ? new Vector4(1f, 1f, 1f, 0.78f) : Palette.WithAlpha(model.MutedInk, 0.95f);
         var accentInk = mine ? new Vector4(1f, 1f, 1f, 0.88f) : model.Accent;
         if (placeholder)
@@ -1302,9 +1329,9 @@ internal sealed class ChatTranscript
             ink = model.MutedInk;
         }
 
-        Squircle.Fill(drawList, scaledMin, scaledMax, 14f * scale * fx.Pop,
+        FillBubble(drawList, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine,
             ImGui.GetColorU32(Palette.WithAlpha(fill, fill.W * fx.Alpha)));
-        DrawFlash(drawList, message.Id, scaledMin, scaledMax, 14f * scale * fx.Pop, mine, model);
+        DrawFlash(drawList, message.Id, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine, model);
         var contentTop = bubbleMin.Y + paddingY;
         if (forwardBlock > 0f)
         {
@@ -1572,11 +1599,11 @@ internal sealed class ChatTranscript
         var fx = BubblePop.For(entrance, scale, new Vector2(mine ? bubbleMax.X : bubbleMin.X, bubbleMax.Y));
         var scaledMin = fx.Apply(bubbleMin);
         var scaledMax = fx.Apply(bubbleMax);
-        var fill = mine ? model.Accent : ChatInk.IncomingBubble(model.Theme);
-        var ink = mine ? new Vector4(1f, 1f, 1f, 1f) : model.Theme.TextStrong;
-        Squircle.Fill(drawList, scaledMin, scaledMax, 14f * scale * fx.Pop,
+        var fill = BubbleFill(mine, model);
+        var ink = BubbleInk(mine, model);
+        FillBubble(drawList, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine,
             ImGui.GetColorU32(Palette.WithAlpha(fill, fill.W * fx.Alpha)));
-        DrawFlash(drawList, message.Id, scaledMin, scaledMax, 14f * scale * fx.Pop, mine, model);
+        DrawFlash(drawList, message.Id, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine, model);
         var contentTop = bubbleMin.Y + paddingY;
         if (forwardBlock > 0f)
         {
@@ -1670,7 +1697,7 @@ internal sealed class ChatTranscript
         var bubbleHeight = imageHeight + padding * 2f + captionHeight + stampRowHeight + forwardBlock;
         var start = ImGui.GetCursorScreenPos();
         var offsetX = mine ? available - bubbleWidth : 0f;
-        var fill = mine ? model.Accent : ChatInk.IncomingBubble(model.Theme);
+        var fill = BubbleFill(mine, model);
         var entrance = entrances.Progress(index);
         var bubbleMin = start + new Vector2(offsetX, 0f);
         var bubbleMax = bubbleMin + new Vector2(bubbleWidth, bubbleHeight);
@@ -1678,7 +1705,7 @@ internal sealed class ChatTranscript
         var fx = BubblePop.For(entrance, scale, new Vector2(mine ? bubbleMax.X : bubbleMin.X, bubbleMax.Y));
         var scaledMin = fx.Apply(bubbleMin);
         var scaledMax = fx.Apply(bubbleMax);
-        Squircle.Fill(drawList, scaledMin, scaledMax, 14f * scale * fx.Pop,
+        FillBubble(drawList, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine,
             ImGui.GetColorU32(Palette.WithAlpha(fill, fill.W * fx.Alpha)));
         if (forwardBlock > 0f)
         {
@@ -1711,7 +1738,7 @@ internal sealed class ChatTranscript
             }
         }
 
-        DrawFlash(drawList, message.Id, scaledMin, scaledMax, 14f * scale * fx.Pop, mine, model);
+        DrawFlash(drawList, message.Id, scaledMin, scaledMax, Rounding(model) * fx.Pop, mine, model);
         if (entrance >= 1f && model.Interactions is { } interactions
             && Hovering(bubbleMin, bubbleMax)
             && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
@@ -1721,7 +1748,7 @@ internal sealed class ChatTranscript
 
         if (caption.Length > 0)
         {
-            var ink = mine ? new Vector4(1f, 1f, 1f, 1f) : model.Theme.TextStrong;
+            var ink = BubbleInk(mine, model);
             var captionTop = imageMax.Y + 4f * scale * fx.Pop;
             var captionMaxWidth = imageMax.X - imageMin.X;
             if (captionLayout is not null)
@@ -1901,6 +1928,51 @@ internal sealed class ChatTranscript
         }
     }
 
+    private static Vector4 BubbleFill(bool mine, in ChatTranscriptModel model)
+    {
+        if (model.Bubbles.IsSet)
+        {
+            return mine ? model.Bubbles.OutgoingFill : model.Bubbles.IncomingFill;
+        }
+
+        return mine ? model.Accent : ChatInk.IncomingBubble(model.Theme);
+    }
+
+    private static Vector4 BubbleInk(bool mine, in ChatTranscriptModel model)
+    {
+        if (model.Bubbles.IsSet)
+        {
+            return mine ? model.Bubbles.OutgoingInk : model.Bubbles.IncomingInk;
+        }
+
+        return mine ? White : model.Theme.TextStrong;
+    }
+
+    private static float Rounding(in ChatTranscriptModel model) =>
+        (model.Bubbles.IsSet ? model.Bubbles.Rounding : DefaultRounding) * UiScale.Current;
+
+    private void FillBubble(ImDrawListPtr drawList, Vector2 min, Vector2 max, float rounding, bool mine, uint color)
+    {
+        Squircle.Fill(drawList, min, max, rounding, color);
+        if (!tailPending)
+        {
+            return;
+        }
+
+        tailPending = false;
+        var tail = TailSize * UiScale.Current;
+        var reach = MathF.Min(rounding, (max.Y - min.Y) * 0.5f);
+        if (mine)
+        {
+            drawList.AddTriangleFilled(new Vector2(max.X - reach, min.Y), new Vector2(max.X + tail, min.Y),
+                new Vector2(max.X, min.Y + reach), color);
+            return;
+        }
+
+        drawList.AddTriangleFilled(new Vector2(min.X + reach, min.Y), new Vector2(min.X - tail, min.Y),
+            new Vector2(min.X, min.Y + reach), color);
+    }
+
     private static BubbleStamp MeasureStamp(TranscriptMessage message, bool mine, float scale)
     {
         var time = TimeText.Clock(message.CreatedAtUnix);
@@ -1921,14 +1993,10 @@ internal sealed class ChatTranscript
         }
 
         var seen = message.ReadAtUnix is not null;
-        var glyph = IconGlyph.Of((seen ? FontAwesomeIcon.CheckDouble : FontAwesomeIcon.Check));
-        float tickWidth;
-        using (ImRaii.PushFont(UiBuilder.IconFont))
-        {
-            tickWidth = ImGui.CalcTextSize(glyph).X * StampTickScale;
-        }
-
-        return new BubbleStamp(time, glyph, seen, timeSize.X + 4f * scale + tickWidth, timeSize.Y, tickWidth);
+        var glyph = seen ? PhoneIcons.Checks : PhoneIcons.Check;
+        var tickWidth = StampTickBox * scale;
+        return new BubbleStamp(time, glyph, seen, timeSize.X + StampTickGap * scale + tickWidth, timeSize.Y,
+            tickWidth);
     }
 
     private static void DrawStamp(ImDrawListPtr drawList, in BubbleStamp stamp, Vector2 bottomRight, in BubblePop fx,
@@ -1942,10 +2010,10 @@ internal sealed class ChatTranscript
             return;
         }
 
-        var tickCenter = new Vector2(bottomRight.X - stamp.TickWidth * 0.5f, bottomRight.Y - stamp.Height * 0.45f);
+        var tickCenter = new Vector2(bottomRight.X - stamp.TickWidth * 0.5f, bottomRight.Y - stamp.Height * 0.5f);
         var tickColor = stamp.Seen ? SeenTickColor : timeColor;
-        AppSkin.Icon(drawList, fx.Apply(tickCenter), stamp.TickGlyph,
-            Palette.WithAlpha(tickColor, tickColor.W * fx.Alpha), StampTickScale * fx.Pop);
+        PhoneIcon.Draw(drawList, fx.Apply(tickCenter), stamp.TickGlyph,
+            Palette.WithAlpha(tickColor, tickColor.W * fx.Alpha), stamp.TickWidth * fx.Pop);
     }
 
     private static string FirstName(string name)

@@ -3,20 +3,44 @@ using Aetherphone.Core.Message;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 using Aetherphone.Core.Social;
 
 namespace Aetherphone.Apps.Message;
 
 internal sealed partial class MessageApp
 {
+    private const byte ThreadActInfo = 0;
+    private const byte ThreadActSearch = 1;
+    private const byte ThreadActTranslate = 2;
+    private const byte ThreadActMute = 3;
+    private const byte ThreadActWallpaper = 4;
+    private const byte ThreadActEncryption = 5;
+    private const byte ThreadActStarred = 6;
+    private const byte ThreadActDelete = 7;
+    private const float ThreadHeaderAvatarRadius = 18f;
+    private const float ThreadHeaderAvatarGap = 6f;
+    private const float ThreadHeaderNameGap = 10f;
+    private const float BubbleRounding = 9f;
+
+    private static readonly TextStyle ThreadNameStyle = TextStyles.Headline;
+    private static readonly TextStyle ThreadSubStyle = new(0.76f, FontWeight.Regular);
+
+    private readonly ActionSheet threadSheet = new();
+    private readonly ActionSheet.Item[] threadSheetItems = new ActionSheet.Item[8];
+    private readonly byte[] threadSheetActions = new byte[8];
+    private int threadSheetCount;
+    private string threadSheetTitle = string.Empty;
+    private string? threadSheetConversationId;
 
     private sealed class ThreadView : ChatThreadView<ChatMessageDto, ConversationDto>
     {
         private readonly MessageApp app;
+        private ConversationMemberDto[] memberLineSource = Array.Empty<ConversationMemberDto>();
+        private string memberLine = string.Empty;
 
         public ThreadView(MessageApp app)
             : base(app.store, app.ui, app.images, app.lodestone, app.http, app.library, app.configuration,
@@ -40,6 +64,29 @@ internal sealed partial class MessageApp
         protected override string SaveLabel => Loc.T(L.Common.SaveToGallery);
         protected override string SavedLabel => Loc.T(L.Common.SavedToGallery);
         protected override bool IsGroupThread => app.store.Conversation?.IsGroup ?? false;
+        protected override ChatComposerStyle ComposerStyle => ChatComposerStyle.Plus;
+        protected override string ComposerHint => Loc.T(L.DirectMessages.StartChat);
+
+        protected override ChatBubbleStyle BubbleStyle => new(app.activeTheme.OutgoingBubble,
+            MessageThemes.OutgoingInk, MessageThemes.IncomingBubble, MessageThemes.IncomingInk, BubbleRounding, true);
+
+        public bool SearchOpen => searchController.Open;
+
+        public void ToggleSearch() => searchController.Toggle();
+
+        public bool CanTranslate => TranslationAvailable;
+
+        public bool TranslatingThread(string threadId) => IsConversationTranslated(threadId);
+
+        public void ToggleTranslation(string threadId) => ToggleConversationTranslation(threadId);
+
+        protected override void PaintTranscriptBackdrop(Rect listRect)
+        {
+            var conversationId = store.CurrentThreadId ?? string.Empty;
+            MessageWallpapers.Paint(ImGui.GetWindowDrawList(), listRect,
+                MessageWallpapers.Effective(configuration, conversationId), configuration.MessageWallpaperPattern,
+                app.wallpaperImages);
+        }
 
         protected override bool IsDeleted(ChatMessageDto message) => message.Deleted;
 
@@ -175,7 +222,7 @@ internal sealed partial class MessageApp
 
             var dismissUserId = conversation.OtherUserId;
             var text = Loc.T(L.Encryption.SafetyChanged, DirectMessagesStore.DisplayTitle(conversation));
-            ChatHeaderControls.DrawBanner(ui, ref listRect, text, AppPalettes.Message.MutedInk,
+            ChatHeaderControls.DrawBanner(ui, ref listRect, text, ui.MutedInk,
                 () => app.store.ClearRotationNotice(dismissUserId));
         }
 
@@ -183,110 +230,134 @@ internal sealed partial class MessageApp
         {
             var conversation = app.store.Conversation;
             var isGroup = conversation?.IsGroup ?? false;
-            var context = new PhoneContext(area, Theme, Navigation);
-            AppHeader.Draw(context, string.Empty, BackAction);
             var scale = UiScale.Current;
             var drawList = ImGui.GetWindowDrawList();
-            var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
-            ChatHeaderControls.DrawLock(ui, area, rowCenterY, store.EncryptingCurrent, store.VaultState,
-                () =>
-                {
-                    if (conversation is not null)
-                    {
-                        app.router.Push(MessageRoute.Encryption(conversation.Id));
-                    }
-                });
-            ChatHeaderControls.DrawSearchToggle(ui, area, rowCenterY, searchController.Open, searchController.Toggle);
-            DrawTranslateToggle(area, rowCenterY, threadId);
+            var header = app.PaintHeaderBand(area);
+            var rowCenterY = header.Center.Y;
+            var chipRadius = SocialChrome.BackChipRadius * scale;
+            var chipCenter = new Vector2(area.Min.X + 12f * scale + chipRadius, rowCenterY);
+            if (SocialChrome.DrawBackChip(drawList, chipCenter, chipRadius, app.ink))
+            {
+                BackAction();
+            }
+
+            var slots = 1;
+            var callable = !isGroup && conversation is not null && app.calls.Enabled
+                && app.contacts.Find(conversation.OtherUserId) is { IsMutual: true };
+            if (callable)
+            {
+                slots = 2;
+            }
+
+            if (app.DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 0), PhoneIcons.DotsVertical,
+                    Loc.T(L.Message.MoreOptions)) && conversation is not null)
+            {
+                app.OpenThreadSheet(conversation);
+            }
+
+            if (callable && app.DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 1), PhoneIcons.Phone,
+                    Loc.T(L.Friends.Call)) && conversation is not null
+                && app.contacts.Find(conversation.OtherUserId) is { } callTarget)
+            {
+                app.StartCall(callTarget);
+            }
+
+            var avatarRadius = ThreadHeaderAvatarRadius * scale;
+            var avatarCenter = new Vector2(chipCenter.X + chipRadius + ThreadHeaderAvatarGap * scale + avatarRadius,
+                rowCenterY);
             var name = conversation is null ? app.DisplayName : DirectMessagesStore.DisplayTitle(conversation);
-            var avatarRadius = 18f * scale;
-            var nameCap = MathF.Max(40f * scale, area.Width * 0.42f);
-            var nameSize = Typography.Measure(name, 1f, FontWeight.SemiBold);
-            nameSize.X = MathF.Min(nameSize.X, nameCap);
-            var gap = 9f * scale;
-            var groupWidth = avatarRadius * 2f + gap + nameSize.X;
-            var startX = MathF.Max(area.Center.X - groupWidth * 0.5f, area.Min.X + 48f * scale);
-            var avatarCenter = new Vector2(startX + avatarRadius, rowCenterY);
+            if (conversation is null)
+            {
+                app.DrawGroupAvatar(drawList, avatarCenter, avatarRadius, name, null);
+            }
+            else
+            {
+                app.DrawConversationAvatar(drawList, conversation, avatarCenter, avatarRadius);
+            }
+
+            var nameLeft = avatarCenter.X + avatarRadius + ThreadHeaderNameGap * scale;
+            var nameRight = area.Max.X - (CellPadX + SocialChrome.HeaderReserve(slots)) * scale;
+            var nameWidth = MathF.Max(1f, nameRight - nameLeft);
+            var subtitle = conversation is null
+                ? string.Empty
+                : isGroup ? GroupSubtitle(conversation) : app.PresenceText(conversation);
+            var subtitleInk = !isGroup && conversation is { Presence: 1 } ? app.ink.AccentLink : app.ink.MutedInk;
+            var titleId = "messageapp.thread.title." + (conversation?.Id ?? "self");
+            var nameHeight = Typography.LineHeight(ThreadNameStyle);
+            if (subtitle.Length == 0)
+            {
+                var soloTop = rowCenterY - nameHeight * 0.5f;
+                var soloHovering = UiInteract.Hover(new Vector2(nameLeft, soloTop),
+                    new Vector2(nameRight, soloTop + nameHeight));
+                Marquee.DrawLeft(drawList, titleId, name, nameLeft, soloTop, nameWidth, ThreadNameStyle,
+                    app.ink.TitleInk, soloHovering);
+            }
+            else
+            {
+                var subHeight = Typography.LineHeight(ThreadSubStyle);
+                var top = rowCenterY - (nameHeight + subHeight) * 0.5f;
+                var hovering = UiInteract.Hover(new Vector2(nameLeft, top), new Vector2(nameRight, top + nameHeight));
+                Marquee.DrawLeft(drawList, titleId, name, nameLeft, top, nameWidth, ThreadNameStyle, app.ink.TitleInk,
+                    hovering);
+                Typography.Draw(drawList, new Vector2(nameLeft, top + nameHeight),
+                    Typography.FitText(subtitle, nameWidth, ThreadSubStyle), subtitleInk, ThreadSubStyle);
+            }
+
+            if (conversation is null)
+            {
+                return;
+            }
+
+            var hitMin = new Vector2(avatarCenter.X - avatarRadius, header.Min.Y);
+            var hitMax = new Vector2(nameRight, header.Max.Y);
+            if (!UiInteract.HoverClick(hitMin, hitMax))
+            {
+                return;
+            }
+
             if (isGroup)
             {
-                drawList.AddCircleFilled(avatarCenter, avatarRadius,
-                    ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.85f)), 32);
-                AppSkin.Icon(avatarCenter, IconGlyph.Of(FontAwesomeIcon.Users), White, 0.8f);
+                app.router.Push(MessageRoute.GroupInfo(conversation.Id));
             }
-            else
+            else if (app.contacts.Find(conversation.OtherUserId) is not null)
             {
-                AvatarView.DrawRemote(drawList, avatarCenter, avatarRadius, Theme, name, string.Empty,
-                    conversation?.OtherAvatarUrl, images, lodestone, 0.9f, 32, 1f,
-                    Frames.Of(conversation?.FrameId));
+                app.router.Push(MessageRoute.Contact(conversation.OtherUserId));
+            }
+        }
+
+        private string GroupSubtitle(ConversationDto conversation)
+        {
+            var members = app.store.Members;
+            if (members.Length == 0)
+            {
+                return Loc.T(L.DirectMessages.MembersCount, conversation.MemberCount);
             }
 
-            var nameLeft = avatarCenter.X + avatarRadius + gap;
-            var maxNameRight = area.Max.X - ChatHeaderControls.ReservedRightWidth * scale;
-            nameCap = MathF.Max(1f, MathF.Min(nameCap, maxNameRight - nameLeft));
-            var titleId = "messageapp.thread.title." + (conversation?.Id ?? "self");
-            if (isGroup && conversation is not null)
+            if (ReferenceEquals(members, memberLineSource))
             {
-                var sub = Loc.T(L.DirectMessages.MembersCount, conversation.MemberCount);
-                var subSize = Typography.Measure(sub, 0.72f, FontWeight.Regular);
-                subSize.X = MathF.Min(subSize.X, nameCap);
-                var gapY = 1f * scale;
-                var stackTop = rowCenterY - (nameSize.Y + gapY + subSize.Y) * 0.5f;
-                var titleHovering = UiInteract.Hover(new Vector2(nameLeft, stackTop),
-                    new Vector2(nameLeft + nameCap, stackTop + nameSize.Y));
-                Marquee.DrawLeft(titleId, name, nameLeft, stackTop, nameCap, new TextStyle(1f, FontWeight.SemiBold),
-                    Theme.TextStrong, titleHovering);
-                var subTop = stackTop + nameSize.Y + gapY;
-                var subHovering = UiInteract.Hover(new Vector2(nameLeft, subTop),
-                    new Vector2(nameLeft + nameCap, subTop + subSize.Y));
-                Marquee.DrawLeft(new MarqueeId(titleId, ".sub"), sub, nameLeft, subTop, nameCap,
-                    new TextStyle(0.72f, FontWeight.Regular), AppPalettes.Message.MutedInk, subHovering);
-                var hitMin = new Vector2(avatarCenter.X - avatarRadius, area.Min.Y);
-                var hitMax = new Vector2(nameLeft + MathF.Max(nameSize.X, subSize.X),
-                    area.Min.Y + AppHeader.Height * scale);
-                if (UiInteract.HoverClick(hitMin, hitMax))
-                {
-                    app.router.Push(MessageRoute.GroupInfo(conversation.Id));
-                }
+                return memberLine;
             }
-            else
+
+            memberLineSource = members;
+            var builder = new System.Text.StringBuilder(64);
+            var myId = MyUserId;
+            for (var index = 0; index < members.Length; index++)
             {
-                var presence = app.PresenceText(conversation);
-                if (presence.Length > 0)
+                if (!members[index].IsActive)
                 {
-                    var subSize = Typography.Measure(presence, 0.72f, FontWeight.Regular);
-                    subSize.X = MathF.Min(subSize.X, nameCap);
-                    var gapY = 1f * scale;
-                    var stackTop = rowCenterY - (nameSize.Y + gapY + subSize.Y) * 0.5f;
-                    var titleHovering = UiInteract.Hover(new Vector2(nameLeft, stackTop),
-                        new Vector2(nameLeft + nameCap, stackTop + nameSize.Y));
-                    Marquee.DrawLeft(titleId, name, nameLeft, stackTop, nameCap,
-                        new TextStyle(1f, FontWeight.SemiBold), Theme.TextStrong, titleHovering);
-                    var subTop = stackTop + nameSize.Y + gapY;
-                    var subHovering = UiInteract.Hover(new Vector2(nameLeft, subTop),
-                        new Vector2(nameLeft + nameCap, subTop + subSize.Y));
-                    Marquee.DrawLeft(new MarqueeId(titleId, ".sub"), presence, nameLeft, subTop, nameCap,
-                        new TextStyle(0.72f, FontWeight.Regular),
-                        conversation!.Presence == 1 ? ui.Accent : AppPalettes.Message.MutedInk, subHovering);
-                }
-                else
-                {
-                    var soloTop = rowCenterY - nameSize.Y * 0.5f;
-                    var titleHovering = UiInteract.Hover(new Vector2(nameLeft, soloTop),
-                        new Vector2(nameLeft + nameCap, soloTop + nameSize.Y));
-                    Marquee.DrawLeft(titleId, name, nameLeft, soloTop, nameCap,
-                        new TextStyle(1f, FontWeight.SemiBold), Theme.TextStrong, titleHovering);
+                    continue;
                 }
 
-                if (conversation is not null && app.contacts.Find(conversation.OtherUserId) is not null)
+                if (builder.Length > 0)
                 {
-                    var hitMin = new Vector2(avatarCenter.X - avatarRadius, area.Min.Y);
-                    var hitMax = new Vector2(nameLeft + nameSize.X, area.Min.Y + AppHeader.Height * scale);
-                    if (UiInteract.HoverClick(hitMin, hitMax))
-                    {
-                        app.router.Push(MessageRoute.Contact(conversation.OtherUserId));
-                    }
+                    builder.Append(", ");
                 }
+
+                builder.Append(members[index].UserId == myId ? Loc.T(L.Message.You) : MemberLabel(members[index]));
             }
+
+            memberLine = builder.ToString();
+            return memberLine;
         }
 
         protected override TranscriptMessage[] MapTranscript(ChatMessageDto[] source)
@@ -393,8 +464,120 @@ internal sealed partial class MessageApp
                 "removed" => Loc.T(L.DirectMessages.SysRemoved, actor, argument),
                 "left" => Loc.T(L.DirectMessages.SysLeft, actor),
                 "renamed" => Loc.T(L.DirectMessages.SysRenamed, actor, argument),
+                "promoted" => Loc.T(L.DirectMessages.SysPromoted, actor, argument),
+                "demoted" => Loc.T(L.DirectMessages.SysDemoted, actor, argument),
+                "photo" => Loc.T(L.DirectMessages.SysPhoto, actor),
+                "description" => Loc.T(L.DirectMessages.SysDescription, actor),
                 _ => body,
             };
+        }
+    }
+
+    private Rect PaintHeaderBand(Rect area)
+    {
+        var scale = UiScale.Current;
+        var drawList = ImGui.GetWindowDrawList();
+        var band = new Rect(area.Min, new Vector2(area.Max.X, area.Min.Y + AppHeader.Height * scale));
+        drawList.AddRectFilled(band.Min, band.Max, ImGui.GetColorU32(MessageThemes.TopBar));
+        drawList.AddLine(new Vector2(band.Min.X, band.Max.Y), band.Max, ImGui.GetColorU32(ui.Hairline), 1f);
+        return band;
+    }
+
+    private void OpenThreadSheet(ConversationDto conversation)
+    {
+        threadSheetConversationId = conversation.Id;
+        threadSheetTitle = DirectMessagesStore.DisplayTitle(conversation);
+        var count = 0;
+        var isGroup = conversation.IsGroup;
+        if (isGroup || contacts.Find(conversation.OtherUserId) is not null)
+        {
+            threadSheetItems[count] = new ActionSheet.Item(Loc.T(isGroup ? L.Message.GroupInfo : L.Message.ContactInfo),
+                isGroup ? PhoneIcons.Users : PhoneIcons.UserCircle);
+            threadSheetActions[count++] = ThreadActInfo;
+        }
+
+        threadSheetItems[count] = new ActionSheet.Item(Loc.T(L.Common.Search), PhoneIcons.Search,
+            Selected: threadView.SearchOpen);
+        threadSheetActions[count++] = ThreadActSearch;
+        if (threadView.CanTranslate)
+        {
+            var translating = threadView.TranslatingThread(conversation.Id);
+            threadSheetItems[count] = new ActionSheet.Item(
+                Loc.T(translating ? L.Translate.ChatOn : L.Translate.ChatToggle), PhoneIcons.Language,
+                Selected: translating);
+            threadSheetActions[count++] = ThreadActTranslate;
+        }
+
+        threadSheetItems[count] = new ActionSheet.Item(
+            Loc.T(conversation.Muted ? L.Message.UnmuteAction : L.Message.MuteAction),
+            conversation.Muted ? PhoneIcons.Bell : PhoneIcons.BellOff);
+        threadSheetActions[count++] = ThreadActMute;
+        threadSheetItems[count] = new ActionSheet.Item(Loc.T(L.Message.Wallpaper), PhoneIcons.Wallpaper);
+        threadSheetActions[count++] = ThreadActWallpaper;
+        threadSheetItems[count] = new ActionSheet.Item(Loc.T(L.Encryption.InfoTitle),
+            store.EncryptingCurrent ? PhoneIcons.Lock : PhoneIcons.LockOpen);
+        threadSheetActions[count++] = ThreadActEncryption;
+        if (StarredCountIn(conversation.Id) > 0)
+        {
+            threadSheetItems[count] = new ActionSheet.Item(Loc.T(L.Message.StarredTitle), PhoneIcons.Star);
+            threadSheetActions[count++] = ThreadActStarred;
+        }
+
+        threadSheetItems[count] = new ActionSheet.Item(Loc.T(L.Message.DeleteConversation), PhoneIcons.Trash, true);
+        threadSheetActions[count++] = ThreadActDelete;
+        threadSheetCount = count;
+        threadSheet.Open();
+    }
+
+    private void DrawThreadSheet(Rect screen)
+    {
+        if (!threadSheet.CapturesPointer)
+        {
+            return;
+        }
+
+        var picked = threadSheet.Draw(screen, ActionSheetStyle.From(ui), threadSheetItems.AsSpan(0, threadSheetCount),
+            Loc.T(L.Common.Cancel), false, threadSheetTitle);
+        if (picked < 0 || threadSheetConversationId is not { } conversationId)
+        {
+            return;
+        }
+
+        var conversation = store.Conversation;
+        switch (threadSheetActions[picked])
+        {
+            case ThreadActInfo:
+                if (conversation is { IsGroup: true })
+                {
+                    router.Push(MessageRoute.GroupInfo(conversationId));
+                }
+                else if (conversation is not null)
+                {
+                    router.Push(MessageRoute.Contact(conversation.OtherUserId));
+                }
+
+                break;
+            case ThreadActSearch:
+                threadView.ToggleSearch();
+                break;
+            case ThreadActTranslate:
+                threadView.ToggleTranslation(conversationId);
+                break;
+            case ThreadActMute:
+                store.SetMuted(conversationId, !(conversation?.Muted ?? false), _ => { });
+                break;
+            case ThreadActWallpaper:
+                router.Push(MessageRoute.ChatWallpaper(conversationId));
+                break;
+            case ThreadActEncryption:
+                router.Push(MessageRoute.Encryption(conversationId));
+                break;
+            case ThreadActStarred:
+                router.Push(MessageRoute.StarredIn(conversationId));
+                break;
+            case ThreadActDelete:
+                AskDeleteConversation(conversationId);
+                break;
         }
     }
 
@@ -410,6 +593,21 @@ internal sealed partial class MessageApp
         }
 
         return false;
+    }
+
+    private int StarredCountIn(string conversationId)
+    {
+        var starred = configuration.MessageStarredMessages;
+        var count = 0;
+        for (var index = 0; index < starred.Count; index++)
+        {
+            if (starred[index].ConversationId == conversationId)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private void ToggleStar(string messageId)

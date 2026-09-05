@@ -8,7 +8,9 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Message;
 using Aetherphone.Core.Net;
 using Aetherphone.Core.Notifications;
+using Aetherphone.Core.Media;
 using Aetherphone.Core.Runtime;
+using Aetherphone.Core.Wallpapers;
 using Aetherphone.Windows.Components;
 
 namespace Aetherphone.Apps.Message;
@@ -493,25 +495,82 @@ internal sealed class DirectMessagesStore : ChatThreadStoreBase<ChatMessageDto, 
         }, onComplete);
     }
 
-    public void Rename(string id, string title, Action<bool> onComplete)
+    public void UpdateGroup(string id, UpdateConversationRequest request, Action<bool> onComplete)
     {
-        work.Run("rename", async token =>
+        work.Run("update group", async token =>
         {
-            var detail = await client.RenameConversationAsync(id, title, token).ConfigureAwait(false);
-            if (detail is null)
+            var detail = await client.UpdateConversationAsync(id, request, token).ConfigureAwait(false);
+            return AcceptDetail(id, detail);
+        }, onComplete);
+    }
+
+    public void SetGroupPhoto(string id, string sourcePath, WallpaperCrop crop, Action<bool> onComplete)
+    {
+        work.Run("group photo", async token =>
+        {
+            var baked = ImageProcessor.BakeSquareJpeg(sourcePath, crop, AvatarUpload.Size);
+            var upload = await media.UploadUrlAsync("image/jpeg", "avatar", token).ConfigureAwait(false);
+            if (upload is null)
             {
                 return false;
             }
 
-            if (ConversationId == id)
+            var uploaded = await media.UploadImageAsync(upload.UploadUrl, baked.Bytes, "image/jpeg", token)
+                .ConfigureAwait(false);
+            if (!uploaded)
             {
-                conversation = detail.Conversation;
-                members = detail.Members;
+                return false;
             }
 
-            InvalidateThreadList();
-            return true;
+            var detail = await client
+                .UpdateConversationAsync(id, new UpdateConversationRequest(AvatarUrl: upload.PublicUrl), token)
+                .ConfigureAwait(false);
+            return AcceptDetail(id, detail);
         }, onComplete);
+    }
+
+    public void SetMemberRole(string id, string userId, int role, Action<bool> onComplete)
+    {
+        work.Run("member role", async token =>
+        {
+            var detail = await client.SetMemberRoleAsync(id, userId, role, token).ConfigureAwait(false);
+            return AcceptDetail(id, detail);
+        }, onComplete);
+    }
+
+    private bool AcceptDetail(string id, ConversationDetailDto? detail)
+    {
+        if (detail is null)
+        {
+            return false;
+        }
+
+        if (ConversationId == id)
+        {
+            conversation = detail.Conversation;
+            members = detail.Members;
+        }
+
+        InvalidateThreadList();
+        return true;
+    }
+
+    public int MyRole
+    {
+        get
+        {
+            var snapshot = members;
+            var myId = MyUserId;
+            for (var index = 0; index < snapshot.Length; index++)
+            {
+                if (snapshot[index].UserId == myId)
+                {
+                    return snapshot[index].Role;
+                }
+            }
+
+            return ChatRoles.Member;
+        }
     }
 
     private ConversationDto? FindConversation(string id)

@@ -372,7 +372,8 @@ internal sealed record VelvetProfileDto(
     string[]? BadgeIds = null,
     string FrameId = "",
     string? IntroLang = null,
-    int Race = 0);
+    int Race = 0,
+    int Presence = 0);
 
 internal sealed record UpdateVelvetProfileRequest(
     string? Intro,
@@ -667,7 +668,8 @@ internal sealed record ConversationDto(
     string LastMessageSenderId = "",
     bool Muted = false,
     long? LastSeenAtUnix = null,
-    string FrameId = "") : IIdentified;
+    string FrameId = "",
+    string? Description = null) : IIdentified;
 
 internal sealed record ConversationMemberDto(
     string UserId,
@@ -752,7 +754,9 @@ internal sealed record SendChatMessageRequest(
 
 internal sealed record AddMembersRequest(string[] MemberIds);
 
-internal sealed record RenameConversationRequest(string Title);
+internal sealed record UpdateConversationRequest(string? Title = null, string? Description = null, string? AvatarUrl = null);
+
+internal sealed record SetMemberRoleRequest(int Role);
 
 internal sealed record ChatTypingDto(string[] TypingUserIds);
 
