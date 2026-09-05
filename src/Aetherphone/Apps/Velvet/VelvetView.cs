@@ -33,6 +33,8 @@ internal enum VelvetScreenId
     Reactions,
     RequestDetail,
     Filters,
+    Search,
+    CardPreview,
     PostTags,
     EditCaption,
     Encryption,
@@ -48,6 +50,8 @@ internal readonly record struct VelvetView(VelvetScreenId Screen, string? Arg = 
     public static readonly VelvetView Blocked = new(VelvetScreenId.Blocked);
     public static readonly VelvetView NotInterested = new(VelvetScreenId.NotInterested);
     public static readonly VelvetView Filters = new(VelvetScreenId.Filters);
+    public static readonly VelvetView Search = new(VelvetScreenId.Search);
+    public static readonly VelvetView CardPreview = new(VelvetScreenId.CardPreview);
     public static readonly VelvetView PostTags = new(VelvetScreenId.PostTags);
     public static readonly VelvetView Encryption = new(VelvetScreenId.Encryption);
 

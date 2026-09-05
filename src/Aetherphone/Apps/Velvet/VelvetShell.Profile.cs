@@ -110,6 +110,7 @@ internal sealed partial class VelvetShell
             Gap(14f);
             if (profileTab == VelvetProfileTab.Photos)
             {
+                DrawCardPhotoGrid(user, width);
                 DrawGallery(user, isMe, connected, width);
             }
             else
@@ -307,24 +308,7 @@ internal sealed partial class VelvetShell
         var pad = SocialChrome.CellPadX * scale;
         var innerWidth = MathF.Max(1f, width - pad * 2f);
         ImGui.Indent(pad);
-        if (user.Intro.Length > 0)
-        {
-            var introKey = new TranslationKey(TranslationSurface.Bio, user.UserId);
-            var introText = translation.View(introKey, user.Intro).Text;
-            var introOrigin = ImGui.GetCursorScreenPos();
-            var introHeight = Typography.DrawWrappedLeft(introOrigin, introText, VelvetTheme.BodyInk, TextStyles.Body,
-                innerWidth);
-            ImGui.Dummy(new Vector2(innerWidth, introHeight));
-            var introLinkHeight = TranslateLink.Height(translation, introKey, user.IntroLang, scale);
-            if (introLinkHeight > 0f)
-            {
-                TranslateLink.Draw(translation, confirm, introKey, user.IntroLang, user.Intro,
-                    new Vector2(introOrigin.X, introOrigin.Y + introHeight), innerWidth, VelvetTheme.MutedInk,
-                    VelvetTheme.RoseGlow, scale);
-                ImGui.Dummy(new Vector2(innerWidth, introLinkHeight));
-            }
-        }
-
+        DrawIntroBlock(user, innerWidth);
         DrawAboutSection(L.Velvet.CardGender, VelvetGender.Labels(user.Gender), VChipStyle.Tint, VelvetTheme.Rose,
             innerWidth);
         DrawAboutSection(L.Velvet.CardSexuality, VelvetSexuality.Labels(user.Sexuality), VChipStyle.Tint,
@@ -340,6 +324,32 @@ internal sealed partial class VelvetShell
         DrawAboutSection(L.Velvet.CardTags, user.Tags, VChipStyle.Tint, VelvetTheme.Rose, innerWidth);
         DrawAboutSection(L.Velvet.CardLimits, user.Limits, VChipStyle.Outline, VelvetTheme.Gold, innerWidth);
         ImGui.Unindent(pad);
+    }
+
+    private void DrawIntroBlock(VelvetProfileDto user, float innerWidth)
+    {
+        if (user.Intro.Length == 0)
+        {
+            return;
+        }
+
+        var scale = UiScale.Current;
+        var introKey = new TranslationKey(TranslationSurface.Bio, user.UserId);
+        var introText = translation.View(introKey, user.Intro).Text;
+        var introOrigin = ImGui.GetCursorScreenPos();
+        var introHeight = Typography.DrawWrappedLeft(introOrigin, introText, VelvetTheme.BodyInk, TextStyles.Body,
+            innerWidth);
+        ImGui.Dummy(new Vector2(innerWidth, introHeight));
+        var introLinkHeight = TranslateLink.Height(translation, introKey, user.IntroLang, scale);
+        if (introLinkHeight <= 0f)
+        {
+            return;
+        }
+
+        TranslateLink.Draw(translation, confirm, introKey, user.IntroLang, user.Intro,
+            new Vector2(introOrigin.X, introOrigin.Y + introHeight), innerWidth, VelvetTheme.MutedInk,
+            VelvetTheme.RoseGlow, scale);
+        ImGui.Dummy(new Vector2(innerWidth, introLinkHeight));
     }
 
     private void DrawAboutSection(LocString title, string[] tokens, VChipStyle style, Vector4 tone,
@@ -470,6 +480,38 @@ internal sealed partial class VelvetShell
                 TextStyles.Callout, width - 48f * scale);
             Gap(30f);
         }
+    }
+
+    private void DrawCardPhotoGrid(VelvetProfileDto user, float width)
+    {
+        var photos = CardPhotos(user);
+        if (photos.Length == 0)
+        {
+            return;
+        }
+
+        var scale = UiScale.Current;
+        var cellGap = ProfileGridGap * scale;
+        var cell = (width - cellGap * (ProfileColumns - 1)) / ProfileColumns;
+        var rows = (photos.Length + ProfileColumns - 1) / ProfileColumns;
+        var origin = ImGui.GetCursorScreenPos();
+        var drawList = ImGui.GetWindowDrawList();
+        for (var index = 0; index < photos.Length; index++)
+        {
+            var row = index / ProfileColumns;
+            var column = index % ProfileColumns;
+            var min = new Vector2(origin.X + column * (cell + cellGap), origin.Y + row * (cell + cellGap));
+            var max = new Vector2(min.X + cell, min.Y + cell);
+            DrawMedia(drawList, min, max, photos[index].Url, 0f);
+            if (UiInteract.Click(min, max))
+            {
+                OpenPhotoViewer(photos[index].Url);
+            }
+        }
+
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, rows * cell + (rows - 1) * cellGap));
+        Gap(ProfileGridGap);
     }
 
     private void DrawLockedGallery(string name, float width, int totalCount)

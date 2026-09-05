@@ -19,9 +19,11 @@ internal sealed class VelvetFilterSelection
     public readonly HashSet<string> Limits = new();
     public readonly HashSet<string> Tags = new();
 
-    public bool Any =>
-        Intent != 0 || Gender != 0 || Sexuality != 0 || Relationship != 0 || Race != 0 || RegionMask != 0
+    public bool AnyBesidesRegion =>
+        Intent != 0 || Gender != 0 || Sexuality != 0 || Relationship != 0 || Race != 0
         || Roles.Count > 0 || Kinks.Count > 0 || Limits.Count > 0 || Tags.Count > 0;
+
+    public bool Any => AnyBesidesRegion || RegionMask != 0;
 
     public void Clear()
     {

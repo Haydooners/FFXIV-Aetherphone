@@ -27,6 +27,7 @@ using Aetherphone.Windows;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Interface.Textures.TextureWraps;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -70,6 +71,8 @@ internal sealed partial class VelvetShell : IResumableApp
     private readonly PhotoCarousel carousel = new();
     private readonly PullToRefresh pullToRefresh = new();
     private readonly AvatarComposer avatar;
+    private readonly AvatarComposer cardPhotos;
+    private readonly Func<IDalamudTextureWrap?> viewerSource;
     private readonly VelvetPostComposer post;
     private string? pendingSharedPhoto;
     private readonly ViewRouter<VelvetView> router;
@@ -132,6 +135,11 @@ internal sealed partial class VelvetShell : IResumableApp
             new AvatarComposerLabels(L.Velvet.ChangePhoto, L.Velvet.ImportFromPc, L.Velvet.NoPhotos,
                 L.Velvet.MoveAndScale, L.Velvet.Use, L.Velvet.Saving, L.Velvet.GestureHint), library,
             wallpaperImages, confirm, () => store.AvatarFailure);
+        cardPhotos = new AvatarComposer(() => store.CardPhotoBusy, store.AddCardPhoto,
+            new AvatarComposerLabels(L.Velvet.AddPhoto, L.Velvet.ImportFromPc, L.Velvet.NoPhotos,
+                L.Velvet.MoveAndScale, L.Velvet.Use, L.Velvet.Saving, L.Velvet.GestureHint), library,
+            wallpaperImages, confirm, () => store.CardPhotoFailure, CardPhotoAspect);
+        viewerSource = () => images.Get(viewerUrl);
         post = new VelvetPostComposer(store, stories, library, images, lodestone, wallpaperImages, OpenPostTags);
         router = new ViewRouter<VelvetView>(VelvetView.Root);
         drawView = DrawView;
@@ -186,6 +194,7 @@ internal sealed partial class VelvetShell : IResumableApp
         profileTab = VelvetProfileTab.About;
         avatarLightbox.Reset();
         store.ClearDiscover();
+        ResetDeck();
         discoverInclude.Clear();
         feedInclude.Clear();
         RefreshAndConsumeLaunch();
@@ -233,6 +242,7 @@ internal sealed partial class VelvetShell : IResumableApp
         postSheet.Close();
         threadSheet.Close();
         profileMenu.Close();
+        photoSheet.Close();
         stories.Close();
     }
 
@@ -311,6 +321,7 @@ internal sealed partial class VelvetShell : IResumableApp
         DrawPostSheet(screen);
         DrawThreadSheet(screen);
         DrawProfileMenu(screen);
+        DrawPhotoSheet(screen);
     }
 
     public void Dispose()
@@ -431,6 +442,12 @@ internal sealed partial class VelvetShell : IResumableApp
             case VelvetScreenId.Filters:
                 DrawFilters(area);
                 break;
+            case VelvetScreenId.Search:
+                DrawSearch(area);
+                break;
+            case VelvetScreenId.CardPreview:
+                DrawCardPreview(area);
+                break;
             case VelvetScreenId.PostTags:
                 DrawPostTags(area);
                 break;
@@ -473,44 +490,7 @@ internal sealed partial class VelvetShell : IResumableApp
             activeTab = VelvetPage.Discover;
         }
 
-        if (activeTab == VelvetPage.Feed)
-        {
-            DrawHomeTopBar(headerRect, true);
-            bodyRect = DrawFeedScopeTabs(bodyRect);
-        }
-        else
-        {
-            var showProfileMenu = activeTab == VelvetPage.Me;
-            var showFilters = activeTab == VelvetPage.Discover;
-            var title = activeTab switch
-            {
-                VelvetPage.Messages => Loc.T(L.Velvet.Messages),
-                VelvetPage.Me => Loc.T(L.Velvet.TabMe),
-                _ => Loc.T(L.Velvet.TabDiscover),
-            };
-            UiAnchors.Report("velvet.activity", AnchorBox(VHeader.Slot(headerRect, 0), 18f * scale));
-            if (VHeader.Root(headerRect, title, social.UnseenCount(Id), showProfileMenu || showFilters ? 2 : 1))
-            {
-                activityFeed.Invalidate();
-                router.Push(VelvetView.Activity);
-            }
-
-            if (showFilters && VIcon.Button(VHeader.Slot(headerRect, 1), VHeader.IconRadius,
-                    PhoneIcons.AdjustmentsHorizontal, VIcon.Header,
-                    IncludeFor(VelvetPage.Discover).Any || mutes.Any ? VelvetTheme.RoseInk : VelvetTheme.MutedInk,
-                    Loc.T(L.Velvet.FiltersTitle), HoverLabelSide.Below))
-            {
-                OpenFilters(VelvetPage.Discover);
-            }
-
-            if (showProfileMenu && store.Me is { } profile && VIcon.Button(VHeader.Slot(headerRect, 1),
-                    VHeader.IconRadius, PhoneIcons.Dots, VIcon.Overflow, VelvetTheme.TitleInk, Loc.T(L.Velvet.More),
-                    HoverLabelSide.Below))
-            {
-                OpenProfileMenu(profile);
-            }
-        }
-
+        DrawRootTopBar(headerRect);
 
         switch (activeTab)
         {

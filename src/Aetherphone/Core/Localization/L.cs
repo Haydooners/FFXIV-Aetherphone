@@ -4222,6 +4222,16 @@ internal static class L
             new("velvet.filterPickHint",
                 "Tick a row to see only those, cross it out to never see it. Leave a row alone to see everything.");
         public static readonly LocString FilterShowResults = new("velvet.filterShowResults", "Show results");
+        public static readonly LocString PhotosSection = new("velvet.photosSection", "Your photos");
+        public static readonly LocString PhotosHint =
+            new("velvet.photosHint", "Your first photo is the cover people see on Discover. Tap a photo to make it the cover or remove it.");
+        public static readonly LocString MakeCover = new("velvet.makeCover", "Make it the cover");
+        public static readonly LocString RemovePhoto = new("velvet.removePhoto", "Remove photo");
+        public static readonly LocString PreviewCard = new("velvet.previewCard", "Preview my card");
+        public static readonly LocString CardPreviewTitle = new("velvet.cardPreviewTitle", "Your card");
+        public static readonly LocString CoverBadge = new("velvet.coverBadge", "Cover");
+        public static readonly LocString ObPhotoHint =
+            new("velvet.obPhotoHint", "This is your cover on Discover. Add at least one photo to be seen.");
         public static readonly LocString FitTitle = new("velvet.fitTitle", "You two");
         public static readonly LocString FitBoth = new("velvet.fitBoth", "Both {0}");
         public static readonly LocString FitBothHereFor = new("velvet.fitBothHereFor", "Both here for {0}");

@@ -88,19 +88,97 @@ internal sealed partial class VelvetStore
         }, () => loadingMoreDiscover = false);
     }
 
+    public void SearchPeople(string needle, VelvetDiscoverFilter filter)
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        var epoch = ++searchEpoch;
+        var trimmed = needle.Trim();
+        if (trimmed.Length == 0)
+        {
+            searchResults = Array.Empty<VelvetProfileDto>();
+            loadingSearch = false;
+            searchLoaded = false;
+            return;
+        }
+
+        loadingSearch = true;
+        work.Run("people search", async token =>
+        {
+            var page = await client.DiscoverAsync(filter, trimmed, string.Empty, null, token).ConfigureAwait(false);
+            if (page is not null && epoch == searchEpoch)
+            {
+                searchResults = page.Users;
+            }
+        }, () =>
+        {
+            if (epoch != searchEpoch)
+            {
+                return;
+            }
+
+            loadingSearch = false;
+            searchLoaded = true;
+        });
+    }
+
+    public void ClearSearch()
+    {
+        searchEpoch++;
+        searchResults = Array.Empty<VelvetProfileDto>();
+        loadingSearch = false;
+        searchLoaded = false;
+    }
+
+    public void RestoreToDiscover(VelvetProfileDto profile)
+    {
+        discoverResults = PrependDiscover(discoverResults, profile);
+        ForgetNotInterested(profile.UserId);
+    }
+
+    private static VelvetProfileDto[] PrependDiscover(VelvetProfileDto[] existing, VelvetProfileDto profile)
+    {
+        var merged = new VelvetProfileDto[existing.Length + 1];
+        merged[0] = profile;
+        var cursor = 1;
+        for (var index = 0; index < existing.Length; index++)
+        {
+            if (existing[index].UserId != profile.UserId)
+            {
+                merged[cursor] = existing[index];
+                cursor++;
+            }
+        }
+
+        if (cursor == merged.Length)
+        {
+            return merged;
+        }
+
+        var trimmed = new VelvetProfileDto[cursor];
+        Array.Copy(merged, trimmed, cursor);
+        return trimmed;
+    }
+
     private VelvetProfileDto[] WithoutNotInterested(VelvetProfileDto[] incoming)
     {
-        var notInterested = notInterestedFromDiscover;
-        if (notInterested.Length == 0)
+        var notInterested = notInterestedIds;
+        var passes = passedAt;
+        if (notInterested.Count == 0 && passes.Count == 0)
         {
             return incoming;
         }
 
+        var now = UnixNow();
         var kept = new VelvetProfileDto[incoming.Length];
         var count = 0;
         for (var index = 0; index < incoming.Length; index++)
         {
-            if (Array.IndexOf(notInterested, incoming[index].UserId) < 0)
+            var userId = incoming[index].UserId;
+            if (!notInterested.Contains(userId) && !PassActive(passes, userId, now))
             {
                 kept[count] = incoming[index];
                 count++;

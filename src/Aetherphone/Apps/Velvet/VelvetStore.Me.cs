@@ -112,6 +112,132 @@ internal sealed partial class VelvetStore
         }, onComplete, () => avatarBusy = false);
     }
 
+    public void AddCardPhoto(string sourcePath, WallpaperCrop crop, Action<bool> onComplete)
+    {
+        if (cardPhotoBusy)
+        {
+            return;
+        }
+
+        cardPhotoBusy = true;
+        work.Run("card photo add", async token =>
+        {
+            var baked = ImageProcessor.BakeCroppedJpeg(sourcePath, crop, CardPhotoWidth, CardPhotoHeight);
+            var upload = await media.UploadUrlAsync("image/jpeg", "velvet", token).ConfigureAwait(false);
+            if (upload is null)
+            {
+                cardPhotoFailure = AvatarUploadOutcome.Unreachable;
+                return false;
+            }
+
+            if (!await media.UploadImageAsync(upload.UploadUrl, baked.Bytes, "image/jpeg", token).ConfigureAwait(false))
+            {
+                cardPhotoFailure = AvatarUploadOutcome.Unreachable;
+                return false;
+            }
+
+            var status = 0;
+            var updated = await client.AddCardPhotoAsync(new AddVelvetCardPhotoRequest(upload.Key, CardPhotoWidth,
+                CardPhotoHeight), token, code => status = code).ConfigureAwait(false);
+            if (updated is null)
+            {
+                cardPhotoFailure = status is >= 400 and < 500
+                    ? AvatarUploadOutcome.Rejected
+                    : AvatarUploadOutcome.Unreachable;
+                return false;
+            }
+
+            me = updated;
+            return true;
+        }, onComplete, () => cardPhotoBusy = false);
+    }
+
+    public void RemoveCardPhoto(string photoId)
+    {
+        if (me is { Photos: { } photos } current)
+        {
+            me = current with { Photos = WithoutPhoto(photos, photoId) };
+        }
+
+        work.Run("card photo remove", async token =>
+        {
+            var updated = await client.RemoveCardPhotoAsync(photoId, token).ConfigureAwait(false);
+            if (updated is not null)
+            {
+                me = updated;
+            }
+        });
+    }
+
+    public void MakeCardPhotoCover(string photoId)
+    {
+        if (me is not { Photos: { Length: > 1 } photos } current)
+        {
+            return;
+        }
+
+        var order = CoverFirst(photos, photoId);
+        if (order is null)
+        {
+            return;
+        }
+
+        var reordered = new VelvetCardPhotoDto[order.Length];
+        for (var index = 0; index < order.Length; index++)
+        {
+            reordered[index] = Array.Find(photos, photo => photo.Id == order[index])!;
+        }
+
+        me = current with { Photos = reordered };
+        work.Run("card photo cover", async token =>
+        {
+            var updated = await client.ReorderCardPhotosAsync(order, token).ConfigureAwait(false);
+            if (updated is not null)
+            {
+                me = updated;
+            }
+        });
+    }
+
+    private static VelvetCardPhotoDto[] WithoutPhoto(VelvetCardPhotoDto[] photos, string photoId)
+    {
+        var kept = new List<VelvetCardPhotoDto>(photos.Length);
+        for (var index = 0; index < photos.Length; index++)
+        {
+            if (photos[index].Id != photoId)
+            {
+                kept.Add(photos[index]);
+            }
+        }
+
+        return kept.Count == photos.Length ? photos : kept.ToArray();
+    }
+
+    private static string[]? CoverFirst(VelvetCardPhotoDto[] photos, string photoId)
+    {
+        var order = new string[photos.Length];
+        var cursor = 1;
+        var found = false;
+        for (var index = 0; index < photos.Length; index++)
+        {
+            if (photos[index].Id == photoId)
+            {
+                order[0] = photoId;
+                found = true;
+                continue;
+            }
+
+            if (cursor < order.Length)
+            {
+                order[cursor] = photos[index].Id;
+            }
+
+            cursor++;
+        }
+
+        return found ? order : null;
+    }
+
     public void UpdateIdentity(string displayName, string handle, Action<bool> onComplete)
     {
         work.Run("identity update", async token =>

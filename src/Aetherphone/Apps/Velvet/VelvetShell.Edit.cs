@@ -27,6 +27,7 @@ internal sealed partial class VelvetShell
     private volatile bool editSaveSucceeded;
     private volatile bool editSaveFailed;
     private bool avatarEditing;
+    private bool photoEditing;
 
     private void BeginEditProfile()
     {
@@ -55,6 +56,7 @@ internal sealed partial class VelvetShell
         editSaveSucceeded = false;
         editSaveFailed = false;
         avatarEditing = false;
+        photoEditing = false;
     }
 
     private void DrawEditProfile(Rect area)
@@ -66,6 +68,17 @@ internal sealed partial class VelvetShell
             if (avatar.Draw(area, context, ui.Accent))
             {
                 avatarEditing = false;
+            }
+
+            return;
+        }
+
+        if (photoEditing)
+        {
+            var context = new PhoneContext(area, theme, navigation);
+            if (cardPhotos.Draw(area, context, ui.Accent))
+            {
+                photoEditing = false;
             }
 
             return;
@@ -113,6 +126,8 @@ internal sealed partial class VelvetShell
             }
 
             Gap(8f);
+            DrawEditPhotos();
+            Gap(18f);
             DrawEditAvatar();
             Gap(14f);
 
@@ -170,6 +185,170 @@ internal sealed partial class VelvetShell
 
             Gap(40f);
         }
+    }
+
+    private const int MaxCardPhotos = 6;
+    private const int CardPhotoColumns = 3;
+    private const float CardPhotoAspect = 0.8f;
+    private const float CardPhotoGap = 8f;
+    private const float CardPhotoRounding = 12f;
+    private const float CardPhotoBadgeHeight = 20f;
+    private const float CardPhotoBadgePad = 8f;
+    private const float CardPhotoBadgeInset = 8f;
+    private const float CardPhotoSpinnerRadius = 8f;
+    private const float PreviewButtonHeight = 38f;
+    private const int PhotoSheetMaxItems = 2;
+
+    private readonly ActionSheet photoSheet = new();
+    private readonly ActionSheet.Item[] photoSheetItems = new ActionSheet.Item[PhotoSheetMaxItems];
+    private int photoSheetCount;
+    private string photoSheetPhotoId = string.Empty;
+    private bool photoSheetCanCover;
+
+    private void DrawEditPhotos()
+    {
+        var scale = UiScale.Current;
+        var photos = store.Me is { } me ? CardPhotos(me) : NoCardPhotos;
+        VSectionHeader.Card(PhoneIcons.Photo, Loc.T(L.Velvet.PhotosSection));
+        Gap(6f);
+        var width = ScrollLayout.StableContentWidth();
+        var gap = CardPhotoGap * scale;
+        var cell = (width - gap * (CardPhotoColumns - 1)) / CardPhotoColumns;
+        var cellHeight = cell / CardPhotoAspect;
+        var rows = (MaxCardPhotos + CardPhotoColumns - 1) / CardPhotoColumns;
+        var origin = ImGui.GetCursorScreenPos();
+        var drawList = ImGui.GetWindowDrawList();
+        var busy = store.CardPhotoBusy;
+        for (var slot = 0; slot < MaxCardPhotos; slot++)
+        {
+            var row = slot / CardPhotoColumns;
+            var column = slot % CardPhotoColumns;
+            var min = new Vector2(origin.X + column * (cell + gap), origin.Y + row * (cellHeight + gap));
+            var max = new Vector2(min.X + cell, min.Y + cellHeight);
+            if (slot < photos.Length)
+            {
+                if (DrawCardPhotoTile(drawList, min, max, photos[slot], slot == 0))
+                {
+                    OpenPhotoSheet(photos[slot].Id, slot);
+                }
+
+                continue;
+            }
+
+            var next = slot == photos.Length;
+            if (DrawEmptyPhotoSlot(drawList, min, max, next, next && busy) && !busy)
+            {
+                cardPhotos.Open();
+                photoEditing = true;
+            }
+        }
+
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, rows * cellHeight + (rows - 1) * gap));
+        Gap(8f);
+        ui.HelpText(Loc.T(L.Velvet.PhotosHint));
+        Gap(8f);
+        if (ui.GhostButton(Reserve(PreviewButtonHeight), Loc.T(L.Velvet.PreviewCard)))
+        {
+            OpenCardPreview();
+        }
+    }
+
+    private bool DrawCardPhotoTile(ImDrawListPtr drawList, Vector2 min, Vector2 max, VelvetCardPhotoDto photo,
+        bool cover)
+    {
+        var scale = UiScale.Current;
+        var rounding = CardPhotoRounding * scale;
+        DrawCoverImage(drawList, min, max, photo.Url, rounding, string.Empty);
+        var hovered = UiInteract.Hover(min, max);
+        if (hovered)
+        {
+            Squircle.Stroke(drawList, min, max, rounding, VelvetTheme.RoseInk.Packed(), Metrics.Stroke.Thin * scale);
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        if (cover)
+        {
+            var label = Loc.T(L.Velvet.CoverBadge);
+            var textSize = Typography.Measure(label, TextStyles.Caption2);
+            var pad = CardPhotoBadgePad * scale;
+            var badgeMin = new Vector2(min.X + CardPhotoBadgeInset * scale,
+                max.Y - CardPhotoBadgeInset * scale - CardPhotoBadgeHeight * scale);
+            var badgeMax = new Vector2(badgeMin.X + textSize.X + pad * 2f, max.Y - CardPhotoBadgeInset * scale);
+            Squircle.Fill(drawList, badgeMin, badgeMax, CardPhotoBadgeHeight * scale * 0.5f, VelvetTheme.Rose.Packed());
+            Typography.Draw(drawList,
+                new Vector2(badgeMin.X + pad, (badgeMin.Y + badgeMax.Y) * 0.5f - textSize.Y * 0.5f), label,
+                VelvetTheme.OnAccent, TextStyles.Caption2);
+        }
+
+        return UiInteract.Click(min, max, hovered);
+    }
+
+    private static bool DrawEmptyPhotoSlot(ImDrawListPtr drawList, Vector2 min, Vector2 max, bool next, bool busy)
+    {
+        var scale = UiScale.Current;
+        var rounding = CardPhotoRounding * scale;
+        var hovered = next && !busy && UiInteract.Hover(min, max);
+        Squircle.Fill(drawList, min, max, rounding, (hovered ? VelvetTheme.CardHi : VelvetTheme.PlumWell).Packed());
+        Squircle.Stroke(drawList, min, max, rounding,
+            (next ? VelvetTheme.Alpha(VelvetTheme.RoseInk, 0.55f) : VelvetTheme.Hairline).Packed(),
+            Metrics.Stroke.Hairline * scale);
+        var center = (min + max) * 0.5f;
+        if (busy)
+        {
+            LoadingPulse.Spinner(center, CardPhotoSpinnerRadius * scale, VelvetTheme.RoseInk);
+        }
+        else
+        {
+            PhoneIcon.Draw(drawList, center, PhoneIcons.Plus, next ? VelvetTheme.RoseInk : VelvetTheme.Faint,
+                VIcon.CardAction * scale);
+        }
+
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        return UiInteract.Click(min, max, hovered);
+    }
+
+    private void OpenPhotoSheet(string photoId, int index)
+    {
+        photoSheetPhotoId = photoId;
+        photoSheetCanCover = index > 0;
+        photoSheetCount = 0;
+        if (photoSheetCanCover)
+        {
+            photoSheetItems[photoSheetCount] = new ActionSheet.Item(Loc.T(L.Velvet.MakeCover));
+            photoSheetCount++;
+        }
+
+        photoSheetItems[photoSheetCount] = new ActionSheet.Item(Loc.T(L.Velvet.RemovePhoto), string.Empty, true);
+        photoSheetCount++;
+        photoSheet.Open();
+    }
+
+    private void DrawPhotoSheet(Rect screen)
+    {
+        if (!photoSheet.CapturesPointer)
+        {
+            return;
+        }
+
+        var picked = photoSheet.Draw(screen, ActionSheetStyle.From(ui), photoSheetItems.AsSpan(0, photoSheetCount),
+            Loc.T(L.Common.Cancel), false, string.Empty);
+        if (picked < 0)
+        {
+            return;
+        }
+
+        if (photoSheetCanCover && picked == 0)
+        {
+            store.MakeCardPhotoCover(photoSheetPhotoId);
+            return;
+        }
+
+        store.RemoveCardPhoto(photoSheetPhotoId);
     }
 
     private void DrawEditAvatar()

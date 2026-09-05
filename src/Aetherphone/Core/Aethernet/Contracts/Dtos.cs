@@ -373,7 +373,14 @@ internal sealed record VelvetProfileDto(
     string FrameId = "",
     string? IntroLang = null,
     int Race = 0,
-    int Presence = 0);
+    int Presence = 0,
+    VelvetCardPhotoDto[]? Photos = null);
+
+internal sealed record VelvetCardPhotoDto(string Id, string Url, int Width, int Height);
+
+internal sealed record AddVelvetCardPhotoRequest(string MediaKey, int Width, int Height);
+
+internal sealed record ReorderVelvetCardPhotosRequest(string[] PhotoIds);
 
 internal sealed record UpdateVelvetProfileRequest(
     string? Intro,

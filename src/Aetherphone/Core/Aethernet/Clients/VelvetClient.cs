@@ -36,6 +36,29 @@ internal sealed class VelvetClient
         return net.GetAsync($"/velvet/users/{Uri.EscapeDataString(userId)}", AethernetJsonContext.Default.VelvetProfileDto, token, null, onFailure);
     }
 
+    public Task<VelvetProfileDto?> AddCardPhotoAsync(AddVelvetCardPhotoRequest request, CancellationToken token,
+        Action<int>? onStatus = null, Action<AepFailure>? onFailure = null)
+    {
+        return net.SendJsonAsync(HttpMethod.Post, "/velvet/me/photos", request,
+            AethernetJsonContext.Default.AddVelvetCardPhotoRequest, AethernetJsonContext.Default.VelvetProfileDto, token,
+            onStatus, onFailure);
+    }
+
+    public Task<VelvetProfileDto?> RemoveCardPhotoAsync(string photoId, CancellationToken token,
+        Action<AepFailure>? onFailure = null)
+    {
+        return net.RequestAsync(HttpMethod.Delete, $"/velvet/me/photos/{Uri.EscapeDataString(photoId)}",
+            AethernetJsonContext.Default.VelvetProfileDto, token, null, onFailure);
+    }
+
+    public Task<VelvetProfileDto?> ReorderCardPhotosAsync(string[] photoIds, CancellationToken token,
+        Action<AepFailure>? onFailure = null)
+    {
+        return net.SendJsonAsync(HttpMethod.Put, "/velvet/me/photos/order", new ReorderVelvetCardPhotosRequest(photoIds),
+            AethernetJsonContext.Default.ReorderVelvetCardPhotosRequest, AethernetJsonContext.Default.VelvetProfileDto,
+            token, null, onFailure);
+    }
+
     public Task<VelvetDiscoverPage?> DiscoverAsync(VelvetDiscoverFilter filter, string tags, string region,
         string? cursor, CancellationToken token, Action<AepFailure>? onFailure = null)
     {

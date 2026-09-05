@@ -174,16 +174,34 @@ internal sealed partial class VelvetStore
                 return;
             }
 
-            var current = notInterestedFromDiscover;
-            if (Array.IndexOf(current, userId) < 0)
+            var current = notInterestedIds;
+            if (!current.Contains(userId))
             {
-                var grown = new string[current.Length + 1];
-                Array.Copy(current, grown, current.Length);
-                grown[current.Length] = userId;
-                notInterestedFromDiscover = grown;
+                notInterestedIds = new HashSet<string>(current, StringComparer.Ordinal) { userId };
             }
 
-            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedFromDiscover), token)
+            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedIds, passedAt), token)
+                .ConfigureAwait(false);
+        });
+    }
+
+    public void PassFromDiscover(string userId)
+    {
+        discoverResults = RemoveDiscover(discoverResults, userId);
+
+        var accountId = MyUserId;
+        var epoch = accountEpoch;
+        var stamp = UnixNow();
+        work.Run("discover pass save", async token =>
+        {
+            await EnsureNotInterestedLoadedAsync(token).ConfigureAwait(false);
+            if (epoch != accountEpoch)
+            {
+                return;
+            }
+
+            passedAt = new Dictionary<string, long>(passedAt, StringComparer.Ordinal) { [userId] = stamp };
+            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedIds, passedAt), token)
                 .ConfigureAwait(false);
         });
     }
@@ -192,7 +210,11 @@ internal sealed partial class VelvetStore
     {
         notInterested = RemoveProfile(notInterested, userId);
         discoverLoaded = false;
+        ForgetNotInterested(userId);
+    }
 
+    private void ForgetNotInterested(string userId)
+    {
         var accountId = MyUserId;
         var epoch = accountEpoch;
         work.Run("discover not interested remove", async token =>
@@ -203,17 +225,23 @@ internal sealed partial class VelvetStore
                 return;
             }
 
-            var current = notInterestedFromDiscover;
-            var index = Array.IndexOf(current, userId);
-            if (index >= 0)
+            var current = notInterestedIds;
+            if (current.Contains(userId))
             {
-                var trimmed = new string[current.Length - 1];
-                Array.Copy(current, trimmed, index);
-                Array.Copy(current, index + 1, trimmed, index, current.Length - index - 1);
-                notInterestedFromDiscover = trimmed;
+                var trimmed = new HashSet<string>(current, StringComparer.Ordinal);
+                trimmed.Remove(userId);
+                notInterestedIds = trimmed;
             }
 
-            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedFromDiscover), token)
+            var passes = passedAt;
+            if (passes.ContainsKey(userId))
+            {
+                var trimmedPasses = new Dictionary<string, long>(passes, StringComparer.Ordinal);
+                trimmedPasses.Remove(userId);
+                passedAt = trimmedPasses;
+            }
+
+            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedIds, passedAt), token)
                 .ConfigureAwait(false);
         });
     }
@@ -291,11 +319,11 @@ internal sealed partial class VelvetStore
                 return false;
             }
 
-            var ids = notInterestedFromDiscover;
-            var list = new List<VelvetProfileDto>(ids.Length);
-            for (var index = 0; index < ids.Length; index++)
+            var ids = notInterestedIds;
+            var list = new List<VelvetProfileDto>(ids.Count);
+            foreach (var id in ids)
             {
-                var user = await client.UserAsync(ids[index], token).ConfigureAwait(false);
+                var user = await client.UserAsync(id, token).ConfigureAwait(false);
                 if (epoch != accountEpoch)
                 {
                     return false;

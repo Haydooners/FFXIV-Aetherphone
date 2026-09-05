@@ -71,9 +71,12 @@ internal sealed partial class VelvetShell
         configuration.Save();
     }
 
-    private void ApplyDiscoverFilters() =>
-        store.RefreshDiscover(VelvetFilterSelection.Combine(discoverInclude, mutes), discoverApplied.Trim(),
+    private void ApplyDiscoverFilters()
+    {
+        filterSummaryDirty = true;
+        store.RefreshDiscover(VelvetFilterSelection.Combine(discoverInclude, mutes), string.Empty,
             SocialRegion.FilterCsv(discoverInclude.RegionMask) ?? string.Empty);
+    }
 
     private void ApplyFeedFilters() =>
         store.SetFeedFilter(VelvetFilterSelection.Combine(feedInclude, mutes),

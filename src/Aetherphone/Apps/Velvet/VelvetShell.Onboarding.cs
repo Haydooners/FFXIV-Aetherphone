@@ -22,7 +22,7 @@ internal sealed partial class VelvetShell
     private string onboardHandle = string.Empty;
     private string onboardIntro = string.Empty;
     private bool onboardDiscoverable = true;
-    private bool onboardAvatarEditing;
+    private bool onboardPhotoEditing;
     private readonly List<string> onboardTags = new();
     private readonly List<string> onboardRole = new();
     private readonly List<string> onboardKinks = new();
@@ -40,14 +40,14 @@ internal sealed partial class VelvetShell
             onboardSeeded = true;
         }
 
-        if (onboardAvatarEditing)
+        if (onboardPhotoEditing)
         {
             var overlay = SceneChrome.ScreenFrom(area, theme, scale);
             ui.Backdrop(overlay);
             var overlayContext = new PhoneContext(area, theme, navigation);
-            if (avatar.Draw(area, overlayContext, ui.Accent))
+            if (cardPhotos.Draw(area, overlayContext, ui.Accent))
             {
-                onboardAvatarEditing = false;
+                onboardPhotoEditing = false;
             }
 
             return;
@@ -172,7 +172,7 @@ internal sealed partial class VelvetShell
 
     private bool CanAdvanceOnboard() => onboardStep switch
     {
-        0 => onboardName.Trim().Length > 0,
+        0 => onboardName.Trim().Length > 0 && store.Me is { Photos: { Length: > 0 } },
         1 => VelvetIntent.Sanitize(onboardIntent) != 0,
         2 => onboardIntro.Trim().Length > 0,
         _ => true,
@@ -183,8 +183,10 @@ internal sealed partial class VelvetShell
         using (AppSurface.Begin(body))
         {
             Gap(6f);
-            DrawOnboardAvatar();
-            Gap(18f);
+            DrawOnboardCardPhoto();
+            Gap(4f);
+            ui.HelpText(Loc.T(L.Velvet.ObPhotoHint));
+            Gap(14f);
             ui.Field(Loc.T(L.Velvet.DisplayNameLabel), "##ob_name", ref onboardName, 40, false);
             Gap(10f);
             ui.Field(Loc.T(L.Velvet.HandleLabel), "##ob_handle", ref onboardHandle, 15, false);
@@ -194,39 +196,34 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private void DrawOnboardAvatar()
+    private const float OnboardPhotoHeight = 170f;
+    private const float OnboardPhotoBlock = 214f;
+    private const float OnboardPhotoHintGap = 10f;
+
+    private void DrawOnboardCardPhoto()
     {
         var scale = UiScale.Current;
-        var block = Reserve(150f);
+        var block = Reserve(OnboardPhotoBlock);
         var drawList = ImGui.GetWindowDrawList();
-        var radius = 52f * scale;
-        var center = new Vector2(block.Center.X, block.Min.Y + 8f * scale + radius);
-        var me = store.Me;
-        VAvatar.Draw(drawList, center, radius, theme, DisplayNameOf(onboardName, onboardHandle),
-            me?.World ?? string.Empty, me?.AvatarUrl, images, lodestone, -1, VelvetTheme.Rose);
+        var tileHeight = OnboardPhotoHeight * scale;
+        var tileWidth = tileHeight * CardPhotoAspect;
+        var min = new Vector2(block.Center.X - tileWidth * 0.5f, block.Min.Y + 4f * scale);
+        var max = new Vector2(min.X + tileWidth, min.Y + tileHeight);
+        var photos = store.Me is { } me ? CardPhotos(me) : NoCardPhotos;
+        var busy = store.CardPhotoBusy;
+        var tapped = photos.Length > 0
+            ? DrawCardPhotoTile(drawList, min, max, photos[0], true)
+            : DrawEmptyPhotoSlot(drawList, min, max, true, busy);
 
-        var badgeCenter = new Vector2(center.X + radius * 0.70f, center.Y + radius * 0.70f);
-        drawList.AddCircleFilled(badgeCenter, 15f * scale, VelvetTheme.GroundBottom.Packed(), 24);
-        drawList.AddCircleFilled(badgeCenter, 13f * scale, VelvetTheme.Rose.Packed(), 24);
-        PhoneIcon.Draw(drawList, badgeCenter, PhoneIcons.Camera, VelvetTheme.OnAccent, VIcon.Small * scale);
-
-        var avatarMin = new Vector2(center.X - radius, center.Y - radius);
-        var avatarMax = new Vector2(center.X + radius, center.Y + radius);
-        var hovered = UiInteract.Hover(avatarMin, avatarMax);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        var hint = me?.AvatarUrl is { Length: > 0 } ? Loc.T(L.Velvet.ChangePhoto) : Loc.T(L.Velvet.AddPhoto);
+        var hint = Loc.T(L.Velvet.AddPhoto);
         var hintSize = Typography.Measure(hint, TextStyles.Footnote);
-        Typography.Draw(drawList, new Vector2(center.X - hintSize.X * 0.5f, center.Y + radius + 12f * scale), hint,
-            VelvetTheme.RoseInk, TextStyles.Footnote);
+        Typography.Draw(drawList, new Vector2(block.Center.X - hintSize.X * 0.5f, max.Y + OnboardPhotoHintGap * scale),
+            hint, VelvetTheme.RoseInk, TextStyles.Footnote);
 
-        if (hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+        if (tapped && !busy && photos.Length < MaxCardPhotos)
         {
-            avatar.Open();
-            onboardAvatarEditing = true;
+            cardPhotos.Open();
+            onboardPhotoEditing = true;
         }
     }
 

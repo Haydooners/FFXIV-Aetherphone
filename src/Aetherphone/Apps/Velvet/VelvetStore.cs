@@ -19,6 +19,8 @@ namespace Aetherphone.Apps.Velvet;
 internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto, VelvetThreadDto>
 {
     private const int PostSize = 1080;
+    private const int CardPhotoWidth = 864;
+    private const int CardPhotoHeight = 1080;
     private readonly VelvetClient client;
     private readonly AccountClient account;
     private readonly Configuration configuration;
@@ -37,10 +39,13 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private volatile bool accessBlocked;
     private volatile bool regionBlocked;
     private volatile bool avatarBusy;
+    private volatile bool cardPhotoBusy;
+    private volatile AvatarUploadOutcome cardPhotoFailure = AvatarUploadOutcome.Unreachable;
     private volatile AvatarUploadOutcome avatarFailure = AvatarUploadOutcome.Unreachable;
     private volatile bool introBusy;
     private volatile VelvetProfileDto[] discoverResults = Array.Empty<VelvetProfileDto>();
-    private volatile string[] notInterestedFromDiscover = Array.Empty<string>();
+    private volatile HashSet<string> notInterestedIds = EmptyIds;
+    private volatile Dictionary<string, long> passedAt = EmptyPasses;
     private volatile bool loadingDiscover;
     private volatile bool discoverLoaded;
     private volatile AepFailureBox? discoverFailureBox;
@@ -50,6 +55,10 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private volatile string discoverTags = string.Empty;
     private volatile string discoverRegion = string.Empty;
     private volatile int discoverEpoch;
+    private volatile VelvetProfileDto[] searchResults = Array.Empty<VelvetProfileDto>();
+    private volatile bool loadingSearch;
+    private volatile bool searchLoaded;
+    private volatile int searchEpoch;
     private volatile VelvetConnectionDto[] connections = Array.Empty<VelvetConnectionDto>();
     private volatile bool loadingConnections;
     private volatile bool connectionsLoaded;
@@ -99,6 +108,9 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private volatile bool blockedLoaded;
     private volatile VelvetProfileDto[] notInterested = Array.Empty<VelvetProfileDto>();
     private readonly VelvetNotInterestedArchive notInterestedArchive;
+    private static readonly HashSet<string> EmptyIds = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, long> EmptyPasses = new(StringComparer.Ordinal);
+    private const long PassLifetimeSeconds = 30L * 24L * 60L * 60L;
     private volatile bool notInterestedIdsLoaded;
     private volatile bool notInterestedLoaded;
     private volatile bool loadingNotInterested;
@@ -171,6 +183,8 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     public bool AvatarBusy => avatarBusy;
 
     public AvatarUploadOutcome AvatarFailure => avatarFailure;
+    public bool CardPhotoBusy => cardPhotoBusy;
+    public AvatarUploadOutcome CardPhotoFailure => cardPhotoFailure;
     public bool IntroBusy => introBusy;
     public VelvetProfileDto[] DiscoverResults => discoverResults;
     public bool LoadingDiscover => loadingDiscover;
@@ -181,6 +195,9 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     public AepFailure DiscoverFailure => discoverFailureBox?.Failure ?? AepFailure.None;
     public bool HasMoreDiscover => discoverCursor is not null;
     public bool LoadingMoreDiscover => loadingMoreDiscover;
+    public VelvetProfileDto[] SearchResults => searchResults;
+    public bool LoadingSearch => loadingSearch;
+    public bool SearchLoaded => searchLoaded;
     public VelvetConnectionDto[] Connections => connections;
     public bool LoadingConnections => loadingConnections;
     public bool ConnectionsLoaded => connectionsLoaded;
@@ -262,8 +279,13 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         meGate.Reset();
         discoverResults = Array.Empty<VelvetProfileDto>();
 
-        notInterestedFromDiscover = Array.Empty<string>();
+        notInterestedIds = EmptyIds;
+        passedAt = EmptyPasses;
         notInterestedLoaded = false;
+        searchEpoch++;
+        searchResults = Array.Empty<VelvetProfileDto>();
+        loadingSearch = false;
+        searchLoaded = false;
         notInterestedIdsLoaded = false;
         notInterested = Array.Empty<VelvetProfileDto>();
         discoverCursor = null;
@@ -644,13 +666,14 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
                 return;
             }
 
-            var ids = await Task.Run(() => notInterestedArchive.Load(accountId), token).ConfigureAwait(false);
+            var snapshot = await Task.Run(() => notInterestedArchive.Load(accountId), token).ConfigureAwait(false);
             if (epoch != accountEpoch)
             {
                 return;
             }
 
-            notInterestedFromDiscover = MergeNotInterested(notInterestedFromDiscover, ids);
+            notInterestedIds = MergeNotInterested(notInterestedIds, snapshot.UserIds);
+            passedAt = MergePasses(passedAt, snapshot.Passes, UnixNow());
             discoverResults = WithoutNotInterested(discoverResults);
             loaded = true;
         }
@@ -668,23 +691,40 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         }
     }
 
-    private static string[] MergeNotInterested(string[] existing, string[] incoming)
+    private static long UnixNow() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+    private static bool PassActive(Dictionary<string, long> passes, string userId, long now) =>
+        passes.TryGetValue(userId, out var stamp) && now - stamp < PassLifetimeSeconds;
+
+    private static Dictionary<string, long> MergePasses(Dictionary<string, long> existing,
+        Dictionary<string, long> incoming, long now)
     {
-        var set = new HashSet<string>(existing, StringComparer.Ordinal);
+        var merged = new Dictionary<string, long>(existing, StringComparer.Ordinal);
+        var changed = false;
+        foreach (var (userId, stamp) in incoming)
+        {
+            if (now - stamp >= PassLifetimeSeconds || merged.ContainsKey(userId))
+            {
+                continue;
+            }
+
+            merged[userId] = stamp;
+            changed = true;
+        }
+
+        return changed ? merged : existing;
+    }
+
+    private static HashSet<string> MergeNotInterested(HashSet<string> existing, string[] incoming)
+    {
+        var merged = new HashSet<string>(existing, StringComparer.Ordinal);
         var added = false;
         for (var index = 0; index < incoming.Length; index++)
         {
-            added |= set.Add(incoming[index]);
+            added |= merged.Add(incoming[index]);
         }
 
-        if (!added)
-        {
-            return existing;
-        }
-
-        var merged = new string[set.Count];
-        set.CopyTo(merged);
-        return merged;
+        return added ? merged : existing;
     }
 
     private static VelvetProfileDto[] RemoveProfile(VelvetProfileDto[] source, string userId)

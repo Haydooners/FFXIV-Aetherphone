@@ -1,5 +1,4 @@
 using Aetherphone.Core;
-using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -16,19 +15,6 @@ internal static class VHeader
     public static Vector2 Slot(Rect area, int index) => SocialChrome.HeaderSlot(area, index);
 
     public static float IconRadius => SocialChrome.HeaderIconRadius * UiScale.Current;
-
-    public static bool Root(Rect area, string title, int bellBadge, int trailingSlots)
-    {
-        var scale = UiScale.Current;
-        var midY = area.Min.Y + Height * scale * 0.5f;
-        var titleLeft = area.Min.X + SocialChrome.CellPadX * scale;
-        var titleRight = area.Max.X - (SocialChrome.CellPadX + SocialChrome.HeaderReserve(trailingSlots)) * scale;
-        Marquee.DrawLeftAuto(new MarqueeId("vheader.root.", title), title, titleLeft,
-            midY - Typography.Measure(title, TextStyles.Title3).Y * 0.5f, MathF.Max(1f, titleRight - titleLeft),
-            TextStyles.Title3, VelvetTheme.TitleInk);
-        return VIcon.Button(Slot(area, 0), IconRadius, PhoneIcons.Bell, VIcon.Header, VelvetTheme.TitleInk,
-            Loc.T(L.Velvet.Activity), HoverLabelSide.Below, bellBadge);
-    }
 
     public static bool Push(Rect area, string title, int trailingSlots = 0)
     {
