@@ -1,5 +1,6 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Crypto;
@@ -21,6 +22,7 @@ internal sealed partial class MessageApp
     private const float ChatRowAvatarRadius = 25f;
     private const float ChatRowTitleTop = 13f;
     private const float ChatSearchHeight = 52f;
+    private const float ChatSearchRevealSeconds = 0.12f;
     private const float ChatChipsHeight = 44f;
     private const float ArchivedRowHeight = 52f;
     private const float UnreadBadgeRadius = 10f;
@@ -40,7 +42,11 @@ internal sealed partial class MessageApp
     private readonly List<ConversationDto> regularChats = new();
     private string? sheetConversationId;
     private string chatSheetTitle = string.Empty;
+    private string chatQuery = string.Empty;
     private byte chatFilter = ChatFilterAll;
+    private bool chatSearchOpen;
+    private bool chatSearchFocus;
+    private Spring chatSearchReveal = new(0f);
 
     private void DrawChatsTab(Rect area)
     {
@@ -56,11 +62,10 @@ internal sealed partial class MessageApp
         }
 
         var scale = UiScale.Current;
-        var searchRect = new Rect(new Vector2(area.Min.X + CellPadX * scale, area.Min.Y),
-            new Vector2(area.Max.X - CellPadX * scale, area.Min.Y + ChatSearchHeight * scale));
-        SearchField.Draw(searchRect, "##messageFilter", Loc.T(L.Common.Search), ref filter, ui.Palette);
-        var chipsTop = searchRect.Max.Y;
-        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + CellPadX * scale, chipsTop + 4f * scale));
+        var chipsTop = DrawChatSearchRow(area, scale);
+        var railTop = chipsTop + (ChatChipsHeight - ChipRail.RowHeight) * 0.5f * scale;
+        var railRow = new Rect(new Vector2(area.Min.X + CellPadX * scale, railTop),
+            new Vector2(area.Max.X - CellPadX * scale, railTop + ChipRail.RowHeight * scale));
         chatFilterLabels[0] = Loc.T(L.Collections.FilterAll);
         chatFilterLabels[1] = Loc.T(L.Message.FilterUnread);
         chatFilterLabels[2] = Loc.T(L.Message.Favorites);
@@ -70,7 +75,7 @@ internal sealed partial class MessageApp
             chatFilterActive[index] = chatFilter == index;
         }
 
-        var tappedChip = chatFilterRail.Draw(ui, chatFilterLabels, chatFilterActive);
+        var tappedChip = chatFilterRail.Draw(railRow, ui, chatFilterLabels, chatFilterActive, centered: true);
         if (tappedChip >= 0)
         {
             chatFilter = (byte)tappedChip;
@@ -79,7 +84,7 @@ internal sealed partial class MessageApp
         var listRect = new Rect(new Vector2(area.Min.X, chipsTop + ChatChipsHeight * scale), area.Max);
         DrawRecoveryNudge(ref listRect);
         CollectChats(pinnedChats, regularChats, archived: false);
-        var query = filter.Trim();
+        var query = chatQuery.Trim();
         if (pinnedChats.Count == 0 && regularChats.Count == 0)
         {
             if (query.Length > 0 || chatFilter != ChatFilterAll)
@@ -133,6 +138,60 @@ internal sealed partial class MessageApp
 
             ImGui.Dummy(new Vector2(0f, 24f * scale));
         }
+    }
+
+    private float DrawChatSearchRow(Rect area, float scale)
+    {
+        var target = chatSearchOpen ? 1f : 0f;
+        var frameSeconds = MathF.Min(ImGui.GetIO().DeltaTime, 0.1f);
+        var reveal = chatSearchReveal.Step(target, ChatSearchRevealSeconds, frameSeconds);
+        if (chatSearchReveal.IsResting(target, 0.005f, 0.05f))
+        {
+            chatSearchReveal.SnapTo(target);
+            reveal = target;
+        }
+
+        var height = ChatSearchHeight * scale * Math.Clamp(reveal, 0f, 1f);
+        if (height < 1f)
+        {
+            return area.Min.Y;
+        }
+
+        var drawList = ImGui.GetWindowDrawList();
+        var bottom = area.Min.Y + height;
+        drawList.PushClipRect(area.Min, new Vector2(area.Max.X, bottom), true);
+        var bar = new Rect(new Vector2(area.Min.X + CellPadX * scale, bottom - ChatSearchHeight * scale),
+            new Vector2(area.Max.X - CellPadX * scale, bottom));
+        SearchField.Draw(bar, "##messageFilter", Loc.T(L.Common.Search), ref chatQuery, ui.Palette,
+            focus: chatSearchFocus);
+        chatSearchFocus = false;
+        drawList.PopClipRect();
+        return bottom;
+    }
+
+    private void ToggleChatSearch()
+    {
+        if (chatSearchOpen)
+        {
+            CloseChatSearch();
+            return;
+        }
+
+        chatSearchOpen = true;
+        chatSearchFocus = true;
+    }
+
+    private void CloseChatSearch()
+    {
+        chatSearchOpen = false;
+        chatSearchFocus = false;
+        chatQuery = string.Empty;
+    }
+
+    private void ResetChatSearch()
+    {
+        CloseChatSearch();
+        chatSearchReveal.SnapTo(0f);
     }
 
     private void DrawArchivedRow(ImDrawListPtr drawList)
@@ -226,7 +285,7 @@ internal sealed partial class MessageApp
         pinnedTarget.Clear();
         regularTarget.Clear();
         var snapshot = store.Conversations;
-        var query = filter.Trim();
+        var query = chatQuery.Trim();
         for (var index = 0; index < snapshot.Length; index++)
         {
             var item = snapshot[index];

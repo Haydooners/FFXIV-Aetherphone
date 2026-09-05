@@ -35,10 +35,9 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
 
     private const float ThreadPollSeconds = 3f;
     private const float TypingSendSeconds = 2.5f;
-    private const float TabBarHeight = 60f;
+    private const float TabBarHeight = 58f;
     private const float TabIconSize = 24f;
-    private const float TabIconOffset = 20f;
-    private const float TabLabelOffset = 21f;
+    private const float TabHoverRadius = 20f;
     private const float TabBadgeOffsetX = 12f;
     private const float TabBadgeOffsetY = 9f;
     private const int TabCount = 4;
@@ -46,8 +45,6 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
     private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 Transparent = new(0f, 0f, 0f, 0f);
     private static readonly Vector4 CallGreen = new(0.20f, 0.78f, 0.35f, 1f);
-    private static readonly TextStyle TabLabelStyle = TextStyles.Caption1;
-    private static readonly TextStyle TabActiveLabelStyle = new(TextStyles.Caption1.Scale, FontWeight.SemiBold);
 
     public string Id => "message";
     public string DisplayName => Loc.T(L.Apps.Message);
@@ -146,6 +143,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         router.Reset();
         activeTab = MessageTab.Chats;
         filter = string.Empty;
+        ResetChatSearch();
         searchDraft = string.Empty;
         addError = string.Empty;
         avatarLightbox.Reset();
@@ -468,12 +466,22 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
                 DrawTabHeader(area, Loc.T(L.Settings.Title), 0);
                 break;
             default:
-                DrawTabHeader(area, Loc.T(L.Message.TabChats), 1);
-                if (session.IsSignedIn
-                    && DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 0), PhoneIcons.MessagePlus,
+                DrawTabHeader(area, Loc.T(L.Message.TabChats), 2);
+                if (!session.IsSignedIn)
+                {
+                    break;
+                }
+
+                if (DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 0), PhoneIcons.MessagePlus,
                         Loc.T(L.Message.NewChat)))
                 {
                     OpenNewChat();
+                }
+
+                if (DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 1), PhoneIcons.Search,
+                        Loc.T(L.Common.Search), chatSearchOpen))
+                {
+                    ToggleChatSearch();
                 }
 
                 break;
@@ -498,11 +506,17 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         for (var index = 0; index < TabCount; index++)
         {
             var tab = (MessageTab)index;
-            var cellMin = new Vector2(bar.Min.X + slot * index, bar.Min.Y);
-            var cellMax = new Vector2(cellMin.X + slot, bar.Max.Y);
+            var cell = new Rect(new Vector2(bar.Min.X + slot * index, bar.Min.Y),
+                new Vector2(bar.Min.X + slot * (index + 1), bar.Max.Y));
             var active = activeTab == tab;
-            var hovered = UiInteract.Hover(cellMin, cellMax);
-            var iconCenter = new Vector2((cellMin.X + cellMax.X) * 0.5f, bar.Min.Y + TabIconOffset * scale);
+            var hovered = UiInteract.Hover(cell.Min, cell.Max);
+            var iconCenter = new Vector2(cell.Center.X, bar.Center.Y);
+            if (hovered)
+            {
+                drawList.AddCircleFilled(iconCenter, TabHoverRadius * scale, ImGui.GetColorU32(ink.FieldFill), 32);
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+
             var tint = active ? ink.AccentLink : hovered ? ink.TitleInk : ink.MutedInk;
             string label;
             var badge = 0;
@@ -534,20 +548,12 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
                     break;
             }
 
-            UiAnchors.Report(anchor, new Rect(cellMin, cellMax));
+            UiAnchors.Report(anchor, cell);
             PhoneIcon.Draw(drawList, iconCenter, glyph, tint, TabIconSize * scale);
             SocialChrome.DrawCountBadge(drawList,
                 iconCenter + new Vector2(TabBadgeOffsetX * scale, -TabBadgeOffsetY * scale), badge, ink);
-            var style = active ? TabActiveLabelStyle : TabLabelStyle;
-            var fitted = Typography.FitText(label, slot - 8f * scale, style);
-            Typography.DrawCentered(drawList, new Vector2(iconCenter.X, iconCenter.Y + TabLabelOffset * scale), fitted,
-                tint, style);
-            if (hovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            if (UiInteract.Click(cellMin, cellMax, hovered))
+            HoverTooltip.Show(cell, label, HoverLabelSide.Above);
+            if (UiInteract.Click(cell.Min, cell.Max, hovered))
             {
                 SelectTab(tab);
             }
@@ -559,6 +565,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         activeTab = tab;
         chatSheet.Close();
         filter = string.Empty;
+        CloseChatSearch();
     }
 
     public void Dispose()

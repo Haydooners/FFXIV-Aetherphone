@@ -242,7 +242,7 @@ if (tapped >= 0)
 }
 ```
 
-A tap only registers if the pointer traveled less than the drag slop, so panning does not select chips.
+A tap only registers if the pointer traveled less than the drag slop, so panning does not select chips. Pass `centered: true` to the `Rect` overload to center the chips inside the row when they all fit; an overflowing rail still starts at the left edge and pans.
 
 ### Other frequently used widgets
 
