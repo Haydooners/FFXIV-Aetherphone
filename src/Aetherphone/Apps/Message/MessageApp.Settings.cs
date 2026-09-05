@@ -200,7 +200,7 @@ internal sealed partial class MessageApp
         var height = textSize.Y + padY * 2f;
         var min = mine ? new Vector2(anchor.X - width, anchor.Y) : anchor;
         var max = min + new Vector2(width, height);
-        var rounding = BubbleRounding * scale;
+        var rounding = MessageThreadViewBase.BubbleRounding * scale;
         Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(fill));
         var tail = 7f * scale;
         if (mine)

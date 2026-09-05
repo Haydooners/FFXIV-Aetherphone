@@ -64,7 +64,34 @@ internal static class AppRegistry
 
         var photoLibrary = new PhotoLibrary(Plugin.PluginInterface.ConfigDirectory);
         var dmNet = new AethernetApi(services.Http, services.AethernetSession, "dm");
-        apps.Insert(0, new MessageApp(new DirectMessagesStore(services.AethernetSession, dmNet.Chats, dmNet.Safety, dmNet.Media, services.Notifications, services.KeyVault, services.ConversationKeys, services.PeerKeys, services.ChatHistory, services.Visibility, services.RealtimeSignals, services.Installer), contactBook, services.Calls, services.AethernetSession, services.RemoteImages, services.Lodestone, services.DmLauncher, photoLibrary, services.Http, services.Configuration, services.Confirm, services.Translation, services.Report, services.WallpaperImages, services.Musters, services.MusterLauncher, services.SocialNotifications, services.EncryptionSetup, services.EncryptionHelp, services.SettingsLauncher));
+        var messageStore = new DirectMessagesStore(services.AethernetSession, dmNet.Chats, dmNet.Safety, dmNet.Media, services.Notifications, services.KeyVault, services.ConversationKeys, services.PeerKeys, services.ChatHistory, services.Visibility, services.RealtimeSignals, services.Installer);
+        var messagePopouts = new MessagePopouts(new MessagePopoutServices
+        {
+            Session = services.AethernetSession,
+            Net = dmNet,
+            Notifications = services.Notifications,
+            Vault = services.KeyVault,
+            ConversationKeys = services.ConversationKeys,
+            PeerKeys = services.PeerKeys,
+            ChatHistory = services.ChatHistory,
+            Visibility = services.Visibility,
+            Signals = services.RealtimeSignals,
+            Installer = services.Installer,
+            Images = services.RemoteImages,
+            Lodestone = services.Lodestone,
+            Http = services.Http,
+            Library = photoLibrary,
+            Configuration = services.Configuration,
+            Confirm = services.Confirm,
+            Report = services.Report,
+            Translation = services.Translation,
+            WallpaperImages = services.WallpaperImages,
+            EncryptionHelp = services.EncryptionHelp,
+            Themes = services.Themes,
+        }, messageStore);
+        var messageApp = new MessageApp(messageStore, contactBook, services.Calls, services.AethernetSession, services.RemoteImages, services.Lodestone, services.DmLauncher, photoLibrary, services.Http, services.Configuration, services.Confirm, services.Translation, services.Report, services.WallpaperImages, services.Musters, services.MusterLauncher, services.SocialNotifications, services.EncryptionSetup, services.EncryptionHelp, services.SettingsLauncher, messagePopouts);
+        messagePopouts.Owner = messageApp;
+        apps.Insert(0, messageApp);
         apps.Add(new ChirperApp(services.AethernetSession, new AethernetApi(services.Http, services.AethernetSession, "chirper"), services.Lodestone, services.RemoteImages, photoLibrary, services.SocialLauncher, services.GameData, services.Configuration, services.SocialNotifications, services.WallpaperImages, services.Confirm, services.Translation, services.Report, services.Conduct, services.RealtimeSignals));
         apps.Add(new AethergramApp(services.AethernetSession, new AethernetApi(services.Http, services.AethernetSession, "aethergram"), services.Lodestone, services.RemoteImages, photoLibrary, services.SocialLauncher, services.GramDmLauncher, services.GameData, services.Configuration, services.SocialNotifications, services.Notifications, services.Http, services.KeyVault, services.ConversationKeys, services.ChatHistory, services.Visibility, services.RealtimeSignals, services.WallpaperImages, services.Confirm, services.Translation, services.Report, services.Conduct, services.Installer, services.EncryptionHelp));
         apps.Add(new VelvetShell(services.AethernetSession, new AethernetApi(services.Http, services.AethernetSession, "velvet"), services.Lodestone, services.Configuration, photoLibrary, services.Http, services.RemoteImages, services.Notifications, services.VelvetLauncher, services.SocialLauncher, services.GameData, services.SocialNotifications, services.KeyVault, services.ConversationKeys, services.ChatHistory, services.Visibility, services.RealtimeSignals, services.WallpaperImages, services.Confirm, services.Translation, services.Report, services.Conduct, services.Installer, services.EncryptionHelp));
@@ -123,6 +150,7 @@ internal static class AppRegistry
             Widgets = WidgetCatalog.Build(services, photoLibrary, calendarEvents, apps),
             Photos = photoLibrary,
             Contacts = contactBook,
+            MessagePopouts = messagePopouts,
         };
     }
 }

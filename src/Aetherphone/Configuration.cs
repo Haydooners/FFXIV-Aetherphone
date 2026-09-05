@@ -281,6 +281,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public Dictionary<string, string> MessageDrafts { get; set; } = new();
     public List<StarredMessage> MessageStarredMessages { get; set; } = new();
     public string MessageChatTheme { get; set; } = string.Empty;
+    public List<MessagePopoutState> MessagePopouts { get; set; } = new();
     public string MessageWallpaper { get; set; } = string.Empty;
     public bool MessageWallpaperPattern { get; set; } = true;
     public Dictionary<string, string> MessageChatWallpapers { get; set; } = new();

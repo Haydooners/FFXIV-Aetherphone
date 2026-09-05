@@ -87,15 +87,16 @@ internal static class PhoneIcons
     public const string Volume = "\uE652";
     public const string FileText = "\uE653";
     public const string Sparkles = "\uE654";
-    public const string BellFilled = "\uE655";
-    public const string HeartFilled = "\uE656";
-    public const string HomeFilled = "\uE657";
-    public const string PinFilled = "\uE658";
-    public const string UserFilled = "\uE659";
-    public const string BookmarkFilled = "\uE65A";
-    public const string MessageCircleFilled = "\uE65B";
-    public const string SendFilled = "\uE65C";
-    public const string StarFilled = "\uE65D";
-    public const string CircleCheckFilled = "\uE65E";
-    public const string PhoneFilled = "\uE65F";
+    public const string ExternalLink = "\uE655";
+    public const string BellFilled = "\uE656";
+    public const string HeartFilled = "\uE657";
+    public const string HomeFilled = "\uE658";
+    public const string PinFilled = "\uE659";
+    public const string UserFilled = "\uE65A";
+    public const string BookmarkFilled = "\uE65B";
+    public const string MessageCircleFilled = "\uE65C";
+    public const string SendFilled = "\uE65D";
+    public const string StarFilled = "\uE65E";
+    public const string CircleCheckFilled = "\uE65F";
+    public const string PhoneFilled = "\uE660";
 }

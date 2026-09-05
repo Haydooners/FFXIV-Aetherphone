@@ -25,7 +25,6 @@ internal sealed partial class MessageApp
     private const float ChevronSize = 18f;
     private const float RowTrailingGap = 8f;
     private const float RowAvatarGap = 14f;
-    private const float GroupAvatarGlyphFactor = 0.95f;
     private const float RoleTagPadX = 7f;
     private const float RoleTagHeight = 20f;
 
@@ -77,31 +76,12 @@ internal sealed partial class MessageApp
         FeedCell.Hairline(drawList, textLeft, cell.Bounds.Max.X, cell.Bounds.Max.Y, ui.Hairline);
     }
 
-    private void DrawConversationAvatar(ImDrawListPtr drawList, ConversationDto item, Vector2 center, float radius)
-    {
-        if (item.IsGroup)
-        {
-            DrawGroupAvatar(drawList, center, radius, DirectMessagesStore.DisplayTitle(item), item.AvatarUrl);
-            return;
-        }
-
-        AvatarView.DrawRemote(drawList, center, radius, theme, DirectMessagesStore.DisplayTitle(item), string.Empty,
-            item.OtherAvatarUrl, images, lodestone, 0.95f, 32, 1f, Frames.Of(item.FrameId));
-    }
+    private void DrawConversationAvatar(ImDrawListPtr drawList, ConversationDto item, Vector2 center, float radius) =>
+        ConversationAvatar.Draw(drawList, item, center, radius, theme, ui, images, lodestone);
 
     private void DrawGroupAvatar(ImDrawListPtr drawList, Vector2 center, float radius, string title,
-        string? avatarUrl)
-    {
-        if (!string.IsNullOrEmpty(avatarUrl))
-        {
-            AvatarView.DrawRemote(drawList, center, radius, theme, title, string.Empty, avatarUrl, images, lodestone,
-                0.95f, 32);
-            return;
-        }
-
-        drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(ui.FieldSurface), 32);
-        PhoneIcon.Draw(drawList, center, PhoneIcons.Users, ui.MutedInk, radius * GroupAvatarGlyphFactor);
-    }
+        string? avatarUrl) =>
+        ConversationAvatar.DrawGroup(drawList, center, radius, title, avatarUrl, theme, ui, images, lodestone);
 
     private void DrawContactAvatar(ImDrawListPtr drawList, ContactDto contact, Vector2 center, float radius)
     {
@@ -111,12 +91,9 @@ internal sealed partial class MessageApp
 
     private void DrawMemberAvatar(ImDrawListPtr drawList, ConversationMemberDto member, Vector2 center, float radius)
     {
-        AvatarView.DrawRemote(drawList, center, radius, theme, MemberLabel(member), string.Empty, member.AvatarUrl,
+        AvatarView.DrawRemote(drawList, center, radius, theme, DirectMessagesStore.MemberLabel(member), string.Empty, member.AvatarUrl,
             images, lodestone, 0.9f, 32, 1f, Frames.Of(member.FrameId));
     }
-
-    private static string MemberLabel(ConversationMemberDto member) =>
-        member.DisplayName.Length > 0 ? member.DisplayName : member.Handle;
 
     private readonly struct PersonRowResult
     {
@@ -358,17 +335,6 @@ internal sealed partial class MessageApp
         return (today - local.Date).TotalDays < 7d
             ? local.ToString("ddd", Loc.Culture)
             : local.ToString("d", Loc.Culture);
-    }
-
-    private static string FormatStamp(long unixSeconds)
-    {
-        var clock = TimeText.Clock(unixSeconds);
-        if (TimeText.SameLocalDay(unixSeconds, DateTimeOffset.UtcNow.ToUnixTimeSeconds()))
-        {
-            return clock;
-        }
-
-        return string.Concat(TimeText.DayLabel(unixSeconds), ", ", clock);
     }
 
     private static Rect RowBand(Rect row, float scale) =>

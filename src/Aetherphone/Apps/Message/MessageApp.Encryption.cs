@@ -135,7 +135,7 @@ internal sealed partial class MessageApp
             {
                 if (members[memberIndex].UserId == userIds[index])
                 {
-                    name = MemberLabel(members[memberIndex]);
+                    name = DirectMessagesStore.MemberLabel(members[memberIndex]);
                     break;
                 }
             }
@@ -313,7 +313,7 @@ internal sealed partial class MessageApp
         var titleHeight = Typography.LineHeight(RowTitleStyle);
         var subHeight = Typography.LineHeight(RowSubStyle);
         var top = row.Center.Y - (titleHeight + RowLineGap * scale + subHeight) * 0.5f;
-        UserName.Draw(drawList, "messageapp.encryption.member." + member.UserId, MemberLabel(member), member.Badges,
+        UserName.Draw(drawList, "messageapp.encryption.member." + member.UserId, DirectMessagesStore.MemberLabel(member), member.Badges,
             member.BadgeIds, textLeft, top, textMaxWidth, RowTitleStyle, ink.TitleInk, rowHovering, theme);
         Typography.Draw(drawList, new Vector2(textLeft, top + titleHeight + RowLineGap * scale),
             Typography.FitText(Loc.T(hasKey ? L.Encryption.MemberReady : L.Encryption.MemberNoKey), textMaxWidth,

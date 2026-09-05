@@ -18,6 +18,7 @@ using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Translation;
 using Aetherphone.Core.Wallpapers;
+using Aetherphone.Windows;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 
@@ -33,8 +34,6 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         Settings,
     }
 
-    private const float ThreadPollSeconds = 3f;
-    private const float TypingSendSeconds = 2.5f;
     private const float TabBarHeight = 58f;
     private const float TabIconSize = 24f;
     private const float TabHoverRadius = 20f;
@@ -75,6 +74,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
     private readonly SocialNotificationService socialNotifications;
     private readonly EncryptionSetupLauncher encryptionSetup;
     private readonly SettingsLauncher settingsLauncher;
+    private readonly MessagePopouts popouts;
     private readonly AppSkin ui = new(AppPalettes.Message);
     private readonly AvatarLightbox avatarLightbox = new();
     private readonly ViewRouter<MessageRoute> router;
@@ -108,8 +108,9 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         ReportService report,
         WallpaperImageCache wallpaperImages, MusterStore musters, MusterLauncher musterLauncher,
         SocialNotificationService socialNotifications, EncryptionSetupLauncher encryptionSetup,
-        EncryptionHelpService encryptionHelp, SettingsLauncher settingsLauncher)
+        EncryptionHelpService encryptionHelp, SettingsLauncher settingsLauncher, MessagePopouts popouts)
     {
+        this.popouts = popouts;
         this.translation = translation;
         this.socialNotifications = socialNotifications;
         this.musterLauncher = musterLauncher;
@@ -161,24 +162,35 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
     {
         contacts.Refresh(force: forceContacts);
         store.RefreshConversations();
+        ConsumeLaunchRequests();
+    }
+
+    private void ConsumeLaunchRequests()
+    {
         if (launcher.TryConsumeCalls())
         {
             activeTab = MessageTab.Calls;
+            return;
         }
-        else if (launcher.TryConsumeConversation(out var conversationId))
+
+        if (launcher.TryConsumeConversation(out var conversationId))
         {
             router.Push(MessageRoute.Thread(conversationId), false);
+            return;
         }
-        else if (launcher.TryConsumeUser(out var userId))
+
+        if (!launcher.TryConsumeUser(out var userId))
         {
-            store.CreateDirect(userId, id =>
-            {
-                if (!string.IsNullOrEmpty(id))
-                {
-                    composeResult = id;
-                }
-            });
+            return;
         }
+
+        store.CreateDirect(userId, id =>
+        {
+            if (!string.IsNullOrEmpty(id))
+            {
+                composeResult = id;
+            }
+        });
     }
 
     public void OnClosed()
@@ -201,6 +213,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
 
         currentCall = calls.Snapshot();
         contacts.Refresh();
+        ConsumeLaunchRequests();
         SyncCallRoute();
         ConsumeSharedPhoto();
         ProcessPending();

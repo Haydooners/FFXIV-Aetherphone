@@ -38,6 +38,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
     protected readonly StoreWork work;
     protected readonly MessageCipher cipher;
     private readonly string logTag;
+    private readonly bool tracksInbox;
     private readonly NotificationService notifications;
     private readonly AppGate gate;
     private readonly PollCadence inboxCadence;
@@ -88,8 +89,9 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
     protected ChatThreadStoreBase(string logTag, AethernetSession session, SafetyClient safety, MediaClient media,
         NotificationService notifications, KeyVault vault, ConversationKeyStore keys, DecryptedHistoryStore chatHistory,
         PhoneVisibility visibility,
-        AppGate gate)
+        AppGate gate, bool tracksInbox = true)
     {
+        this.tracksInbox = tracksInbox;
         this.session = session;
         this.safety = safety;
         this.media = media;
@@ -419,13 +421,17 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
             return;
         }
 
-        EnsureVaultRefreshed();
+        if (tracksInbox)
+        {
+            EnsureVaultRefreshed();
+        }
+
         var now = DateTime.UtcNow;
         EnsureCurrentThreadKeysFresh(now);
         ResumePendingThreadOpen(now);
         ConsumePendingThreadRefresh(now);
 
-        if (inboxPolling || !inboxCadence.Due(now))
+        if (!tracksInbox || inboxPolling || !inboxCadence.Due(now))
         {
             return;
         }

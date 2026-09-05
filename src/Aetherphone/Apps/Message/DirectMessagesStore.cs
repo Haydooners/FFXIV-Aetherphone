@@ -29,9 +29,9 @@ internal sealed class DirectMessagesStore : ChatThreadStoreBase<ChatMessageDto, 
     public DirectMessagesStore(AethernetSession session, ChatClient client, SafetyClient safety, MediaClient media,
         NotificationService notifications, KeyVault vault, ConversationKeyStore keys, PeerKeyDirectory peers,
         DecryptedHistoryStore chatHistory, PhoneVisibility visibility, RealtimeSignalBus signals,
-        AppInstaller installer)
+        AppInstaller installer, bool tracksInbox = true)
         : base("Messages", session, safety, media, notifications, vault, keys, chatHistory, visibility,
-            installer.Gate("message"))
+            installer.Gate("message"), tracksInbox)
     {
         this.client = client;
         this.peers = peers;
@@ -265,6 +265,9 @@ internal sealed class DirectMessagesStore : ChatThreadStoreBase<ChatMessageDto, 
     }
 
     public static string DisplayTitle(ConversationDto item) => ConversationTitle.Of(item);
+
+    public static string MemberLabel(ConversationMemberDto member) =>
+        member.DisplayName.Length > 0 ? member.DisplayName : member.Handle;
 
     private static string PreviewText(ConversationDto item)
     {

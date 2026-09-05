@@ -74,6 +74,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly AetherStreamScreenWindow screenWindow;
     private readonly UpdateChipWindow updateChipWindow;
     private readonly LinkpearlPopouts linkpearlPopouts;
+    private readonly MessagePopouts messagePopouts;
     private readonly PopoutPresence linkpearlPresence;
     private readonly LinkpearlHotkey linkpearlHotkey;
     private readonly AppGate linkpearlGate;
@@ -156,6 +157,15 @@ public sealed class Plugin : IDalamudPlugin
             {
                 windowSystem.AddWindow(linkpearlPopouts.Windows[index]);
             }
+
+            messagePopouts = bundle.MessagePopouts;
+            for (var index = 0; index < messagePopouts.Windows.Count; index++)
+            {
+                windowSystem.AddWindow(messagePopouts.Windows[index]);
+            }
+
+            messagePopouts.OpenInPhone = OpenMessageConversation;
+            messagePopouts.Restore();
 
             linkpearlPopouts.OpenInPhone = OpenLinkpearlConversation;
             linkpearlPopouts.LookUpInPhone = OpenLinkpearlLookup;
@@ -287,6 +297,12 @@ public sealed class Plugin : IDalamudPlugin
         Framework.Update += OnAutoOpenTick;
     }
 
+    private void OpenMessageConversation(string conversationId)
+    {
+        services.DmLauncher.RequestConversation(conversationId);
+        ShowPhoneApp("message");
+    }
+
     private void OpenLinkpearlConversation(string conversationKey)
     {
         services.LinkpearlLauncher.Request(conversationKey);
@@ -379,6 +395,7 @@ public sealed class Plugin : IDalamudPlugin
         phoneWindow.PersistPositions();
         linkpearlPresence.Dispose();
         linkpearlPopouts.Dispose();
+        messagePopouts.Dispose();
         windowSystem.RemoveAllWindows();
         videoDebugWindow.Dispose();
         streamSuggestions.Dispose();

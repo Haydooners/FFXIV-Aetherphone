@@ -708,6 +708,14 @@ internal static class L
         public static readonly LocString PhotoFailed = new("message.photoFailed", "The group photo could not be saved.");
         public static readonly LocString SaveFailed = new("message.saveFailed", "The changes could not be saved.");
         public static readonly LocString AddedToGroup = new("message.addedToGroup", "You were added to this group");
+        public static readonly LocString PopoutChat = new("message.popoutChat", "Pop out chat");
+        public static readonly LocString ClosePopout = new("message.closePopout", "Close the pop-out");
+        public static readonly LocString PopoutLimit = new("message.popoutLimit", "You can have up to {0} pop-outs open.");
+        public static readonly LocString PopoutOpenInPhone = new("message.popoutOpenInPhone", "Open in the phone");
+        public static readonly LocString PopoutCollapse = new("message.popoutCollapse", "Collapse");
+        public static readonly LocString PopoutExpand = new("message.popoutExpand", "Expand");
+        public static readonly LocString PopoutSwitch = new("message.popoutSwitch", "Switch conversation");
+        public static readonly LocString PopoutSignedOut = new("message.popoutSignedOut", "Sign in on the phone to keep chatting here.");
         public static readonly LocString OpensSettings = new("message.opensSettings", "Notifications, privacy and calls are managed in the Settings app.");
     }
 

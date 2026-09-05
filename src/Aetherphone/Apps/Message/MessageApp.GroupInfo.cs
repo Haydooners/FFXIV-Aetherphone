@@ -339,7 +339,7 @@ internal sealed partial class MessageApp
             right -= RowTrailingGap * scale;
         }
 
-        var label = isMe ? Loc.T(L.Message.You) : MemberLabel(member);
+        var label = isMe ? Loc.T(L.Message.You) : DirectMessagesStore.MemberLabel(member);
         var subtitle = member.Handle.Length > 0 ? "@" + member.Handle : string.Empty;
         var titleHeight = Typography.LineHeight(RowTitleStyle);
         var subHeight = subtitle.Length > 0 ? Typography.LineHeight(RowSubStyle) : 0f;
@@ -363,7 +363,7 @@ internal sealed partial class MessageApp
     {
         memberSheetConversationId = conversation.Id;
         memberSheetUserId = member.UserId;
-        memberSheetTitle = MemberLabel(member);
+        memberSheetTitle = DirectMessagesStore.MemberLabel(member);
         var count = 0;
         var contact = contacts.Find(member.UserId);
         if (contact is { IsMutual: true })

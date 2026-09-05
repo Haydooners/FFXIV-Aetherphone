@@ -117,6 +117,7 @@ OUTLINE = [
     ("Volume", "volume"),
     ("FileText", "file-text"),
     ("Sparkles", "sparkles"),
+    ("ExternalLink", "external-link"),
 ]
 
 FILLED = [

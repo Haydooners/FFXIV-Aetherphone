@@ -5,6 +5,7 @@ using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
+using Aetherphone.Windows;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Aetherphone.Core.Social;
@@ -21,165 +22,41 @@ internal sealed partial class MessageApp
     private const byte ThreadActEncryption = 5;
     private const byte ThreadActStarred = 6;
     private const byte ThreadActDelete = 7;
+    private const byte ThreadActPopout = 8;
     private const float ThreadHeaderAvatarRadius = 18f;
     private const float ThreadHeaderAvatarGap = 6f;
     private const float ThreadHeaderNameGap = 10f;
-    private const float BubbleRounding = 9f;
-    private const float ThreadSidePadding = 24f;
 
     private static readonly TextStyle ThreadNameStyle = TextStyles.Headline;
     private static readonly TextStyle ThreadSubStyle = new(0.76f, FontWeight.Regular);
 
     private readonly ActionSheet threadSheet = new();
-    private readonly ActionSheet.Item[] threadSheetItems = new ActionSheet.Item[8];
-    private readonly byte[] threadSheetActions = new byte[8];
+    private readonly ActionSheet.Item[] threadSheetItems = new ActionSheet.Item[9];
+    private readonly byte[] threadSheetActions = new byte[9];
     private int threadSheetCount;
     private string threadSheetTitle = string.Empty;
     private string? threadSheetConversationId;
 
-    private sealed class ThreadView : ChatThreadView<ChatMessageDto, ConversationDto>
+    private sealed class ThreadView : MessageThreadViewBase
     {
         private readonly MessageApp app;
-        private ConversationMemberDto[] memberLineSource = Array.Empty<ConversationMemberDto>();
-        private string memberLine = string.Empty;
 
         public ThreadView(MessageApp app)
             : base(app.store, app.ui, app.images, app.lodestone, app.http, app.library, app.configuration,
-                app.confirm, app.report, app.translation, app.wallpaperImages, app.encryptionHelp, ThreadPollSeconds,
-                TypingSendSeconds)
+                app.confirm, app.report, app.translation, app.wallpaperImages, app.encryptionHelp)
         {
             this.app = app;
         }
 
         protected override PhoneTheme Theme => app.theme;
+
         protected override IPhoneApp Owner => app;
+
         protected override INavigator Navigation => app.navigation;
+
         protected override Action BackAction => app.back;
-        protected override string MyUserId => store.MyUserId;
-        protected override Vector4 Accent => ui.Accent;
-        protected override string EmptyText => Loc.T(L.Message.ThreadEmpty);
-        protected override string LogTag => "Message";
-        protected override string PickerTitle => Loc.T(L.Common.SendPhoto);
-        protected override string ImportLabel => Loc.T(L.Common.ImportFromPc);
-        protected override string NoPhotosLabel => Loc.T(L.Common.NoPhotos);
-        protected override string SaveLabel => Loc.T(L.Common.SaveToGallery);
-        protected override string SavedLabel => Loc.T(L.Common.SavedToGallery);
-        protected override bool IsGroupThread => app.store.Conversation?.IsGroup ?? false;
-        protected override ChatComposerStyle ComposerStyle => ChatComposerStyle.Plus;
-        protected override string ComposerHint => Loc.T(L.DirectMessages.StartChat);
 
-        protected override ChatBubbleStyle BubbleStyle => new(app.activeTheme.OutgoingBubble,
-            MessageThemes.OutgoingInk, MessageThemes.IncomingBubble, MessageThemes.IncomingInk, BubbleRounding, true);
-
-        protected override float TranscriptSidePadding => ThreadSidePadding;
-
-        public bool SearchOpen => searchController.Open;
-
-        public void ToggleSearch() => searchController.Toggle();
-
-        public bool CanTranslate => TranslationAvailable;
-
-        public bool TranslatingThread(string threadId) => IsConversationTranslated(threadId);
-
-        public void ToggleTranslation(string threadId) => ToggleConversationTranslation(threadId);
-
-        protected override void PaintTranscriptBackdrop(Rect listRect)
-        {
-            var conversationId = store.CurrentThreadId ?? string.Empty;
-            MessageWallpapers.Paint(ImGui.GetWindowDrawList(), listRect,
-                MessageWallpapers.Effective(configuration, conversationId), configuration.MessageWallpaperPattern,
-                app.wallpaperImages);
-        }
-
-        protected override bool IsDeleted(ChatMessageDto message) => message.Deleted;
-
-        protected override string SenderIdOf(ChatMessageDto message) => message.SenderId;
-
-        protected override int KindOf(ChatMessageDto message) => message.Kind;
-
-        protected override string? BodyOf(ChatMessageDto message) => message.Body;
-
-        protected override int EncVersionOf(ChatMessageDto message) => message.EncVersion;
-
-        protected override byte[]? DecryptSealed(ChatMessageDto message, string? threadId, byte[] sealedBytes) =>
-            app.store.DecryptMedia(message, sealedBytes);
-
-        protected override void OpenImageView(string messageId) => app.router.Push(MessageRoute.ImageView(messageId));
-
-        protected override void OpenReactions(string messageId) => app.router.Push(MessageRoute.Reactions(messageId));
-
-        protected override void PushImagePickerScreen(string threadId) => app.router.Push(MessageRoute.ChatImage(threadId));
-
-        protected override void PopScreen() => app.router.Pop();
-
-        protected override void OpenEncryptionInfo(string threadId)
-        {
-            var conversation = app.store.Conversation;
-            if (conversation is not null)
-            {
-                app.router.Push(MessageRoute.Encryption(conversation.Id));
-            }
-        }
-
-        protected override void OnThreadSwitchingFrom(string previousThreadId)
-        {
-            if (!composer.IsEditing)
-            {
-                SaveDraft(previousThreadId);
-            }
-        }
-
-        protected override void OnThreadOpened(string threadId)
-        {
-            composer.Draft = configuration.MessageDrafts.GetValueOrDefault(threadId, string.Empty);
-        }
-
-        protected override void OnDraftConsumed(string threadId) => ClearDraft(threadId);
-
-        private void SaveDraft(string conversationId)
-        {
-            var trimmed = composer.Draft.Trim();
-            var drafts = configuration.MessageDrafts;
-            if (trimmed.Length == 0)
-            {
-                if (drafts.Remove(conversationId))
-                {
-                    configuration.Save();
-                }
-
-                return;
-            }
-
-            if (drafts.GetValueOrDefault(conversationId) == trimmed)
-            {
-                return;
-            }
-
-            drafts[conversationId] = trimmed;
-            configuration.Save();
-        }
-
-        private void ClearDraft(string conversationId)
-        {
-            if (configuration.MessageDrafts.Remove(conversationId))
-            {
-                configuration.Save();
-            }
-        }
-
-        protected override void BeginReply(string messageId)
-        {
-            var message = FindMessage(messageId);
-            if (message is null || message.Kind == 2)
-            {
-                return;
-            }
-
-            var senderName = message.SenderId == MyUserId
-                ? Loc.T(L.Message.You)
-                : message.SenderDisplayName;
-            composer.BeginReply(messageId, senderName, ChatText.QuotePreview(message.Body, message.Kind));
-        }
+        protected override MessageTheme ChatTheme => app.activeTheme;
 
         protected override ChatMenuModel BuildMenuModel()
         {
@@ -215,18 +92,21 @@ internal sealed partial class MessageApp
             };
         }
 
-        protected override void DrawAboveTranscript(ref Rect listRect, string threadId)
+        protected override void OpenImageView(string messageId) => app.router.Push(MessageRoute.ImageView(messageId));
+
+        protected override void OpenReactions(string messageId) => app.router.Push(MessageRoute.Reactions(messageId));
+
+        protected override void PushImagePickerScreen(string threadId) => app.router.Push(MessageRoute.ChatImage(threadId));
+
+        protected override void PopScreen() => app.router.Pop();
+
+        protected override void OpenEncryptionInfo(string threadId)
         {
             var conversation = app.store.Conversation;
-            if (IsGroupThread || conversation is null || !app.store.HasRotationNotice(conversation.OtherUserId))
+            if (conversation is not null)
             {
-                return;
+                app.router.Push(MessageRoute.Encryption(conversation.Id));
             }
-
-            var dismissUserId = conversation.OtherUserId;
-            var text = Loc.T(L.Encryption.SafetyChanged, DirectMessagesStore.DisplayTitle(conversation));
-            ChatHeaderControls.DrawBanner(ui, ref listRect, text, ui.MutedInk,
-                () => app.store.ClearRotationNotice(dismissUserId));
         }
 
         protected override void DrawHeader(Rect area, string threadId)
@@ -283,7 +163,7 @@ internal sealed partial class MessageApp
             var nameWidth = MathF.Max(1f, nameRight - nameLeft);
             var subtitle = conversation is null
                 ? string.Empty
-                : isGroup ? GroupSubtitle(conversation) : app.PresenceText(conversation);
+                : isGroup ? GroupSubtitle(conversation) : PresenceText(conversation);
             var subtitleInk = !isGroup && conversation is { Presence: 1 } ? app.ink.AccentLink : app.ink.MutedInk;
             var titleId = "messageapp.thread.title." + (conversation?.Id ?? "self");
             var nameHeight = Typography.LineHeight(ThreadNameStyle);
@@ -328,153 +208,6 @@ internal sealed partial class MessageApp
                 app.router.Push(MessageRoute.Contact(conversation.OtherUserId));
             }
         }
-
-        private string GroupSubtitle(ConversationDto conversation)
-        {
-            var members = app.store.Members;
-            if (members.Length == 0)
-            {
-                return Loc.T(L.DirectMessages.MembersCount, conversation.MemberCount);
-            }
-
-            if (ReferenceEquals(members, memberLineSource))
-            {
-                return memberLine;
-            }
-
-            memberLineSource = members;
-            var builder = new System.Text.StringBuilder(64);
-            var myId = MyUserId;
-            for (var index = 0; index < members.Length; index++)
-            {
-                if (!members[index].IsActive)
-                {
-                    continue;
-                }
-
-                if (builder.Length > 0)
-                {
-                    builder.Append(", ");
-                }
-
-                builder.Append(members[index].UserId == myId ? Loc.T(L.Message.You) : MemberLabel(members[index]));
-            }
-
-            memberLine = builder.ToString();
-            return memberLine;
-        }
-
-        protected override TranscriptMessage[] MapTranscript(ChatMessageDto[] source)
-        {
-            var isGroup = IsGroupThread;
-            var mapped = new TranscriptMessage[source.Length];
-            for (var index = 0; index < source.Length; index++)
-            {
-                var message = source[index];
-                if (message.Kind == 2)
-                {
-                    mapped[index] = new TranscriptMessage(message.Id, message.SenderId, SystemText(message), 2,
-                        message.CreatedAtUnix, 0, 0, null, string.Empty, default);
-                    continue;
-                }
-
-                var senderName = isGroup ? message.SenderDisplayName : string.Empty;
-                var tint = isGroup ? SenderTint.Of(message.SenderDisplayName) : default;
-                if (message.Deleted)
-                {
-                    mapped[index] = new TranscriptMessage(message.Id, message.SenderId,
-                        Loc.T(L.Message.DeletedBody), 0, message.CreatedAtUnix, 0, 0, null, senderName, tint,
-                        TranscriptFlags.Deleted);
-                    continue;
-                }
-
-                var replySender = string.Empty;
-                var replyBody = string.Empty;
-                var replyKind = message.ReplyKind;
-                if (message.ReplyToId is not null)
-                {
-                    replySender = message.ReplySenderId == MyUserId
-                        ? Loc.T(L.Message.You)
-                        : message.ReplySenderName ?? Loc.T(L.Message.OriginalUnavailable);
-                    replyKind = ChatText.EffectiveKind(message.ReplyBody, replyKind);
-                    replyBody = ChatText.QuotePreview(message.ReplyBody, replyKind);
-                }
-
-                TranscriptReaction[]? reactions = null;
-                var summaries = message.Reactions;
-                if (summaries is { Length: > 0 })
-                {
-                    reactions = new TranscriptReaction[summaries.Length];
-                    for (var summaryIndex = 0; summaryIndex < summaries.Length; summaryIndex++)
-                    {
-                        reactions[summaryIndex] = new TranscriptReaction(summaries[summaryIndex].Token,
-                            summaries[summaryIndex].Count, summaries[summaryIndex].Mine);
-                    }
-                }
-
-                mapped[index] = new TranscriptMessage(message.Id, message.SenderId, message.Body, message.Kind,
-                    message.CreatedAtUnix, message.MediaWidth, message.MediaHeight, message.ReadAtUnix, senderName,
-                    tint, MessageFlags(message), message.ReplyToId, replySender, replyBody, replyKind,
-                    message.DurationSecs, reactions, message.SenderBadges, message.SenderBadgeIds);
-            }
-
-            return mapped;
-        }
-
-        private byte MessageFlags(ChatMessageDto message)
-        {
-            byte flags = 0;
-            if (message.Forwarded)
-            {
-                flags |= TranscriptFlags.Forwarded;
-            }
-
-            if (message.EditedAtUnix is not null)
-            {
-                flags |= TranscriptFlags.Edited;
-            }
-
-            if (message.EncVersion == 0)
-            {
-                return flags;
-            }
-
-            var state = store.DecryptionState(message.Id);
-            flags |= TranscriptFlags.Encrypted;
-            if (state.IsPlaceholder)
-            {
-                flags |= TranscriptFlags.Placeholder;
-            }
-            else if (state.State == Aetherphone.Core.Crypto.DmBodyState.Decrypted && !state.Verified)
-            {
-                flags |= TranscriptFlags.Unverified;
-            }
-
-            return flags;
-        }
-
-        private static string SystemText(ChatMessageDto message)
-        {
-            var actor = message.SenderDisplayName;
-            var body = message.Body ?? string.Empty;
-            var separator = (char)0x1F;
-            var separatorIndex = body.IndexOf(separator);
-            var token = separatorIndex >= 0 ? body.Substring(0, separatorIndex) : body;
-            var argument = separatorIndex >= 0 ? body.Substring(separatorIndex + 1) : string.Empty;
-            return token switch
-            {
-                "created" => Loc.T(L.DirectMessages.SysCreated, actor),
-                "added" => Loc.T(L.DirectMessages.SysAdded, actor, argument),
-                "removed" => Loc.T(L.DirectMessages.SysRemoved, actor, argument),
-                "left" => Loc.T(L.DirectMessages.SysLeft, actor),
-                "renamed" => Loc.T(L.DirectMessages.SysRenamed, actor, argument),
-                "promoted" => Loc.T(L.DirectMessages.SysPromoted, actor, argument),
-                "demoted" => Loc.T(L.DirectMessages.SysDemoted, actor, argument),
-                "photo" => Loc.T(L.DirectMessages.SysPhoto, actor),
-                "description" => Loc.T(L.DirectMessages.SysDescription, actor),
-                _ => body,
-            };
-        }
     }
 
     private Rect PaintHeaderBand(Rect area)
@@ -518,6 +251,10 @@ internal sealed partial class MessageApp
         threadSheetActions[count++] = ThreadActMute;
         threadSheetItems[count] = new ActionSheet.Item(Loc.T(L.Message.Wallpaper), PhoneIcons.Wallpaper);
         threadSheetActions[count++] = ThreadActWallpaper;
+        threadSheetItems[count] = new ActionSheet.Item(
+            Loc.T(popouts.IsOpen(conversation.Id) ? L.Message.ClosePopout : L.Message.PopoutChat),
+            PhoneIcons.ExternalLink, Selected: popouts.IsOpen(conversation.Id));
+        threadSheetActions[count++] = ThreadActPopout;
         threadSheetItems[count] = new ActionSheet.Item(Loc.T(L.Encryption.InfoTitle),
             store.EncryptingCurrent ? PhoneIcons.Lock : PhoneIcons.LockOpen);
         threadSheetActions[count++] = ThreadActEncryption;
@@ -583,7 +320,28 @@ internal sealed partial class MessageApp
             case ThreadActDelete:
                 AskDeleteConversation(conversationId);
                 break;
+            case ThreadActPopout:
+                TogglePopout(conversationId, conversation);
+                break;
         }
+    }
+
+    private void TogglePopout(string conversationId, ConversationDto? conversation)
+    {
+        if (popouts.IsOpen(conversationId))
+        {
+            popouts.Close(conversationId);
+            return;
+        }
+
+        var title = conversation is null ? DisplayName : DirectMessagesStore.DisplayTitle(conversation);
+        if (!popouts.Open(conversationId, title))
+        {
+            ShellToast.Show(Loc.T(L.Message.PopoutLimit, MessagePopouts.MaxWindows));
+            return;
+        }
+
+        router.Pop();
     }
 
     private bool IsStarred(string messageId)
@@ -647,25 +405,5 @@ internal sealed partial class MessageApp
             StarredAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
         });
         configuration.Save();
-    }
-
-    private string PresenceText(ConversationDto? conversation)
-    {
-        if (conversation is null)
-        {
-            return string.Empty;
-        }
-
-        if (conversation.Presence == 1)
-        {
-            return Loc.T(L.Message.PresenceOnline);
-        }
-
-        if (conversation.LastSeenAtUnix is { } lastSeen)
-        {
-            return Loc.T(L.Message.PresenceLastSeen, FormatStamp(lastSeen));
-        }
-
-        return string.Empty;
     }
 }

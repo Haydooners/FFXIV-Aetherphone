@@ -56,7 +56,7 @@ internal sealed partial class MessageApp
     private void TickMessageInfo()
     {
         sinceInfoPoll += ImGui.GetIO().DeltaTime;
-        if (sinceInfoPoll < ThreadPollSeconds)
+        if (sinceInfoPoll < MessageThreadViewBase.ThreadPollSeconds)
         {
             return;
         }
@@ -103,7 +103,7 @@ internal sealed partial class MessageApp
         var bubbleHeight = textSize.Y + 2f * scale + timeSize.Y + paddingY * 2f;
         var bubbleMin = new Vector2(origin.X + width - bubbleWidth, origin.Y);
         var bubbleMax = bubbleMin + new Vector2(bubbleWidth, bubbleHeight);
-        Squircle.Fill(drawList, bubbleMin, bubbleMax, BubbleRounding * scale,
+        Squircle.Fill(drawList, bubbleMin, bubbleMax, MessageThreadViewBase.BubbleRounding * scale,
             ImGui.GetColorU32(activeTheme.OutgoingBubble));
         Typography.DrawWrappedLeft(new Vector2(bubbleMin.X + paddingX, bubbleMin.Y + paddingY), text,
             MessageThemes.OutgoingInk, TextStyles.Body, wrap);
@@ -139,9 +139,9 @@ internal sealed partial class MessageApp
         var card = GroupCard.Begin(ui, 2, ReceiptRowHeight);
         DrawReceiptStatusRow(drawList, card.NextRow(), PhoneIcons.Checks,
             readAt is not null ? ReadTickColor : ink.MutedInk, Loc.T(L.Message.ReadSection),
-            readAt is { } readUnix ? FormatStamp(readUnix) : Loc.T(L.Message.NotReadYet));
+            readAt is { } readUnix ? TimeText.Stamp(readUnix) : Loc.T(L.Message.NotReadYet));
         DrawReceiptStatusRow(drawList, card.NextRow(), PhoneIcons.Check, ink.MutedInk, Loc.T(L.Message.SentSection),
-            FormatStamp(message.CreatedAtUnix));
+            TimeText.Stamp(message.CreatedAtUnix));
         card.End();
         DrawCardGap();
     }
@@ -186,7 +186,7 @@ internal sealed partial class MessageApp
                     continue;
                 }
 
-                DrawReceiptMemberRow(drawList, readCard.NextRow(), member, FormatStamp(readAt), PhoneIcons.Checks,
+                DrawReceiptMemberRow(drawList, readCard.NextRow(), member, TimeText.Stamp(readAt), PhoneIcons.Checks,
                     ReadTickColor);
             }
 
@@ -264,7 +264,7 @@ internal sealed partial class MessageApp
         var band = RowBand(row, scale);
         var rowHovering = UiInteract.Hover(band.Min, band.Max);
         var labelHeight = Typography.LineHeight(RowTitleStyle);
-        Marquee.DrawLeft(drawList, new MarqueeId("messageapp.messageinfo.member.", member.UserId), MemberLabel(member),
+        Marquee.DrawLeft(drawList, new MarqueeId("messageapp.messageinfo.member.", member.UserId), DirectMessagesStore.MemberLabel(member),
             textLeft, row.Center.Y - labelHeight * 0.5f, MathF.Max(1f, right - textLeft), RowTitleStyle, ink.TitleInk,
             rowHovering);
     }
