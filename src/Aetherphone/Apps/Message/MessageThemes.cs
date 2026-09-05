@@ -27,7 +27,6 @@ internal static class MessageThemes
     public const float OutgoingMix = 0.55f;
     public const float BadgeLift = 0.12f;
 
-    public static readonly Vector4 TopBar = new(0.110f, 0.145f, 0.169f, 1f);
     public static readonly Vector4 Body = new(0.043f, 0.078f, 0.102f, 1f);
     public static readonly Vector4 IncomingBubble = new(0.125f, 0.173f, 0.200f, 1f);
     public static readonly Vector4 IncomingInk = new(0.914f, 0.929f, 0.937f, 1f);

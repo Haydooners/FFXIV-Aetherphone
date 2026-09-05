@@ -478,7 +478,7 @@ internal sealed partial class MessageApp
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         var band = new Rect(area.Min, new Vector2(area.Max.X, area.Min.Y + AppHeader.Height * scale));
-        drawList.AddRectFilled(band.Min, band.Max, ImGui.GetColorU32(MessageThemes.TopBar));
+        ui.PaintGradient(drawList, band, screenRect, 0f);
         drawList.AddLine(new Vector2(band.Min.X, band.Max.Y), band.Max, ImGui.GetColorU32(ui.Hairline), 1f);
         return band;
     }

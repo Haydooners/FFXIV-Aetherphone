@@ -490,7 +490,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
-        drawList.AddRectFilled(bar.Min, bar.Max, ImGui.GetColorU32(MessageThemes.TopBar));
+        SocialChrome.PaintBarBackdrop(ui, drawList, bar, screenRect);
         drawList.AddLine(bar.Min, new Vector2(bar.Max.X, bar.Min.Y), ImGui.GetColorU32(ui.Hairline), 1f);
         var slot = bar.Width / TabCount;
         for (var index = 0; index < TabCount; index++)

@@ -635,7 +635,7 @@ internal sealed partial class MessageApp
         }
 
         var barTop = area.Max.Y - actionHeight;
-        drawList.AddRectFilled(new Vector2(area.Min.X, barTop), area.Max, ImGui.GetColorU32(MessageThemes.TopBar));
+        SocialChrome.PaintBarBackdrop(ui, drawList, new Rect(new Vector2(area.Min.X, barTop), area.Max), screenRect);
         var sideInset = CellPadX * scale;
         var buttonTop = barTop + 8f * scale;
         var buttonRect = new Rect(new Vector2(area.Min.X + sideInset, buttonTop),

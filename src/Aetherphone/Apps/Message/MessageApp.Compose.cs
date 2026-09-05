@@ -151,7 +151,7 @@ internal sealed partial class MessageApp
     {
         var drawList = ImGui.GetWindowDrawList();
         var barTop = area.Max.Y - actionHeight;
-        drawList.AddRectFilled(new Vector2(area.Min.X, barTop), area.Max, ImGui.GetColorU32(MessageThemes.TopBar));
+        SocialChrome.PaintBarBackdrop(ui, drawList, new Rect(new Vector2(area.Min.X, barTop), area.Max), screenRect);
         drawList.AddLine(new Vector2(area.Min.X, barTop), new Vector2(area.Max.X, barTop), ImGui.GetColorU32(ui.Hairline),
             1f);
         var sideInset = CellPadX * scale;
