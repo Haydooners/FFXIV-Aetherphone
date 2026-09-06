@@ -2512,6 +2512,8 @@
   "velvet.searchNoneHint": "別の名前やタグで試してください。",
   "velvet.fitSharedKinks.one": "共通のキンク {0}件",
   "velvet.fitSharedKinks.other": "共通のキンク {0}件",
+  "velvet.cardShared.one": "共通 {0}件",
+  "velvet.cardShared.other": "共通 {0}件",
   "velvet.filterShownHidden": "{0}件表示、{1}件非表示",
   "velvet.cardRace": "種族",
   "velvet.editDetailsHeader": "詳細",

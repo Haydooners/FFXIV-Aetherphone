@@ -45,6 +45,7 @@ internal static class VCard
     private const float StackedPadY = 10f;
     private const float StackedGap = 2f;
 
+    private static readonly TextStyle TrailingStyle = TextStyles.Footnote;
     private static readonly TextStyle FactLabelStyle = TextStyles.Body;
     private static readonly TextStyle FactValueStyle = TextStyles.BodyEmphasized;
     private static readonly TextStyle StackedLabelStyle = TextStyles.Footnote;
@@ -78,7 +79,7 @@ internal static class VCard
     }
 
     public static void Header(ImDrawListPtr drawList, Vector2 origin, float width, string glyph, Vector4 tone,
-        string title, float scale)
+        string title, float scale, string trailing = "")
     {
         var tile = HeaderTile * scale;
         var tileMax = new Vector2(origin.X + tile, origin.Y + tile);
@@ -86,6 +87,14 @@ internal static class VCard
         Tile(drawList, origin, tileMax, glyph, tone, HeaderGlyph * scale, scale);
         var titleLeft = tileMax.X + HeaderTitleGap * scale;
         var titleWidth = MathF.Max(1f, origin.X + width - titleLeft);
+        if (trailing.Length > 0)
+        {
+            var trailingSize = Typography.Measure(trailing, TrailingStyle);
+            titleWidth = MathF.Max(1f, titleWidth - trailingSize.X - HeaderTitleGap * scale);
+            Typography.Draw(drawList, new Vector2(origin.X + width - trailingSize.X, centerY - trailingSize.Y * 0.5f),
+                trailing, VelvetTheme.MutedInk, TrailingStyle);
+        }
+
         Typography.Draw(drawList, new Vector2(titleLeft, centerY - Typography.LineHeight(TextStyles.Headline) * 0.5f),
             Typography.FitText(title, titleWidth, TextStyles.Headline), VelvetTheme.TitleInk, TextStyles.Headline);
     }

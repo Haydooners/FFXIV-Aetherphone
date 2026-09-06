@@ -2512,6 +2512,8 @@
   "velvet.searchNoneHint": "Tente outro nome ou tag.",
   "velvet.fitSharedKinks.one": "{0} kink em comum",
   "velvet.fitSharedKinks.other": "{0} kinks em comum",
+  "velvet.cardShared.one": "{0} em comum",
+  "velvet.cardShared.other": "{0} em comum",
   "velvet.filterShownHidden": "{0} exibidos, {1} ocultos",
   "velvet.cardRace": "Raça",
   "velvet.editDetailsHeader": "Detalhes",

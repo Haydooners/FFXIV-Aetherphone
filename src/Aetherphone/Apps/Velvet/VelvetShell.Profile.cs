@@ -23,7 +23,7 @@ internal sealed partial class VelvetShell
     private const float ProfileAvatarRadius = 44f;
     private const float ProfileHeadTop = 14f;
     private const float ProfileStatsGap = 20f;
-    private const float ProfileStatSpacing = 22f;
+    private const float ProfileStatColumnPad = 10f;
     private const float ProfileBlockGap = 10f;
     private const float ProfileTabHeight = 44f;
     private const float ProfileActionHeight = 40f;
@@ -34,11 +34,13 @@ internal sealed partial class VelvetShell
     private const float ProfileAboutLead = 4f;
     private const int ProfileColumns = 3;
     private const int MaxFacts = 3;
+    private const int MaxSharedLabels = 64;
 
     private static readonly Vector4 RoleTone = new(0.62f, 0.22f, 0.60f, 1f);
     private static readonly Vector4 KinkTone = new(0.647f, 0.482f, 0.839f, 1f);
     private static readonly TextStyle ProfileNameStyle = new(1.35f, FontWeight.Bold);
     private static readonly TextStyle ProfileStatValueStyle = new(1.1f, FontWeight.Bold);
+    private static readonly TextStyle ProfileStatLabelStyle = TextStyles.Subheadline;
     private static readonly TextStyle ProfileTabStyle = new(1.02f, FontWeight.SemiBold);
     private static readonly TextStyle ProfileTabIdleStyle = new(1.02f, FontWeight.Medium);
     private static readonly UnderlineTabStyle ProfileTabsStyle = new(ProfileTabStyle, ProfileTabIdleStyle,
@@ -47,11 +49,13 @@ internal sealed partial class VelvetShell
 
     private readonly VFact[] facts = new VFact[MaxFacts];
     private readonly float[] factHeights = new float[MaxFacts];
+    private readonly string?[] sharedLabels = new string?[MaxSharedLabels];
     private VelvetProfileTab profileTab = VelvetProfileTab.About;
     private Spring profileTabSlide;
     private string roleSummaryRaw = string.Empty;
     private string roleSummary = string.Empty;
     private LanguageInfo? roleSummaryLanguage;
+    private LanguageInfo? sharedLabelLanguage;
 
     private void DrawProfile(Rect area, string userId)
     {
@@ -152,11 +156,22 @@ internal sealed partial class VelvetShell
             images, lodestone, -1, ring, frame);
         avatarLightbox.TryOpen(avatarCenter, radius, user.AvatarUrl, images);
 
-        var statsTop = avatarCenter.Y - Typography.LineHeight(ProfileStatValueStyle);
+        var statCount = isMe ? 2 : 1;
         var statsLeft = avatarCenter.X + radius + frameReach + ProfileStatsGap * scale;
-        DrawProfileStats(drawList, user, isMe, statsLeft, innerRight, statsTop);
+        var statsInline = StatsFitInline(innerRight - statsLeft, statCount, scale);
+        var statsHeight = Typography.LineHeight(ProfileStatValueStyle)
+            + Typography.LineHeight(ProfileStatLabelStyle);
+        var statsRowTop = avatarCenter.Y + radius + frameReach + ProfileBlockGap * scale;
+        if (statsInline)
+        {
+            DrawProfileStats(drawList, user, statCount, statsLeft, innerRight, avatarCenter.Y);
+        }
+        else
+        {
+            DrawProfileStats(drawList, user, statCount, innerLeft, innerRight, statsRowTop + statsHeight * 0.5f);
+        }
 
-        var nameTop = avatarCenter.Y + radius + frameReach + ProfileBlockGap * scale;
+        var nameTop = statsInline ? statsRowTop : statsRowTop + statsHeight + ProfileBlockGap * scale;
         UserName.DrawAuto(drawList, "velvet.profile.name." + user.UserId, name, user.Badges, user.BadgeIds, innerLeft,
             nameTop, innerWidth, ProfileNameStyle, VelvetTheme.TitleInk, theme, 2);
 
@@ -184,24 +199,45 @@ internal sealed partial class VelvetShell
         ImGui.Dummy(new Vector2(width, bottom - origin.Y));
     }
 
-    private void DrawProfileStats(ImDrawListPtr drawList, VelvetProfileDto user, bool isMe, float left, float right,
-        float top)
+    private static bool StatsFitInline(float available, int count, float scale)
     {
-        var scale = UiScale.Current;
-        var lineHeight = Typography.LineHeight(ProfileStatValueStyle);
+        var widest = Typography.Measure(Loc.T(L.Velvet.Posts), ProfileStatLabelStyle).X;
+        if (count > 1)
+        {
+            widest = MathF.Max(widest,
+                Typography.Measure(Loc.T(L.Velvet.ProfileConnections), ProfileStatLabelStyle).X);
+        }
+
+        return (widest + ProfileStatColumnPad * scale) * count <= available;
+    }
+
+    private void DrawProfileStats(ImDrawListPtr drawList, VelvetProfileDto user, int count, float left, float right,
+        float centerY)
+    {
         store.EnsureUserPosts(user.UserId);
         var postCount = store.UserPostsUserId == user.UserId && store.UserPostsLoaded ? store.UserPostsTotal : 0;
-        var cursor = SocialChrome.DrawStat(drawList, left, top, lineHeight, CountText.Compact(postCount),
-            Loc.T(L.Velvet.Posts), false, right, VelvetInk.Shared, ProfileStatValueStyle, TextStyles.Subheadline,
-            out _);
-        if (!isMe)
+        var column = MathF.Max(1f, (right - left) / count);
+        var valueHeight = Typography.LineHeight(ProfileStatValueStyle);
+        var top = centerY - (valueHeight + Typography.LineHeight(ProfileStatLabelStyle)) * 0.5f;
+        DrawProfileStat(drawList, left, top, column, valueHeight, postCount, Loc.T(L.Velvet.Posts));
+        if (count < 2)
         {
             return;
         }
 
-        SocialChrome.DrawStat(drawList, cursor + ProfileStatSpacing * scale, top, lineHeight,
-            CountText.Compact(store.Connections.Length), Loc.T(L.Velvet.ProfileConnections), false, right,
-            VelvetInk.Shared, ProfileStatValueStyle, TextStyles.Subheadline, out _);
+        DrawProfileStat(drawList, left + column, top, column, valueHeight, store.Connections.Length,
+            Loc.T(L.Velvet.ProfileConnections));
+    }
+
+    private static void DrawProfileStat(ImDrawListPtr drawList, float left, float top, float column, float valueHeight,
+        int count, string label)
+    {
+        var scale = UiScale.Current;
+        var maxWidth = MathF.Max(1f, column - ProfileStatColumnPad * scale);
+        Typography.Draw(drawList, new Vector2(left, top), CountText.Compact(count), VelvetTheme.TitleInk,
+            ProfileStatValueStyle);
+        Typography.Draw(drawList, new Vector2(left, top + valueHeight),
+            Typography.FitText(label, maxWidth, ProfileStatLabelStyle), VelvetTheme.MutedInk, ProfileStatLabelStyle);
     }
 
     private float DrawProfileChips(ImDrawListPtr drawList, VelvetProfileDto user, float left, float right,
@@ -429,16 +465,24 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         chipModels.Clear();
+        var sharedCount = 0;
         for (var index = 0; index < tokens.Length; index++)
         {
-            chipModels.Add(TokenChip(tokens[index], tone, viewer, group));
+            var match = VelvetFit.Match(viewer, group, tokens[index]);
+            if (match == VelvetTokenMatch.Shared)
+            {
+                sharedCount++;
+            }
+
+            chipModels.Add(TokenChip(tokens[index], tone, match));
         }
 
+        var trailing = SharedLabel(sharedCount);
         var contentWidth = MathF.Max(1f, width - VCard.Pad * 2f * scale);
         var chipsHeight = MeasureChipFlow(contentWidth, scale);
         Gap(VCard.Gap);
         var card = VCard.Begin(drawList, width, VCard.HeaderBlock * scale + chipsHeight, scale);
-        VCard.Header(drawList, card.ContentOrigin, card.ContentWidth, glyph, tone, Loc.T(title), scale);
+        VCard.Header(drawList, card.ContentOrigin, card.ContentWidth, glyph, tone, Loc.T(title), scale, trailing);
         ImGui.SetCursorScreenPos(new Vector2(card.ContentOrigin.X,
             card.ContentOrigin.Y + VCard.HeaderBlock * scale));
         DrawChipFlow(card.ContentWidth, scale);
@@ -471,19 +515,35 @@ internal sealed partial class VelvetShell
         chipModels.Clear();
         for (var index = 0; index < tokens.Length; index++)
         {
-            chipModels.Add(TokenChip(tokens[index], tone, null, VelvetTokenGroup.None));
+            chipModels.Add(TokenChip(tokens[index], tone, VelvetTokenMatch.None));
         }
 
         DrawChipFlow(width, UiScale.Current);
     }
 
-    private static VChipModel TokenChip(string token, Vector4 tone, VelvetProfileDto? viewer, VelvetTokenGroup group)
+    private string SharedLabel(int count)
+    {
+        if (count <= 0 || count >= MaxSharedLabels)
+        {
+            return string.Empty;
+        }
+
+        if (!ReferenceEquals(sharedLabelLanguage, Loc.Current))
+        {
+            sharedLabelLanguage = Loc.Current;
+            Array.Clear(sharedLabels);
+        }
+
+        return sharedLabels[count] ??= Loc.Plural(L.Velvet.CardShared, count);
+    }
+
+    private static VChipModel TokenChip(string token, Vector4 tone, VelvetTokenMatch match)
     {
         var label = VelvetTokenLabels.Of(token);
-        return VelvetFit.Match(viewer, group, token) switch
+        return match switch
         {
-            VelvetTokenMatch.Shared => new VChipModel(label, VChipStyle.Solid, tone, PhoneIcons.Check),
-            VelvetTokenMatch.Conflict => new VChipModel(label, VChipStyle.Tint, VelvetTheme.Danger, PhoneIcons.X),
+            VelvetTokenMatch.Shared => new VChipModel(label, VChipStyle.Match, tone, PhoneIcons.Users),
+            VelvetTokenMatch.Conflict => new VChipModel(label, VChipStyle.Tint, VelvetTheme.Danger, PhoneIcons.Ban),
             _ => new VChipModel(label, VChipStyle.Tint, tone),
         };
     }

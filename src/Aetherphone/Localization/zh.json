@@ -2512,6 +2512,8 @@
   "velvet.searchNoneHint": "换个名字或标签试试。",
   "velvet.fitSharedKinks.one": "{0} 个共同癖好",
   "velvet.fitSharedKinks.other": "{0} 个共同癖好",
+  "velvet.cardShared.one": "{0} 项相同",
+  "velvet.cardShared.other": "{0} 项相同",
   "velvet.filterShownHidden": "显示 {0} 项，隐藏 {1} 项",
   "velvet.cardRace": "种族",
   "velvet.editDetailsHeader": "详情",

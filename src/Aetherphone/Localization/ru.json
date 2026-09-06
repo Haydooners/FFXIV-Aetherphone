@@ -2512,6 +2512,8 @@
   "velvet.searchNoneHint": "Попробуйте другое имя или тег.",
   "velvet.fitSharedKinks.one": "{0} общий кинк",
   "velvet.fitSharedKinks.other": "{0} общих кинков",
+  "velvet.cardShared.one": "Общих: {0}",
+  "velvet.cardShared.other": "Общих: {0}",
   "velvet.filterShownHidden": "Показано: {0}, скрыто: {1}",
   "velvet.cardRace": "Раса",
   "velvet.editDetailsHeader": "Подробности",

@@ -4258,6 +4258,8 @@ internal static class L
         public static readonly LocString SearchNoneHint = new("velvet.searchNoneHint", "Try a different name or tag.");
         public static readonly LocPlural FitSharedKinks =
             new("velvet.fitSharedKinks", "{0} shared kink", "{0} shared kinks");
+        public static readonly LocPlural CardShared =
+            new("velvet.cardShared", "{0} you share", "{0} you share");
         public static readonly LocString CardRace = new("velvet.cardRace", "Race");
         public static readonly LocString EditDetailsHeader = new("velvet.editDetailsHeader", "Details");
         public static readonly LocString EditNotSet = new("velvet.editNotSet", "Not set");

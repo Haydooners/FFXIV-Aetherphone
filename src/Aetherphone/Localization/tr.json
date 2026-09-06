@@ -2512,6 +2512,8 @@
   "velvet.searchNoneHint": "Başka bir isim ya da etiket dene.",
   "velvet.fitSharedKinks.one": "{0} ortak kink",
   "velvet.fitSharedKinks.other": "{0} ortak kink",
+  "velvet.cardShared.one": "{0} ortak",
+  "velvet.cardShared.other": "{0} ortak",
   "velvet.filterShownHidden": "{0} gösteriliyor, {1} gizli",
   "velvet.cardRace": "İrk",
   "velvet.editDetailsHeader": "Ayrıntılar",

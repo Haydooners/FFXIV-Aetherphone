@@ -8,6 +8,7 @@ internal enum VChipStyle
     Solid,
     Tint,
     Ghost,
+    Match,
 }
 
 internal readonly record struct VChipModel(
@@ -34,6 +35,9 @@ internal static class VChip
     private const float GhostFill = 0.10f;
     private const float GhostFillHover = 0.16f;
     private const float GhostStroke = 0.16f;
+    private const float MatchFill = 0.22f;
+    private const float MatchFillHover = 0.30f;
+    private const float MatchStroke = 0.85f;
 
     private static readonly TextStyle LabelStyle = TextStyles.Subheadline;
 
@@ -77,6 +81,11 @@ internal static class VChip
                 stroke = VelvetTheme.Alpha(chip.Tone, TintStroke);
                 ink = VelvetTheme.ToneInk(chip.Tone);
                 break;
+            case VChipStyle.Match:
+                fill = VelvetTheme.Alpha(chip.Tone, hovered ? MatchFillHover : MatchFill);
+                stroke = VelvetTheme.Alpha(chip.Tone, MatchStroke);
+                ink = VelvetTheme.ToneInk(chip.Tone);
+                break;
             default:
                 fill = VelvetTheme.Alpha(VelvetTheme.Moonlight, hovered ? GhostFillHover : GhostFill);
                 stroke = VelvetTheme.Alpha(VelvetTheme.Moonlight, GhostStroke);
@@ -87,7 +96,8 @@ internal static class VChip
         Squircle.Fill(drawList, min, max, radius, fill.Packed());
         if (chip.Style != VChipStyle.Solid)
         {
-            Squircle.Stroke(drawList, min, max, radius, stroke.Packed(), Metrics.Stroke.Hairline * scale);
+            var strokeWidth = chip.Style == VChipStyle.Match ? Metrics.Stroke.Ring : Metrics.Stroke.Hairline;
+            Squircle.Stroke(drawList, min, max, radius, stroke.Packed(), strokeWidth * scale);
         }
 
         var cursorX = min.X + PadX * scale;

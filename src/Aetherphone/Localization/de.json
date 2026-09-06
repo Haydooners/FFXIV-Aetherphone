@@ -2512,6 +2512,8 @@
   "velvet.searchNoneHint": "Versuche einen anderen Namen oder Tag.",
   "velvet.fitSharedKinks.one": "{0} gemeinsamer Kink",
   "velvet.fitSharedKinks.other": "{0} gemeinsame Kinks",
+  "velvet.cardShared.one": "{0} gemeinsam",
+  "velvet.cardShared.other": "{0} gemeinsam",
   "velvet.filterShownHidden": "{0} angezeigt, {1} ausgeblendet",
   "velvet.cardRace": "Volk",
   "velvet.editDetailsHeader": "Details",
