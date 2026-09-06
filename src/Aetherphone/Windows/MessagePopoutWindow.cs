@@ -57,7 +57,7 @@ internal sealed class MessagePopoutWindow : Window
     private readonly ConfirmService confirm;
     private readonly ConfirmOverlay confirmOverlay;
     private readonly int confirmHost = ConfirmHosts.Reserve();
-    private readonly DropdownMenu switchMenu = new();
+    private readonly DropdownMenu switchMenu = new() { Detached = true };
     private readonly List<DropdownMenu.Item> switchItems = new(SwitchMenuLimit);
     private readonly List<string> switchIds = new(SwitchMenuLimit);
     private readonly List<string> switchTitles = new(SwitchMenuLimit);
@@ -659,7 +659,7 @@ internal sealed class MessagePopoutWindow : Window
             return;
         }
 
-        var picked = switchMenu.Draw(frame, theme, CollectionsMarshal.AsSpan(switchItems));
+        var picked = switchMenu.Draw(PhoneBounds.Viewport(), theme, CollectionsMarshal.AsSpan(switchItems));
         if (picked < 0)
         {
             return;
