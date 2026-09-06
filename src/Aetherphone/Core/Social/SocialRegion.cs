@@ -1,4 +1,5 @@
 using System.Text;
+using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Game;
 
 namespace Aetherphone.Core.Social;
@@ -54,20 +55,22 @@ internal static class SocialRegion
         return builder.ToString();
     }
 
-    public static string AutoCode(GameData gameData)
+    public static string AutoCode(AethernetSession session, GameData gameData)
     {
-        var code = gameData.LocalRegionCode();
-        return code.Length > 0 ? code : Codes[0];
-    }
-
-    public static string EffectiveCode(Configuration configuration, GameData gameData)
-    {
-        if (configuration.RegionManual && IsValid(configuration.ManualRegion))
+        var accountCode = gameData.RegionCodeForWorld(session.AccountWorld);
+        if (accountCode.Length > 0)
         {
-            return configuration.ManualRegion;
+            return accountCode;
         }
 
-        return AutoCode(gameData);
+        var localCode = gameData.LocalRegionCode();
+        return localCode.Length > 0 ? localCode : Codes[0];
+    }
+
+    public static string EffectiveCode(AethernetSession session, GameData gameData)
+    {
+        var manual = session.ManualRegion;
+        return IsValid(manual) ? manual : AutoCode(session, gameData);
     }
 
     public static string Resolve(string? region, string? world, GameData gameData)

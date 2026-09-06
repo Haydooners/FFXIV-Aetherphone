@@ -3132,7 +3132,7 @@ internal static class L
     {
         public static readonly LocString Title = new("profile.title", "Profile");
         public static readonly LocString RegionSection = new("profile.regionSection", "Region");
-        public static readonly LocString RegionHelp = new("profile.regionHelp", "Your region shows on your social profiles in place of your character name and home world.");
+        public static readonly LocString RegionHelp = new("profile.regionHelp", "Your region shows on your social profiles in place of your character name and home world. Each account keeps its own choice.");
         public static readonly LocString RegionAutomatic = new("profile.regionAutomatic", "Automatic");
         public static readonly LocString TimeZoneSection = new("profile.timeZoneSection", "Time zone");
         public static readonly LocString TimeZoneHelp = new("profile.timeZoneHelp", "Show your local time on your profile so others can find a moment that works for both of you.");

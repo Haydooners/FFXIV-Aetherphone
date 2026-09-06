@@ -1471,7 +1471,7 @@
   "wallpaper.dark": "Koyu",
   "profile.title": "Profil",
   "profile.regionSection": "Bölge",
-  "profile.regionHelp": "Sosyal profillerinde karakter adın ve ana dünyan yerine bölgen gösterilir.",
+  "profile.regionHelp": "Sosyal profillerinde karakter adın ve ana dünyan yerine bölgen gösterilir. Her hesap kendi seçimini saklar.",
   "profile.regionAutomatic": "Otomatik",
   "profile.timeZoneSection": "Saat dilimi",
   "profile.timeZoneHelp": "Yerel saatini profilinde göster, böylece başkaları ikinize de uyan bir zaman bulabilir.",

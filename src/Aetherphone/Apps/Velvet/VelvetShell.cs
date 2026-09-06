@@ -341,7 +341,7 @@ internal sealed partial class VelvetShell : IResumableApp
         if (sinceHeartbeat >= HeartbeatSeconds)
         {
             sinceHeartbeat = 0f;
-            store.Heartbeat(SocialRegion.EffectiveCode(configuration, gameData), LocalRaceIsLalafell, localRaceId);
+            store.Heartbeat(LocalRaceIsLalafell, localRaceId);
         }
     }
 

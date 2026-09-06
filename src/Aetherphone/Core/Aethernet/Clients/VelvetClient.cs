@@ -379,25 +379,26 @@ internal sealed class VelvetClient
         return net.GetAsync($"/velvet/threads/{Uri.EscapeDataString(userId)}/typing", AethernetJsonContext.Default.VelvetTypingDto, token, null, onFailure);
     }
 
-    public Task<bool> HeartbeatAsync(int? utcOffsetMinutes, string region, bool? isLalafell, int raceId,
-        CancellationToken token,
+    public Task<bool> HeartbeatAsync(int? utcOffsetMinutes, bool? isLalafell, int raceId, CancellationToken token,
         Action<AepFailure>? onFailure = null)
     {
-        var path = new System.Text.StringBuilder("/velvet/heartbeat?");
+        var path = new System.Text.StringBuilder("/velvet/heartbeat");
+        var separator = '?';
         if (utcOffsetMinutes is { } offset)
         {
-            path.Append("utcOffsetMinutes=").Append(offset).Append('&');
+            path.Append(separator).Append("utcOffsetMinutes=").Append(offset);
+            separator = '&';
         }
 
-        path.Append("region=").Append(Uri.EscapeDataString(region));
         if (raceId > 0)
         {
-            path.Append("&race=").Append(raceId);
+            path.Append(separator).Append("race=").Append(raceId);
+            separator = '&';
         }
 
         if (isLalafell is { } reported)
         {
-            path.Append("&lalafell=").Append(reported ? "true" : "false");
+            path.Append(separator).Append("lalafell=").Append(reported ? "true" : "false");
         }
 
         return net.SendAsync(HttpMethod.Post, path.ToString(), token, null, onFailure);

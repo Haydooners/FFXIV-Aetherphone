@@ -1471,7 +1471,7 @@
   "wallpaper.dark": "Dunkel",
   "profile.title": "Profil",
   "profile.regionSection": "Region",
-  "profile.regionHelp": "Deine Region wird in deinen sozialen Profilen anstelle deines Charakternamens und deiner Heimatwelt angezeigt.",
+  "profile.regionHelp": "Deine Region wird in deinen sozialen Profilen anstelle deines Charakternamens und deiner Heimatwelt angezeigt. Jedes Konto behält seine eigene Auswahl.",
   "profile.regionAutomatic": "Automatisch",
   "profile.timeZoneSection": "Zeitzone",
   "profile.timeZoneHelp": "Zeige deine Ortszeit in deinem Profil, damit andere einen passenden Moment für euch beide finden.",

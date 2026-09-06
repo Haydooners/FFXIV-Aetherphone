@@ -1471,7 +1471,7 @@
   "wallpaper.dark": "深色",
   "profile.title": "个人资料",
   "profile.regionSection": "地区",
-  "profile.regionHelp": "你的社交资料将显示所在地区，而不是角色名和主世界。",
+  "profile.regionHelp": "你的社交资料将显示所在地区，而不是角色名和主世界。每个账号都会单独保存自己的选择。",
   "profile.regionAutomatic": "自动",
   "profile.timeZoneSection": "时区",
   "profile.timeZoneHelp": "在个人资料上显示你的当地时间，以便其他人更容易找到适合双方的时间。",

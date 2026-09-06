@@ -256,7 +256,7 @@ internal sealed partial class VelvetStore
         });
     }
 
-    public void Heartbeat(string region, bool? isLalafell, int raceId)
+    public void Heartbeat(bool? isLalafell, int raceId)
     {
         if (!session.IsSignedIn)
         {
@@ -265,7 +265,7 @@ internal sealed partial class VelvetStore
 
         var offset = SocialTimeZone.EffectiveOffsetMinutes(configuration);
         work.Run("heartbeat", async token =>
-            await client.HeartbeatAsync(offset, region, isLalafell, raceId, token).ConfigureAwait(false));
+            await client.HeartbeatAsync(offset, isLalafell, raceId, token).ConfigureAwait(false));
     }
 
     public void RefreshRequests()

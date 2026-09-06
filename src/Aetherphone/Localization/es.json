@@ -1471,7 +1471,7 @@
   "wallpaper.dark": "Oscuro",
   "profile.title": "Perfil",
   "profile.regionSection": "Región",
-  "profile.regionHelp": "Tu región se muestra en tus perfiles sociales en lugar del nombre de tu personaje y tu mundo de origen.",
+  "profile.regionHelp": "Tu región se muestra en tus perfiles sociales en lugar del nombre de tu personaje y tu mundo de origen. Cada cuenta guarda su propia elección.",
   "profile.regionAutomatic": "Automático",
   "profile.timeZoneSection": "Zona horaria",
   "profile.timeZoneHelp": "Muestra tu hora local en tu perfil para que otros puedan encontrar un momento que funcione para ambos.",

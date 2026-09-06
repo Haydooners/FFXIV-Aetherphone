@@ -1471,7 +1471,7 @@
   "wallpaper.dark": "ダーク",
   "profile.title": "プロフィール",
   "profile.regionSection": "地域",
-  "profile.regionHelp": "ソーシャルプロフィールには、キャラクター名やホームワールドの代わりに地域が表示されます。",
+  "profile.regionHelp": "ソーシャルプロフィールには、キャラクター名やホームワールドの代わりに地域が表示されます。地域の設定はアカウントごとに保存されます。",
   "profile.regionAutomatic": "自動",
   "profile.timeZoneSection": "タイムゾーン",
   "profile.timeZoneHelp": "あなたのプロフィールに現地時間を表示し、お互いに都合の良い時間を見つけやすくします。",
