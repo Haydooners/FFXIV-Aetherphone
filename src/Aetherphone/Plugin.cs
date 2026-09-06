@@ -19,7 +19,6 @@ using Aetherphone.Windows;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.ClientState.Keys;
-using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.Command;
 using Dalamud.Game.Config;
 using Dalamud.Game.Gui.ContextMenu;
