@@ -5181,6 +5181,11 @@ internal static class L
         public static readonly LocString OnlineEightWin = new("games.onlineEightWin", "{0} sinks the eight and wins!");
         public static readonly LocString OnlineEightEarlyLoss = new("games.onlineEightEarlyLoss", "{0} wins, the eight went down too early");
         public static readonly LocString OnlineEightScratchLoss = new("games.onlineEightScratchLoss", "{0} wins, the eight fell on a foul");
+        public static readonly LocString OnlineRuleDefault = new("games.onlineRuleDefault", "Default");
+        public static readonly LocString OnlineRuleHouse = new("games.onlineRuleHouse", "House Rules");
+        public static readonly LocString OnlineHouseBadge = new("games.onlineHouseBadge", "⚡ House Rules");
+        public static readonly LocString OnlineHandsRotated = new("games.onlineHandsRotated", "🌀 Hands Rotated!");
+        public static readonly LocString OnlineHandSwapped = new("games.onlineHandSwapped", "🤝 Hand Swapped!");
     }
 
     internal static class Minimized

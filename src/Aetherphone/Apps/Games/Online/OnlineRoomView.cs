@@ -249,14 +249,13 @@ internal sealed class OnlineRoomView
             var pickWidth = ScrollLayout.StableContentWidth();
             var dropdownRect = new Rect(pickOrigin, new Vector2(pickOrigin.X + pickWidth, pickOrigin.Y + 36f * scale));
 
-            var label = $"Rules: {ruleSetOptions[selectedRuleSetIndex].Label}";
+            var label = $"Rules: {RuleSetOptions[selectedRuleSetIndex].Label}";
             if (GameHud.Button(new Vector2(dropdownRect.Center.X, dropdownRect.Center.Y),
-             new Vector2(pickWidth, 36f * scale), label, accent, theme))
-                {
-                    rulesMenu.Toggle("uno_ruleset", dropdownRect);
-                }
+                new Vector2(pickWidth, 36f * scale), label, accent, theme))
+                    {
+                        rulesMenu.Toggle("uno_ruleset", dropdownRect);
+                    }
             
-            var picked = rulesMenu.Draw(body, theme, ruleSetOptions);
             if (picked >= 0 && picked != selectedRuleSetIndex) {
                 selectedRuleSetIndex = picked;
                 AepLog.Debug($"Host Selected ruleset: {selectedRuleSetIndex}");

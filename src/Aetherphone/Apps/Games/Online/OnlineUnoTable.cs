@@ -175,7 +175,7 @@ internal sealed class OnlineUnoTable
 
         if (board.RuleSet == GameRoomWire.RuleSetHouse){
             var badgePos = origin + new Vector2(16f * scale, 16f * scale);
-            Typography.Draw(drawList, badgePos, "⚡House Rules", theme.TextMuted, TextStyles.Caption1);
+            Typography.Draw(drawList, badgePos, Loc.T(L.Games.OnlineHouseBadge), theme.TextMuted, TextStyles.Caption1);
         }
 
         ObserveBoard(board, players, mySeat, myTurn, accent, scale);
@@ -386,12 +386,12 @@ internal sealed class OnlineUnoTable
 
         if (board.RuleSet == GameRoomWire.RuleSetHouse && GameRoomWire.IsZero(board.LastCard))
         {
-            ShowBanner("🌀 Hands Rotated!", accent);
+            ShowBanner(Loc.T(L.Games.OnlineHandsRotated), accent);
         }
 
         if (board.RuleSet == GameRoomWire.RuleSetHouse && GameRoomWire.IsSeven(board.LastCard))
         {
-            ShowBanner("🤝 Hand Swapped!", accent);
+            ShowBanner(Loc.T(L.Games.OnlineHandSwapped), accent);
         }
 
         if (penalty == 0 || seat < 0 || players.Length < 2)
