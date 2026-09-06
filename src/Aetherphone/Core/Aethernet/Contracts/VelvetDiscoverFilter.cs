@@ -49,7 +49,7 @@ internal sealed record VelvetDiscoverFilter(
         && RaceInclude == other.RaceInclude && RaceExclude == other.RaceExclude
         && ActiveWithinDays == other.ActiveWithinDays && HasPhoto == other.HasPhoto;
 
-    private static bool SameTokens(string[] left, string[] right)
+    public static bool SameTokens(string[] left, string[] right)
     {
         if (left.Length != right.Length)
         {

@@ -151,9 +151,10 @@ internal sealed partial class VelvetStore
         feedScope = (int)scope;
     }
 
-    public void SetFeedFilter(VelvetDiscoverFilter filter, string region)
+    public void SetFeedFilter(VelvetDiscoverFilter filter, string region, string[] postTags)
     {
-        if (feedFilter.Matches(filter) && string.Equals(feedRegion, region, StringComparison.Ordinal))
+        if (feedFilter.Matches(filter) && string.Equals(feedRegion, region, StringComparison.Ordinal)
+            && VelvetDiscoverFilter.SameTokens(feedPostTags, postTags))
         {
             return;
         }
@@ -161,6 +162,7 @@ internal sealed partial class VelvetStore
         feedEpoch++;
         feedFilter = filter;
         feedRegion = region;
+        feedPostTags = postTags;
         for (var index = 0; index < feedLanes.Length; index++)
         {
             feedLanes[index].Clear();
@@ -183,10 +185,11 @@ internal sealed partial class VelvetStore
         var epoch = feedEpoch;
         var filter = feedFilter;
         var region = feedRegion;
+        var postTags = feedPostTags;
         lane.Loading = true;
         work.Run("feed", async token =>
         {
-            var page = await client.FeedAsync(ScopeKey(scope), filter, region, Array.Empty<string>(), null, token)
+            var page = await client.FeedAsync(ScopeKey(scope), filter, region, postTags, null, token)
                 .ConfigureAwait(false);
             if (page is not null && epoch == feedEpoch)
             {
@@ -229,10 +232,11 @@ internal sealed partial class VelvetStore
         var epoch = feedEpoch;
         var filter = feedFilter;
         var region = feedRegion;
+        var postTags = feedPostTags;
         lane.LoadingMore = true;
         work.Run("feed more", async token =>
         {
-            var page = await client.FeedAsync(ScopeKey(scope), filter, region, Array.Empty<string>(), cursor, token)
+            var page = await client.FeedAsync(ScopeKey(scope), filter, region, postTags, cursor, token)
                 .ConfigureAwait(false);
             if (page is not null && epoch == feedEpoch)
             {

@@ -83,6 +83,38 @@ internal sealed class VelvetFilterSelection
             include.Tags.ToArray(), exclude.Tags.ToArray(),
             VelvetRace.Sanitize(include.Race), VelvetRace.Sanitize(exclude.Race));
 
+    public static VelvetDiscoverFilter CombineForFeed(VelvetFilterSelection include, VelvetFilterSelection exclude) =>
+        Combine(include, exclude) with
+        {
+            KinksInclude = Array.Empty<string>(),
+            LimitsInclude = Array.Empty<string>(),
+            TagsInclude = Array.Empty<string>(),
+        };
+
+    public static string[] ContentTokens(VelvetFilterSelection include)
+    {
+        var count = include.Kinks.Count + include.Limits.Count + include.Tags.Count;
+        if (count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        var tokens = new string[count];
+        var cursor = 0;
+        CopyTokens(include.Kinks, tokens, ref cursor);
+        CopyTokens(include.Limits, tokens, ref cursor);
+        CopyTokens(include.Tags, tokens, ref cursor);
+        return tokens;
+    }
+
+    private static void CopyTokens(HashSet<string> source, string[] target, ref int cursor)
+    {
+        foreach (var token in source)
+        {
+            target[cursor++] = token;
+        }
+    }
+
     private static void CopyKnownInto(List<string> source, HashSet<string> target, string[] known)
     {
         for (var index = 0; index < source.Count; index++)

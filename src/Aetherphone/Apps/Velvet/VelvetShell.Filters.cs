@@ -94,8 +94,8 @@ internal sealed partial class VelvetShell
             string.Empty, RegionCsvFor(discoverInclude));
     }
 
-    private void ApplyFeedFilters() => store.SetFeedFilter(VelvetFilterSelection.Combine(feedInclude, mutes),
-        RegionCsvFor(feedInclude));
+    private void ApplyFeedFilters() => store.SetFeedFilter(VelvetFilterSelection.CombineForFeed(feedInclude, mutes),
+        RegionCsvFor(feedInclude), VelvetFilterSelection.ContentTokens(feedInclude));
 
     private int AllowedRegions(VelvetFilterSelection include) =>
         SocialRegion.AllowedMask(include.RegionMask, mutes.RegionMask);

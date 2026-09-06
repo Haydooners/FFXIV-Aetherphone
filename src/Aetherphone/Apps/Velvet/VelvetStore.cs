@@ -83,6 +83,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private volatile int feedScope = (int)VelvetFeedScope.All;
     private volatile VelvetDiscoverFilter feedFilter = VelvetDiscoverFilter.Empty;
     private volatile string feedRegion = string.Empty;
+    private volatile string[] feedPostTags = Array.Empty<string>();
     private volatile int feedEpoch;
     private volatile bool posting;
     private volatile VelvetPostDto? fetchedPost;
