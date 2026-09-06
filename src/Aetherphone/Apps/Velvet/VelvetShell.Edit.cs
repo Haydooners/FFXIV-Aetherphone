@@ -164,7 +164,9 @@ internal sealed partial class VelvetShell
             SaveProfile();
         }
 
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + VHeader.Height * scale), area.Max);
+        var side = Metrics.Space.Sm * scale;
+        var body = new Rect(new Vector2(area.Min.X + side, area.Min.Y + VHeader.Height * scale),
+            new Vector2(area.Max.X - side, area.Max.Y));
         using (AppSurface.Begin(body))
         {
             if (editSaveFailed)
@@ -175,9 +177,9 @@ internal sealed partial class VelvetShell
             }
 
             Gap(8f);
-            DrawEditPhotos();
-            Gap(18f);
             DrawEditAvatar();
+            Gap(10f);
+            DrawEditPhotos();
             Gap(14f);
 
             VSectionHeader.Card(PhoneIcons.User, Loc.T(L.Velvet.CardIdentity));
