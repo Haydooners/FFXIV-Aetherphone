@@ -7,6 +7,7 @@ internal sealed class VelvetMaskLabels
     private readonly int[] flags;
     private readonly Func<int, string> labelOf;
     private string[] labels = Array.Empty<string>();
+    private string summary = string.Empty;
     private int cachedMask = -1;
     private LanguageInfo? cachedLanguage;
 
@@ -18,9 +19,21 @@ internal sealed class VelvetMaskLabels
 
     public string[] Of(int mask)
     {
+        Ensure(mask);
+        return labels;
+    }
+
+    public string Summary(int mask)
+    {
+        Ensure(mask);
+        return summary;
+    }
+
+    private void Ensure(int mask)
+    {
         if (mask == cachedMask && ReferenceEquals(cachedLanguage, Loc.Current))
         {
-            return labels;
+            return;
         }
 
         cachedMask = mask;
@@ -37,7 +50,8 @@ internal sealed class VelvetMaskLabels
         if (count == 0)
         {
             labels = Array.Empty<string>();
-            return labels;
+            summary = string.Empty;
+            return;
         }
 
         if (labels.Length != count)
@@ -54,7 +68,7 @@ internal sealed class VelvetMaskLabels
             }
         }
 
-        return labels;
+        summary = string.Join(", ", labels);
     }
 }
 
@@ -133,6 +147,8 @@ internal static class VelvetGender
 
     public static string[] Labels(int mask) => LabelCache.Of(Sanitize(mask));
 
+    public static string Summary(int mask) => LabelCache.Summary(Sanitize(mask));
+
     public static string Label(int flag) =>
         flag switch
         {
@@ -172,6 +188,8 @@ internal static class VelvetSexuality
     private static readonly VelvetMaskLabels LabelCache = new(All, Label);
 
     public static string[] Labels(int mask) => LabelCache.Of(Sanitize(mask));
+
+    public static string Summary(int mask) => LabelCache.Summary(Sanitize(mask));
 
     public static string Label(int flag) =>
         flag switch

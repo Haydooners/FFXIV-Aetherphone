@@ -31,7 +31,9 @@ internal sealed partial class VelvetShell
     private const float ProfileGridGap = 1.5f;
     private const float ProfileTabUnderline = 2f;
     private const float ProfileTabSmoothTime = 0.1f;
+    private const float ProfileAboutLead = 4f;
     private const int ProfileColumns = 3;
+    private const int MaxFacts = 3;
 
     private static readonly Vector4 RoleTone = new(0.62f, 0.22f, 0.60f, 1f);
     private static readonly Vector4 KinkTone = new(0.647f, 0.482f, 0.839f, 1f);
@@ -43,8 +45,13 @@ internal sealed partial class VelvetShell
         VelvetTheme.TitleInk, VelvetTheme.MutedInk, VelvetTheme.Rose, ProfileTabUnderline, SocialChrome.CellPadX,
         ProfileTabSmoothTime);
 
+    private readonly VFact[] facts = new VFact[MaxFacts];
+    private readonly float[] factHeights = new float[MaxFacts];
     private VelvetProfileTab profileTab = VelvetProfileTab.About;
     private Spring profileTabSlide;
+    private string roleSummaryRaw = string.Empty;
+    private string roleSummary = string.Empty;
+    private LanguageInfo? roleSummaryLanguage;
 
     private void DrawProfile(Rect area, string userId)
     {
@@ -106,13 +113,14 @@ internal sealed partial class VelvetShell
                 profileTab = picked == 1 ? VelvetProfileTab.Posts : VelvetProfileTab.About;
             }
 
-            Gap(14f);
             if (profileTab == VelvetProfileTab.Posts)
             {
+                Gap(14f);
                 DrawPostGrid(user, isMe, connected, width);
             }
             else
             {
+                Gap(ProfileAboutLead);
                 DrawProfileAbout(user, width);
             }
 
@@ -289,23 +297,18 @@ internal sealed partial class VelvetShell
         var pad = SocialChrome.CellPadX * scale;
         var innerWidth = MathF.Max(1f, width - pad * 2f);
         ImGui.Indent(pad);
-        DrawIntroBlock(user, innerWidth);
+        DrawIntroCard(user, innerWidth);
         var viewer = ViewerAgainst(user);
-        DrawAboutSection(L.Velvet.CardGender, VelvetGender.Labels(user.Gender), VChipStyle.Tint, VelvetTheme.Rose,
-            innerWidth);
-        DrawAboutSection(L.Velvet.CardSexuality, VelvetSexuality.Labels(user.Sexuality), VChipStyle.Tint,
-            VelvetTheme.Rose, innerWidth);
+        DrawFactsCard(user, innerWidth);
         if (VelvetIntent.IncludesErp(user.LookingFor))
         {
-            DrawAboutSection(L.Velvet.CardRole, VelvetTags.Parse(user.Dynamic), VChipStyle.Tint, RoleTone,
-                innerWidth);
-            DrawAboutSection(L.Velvet.CardKinks, user.Kinks ?? Array.Empty<string>(), VChipStyle.Tint, KinkTone,
-                innerWidth, viewer, VelvetTokenGroup.Kinks);
+            DrawTokenCard(L.Velvet.CardKinks, PhoneIcons.Flame, KinkTone, user.Kinks, innerWidth, viewer,
+                VelvetTokenGroup.Kinks);
         }
 
-        DrawAboutSection(L.Velvet.CardTags, user.Tags, VChipStyle.Tint, VelvetTheme.Rose, innerWidth, viewer,
+        DrawTokenCard(L.Velvet.CardTags, PhoneIcons.Hash, VelvetTheme.Rose, user.Tags, innerWidth, viewer,
             VelvetTokenGroup.Tags);
-        DrawAboutSection(L.Velvet.CardLimits, user.Limits, VChipStyle.Outline, VelvetTheme.Gold, innerWidth, viewer,
+        DrawTokenCard(L.Velvet.CardLimits, PhoneIcons.Shield, VelvetTheme.Gold, user.Limits, innerWidth, viewer,
             VelvetTokenGroup.Limits);
         ImGui.Unindent(pad);
     }
@@ -313,7 +316,7 @@ internal sealed partial class VelvetShell
     private VelvetProfileDto? ViewerAgainst(VelvetProfileDto user) =>
         store.Me is { } me && me.UserId != user.UserId ? me : null;
 
-    private void DrawIntroBlock(VelvetProfileDto user, float innerWidth)
+    private void DrawIntroCard(VelvetProfileDto user, float width)
     {
         if (user.Intro.Length == 0)
         {
@@ -321,36 +324,125 @@ internal sealed partial class VelvetShell
         }
 
         var scale = UiScale.Current;
+        var drawList = ImGui.GetWindowDrawList();
         var introKey = new TranslationKey(TranslationSurface.Bio, user.UserId);
         var introText = translation.View(introKey, user.Intro).Text;
-        var introOrigin = ImGui.GetCursorScreenPos();
-        var introHeight = Typography.DrawWrappedLeft(introOrigin, introText, VelvetTheme.BodyInk, TextStyles.Body,
-            innerWidth);
-        ImGui.Dummy(new Vector2(innerWidth, introHeight));
-        var introLinkHeight = TranslateLink.Height(translation, introKey, user.IntroLang, scale);
-        if (introLinkHeight <= 0f)
+        var contentWidth = MathF.Max(1f, width - VCard.Pad * 2f * scale);
+        var textHeight = Typography.MeasureWrappedBlock(introText, TextStyles.Body, contentWidth).Y;
+        var linkHeight = TranslateLink.Height(translation, introKey, user.IntroLang, scale);
+        Gap(VCard.Gap);
+        var card = VCard.Begin(drawList, width, textHeight + linkHeight, scale);
+        Typography.DrawWrappedLeft(card.ContentOrigin, introText, VelvetTheme.BodyInk, TextStyles.Body,
+            card.ContentWidth);
+        if (linkHeight > 0f)
         {
-            return;
+            TranslateLink.Draw(translation, confirm, introKey, user.IntroLang, user.Intro,
+                new Vector2(card.ContentOrigin.X, card.ContentOrigin.Y + textHeight), card.ContentWidth,
+                VelvetTheme.MutedInk, VelvetTheme.RoseGlow, scale);
         }
 
-        TranslateLink.Draw(translation, confirm, introKey, user.IntroLang, user.Intro,
-            new Vector2(introOrigin.X, introOrigin.Y + introHeight), innerWidth, VelvetTheme.MutedInk,
-            VelvetTheme.RoseGlow, scale);
-        ImGui.Dummy(new Vector2(innerWidth, introLinkHeight));
+        VCard.End(card);
     }
 
-    private void DrawAboutSection(LocString title, string[] tokens, VChipStyle style, Vector4 tone,
-        float sectionWidth, VelvetProfileDto? viewer = null, VelvetTokenGroup group = VelvetTokenGroup.None)
+    private void DrawFactsCard(VelvetProfileDto user, float width)
     {
-        if (tokens.Length == 0)
+        var count = 0;
+        var gender = VelvetGender.Summary(user.Gender);
+        if (gender.Length > 0)
+        {
+            facts[count++] = new VFact(PhoneIcons.Gender, VelvetTheme.Rose, Loc.T(L.Velvet.CardGender), gender);
+        }
+
+        var sexuality = VelvetSexuality.Summary(user.Sexuality);
+        if (sexuality.Length > 0)
+        {
+            facts[count++] = new VFact(PhoneIcons.Rainbow, VelvetTheme.Rose, Loc.T(L.Velvet.CardSexuality),
+                sexuality);
+        }
+
+        if (VelvetIntent.IncludesErp(user.LookingFor))
+        {
+            var role = RoleSummary(user.Dynamic);
+            if (role.Length > 0)
+            {
+                facts[count++] = new VFact(PhoneIcons.Heart, RoleTone, Loc.T(L.Velvet.CardRole), role);
+            }
+        }
+
+        if (count == 0)
         {
             return;
         }
 
-        Gap(16f);
-        VSectionHeader.Bar(Loc.T(title));
-        Gap(4f);
-        DrawDisplayTokens(tokens, style, tone, sectionWidth, viewer, group);
+        var scale = UiScale.Current;
+        var drawList = ImGui.GetWindowDrawList();
+        var contentWidth = MathF.Max(1f, width - VCard.Pad * 2f * scale);
+        var contentHeight = 0f;
+        for (var index = 0; index < count; index++)
+        {
+            factHeights[index] = VCard.FactHeight(facts[index], contentWidth, scale);
+            contentHeight += factHeights[index];
+        }
+
+        Gap(VCard.Gap);
+        var card = VCard.Begin(drawList, width, contentHeight, scale, 0f);
+        var rowTop = card.ContentOrigin.Y;
+        for (var index = 0; index < count; index++)
+        {
+            VCard.Fact(drawList, new Vector2(card.ContentOrigin.X, rowTop), card.ContentWidth, facts[index],
+                factHeights[index], index < count - 1, scale);
+            rowTop += factHeights[index];
+        }
+
+        VCard.End(card);
+    }
+
+    private string RoleSummary(string raw)
+    {
+        if (string.Equals(raw, roleSummaryRaw, StringComparison.Ordinal)
+            && ReferenceEquals(roleSummaryLanguage, Loc.Current))
+        {
+            return roleSummary;
+        }
+
+        roleSummaryRaw = raw;
+        roleSummaryLanguage = Loc.Current;
+        var tokens = VelvetTags.Parse(raw);
+        var labels = new string[tokens.Length];
+        for (var index = 0; index < tokens.Length; index++)
+        {
+            labels[index] = VelvetTokenLabels.Of(tokens[index]);
+        }
+
+        roleSummary = string.Join(", ", labels);
+        return roleSummary;
+    }
+
+    private void DrawTokenCard(LocString title, string glyph, Vector4 tone, string[]? tokens, float width,
+        VelvetProfileDto? viewer, VelvetTokenGroup group)
+    {
+        if (tokens is null || tokens.Length == 0)
+        {
+            return;
+        }
+
+        var scale = UiScale.Current;
+        var drawList = ImGui.GetWindowDrawList();
+        chipModels.Clear();
+        for (var index = 0; index < tokens.Length; index++)
+        {
+            chipModels.Add(TokenChip(tokens[index], tone, viewer, group));
+        }
+
+        var contentWidth = MathF.Max(1f, width - VCard.Pad * 2f * scale);
+        var chipsHeight = MeasureChipFlow(contentWidth, scale);
+        Gap(VCard.Gap);
+        var card = VCard.Begin(drawList, width, VCard.HeaderBlock * scale + chipsHeight, scale);
+        VCard.Header(drawList, card.ContentOrigin, card.ContentWidth, glyph, tone, Loc.T(title), scale);
+        ImGui.SetCursorScreenPos(new Vector2(card.ContentOrigin.X,
+            card.ContentOrigin.Y + VCard.HeaderBlock * scale));
+        DrawChipFlow(card.ContentWidth, scale);
+        VCard.End(card);
     }
 
     private void AskDisconnect(string userId)
@@ -369,38 +461,30 @@ internal sealed partial class VelvetShell
         });
     }
 
-    private void DrawDisplayTokens(string[] tokens, VChipStyle style, Vector4 tone, float width = 0f,
-        VelvetProfileDto? viewer = null, VelvetTokenGroup group = VelvetTokenGroup.None)
+    private void DrawDisplayTokens(string[] tokens, Vector4 tone, float width)
     {
         if (tokens.Length == 0)
         {
             return;
         }
 
-        var scale = UiScale.Current;
-        if (width <= 0f)
-        {
-            width = ImGui.GetContentRegionAvail().X;
-        }
-
         chipModels.Clear();
         for (var index = 0; index < tokens.Length; index++)
         {
-            chipModels.Add(TokenChip(tokens[index], style, tone, viewer, group));
+            chipModels.Add(TokenChip(tokens[index], tone, null, VelvetTokenGroup.None));
         }
 
-        DrawChipFlow(width, scale);
+        DrawChipFlow(width, UiScale.Current);
     }
 
-    private static VChipModel TokenChip(string token, VChipStyle style, Vector4 tone, VelvetProfileDto? viewer,
-        VelvetTokenGroup group)
+    private static VChipModel TokenChip(string token, Vector4 tone, VelvetProfileDto? viewer, VelvetTokenGroup group)
     {
         var label = VelvetTokenLabels.Of(token);
         return VelvetFit.Match(viewer, group, token) switch
         {
             VelvetTokenMatch.Shared => new VChipModel(label, VChipStyle.Solid, tone, PhoneIcons.Check),
-            VelvetTokenMatch.Conflict => new VChipModel(label, style, VelvetTheme.Danger, PhoneIcons.X),
-            _ => new VChipModel(label, style, tone),
+            VelvetTokenMatch.Conflict => new VChipModel(label, VChipStyle.Tint, VelvetTheme.Danger, PhoneIcons.X),
+            _ => new VChipModel(label, VChipStyle.Tint, tone),
         };
     }
 }

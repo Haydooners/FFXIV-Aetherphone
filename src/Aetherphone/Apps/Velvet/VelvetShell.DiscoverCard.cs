@@ -30,7 +30,7 @@ internal sealed partial class VelvetShell
     private const float DeckStampPad = 10f;
     private const float DeckStampStroke = 2.5f;
     private const float DeckStampMinProgress = 0.05f;
-    private const float DeckSectionGap = 16f;
+    private const float DeckColumnLead = 4f;
     private const float DeckFitRowHeight = 24f;
     private const float DeckFitGlyphGap = 8f;
     private const float DeckBottomPad = 24f;
@@ -128,7 +128,7 @@ internal sealed partial class VelvetShell
 
         var indent = MathF.Abs(inset + offsetX) < DeckIndentEpsilon ? DeckIndentEpsilon : inset + offsetX;
         ImGui.Indent(indent);
-        Gap(DeckSectionGap);
+        Gap(DeckColumnLead);
         DrawDeckFit(innerWidth);
         DrawCardColumn(profile, photos, innerWidth, ViewerAgainst(profile));
         ImGui.Unindent(indent);
@@ -139,26 +139,21 @@ internal sealed partial class VelvetShell
         VelvetProfileDto? viewer)
     {
         var drawList = ImGui.GetWindowDrawList();
-        DrawIntroBlock(profile, innerWidth);
+        DrawIntroCard(profile, innerWidth);
         var photoIndex = 1;
         DrawCardPhoto(drawList, photos, ref photoIndex, innerWidth);
-        DrawAboutSection(L.Velvet.CardGender, VelvetGender.Labels(profile.Gender), VChipStyle.Tint, VelvetTheme.Rose,
-            innerWidth);
-        DrawAboutSection(L.Velvet.CardSexuality, VelvetSexuality.Labels(profile.Sexuality), VChipStyle.Tint,
-            VelvetTheme.Rose, innerWidth);
+        DrawFactsCard(profile, innerWidth);
         if (VelvetIntent.IncludesErp(profile.LookingFor))
         {
-            DrawAboutSection(L.Velvet.CardRole, VelvetTags.Parse(profile.Dynamic), VChipStyle.Tint, RoleTone,
-                innerWidth);
-            DrawAboutSection(L.Velvet.CardKinks, profile.Kinks ?? Array.Empty<string>(), VChipStyle.Tint, KinkTone,
-                innerWidth, viewer, VelvetTokenGroup.Kinks);
+            DrawTokenCard(L.Velvet.CardKinks, PhoneIcons.Flame, KinkTone, profile.Kinks, innerWidth, viewer,
+                VelvetTokenGroup.Kinks);
         }
 
         DrawCardPhoto(drawList, photos, ref photoIndex, innerWidth);
-        DrawAboutSection(L.Velvet.CardTags, profile.Tags, VChipStyle.Tint, VelvetTheme.Rose, innerWidth, viewer,
+        DrawTokenCard(L.Velvet.CardTags, PhoneIcons.Hash, VelvetTheme.Rose, profile.Tags, innerWidth, viewer,
             VelvetTokenGroup.Tags);
-        DrawAboutSection(L.Velvet.CardLimits, profile.Limits, VChipStyle.Outline, VelvetTheme.Gold, innerWidth,
-            viewer, VelvetTokenGroup.Limits);
+        DrawTokenCard(L.Velvet.CardLimits, PhoneIcons.Shield, VelvetTheme.Gold, profile.Limits, innerWidth, viewer,
+            VelvetTokenGroup.Limits);
         while (photoIndex < photos.Length)
         {
             DrawCardPhoto(drawList, photos, ref photoIndex, innerWidth);
@@ -209,7 +204,7 @@ internal sealed partial class VelvetShell
             ImGui.SetCursorScreenPos(origin);
             ImGui.Dummy(new Vector2(width, cover.Max.Y - origin.Y));
             ImGui.Indent(inset);
-            Gap(DeckSectionGap);
+            Gap(DeckColumnLead);
             DrawCardColumn(me, photos, innerWidth, null);
             ImGui.Unindent(inset);
             Gap(PreviewBottomPad);
@@ -433,29 +428,29 @@ internal sealed partial class VelvetShell
 
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
-        VSectionHeader.Bar(Loc.T(L.Velvet.FitTitle));
-        Gap(4f);
         var glyphSize = VIcon.Chip * scale;
         var rowHeight = DeckFitRowHeight * scale;
+        Gap(VCard.Gap);
+        var card = VCard.Begin(drawList, innerWidth, VCard.HeaderBlock * scale + rowHeight * fitLabels.Count, scale);
+        VCard.Header(drawList, card.ContentOrigin, card.ContentWidth, PhoneIcons.HeartHandshake, VelvetTheme.Rose,
+            Loc.T(L.Velvet.FitTitle), scale);
+        var textLeft = card.ContentOrigin.X + glyphSize + DeckFitGlyphGap * scale;
+        var textWidth = MathF.Max(1f, card.ContentWidth - glyphSize - DeckFitGlyphGap * scale);
+        var rowTop = card.ContentOrigin.Y + VCard.HeaderBlock * scale;
         for (var index = 0; index < fitLabels.Count; index++)
         {
-            var origin = ImGui.GetCursorScreenPos();
             var conflict = fitItems[index].Kind == VelvetFitKind.Conflict;
             var tone = conflict ? VelvetTheme.Danger : VelvetTheme.Online;
-            var ink = conflict
-                ? VelvetTheme.Lerp(VelvetTheme.Danger, VelvetTheme.OnAccent, 0.35f)
-                : VelvetTheme.BodyInk;
-            var centerY = origin.Y + rowHeight * 0.5f;
-            PhoneIcon.Draw(drawList, new Vector2(origin.X + glyphSize * 0.5f, centerY),
+            var ink = conflict ? VelvetTheme.ToneInk(VelvetTheme.Danger) : VelvetTheme.BodyInk;
+            var centerY = rowTop + rowHeight * 0.5f;
+            PhoneIcon.Draw(drawList, new Vector2(card.ContentOrigin.X + glyphSize * 0.5f, centerY),
                 conflict ? PhoneIcons.X : PhoneIcons.Check, tone, glyphSize);
-            var textLeft = origin.X + glyphSize + DeckFitGlyphGap * scale;
             Typography.Draw(drawList, new Vector2(textLeft, centerY - Typography.LineHeight(DeckFitStyle) * 0.5f),
-                Typography.FitText(fitLabels[index], MathF.Max(1f, innerWidth - glyphSize - DeckFitGlyphGap * scale),
-                    DeckFitStyle), ink, DeckFitStyle);
-            ImGui.Dummy(new Vector2(innerWidth, rowHeight));
+                Typography.FitText(fitLabels[index], textWidth, DeckFitStyle), ink, DeckFitStyle);
+            rowTop += rowHeight;
         }
 
-        Gap(DeckSectionGap);
+        VCard.End(card);
     }
 
     private void DrawCardPhoto(ImDrawListPtr drawList, VelvetCardPhotoDto[] photos, ref int photoIndex,
@@ -469,7 +464,7 @@ internal sealed partial class VelvetShell
         var photo = photos[photoIndex];
         photoIndex++;
         var scale = UiScale.Current;
-        Gap(DeckSectionGap);
+        Gap(VCard.Gap);
         var height = PostAspects.TallDisplayHeight(innerWidth, photo.Width, photo.Height);
         var min = ImGui.GetCursorScreenPos();
         var max = new Vector2(min.X + innerWidth, min.Y + height);
