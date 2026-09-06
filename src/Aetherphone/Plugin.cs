@@ -19,6 +19,7 @@ using Aetherphone.Windows;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.ClientState.Keys;
+using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.Command;
 using Dalamud.Game.Config;
 using Dalamud.Game.Gui.ContextMenu;
@@ -582,7 +583,7 @@ public sealed class Plugin : IDalamudPlugin
         }
 
         if (args.Target is not MenuTargetDefault target || target.TargetName.Length == 0 ||
-            target.TargetHomeWorld.RowId == 0)
+            target.TargetHomeWorld.RowId == 0 || target.TargetObject?.ObjectKind != ObjectKind.Pc)
         {
             return;
         }
