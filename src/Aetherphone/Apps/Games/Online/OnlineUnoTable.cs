@@ -112,6 +112,7 @@ internal sealed class OnlineUnoTable
     private float bannerProgress = 1f;
     private int wildPendingCard = -1;
     private int wildOpenedFrame = -1;
+    private int sevenPendingCard = -1;
 
     private Vector2 origin;
     private float uiScale = 1f;
@@ -147,6 +148,7 @@ internal sealed class OnlineUnoTable
     {
         using var surface = AppSurface.Begin(body, true);
         ImGui.Dummy(new Vector2(MathF.Max(1f, body.Width - 32f * scale), body.Height - 16f * scale));
+        var ruleSet = store.ActiveRuleSet != 0 ? store.ActiveRuleSet : board.RuleSet;
         var drawList = ImGui.GetWindowDrawList();
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         var accent = Core.Apps.AppAccents.For("games");
@@ -170,6 +172,11 @@ internal sealed class OnlineUnoTable
         PlaceSeats(body, scale, players, mySeat);
         var ambient = StepAmbient(board.ActiveColor, delta);
         GameScene.Ambient(drawList, body, ambient);
+
+        if (board.RuleSet == GameRoomWire.RuleSetHouse){
+            var badgePos = origin + new Vector2(16f * scale, 16f * scale);
+            Typography.Draw(drawList, badgePos, "⚡House Rules", theme.TextMuted, TextStyles.Caption1);
+        }
 
         ObserveBoard(board, players, mySeat, myTurn, accent, scale);
         ReconcileHand(hand, scale);
@@ -259,6 +266,7 @@ internal sealed class OnlineUnoTable
         if (board.RoundIndex != seenRound)
         {
             seenRound = board.RoundIndex;
+            AepLog.Debug($"Round started. Active RuleSet: {store.ActiveRuleSet}");
             pileCount = 0;
             flightCount = 0;
             slotCount = 0;
@@ -294,7 +302,7 @@ internal sealed class OnlineUnoTable
             }
         }
 
-        for (var seat = 0; seat < players.Length; seat++)
+        for (var seat = 0; seat < players.Length && seat < previousCounts.Length; seat++)
         {
             var count = players[seat].CardCount;
             if (previousCounts[seat] > 1 && count == 1 && !first)
@@ -374,6 +382,16 @@ internal sealed class OnlineUnoTable
                     ShowBanner(Loc.T(L.Games.OnlineReversed), accent);
                     break;
             }
+        }
+
+        if (board.RuleSet == GameRoomWire.RuleSetHouse && GameRoomWire.IsZero(board.LastCard))
+        {
+            ShowBanner("🌀 Hands Rotated!", accent);
+        }
+
+        if (board.RuleSet == GameRoomWire.RuleSetHouse && GameRoomWire.IsSeven(board.LastCard))
+        {
+            ShowBanner("🤝 Hand Swapped!", accent);
         }
 
         if (penalty == 0 || seat < 0 || players.Length < 2)
@@ -654,7 +672,7 @@ internal sealed class OnlineUnoTable
             return;
         }
 
-        for (var seat = 0; seat < players.Length; seat++)
+        for (var seat = 0; seat < players.Length && seat < seatCounts.Length; seat++)
         {
             if (seat == mySeat)
             {
@@ -662,6 +680,12 @@ internal sealed class OnlineUnoTable
             }
 
             var player = players[seat];
+            if (sevenPendingCard >= 0 && ImGui.IsItemClicked(ImGuiMouseButton.Left))
+            {
+                store.SendPlay(sevenPendingCard, seat);
+                sevenPendingCard = -1;
+            }
+
             var anchor = Absolute(seatAnchors[seat]);
             var dim = player.Away ? 0.35f : 1f;
             var onTurn = board.TurnSeat == seat && board.WinnerSeat < 0;
@@ -879,7 +903,8 @@ internal sealed class OnlineUnoTable
     {
         for (var index = 0; index < hand.Length; index++)
         {
-            if (GameRoomWire.IsPlayable(hand[index], board.ActiveColor, board.DiscardTop))
+            if (GameRoomWire.IsPlayable(hand[index], board.ActiveColor, board.DiscardTop,
+            board.RuleSet, board.PendingDrawCount))
             {
                 return true;
             }
@@ -945,7 +970,8 @@ internal sealed class OnlineUnoTable
         {
             ref var slot = ref slots[index];
             var playable = myTurn && board.WinnerSeat < 0
-                && GameRoomWire.IsPlayable(slot.Card, board.ActiveColor, board.DiscardTop)
+                && GameRoomWire.IsPlayable(slot.Card, board.ActiveColor, board.DiscardTop,
+                board.RuleSet, board.PendingDrawCount)
                 && (!pending || slot.Card == mine!.PendingDrawnCard);
             var lifted = index == hovered && playable;
             if (lifted)
@@ -1022,6 +1048,20 @@ internal sealed class OnlineUnoTable
                 swatchScales[swatch].SnapTo(0.6f);
             }
         }
+        else if (board.RuleSet == GameRoomWire.RuleSetHouse && GameRoomWire.IsSeven(picked.Card))
+        {
+            var playerCount = board.Players?.Length ?? 0;
+            if (playerCount > 2)
+            {
+                sevenPendingCard = picked.Card;
+            }
+            else
+            {
+                var mySeatIndex = SeatOf(board.Players ?? Array.Empty<UnoPlayerDto>(), store.AccountId);
+                var opponentSeat = mySeatIndex == 0 ? 1 : 0;
+                store.SendPlay(picked.Card, opponentSeat);
+            }
+        }
         else
         {
             store.SendPlay(picked.Card, -1);
@@ -1038,7 +1078,8 @@ internal sealed class OnlineUnoTable
         }
 
         var playable = myTurn && board.WinnerSeat < 0
-            && GameRoomWire.IsPlayable(slot.Card, board.ActiveColor, board.DiscardTop)
+            && GameRoomWire.IsPlayable(slot.Card, board.ActiveColor, board.DiscardTop,
+            board.RuleSet, board.PendingDrawCount)
             && (!pending || slot.Card == mine!.PendingDrawnCard);
         var alpha = !myTurn ? 0.88f : playable ? 1f : 0.5f;
         var center = Absolute(new Vector2(slot.X.Value, slot.Y.Value));

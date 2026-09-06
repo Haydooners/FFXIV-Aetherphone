@@ -94,6 +94,10 @@ internal static class GameRoomWire
 
     public const string ReasonStaleAction = "stale_action";
 
+    public const int RuleSetDefault = 0;
+
+    public const int RuleSetHouse = 1;
+
     public const int WildCard = 52;
 
     public const int WildDrawFourCard = 53;
@@ -119,8 +123,36 @@ internal static class GameRoomWire
         return card is WildCard or WildDrawFourCard;
     }
 
-    public static bool IsPlayable(int card, int activeColor, int topCard)
+    public static bool IsZero(int card)
     {
+        return card >= 0 && card < WildCard && RankOf(card) == 0;
+    }
+
+    public static bool IsSeven(int card)
+    {
+        return card >= 0 && card < WildCard && RankOf(card) == 7;
+    }
+
+    public static bool IsPlayable(int card, int activeColor, int topCard,
+     int ruleSet = RuleSetDefault, int pendingDrawCount = 0)
+    {
+
+        if (pendingDrawCount > 0){
+            if (ruleSet == RuleSetHouse){
+            var topRank = RankOf(topCard);
+            var cardRank = RankOf(card);
+
+            if (topRank == RankDrawTwo && cardRank == RankDrawTwo){
+                return true;
+            }
+                            
+            if (card == WildDrawFourCard){
+                return true;
+            }
+            }
+            return false;
+        }
+
         if (IsWild(card))
         {
             return true;

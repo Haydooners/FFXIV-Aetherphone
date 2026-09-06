@@ -90,6 +90,8 @@ internal sealed class GameRoomsStore : IDisposable
 
     public bool ActInFlight => actInFlight;
 
+    public int ActiveRuleSet { get; set; } = GameRoomWire.RuleSetDefault;
+
     public GameRoomAnswer? TakeRoomAnswer()
     {
         return Interlocked.Exchange(ref roomAnswer, null);
@@ -232,9 +234,11 @@ internal sealed class GameRoomsStore : IDisposable
         Interlocked.Exchange(ref roomAttemptedAtTick, 0);
     }
 
-    public void SendStart()
+    public void SendStart(int ruleSet = 0)
     {
-        SendAction(GameRoomWire.ActionStart, -1, -1);
+        ActiveRuleSet = ruleSet;
+        AepLog.Debug($"Starting game with ruleset: {ActiveRuleSet}");
+        SendAction(GameRoomWire.ActionStart, ruleSet, -1);
     }
 
     public void SendPlay(int card, int chosenColor)

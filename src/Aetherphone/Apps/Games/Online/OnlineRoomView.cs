@@ -9,6 +9,7 @@ using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 
+
 namespace Aetherphone.Apps.Games.Online;
 
 // One room, three faces: the lobby with the code and the roster, the live table of whichever game
@@ -22,11 +23,13 @@ internal sealed class OnlineRoomView
     private const long NoticeMilliseconds = 4_000;
 
     private readonly GameRoomsStore store;
+    private readonly DropdownMenu rulesMenu = new();
     private readonly OnlineUnoTable unoTable;
     private readonly OnlineChessTable chessTable;
     private readonly OnlinePoolTable poolTable;
 
     private string inlineReason = string.Empty;
+    private int selectedRuleSetIndex;
     private long noticeAtTick;
     private long copiedAtTick;
 
@@ -221,6 +224,7 @@ internal sealed class OnlineRoomView
         var roster = held.Roster!;
         var players = roster.Players;
         var isHost = IsHost(roster);
+        rulesMenu.Gate();
 
         if (phase == GameRoomWire.PhaseFinished)
         {
@@ -231,6 +235,31 @@ internal sealed class OnlineRoomView
         if (inlineReason.Length > 0 && Environment.TickCount64 - noticeAtTick < NoticeMilliseconds)
         {
             DrawInlineNotice(theme, scale);
+        }
+
+        DropdownMenu.Item[] ruleSetOptions = [
+            new DropdownMenu.Item("Default"),
+            new DropdownMenu.Item("House Rules")
+        ];
+        if (isHost && held.Snapshot.GameKind == GameRoomWire.UnoKind) {
+            var pickOrigin = ImGui.GetCursorScreenPos();
+            var pickWidth = ScrollLayout.StableContentWidth();
+            var dropdownRect = new Rect(pickOrigin, new Vector2(pickOrigin.X + pickWidth, pickOrigin.Y + 36f * scale));
+
+            var label = $"Rules: {ruleSetOptions[selectedRuleSetIndex].Label}";
+            if (GameHud.Button(new Vector2(dropdownRect.Center.X, dropdownRect.Center.Y),
+             new Vector2(pickWidth, 36f * scale), label, accent, theme))
+                {
+                    rulesMenu.Toggle("uno_ruleset", dropdownRect);
+                }
+            
+            var picked = rulesMenu.Draw(body, theme, ruleSetOptions);
+            if (picked >= 0 && picked != selectedRuleSetIndex) {
+                selectedRuleSetIndex = picked;
+                AepLog.Debug($"Host Selected ruleset: {selectedRuleSetIndex}");
+            }
+
+            ImGui.Dummy(new Vector2(pickWidth, 40f * scale));
         }
 
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
@@ -261,7 +290,7 @@ internal sealed class OnlineRoomView
             if (GameHud.Button(primaryCenter, buttonSize, label, enough ? accent : theme.TextMuted, theme)
                 && enough && !store.ActInFlight)
             {
-                store.SendStart();
+                store.SendStart(selectedRuleSetIndex);
             }
 
             if (!enough)

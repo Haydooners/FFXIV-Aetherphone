@@ -45,7 +45,8 @@ internal sealed class OnlineHub
 
     public void Enter(string preferredKind)
     {
-        this.preferredKind = preferredKind;
+        AepLog.Debug($"[OnlineHub] Enter: preferredKind={preferredKind}");
+        this.preferredKind = preferredKind; 
         inlineReason = string.Empty;
         codeBuffer = string.Empty;
         unoHint = Loc.T(L.Games.OnlineHostHint,
@@ -116,10 +117,12 @@ internal sealed class OnlineHub
             return;
         }
 
+        AepLog.Debug($"[OnlineHub] Consume: intent={answer.Intent}, granted={answer.Granted}");
         if (answer.Intent is GameRoomIntent.Created or GameRoomIntent.Joined)
         {
             if (answer.Granted && answer.Room is not null)
             {
+                AepLog.Debug($"[OnlineHub] Consume: room granted, roomId={answer.Room.RoomId}, kind={answer.Room.GameKind}, opening room");
                 inlineReason = string.Empty;
                 codeBuffer = string.Empty;
                 store.Enter(answer.Room.RoomId);
@@ -127,6 +130,7 @@ internal sealed class OnlineHub
                 return;
             }
 
+            AepLog.Debug($"[OnlineHub] Consume: room denied, reason={answer.Reason}");
             inlineReason = answer.Reason;
         }
     }
@@ -204,6 +208,7 @@ internal sealed class OnlineHub
         ImGui.Dummy(new Vector2(width, height));
         if (clicked && !store.IntentInFlight)
         {
+            AepLog.Debug($"[OnlineHub] DrawHostCard: user tapped host for kind={kind}");
             inlineReason = string.Empty;
             store.CreateRoom(kind);
         }
@@ -240,6 +245,7 @@ internal sealed class OnlineHub
         if (GameHud.Button(pillCenter, new Vector2(pillWidth, FieldHeight * scale), Loc.T(L.Games.OnlineJoin),
                 ready ? ui.Accent : ui.MutedInk, ui.Theme) && ready)
         {
+            AepLog.Debug($"[OnlineHub] DrawJoinByCode: user tapped Join, code={trimmed.ToString()}");
             inlineReason = string.Empty;
             store.JoinByCode(trimmed.ToString());
         }
@@ -273,6 +279,7 @@ internal sealed class OnlineHub
         {
             if (DrawRoomRow(ui, scale, rooms[index], roomTitles[index], roomSubtitles[index]))
             {
+                AepLog.Debug($"[OnlineHub] DrawRooms: user tapped room, roomId={rooms[index].RoomId}, kind={rooms[index].GameKind}");
                 inlineReason = string.Empty;
                 store.Enter(rooms[index].RoomId);
                 openRoom(rooms[index].RoomId, rooms[index].GameKind);
@@ -287,6 +294,7 @@ internal sealed class OnlineHub
             return;
         }
 
+        AepLog.Debug($"[OnlineHub] RefreshRoomLabels: rooms array changed, rebuilding {rooms.Length} label(s)");
         labeledRooms = rooms;
         if (roomTitles.Length < rooms.Length)
         {
