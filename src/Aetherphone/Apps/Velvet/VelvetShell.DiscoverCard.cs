@@ -34,8 +34,6 @@ internal sealed partial class VelvetShell
     private const float DeckFitRowHeight = 24f;
     private const float DeckFitGlyphGap = 8f;
     private const float DeckBottomPad = 24f;
-    private const float DeckLockedGap = 1.5f;
-    private const int DeckLockedColumns = 3;
     private const float DeckIndentEpsilon = 0.01f;
     private const float PreviewBottomPad = 40f;
 
@@ -58,8 +56,6 @@ internal sealed partial class VelvetShell
     private string previewMetaLine = string.Empty;
     private string deckPhotoBadge = string.Empty;
     private int deckPhotoBadgeCount = -1;
-    private string deckLockedTeaser = string.Empty;
-    private int deckLockedCount = -1;
     private string deckSeenLabel = string.Empty;
     private string stampPass = string.Empty;
     private string stampConnect = string.Empty;
@@ -86,10 +82,7 @@ internal sealed partial class VelvetShell
     {
         fitUserId = string.Empty;
         deckPhotoBadgeCount = -1;
-        deckLockedCount = -1;
         deckScrollTopPending = true;
-        cardPressed = false;
-        cardDragging = false;
         if (deck.Count == 0)
         {
             return;
@@ -109,7 +102,6 @@ internal sealed partial class VelvetShell
             deckScrollTopPending = false;
         }
 
-        store.EnsureUserPosts(profile.UserId);
         EnsureFit(profile);
         EnsureStamps();
         var photos = CardPhotos(profile);
@@ -139,10 +131,8 @@ internal sealed partial class VelvetShell
         Gap(DeckSectionGap);
         DrawDeckFit(innerWidth);
         DrawCardColumn(profile, photos, innerWidth);
-        DrawDeckLocked(drawList, profile, innerWidth);
         ImGui.Unindent(indent);
         Gap(DeckActionBarHeight + DeckBottomPad);
-        DriveCardGesture(body, in surface, width);
     }
 
     private void DrawCardColumn(VelvetProfileDto profile, VelvetCardPhotoDto[] photos, float innerWidth)
@@ -253,8 +243,8 @@ internal sealed partial class VelvetShell
         {
             VelvetFitKind.SharedKinks => Loc.Plural(L.Velvet.FitSharedKinks, item.Value),
             VelvetFitKind.SharedIntent => Loc.T(L.Velvet.FitBothHereFor, VelvetIntent.Label(item.Value)),
-            VelvetFitKind.SharedTag => Loc.T(L.Velvet.FitBoth, item.Token),
-            VelvetFitKind.Conflict => Loc.T(L.Velvet.FitConflict, item.Token),
+            VelvetFitKind.SharedTag => Loc.T(L.Velvet.FitBoth, VelvetTokenLabels.Of(item.Token)),
+            VelvetFitKind.Conflict => Loc.T(L.Velvet.FitConflict, VelvetTokenLabels.Of(item.Token)),
             _ => Loc.T(L.Velvet.FitNoConflicts),
         };
 
@@ -487,47 +477,6 @@ internal sealed partial class VelvetShell
         }
 
         ImGui.Dummy(new Vector2(innerWidth, height));
-    }
-
-    private void DrawDeckLocked(ImDrawListPtr drawList, VelvetProfileDto profile, float innerWidth)
-    {
-        if (store.UserPostsUserId != profile.UserId || !store.UserPostsLoaded)
-        {
-            return;
-        }
-
-        var locked = store.UserPostsTotal - store.UserPosts.Length;
-        if (locked <= 0)
-        {
-            return;
-        }
-
-        if (deckLockedCount != locked)
-        {
-            deckLockedCount = locked;
-            deckLockedTeaser = Loc.Plural(L.Velvet.ConnectToUnlock, locked);
-        }
-
-        var scale = UiScale.Current;
-        Gap(DeckSectionGap);
-        var cellGap = DeckLockedGap * scale;
-        var cell = (innerWidth - cellGap * (DeckLockedColumns - 1)) / DeckLockedColumns;
-        var origin = ImGui.GetCursorScreenPos();
-        var tiles = Math.Min(DeckLockedColumns, locked);
-        for (var column = 0; column < tiles; column++)
-        {
-            var min = new Vector2(origin.X + column * (cell + cellGap), origin.Y);
-            VMediaTile.Conceal(drawList, min, new Vector2(min.X + cell, min.Y + cell), DeckPhotoRadius * scale,
-                string.Empty, 0f);
-        }
-
-        ImGui.Dummy(new Vector2(innerWidth, cell));
-        Gap(10f);
-        var teaserOrigin = ImGui.GetCursorScreenPos();
-        var teaserHeight = Typography.DrawWrappedCentered(
-            new Vector2(teaserOrigin.X + innerWidth * 0.5f, teaserOrigin.Y), deckLockedTeaser, VelvetTheme.RoseInk,
-            TextStyles.Callout, innerWidth);
-        ImGui.Dummy(new Vector2(innerWidth, teaserHeight));
     }
 
     private void DrawCoverImage(ImDrawListPtr drawList, Vector2 min, Vector2 max, string url, float rounding,

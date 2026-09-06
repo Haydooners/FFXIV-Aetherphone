@@ -22,11 +22,8 @@ internal sealed partial class VelvetShell
     private const float DeckUndoHeight = 24f;
     private const float DeckUndoPad = 14f;
     private const float DeckCommitFraction = 0.32f;
-    private const float DeckDragSlop = 10f;
-    private const float DeckDragAxisBias = 1.2f;
     private const float DeckExitOverhang = 48f;
     private const float DeckExitSmoothTime = 0.16f;
-    private const float DeckReturnSmoothTime = 0.14f;
     private const float DeckSettleEpsilon = 2f;
     private const float DeckPressShrink = 0.94f;
     private const float DeckTooltipSmoothTime = 0.11f;
@@ -58,9 +55,6 @@ internal sealed partial class VelvetShell
     private Spring passTooltipEase;
     private Spring connectTooltipEase;
     private int cardExit;
-    private bool cardPressed;
-    private bool cardDragging;
-    private Vector2 cardPressPosition;
     private string filterSummary = string.Empty;
     private bool filterSummaryDirty = true;
     private LanguageInfo? filterSummaryLanguage;
@@ -110,8 +104,6 @@ internal sealed partial class VelvetShell
         deckRecycled = false;
         cardSlide.SnapTo(0f);
         cardExit = 0;
-        cardPressed = false;
-        cardDragging = false;
         filterSummaryDirty = true;
     }
 
@@ -128,7 +120,7 @@ internal sealed partial class VelvetShell
         deckMe = me;
         deck.Clear();
         deckScores.Clear();
-        var regionMask = discoverInclude.RegionMask;
+        var allowedRegions = AllowedRegions(discoverInclude);
         var skippedConnected = 0;
         var skippedRegion = 0;
         for (var index = 0; index < source.Length; index++)
@@ -140,7 +132,7 @@ internal sealed partial class VelvetShell
                 continue;
             }
 
-            if (!RegionAllowed(profile, regionMask))
+            if (!RegionAllowed(profile, allowedRegions))
             {
                 skippedRegion++;
                 continue;
@@ -156,15 +148,15 @@ internal sealed partial class VelvetShell
         PinDeckTop();
     }
 
-    private bool RegionAllowed(VelvetProfileDto profile, int regionMask)
+    private bool RegionAllowed(VelvetProfileDto profile, int allowedRegions)
     {
-        if (regionMask == 0)
+        if (allowedRegions == SocialRegion.AllMask)
         {
             return true;
         }
 
         var regionIndex = Array.IndexOf(SocialRegion.Codes, RegionCodeOf(profile));
-        return regionIndex >= 0 && SocialRegion.MaskShows(regionMask, regionIndex);
+        return regionIndex >= 0 && (allowedRegions & (1 << regionIndex)) != 0;
     }
 
     private void InsertByScore(VelvetProfileDto profile, int score)
@@ -250,22 +242,17 @@ internal sealed partial class VelvetShell
 
     private void StepCard(float width)
     {
-        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        if (cardExit != 0)
+        if (cardExit == 0)
         {
-            var target = cardExit * (width + DeckExitOverhang * UiScale.Current);
-            cardSlide.Step(target, DeckExitSmoothTime, delta);
-            if (MathF.Abs(cardSlide.Value - target) <= DeckSettleEpsilon)
-            {
-                CommitCardExit();
-            }
-
             return;
         }
 
-        if (!cardDragging && cardSlide.Value != 0f)
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        var target = cardExit * (width + DeckExitOverhang * UiScale.Current);
+        cardSlide.Step(target, DeckExitSmoothTime, delta);
+        if (MathF.Abs(cardSlide.Value - target) <= DeckSettleEpsilon)
         {
-            cardSlide.Step(0f, DeckReturnSmoothTime, delta);
+            CommitCardExit();
         }
     }
 
@@ -323,71 +310,6 @@ internal sealed partial class VelvetShell
         store.RestoreToDiscover(restored);
         SyncDeck();
         OnDeckTopChanged();
-    }
-
-    private void DriveCardGesture(Rect cardArea, in AppSurface.SurfaceScope surface, float width)
-    {
-        if (cardExit != 0)
-        {
-            cardPressed = false;
-            cardDragging = false;
-            return;
-        }
-
-        if (surface.Dragging)
-        {
-            cardPressed = false;
-            cardDragging = false;
-            return;
-        }
-
-        var scale = UiScale.Current;
-        var mouse = ImGui.GetMousePos();
-        if (!cardPressed)
-        {
-            if (UiInteract.Hover(cardArea.Min, cardArea.Max) && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-            {
-                cardPressed = true;
-                cardDragging = false;
-                cardPressPosition = mouse;
-            }
-
-            return;
-        }
-
-        var move = mouse - cardPressPosition;
-        if (!ImGui.IsMouseDown(ImGuiMouseButton.Left))
-        {
-            cardPressed = false;
-            if (!cardDragging)
-            {
-                return;
-            }
-
-            cardDragging = false;
-            UiInteract.BlockThisFrame();
-            if (MathF.Abs(move.X) >= width * DeckCommitFraction)
-            {
-                cardExit = move.X < 0f ? -1 : 1;
-            }
-
-            return;
-        }
-
-        if (!cardDragging)
-        {
-            if (MathF.Abs(move.X) <= DeckDragSlop * scale || MathF.Abs(move.X) <= MathF.Abs(move.Y) * DeckDragAxisBias)
-            {
-                return;
-            }
-
-            cardDragging = true;
-            surface.CancelDrag();
-            UiInteract.CancelPendingTap();
-        }
-
-        cardSlide.SnapTo(move.X);
-        UiInteract.BlockThisFrame();
     }
 
     private void DrawDeckActions(Rect bar, VelvetProfileDto top)
@@ -550,11 +472,13 @@ internal sealed partial class VelvetShell
             ShowPassesAgain();
         }
 
-        if (discoverInclude.RegionMask != 0 && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckWidenRegion),
-                NextTone(ref lead), "velvet.deck.widen"))
+        if ((discoverInclude.RegionMask != 0 || mutes.RegionMask != 0)
+            && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckWidenRegion), NextTone(ref lead),
+                "velvet.deck.widen"))
         {
             discoverInclude.RegionMask = 0;
-            ApplyDiscoverFilters();
+            mutes.RegionMask = 0;
+            ApplyMutesEverywhere();
         }
 
         if (discoverInclude.AnyBesidesRegion && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.FilterClearAll),
@@ -642,7 +566,7 @@ internal sealed partial class VelvetShell
         var include = discoverInclude;
         for (var index = 0; index < SocialRegion.Codes.Length; index++)
         {
-            if (SocialRegion.MaskShows(include.RegionMask, index))
+            if ((include.RegionMask & (1 << index)) != 0)
             {
                 AppendSummary(SocialRegion.Codes[index]);
             }
@@ -708,7 +632,7 @@ internal sealed partial class VelvetShell
     {
         foreach (var token in tokens)
         {
-            AppendSummary(token);
+            AppendSummary(VelvetTokenLabels.Of(token));
         }
     }
 
