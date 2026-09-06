@@ -205,12 +205,13 @@ internal sealed class VelvetClient
         return net.GetAsync(path, AethernetJsonContext.Default.VelvetConnectionPage, token, null, onFailure);
     }
 
-    public Task<VelvetFeedPage?> FeedAsync(string scope, VelvetDiscoverFilter filter, string region, string? cursor,
-        CancellationToken token, Action<AepFailure>? onFailure = null)
+    public Task<VelvetFeedPage?> FeedAsync(string scope, VelvetDiscoverFilter filter, string region, string[] postTags,
+        string? cursor, CancellationToken token, Action<AepFailure>? onFailure = null)
     {
         var path = new System.Text.StringBuilder("/velvet/feed");
         AppendFilter(path, filter, region);
         path.Append("&scope=").Append(Uri.EscapeDataString(scope));
+        AppendCsv(path, "postTags", TokenCsv(postTags));
         AppendCursor(path, cursor);
         return net.GetAsync(path.ToString(), AethernetJsonContext.Default.VelvetFeedPage, token, null, onFailure);
     }

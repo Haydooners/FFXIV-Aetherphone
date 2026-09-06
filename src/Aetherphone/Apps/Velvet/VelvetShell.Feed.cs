@@ -19,7 +19,7 @@ internal sealed partial class VelvetShell
     private const float FeedConnectGap = 8f;
 
     private readonly FeedVirtualizer feedVirtualizer = new(400f);
-    private readonly Dictionary<string, string> feedTagLines = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string[]> feedTagLabels = new(StringComparer.Ordinal);
     private readonly HashSet<string> feedConnectedIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> feedRequestedIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> feedIncomingIds = new(StringComparer.Ordinal);
@@ -144,7 +144,7 @@ internal sealed partial class VelvetShell
 
     private void RefreshFeedContent()
     {
-        feedTagLines.Clear();
+        feedTagLabels.Clear();
         store.RefreshFeed();
         stories.RefreshTray();
     }
@@ -155,32 +155,26 @@ internal sealed partial class VelvetShell
         return post.EditedAtUnix is null ? time : Loc.T(L.Velvet.EditedStamp, time);
     }
 
-    private string TagLineFor(VelvetPostDto entry)
+    private string[] TagLabelsFor(VelvetPostDto entry)
     {
         if (entry.Tags.Length == 0)
         {
-            return string.Empty;
+            return Array.Empty<string>();
         }
 
-        if (feedTagLines.TryGetValue(entry.Id, out var cached))
+        if (feedTagLabels.TryGetValue(entry.Id, out var cached) && cached.Length == entry.Tags.Length)
         {
             return cached;
         }
 
-        var builder = new System.Text.StringBuilder();
+        var labels = new string[entry.Tags.Length];
         for (var index = 0; index < entry.Tags.Length; index++)
         {
-            if (index > 0)
-            {
-                builder.Append("  ");
-            }
-
-            builder.Append('#').Append(VelvetTokenLabels.Of(entry.Tags[index]));
+            labels[index] = "#" + VelvetTokenLabels.Of(entry.Tags[index]);
         }
 
-        var line = builder.ToString();
-        feedTagLines[entry.Id] = line;
-        return line;
+        feedTagLabels[entry.Id] = labels;
+        return labels;
     }
 
     private void StartStoryCompose()
@@ -282,10 +276,8 @@ internal sealed partial class VelvetShell
         var captionHeight = captionText.Length == 0
             ? 0f
             : captionTextHeight + translateHeight + PostCardMetrics.CaptionGap * scale;
-        var tagsLine = TagLineFor(entry);
-        var tagsHeight = tagsLine.Length == 0
-            ? 0f
-            : Typography.MeasureWrappedBlock(tagsLine, TextStyles.Footnote, innerWidth).Y;
+        var tagLabels = TagLabelsFor(entry);
+        var tagsHeight = VTagRun.Height(tagLabels, innerWidth, scale);
         var cellHeight = padY + headerBlock + PostCardMetrics.MediaGap * scale + mediaHeight
             + PostCardMetrics.ActionsGap * scale + actionsHeight + PostCardMetrics.TextGap * scale
             + captionHeight + tagsHeight + padY;
@@ -429,10 +421,14 @@ internal sealed partial class VelvetShell
             lineY += captionHeight;
         }
 
-        if (tagsLine.Length > 0)
+        if (tagLabels.Length > 0)
         {
-            Typography.DrawWrappedLeft(new Vector2(innerX, lineY), tagsLine, VelvetTheme.RoseInk, TextStyles.Footnote,
-                innerWidth);
+            var tappedTag = VTagRun.Draw(drawList, new Vector2(innerX, lineY), innerWidth, tagLabels,
+                VelvetTheme.RoseInk, VelvetTheme.RoseGlow, scale);
+            if (tappedTag >= 0)
+            {
+                OpenTagPosts(entry.Tags[tappedTag]);
+            }
         }
 
         FeedCell.End(drawList, cell, VelvetTheme.Hairline);

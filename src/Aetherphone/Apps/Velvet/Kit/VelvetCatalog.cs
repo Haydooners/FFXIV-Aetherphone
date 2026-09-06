@@ -293,8 +293,32 @@ internal static class VelvetSuggestions
 
     public static readonly VelvetTagCategory[] PostTagCategories = BuildPostTagCategories();
 
+    public static readonly string[] PostTagTokens = BuildPostTagTokens();
+
     public static bool TryTagLabel(string token, out string label) =>
         Tone.TryLabel(token, out label) || Pace.TryLabel(token, out label) || Style.TryLabel(token, out label);
+
+    private static string[] BuildPostTagTokens()
+    {
+        var count = 0;
+        for (var index = 0; index < PostTagCategories.Length; index++)
+        {
+            count += PostTagCategories[index].Tags.Length;
+        }
+
+        var tokens = new string[count];
+        var cursor = 0;
+        for (var index = 0; index < PostTagCategories.Length; index++)
+        {
+            var tags = PostTagCategories[index].Tags;
+            for (var tagIndex = 0; tagIndex < tags.Length; tagIndex++)
+            {
+                tokens[cursor++] = tags[tagIndex];
+            }
+        }
+
+        return tokens;
+    }
 
     private static VelvetTagCategory[] BuildPostTagCategories()
     {

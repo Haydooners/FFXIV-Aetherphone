@@ -15,11 +15,15 @@ internal sealed partial class VelvetShell
     private const float SearchDebounceSeconds = 0.45f;
     private const int SearchMaxLength = 64;
     private const float SearchRowHeight = 64f;
+    private const float SearchTagRowHeight = 56f;
     private const float SearchAvatarRadius = 22f;
+    private const int SearchTagLimit = 8;
 
     private static readonly Vector4 SearchClearFill = new(1f, 1f, 1f, 0.14f);
+    private static readonly TextStyle SearchSectionStyle = TextStyles.FootnoteEmphasized;
 
-    private readonly VelvetFilterSelection searchInclude = new();
+    private readonly List<string> searchTagTokens = new();
+    private readonly List<string> searchTagLabels = new();
     private string searchQuery = string.Empty;
     private string searchApplied = string.Empty;
     private float searchDebounce;
@@ -31,6 +35,8 @@ internal sealed partial class VelvetShell
         searchApplied = string.Empty;
         searchDebounce = 0f;
         searchFocusPending = true;
+        searchTagTokens.Clear();
+        searchTagLabels.Clear();
         store.ClearSearch();
         router.Push(VelvetView.Search);
     }
@@ -58,16 +64,17 @@ internal sealed partial class VelvetShell
         var list = new Rect(new Vector2(area.Min.X, fieldRect.Max.Y + SearchFieldTop * scale), area.Max);
         using (AppSurface.BeginEdgeToEdge(list))
         {
-            var results = store.SearchResults;
+            var tagsOnly = TagsOnlyQuery(searchApplied);
+            var results = tagsOnly ? Array.Empty<VelvetProfileDto>() : store.SearchResults;
             if (searchApplied.Length == 0)
             {
                 DrawEmpty(list, Loc.T(L.Velvet.SearchPeopleHint), string.Empty);
                 return;
             }
 
-            if (results.Length == 0)
+            if (results.Length == 0 && searchTagTokens.Count == 0)
             {
-                if (store.LoadingSearch || !store.SearchLoaded)
+                if (!tagsOnly && (store.LoadingSearch || !store.SearchLoaded))
                 {
                     DrawEmpty(list, Loc.T(L.Common.Searching), string.Empty);
                 }
@@ -80,9 +87,23 @@ internal sealed partial class VelvetShell
             }
 
             Gap(2f);
-            for (var index = 0; index < results.Length; index++)
+            if (searchTagTokens.Count > 0)
             {
-                DrawSearchRow(results[index]);
+                SocialChrome.DrawSectionLabel(Loc.T(L.Velvet.PostTagsTitle), VelvetInk.Shared, SearchSectionStyle);
+                for (var index = 0; index < searchTagTokens.Count; index++)
+                {
+                    DrawSearchTagRow(index);
+                }
+            }
+
+            if (results.Length > 0)
+            {
+                SocialChrome.DrawSectionLabel(Loc.T(L.Velvet.SearchPeopleSection), VelvetInk.Shared,
+                    SearchSectionStyle);
+                for (var index = 0; index < results.Length; index++)
+                {
+                    DrawSearchRow(results[index]);
+                }
             }
 
             Gap(40f);
@@ -104,8 +125,67 @@ internal sealed partial class VelvetShell
 
         searchApplied = searchQuery;
         searchDebounce = 0f;
-        var filter = VelvetFilterSelection.Combine(searchInclude, mutes);
-        store.SearchPeople(searchApplied, filter);
+        RebuildSearchTags();
+        if (TagsOnlyQuery(searchApplied))
+        {
+            store.ClearSearch();
+            return;
+        }
+
+        store.SearchPeople(searchApplied, MutesFilter());
+    }
+
+    private static bool TagsOnlyQuery(string query)
+    {
+        var trimmed = query.AsSpan().TrimStart();
+        return trimmed.Length > 0 && trimmed[0] == '#';
+    }
+
+    private void RebuildSearchTags()
+    {
+        searchTagTokens.Clear();
+        searchTagLabels.Clear();
+        var trimmed = searchApplied.AsSpan().Trim();
+        if (trimmed.Length > 0 && trimmed[0] == '#')
+        {
+            trimmed = trimmed[1..].TrimStart();
+        }
+
+        if (trimmed.Length == 0)
+        {
+            return;
+        }
+
+        var needle = trimmed.ToString();
+        var tokens = VelvetSuggestions.PostTagTokens;
+        for (var index = 0; index < tokens.Length && searchTagTokens.Count < SearchTagLimit; index++)
+        {
+            var label = VelvetTokenLabels.Of(tokens[index]);
+            if (!label.Contains(needle, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            searchTagTokens.Add(tokens[index]);
+            searchTagLabels.Add("#" + label);
+        }
+    }
+
+    private void DrawSearchTagRow(int index)
+    {
+        var model = new VRowModel
+        {
+            Title = searchTagLabels[index],
+            Height = SearchTagRowHeight,
+            Leading = VRowLeading.IconTile,
+            TileIcon = PhoneIcons.Hash,
+            TileTint = VelvetTheme.Rose,
+            Chevron = true,
+        };
+        if (VRow.Cell(in model, ui, theme, images, lodestone) == VRowHit.Body)
+        {
+            OpenTagPosts(searchTagTokens[index]);
+        }
     }
 
     private void DrawSearchRow(VelvetProfileDto user)

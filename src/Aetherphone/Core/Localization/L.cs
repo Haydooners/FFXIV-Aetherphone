@@ -4256,6 +4256,7 @@ internal static class L
         public static readonly LocString DeckSeenBefore = new("velvet.deckSeenBefore", "Seen before");
         public static readonly LocString SearchNone = new("velvet.searchNone", "No one matches");
         public static readonly LocString SearchNoneHint = new("velvet.searchNoneHint", "Try a different name or tag.");
+        public static readonly LocString SearchPeopleSection = new("velvet.searchPeopleSection", "People");
         public static readonly LocPlural FitSharedKinks =
             new("velvet.fitSharedKinks", "{0} shared kink", "{0} shared kinks");
         public static readonly LocPlural CardShared =
@@ -4272,7 +4273,7 @@ internal static class L
         public static readonly LocString PostTagsTitle = new("velvet.postTagsTitle", "Tags");
         public static readonly LocString PostTagsEmpty = new("velvet.postTagsEmpty", "Add tags");
         public static readonly LocString PostTagsHint =
-            new("velvet.postTagsHint", "Tag what this post contains so people can filter it out.");
+            new("velvet.postTagsHint", "Tag what this post contains so people can find it or filter it out.");
         public static readonly LocPlural PostTagsRemaining =
             new("velvet.postTagsRemaining", "{0} tag left", "{0} tags left");
         public static readonly LocString FeedNone = new("velvet.feedNone", "Nothing shared yet");

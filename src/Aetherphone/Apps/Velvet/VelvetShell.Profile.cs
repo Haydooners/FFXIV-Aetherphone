@@ -505,11 +505,11 @@ internal sealed partial class VelvetShell
         });
     }
 
-    private void DrawDisplayTokens(string[] tokens, Vector4 tone, float width)
+    private int DrawDisplayTokens(string[] tokens, Vector4 tone, float width)
     {
         if (tokens.Length == 0)
         {
-            return;
+            return -1;
         }
 
         chipModels.Clear();
@@ -518,7 +518,7 @@ internal sealed partial class VelvetShell
             chipModels.Add(TokenChip(tokens[index], tone, VelvetTokenMatch.None));
         }
 
-        DrawChipFlow(width, UiScale.Current);
+        return DrawChipFlow(width, UiScale.Current);
     }
 
     private string SharedLabel(int count)

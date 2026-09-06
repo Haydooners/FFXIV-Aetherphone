@@ -7,6 +7,8 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed class VelvetFilterSelection
 {
+    private static readonly VelvetFilterSelection Nothing = new();
+
     public int Intent;
     public int Gender;
     public int Sexuality;
@@ -67,6 +69,8 @@ internal sealed class VelvetFilterSelection
         stored.Limits = new List<string>(Limits);
         stored.Tags = new List<string>(Tags);
     }
+
+    public static VelvetDiscoverFilter MutesOnly(VelvetFilterSelection mutes) => Combine(Nothing, mutes);
 
     public static VelvetDiscoverFilter Combine(VelvetFilterSelection include, VelvetFilterSelection exclude) =>
         new(VelvetIntent.Sanitize(include.Intent), VelvetIntent.Sanitize(exclude.Intent),

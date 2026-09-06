@@ -1,5 +1,6 @@
 using Aetherphone.Apps.Velvet.Kit;
 using Aetherphone.Core;
+using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Social;
@@ -53,6 +54,8 @@ internal sealed partial class VelvetShell
     };
 
     private readonly VelvetFilterSelection mutes = new();
+    private VelvetDiscoverFilter mutesFilter = VelvetDiscoverFilter.Empty;
+    private bool mutesFilterDirty = true;
     private readonly Spring[] facetReveal = new Spring[FilterFacets.Length];
     private readonly List<string> facetLabels = new();
     private int expandedFacets;
@@ -61,12 +64,27 @@ internal sealed partial class VelvetShell
     private VelvetFilterSelection IncludeFor(VelvetPage surface) =>
         surface == VelvetPage.Feed ? feedInclude : discoverInclude;
 
-    private void LoadMutes() => mutes.LoadFrom(configuration.VelvetMutes);
+    private void LoadMutes()
+    {
+        mutes.LoadFrom(configuration.VelvetMutes);
+        mutesFilterDirty = true;
+    }
 
     private void SaveMutes()
     {
         mutes.SaveInto(configuration.VelvetMutes);
         configuration.Save();
+    }
+
+    private VelvetDiscoverFilter MutesFilter()
+    {
+        if (mutesFilterDirty)
+        {
+            mutesFilter = VelvetFilterSelection.MutesOnly(mutes);
+            mutesFilterDirty = false;
+        }
+
+        return mutesFilter;
     }
 
     private void ApplyDiscoverFilters()
@@ -98,6 +116,7 @@ internal sealed partial class VelvetShell
 
     private void ApplyMutesEverywhere()
     {
+        mutesFilterDirty = true;
         SaveMutes();
         ApplyDiscoverFilters();
         ApplyFeedFilters();

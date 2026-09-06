@@ -264,6 +264,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         meGate.Reset();
         discoverResults = Array.Empty<VelvetProfileDto>();
         ResetUserPosts();
+        ResetTagPosts();
 
         notInterestedIds = EmptyIds;
         passedAt = EmptyPasses;
@@ -584,6 +585,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
             feedLanes[laneIndex].Items = CopyOnWrite.RemoveById(feedLanes[laneIndex].Items, postId);
         }
 
+        tagLane.Items = CopyOnWrite.RemoveById(tagLane.Items, postId);
         var remainingUserPosts = CopyOnWrite.RemoveById(userPosts, postId);
         if (!ReferenceEquals(remainingUserPosts, userPosts))
         {

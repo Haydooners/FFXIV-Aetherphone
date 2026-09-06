@@ -28,6 +28,14 @@ internal sealed partial class VelvetStore
     private volatile bool userPostsLoaded;
     private volatile bool userPostsFailed;
 
+    private readonly RetryGate tagGate = new RetryGate(TimeSpan.FromSeconds(15));
+    private readonly FeedLane<VelvetPostDto> tagLane = new(ByNewestFirst, ByCreatedAtUnix);
+    private volatile VelvetDiscoverFilter tagFilter = VelvetDiscoverFilter.Empty;
+    private volatile string[] tagQuery = Array.Empty<string>();
+    private volatile string tagToken = string.Empty;
+    private volatile bool tagPostsLoaded;
+    private volatile int tagEpoch;
+
     public string? UserPostsUserId => userPostsUserId;
     public VelvetPostDto[] UserPosts => userPosts;
     public int UserPostsTotal => userPostsTotal;
@@ -35,6 +43,13 @@ internal sealed partial class VelvetStore
     public bool UserPostsFailed => userPostsFailed;
     public bool UserPostsLoadingMore => userPostsLoadingMore;
     public bool HasMoreUserPosts => userPostsCursor is not null;
+
+    public string TagToken => tagToken;
+    public VelvetPostDto[] TagPosts => tagLane.Items;
+    public bool TagPostsLoaded => tagPostsLoaded;
+    public bool TagPostsLoadingMore => tagLane.LoadingMore;
+    public bool HasMoreTagPosts => tagLane.HasMore;
+    public ITrimmable TagPostsSource => tagLane;
 
     public void EnsureUserPosts(string userId)
     {
@@ -110,6 +125,17 @@ internal sealed partial class VelvetStore
         }, () => userPostsLoadingMore = false);
     }
 
+    private void ResetTagPosts()
+    {
+        tagEpoch++;
+        tagToken = string.Empty;
+        tagQuery = Array.Empty<string>();
+        tagFilter = VelvetDiscoverFilter.Empty;
+        tagPostsLoaded = false;
+        tagGate.Reset();
+        tagLane.Clear();
+    }
+
     private void ResetUserPosts()
     {
         userPostsUserId = null;
@@ -160,7 +186,8 @@ internal sealed partial class VelvetStore
         lane.Loading = true;
         work.Run("feed", async token =>
         {
-            var page = await client.FeedAsync(ScopeKey(scope), filter, region, null, token).ConfigureAwait(false);
+            var page = await client.FeedAsync(ScopeKey(scope), filter, region, Array.Empty<string>(), null, token)
+                .ConfigureAwait(false);
             if (page is not null && epoch == feedEpoch)
             {
                 lane.ApplyRefresh(page.Items, page.NextCursor);
@@ -205,12 +232,85 @@ internal sealed partial class VelvetStore
         lane.LoadingMore = true;
         work.Run("feed more", async token =>
         {
-            var page = await client.FeedAsync(ScopeKey(scope), filter, region, cursor, token).ConfigureAwait(false);
+            var page = await client.FeedAsync(ScopeKey(scope), filter, region, Array.Empty<string>(), cursor, token)
+                .ConfigureAwait(false);
             if (page is not null && epoch == feedEpoch)
             {
                 lane.ApplyMore(page.Items, page.NextCursor);
             }
         }, () => lane.LoadingMore = false);
+    }
+
+    public void EnsureTagPosts(string token, VelvetDiscoverFilter filter)
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        var sameQuery = string.Equals(tagToken, token, StringComparison.Ordinal) && tagFilter.Matches(filter);
+        if (sameQuery && (tagPostsLoaded || tagLane.Loading))
+        {
+            return;
+        }
+
+        if (!sameQuery)
+        {
+            tagGate.Reset();
+        }
+
+        if (!tagGate.TryPass())
+        {
+            return;
+        }
+
+        var epoch = ++tagEpoch;
+        var query = new[] { token };
+        tagToken = token;
+        tagQuery = query;
+        tagFilter = filter;
+        tagPostsLoaded = false;
+        tagLane.Clear();
+        tagLane.Loading = true;
+        work.Run("tag posts", async cancel =>
+        {
+            var page = await client.FeedAsync("all", filter, string.Empty, query, null, cancel).ConfigureAwait(false);
+            if (page is null || epoch != tagEpoch)
+            {
+                return;
+            }
+
+            tagLane.ApplyRefresh(page.Items, page.NextCursor);
+            tagPostsLoaded = true;
+        }, () =>
+        {
+            if (epoch == tagEpoch)
+            {
+                tagLane.Loading = false;
+            }
+        });
+    }
+
+    public void LoadMoreTagPosts()
+    {
+        var cursor = tagLane.Cursor;
+        if (!session.IsSignedIn || cursor is null || tagLane.LoadingMore || tagLane.Loading)
+        {
+            return;
+        }
+
+        var epoch = tagEpoch;
+        var filter = tagFilter;
+        var query = tagQuery;
+        tagLane.LoadingMore = true;
+        work.Run("tag posts more", async cancel =>
+        {
+            var page = await client.FeedAsync("all", filter, string.Empty, query, cursor, cancel).ConfigureAwait(false);
+            if (page is not null && epoch == tagEpoch)
+            {
+                tagLane.ApplyMore(page.Items, page.NextCursor);
+            }
+        }, () => tagLane.LoadingMore = false);
     }
 
     private static string ScopeKey(VelvetFeedScope scope) =>
@@ -523,6 +623,7 @@ internal sealed partial class VelvetStore
         }
 
         userPosts = CopyOnWrite.Replace(userPosts, post);
+        tagLane.Items = CopyOnWrite.Replace(tagLane.Items, post);
         if (fetchedPost?.Id == post.Id)
         {
             fetchedPost = post;
