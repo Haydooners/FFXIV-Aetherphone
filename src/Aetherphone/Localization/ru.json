@@ -2452,6 +2452,7 @@
   "velvet.introTitle": "Отправить приветствие",
   "velvet.introduceYourselfTo": "Представьтесь: {0}",
   "velvet.yourIntro": "Ваше приветствие",
+  "velvet.theirIntro": "Их приветствие",
   "velvet.introSheetHint": "Ваше приветствие попадёт в раздел «Запросы». Ответ означает, что вас приняли.",
   "velvet.sendIntro": "Отправить приветствие",
   "velvet.reply": "Ответить",

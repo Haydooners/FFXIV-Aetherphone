@@ -4186,6 +4186,7 @@ internal static class L
         public static readonly LocString IntroTitle = new("velvet.introTitle", "Send an intro");
         public static readonly LocString IntroduceYourselfTo = new("velvet.introduceYourselfTo", "Introduce yourself to {0}");
         public static readonly LocString YourIntro = new("velvet.yourIntro", "Your intro");
+        public static readonly LocString TheirIntro = new("velvet.theirIntro", "Their intro");
         public static readonly LocString IntroSheetHint = new("velvet.introSheetHint", "Your intro lands in their Requests. A reply accepts you.");
         public static readonly LocString SendIntro = new("velvet.sendIntro", "Send intro");
         public static readonly LocString Reply = new("velvet.reply", "Reply");

@@ -2452,6 +2452,7 @@
   "velvet.introTitle": "Send an intro",
   "velvet.introduceYourselfTo": "Introduce yourself to {0}",
   "velvet.yourIntro": "Your intro",
+  "velvet.theirIntro": "Their intro",
   "velvet.introSheetHint": "Your intro lands in their Requests. A reply accepts you.",
   "velvet.sendIntro": "Send intro",
   "velvet.reply": "Reply",

@@ -2452,6 +2452,7 @@
   "velvet.introTitle": "自己紹介を送る",
   "velvet.introduceYourselfTo": "{0}さんに自己紹介しましょう",
   "velvet.yourIntro": "あなたの自己紹介",
+  "velvet.theirIntro": "相手の自己紹介",
   "velvet.introSheetHint": "自己紹介は相手のリクエストに届きます。返信があれば承認されたことになります。",
   "velvet.sendIntro": "自己紹介を送る",
   "velvet.reply": "返信",

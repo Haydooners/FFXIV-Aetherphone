@@ -2452,6 +2452,7 @@
   "velvet.introTitle": "发送介绍",
   "velvet.introduceYourselfTo": "向 {0} 介绍你自己",
   "velvet.yourIntro": "你的介绍",
+  "velvet.theirIntro": "对方的介绍",
   "velvet.introSheetHint": "你的介绍会出现在对方的“请求”中。对方回复即表示接受你。",
   "velvet.sendIntro": "发送介绍",
   "velvet.reply": "回复",

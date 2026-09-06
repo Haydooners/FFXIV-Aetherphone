@@ -2452,6 +2452,7 @@
   "velvet.introTitle": "Tanışma mesajı gönder",
   "velvet.introduceYourselfTo": "{0} kişisine kendini tanıt",
   "velvet.yourIntro": "Tanışma mesajın",
+  "velvet.theirIntro": "Tanışma mesajı",
   "velvet.introSheetHint": "Tanışma mesajın İstekler'ine düşer. Yanıt verirse kabul edilmiş olursun.",
   "velvet.sendIntro": "Tanışma gönder",
   "velvet.reply": "Yanıtla",

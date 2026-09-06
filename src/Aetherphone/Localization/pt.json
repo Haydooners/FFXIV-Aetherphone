@@ -2452,6 +2452,7 @@
   "velvet.introTitle": "Enviar uma apresentação",
   "velvet.introduceYourselfTo": "Apresente-se para {0}",
   "velvet.yourIntro": "Sua apresentação",
+  "velvet.theirIntro": "A apresentação da pessoa",
   "velvet.introSheetHint": "Sua apresentação vai para as Solicitações dessa pessoa. Uma resposta aceita você.",
   "velvet.sendIntro": "Enviar apresentação",
   "velvet.reply": "Responder",
