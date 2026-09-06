@@ -13,6 +13,7 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetShell
 {
+    private const float FabRadius = 27f;
     private const float FeedConnectWidth = 76f;
     private const float FeedConnectHeight = 28f;
     private const float FeedConnectGap = 8f;
@@ -85,7 +86,7 @@ internal sealed partial class VelvetShell
         }
 
         if (ComposeFab.Draw(area, "velvetCompose", VelvetTheme.Rose, PhoneIcons.Plus,
-                Loc.T(L.Velvet.Share), "velvet.compose"))
+                Loc.T(L.Velvet.Share), "velvet.compose", VelvetTheme.RoseDeep, FabRadius, true))
         {
             post.Open();
             router.Push(VelvetView.Compose);
