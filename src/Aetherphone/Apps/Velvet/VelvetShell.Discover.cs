@@ -27,6 +27,19 @@ internal sealed partial class VelvetShell
     private const float DeckSettleEpsilon = 2f;
     private const float DeckPressShrink = 0.94f;
     private const float DeckTooltipSmoothTime = 0.11f;
+    private const float DeckHoverSmoothTime = 0.11f;
+    private const float DeckHoverGrow = 0.06f;
+    private const float DeckHoverTopLift = 0.18f;
+    private const float DeckHoverBottomLift = 0.10f;
+    private const float DeckRimAlpha = 0.30f;
+    private const float DeckRimWeight = 1.5f;
+    private const float DeckGlowReach = 8f;
+    private const float DeckSayGrow = 2f;
+    private const float DeckIdleFillAlpha = 0.6f;
+    private const float DeckIdleInkAlpha = 0.5f;
+    private const string DeckPassId = "velvetDeckPass";
+    private const string DeckSayId = "velvetDeckSay";
+    private const string DeckConnectId = "velvetDeckConnect";
     private const int DeckRefillBelow = 4;
     private const int DeckRevisitPenalty = 1000;
     private const float FilterSummaryHeight = 30f;
@@ -54,6 +67,9 @@ internal sealed partial class VelvetShell
     private Spring cardSlide;
     private Spring passTooltipEase;
     private Spring connectTooltipEase;
+    private Spring passHoverEase;
+    private Spring sayHoverEase;
+    private Spring connectHoverEase;
     private int cardExit;
     private string filterSummary = string.Empty;
     private bool filterSummaryDirty = true;
@@ -334,8 +350,9 @@ internal sealed partial class VelvetShell
             new Vector2(passCenter.X + radius + DeckActionGap * scale, rowCenterY - sayHalf),
             new Vector2(connectCenter.X - radius - DeckActionGap * scale, rowCenterY + sayHalf));
 
-        if (DrawDeckCircle(drawList, passCenter, radius, PhoneIcons.X, VelvetTheme.CardHi, VelvetTheme.BodyInk,
-                Loc.T(L.Velvet.DeckPass), barHovered, live, ref passTooltipEase))
+        if (DrawDeckCircle(drawList, DeckPassId, passCenter, radius, PhoneIcons.X, VelvetTheme.CardHi,
+                VelvetTheme.Card, VelvetTheme.BodyInk, 0f, Loc.T(L.Velvet.DeckPass), barHovered, live,
+                ref passHoverEase, ref passTooltipEase))
         {
             PassTop();
         }
@@ -345,8 +362,9 @@ internal sealed partial class VelvetShell
             RequestIntro(top.UserId, top.DisplayName, top.Handle, top.AvatarUrl);
         }
 
-        if (DrawDeckCircle(drawList, connectCenter, radius, PhoneIcons.HeartFilled, VelvetTheme.Rose,
-                VelvetTheme.OnAccent, Loc.T(L.Velvet.Connect), barHovered, live, ref connectTooltipEase))
+        if (DrawDeckCircle(drawList, DeckConnectId, connectCenter, radius, PhoneIcons.HeartFilled, VelvetTheme.Rose,
+                VelvetTheme.RoseDeep, VelvetTheme.OnAccent, DeckGlowReach, Loc.T(L.Velvet.Connect), barHovered, live,
+                ref connectHoverEase, ref connectTooltipEase))
         {
             ConnectTop();
         }
@@ -367,24 +385,35 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private static bool DrawDeckCircle(ImDrawListPtr drawList, Vector2 center, float radius, string glyph, Vector4 fill,
-        Vector4 ink, string tooltip, bool barHovered, bool live, ref Spring tooltipEase)
+    private static bool DrawDeckCircle(ImDrawListPtr drawList, string id, Vector2 center, float radius, string glyph,
+        Vector4 fill, Vector4 deep, Vector4 ink, float glowReach, string tooltip, bool barHovered, bool live,
+        ref Spring hoverEase, ref Spring tooltipEase)
     {
         var scale = UiScale.Current;
         var extent = new Vector2(radius, radius);
         var hovered = live && barHovered && ImGui.IsMouseHoveringRect(center - extent, center + extent);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var drawRadius = pressed ? radius * DeckPressShrink : radius;
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        var eased = Math.Clamp(hoverEase.Step(hovered ? 1f : 0f, DeckHoverSmoothTime, delta), 0f, 1f);
+        var drawRadius = radius * (1f + DeckHoverGrow * eased) * PressFx.Scale(id, pressed, DeckPressShrink);
+        var fillAlpha = live ? 1f : DeckIdleFillAlpha;
         drawList.AddCircleFilled(center + new Vector2(0f, 2f * scale), drawRadius, DeckShadow.Packed(), 40);
-        var body = hovered ? VelvetTheme.Lerp(fill, VelvetTheme.OnAccent, 0.10f) : fill;
-        drawList.AddCircleFilled(center, drawRadius, (live ? body : VelvetTheme.Alpha(body, 0.6f)).Packed(), 40);
-        PhoneIcon.Draw(drawList, center, glyph, live ? ink : VelvetTheme.Alpha(ink, 0.5f), VIcon.CardAction * scale);
+        AccentGloss.Circle(drawList, center, drawRadius,
+            DeckBodyTone(fill, DeckHoverTopLift * eased, fillAlpha),
+            DeckBodyTone(deep, DeckHoverBottomLift * eased, fillAlpha), scale, eased, glowReach);
+        if (eased > 0.001f)
+        {
+            drawList.AddCircle(center, drawRadius,
+                VelvetTheme.Alpha(VelvetTheme.OnAccent, DeckRimAlpha * eased).Packed(), 48, DeckRimWeight * scale);
+        }
+
+        PhoneIcon.Draw(drawList, center, glyph, live ? ink : VelvetTheme.Alpha(ink, DeckIdleInkAlpha),
+            VIcon.CardAction * scale * drawRadius / radius);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         HoverTooltip.Enqueue(new Rect(center - extent, center + extent), tooltip,
             tooltipEase.Step(hovered ? 1f : 0f, DeckTooltipSmoothTime, delta), HoverLabelSide.Above);
         return UiInteract.Click(center - extent, center + extent, hovered);
@@ -394,16 +423,30 @@ internal sealed partial class VelvetShell
     {
         var scale = UiScale.Current;
         var hovered = live && barHovered && ImGui.IsMouseHoveringRect(rect.Min, rect.Max);
-        var rounding = rect.Height * 0.5f;
-        var fill = !live ? VelvetTheme.Alpha(VelvetTheme.Rose, 0.5f)
-            : hovered ? VelvetTheme.RoseBright : VelvetTheme.Rose;
-        drawList.AddRectFilled(rect.Min + new Vector2(0f, 2f * scale), rect.Max + new Vector2(0f, 2f * scale),
+        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        var eased = Math.Clamp(sayHoverEase.Step(hovered ? 1f : 0f, DeckHoverSmoothTime, delta), 0f, 1f);
+        var grow = DeckSayGrow * scale * eased;
+        var shrink = rect.Height * 0.5f * (1f - PressFx.Scale(DeckSayId, pressed, DeckPressShrink));
+        var inset = new Vector2(shrink - grow, shrink - grow);
+        var body = new Rect(rect.Min + inset, rect.Max - inset);
+        var rounding = body.Height * 0.5f;
+        var fillAlpha = live ? 1f : DeckIdleFillAlpha;
+        drawList.AddRectFilled(body.Min + new Vector2(0f, 2f * scale), body.Max + new Vector2(0f, 2f * scale),
             DeckShadow.Packed(), rounding);
-        Squircle.Fill(drawList, rect.Min, rect.Max, rounding, fill.Packed());
-        var maxLabelWidth = MathF.Max(1f, rect.Width - DeckSayPad * 2f * scale);
-        Typography.DrawCentered(drawList, rect.Center,
+        AccentGloss.Pill(drawList, body.Min, body.Max,
+            DeckBodyTone(VelvetTheme.Rose, DeckHoverTopLift * eased, fillAlpha),
+            DeckBodyTone(VelvetTheme.RoseDeep, DeckHoverBottomLift * eased, fillAlpha), scale, eased, DeckGlowReach);
+        if (eased > 0.001f)
+        {
+            Squircle.Stroke(drawList, body.Min, body.Max, rounding,
+                VelvetTheme.Alpha(VelvetTheme.OnAccent, DeckRimAlpha * eased).Packed(), DeckRimWeight * scale);
+        }
+
+        var maxLabelWidth = MathF.Max(1f, body.Width - DeckSayPad * 2f * scale);
+        Typography.DrawCentered(drawList, body.Center,
             Typography.FitText(Loc.T(L.Velvet.DeckSay), maxLabelWidth, DeckSayStyle),
-            live ? VelvetTheme.OnAccent : VelvetTheme.Alpha(VelvetTheme.OnAccent, 0.6f), DeckSayStyle);
+            live ? VelvetTheme.OnAccent : VelvetTheme.Alpha(VelvetTheme.OnAccent, DeckIdleFillAlpha), DeckSayStyle);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -411,6 +454,9 @@ internal sealed partial class VelvetShell
 
         return UiInteract.Click(rect.Min, rect.Max, hovered);
     }
+
+    private static Vector4 DeckBodyTone(Vector4 tone, float lift, float alpha) =>
+        VelvetTheme.Alpha(VelvetTheme.Lerp(tone, VelvetTheme.OnAccent, lift), alpha);
 
     private static bool DrawDeckGhost(ImDrawListPtr drawList, Rect rect, string label, bool barHovered, bool live)
     {
