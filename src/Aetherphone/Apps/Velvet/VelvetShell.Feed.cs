@@ -49,7 +49,7 @@ internal sealed partial class VelvetShell
 
             stories.DrawTray(theme);
             var width = ScrollLayout.StableContentWidth();
-            var feed = store.Feed;
+            var feed = AllowedRegions(feedInclude) == 0 ? Array.Empty<VelvetPostDto>() : store.Feed;
             if (feed.Length == 0)
             {
                 var emptyRect = new Rect(new Vector2(area.Min.X, ImGui.GetCursorScreenPos().Y), area.Max);
@@ -166,7 +166,18 @@ internal sealed partial class VelvetShell
             return cached;
         }
 
-        var line = "#" + string.Join("  #", entry.Tags);
+        var builder = new System.Text.StringBuilder();
+        for (var index = 0; index < entry.Tags.Length; index++)
+        {
+            if (index > 0)
+            {
+                builder.Append("  ");
+            }
+
+            builder.Append('#').Append(VelvetTokenLabels.Of(entry.Tags[index]));
+        }
+
+        var line = builder.ToString();
         feedTagLines[entry.Id] = line;
         return line;
     }

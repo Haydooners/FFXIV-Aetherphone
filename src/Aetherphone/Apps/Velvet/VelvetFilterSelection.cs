@@ -47,7 +47,8 @@ internal sealed class VelvetFilterSelection
         Sexuality = stored.Sexuality;
         Relationship = stored.Relationship;
         Race = VelvetRace.Sanitize(stored.Race);
-        CopyInto(stored.Roles, Roles);
+        RegionMask = stored.Region;
+        CopyKnownInto(stored.Roles, Roles, VelvetRoles.Tokens);
         CopyInto(stored.Kinks, Kinks);
         CopyInto(stored.Limits, Limits);
         CopyInto(stored.Tags, Tags);
@@ -60,6 +61,7 @@ internal sealed class VelvetFilterSelection
         stored.Sexuality = Sexuality;
         stored.Relationship = Relationship;
         stored.Race = Race;
+        stored.Region = RegionMask;
         stored.Roles = new List<string>(Roles);
         stored.Kinks = new List<string>(Kinks);
         stored.Limits = new List<string>(Limits);
@@ -76,6 +78,18 @@ internal sealed class VelvetFilterSelection
             include.Limits.ToArray(), exclude.Limits.ToArray(),
             include.Tags.ToArray(), exclude.Tags.ToArray(),
             VelvetRace.Sanitize(include.Race), VelvetRace.Sanitize(exclude.Race));
+
+    private static void CopyKnownInto(List<string> source, HashSet<string> target, string[] known)
+    {
+        for (var index = 0; index < source.Count; index++)
+        {
+            var token = source[index];
+            if (Array.IndexOf(known, token) >= 0)
+            {
+                target.Add(token);
+            }
+        }
+    }
 
     private static void CopyInto(List<string> source, HashSet<string> target)
     {

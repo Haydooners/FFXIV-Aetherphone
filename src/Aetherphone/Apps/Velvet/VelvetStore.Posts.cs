@@ -18,6 +18,108 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetStore
 {
+    private readonly RetryGate userPostsGate = new RetryGate(TimeSpan.FromSeconds(15));
+    private volatile string? userPostsUserId;
+    private volatile VelvetPostDto[] userPosts = Array.Empty<VelvetPostDto>();
+    private volatile int userPostsTotal;
+    private volatile string? userPostsCursor;
+    private volatile bool userPostsLoadingMore;
+    private volatile bool userPostsLoading;
+    private volatile bool userPostsLoaded;
+    private volatile bool userPostsFailed;
+
+    public string? UserPostsUserId => userPostsUserId;
+    public VelvetPostDto[] UserPosts => userPosts;
+    public int UserPostsTotal => userPostsTotal;
+    public bool UserPostsLoaded => userPostsLoaded;
+    public bool UserPostsFailed => userPostsFailed;
+    public bool UserPostsLoadingMore => userPostsLoadingMore;
+    public bool HasMoreUserPosts => userPostsCursor is not null;
+
+    public void EnsureUserPosts(string userId)
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        if (userPostsUserId == userId && (userPostsLoaded || userPostsLoading))
+        {
+            return;
+        }
+
+        if (userPostsUserId != userId)
+        {
+            userPostsGate.Reset();
+        }
+
+        if (!userPostsGate.TryPass())
+        {
+            return;
+        }
+
+        userPostsUserId = userId;
+        userPosts = Array.Empty<VelvetPostDto>();
+        userPostsTotal = 0;
+        userPostsCursor = null;
+        userPostsLoaded = false;
+        userPostsFailed = false;
+        userPostsLoading = true;
+        work.Run("user posts", async token =>
+        {
+            var page = await client.UserPostsAsync(userId, null, token).ConfigureAwait(false);
+            if (userPostsUserId != userId)
+            {
+                return;
+            }
+
+            if (page is null)
+            {
+                userPostsFailed = true;
+                return;
+            }
+
+            userPosts = page.Items;
+            userPostsTotal = page.TotalCount;
+            userPostsCursor = page.NextCursor;
+            userPostsLoaded = true;
+        }, () => userPostsLoading = false);
+    }
+
+    public void LoadMoreUserPosts()
+    {
+        var userId = userPostsUserId;
+        var cursor = userPostsCursor;
+        if (!session.IsSignedIn || userId is null || cursor is null || userPostsLoadingMore || userPostsLoading)
+        {
+            return;
+        }
+
+        userPostsLoadingMore = true;
+        work.Run("user posts more", async token =>
+        {
+            var page = await client.UserPostsAsync(userId, cursor, token).ConfigureAwait(false);
+            if (page is null || userPostsUserId != userId)
+            {
+                return;
+            }
+
+            userPosts = CopyOnWrite.AppendPageById(userPosts, page.Items);
+            userPostsTotal = page.TotalCount;
+            userPostsCursor = page.NextCursor;
+        }, () => userPostsLoadingMore = false);
+    }
+
+    private void ResetUserPosts()
+    {
+        userPostsUserId = null;
+        userPosts = Array.Empty<VelvetPostDto>();
+        userPostsTotal = 0;
+        userPostsCursor = null;
+        userPostsLoaded = false;
+        userPostsFailed = false;
+    }
+
     public void SetFeedScope(VelvetFeedScope scope)
     {
         feedScope = (int)scope;

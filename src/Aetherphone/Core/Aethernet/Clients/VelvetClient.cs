@@ -221,6 +221,18 @@ internal sealed class VelvetClient
         return net.GetAsync($"/velvet/posts/{Uri.EscapeDataString(postId)}", AethernetJsonContext.Default.VelvetPostDto, token, null, onFailure);
     }
 
+    public Task<VelvetUserPostsPage?> UserPostsAsync(string userId, string? cursor, CancellationToken token,
+        Action<AepFailure>? onFailure = null)
+    {
+        var path = $"/velvet/users/{Uri.EscapeDataString(userId)}/posts";
+        if (cursor is not null)
+        {
+            path += $"?cursor={Uri.EscapeDataString(cursor)}";
+        }
+
+        return net.GetAsync(path, AethernetJsonContext.Default.VelvetUserPostsPage, token, null, onFailure);
+    }
+
     public Task<VelvetPostDto?> CreatePostAsync(CreateVelvetPostRequest request, CancellationToken token,
         Action<AepFailure>? onFailure = null)
     {
@@ -389,18 +401,6 @@ internal sealed class VelvetClient
         }
 
         return net.SendAsync(HttpMethod.Post, path.ToString(), token, null, onFailure);
-    }
-
-    public Task<VelvetUserPostsPage?> UserPostsAsync(string userId, string? cursor, CancellationToken token,
-        Action<AepFailure>? onFailure = null)
-    {
-        var path = $"/velvet/users/{Uri.EscapeDataString(userId)}/posts";
-        if (cursor is not null)
-        {
-            path += $"?cursor={Uri.EscapeDataString(cursor)}";
-        }
-
-        return net.GetAsync(path, AethernetJsonContext.Default.VelvetUserPostsPage, token, null, onFailure);
     }
 
     public Task<VelvetMediaUrlDto?> DmMediaUrlAsync(string messageId, CancellationToken token,

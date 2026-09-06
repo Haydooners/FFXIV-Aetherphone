@@ -15,7 +15,7 @@ namespace Aetherphone.Apps.Velvet;
 internal enum VelvetProfileTab
 {
     About,
-    Photos,
+    Posts,
 }
 
 internal sealed partial class VelvetShell
@@ -43,7 +43,6 @@ internal sealed partial class VelvetShell
         VelvetTheme.TitleInk, VelvetTheme.MutedInk, VelvetTheme.Rose, ProfileTabUnderline, SocialChrome.CellPadX,
         ProfileTabSmoothTime);
 
-    private readonly List<VelvetPostDto> galleryPosts = new();
     private VelvetProfileTab profileTab = VelvetProfileTab.About;
     private Spring profileTabSlide;
 
@@ -100,18 +99,17 @@ internal sealed partial class VelvetShell
             var width = ScrollLayout.StableContentWidth();
             DrawProfileHead(user, isMe, width);
             var picked = UnderlineTabs.Draw(Reserve(ProfileTabHeight), Loc.T(L.Velvet.CardAbout),
-                Loc.T(L.Velvet.Photos), profileTab == VelvetProfileTab.Photos, ref profileTabSlide, VelvetInk.Shared,
+                Loc.T(L.Velvet.Posts), profileTab == VelvetProfileTab.Posts, ref profileTabSlide, VelvetInk.Shared,
                 ProfileTabsStyle);
             if (picked >= 0)
             {
-                profileTab = picked == 1 ? VelvetProfileTab.Photos : VelvetProfileTab.About;
+                profileTab = picked == 1 ? VelvetProfileTab.Posts : VelvetProfileTab.About;
             }
 
             Gap(14f);
-            if (profileTab == VelvetProfileTab.Photos)
+            if (profileTab == VelvetProfileTab.Posts)
             {
-                DrawCardPhotoGrid(user, width);
-                DrawGallery(user, isMe, connected, width);
+                DrawPostGrid(user, isMe, connected, width);
             }
             else
             {
@@ -184,11 +182,9 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var lineHeight = Typography.LineHeight(ProfileStatValueStyle);
         store.EnsureUserPosts(user.UserId);
-        var photoCount = store.UserPostsUserId == user.UserId && store.UserPostsLoaded
-            ? store.UserPostsTotal
-            : CountFeedPostsBy(user.UserId);
-        var cursor = SocialChrome.DrawStat(drawList, left, top, lineHeight, CountText.Compact(photoCount),
-            Loc.T(L.Velvet.Photos), false, right, VelvetInk.Shared, ProfileStatValueStyle, TextStyles.Subheadline,
+        var postCount = store.UserPostsUserId == user.UserId && store.UserPostsLoaded ? store.UserPostsTotal : 0;
+        var cursor = SocialChrome.DrawStat(drawList, left, top, lineHeight, CountText.Compact(postCount),
+            Loc.T(L.Velvet.Posts), false, right, VelvetInk.Shared, ProfileStatValueStyle, TextStyles.Subheadline,
             out _);
         if (!isMe)
         {
@@ -198,21 +194,6 @@ internal sealed partial class VelvetShell
         SocialChrome.DrawStat(drawList, cursor + ProfileStatSpacing * scale, top, lineHeight,
             CountText.Compact(store.Connections.Length), Loc.T(L.Velvet.ProfileConnections), false, right,
             VelvetInk.Shared, ProfileStatValueStyle, TextStyles.Subheadline, out _);
-    }
-
-    private int CountFeedPostsBy(string userId)
-    {
-        var feed = store.Feed;
-        var count = 0;
-        for (var index = 0; index < feed.Length; index++)
-        {
-            if (feed[index].OwnerId == userId)
-            {
-                count++;
-            }
-        }
-
-        return count;
     }
 
     private float DrawProfileChips(ImDrawListPtr drawList, VelvetProfileDto user, float left, float right,
@@ -388,163 +369,6 @@ internal sealed partial class VelvetShell
         });
     }
 
-    private void DrawGallery(VelvetProfileDto user, bool isMe, bool connected, float width)
-    {
-        var scale = UiScale.Current;
-        store.EnsureUserPosts(user.UserId);
-        var serverGallery = store.UserPostsUserId == user.UserId && store.UserPostsLoaded;
-        var owned = galleryPosts;
-        owned.Clear();
-        int totalCount;
-        if (serverGallery)
-        {
-            owned.AddRange(store.UserPosts);
-            totalCount = store.UserPostsTotal;
-        }
-        else
-        {
-            if (!store.FeedLoaded && !store.LoadingFeed)
-            {
-                store.RefreshFeed();
-            }
-
-            var feed = store.Feed;
-            for (var index = 0; index < feed.Length; index++)
-            {
-                if (feed[index].OwnerId == user.UserId)
-                {
-                    owned.Add(feed[index]);
-                }
-            }
-
-            totalCount = owned.Count;
-        }
-
-        if (owned.Count == 0)
-        {
-            if (!isMe && !connected)
-            {
-                DrawLockedGallery(DisplayNameOf(user.DisplayName, user.Handle), width, totalCount);
-                return;
-            }
-
-            var emptyOrigin = ImGui.GetCursorScreenPos();
-            Typography.DrawWrappedCentered(new Vector2(emptyOrigin.X + width * 0.5f, emptyOrigin.Y + 24f * scale),
-                isMe ? Loc.T(L.Velvet.NoPhotosMine) : Loc.T(L.Velvet.NoPhotosShared), VelvetTheme.MutedInk,
-                TextStyles.Subheadline, width - 48f * scale);
-            Gap(80f);
-            return;
-        }
-
-        var cellGap = ProfileGridGap * scale;
-        var cell = (width - cellGap * (ProfileColumns - 1)) / ProfileColumns;
-        var rows = (owned.Count + ProfileColumns - 1) / ProfileColumns;
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        for (var index = 0; index < owned.Count; index++)
-        {
-            var row = index / ProfileColumns;
-            var column = index % ProfileColumns;
-            var min = new Vector2(origin.X + column * (cell + cellGap), origin.Y + row * (cell + cellGap));
-            var max = new Vector2(min.X + cell, min.Y + cell);
-            var tileVeiled = SensitiveReveals.ShouldVeil(owned[index].Sensitive, owned[index].Id,
-                configuration.ShowSensitiveContent);
-            DrawMedia(drawList, min, max, owned[index].MediaUrl, 0f, veiled: tileVeiled);
-            if (!tileVeiled && PostMedia.Photos(owned[index].MediaUrls, owned[index].MediaUrl).Length > 1)
-            {
-                MultiPhotoBadge.Draw(drawList, new Vector2(max.X - 8f * scale, min.Y + 8f * scale), scale);
-            }
-
-            if (UiInteract.Click(min, max))
-            {
-                store.EnsurePost(owned[index].Id);
-                router.Push(VelvetView.PostDetail(owned[index].Id));
-            }
-        }
-
-        var gridHeight = rows * cell + (rows - 1) * cellGap;
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, gridHeight));
-
-        if (serverGallery)
-        {
-            if (store.UserPostsLoadingMore)
-            {
-                InfiniteScroll.DrawLoadingRow(origin.X + width * 0.5f, VelvetTheme.MutedInk);
-            }
-            else if (store.HasMoreUserPosts && InfiniteScroll.ReachedBottom())
-            {
-                store.LoadMoreUserPosts();
-            }
-        }
-
-        if (!isMe && !connected && totalCount > owned.Count)
-        {
-            Gap(14f);
-            Typography.DrawWrappedCentered(new Vector2(origin.X + width * 0.5f, ImGui.GetCursorScreenPos().Y),
-                Loc.Plural(L.Velvet.ConnectToUnlock, totalCount - owned.Count), VelvetTheme.RoseInk,
-                TextStyles.Callout, width - 48f * scale);
-            Gap(30f);
-        }
-    }
-
-    private void DrawCardPhotoGrid(VelvetProfileDto user, float width)
-    {
-        var photos = CardPhotos(user);
-        if (photos.Length == 0)
-        {
-            return;
-        }
-
-        var scale = UiScale.Current;
-        var cellGap = ProfileGridGap * scale;
-        var cell = (width - cellGap * (ProfileColumns - 1)) / ProfileColumns;
-        var rows = (photos.Length + ProfileColumns - 1) / ProfileColumns;
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        for (var index = 0; index < photos.Length; index++)
-        {
-            var row = index / ProfileColumns;
-            var column = index % ProfileColumns;
-            var min = new Vector2(origin.X + column * (cell + cellGap), origin.Y + row * (cell + cellGap));
-            var max = new Vector2(min.X + cell, min.Y + cell);
-            DrawMedia(drawList, min, max, photos[index].Url, 0f);
-            if (UiInteract.Click(min, max))
-            {
-                OpenProfilePhotos(user.UserId, photos[index].Id);
-            }
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, rows * cell + (rows - 1) * cellGap));
-        Gap(ProfileGridGap);
-    }
-
-    private void DrawLockedGallery(string name, float width, int totalCount)
-    {
-        var scale = UiScale.Current;
-        var cellGap = ProfileGridGap * scale;
-        var cell = (width - cellGap * (ProfileColumns - 1)) / ProfileColumns;
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        for (var column = 0; column < ProfileColumns; column++)
-        {
-            var min = new Vector2(origin.X + column * (cell + cellGap), origin.Y);
-            var max = new Vector2(min.X + cell, min.Y + cell);
-            VMediaTile.Conceal(drawList, min, max, 0f, string.Empty, 0f);
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, cell));
-        Gap(14f);
-        var teaser = totalCount > 0
-            ? Loc.Plural(L.Velvet.ConnectToUnlock, totalCount)
-            : Loc.T(L.Velvet.ConnectToSeePhotos, name);
-        Typography.DrawWrappedCentered(new Vector2(origin.X + width * 0.5f, ImGui.GetCursorScreenPos().Y), teaser,
-            VelvetTheme.RoseInk, TextStyles.Callout, width - 48f * scale);
-        Gap(34f);
-    }
-
     private void DrawDisplayTokens(string[] tokens, VChipStyle style, Vector4 tone, float width = 0f,
         VelvetProfileDto? viewer = null, VelvetTokenGroup group = VelvetTokenGroup.None)
     {
@@ -569,11 +393,14 @@ internal sealed partial class VelvetShell
     }
 
     private static VChipModel TokenChip(string token, VChipStyle style, Vector4 tone, VelvetProfileDto? viewer,
-        VelvetTokenGroup group) =>
-        VelvetFit.Match(viewer, group, token) switch
+        VelvetTokenGroup group)
+    {
+        var label = VelvetTokenLabels.Of(token);
+        return VelvetFit.Match(viewer, group, token) switch
         {
-            VelvetTokenMatch.Shared => new VChipModel(token, VChipStyle.Solid, tone, PhoneIcons.Check),
-            VelvetTokenMatch.Conflict => new VChipModel(token, style, VelvetTheme.Danger, PhoneIcons.X),
-            _ => new VChipModel(token, style, tone),
+            VelvetTokenMatch.Shared => new VChipModel(label, VChipStyle.Solid, tone, PhoneIcons.Check),
+            VelvetTokenMatch.Conflict => new VChipModel(label, style, VelvetTheme.Danger, PhoneIcons.X),
+            _ => new VChipModel(label, style, tone),
         };
+    }
 }

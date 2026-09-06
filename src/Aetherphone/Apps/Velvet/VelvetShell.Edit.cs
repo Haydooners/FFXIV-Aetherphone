@@ -472,16 +472,16 @@ internal sealed partial class VelvetShell
 
                 break;
             case VelvetEditSection.Role:
-                FillTokenChips(VelvetSuggestions.Roles, editRole, RoleTone);
-                AppendOrphanChips(editRole, VelvetSuggestions.Roles);
+                FillTokenChips(VelvetRoles.Tokens, editRole, RoleTone);
+                AppendOrphanChips(editRole, VelvetRoles.Tokens);
                 break;
             case VelvetEditSection.Kinks:
-                FillTokenChips(VelvetSuggestions.Kinks, editKinks, KinkTone);
-                AppendOrphanChips(editKinks, VelvetSuggestions.Kinks);
+                FillTokenChips(VelvetKinks.Tokens, editKinks, KinkTone);
+                AppendOrphanChips(editKinks, VelvetKinks.Tokens);
                 break;
             case VelvetEditSection.Limits:
-                FillTokenChips(VelvetSuggestions.Limits, editLimits, VelvetTheme.Gold);
-                AppendOrphanChips(editLimits, VelvetSuggestions.Limits);
+                FillTokenChips(VelvetLimits.Tokens, editLimits, VelvetTheme.Gold);
+                AppendOrphanChips(editLimits, VelvetLimits.Tokens);
                 break;
             case VelvetEditSection.Relationship:
                 for (var index = 0; index < VelvetRelationship.All.Length; index++)
@@ -500,7 +500,7 @@ internal sealed partial class VelvetShell
         for (var index = 0; index < options.Length; index++)
         {
             var token = options[index];
-            AddOptionChip(token, selected.Contains(token), tone, null);
+            AddOptionChip(VelvetTokenLabels.Of(token), selected.Contains(token), tone, null);
         }
     }
 
@@ -514,7 +514,7 @@ internal sealed partial class VelvetShell
                 continue;
             }
 
-            chipModels.Add(new VChipModel(token, VChipStyle.Solid, VelvetTheme.Moonlight, null,
+            chipModels.Add(new VChipModel(VelvetTokenLabels.Of(token), VChipStyle.Solid, VelvetTheme.Moonlight, null,
                 true));
         }
     }
@@ -540,13 +540,13 @@ internal sealed partial class VelvetShell
                 editIntent = VelvetIntent.Toggle(editIntent, VelvetIntent.All[clicked].Flag);
                 break;
             case VelvetEditSection.Role:
-                ToggleToken(VelvetSuggestions.Roles, editRole, clicked);
+                ToggleToken(VelvetRoles.Tokens, editRole, clicked);
                 break;
             case VelvetEditSection.Kinks:
-                ToggleToken(VelvetSuggestions.Kinks, editKinks, clicked);
+                ToggleToken(VelvetKinks.Tokens, editKinks, clicked);
                 break;
             case VelvetEditSection.Limits:
-                ToggleToken(VelvetSuggestions.Limits, editLimits, clicked);
+                ToggleToken(VelvetLimits.Tokens, editLimits, clicked);
                 break;
             case VelvetEditSection.Relationship:
                 editRelationship = VelvetRelationship.All[clicked];
@@ -665,7 +665,7 @@ internal sealed partial class VelvetShell
     {
         for (var index = 0; index < tokens.Count; index++)
         {
-            editSummaryLabels.Add(tokens[index]);
+            editSummaryLabels.Add(VelvetTokenLabels.Of(tokens[index]));
         }
     }
 

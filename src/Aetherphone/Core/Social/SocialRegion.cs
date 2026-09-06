@@ -7,27 +7,30 @@ internal static class SocialRegion
 {
     public static readonly string[] Codes = { "NA", "EU", "JP", "OCE", "CN" };
 
-    private static readonly int AllRegionsMask = (1 << Codes.Length) - 1;
+    public static readonly int AllMask = (1 << Codes.Length) - 1;
 
     public static bool IsValid(string code) => Array.IndexOf(Codes, code) >= 0;
 
     public static bool MaskShows(int mask, int regionIndex) =>
         mask == 0 || (mask & (1 << regionIndex)) != 0;
 
+    public static int AllowedMask(int shown, int hidden) =>
+        (shown == 0 ? AllMask : shown) & ~hidden & AllMask;
+
     public static int ToggleMask(int mask, int regionIndex)
     {
-        var bits = (mask == 0 ? AllRegionsMask : mask) ^ (1 << regionIndex);
+        var bits = (mask == 0 ? AllMask : mask) ^ (1 << regionIndex);
         if (bits == 0)
         {
             return mask;
         }
 
-        return bits == AllRegionsMask ? 0 : bits;
+        return bits == AllMask ? 0 : bits;
     }
 
     public static string? FilterCsv(int mask)
     {
-        if (mask == 0 || mask == AllRegionsMask)
+        if (mask == 0 || mask == AllMask)
         {
             return null;
         }

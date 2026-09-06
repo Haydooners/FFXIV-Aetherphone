@@ -26,7 +26,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private readonly Configuration configuration;
     private readonly RealtimeSignalBus signals;
     private readonly RetryGate meGate = new RetryGate(TimeSpan.FromSeconds(30));
-    private readonly RetryGate userPostsGate = new RetryGate(TimeSpan.FromSeconds(15));
     private readonly FeedLane<VelvetPostDto>[] feedLanes =
     {
         new FeedLane<VelvetPostDto>(ByNewestFirst, ByCreatedAtUnix),
@@ -73,14 +72,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private volatile bool profileLoading;
     private volatile bool profileFailed;
     private volatile bool profileRevalidating;
-    private volatile string? userPostsUserId;
-    private volatile VelvetPostDto[] userPosts = Array.Empty<VelvetPostDto>();
-    private volatile int userPostsTotal;
-    private volatile string? userPostsCursor;
-    private volatile bool userPostsLoadingMore;
-    private volatile bool userPostsLoading;
-    private volatile bool userPostsLoaded;
-    private volatile bool userPostsFailed;
     private volatile string? detailPostId;
     private volatile VelvetCommentDto[] detailComments = Array.Empty<VelvetCommentDto>();
     private volatile string? commentsCursor;
@@ -213,13 +204,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     public VelvetProfileDto? ProfileUser => profileUser;
     public bool ProfileLoading => profileLoading;
     public bool ProfileFailed => profileFailed;
-    public string? UserPostsUserId => userPostsUserId;
-    public VelvetPostDto[] UserPosts => userPosts;
-    public int UserPostsTotal => userPostsTotal;
-    public bool UserPostsLoaded => userPostsLoaded;
-    public bool UserPostsFailed => userPostsFailed;
-    public bool UserPostsLoadingMore => userPostsLoadingMore;
-    public bool HasMoreUserPosts => userPostsCursor is not null;
     public VelvetThreadDto[] Threads => ThreadListItems;
     public bool LoadingThreads => LoadingThreadList;
     public bool ThreadsLoaded => ThreadListLoaded;
@@ -279,6 +263,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         regionBlocked = false;
         meGate.Reset();
         discoverResults = Array.Empty<VelvetProfileDto>();
+        ResetUserPosts();
 
         notInterestedIds = EmptyIds;
         passedAt = EmptyPasses;
@@ -304,12 +289,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         profileUserId = null;
         profileUser = null;
         profileFailed = false;
-        userPostsUserId = null;
-        userPosts = Array.Empty<VelvetPostDto>();
-        userPostsTotal = 0;
-        userPostsCursor = null;
-        userPostsLoaded = false;
-        userPostsFailed = false;
         detailPostId = null;
         detailComments = Array.Empty<VelvetCommentDto>();
         commentsCursor = null;

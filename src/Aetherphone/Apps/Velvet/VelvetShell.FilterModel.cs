@@ -30,9 +30,9 @@ internal sealed partial class VelvetShell
             VelvetFilterFacet.Gender => VelvetGender.All.Length,
             VelvetFilterFacet.Sexuality => VelvetSexuality.All.Length,
             VelvetFilterFacet.Relationship => VelvetRelationship.All.Length,
-            VelvetFilterFacet.Role => VelvetSuggestions.Roles.Length,
-            VelvetFilterFacet.Kinks => VelvetSuggestions.Kinks.Length,
-            VelvetFilterFacet.Limits => VelvetSuggestions.Limits.Length,
+            VelvetFilterFacet.Role => VelvetRoles.All.Length,
+            VelvetFilterFacet.Kinks => VelvetKinks.Tokens.Length,
+            VelvetFilterFacet.Limits => VelvetLimits.Tokens.Length,
             _ => TagOptionCount(),
         };
 
@@ -50,7 +50,7 @@ internal sealed partial class VelvetShell
 
     private static float FacetContentHeight(VelvetFilterFacet facet)
     {
-        var rows = FacetOptionCount(facet) * FilterOptionRowHeight + FilterRevealPadY;
+        var rows = FacetOptionCount(facet) * FilterOptionRowHeight + VDisclosure.PanelPadY * 2f;
         return facet == VelvetFilterFacet.Tags
             ? rows + VelvetSuggestions.TagCategories.Length * FilterGroupHeaderHeight
             : rows;
@@ -104,13 +104,17 @@ internal sealed partial class VelvetShell
 
                 break;
             case VelvetFilterFacet.Role:
-                CopyLabels(VelvetSuggestions.Roles);
+                for (var index = 0; index < VelvetRoles.All.Length; index++)
+                {
+                    facetLabels.Add(Loc.T(VelvetRoles.All[index].Label));
+                }
+
                 break;
             case VelvetFilterFacet.Kinks:
-                CopyLabels(VelvetSuggestions.Kinks);
+                CopyLabels(VelvetKinks.Tokens);
                 break;
             case VelvetFilterFacet.Limits:
-                CopyLabels(VelvetSuggestions.Limits);
+                CopyLabels(VelvetLimits.Tokens);
                 break;
         }
     }
@@ -119,17 +123,12 @@ internal sealed partial class VelvetShell
     {
         for (var index = 0; index < source.Length; index++)
         {
-            facetLabels.Add(source[index]);
+            facetLabels.Add(VelvetTokenLabels.Of(source[index]));
         }
     }
 
     private VelvetOptionState OptionState(VelvetFilterFacet facet, VelvetFilterSelection include, int optionIndex)
     {
-        if (facet == VelvetFilterFacet.Region)
-        {
-            return (include.RegionMask & (1 << optionIndex)) != 0 ? VelvetOptionState.Shown : VelvetOptionState.Any;
-        }
-
         if (TokenFacet(facet, out var catalog))
         {
             var token = catalog[optionIndex];
@@ -153,18 +152,6 @@ internal sealed partial class VelvetShell
     private void SetOptionState(VelvetFilterFacet facet, VelvetFilterSelection include, int optionIndex,
         VelvetOptionState state)
     {
-        if (facet == VelvetFilterFacet.Region)
-        {
-            var bit = 1 << optionIndex;
-            var on = (include.RegionMask & bit) != 0;
-            if (state == VelvetOptionState.Shown != on)
-            {
-                include.RegionMask = SocialRegion.ToggleMask(include.RegionMask, optionIndex);
-            }
-
-            return;
-        }
-
         if (TokenFacet(facet, out var catalog))
         {
             var token = catalog[optionIndex];
@@ -233,13 +220,13 @@ internal sealed partial class VelvetShell
         switch (facet)
         {
             case VelvetFilterFacet.Role:
-                catalog = VelvetSuggestions.Roles;
+                catalog = VelvetRoles.Tokens;
                 return true;
             case VelvetFilterFacet.Kinks:
-                catalog = VelvetSuggestions.Kinks;
+                catalog = VelvetKinks.Tokens;
                 return true;
             case VelvetFilterFacet.Limits:
-                catalog = VelvetSuggestions.Limits;
+                catalog = VelvetLimits.Tokens;
                 return true;
             case VelvetFilterFacet.Tags:
                 catalog = TagCatalog;
@@ -281,6 +268,7 @@ internal sealed partial class VelvetShell
     private static int FacetFlag(VelvetFilterFacet facet, int optionIndex) =>
         facet switch
         {
+            VelvetFilterFacet.Region => 1 << optionIndex,
             VelvetFilterFacet.Race => VelvetRace.Bit(VelvetRace.All[optionIndex]),
             VelvetFilterFacet.Intent => VelvetIntent.All[optionIndex].Flag,
             VelvetFilterFacet.Gender => VelvetGender.All[optionIndex],
@@ -292,6 +280,7 @@ internal sealed partial class VelvetShell
     private static int MaskFor(VelvetFilterFacet facet, VelvetFilterSelection selection) =>
         facet switch
         {
+            VelvetFilterFacet.Region => selection.RegionMask,
             VelvetFilterFacet.Race => selection.Race,
             VelvetFilterFacet.Intent => selection.Intent,
             VelvetFilterFacet.Gender => selection.Gender,
@@ -304,6 +293,9 @@ internal sealed partial class VelvetShell
     {
         switch (facet)
         {
+            case VelvetFilterFacet.Region:
+                selection.RegionMask = mask;
+                break;
             case VelvetFilterFacet.Race:
                 selection.Race = mask;
                 break;

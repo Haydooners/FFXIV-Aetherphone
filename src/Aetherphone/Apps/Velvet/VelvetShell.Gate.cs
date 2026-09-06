@@ -125,14 +125,15 @@ internal sealed partial class VelvetShell
         for (var index = 0; index < options.Length; index++)
         {
             var tag = options[index];
-            var chipWidth = Typography.Measure(tag, TextStyles.Callout).X + 32f * scale;
+            var label = VelvetTokenLabels.Of(tag);
+            var chipWidth = Typography.Measure(label, TextStyles.Callout).X + 32f * scale;
             if (x + chipWidth > origin.X + width && x > origin.X)
             {
                 x = origin.X;
                 y += height + rowGap;
             }
 
-            if (DrawTagPill(new Vector2(x, y), new Vector2(chipWidth, height), tag, hue,
+            if (DrawTagPill(new Vector2(x, y), new Vector2(chipWidth, height), label, hue,
                     selected.Contains(tag), scale))
             {
                 toggled = index;
@@ -152,14 +153,15 @@ internal sealed partial class VelvetShell
                     continue;
                 }
 
-                var chipWidth = Typography.Measure(tag, TextStyles.Callout).X + 32f * scale;
+                var label = VelvetTokenLabels.Of(tag);
+                var chipWidth = Typography.Measure(label, TextStyles.Callout).X + 32f * scale;
                 if (x + chipWidth > origin.X + width && x > origin.X)
                 {
                     x = origin.X;
                     y += height + rowGap;
                 }
 
-                if (DrawTagPill(new Vector2(x, y), new Vector2(chipWidth, height), tag, VelvetTheme.Moonlight,
+                if (DrawTagPill(new Vector2(x, y), new Vector2(chipWidth, height), label, VelvetTheme.Moonlight,
                         true, scale))
                 {
                     removed = tag;

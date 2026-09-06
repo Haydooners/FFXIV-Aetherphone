@@ -73,7 +73,28 @@ internal sealed class VelvetPostComposer
             tags.Add(token);
         }
 
-        tagsLabel = tags.Count == 0 ? string.Empty : string.Join(", ", tags);
+        tagsLabel = BuildTagsLabel();
+    }
+
+    private string BuildTagsLabel()
+    {
+        if (tags.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var builder = new System.Text.StringBuilder();
+        for (var index = 0; index < tags.Count; index++)
+        {
+            if (index > 0)
+            {
+                builder.Append(", ");
+            }
+
+            builder.Append(VelvetTokenLabels.Of(tags[index]));
+        }
+
+        return builder.ToString();
     }
 
     public void ClearTags()

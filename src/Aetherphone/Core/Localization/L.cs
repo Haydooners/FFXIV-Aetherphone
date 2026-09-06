@@ -4176,12 +4176,13 @@ internal static class L
         public static readonly LocString LookingForOne = new("velvet.lookingForOne", "Looking for {0}");
         public static readonly LocString Photos = new("velvet.photos", "Photos");
         public static readonly LocString MyPhotos = new("velvet.myPhotos", "My photos");
+        public static readonly LocString Posts = new("velvet.posts", "Posts");
+        public static readonly LocString NoPostsShared = new("velvet.noPostsShared", "No posts yet.");
+        public static readonly LocString NoPostsMine = new("velvet.noPostsMine", "You have not shared any posts yet.");
+        public static readonly LocString ConnectToSeePosts = new("velvet.connectToSeePosts", "Connect with {0} to see their posts");
+        public static readonly LocPlural ConnectToUnlockPosts =
+            new("velvet.connectToUnlockPosts", "Connect to unlock {0} post", "Connect to unlock {0} posts");
         public static readonly LocString ProfileConnections = new("velvet.profileConnections", "Connections");
-        public static readonly LocString NoPhotosShared = new("velvet.noPhotosShared", "No photos shared yet.");
-        public static readonly LocString NoPhotosMine = new("velvet.noPhotosMine", "You have not shared any photos yet.");
-        public static readonly LocString ConnectToSeePhotos = new("velvet.connectToSeePhotos", "Connect with {0} to see their photos");
-        public static readonly LocPlural ConnectToUnlock =
-            new("velvet.connectToUnlock", "Connect to unlock {0} photo", "Connect to unlock {0} photos");
         public static readonly LocString IntroTitle = new("velvet.introTitle", "Send an intro");
         public static readonly LocString IntroduceYourselfTo = new("velvet.introduceYourselfTo", "Introduce yourself to {0}");
         public static readonly LocString YourIntro = new("velvet.yourIntro", "Your intro");
@@ -4329,6 +4330,9 @@ internal static class L
         public static readonly LocString CardAbout = new("velvet.cardAbout", "About");
         public static readonly LocString CardIntent = new("velvet.cardIntent", "Intent");
         public static readonly LocString CardRole = new("velvet.cardRole", "Role");
+        public static readonly LocString RoleDom = new("velvet.roleDom", "Dominant");
+        public static readonly LocString RoleSub = new("velvet.roleSub", "Submissive");
+        public static readonly LocString RoleSwitch = new("velvet.roleSwitch", "Switch");
         public static readonly LocString CardRelationship = new("velvet.cardRelationship", "Relationship");
         public static readonly LocString CardTags = new("velvet.cardTags", "Tags");
         public static readonly LocString CardLimits = new("velvet.cardLimits", "Limits");
