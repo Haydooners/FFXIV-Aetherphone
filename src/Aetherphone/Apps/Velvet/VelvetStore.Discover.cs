@@ -85,7 +85,9 @@ internal sealed partial class VelvetStore
             if (page is not null && epoch == discoverEpoch)
             {
                 discoverResults = AppendUniqueDiscover(discoverResults, WithoutNotInterested(page.Users));
-                discoverCursor = page.NextCursor;
+                discoverCursor = page.Users.Length > 0 ? page.NextCursor : null;
+                AepLog.Info($"Velvet discover page returned {page.Users.Length} profiles, "
+                    + $"deck pool now {discoverResults.Length}");
             }
         }, () => loadingMoreDiscover = false);
     }

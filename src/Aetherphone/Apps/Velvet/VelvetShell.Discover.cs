@@ -123,17 +123,28 @@ internal sealed partial class VelvetShell
         deck.Clear();
         deckScores.Clear();
         var regionMask = discoverInclude.RegionMask;
+        var skippedConnected = 0;
+        var skippedRegion = 0;
         for (var index = 0; index < source.Length; index++)
         {
             var profile = source[index];
-            if (profile.ConnectionState != VelvetConnectionState.None || !RegionAllowed(profile, regionMask))
+            if (profile.ConnectionState != VelvetConnectionState.None)
             {
+                skippedConnected++;
+                continue;
+            }
+
+            if (!RegionAllowed(profile, regionMask))
+            {
+                skippedRegion++;
                 continue;
             }
 
             InsertByScore(profile, VelvetFit.Score(me, profile));
         }
 
+        AepLog.Info($"Velvet deck rebuilt: {deck.Count} cards from {source.Length} profiles, "
+            + $"{skippedConnected} already connected, {skippedRegion} out of region, {store.PassCount} passes held");
         PinDeckTop();
     }
 
@@ -463,8 +474,7 @@ internal sealed partial class VelvetShell
     private void DrawDeckEmpty(Rect body)
     {
         var scale = UiScale.Current;
-        var loading = store.LoadingDiscover || store.LoadingMoreDiscover
-            || (store.HasMoreDiscover && !store.DiscoverFailed);
+        var loading = store.LoadingDiscover || store.LoadingMoreDiscover;
         var failed = !loading && store.DiscoverFailed;
         if (failed)
         {
