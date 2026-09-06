@@ -104,7 +104,7 @@ internal sealed partial class VelvetShell
 
         searchApplied = searchQuery;
         searchDebounce = 0f;
-        var filter = VelvetFilterSelection.Combine(searchInclude, mutes) with { HasPhoto = false };
+        var filter = VelvetFilterSelection.Combine(searchInclude, mutes);
         store.SearchPeople(searchApplied, filter);
     }
 

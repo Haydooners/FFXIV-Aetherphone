@@ -75,8 +75,7 @@ internal sealed class VelvetFilterSelection
             include.Kinks.ToArray(), exclude.Kinks.ToArray(),
             include.Limits.ToArray(), exclude.Limits.ToArray(),
             include.Tags.ToArray(), exclude.Tags.ToArray(),
-            VelvetRace.Sanitize(include.Race), VelvetRace.Sanitize(exclude.Race),
-            0, true);
+            VelvetRace.Sanitize(include.Race), VelvetRace.Sanitize(exclude.Race));
 
     private static void CopyInto(List<string> source, HashSet<string> target)
     {

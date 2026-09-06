@@ -74,8 +74,8 @@ internal sealed partial class VelvetShell
     private void ApplyDiscoverFilters()
     {
         filterSummaryDirty = true;
-        store.RefreshDiscover(VelvetFilterSelection.Combine(discoverInclude, mutes), string.Empty,
-            SocialRegion.FilterCsv(discoverInclude.RegionMask) ?? string.Empty);
+        store.RefreshDiscover(VelvetFilterSelection.Combine(discoverInclude, mutes) with { HasPhoto = true },
+            string.Empty, SocialRegion.FilterCsv(discoverInclude.RegionMask) ?? string.Empty);
     }
 
     private void ApplyFeedFilters() =>
