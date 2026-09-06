@@ -99,6 +99,21 @@ internal static class VCard
             Typography.FitText(title, titleWidth, TextStyles.Headline), VelvetTheme.TitleInk, TextStyles.Headline);
     }
 
+    public static float RowTextLeft(float left, float scale) => left + (HeaderTile + HeaderGap) * scale;
+
+    public static void RowLabel(ImDrawListPtr drawList, Vector2 origin, float rowHeight, string glyph, Vector4 tone,
+        string label, float width, float scale)
+    {
+        var tile = HeaderTile * scale;
+        var centerY = origin.Y + rowHeight * 0.5f;
+        Tile(drawList, new Vector2(origin.X, centerY - tile * 0.5f), new Vector2(origin.X + tile, centerY + tile * 0.5f),
+            glyph, tone, HeaderGlyph * scale, scale);
+        var textLeft = RowTextLeft(origin.X, scale);
+        var textWidth = MathF.Max(1f, origin.X + width - textLeft);
+        Typography.Draw(drawList, new Vector2(textLeft, centerY - Typography.LineHeight(TextStyles.Body) * 0.5f),
+            Typography.FitText(label, textWidth, TextStyles.Body), VelvetTheme.TitleInk, TextStyles.Body);
+    }
+
     public static float FactHeight(in VFact fact, float width, float scale)
     {
         if (Inline(fact, width, scale, out _))

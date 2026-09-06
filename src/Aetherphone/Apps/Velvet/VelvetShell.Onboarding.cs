@@ -56,10 +56,6 @@ internal sealed partial class VelvetShell
     private const float OnboardSettingsRowHeight = 52f;
     private const float OnboardSegmentHeight = 34f;
     private const float OnboardSegmentPadBottom = 12f;
-    private const float OnboardToggleTrackWidth = 44f;
-    private const float OnboardToggleTrackHeight = 24f;
-    private const float OnboardToggleKnobInset = 3f;
-    private const float OnboardToggleOffFill = 0.16f;
 
     private static readonly VelvetEditSection[] OnboardSections =
     {
@@ -649,15 +645,16 @@ internal sealed partial class VelvetShell
         var right = left + card.ContentWidth;
 
         var discoverTop = card.ContentOrigin.Y;
-        DrawOnboardSettingLabel(drawList, left, discoverTop, rowHeight, PhoneIcons.Compass, VelvetTheme.Rose,
-            Loc.T(L.Velvet.DiscoverableLabel));
-        DrawOnboardToggle(drawList, new Rect(new Vector2(left, discoverTop), new Vector2(right, discoverTop + rowHeight)),
-            ref onboardDiscoverable);
+        var discoverRow = new Rect(new Vector2(left, discoverTop), new Vector2(right, discoverTop + rowHeight));
+        VCard.RowLabel(drawList, discoverRow.Min, rowHeight, PhoneIcons.Compass, VelvetTheme.Rose,
+            Loc.T(L.Velvet.DiscoverableLabel), card.ContentWidth - (VToggle.TrackWidth + Metrics.Space.Md) * scale,
+            scale);
+        onboardDiscoverable = VToggle.Draw(drawList, "velvetObDiscoverable", discoverRow, onboardDiscoverable, scale);
         FeedCell.Hairline(drawList, left, right, discoverTop + rowHeight, VelvetTheme.Hairline);
 
         var whoTop = discoverTop + rowHeight;
-        DrawOnboardSettingLabel(drawList, left, whoTop, rowHeight, PhoneIcons.MessageCircle, VelvetTheme.Moonlight,
-            Loc.T(L.Velvet.WhoCanMessage));
+        VCard.RowLabel(drawList, new Vector2(left, whoTop), rowHeight, PhoneIcons.MessageCircle,
+            VelvetTheme.Moonlight, Loc.T(L.Velvet.WhoCanMessage), card.ContentWidth, scale);
         var segmentTop = whoTop + rowHeight;
         FillWhoLabels();
         var who = VSegmented.Draw("velvetObWho",
@@ -669,37 +666,6 @@ internal sealed partial class VelvetShell
         }
 
         VCard.End(card);
-    }
-
-    private static void DrawOnboardSettingLabel(ImDrawListPtr drawList, float left, float rowTop, float rowHeight,
-        string glyph, Vector4 tone, string label)
-    {
-        var scale = UiScale.Current;
-        var tile = VCard.HeaderTile * scale;
-        var centerY = rowTop + rowHeight * 0.5f;
-        VCard.Tile(drawList, new Vector2(left, centerY - tile * 0.5f), new Vector2(left + tile, centerY + tile * 0.5f),
-            glyph, tone, VCard.HeaderGlyph * scale, scale);
-        var textLeft = left + tile + VCard.HeaderGap * scale;
-        Typography.Draw(drawList, new Vector2(textLeft, centerY - Typography.LineHeight(TextStyles.Body) * 0.5f),
-            label, VelvetTheme.TitleInk, TextStyles.Body);
-    }
-
-    private static void DrawOnboardToggle(ImDrawListPtr drawList, Rect row, ref bool value)
-    {
-        var scale = UiScale.Current;
-        var trackWidth = OnboardToggleTrackWidth * scale;
-        var trackHeight = OnboardToggleTrackHeight * scale;
-        var trackMin = new Vector2(row.Max.X - trackWidth, row.Center.Y - trackHeight * 0.5f);
-        var trackMax = new Vector2(row.Max.X, row.Center.Y + trackHeight * 0.5f);
-        Squircle.Fill(drawList, trackMin, trackMax, trackHeight * 0.5f,
-            (value ? VelvetTheme.Rose : VelvetTheme.Alpha(VelvetTheme.OnAccent, OnboardToggleOffFill)).Packed());
-        var knobRadius = trackHeight * 0.5f - OnboardToggleKnobInset * scale;
-        var knobX = value ? trackMax.X - trackHeight * 0.5f : trackMin.X + trackHeight * 0.5f;
-        drawList.AddCircleFilled(new Vector2(knobX, row.Center.Y), knobRadius, VelvetTheme.OnAccent.Packed(), 24);
-        if (UiInteract.HoverClick(row.Min, row.Max))
-        {
-            value = !value;
-        }
     }
 
     private void FinishOnboarding()
