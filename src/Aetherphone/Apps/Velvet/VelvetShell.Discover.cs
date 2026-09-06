@@ -342,7 +342,7 @@ internal sealed partial class VelvetShell
 
         if (DrawDeckSay(drawList, sayRect, barHovered, live))
         {
-            RequestIntro(top.UserId, DisplayNameOf(top.DisplayName, top.Handle));
+            RequestIntro(top.UserId, top.DisplayName, top.Handle, top.AvatarUrl);
         }
 
         if (DrawDeckCircle(drawList, connectCenter, radius, PhoneIcons.HeartFilled, VelvetTheme.Rose,

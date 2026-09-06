@@ -5,6 +5,7 @@ using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -13,15 +14,43 @@ internal sealed partial class VelvetShell
     private const float MessagesSearchHeight = 52f;
     private const float MessagesHeadingHeight = 44f;
 
+    private const int IntroLimit = 140;
+    private const float IntroTopGap = 14f;
+    private const float IntroAvatarRadius = 38f;
+    private const float IntroHaloSpread = 13f;
+    private const float IntroHaloAlpha = 0.10f;
+    private const int IntroHaloSegments = 48;
+    private const float IntroTextInset = 40f;
+    private const float IntroNameGap = 16f;
+    private const float IntroHandleGap = 4f;
+    private const float IntroHeroGap = 22f;
+    private const float IntroHeaderGap = 12f;
+    private const float IntroFieldHeight = 118f;
+    private const float IntroFieldPad = 10f;
+    private const float IntroWellAlpha = 0.55f;
+    private const float IntroHintGap = 10f;
+    private const float IntroSendGap = 18f;
+    private const float IntroSendHeight = 48f;
+    private const float IntroBottomGap = 32f;
+
     private static readonly TextStyle MessagesHeadingStyle = TextStyles.Title3;
     private static readonly TextStyle MessagesLinkStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle IntroNameStyle = TextStyles.Title2;
+    private static readonly TextStyle IntroHandleStyle = TextStyles.Subheadline;
+    private static readonly TextStyle IntroSendStyle = TextStyles.SubheadlineEmphasized;
 
     private readonly List<VelvetThreadDto> chatsFiltered = new();
     private VelvetThreadDto[] chatsFilterSource = Array.Empty<VelvetThreadDto>();
     private string chatsFilterQuery = string.Empty;
     private string chatsDraft = string.Empty;
     private string introName = string.Empty;
+    private string introHandle = string.Empty;
+    private string? introAvatarUrl;
     private string introText = string.Empty;
+    private string introPrompt = string.Empty;
+    private LanguageInfo? introPromptLanguage;
+    private string introCounter = string.Empty;
+    private int introCounterLength = -1;
 
     private void DrawMessages(Rect area)
     {
@@ -479,10 +508,14 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private void RequestIntro(string userId, string displayName)
+    private void RequestIntro(string userId, string displayName, string handle, string? avatarUrl)
     {
-        introName = displayName;
+        introName = DisplayNameOf(displayName, handle);
+        introHandle = string.IsNullOrWhiteSpace(displayName) || handle.Length == 0 ? string.Empty : "@" + handle;
+        introAvatarUrl = avatarUrl;
         introText = string.Empty;
+        introPrompt = string.Empty;
+        introCounterLength = -1;
         router.Push(VelvetView.Intro(userId));
     }
 
@@ -496,45 +529,133 @@ internal sealed partial class VelvetShell
         }
 
         var body = new Rect(new Vector2(area.Min.X, area.Min.Y + VHeader.Height * scale), area.Max);
-        using (AppSurface.Begin(body))
+        using (AppSurface.BeginEdgeToEdge(body))
+        using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
         {
-            Gap(30f);
             var drawList = ImGui.GetWindowDrawList();
-            var width = ImGui.GetContentRegionAvail().X;
-            var centerX = ImGui.GetCursorScreenPos().X + width * 0.5f;
-            var moonY = ImGui.GetCursorScreenPos().Y + 22f * scale;
-            VelvetArt.Moon(drawList, new Vector2(centerX, moonY), 18f * scale, VelvetTheme.Moonlight,
-                VelvetTheme.GroundTop);
-            Gap(80f);
-            Typography.DrawWrappedCentered(new Vector2(centerX, ImGui.GetCursorScreenPos().Y),
-                Loc.T(L.Velvet.IntroduceYourselfTo, introName), VelvetTheme.TitleInk, TextStyles.Title3,
-                width - 48f * scale);
-            Gap(50f);
-
-            ui.Field(Loc.T(L.Velvet.YourIntro), "##introText", ref introText, 140, true);
-            ui.HelpText(Loc.T(L.Velvet.IntroSheetHint));
-            Gap(16f);
-
-            var sendRect = Reserve(46f);
-            var canSend = introText.Trim().Length > 0;
-            if (canSend)
+            var width = ScrollLayout.StableContentWidth();
+            var inset = SocialChrome.CellPadX * scale;
+            var contentWidth = MathF.Max(1f, width - inset * 2f);
+            Gap(IntroTopGap);
+            DrawIntroHero(drawList, userId, width, scale);
+            Gap(IntroHeroGap);
+            DrawIntroCard(drawList, width, inset, contentWidth, scale);
+            Gap(IntroHintGap);
+            DrawInsetHelpText(Loc.T(L.Velvet.IntroSheetHint));
+            Gap(IntroSendGap);
+            var sendOrigin = ImGui.GetCursorScreenPos();
+            var send = new Rect(new Vector2(sendOrigin.X + inset, sendOrigin.Y),
+                new Vector2(sendOrigin.X + inset + contentWidth, sendOrigin.Y + IntroSendHeight * scale));
+            if (SocialPill.Accent(drawList, send, Loc.T(L.Velvet.SendIntro), VelvetInk.Shared, IntroSendStyle,
+                    send.Height * 0.5f, !string.IsNullOrWhiteSpace(introText) && !store.IntroBusy))
             {
-                if (ui.PillButton(sendRect, Loc.T(L.Velvet.SendIntro), true))
-                {
-                    SendIntro(userId);
-                }
-            }
-            else
-            {
-                Squircle.Fill(drawList, sendRect.Min, sendRect.Max, sendRect.Height * 0.5f,
-                    VelvetTheme.Alpha(VelvetTheme.Rose, 0.35f).Packed());
-                Typography.DrawCentered(sendRect.Center, Loc.T(L.Velvet.SendIntro),
-                    VelvetTheme.Alpha(VelvetTheme.OnAccent, 0.6f),
-                    0.9f, FontWeight.SemiBold);
+                SendIntro(userId);
             }
 
-            Gap(40f);
+            ImGui.SetCursorScreenPos(sendOrigin);
+            ImGui.Dummy(new Vector2(width, IntroSendHeight * scale));
+            Gap(IntroBottomGap);
         }
+    }
+
+    private void DrawIntroHero(ImDrawListPtr drawList, string userId, float width, float scale)
+    {
+        var origin = ImGui.GetCursorScreenPos();
+        var centerX = origin.X + width * 0.5f;
+        var radius = IntroAvatarRadius * scale;
+        var center = new Vector2(centerX, origin.Y + radius);
+        drawList.AddCircleFilled(center, radius + IntroHaloSpread * scale,
+            VelvetTheme.Alpha(VelvetTheme.RoseGlow, IntroHaloAlpha).Packed(), IntroHaloSegments);
+        VAvatar.Draw(drawList, center, radius, theme, introName, string.Empty, introAvatarUrl, images, lodestone, -1,
+            VelvetTheme.Rose);
+        var textWidth = MathF.Max(1f, width - IntroTextInset * 2f * scale);
+        var bottom = Typography.DrawWrappedCentered(drawList, introName, IntroNameStyle, VelvetTheme.TitleInk,
+            new Vector2(centerX, center.Y + radius + IntroNameGap * scale), textWidth);
+        if (introHandle.Length > 0)
+        {
+            bottom = Typography.DrawWrappedCentered(drawList, introHandle, IntroHandleStyle, VelvetTheme.MutedInk,
+                new Vector2(centerX, bottom + IntroHandleGap * scale), textWidth);
+        }
+
+        var height = bottom - origin.Y;
+        if (UiInteract.HoverClick(new Vector2(origin.X, origin.Y), new Vector2(origin.X + width, origin.Y + height)))
+        {
+            OpenProfile(userId);
+        }
+
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height));
+    }
+
+    private void DrawIntroCard(ImDrawListPtr drawList, float width, float inset, float contentWidth, float scale)
+    {
+        var origin = ImGui.GetCursorScreenPos();
+        var cardMin = new Vector2(origin.X + inset, origin.Y);
+        var cardHeight = (VCard.Pad * 2f + VCard.HeaderTile + IntroHeaderGap * 2f + IntroFieldHeight) * scale;
+        var cardMax = new Vector2(cardMin.X + contentWidth, cardMin.Y + cardHeight);
+        VCard.Paint(drawList, cardMin, cardMax, scale);
+        var pad = VCard.Pad * scale;
+        var contentLeft = cardMin.X + pad;
+        var contentRight = cardMax.X - pad;
+        var headerTop = cardMin.Y + pad;
+        VCard.Header(drawList, new Vector2(contentLeft, headerTop), contentRight - contentLeft, PhoneIcons.Quote,
+            VelvetTheme.Rose, Loc.T(L.Velvet.YourIntro), scale, IntroCounter());
+        var hairlineY = headerTop + (VCard.HeaderTile + IntroHeaderGap) * scale;
+        FeedCell.Hairline(drawList, contentLeft, contentRight, hairlineY, VelvetTheme.Hairline);
+        DrawIntroField(new Rect(new Vector2(contentLeft, hairlineY + IntroHeaderGap * scale),
+            new Vector2(contentRight, cardMax.Y - pad)), scale);
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, cardHeight));
+    }
+
+    private void DrawIntroField(Rect field, float scale)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        Squircle.Fill(drawList, field.Min, field.Max, Metrics.Radius.Md * scale,
+            VelvetTheme.Alpha(VelvetTheme.Sunken, IntroWellAlpha).Packed());
+        var padding = ImGui.GetStyle().FramePadding;
+        var textLeft = field.Min.X + IntroFieldPad * scale;
+        var wrapWidth = MathF.Max(1f, field.Width - (IntroFieldPad * 2f) * scale - padding.X * 2f - 4f * scale);
+        ImGui.SetCursorScreenPos(new Vector2(textLeft, field.Min.Y + IntroFieldPad * scale));
+        using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
+        using (ImRaii.PushColor(ImGuiCol.Text, VelvetTheme.TitleInk))
+        {
+            SoftWrapField.Multiline("##introText", ref introText, IntroLimit,
+                new Vector2(field.Width - IntroFieldPad * 2f * scale, field.Height - IntroFieldPad * 2f * scale),
+                wrapWidth);
+        }
+
+        if (introText.Length > 0)
+        {
+            return;
+        }
+
+        Typography.DrawWrappedLeft(new Vector2(textLeft + padding.X, field.Min.Y + IntroFieldPad * scale + padding.Y),
+            IntroPrompt(), VelvetTheme.MutedInk, TextStyles.Body, wrapWidth);
+    }
+
+    private string IntroPrompt()
+    {
+        if (introPrompt.Length > 0 && ReferenceEquals(introPromptLanguage, Loc.Current))
+        {
+            return introPrompt;
+        }
+
+        introPromptLanguage = Loc.Current;
+        introPrompt = Loc.T(L.Velvet.IntroduceYourselfTo, introName);
+        return introPrompt;
+    }
+
+    private string IntroCounter()
+    {
+        if (introCounterLength == introText.Length)
+        {
+            return introCounter;
+        }
+
+        introCounterLength = introText.Length;
+        introCounter = introCounterLength.ToString(Loc.Culture) + "/" + IntroLimit.ToString(Loc.Culture);
+        return introCounter;
     }
 
     private void SendIntro(string userId)

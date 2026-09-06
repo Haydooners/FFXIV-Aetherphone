@@ -320,7 +320,7 @@ internal sealed partial class VelvetShell
                 if (SocialPill.Accent(drawList, rect, Loc.T(L.Velvet.IntroduceYourself), VelvetInk.Shared,
                         TextStyles.SubheadlineEmphasized, rounding))
                 {
-                    RequestIntro(user.UserId, DisplayNameOf(user.DisplayName, user.Handle));
+                    RequestIntro(user.UserId, user.DisplayName, user.Handle, user.AvatarUrl);
                 }
 
                 break;

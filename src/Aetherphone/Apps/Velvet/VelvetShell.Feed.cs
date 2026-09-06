@@ -350,7 +350,7 @@ internal sealed partial class VelvetShell
         if (connectable && SocialPill.Outline(drawList, connectRect, Loc.T(L.Velvet.Connect), VelvetInk.Shared,
                 TextStyles.FootnoteEmphasized, connectRect.Height * 0.5f, VelvetInk.Shared.ButtonFill))
         {
-            RequestIntro(entry.OwnerId, authorName);
+            RequestIntro(entry.OwnerId, entry.OwnerDisplayName, entry.OwnerHandle, entry.OwnerAvatarUrl);
         }
 
         var photos = PostMedia.Photos(entry.MediaUrls, entry.MediaUrl);
