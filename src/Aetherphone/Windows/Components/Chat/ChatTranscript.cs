@@ -452,16 +452,12 @@ internal sealed class ChatTranscript
             return;
         }
 
-        ImGui.SetScrollY(MathF.Max(0f, ImGui.GetScrollMaxY() - olderAnchorFromBottom));
+        var restored = MathF.Max(0f, ImGui.GetScrollMaxY() - olderAnchorFromBottom);
+        ImGui.SetScrollY(restored);
         olderElapsed += delta;
-        if (model.Messages.Length > olderBaselineCount)
-        {
-            if (++olderSettleFrames >= OlderSettleFrames)
-            {
-                olderAnchorFromBottom = -1f;
-            }
-        }
-        else if (olderElapsed >= OlderRestoreTimeout)
+        var landed = model.Messages.Length > olderBaselineCount && ++olderSettleFrames >= OlderSettleFrames &&
+                     MathF.Abs(ImGui.GetScrollY() - restored) <= 1f;
+        if (landed || olderElapsed >= OlderRestoreTimeout)
         {
             olderAnchorFromBottom = -1f;
         }
