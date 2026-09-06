@@ -312,7 +312,7 @@ internal sealed class ChatTranscript
 
         var sidePadding = model.SidePadding * scale;
         rowWidth = MathF.Max(1f, listRect.Width - sidePadding * 2f);
-        using (var surface = AppSurface.Begin(listRect))
+        using (var surface = AppSurface.BeginEdgeToEdge(listRect))
         {
             ImGui.Indent(sidePadding);
             if (model.Messages.Length == 0 && typingReveal < 0.01f)

@@ -499,7 +499,7 @@ internal sealed class GameChatThread : IChatTranscriptInteractions, IDisposable
             BodyInk = theme.TextStrong,
             EmptyText = Loc.T(L.Messages.Empty),
             LoadingText = Loc.T(L.Messages.Empty),
-            SidePadding = 0f,
+            SidePadding = AppSurface.SidePadding,
             IsGroup = target.Streams.Length > 1 || target.SendTarget.Length == 0,
             LabelsOwnMessages = target.Streams.Length > 1 || target.SendTarget.Length == 0,
             Interactions = this,

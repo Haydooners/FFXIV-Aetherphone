@@ -161,7 +161,7 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
 
     protected virtual ChatBubbleStyle BubbleStyle => default;
 
-    protected virtual float TranscriptSidePadding => 0f;
+    protected virtual float TranscriptSidePadding => AppSurface.SidePadding;
 
     protected abstract void DrawHeader(Rect area, string threadId);
 
