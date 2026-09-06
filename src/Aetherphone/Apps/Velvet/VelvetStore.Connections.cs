@@ -206,6 +206,32 @@ internal sealed partial class VelvetStore
         });
     }
 
+    public void ClearPasses()
+    {
+        if (passedAt.Count == 0)
+        {
+            return;
+        }
+
+        passedAt = EmptyPasses;
+        discoverLoaded = false;
+
+        var accountId = MyUserId;
+        var epoch = accountEpoch;
+        work.Run("discover passes clear", async token =>
+        {
+            await EnsureNotInterestedLoadedAsync(token).ConfigureAwait(false);
+            if (epoch != accountEpoch)
+            {
+                return;
+            }
+
+            passedAt = EmptyPasses;
+            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedIds, passedAt), token)
+                .ConfigureAwait(false);
+        });
+    }
+
     public void RemoveFromNotInterested(string userId)
     {
         notInterested = RemoveProfile(notInterested, userId);

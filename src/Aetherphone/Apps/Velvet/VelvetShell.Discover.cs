@@ -513,6 +513,13 @@ internal sealed partial class VelvetShell
             ApplyDiscoverFilters();
         }
 
+        if (store.HasPasses && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckStartOver),
+                ConfirmButtonTone.Neutral, "velvet.deck.startOver"))
+        {
+            store.ClearPasses();
+            ApplyDiscoverFilters();
+        }
+
         if (lastPassed is not null && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckUndo),
                 ConfirmButtonTone.Neutral, "velvet.deck.undo"))
         {

@@ -2504,6 +2504,7 @@
   "velvet.deckEndHint": "フィルターを広げるか、あとでまた確認してください。新しい人は毎日増えています。",
   "velvet.deckWidenRegion": "リージョンを広げる",
   "velvet.deckCheckAgain": "もう一度確認",
+  "velvet.deckStartOver": "最初からやり直す",
   "velvet.searchNone": "該当する人がいません",
   "velvet.searchNoneHint": "別の名前やタグで試してください。",
   "velvet.fitSharedKinks.one": "共通のキンク {0}件",

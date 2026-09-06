@@ -4249,6 +4249,7 @@ internal static class L
             new("velvet.deckEndHint", "Widen your filters or check again later. New people arrive every day.");
         public static readonly LocString DeckWidenRegion = new("velvet.deckWidenRegion", "Widen region");
         public static readonly LocString DeckCheckAgain = new("velvet.deckCheckAgain", "Check again");
+        public static readonly LocString DeckStartOver = new("velvet.deckStartOver", "Start over");
         public static readonly LocString SearchNone = new("velvet.searchNone", "No one matches");
         public static readonly LocString SearchNoneHint = new("velvet.searchNoneHint", "Try a different name or tag.");
         public static readonly LocPlural FitSharedKinks =

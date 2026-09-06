@@ -195,6 +195,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     public AepFailure DiscoverFailure => discoverFailureBox?.Failure ?? AepFailure.None;
     public bool HasMoreDiscover => discoverCursor is not null;
     public bool LoadingMoreDiscover => loadingMoreDiscover;
+    public bool HasPasses => passedAt.Count > 0;
     public VelvetProfileDto[] SearchResults => searchResults;
     public bool LoadingSearch => loadingSearch;
     public bool SearchLoaded => searchLoaded;

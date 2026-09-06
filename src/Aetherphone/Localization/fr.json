@@ -2504,6 +2504,7 @@
   "velvet.deckEndHint": "Élargissez vos filtres ou revenez plus tard. De nouvelles personnes arrivent chaque jour.",
   "velvet.deckWidenRegion": "Élargir la région",
   "velvet.deckCheckAgain": "Revérifier",
+  "velvet.deckStartOver": "Tout recommencer",
   "velvet.searchNone": "Personne ne correspond",
   "velvet.searchNoneHint": "Essayez un autre nom ou tag.",
   "velvet.fitSharedKinks.one": "{0} kink en commun",
