@@ -12,28 +12,14 @@ internal static class SpokenLanguages
         new(1 << 3, "fr", "Français"),
         new(1 << 4, "es", "Español"),
         new(1 << 5, "pt", "Português"),
-        new(1 << 6, "it", "Italiano"),
-        new(1 << 7, "nl", "Nederlands"),
-        new(1 << 8, "pl", "Polski"),
-        new(1 << 9, "ru", "Русский"),
-        new(1 << 10, "tr", "Türkçe"),
-        new(1 << 11, "zh", "中文"),
-        new(1 << 12, "ko", "한국어"),
-        new(1 << 13, "sv", "Svenska"),
-        new(1 << 14, "da", "Dansk"),
-        new(1 << 15, "nb", "Norsk"),
-        new(1 << 16, "fi", "Suomi"),
-        new(1 << 17, "cs", "Čeština"),
-        new(1 << 18, "hu", "Magyar"),
-        new(1 << 19, "el", "Ελληνικά"),
-        new(1 << 20, "uk", "Українська"),
-        new(1 << 21, "ro", "Română"),
-        new(1 << 22, "vi", "Tiếng Việt"),
-        new(1 << 23, "id", "Bahasa Indonesia"),
-        new(1 << 24, "tl", "Tagalog"),
+        new(1 << 6, "ru", "Русский"),
+        new(1 << 7, "zh", "中文"),
+        new(1 << 8, "tr", "Türkçe"),
+        new(1 << 9, "it", "Italiano"),
+        new(1 << 10, "pl", "Polski"),
     };
 
-    public const int Mask = (1 << 25) - 1;
+    public const int Mask = (1 << 11) - 1;
 
     public static readonly int[] Flags = BuildFlags();
 
