@@ -48,16 +48,15 @@ internal sealed partial class VelvetShell
         var drawList = ImGui.GetWindowDrawList();
         var maxWidth = MathF.Max(1f, area.Width - FeedCell.PadX * 2f * scale);
         var top = area.Min.Y + EmptyStateTop * scale;
-        var titleHeight = Typography.DrawWrappedCentered(drawList, title, TextStyles.Headline, VelvetTheme.TitleInk,
+        var titleBottom = Typography.DrawWrappedCentered(drawList, title, TextStyles.Headline, VelvetTheme.TitleInk,
             new Vector2(area.Center.X, top), maxWidth);
         if (body.Length == 0)
         {
-            return top + titleHeight;
+            return titleBottom;
         }
 
-        var bodyTop = top + titleHeight + EmptyStateGap * scale;
-        return bodyTop + Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline, VelvetTheme.MutedInk,
-            new Vector2(area.Center.X, bodyTop), maxWidth);
+        return Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline, VelvetTheme.MutedInk,
+            new Vector2(area.Center.X, titleBottom + EmptyStateGap * scale), maxWidth);
     }
 
     private void FillWhoLabels()
