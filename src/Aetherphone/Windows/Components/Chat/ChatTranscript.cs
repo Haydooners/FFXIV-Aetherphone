@@ -22,6 +22,7 @@ internal static class TranscriptFlags
     public const byte Deleted = 8;
     public const byte Forwarded = 16;
     public const byte Edited = 32;
+    public const byte Starred = 64;
 }
 
 internal readonly struct TranscriptReaction
@@ -228,6 +229,8 @@ internal sealed class ChatTranscript
     private const float StampTextScale = 0.70f;
     private const float StampTickBox = 14f;
     private const float StampTickGap = 3f;
+    private const float StampStarBox = 12f;
+    private const float StampStarGap = 4f;
     private const float DefaultRounding = 14f;
     private const float TailSize = 7f;
     private const float BubbleGap = 3f;
@@ -1987,27 +1990,32 @@ internal sealed class ChatTranscript
         }
 
         var timeSize = Typography.Measure(time, StampTextScale);
-        if ((message.Flags & TranscriptFlags.Deleted) != 0)
+        var starWidth = (message.Flags & TranscriptFlags.Starred) != 0 ? StampStarBox * scale : 0f;
+        var lead = starWidth > 0f ? starWidth + StampStarGap * scale : 0f;
+        if ((message.Flags & TranscriptFlags.Deleted) != 0 || !mine)
         {
-            return new BubbleStamp(time, null, false, timeSize.X, timeSize.Y, 0f);
-        }
-
-        if (!mine)
-        {
-            return new BubbleStamp(time, null, false, timeSize.X, timeSize.Y, 0f);
+            return new BubbleStamp(time, null, false, lead + timeSize.X, timeSize.Y, 0f, starWidth);
         }
 
         var seen = message.ReadAtUnix is not null;
         var glyph = seen ? PhoneIcons.Checks : PhoneIcons.Check;
         var tickWidth = StampTickBox * scale;
-        return new BubbleStamp(time, glyph, seen, timeSize.X + StampTickGap * scale + tickWidth, timeSize.Y,
-            tickWidth);
+        return new BubbleStamp(time, glyph, seen, lead + timeSize.X + StampTickGap * scale + tickWidth, timeSize.Y,
+            tickWidth, starWidth);
     }
 
     private static void DrawStamp(ImDrawListPtr drawList, in BubbleStamp stamp, Vector2 bottomRight, in BubblePop fx,
         Vector4 timeColor)
     {
         var topLeft = new Vector2(bottomRight.X - stamp.Width, bottomRight.Y - stamp.Height);
+        if (stamp.StarWidth > 0f)
+        {
+            var starCenter = new Vector2(topLeft.X + stamp.StarWidth * 0.5f, bottomRight.Y - stamp.Height * 0.5f);
+            PhoneIcon.Draw(drawList, fx.Apply(starCenter), PhoneIcons.StarFilled,
+                Palette.WithAlpha(timeColor, timeColor.W * fx.Alpha), stamp.StarWidth * fx.Pop);
+            topLeft.X += stamp.StarWidth + StampStarGap * UiScale.Current;
+        }
+
         Typography.Draw(drawList, fx.Apply(topLeft), stamp.Time, Palette.WithAlpha(timeColor, timeColor.W * fx.Alpha),
             StampTextScale * fx.Pop);
         if (stamp.TickGlyph is null)
@@ -2037,8 +2045,10 @@ internal sealed class ChatTranscript
         public readonly float Width;
         public readonly float Height;
         public readonly float TickWidth;
+        public readonly float StarWidth;
 
-        public BubbleStamp(string time, string? tickGlyph, bool seen, float width, float height, float tickWidth)
+        public BubbleStamp(string time, string? tickGlyph, bool seen, float width, float height, float tickWidth,
+            float starWidth)
         {
             Time = time;
             TickGlyph = tickGlyph;
@@ -2046,6 +2056,7 @@ internal sealed class ChatTranscript
             Width = width;
             Height = height;
             TickWidth = tickWidth;
+            StarWidth = starWidth;
         }
     }
 

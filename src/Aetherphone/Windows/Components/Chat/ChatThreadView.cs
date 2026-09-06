@@ -71,6 +71,7 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
     private volatile string? pendingVoicePlay;
     private TMessage[] transcriptSource = Array.Empty<TMessage>();
     private TranscriptMessage[] transcriptCache = Array.Empty<TranscriptMessage>();
+    private bool transcriptStale;
     private TMessage[] sweptSource = Array.Empty<TMessage>();
     private bool sweptTranslated;
     private string scopeThreadId = string.Empty;
@@ -238,6 +239,8 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
     }
 
     public void PrefillDraft(string body) => pendingPrefill = body;
+
+    public void InvalidateTranscript() => transcriptStale = true;
 
     public void RequestScrollTo(string messageId) => transcript.RequestScrollTo(messageId);
 
@@ -450,11 +453,12 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
 
     private ReadOnlySpan<TranscriptMessage> BuildTranscript(TMessage[] source)
     {
-        if (ReferenceEquals(source, transcriptSource))
+        if (!transcriptStale && ReferenceEquals(source, transcriptSource))
         {
             return transcriptCache;
         }
 
+        transcriptStale = false;
         transcriptSource = source;
         transcriptCache = MapTranscript(source);
         return transcriptCache;

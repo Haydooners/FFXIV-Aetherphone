@@ -289,9 +289,28 @@ internal abstract class MessageThreadViewBase : ChatThreadView<ChatMessageDto, C
         return mapped;
     }
 
+    protected bool IsStarred(string messageId)
+    {
+        var starred = configuration.MessageStarredMessages;
+        for (var index = 0; index < starred.Count; index++)
+        {
+            if (starred[index].MessageId == messageId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private byte MessageFlags(ChatMessageDto message)
     {
         byte flags = 0;
+        if (IsStarred(message.Id))
+        {
+            flags |= TranscriptFlags.Starred;
+        }
+
         if (message.Forwarded)
         {
             flags |= TranscriptFlags.Forwarded;
