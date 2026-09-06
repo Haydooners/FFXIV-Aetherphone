@@ -160,6 +160,8 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
 
     protected virtual IChatTranscriptStoryReplies? StoryReplies => null;
 
+    protected virtual IChatTranscriptSenders? Senders => null;
+
     protected virtual ChatBubbleStyle BubbleStyle => default;
 
     protected virtual float TranscriptSidePadding => AppSurface.SidePadding;
@@ -346,6 +348,7 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
             Paging = this,
             PostCards = PostCards,
             StoryReplies = StoryReplies,
+            Senders = Senders,
             Translation = this,
         };
         transcript.Draw(listRect, model);

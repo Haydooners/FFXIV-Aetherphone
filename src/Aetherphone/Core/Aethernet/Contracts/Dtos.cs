@@ -645,7 +645,9 @@ internal sealed record ContactDto(
     string Alias,
     bool IsMutual,
     long CreatedAtUnix,
-    string FrameId = "");
+    string FrameId = "",
+    int Presence = 0,
+    long? LastSeenAtUnix = null);
 
 internal sealed record ContactListResult(ContactDto[] Contacts, string MyNumber);
 

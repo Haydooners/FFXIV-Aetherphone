@@ -39,6 +39,7 @@ internal sealed class GameChatThread : IChatTranscriptInteractions, IChatTranscr
     private const float JumpPillHeight = 26f;
     private const float LoadOlderThreshold = 48f;
     private const int WindowPageLines = 100;
+    private const int LineSweepThreshold = 256;
     private const int RevealMarginLines = 8;
     private const int CompactRestoreFrames = 3;
     private const string SelfId = "linkpearl.self";
@@ -47,6 +48,8 @@ internal sealed class GameChatThread : IChatTranscriptInteractions, IChatTranscr
     private readonly ChatSend send;
     private readonly GameData gameData;
     private readonly ChatTranscript transcript = new();
+    private readonly Dictionary<string, LineHeight> lineHeights = new(StringComparer.Ordinal);
+    private int lastLineSweepFrame = -1;
     private readonly ChatEntranceTracker entrance = new();
     private readonly GameComposer composer = new();
     private readonly List<PendingSend> ghostSends = new(4);
@@ -187,6 +190,7 @@ internal sealed class GameChatThread : IChatTranscriptInteractions, IChatTranscr
 
         var listRect = new Rect(new Vector2(area.Min.X, area.Min.Y + searchHeight),
             new Vector2(area.Max.X, composerBar.Min.Y - failureBlock));
+        ShrinkWindow();
         EnsureRevealShown(view.Entries);
         if (target.Density == ChatDensity.Bubbles)
         {
@@ -284,7 +288,7 @@ internal sealed class GameChatThread : IChatTranscriptInteractions, IChatTranscr
             return;
         }
 
-        var targets = ChatRuns.For(entry).Targets;
+        var targets = ChatRuns.For(entry, ImGui.GetFrameCount()).Targets;
         if (target >= 0 && target < targets.Length)
         {
             handler(entry, targets[target]);
@@ -321,6 +325,7 @@ internal sealed class GameChatThread : IChatTranscriptInteractions, IChatTranscr
             var seamId = MaybeGrowCompact(surface.Scrolling);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
             var contentOrigin = ImGui.GetWindowPos().Y - ImGui.GetScrollY();
+            var lineWidth = ScrollLayout.StableContentWidth();
             var recordFirst = surface.Pull <= 0f;
             string? nextFirstId = null;
             var nextFirstContentY = 0f;
@@ -358,12 +363,22 @@ internal sealed class GameChatThread : IChatTranscriptInteractions, IChatTranscr
                     nextFirstContentY = contentTop;
                 }
 
-                var style = new ChatLineStyle(RailFor(entry), previous is null || !Grouped(previous, entry), false,
-                    entrance.Progress(index));
+                var headsLine = previous is null || !Grouped(previous, entry);
+                var style = new ChatLineStyle(RailFor(entry), headsLine, false, entrance.Progress(index));
+                var lineStart = ImGui.GetCursorScreenPos();
+                var isReveal = revealId is not null && string.Equals(entry.Id, revealId, StringComparison.Ordinal);
+                if (!isReveal && TryCullLine(entry, headsLine, lineWidth, scale, lineStart))
+                {
+                    previous = entry;
+                    continue;
+                }
+
                 if (ChatLineView.Draw(entry, theme, style, theme.Accent, out var tapped))
                 {
                     Context?.Invoke(entry);
                 }
+
+                RecordLine(entry, headsLine, lineWidth, scale, ImGui.GetCursorScreenPos().Y - lineStart.Y);
 
                 if (tapped >= 0)
                 {
@@ -627,6 +642,75 @@ internal sealed class GameChatThread : IChatTranscriptInteractions, IChatTranscr
         mappedRevision = -1;
     }
 
+    private bool TryCullLine(ChatEntry entry, bool headsLine, float width, float scale, Vector2 lineStart)
+    {
+        if (!lineHeights.TryGetValue(entry.Id, out var cached)
+            || !cached.Matches(width, scale, Plugin.Fonts.Generation, headsLine))
+        {
+            return false;
+        }
+
+        if (ImGui.IsRectVisible(new Vector2(width, cached.Height)))
+        {
+            return false;
+        }
+
+        cached.LastUsedFrame = ImGui.GetFrameCount();
+        ImGui.SetCursorScreenPos(new Vector2(lineStart.X, lineStart.Y + cached.Height));
+        return true;
+    }
+
+    private void RecordLine(ChatEntry entry, bool headsLine, float width, float scale, float height)
+    {
+        var frame = ImGui.GetFrameCount();
+        if (!lineHeights.TryGetValue(entry.Id, out var cached))
+        {
+            if (lineHeights.Count > LineSweepThreshold)
+            {
+                SweepIdleLines(frame);
+            }
+
+            cached = new LineHeight();
+            lineHeights[entry.Id] = cached;
+        }
+
+        cached.Remember(width, scale, Plugin.Fonts.Generation, headsLine, height, frame);
+    }
+
+    private void SweepIdleLines(int frame)
+    {
+        if (lastLineSweepFrame == frame)
+        {
+            return;
+        }
+
+        lastLineSweepFrame = frame;
+        foreach (var pair in lineHeights)
+        {
+            if (pair.Value.LastUsedFrame < frame - 1)
+            {
+                lineHeights.Remove(pair.Key);
+            }
+        }
+    }
+
+    private void ShrinkWindow()
+    {
+        if (shownLines <= WindowPageLines || revealId is not null || compactRestoreFrames > 0)
+        {
+            return;
+        }
+
+        var following = target.Density == ChatDensity.Bubbles ? transcript.AtBottom : followBottom;
+        if (!following)
+        {
+            return;
+        }
+
+        shownLines = WindowPageLines;
+        firstDrawnId = null;
+    }
+
     private void GrowWindow()
     {
         var entries = view.Entries;
@@ -739,7 +823,7 @@ internal sealed class GameChatThread : IChatTranscriptInteractions, IChatTranscr
             tagTint = channel.Tint;
         }
 
-        var runs = ChatRuns.For(entry);
+        var runs = ChatRuns.For(entry, ImGui.GetFrameCount());
         var overrides = ChannelStyles.Shared.For(entry.ChannelKey);
         var packedName = overrides is null ? 0u : entry.IsSelf ? overrides.OutgoingName : overrides.IncomingName;
         var packedBody = overrides is null ? 0u : entry.IsSelf ? overrides.OutgoingBody : overrides.IncomingBody;
@@ -928,6 +1012,29 @@ internal sealed class GameChatThread : IChatTranscriptInteractions, IChatTranscr
         (entry.At - previous.At).TotalSeconds <= GroupWindowSeconds;
 
     private static long Seconds(DateTime at) => new DateTimeOffset(at).ToUnixTimeSeconds();
+
+    private sealed class LineHeight
+    {
+        public float Height;
+        public int LastUsedFrame;
+        private float width;
+        private float scale;
+        private int fontGeneration;
+        private bool headsLine;
+
+        public bool Matches(float rowWidth, float uiScale, int fonts, bool heads) =>
+            Height > 0f && width == rowWidth && scale == uiScale && fontGeneration == fonts && headsLine == heads;
+
+        public void Remember(float rowWidth, float uiScale, int fonts, bool heads, float rowHeight, int frame)
+        {
+            width = rowWidth;
+            scale = uiScale;
+            fontGeneration = fonts;
+            headsLine = heads;
+            Height = rowHeight;
+            LastUsedFrame = frame;
+        }
+    }
 }
 
 internal static class GameChatTargets

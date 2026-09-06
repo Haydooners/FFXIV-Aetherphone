@@ -21,13 +21,16 @@ internal static class Typography
         new(-0.7071f, -0.7071f),
     };
 
-    private static readonly Dictionary<(string Text, float Width, float FontSize), string> FitCache = new();
+    private static readonly Dictionary<(string Text, float Width, float FontSize), CacheSlot<string>> FitCache = new();
 
-    private const int CacheLimit = 512;
+    private const int SweepThreshold = 512;
 
-    private static readonly Dictionary<(string Text, float Width, float FontSize), string[]> WrapCache = new();
+    private static readonly Dictionary<(string Text, float Width, float FontSize), CacheSlot<string[]>> WrapCache =
+        new();
 
     private static int cacheGeneration;
+
+    private static int lastSweepFrame = -1;
 
     private static float autoWrapOffsetX;
 
@@ -43,6 +46,44 @@ internal static class Typography
         FitCache.Clear();
         WrapCache.Clear();
         FitScaleCache.Clear();
+    }
+
+    private static void SweepIdleCaches()
+    {
+        var frame = ImGui.GetFrameCount();
+        if (lastSweepFrame == frame)
+        {
+            return;
+        }
+
+        lastSweepFrame = frame;
+        SweepIdle(FitCache, frame);
+        SweepIdle(WrapCache, frame);
+        SweepIdle(FitScaleCache, frame);
+    }
+
+    private static void SweepIdle<TKey, TValue>(Dictionary<TKey, CacheSlot<TValue>> cache, int frame)
+        where TKey : notnull
+    {
+        foreach (var pair in cache)
+        {
+            if (pair.Value.Frame < frame - 1)
+            {
+                cache.Remove(pair.Key);
+            }
+        }
+    }
+
+    private readonly struct CacheSlot<TValue>
+    {
+        public readonly TValue Value;
+        public readonly int Frame;
+
+        public CacheSlot(TValue value, int frame)
+        {
+            Value = value;
+            Frame = frame;
+        }
     }
 
     public static void Plain(string text)
@@ -189,7 +230,7 @@ internal static class Typography
         FitText(text, maxWidth, style.Scale, style.Weight);
 
     private static readonly Dictionary<(string Text, float MaxWidth, float MaxScale, float MinScale, FontWeight Weight,
-        float FontSize), float> FitScaleCache = new();
+        float FontSize), CacheSlot<float>> FitScaleCache = new();
 
     public static float FitScale(string text, float maxWidth, float maxScale, float minScale, FontWeight weight)
     {
@@ -200,10 +241,21 @@ internal static class Typography
 
         InvalidateCachesOnFontChange();
         var fontSize = ImGui.GetFontSize();
+        var frame = ImGui.GetFrameCount();
         var key = (text, maxWidth, maxScale, minScale, weight, fontSize);
         if (FitScaleCache.TryGetValue(key, out var cached))
         {
-            return cached;
+            if (cached.Frame != frame)
+            {
+                FitScaleCache[key] = new CacheSlot<float>(cached.Value, frame);
+            }
+
+            return cached.Value;
+        }
+
+        if (FitScaleCache.Count > SweepThreshold)
+        {
+            SweepIdleCaches();
         }
 
         var result = minScale;
@@ -220,7 +272,7 @@ internal static class Typography
             }
         }
 
-        FitScaleCache[key] = result;
+        FitScaleCache[key] = new CacheSlot<float>(result, frame);
         return result;
     }
 
@@ -788,19 +840,25 @@ internal static class Typography
     {
         InvalidateCachesOnFontChange();
         var fontSize = ImGui.GetFontSize();
+        var frame = ImGui.GetFrameCount();
         var key = (text, maxWidth, fontSize);
         if (WrapCache.TryGetValue(key, out var cached))
         {
-            return cached;
+            if (cached.Frame != frame)
+            {
+                WrapCache[key] = new CacheSlot<string[]>(cached.Value, frame);
+            }
+
+            return cached.Value;
         }
 
-        if (WrapCache.Count >= CacheLimit)
+        if (WrapCache.Count > SweepThreshold)
         {
-            WrapCache.Clear();
+            SweepIdleCaches();
         }
 
         var lines = Wrap(text, maxWidth);
-        WrapCache[key] = lines;
+        WrapCache[key] = new CacheSlot<string[]>(lines, frame);
         return lines;
     }
 
@@ -967,14 +1025,25 @@ internal static class Typography
 
         InvalidateCachesOnFontChange();
         var fontSize = ImGui.GetFontSize();
+        var frame = ImGui.GetFrameCount();
         var key = (text, maxWidth, fontSize);
         if (FitCache.TryGetValue(key, out var cached))
         {
-            return cached;
+            if (cached.Frame != frame)
+            {
+                FitCache[key] = new CacheSlot<string>(cached.Value, frame);
+            }
+
+            return cached.Value;
+        }
+
+        if (FitCache.Count > SweepThreshold)
+        {
+            SweepIdleCaches();
         }
 
         var result = Shorten(text, maxWidth);
-        FitCache[key] = result;
+        FitCache[key] = new CacheSlot<string>(result, frame);
         return result;
     }
 

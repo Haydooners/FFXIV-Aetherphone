@@ -86,12 +86,12 @@ Aethergram's `ThreadView` additionally implements `IChatTranscriptPostCards` and
 
 `ChatTranscript` consumes a `ReadOnlySpan<TranscriptMessage>`. `TranscriptMessage` is a flat readonly struct (id, sender, body, kind, timestamps, reply snapshot, reactions, `TranscriptFlags` byte with `Encrypted`, `Placeholder`, `Unverified`, `Deleted`, `Forwarded`, `Edited`). It draws:
 
-- day separator chips (`TimeText.DayLabel`) and sender grouping: consecutive messages from the same sender within `GroupWindowSeconds` (240s) are visually grouped, and in group threads a sender name row appears above each run,
+- day separator chips (`TimeText.DayLabel`) and sender grouping: consecutive messages from the same sender within `GroupWindowSeconds` (240s) are visually grouped, and in group threads the first bubble of a run carries the sender name. When the model supplies `IChatTranscriptSenders`, incoming runs in a group also get the sender's avatar in a gutter to the left (`SenderAvatarRadius`), with text, image and voice bubbles drawing the name inside the bubble the way WhatsApp does; card bubbles keep the name row above the run. Without that hook (Velvet, Aethergram) the name row stays above the run and nothing shifts,
 - one bubble renderer per kind: text, image, voice note, shared post, story reply, plus card bubbles for location, muster invite, and Yellow Pages ad tokens detected inside text bodies,
 - a typing indicator bubble driven by `model.OtherTyping`,
 - follow-bottom scrolling (`SyncFollow`), scroll-to-message with a highlight flash (`RequestScrollTo`), and the load-older trigger described below.
 
-Everything the transcript needs from the outside comes in through small interfaces on the model: `IChatTranscriptMedia` (image textures and clicks), `IChatTranscriptInteractions` (context menu, quote click, reaction click), `IChatTranscriptVoice` (playback state and toggle), `IChatTranscriptPaging` (older-page state), and the optional `IChatTranscriptPostCards` / `IChatTranscriptStoryReplies`. `ChatThreadView` implements the first four itself.
+Everything the transcript needs from the outside comes in through small interfaces on the model: `IChatTranscriptMedia` (image textures and clicks), `IChatTranscriptInteractions` (context menu, quote click, reaction click), `IChatTranscriptVoice` (playback state and toggle), `IChatTranscriptPaging` (older-page state), and the optional `IChatTranscriptPostCards` / `IChatTranscriptStoryReplies` / `IChatTranscriptSenders` (group sender avatars; ChocoChat resolves them from the member list, falling back to the avatar snapshot on the message). `ChatThreadView` implements the first four itself.
 
 ### ChatComposer
 
