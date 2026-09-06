@@ -1,6 +1,7 @@
 using Aetherphone.Apps.Velvet.Kit;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
 using Aetherphone.Windows.Components;
@@ -12,6 +13,7 @@ namespace Aetherphone.Apps.Velvet;
 internal sealed partial class VelvetShell
 {
     private const float MessagesSearchHeight = 52f;
+    private const float MessagesSearchRevealSeconds = 0.12f;
     private const float MessagesHeadingHeight = 44f;
 
     private const int IntroLimit = 140;
@@ -50,6 +52,9 @@ internal sealed partial class VelvetShell
     private VelvetThreadDto[] chatsFilterSource = Array.Empty<VelvetThreadDto>();
     private string chatsFilterQuery = string.Empty;
     private string chatsDraft = string.Empty;
+    private bool chatsSearchOpen;
+    private bool chatsSearchFocus;
+    private Spring chatsSearchReveal = new(0f);
     private string introName = string.Empty;
     private string introHandle = string.Empty;
     private string? introAvatarUrl;
@@ -70,17 +75,12 @@ internal sealed partial class VelvetShell
         using (AppSurface.BeginEdgeToEdge(area))
         {
             var width = ScrollLayout.StableContentWidth();
+            DrawMessagesHeading(width, pad);
             if (messagesTab == VelvetMessagesTab.Chats)
             {
-                var searchOrigin = ImGui.GetCursorScreenPos();
-                SearchField.Draw(new Rect(new Vector2(searchOrigin.X + pad, searchOrigin.Y),
-                        new Vector2(searchOrigin.X + width - pad, searchOrigin.Y + MessagesSearchHeight * scale)),
-                    "##velvetChatSearch", Loc.T(L.Common.Search), ref chatsDraft, VelvetTheme.Palette);
-                ImGui.SetCursorScreenPos(searchOrigin);
-                ImGui.Dummy(new Vector2(width, MessagesSearchHeight * scale));
+                DrawChatsSearchRow(width, pad, scale);
             }
 
-            DrawMessagesHeading(width, pad);
             if (messagesTab == VelvetMessagesTab.Chats)
             {
                 DrawChatsList(area);
@@ -123,10 +123,70 @@ internal sealed partial class VelvetShell
         if (UiInteract.Click(linkMin, linkMax, hovered))
         {
             messagesTab = showingRequests ? VelvetMessagesTab.Chats : VelvetMessagesTab.Requests;
+            CloseChatsSearch();
         }
 
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height));
+    }
+
+    private void DrawChatsSearchRow(float width, float pad, float scale)
+    {
+        var target = chatsSearchOpen ? 1f : 0f;
+        var frameSeconds = MathF.Min(ImGui.GetIO().DeltaTime, 0.1f);
+        var reveal = chatsSearchReveal.Step(target, MessagesSearchRevealSeconds, frameSeconds);
+        if (chatsSearchReveal.IsResting(target, 0.005f, 0.05f))
+        {
+            chatsSearchReveal.SnapTo(target);
+            reveal = target;
+        }
+
+        var rowHeight = MessagesSearchHeight * scale;
+        var height = rowHeight * Math.Clamp(reveal, 0f, 1f);
+        if (height < 1f)
+        {
+            return;
+        }
+
+        var drawList = ImGui.GetWindowDrawList();
+        var origin = ImGui.GetCursorScreenPos();
+        var bottom = origin.Y + height;
+        drawList.PushClipRect(origin, new Vector2(origin.X + width, bottom), true);
+        SearchField.Draw(new Rect(new Vector2(origin.X + pad, bottom - rowHeight),
+                new Vector2(origin.X + width - pad, bottom)), "##velvetChatSearch", Loc.T(L.Common.Search),
+            ref chatsDraft, VelvetTheme.Palette, focus: chatsSearchFocus);
+        chatsSearchFocus = false;
+        drawList.PopClipRect();
+        ImGui.SetCursorScreenPos(origin);
+        using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
+        {
+            ImGui.Dummy(new Vector2(width, height));
+        }
+    }
+
+    private void ToggleChatsSearch()
+    {
+        if (chatsSearchOpen)
+        {
+            CloseChatsSearch();
+            return;
+        }
+
+        chatsSearchOpen = true;
+        chatsSearchFocus = true;
+    }
+
+    private void CloseChatsSearch()
+    {
+        chatsSearchOpen = false;
+        chatsSearchFocus = false;
+        chatsDraft = string.Empty;
+    }
+
+    private void ResetChatsSearch()
+    {
+        CloseChatsSearch();
+        chatsSearchReveal.SnapTo(0f);
     }
 
     private void RefreshChatsFilter(VelvetThreadDto[] threads)
@@ -309,24 +369,11 @@ internal sealed partial class VelvetShell
             AvatarRadius = 22f,
             Name = DisplayNameOf(request.DisplayName, request.Handle),
             AvatarUrl = request.AvatarUrl,
-            Pill = Loc.T(L.Velvet.Accept),
-            PillFilled = true,
-            PillEnabled = true,
-            Decline = true,
+            Chevron = true,
         };
-        var hit = VRow.Cell(in model, ui, theme, images, lodestone);
-        switch (hit)
+        if (VRow.Cell(in model, ui, theme, images, lodestone) == VRowHit.Body)
         {
-            case VRowHit.Pill:
-                store.AcceptRequest(request.UserId);
-                OpenThread(request.UserId);
-                break;
-            case VRowHit.Decline:
-                store.DeclineRequest(request.UserId);
-                break;
-            case VRowHit.Body:
-                OpenRequest(request.UserId);
-                break;
+            OpenRequest(request.UserId);
         }
     }
 

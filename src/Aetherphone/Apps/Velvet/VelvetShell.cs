@@ -191,6 +191,7 @@ internal sealed partial class VelvetShell : IResumableApp
         router.Reset();
         activeTab = VelvetPage.Discover;
         messagesTab = VelvetMessagesTab.Chats;
+        ResetChatsSearch();
         profileTab = VelvetProfileTab.About;
         avatarLightbox.Reset();
         store.ClearDiscover();

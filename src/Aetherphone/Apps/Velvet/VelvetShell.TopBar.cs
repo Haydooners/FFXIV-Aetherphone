@@ -78,6 +78,7 @@ internal sealed partial class VelvetShell
             VelvetPage.Discover => 3,
             VelvetPage.Feed => 2,
             VelvetPage.Me => 2,
+            VelvetPage.Messages => 2,
             _ => 1,
         };
 
@@ -128,6 +129,15 @@ internal sealed partial class VelvetShell
                 break;
             case VelvetPage.Feed:
                 DrawFilterIcon(area, drawList, radius, VelvetPage.Feed, null);
+                break;
+            case VelvetPage.Messages:
+                if (messagesTab == VelvetMessagesTab.Chats && SocialChrome.DrawHeaderIcon(drawList,
+                        SocialChrome.HeaderSlot(area, 1), radius, PhoneIcons.Search, TopBarIconSize,
+                        Loc.T(L.Common.Search), VelvetInk.Shared, VelvetTheme.TitleInk, chatsSearchOpen))
+                {
+                    ToggleChatsSearch();
+                }
+
                 break;
             case VelvetPage.Me:
                 if (store.Me is { } profile && SocialChrome.DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 1),
