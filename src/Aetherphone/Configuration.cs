@@ -320,7 +320,6 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool LinkpearlHotkeyEnabled { get; set; }
     public int LinkpearlHotkeyModifier { get; set; }
     public int LinkpearlHotkeyKey { get; set; }
-    public bool LinkpearlPlayerContextMenu { get; set; } = true;
     public bool LinkpearlComposerMultiline { get; set; } = true;
     public int LinkpearlComposerMaxLines { get; set; } = 4;
     public bool LinkpearlDoubleEnterSend { get; set; }
@@ -359,6 +358,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool ChangelogSeenInitialized { get; set; }
     
     public bool MarketContextMenu { get; set; } = true;
+    public bool LinkpearlContextMenu { get; set; }
 
     public bool HasUnseenChangelog => LastSeenChangelogVersion != ChangelogData.LatestVersion;
 

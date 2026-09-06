@@ -1599,6 +1599,8 @@ internal static class L
         public static readonly LocString LockPositionHint = new("settings.lockPositionHint", "The phone stays where you put it, and dragging inside it scrolls instead of moving the window.");
         public static readonly LocString MarketContextMenu = new("settings.marketContextMenu", "Market search in menus");
         public static readonly LocString MarketContextMenuHint = new("settings.marketContextMenuHint", "Shows \"Search the Market\" option in the in-game context menu when right-clicking on an item.");
+        public static readonly LocString LinkpearlContextMenu = new("settings.linkpearlContextMenu", "Linkpearl chat in menus");
+        public static readonly LocString LinkpearlContextMenuHint = new("settings.linkpearlContextMenuHint", "Shows \"Open a Linkpearl chat\" option in the in-game context menu when right-clicking on a player.");
         public static readonly LocString ScrollWhileIdle = new("settings.scrollWhileIdle", "Scroll While Idle");
         public static readonly LocString ScrollWhileIdleHint = new("settings.scrollWhileIdleHint", "Your character scrolls through their phone (Tomescroll emote) while standing still and out of combat. Does nothing if you haven't unlocked the emote.");
         public static readonly LocString ShowInGpose = new("settings.showInGpose", "Show in Group Pose");
@@ -3735,8 +3737,6 @@ internal static class L
         public static readonly LocString HotkeyKey = new("linkpearl.hotkeyKey", "Key");
         public static readonly LocString HotkeyNoModifier = new("linkpearl.hotkeyNoModifier", "None");
         public static readonly LocString HotkeyHint = new("linkpearl.hotkeyHint", "Press the chord to pop out your latest chat, press it again to walk down the recent list.");
-        public static readonly LocString PlayerContextMenu = new("linkpearl.playerContextMenu", "Add to the player menu");
-        public static readonly LocString PlayerContextMenuHint = new("linkpearl.playerContextMenuHint", "Right click a player in the game to start a chat with them.");
         public static readonly LocString ContextMenuEntry = new("linkpearl.contextMenuEntry", "Open a Linkpearl chat");
         public static readonly LocString FilterAll = new("linkpearl.filterAll", "All");
         public static readonly LocString FilterTells = new("linkpearl.filterTells", "Tells");
