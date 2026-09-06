@@ -205,6 +205,29 @@ internal static class VelvetSexuality
         };
 }
 
+internal static class VelvetLanguages
+{
+    public static readonly int[] All = SpokenLanguages.Flags;
+
+    public static bool Has(int mask, int flag) => SpokenLanguages.Has(mask, flag);
+
+    public static int Toggle(int mask, int flag) => SpokenLanguages.Toggle(mask, flag);
+
+    public static int Sanitize(int mask) => SpokenLanguages.Sanitize(mask);
+
+    public static int Shared(int mine, int theirs) => Sanitize(mine) & Sanitize(theirs);
+
+    public static int Suggested() => SpokenLanguages.FlagOf(Loc.Current.Code);
+
+    private static readonly VelvetMaskLabels LabelCache = new(All, Label);
+
+    public static string[] Labels(int mask) => LabelCache.Of(Sanitize(mask));
+
+    public static string Summary(int mask) => LabelCache.Summary(Sanitize(mask));
+
+    public static string Label(int flag) => SpokenLanguages.Label(flag);
+}
+
 internal static class VelvetConnectionState
 {
     public const int None = 0;

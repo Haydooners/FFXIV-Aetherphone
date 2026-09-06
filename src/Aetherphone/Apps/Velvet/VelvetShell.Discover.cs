@@ -638,6 +638,7 @@ internal sealed partial class VelvetShell
 
         AppendMaskSummary(include.Gender, VelvetGender.All, GenderLabelOf);
         AppendMaskSummary(include.Sexuality, VelvetSexuality.All, SexualityLabelOf);
+        AppendMaskSummary(include.Languages, VelvetLanguages.All, LanguageLabelOf);
         var statuses = VelvetRelationship.All;
         for (var index = 0; index < statuses.Length; index++)
         {
@@ -662,6 +663,7 @@ internal sealed partial class VelvetShell
 
     private static readonly Func<int, string> GenderLabelOf = VelvetGender.Label;
     private static readonly Func<int, string> SexualityLabelOf = VelvetSexuality.Label;
+    private static readonly Func<int, string> LanguageLabelOf = VelvetLanguages.Label;
 
     private void AppendMaskSummary(int mask, int[] options, Func<int, string> labelOf)
     {
@@ -696,6 +698,7 @@ internal sealed partial class VelvetShell
         BitOperations.PopCount((uint)selection.Intent) + BitOperations.PopCount((uint)selection.Gender)
         + BitOperations.PopCount((uint)selection.Sexuality) + BitOperations.PopCount((uint)selection.Relationship)
         + BitOperations.PopCount((uint)selection.Race) + BitOperations.PopCount((uint)selection.RegionMask)
+        + BitOperations.PopCount((uint)selection.Languages)
         + selection.Roles.Count + selection.Kinks.Count + selection.Limits.Count + selection.Tags.Count;
 
     private string RegionCodeOf(VelvetProfileDto profile) =>

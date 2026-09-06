@@ -15,6 +15,7 @@ internal sealed class VelvetFilterSelection
     public int Relationship;
     public int Race;
     public int RegionMask;
+    public int Languages;
 
     public readonly HashSet<string> Roles = new();
     public readonly HashSet<string> Kinks = new();
@@ -22,7 +23,7 @@ internal sealed class VelvetFilterSelection
     public readonly HashSet<string> Tags = new();
 
     public bool AnyBesidesRegion =>
-        Intent != 0 || Gender != 0 || Sexuality != 0 || Relationship != 0 || Race != 0
+        Intent != 0 || Gender != 0 || Sexuality != 0 || Relationship != 0 || Race != 0 || Languages != 0
         || Roles.Count > 0 || Kinks.Count > 0 || Limits.Count > 0 || Tags.Count > 0;
 
     public bool Any => AnyBesidesRegion || RegionMask != 0;
@@ -35,6 +36,7 @@ internal sealed class VelvetFilterSelection
         Relationship = 0;
         Race = 0;
         RegionMask = 0;
+        Languages = 0;
         Roles.Clear();
         Kinks.Clear();
         Limits.Clear();
@@ -50,6 +52,7 @@ internal sealed class VelvetFilterSelection
         Relationship = stored.Relationship;
         Race = VelvetRace.Sanitize(stored.Race);
         RegionMask = stored.Region;
+        Languages = VelvetLanguages.Sanitize(stored.Languages);
         CopyKnownInto(stored.Roles, Roles, VelvetRoles.Tokens);
         CopyInto(stored.Kinks, Kinks);
         CopyInto(stored.Limits, Limits);
@@ -64,6 +67,7 @@ internal sealed class VelvetFilterSelection
         stored.Relationship = Relationship;
         stored.Race = Race;
         stored.Region = RegionMask;
+        stored.Languages = Languages;
         stored.Roles = new List<string>(Roles);
         stored.Kinks = new List<string>(Kinks);
         stored.Limits = new List<string>(Limits);
@@ -81,7 +85,9 @@ internal sealed class VelvetFilterSelection
             include.Kinks.ToArray(), exclude.Kinks.ToArray(),
             include.Limits.ToArray(), exclude.Limits.ToArray(),
             include.Tags.ToArray(), exclude.Tags.ToArray(),
-            VelvetRace.Sanitize(include.Race), VelvetRace.Sanitize(exclude.Race));
+            VelvetRace.Sanitize(include.Race), VelvetRace.Sanitize(exclude.Race),
+            LanguagesInclude: VelvetLanguages.Sanitize(include.Languages),
+            LanguagesExclude: VelvetLanguages.Sanitize(exclude.Languages));
 
     public static VelvetDiscoverFilter CombineForFeed(VelvetFilterSelection include, VelvetFilterSelection exclude) =>
         Combine(include, exclude) with

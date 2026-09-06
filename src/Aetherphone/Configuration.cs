@@ -264,7 +264,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public List<string> CustomAlbumOrder { get; set; } = new();
     public Dictionary<string, List<string>> CustomAlbumPhotos { get; set; } = new();
     public const int VelvetGateVersion = 1;
-    public const int VelvetOnboardVersion = 2;
+    public const int VelvetOnboardVersion = 3;
     public bool VelvetAcknowledgedGate { get; set; }
     public bool VelvetOnboarded { get; set; }
     public int VelvetOnboardedVersion { get; set; }

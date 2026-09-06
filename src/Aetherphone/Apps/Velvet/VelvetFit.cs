@@ -1,5 +1,6 @@
 using Aetherphone.Apps.Velvet.Kit;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Localization;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -8,7 +9,9 @@ internal enum VelvetFitKind
     SharedKinks,
     SharedIntent,
     SharedTag,
+    SharedLanguage,
     Conflict,
+    NoSharedLanguage,
     NoConflicts,
 }
 
@@ -40,6 +43,8 @@ internal static class VelvetFit
     private const int IntroWeight = 2;
     private const int SharedKinkWeight = 2;
     private const int ConflictWeight = 2;
+    private const int SharedLanguageWeight = 2;
+    private const int LanguageGapWeight = 2;
     private const int OnlineWeight = 40;
     private const int AwayWeight = 20;
     private const string IrlLimit = "irl";
@@ -59,6 +64,7 @@ internal static class VelvetFit
         }
 
         var conflicts = AddConflicts(me, other, items);
+        AddLanguage(me, other, items);
         var sharedIntent = me.LookingFor & other.LookingFor & DeliberateIntents;
         if (sharedIntent != 0)
         {
@@ -116,8 +122,35 @@ internal static class VelvetFit
         score += BitOperations.PopCount((uint)(me.LookingFor & other.LookingFor & DeliberateIntents));
         score += SharedCount(me.Tags, other.Tags);
         score -= ConflictCount(me, other) * ConflictWeight;
+        score += LanguageScore(me, other);
         return score;
     }
+
+    private static int LanguageScore(VelvetProfileDto me, VelvetProfileDto other)
+    {
+        if (!BothChoseLanguages(me, other))
+        {
+            return 0;
+        }
+
+        return VelvetLanguages.Shared(me.Languages, other.Languages) != 0 ? SharedLanguageWeight : -LanguageGapWeight;
+    }
+
+    private static void AddLanguage(VelvetProfileDto me, VelvetProfileDto other, List<VelvetFitItem> items)
+    {
+        if (!BothChoseLanguages(me, other))
+        {
+            return;
+        }
+
+        var shared = VelvetLanguages.Shared(me.Languages, other.Languages);
+        items.Add(shared != 0
+            ? new VelvetFitItem(VelvetFitKind.SharedLanguage, string.Empty, SpokenLanguages.Primary(shared))
+            : new VelvetFitItem(VelvetFitKind.NoSharedLanguage, string.Empty, 0));
+    }
+
+    private static bool BothChoseLanguages(VelvetProfileDto me, VelvetProfileDto other) =>
+        VelvetLanguages.Sanitize(me.Languages) != 0 && VelvetLanguages.Sanitize(other.Languages) != 0;
 
     public static int SharedCount(string[]? first, string[]? second)
     {

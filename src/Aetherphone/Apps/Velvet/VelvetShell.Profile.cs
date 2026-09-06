@@ -33,7 +33,7 @@ internal sealed partial class VelvetShell
     private const float ProfileTabSmoothTime = 0.1f;
     private const float ProfileAboutLead = 4f;
     private const int ProfileColumns = 3;
-    private const int MaxFacts = 3;
+    private const int MaxFacts = 4;
     private const int MaxSharedLabels = 64;
 
     private static readonly Vector4 RoleTone = new(0.62f, 0.22f, 0.60f, 1f);
@@ -394,6 +394,13 @@ internal sealed partial class VelvetShell
         {
             facts[count++] = new VFact(PhoneIcons.Rainbow, VelvetTheme.Rose, Loc.T(L.Velvet.CardSexuality),
                 sexuality);
+        }
+
+        var languages = VelvetLanguages.Summary(user.Languages);
+        if (languages.Length > 0)
+        {
+            facts[count++] = new VFact(PhoneIcons.Language, VelvetTheme.RegionAccent, Loc.T(L.Velvet.CardLanguages),
+                languages);
         }
 
         if (VelvetIntent.IncludesErp(user.LookingFor))

@@ -4106,7 +4106,6 @@ internal static class L
         public static readonly LocString EditCaptionFailed = new("velvet.editCaptionFailed", "Couldn't save the caption");
         public static readonly LocString EditedStamp = new("velvet.editedStamp", "{0} · Edited");
         public static readonly LocString PronounsLabel = new("velvet.pronounsLabel", "Pronouns");
-        public static readonly LocString DynamicLabel = new("velvet.dynamicLabel", "Your vibe");
         public static readonly LocString DiscoverableLabel = new("velvet.discoverableLabel", "Appear in Discover");
         public static readonly LocString Save = new("velvet.save", "Save");
         public static readonly LocString Saving = new("velvet.saving", "Saving…");
@@ -4236,13 +4235,13 @@ internal static class L
         public static readonly LocString PreviewCard = new("velvet.previewCard", "Preview my card");
         public static readonly LocString CardPreviewTitle = new("velvet.cardPreviewTitle", "Your card");
         public static readonly LocString CoverBadge = new("velvet.coverBadge", "Cover");
-        public static readonly LocString ObPhotoHint =
-            new("velvet.obPhotoHint", "This is your cover on Discover. Add at least one photo to be seen.");
         public static readonly LocString FitTitle = new("velvet.fitTitle", "You two");
         public static readonly LocString FitBoth = new("velvet.fitBoth", "Both {0}");
         public static readonly LocString FitBothHereFor = new("velvet.fitBothHereFor", "Both here for {0}");
         public static readonly LocString FitConflict = new("velvet.fitConflict", "Limit conflict: {0}");
         public static readonly LocString FitNoConflicts = new("velvet.fitNoConflicts", "No limit conflicts");
+        public static readonly LocString FitBothSpeak = new("velvet.fitBothSpeak", "Both speak {0}");
+        public static readonly LocString FitNoSharedLanguage = new("velvet.fitNoSharedLanguage", "No shared language");
         public static readonly LocString DeckPass = new("velvet.deckPass", "Pass");
         public static readonly LocString DeckSay = new("velvet.deckSay", "Say something");
         public static readonly LocString DeckUndo = new("velvet.deckUndo", "Undo");
@@ -4357,6 +4356,7 @@ internal static class L
         public static readonly LocString SexualityPan = new("velvet.sexualityPan", "Pan");
         public static readonly LocString SexualityAsexual = new("velvet.sexualityAsexual", "Asexual");
         public static readonly LocString SexualityDemisexual = new("velvet.sexualityDemisexual", "Demisexual");
+        public static readonly LocString CardLanguages = new("velvet.cardLanguages", "Languages");
         public static readonly LocString CardKinks = new("velvet.cardKinks", "Kinks");
         public static readonly LocString LikesTitle = new("velvet.likesTitle", "Likes");
         public static readonly LocString NoLikes = new("velvet.noLikes", "No likes yet.");
@@ -4375,18 +4375,9 @@ internal static class L
         public static readonly LocString ObSubReady =
             new("velvet.obSubReady", "A couple of last touches, then step inside.");
         public static readonly LocString Continue = new("velvet.continue", "Continue");
-        public static readonly LocString ObHandleHelp = new("velvet.obHandleHelp",
-            "Your handle is how people @mention you. You can change all of this later from Edit profile.");
+        public static readonly LocString ObHandleRules =
+            new("velvet.obHandleRules", "3 to 15 characters: letters, numbers, or _");
         public static readonly LocString AddPhoto = new("velvet.addPhoto", "Add a photo");
-        public static readonly LocString YourRole = new("velvet.yourRole", "Your role");
-        public static readonly LocString RoleErpHelp =
-            new("velvet.roleErpHelp", "Optional. Shown because you are here for ERP.");
-        public static readonly LocString VibeOptionalHelp =
-            new("velvet.vibeOptionalHelp", "Optional. A few tags help the right people find you.");
-        public static readonly LocString ObDiscoverableHelp = new("velvet.obDiscoverableHelp",
-            "When on, your profile can be found by others. When off, only people you connect with can see you.");
-        public static readonly LocString ObConductHelp = new("velvet.obConductHelp",
-            "Velvet is for adults. Be kind and discreet, and remember block and report are always one tap away.");
     }
 
     internal static class Calculator

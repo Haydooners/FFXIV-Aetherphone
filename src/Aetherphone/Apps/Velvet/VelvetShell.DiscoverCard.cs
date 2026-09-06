@@ -242,9 +242,14 @@ internal sealed partial class VelvetShell
             VelvetFitKind.SharedKinks => Loc.Plural(L.Velvet.FitSharedKinks, item.Value),
             VelvetFitKind.SharedIntent => Loc.T(L.Velvet.FitBothHereFor, VelvetIntent.Label(item.Value)),
             VelvetFitKind.SharedTag => Loc.T(L.Velvet.FitBoth, VelvetTokenLabels.Of(item.Token)),
+            VelvetFitKind.SharedLanguage => Loc.T(L.Velvet.FitBothSpeak, VelvetLanguages.Label(item.Value)),
             VelvetFitKind.Conflict => Loc.T(L.Velvet.FitConflict, VelvetTokenLabels.Of(item.Token)),
+            VelvetFitKind.NoSharedLanguage => Loc.T(L.Velvet.FitNoSharedLanguage),
             _ => Loc.T(L.Velvet.FitNoConflicts),
         };
+
+    private static bool FitWarns(VelvetFitKind kind) =>
+        kind is VelvetFitKind.Conflict or VelvetFitKind.NoSharedLanguage;
 
     private void EnsureStamps()
     {
@@ -270,7 +275,7 @@ internal sealed partial class VelvetShell
     }
 
     private void DrawCardCover(ImDrawListPtr drawList, VelvetProfileDto profile, VelvetCardPhotoDto[] photos,
-        Rect cover, float scale, string nameId, string metaLine)
+        Rect cover, float scale, string nameId, string metaLine, bool interactive = true)
     {
         var name = DisplayNameOf(profile.DisplayName, profile.Handle);
         var radius = DeckCoverRadius * scale;
@@ -298,13 +303,18 @@ internal sealed partial class VelvetShell
         var nameY = metaY - DeckCoverLineGap * scale - nameHeight;
 
         var textBlock = new Rect(new Vector2(textLeft, nameY), new Vector2(textLeft + textWidth, cover.Max.Y - pad));
-        var textHovered = UiInteract.Hover(textBlock.Min, textBlock.Max);
+        var textHovered = interactive && UiInteract.Hover(textBlock.Min, textBlock.Max);
         UserName.Draw(drawList, nameId, name, profile.Badges, profile.BadgeIds, textLeft, nameY, textWidth,
             DeckNameStyle, VelvetTheme.TitleInk, textHovered, false);
         Typography.Draw(drawList, new Vector2(textLeft, metaY),
             Typography.FitText(metaLine, textWidth, DeckMetaStyle), VelvetTheme.BodyInk, DeckMetaStyle);
         Typography.Draw(drawList, new Vector2(textLeft, intentY),
             Typography.FitText(intent, textWidth, DeckIntentStyle), VelvetTheme.RoseInk, DeckIntentStyle);
+
+        if (!interactive)
+        {
+            return;
+        }
 
         if (UiInteract.Click(textBlock.Min, textBlock.Max, textHovered))
         {
@@ -439,7 +449,7 @@ internal sealed partial class VelvetShell
         var rowTop = card.ContentOrigin.Y + VCard.HeaderBlock * scale;
         for (var index = 0; index < fitLabels.Count; index++)
         {
-            var conflict = fitItems[index].Kind == VelvetFitKind.Conflict;
+            var conflict = FitWarns(fitItems[index].Kind);
             var tone = conflict ? VelvetTheme.Danger : VelvetTheme.Online;
             var ink = conflict ? VelvetTheme.ToneInk(VelvetTheme.Danger) : VelvetTheme.BodyInk;
             var centerY = rowTop + rowHeight * 0.5f;

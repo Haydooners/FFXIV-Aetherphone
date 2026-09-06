@@ -16,6 +16,7 @@ internal enum VelvetEditSection
     Race,
     Gender,
     Sexuality,
+    Languages,
     Intent,
     Role,
     Kinks,
@@ -29,12 +30,14 @@ internal sealed partial class VelvetShell
     private const float EditGroupGap = 10f;
     private const float EditGroupHeaderHeight = 28f;
     private const float EditHelpGap = 8f;
+    private const int EditIntroMaxLength = 400;
 
     private static readonly VelvetEditSection[] EditSections =
     {
         VelvetEditSection.Race,
         VelvetEditSection.Gender,
         VelvetEditSection.Sexuality,
+        VelvetEditSection.Languages,
         VelvetEditSection.Intent,
         VelvetEditSection.Role,
         VelvetEditSection.Kinks,
@@ -49,6 +52,7 @@ internal sealed partial class VelvetShell
     private string editPronouns = string.Empty;
     private int editGender;
     private int editSexuality;
+    private int editLanguages;
     private int editIntent;
     private int editRelationship;
     private int editRace;
@@ -84,6 +88,7 @@ internal sealed partial class VelvetShell
         editPronouns = me.Pronouns;
         editGender = VelvetGender.Sanitize(me.Gender);
         editSexuality = VelvetSexuality.Sanitize(me.Sexuality);
+        editLanguages = VelvetLanguages.Sanitize(me.Languages);
         editIntent = VelvetIntent.Sanitize(me.LookingFor);
         editRelationship = me.RelationshipStatus;
         editRace = me.RaceOverride;
@@ -190,7 +195,7 @@ internal sealed partial class VelvetShell
 
             VSectionHeader.Card(PhoneIcons.Feather, Loc.T(L.Velvet.CardAbout));
             Gap(4f);
-            ui.Field(Loc.T(L.Velvet.IntroduceYourself), "##ed_intro", ref editIntro, 400, true);
+            ui.Field(Loc.T(L.Velvet.IntroduceYourself), "##ed_intro", ref editIntro, EditIntroMaxLength, true);
             ui.Field(Loc.T(L.Velvet.PronounsLabel), "##ed_pronouns", ref editPronouns, 40, false);
             Gap(16f);
 
@@ -246,6 +251,7 @@ internal sealed partial class VelvetShell
         section switch
         {
             VelvetEditSection.Race => VelvetTheme.Moonlight,
+            VelvetEditSection.Languages => VelvetTheme.RegionAccent,
             VelvetEditSection.Role => RoleTone,
             VelvetEditSection.Kinks => KinkTone,
             VelvetEditSection.Limits => VelvetTheme.Gold,
@@ -258,6 +264,7 @@ internal sealed partial class VelvetShell
             VelvetEditSection.Race => L.Velvet.CardRace,
             VelvetEditSection.Gender => L.Velvet.CardGender,
             VelvetEditSection.Sexuality => L.Velvet.CardSexuality,
+            VelvetEditSection.Languages => L.Velvet.CardLanguages,
             VelvetEditSection.Intent => L.Velvet.CardIntent,
             VelvetEditSection.Role => L.Velvet.CardRole,
             VelvetEditSection.Kinks => L.Velvet.CardKinks,
@@ -272,6 +279,7 @@ internal sealed partial class VelvetShell
             VelvetEditSection.Race => PhoneIcons.Sparkles,
             VelvetEditSection.Gender => PhoneIcons.Gender,
             VelvetEditSection.Sexuality => PhoneIcons.Rainbow,
+            VelvetEditSection.Languages => PhoneIcons.Language,
             VelvetEditSection.Intent => PhoneIcons.Compass,
             VelvetEditSection.Role => PhoneIcons.Heart,
             VelvetEditSection.Kinks => PhoneIcons.Flame,
@@ -473,6 +481,15 @@ internal sealed partial class VelvetShell
                 }
 
                 break;
+            case VelvetEditSection.Languages:
+                for (var index = 0; index < VelvetLanguages.All.Length; index++)
+                {
+                    var value = VelvetLanguages.All[index];
+                    AddOptionChip(VelvetLanguages.Label(value), VelvetLanguages.Has(editLanguages, value),
+                        VelvetTheme.RegionAccent, null);
+                }
+
+                break;
             case VelvetEditSection.Intent:
                 for (var index = 0; index < VelvetIntent.All.Length; index++)
                 {
@@ -546,6 +563,9 @@ internal sealed partial class VelvetShell
                 break;
             case VelvetEditSection.Sexuality:
                 editSexuality = VelvetSexuality.Toggle(editSexuality, VelvetSexuality.All[clicked]);
+                break;
+            case VelvetEditSection.Languages:
+                editLanguages = VelvetLanguages.Toggle(editLanguages, VelvetLanguages.All[clicked]);
                 break;
             case VelvetEditSection.Intent:
                 editIntent = VelvetIntent.Toggle(editIntent, VelvetIntent.All[clicked].Flag);
@@ -638,6 +658,9 @@ internal sealed partial class VelvetShell
                 break;
             case VelvetEditSection.Sexuality:
                 editSummaryLabels.AddRange(VelvetSexuality.Labels(editSexuality));
+                break;
+            case VelvetEditSection.Languages:
+                editSummaryLabels.AddRange(VelvetLanguages.Labels(editLanguages));
                 break;
             case VelvetEditSection.Intent:
                 for (var index = 0; index < VelvetIntent.All.Length; index++)
@@ -880,48 +903,6 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private void DrawGenderPicker(ref int gender)
-    {
-        var scale = UiScale.Current;
-        var width = ImGui.GetContentRegionAvail().X;
-        var options = VelvetGender.All;
-        chipModels.Clear();
-        for (var index = 0; index < options.Length; index++)
-        {
-            var value = options[index];
-            var selected = VelvetGender.Has(gender, value);
-            chipModels.Add(new VChipModel(VelvetGender.Label(value), selected ? VChipStyle.Solid : VChipStyle.Ghost,
-                selected ? VelvetTheme.Rose : VelvetTheme.Moonlight));
-        }
-
-        var clicked = DrawChipFlow(width, scale);
-        if (clicked >= 0)
-        {
-            gender = VelvetGender.Toggle(gender, options[clicked]);
-        }
-    }
-
-    private void DrawSexualityPicker(ref int sexuality)
-    {
-        var scale = UiScale.Current;
-        var width = ImGui.GetContentRegionAvail().X;
-        var options = VelvetSexuality.All;
-        chipModels.Clear();
-        for (var index = 0; index < options.Length; index++)
-        {
-            var value = options[index];
-            var selected = VelvetSexuality.Has(sexuality, value);
-            chipModels.Add(new VChipModel(VelvetSexuality.Label(value), selected ? VChipStyle.Solid : VChipStyle.Ghost,
-                selected ? VelvetTheme.Rose : VelvetTheme.Moonlight));
-        }
-
-        var clicked = DrawChipFlow(width, scale);
-        if (clicked >= 0)
-        {
-            sexuality = VelvetSexuality.Toggle(sexuality, options[clicked]);
-        }
-    }
-
     private bool HasUnsavedEdits()
     {
         if (store.Me is not { } me)
@@ -935,6 +916,7 @@ internal sealed partial class VelvetShell
                || !string.Equals(editPronouns, me.Pronouns, StringComparison.Ordinal)
                || editGender != VelvetGender.Sanitize(me.Gender)
                || editSexuality != VelvetSexuality.Sanitize(me.Sexuality)
+               || editLanguages != VelvetLanguages.Sanitize(me.Languages)
                || editIntent != VelvetIntent.Sanitize(me.LookingFor)
                || editRelationship != me.RelationshipStatus
                || editRace != me.RaceOverride
@@ -975,11 +957,7 @@ internal sealed partial class VelvetShell
         var me = store.Me;
         var identityChanged = me is not null &&
             (editDisplayName.Trim() != me.DisplayName || editHandle.Trim() != me.Handle);
-        var dynamic = VelvetTags.Join(editRole.ToArray());
-        var request = new UpdateVelvetProfileRequest(editIntro.Trim(), editPronouns.Trim(), dynamic, editTags.ToArray(),
-            editLimits.ToArray(), VelvetIntent.Sanitize(editIntent), editRelationship, null,
-            Gender: VelvetGender.Sanitize(editGender), Sexuality: VelvetSexuality.Sanitize(editSexuality),
-            Kinks: editKinks.ToArray(), Race: editRace);
+        var request = BuildEditRequest(null, null);
         if (identityChanged)
         {
             store.UpdateIdentity(editDisplayName.Trim(), editHandle.Trim(),
@@ -991,6 +969,12 @@ internal sealed partial class VelvetShell
             store.UpdateProfile(request, CompleteSave);
         }
     }
+
+    private UpdateVelvetProfileRequest BuildEditRequest(bool? discoverable, int? whoCanMessage) =>
+        new(editIntro.Trim(), editPronouns.Trim(), VelvetTags.Join(editRole.ToArray()), editTags.ToArray(),
+            editLimits.ToArray(), VelvetIntent.Sanitize(editIntent), editRelationship, discoverable, whoCanMessage,
+            VelvetGender.Sanitize(editGender), VelvetSexuality.Sanitize(editSexuality), editKinks.ToArray(), editRace,
+            VelvetLanguages.Sanitize(editLanguages));
 
     private void CompleteSave(bool succeeded)
     {

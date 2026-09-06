@@ -14,6 +14,7 @@ internal sealed partial class VelvetShell
             VelvetFilterFacet.Intent => L.Velvet.CardIntent,
             VelvetFilterFacet.Gender => L.Velvet.CardGender,
             VelvetFilterFacet.Sexuality => L.Velvet.CardSexuality,
+            VelvetFilterFacet.Languages => L.Velvet.CardLanguages,
             VelvetFilterFacet.Relationship => L.Velvet.CardRelationship,
             VelvetFilterFacet.Role => L.Velvet.CardRole,
             VelvetFilterFacet.Kinks => L.Velvet.CardKinks,
@@ -29,6 +30,7 @@ internal sealed partial class VelvetShell
             VelvetFilterFacet.Intent => VelvetIntent.All.Length,
             VelvetFilterFacet.Gender => VelvetGender.All.Length,
             VelvetFilterFacet.Sexuality => VelvetSexuality.All.Length,
+            VelvetFilterFacet.Languages => VelvetLanguages.All.Length,
             VelvetFilterFacet.Relationship => VelvetRelationship.All.Length,
             VelvetFilterFacet.Role => VelvetRoles.All.Length,
             VelvetFilterFacet.Kinks => VelvetKinks.Tokens.Length,
@@ -93,6 +95,13 @@ internal sealed partial class VelvetShell
                 for (var index = 0; index < VelvetSexuality.All.Length; index++)
                 {
                     facetLabels.Add(VelvetSexuality.Label(VelvetSexuality.All[index]));
+                }
+
+                break;
+            case VelvetFilterFacet.Languages:
+                for (var index = 0; index < VelvetLanguages.All.Length; index++)
+                {
+                    facetLabels.Add(VelvetLanguages.Label(VelvetLanguages.All[index]));
                 }
 
                 break;
@@ -273,6 +282,7 @@ internal sealed partial class VelvetShell
             VelvetFilterFacet.Intent => VelvetIntent.All[optionIndex].Flag,
             VelvetFilterFacet.Gender => VelvetGender.All[optionIndex],
             VelvetFilterFacet.Sexuality => VelvetSexuality.All[optionIndex],
+            VelvetFilterFacet.Languages => VelvetLanguages.All[optionIndex],
             VelvetFilterFacet.Relationship => 1 << VelvetRelationship.All[optionIndex],
             _ => 0,
         };
@@ -285,6 +295,7 @@ internal sealed partial class VelvetShell
             VelvetFilterFacet.Intent => selection.Intent,
             VelvetFilterFacet.Gender => selection.Gender,
             VelvetFilterFacet.Sexuality => selection.Sexuality,
+            VelvetFilterFacet.Languages => selection.Languages,
             VelvetFilterFacet.Relationship => selection.Relationship,
             _ => 0,
         };
@@ -307,6 +318,9 @@ internal sealed partial class VelvetShell
                 break;
             case VelvetFilterFacet.Sexuality:
                 selection.Sexuality = mask;
+                break;
+            case VelvetFilterFacet.Languages:
+                selection.Languages = mask;
                 break;
             case VelvetFilterFacet.Relationship:
                 selection.Relationship = mask;
