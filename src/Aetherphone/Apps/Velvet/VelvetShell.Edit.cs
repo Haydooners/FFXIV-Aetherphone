@@ -1,16 +1,48 @@
 using Aetherphone.Apps.Velvet.Kit;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Velvet;
 
+internal enum VelvetEditSection
+{
+    Race,
+    Gender,
+    Sexuality,
+    Intent,
+    Role,
+    Kinks,
+    Limits,
+    Relationship,
+    Tags,
+}
+
 internal sealed partial class VelvetShell
 {
+    private const float EditGroupGap = 10f;
+    private const float EditGroupHeaderHeight = 28f;
+    private const float EditHelpGap = 8f;
+
+    private static readonly VelvetEditSection[] EditSections =
+    {
+        VelvetEditSection.Race,
+        VelvetEditSection.Gender,
+        VelvetEditSection.Sexuality,
+        VelvetEditSection.Intent,
+        VelvetEditSection.Role,
+        VelvetEditSection.Kinks,
+        VelvetEditSection.Limits,
+        VelvetEditSection.Relationship,
+        VelvetEditSection.Tags,
+    };
+
     private string editDisplayName = string.Empty;
     private string editHandle = string.Empty;
     private string editIntro = string.Empty;
@@ -19,10 +51,19 @@ internal sealed partial class VelvetShell
     private int editSexuality;
     private int editIntent;
     private int editRelationship;
+    private int editRace;
     private readonly List<string> editRole = new();
     private readonly List<string> editKinks = new();
     private readonly List<string> editTags = new();
     private readonly List<string> editLimits = new();
+    private readonly Spring[] editReveal = new Spring[EditSections.Length];
+    private readonly string[] editSummaries = new string[EditSections.Length];
+    private readonly List<string> editSummaryLabels = new();
+    private int expandedEditSections;
+    private bool editSummariesDirty;
+    private LanguageInfo? editSummaryLanguage;
+    private int editSummaryRaceId;
+    private string editRaceDetected = string.Empty;
     private volatile bool editBusy;
     private volatile bool editSaveSucceeded;
     private volatile bool editSaveFailed;
@@ -45,6 +86,7 @@ internal sealed partial class VelvetShell
         editSexuality = VelvetSexuality.Sanitize(me.Sexuality);
         editIntent = VelvetIntent.Sanitize(me.LookingFor);
         editRelationship = me.RelationshipStatus;
+        editRace = me.RaceOverride;
         editRole.Clear();
         editRole.AddRange(VelvetTags.Parse(me.Dynamic));
         editKinks.Clear();
@@ -53,6 +95,13 @@ internal sealed partial class VelvetShell
         editTags.AddRange(me.Tags);
         editLimits.Clear();
         editLimits.AddRange(me.Limits);
+        expandedEditSections = 0;
+        for (var index = 0; index < editReveal.Length; index++)
+        {
+            editReveal[index].SnapTo(0f);
+        }
+
+        editSummariesDirty = true;
         editSaveSucceeded = false;
         editSaveFailed = false;
         avatarEditing = false;
@@ -143,47 +192,480 @@ internal sealed partial class VelvetShell
             ui.Field(Loc.T(L.Velvet.PronounsLabel), "##ed_pronouns", ref editPronouns, 40, false);
             Gap(16f);
 
-            VSectionHeader.Card(PhoneIcons.Gender, Loc.T(L.Velvet.CardGender));
-            Gap(6f);
-            DrawGenderPicker(ref editGender);
-            Gap(16f);
-
-            VSectionHeader.Card(PhoneIcons.Rainbow, Loc.T(L.Velvet.CardSexuality));
-            Gap(6f);
-            DrawSexualityPicker(ref editSexuality);
-            Gap(16f);
-
-            VSectionHeader.Card(PhoneIcons.Compass, Loc.T(L.Velvet.CardIntent));
-            Gap(6f);
-            DrawIntentEditor();
-            Gap(16f);
-
-            VSectionHeader.Card(PhoneIcons.Heart, Loc.T(L.Velvet.CardRole));
-            Gap(6f);
-            DrawTagFlow(VelvetSuggestions.Roles, editRole, VelvetTheme.Rose, true);
-            Gap(16f);
-
-            VSectionHeader.Card(PhoneIcons.Flame, Loc.T(L.Velvet.CardKinks));
-            Gap(6f);
-            DrawTagFlow(VelvetSuggestions.Kinks, editKinks, new Vector4(0.647f, 0.482f, 0.839f, 1f), true);
-            Gap(16f);
-
-            VSectionHeader.Card(PhoneIcons.Shield, Loc.T(L.Velvet.CardLimits));
-            Gap(6f);
-            DrawTagFlow(VelvetSuggestions.Limits, editLimits, VelvetTheme.Gold, true);
-            Gap(16f);
-
-            VSectionHeader.Card(PhoneIcons.HeartHandshake, Loc.T(L.Velvet.CardRelationship));
-            Gap(6f);
-            DrawRelationshipEditor();
-            Gap(16f);
-
-            VSectionHeader.Card(PhoneIcons.Hash, Loc.T(L.Velvet.CardTags));
-            Gap(6f);
-            DrawCategoryPicker(VelvetSuggestions.TagCategories, editTags);
-            Gap(16f);
+            VSectionHeader.Overline(Loc.T(L.Velvet.EditDetailsHeader));
+            SyncEditSummaries();
+            using (ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, Vector2.Zero))
+            {
+                for (var index = 0; index < EditSections.Length; index++)
+                {
+                    DrawEditSection(EditSections[index], index);
+                }
+            }
 
             Gap(40f);
+        }
+    }
+
+    private void DrawEditSection(VelvetEditSection section, int slot)
+    {
+        var scale = UiScale.Current;
+        var drawList = ImGui.GetWindowDrawList();
+        var open = (expandedEditSections & (1 << slot)) != 0;
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        var reveal = editReveal[slot].Step(open ? 1f : 0f, VDisclosure.RevealSmoothTime, delta);
+        var header = Reserve(VDisclosure.HeaderHeight);
+        if (VDisclosure.Header(drawList, header, EditSectionGlyph(section), Loc.T(EditSectionTitle(section)),
+                editSummaries[slot], reveal, 0f))
+        {
+            expandedEditSections ^= 1 << slot;
+        }
+
+        if (reveal > 0.001f)
+        {
+            var inset = VDisclosure.PanelPadX * scale;
+            var innerWidth = MathF.Max(1f, header.Width - inset * 2f);
+            var well = EditSectionContentHeight(section, innerWidth, scale) + VDisclosure.PanelPadY * 2f * scale;
+            var visible = (well + VDisclosure.RevealPadY * scale) * reveal;
+            var origin = ImGui.GetCursorScreenPos();
+            var panel = new Rect(new Vector2(header.Min.X, origin.Y), new Vector2(header.Max.X, origin.Y + well));
+            ImGui.PushClipRect(new Vector2(header.Min.X, origin.Y), new Vector2(header.Max.X, origin.Y + visible),
+                true);
+            VDisclosure.Well(drawList, panel, scale);
+            ImGui.SetCursorScreenPos(new Vector2(panel.Min.X + inset, origin.Y + VDisclosure.PanelPadY * scale));
+            DrawEditSectionContent(section, panel.Min.X + inset, innerWidth, scale);
+            ImGui.PopClipRect();
+            ImGui.SetCursorScreenPos(origin);
+            ImGui.Dummy(new Vector2(header.Width, visible));
+        }
+
+        FeedCell.Hairline(drawList, header.Min.X, header.Max.X, ImGui.GetCursorScreenPos().Y, VelvetTheme.Hairline);
+    }
+
+    private static LocString EditSectionTitle(VelvetEditSection section) =>
+        section switch
+        {
+            VelvetEditSection.Race => L.Velvet.CardRace,
+            VelvetEditSection.Gender => L.Velvet.CardGender,
+            VelvetEditSection.Sexuality => L.Velvet.CardSexuality,
+            VelvetEditSection.Intent => L.Velvet.CardIntent,
+            VelvetEditSection.Role => L.Velvet.CardRole,
+            VelvetEditSection.Kinks => L.Velvet.CardKinks,
+            VelvetEditSection.Limits => L.Velvet.CardLimits,
+            VelvetEditSection.Relationship => L.Velvet.CardRelationship,
+            _ => L.Velvet.CardTags,
+        };
+
+    private static string EditSectionGlyph(VelvetEditSection section) =>
+        section switch
+        {
+            VelvetEditSection.Race => PhoneIcons.Sparkles,
+            VelvetEditSection.Gender => PhoneIcons.Gender,
+            VelvetEditSection.Sexuality => PhoneIcons.Rainbow,
+            VelvetEditSection.Intent => PhoneIcons.Compass,
+            VelvetEditSection.Role => PhoneIcons.Heart,
+            VelvetEditSection.Kinks => PhoneIcons.Flame,
+            VelvetEditSection.Limits => PhoneIcons.Shield,
+            VelvetEditSection.Relationship => PhoneIcons.HeartHandshake,
+            _ => PhoneIcons.Hash,
+        };
+
+    private float EditSectionContentHeight(VelvetEditSection section, float width, float scale)
+    {
+        switch (section)
+        {
+            case VelvetEditSection.Race:
+                return EditRaceContentHeight(width, scale);
+            case VelvetEditSection.Tags:
+                return EditTagCategoriesHeight(width, scale);
+        }
+
+        FillEditChips(section);
+        return MeasureChipFlow(width, scale);
+    }
+
+    private void DrawEditSectionContent(VelvetEditSection section, float left, float width, float scale)
+    {
+        switch (section)
+        {
+            case VelvetEditSection.Race:
+                DrawEditRace(left, width, scale);
+                return;
+            case VelvetEditSection.Tags:
+                DrawEditTagCategories(left, width, scale);
+                return;
+        }
+
+        FillEditChips(section);
+        AlignEditCursor(left);
+        var clicked = DrawChipFlow(width, scale);
+        if (clicked >= 0)
+        {
+            ToggleEditOption(section, clicked);
+        }
+    }
+
+    private static void AlignEditCursor(float left)
+    {
+        ImGui.SetCursorScreenPos(new Vector2(left, ImGui.GetCursorScreenPos().Y));
+    }
+
+    private float EditRaceContentHeight(float width, float scale)
+    {
+        var height = Typography.MeasureWrappedBlock(Loc.T(L.Velvet.RaceHelp), TextStyles.Footnote, width).Y
+                     + EditHelpGap * scale;
+        FillRaceChips();
+        height += MeasureChipFlow(width, scale);
+        if (editRaceDetected.Length > 0)
+        {
+            height += EditHelpGap * scale
+                      + Typography.MeasureWrappedBlock(editRaceDetected, TextStyles.Footnote, width).Y;
+        }
+
+        return height;
+    }
+
+    private void DrawEditRace(float left, float width, float scale)
+    {
+        var origin = ImGui.GetCursorScreenPos();
+        var helpHeight = Typography.DrawWrappedLeft(new Vector2(left, origin.Y), Loc.T(L.Velvet.RaceHelp),
+            VelvetTheme.MutedInk, TextStyles.Footnote, width);
+        ImGui.SetCursorScreenPos(new Vector2(left, origin.Y + helpHeight + EditHelpGap * scale));
+        FillRaceChips();
+        var clicked = DrawChipFlow(width, scale);
+        if (clicked >= 0)
+        {
+            editRace = clicked == 0 ? 0 : VelvetRace.All[clicked - 1];
+            editSummariesDirty = true;
+        }
+
+        if (editRaceDetected.Length == 0)
+        {
+            return;
+        }
+
+        var detectedTop = ImGui.GetCursorScreenPos().Y + EditHelpGap * scale;
+        var detectedHeight = Typography.DrawWrappedLeft(new Vector2(left, detectedTop), editRaceDetected,
+            VelvetTheme.MutedInk, TextStyles.Footnote, width);
+        ImGui.SetCursorScreenPos(new Vector2(left, detectedTop));
+        ImGui.Dummy(new Vector2(width, detectedHeight));
+    }
+
+    private void FillRaceChips()
+    {
+        chipModels.Clear();
+        AddOptionChip(Loc.T(L.Velvet.RaceMatchCharacter), editRace == 0, VelvetTheme.Rose, null);
+        for (var index = 0; index < VelvetRace.All.Length; index++)
+        {
+            var raceId = VelvetRace.All[index];
+            AddOptionChip(VelvetRace.Label(gameData, raceId), editRace == raceId, VelvetTheme.Rose, null);
+        }
+    }
+
+    private float EditTagCategoriesHeight(float width, float scale)
+    {
+        var categories = VelvetSuggestions.TagCategories;
+        var height = 0f;
+        for (var index = 0; index < categories.Length; index++)
+        {
+            if (index > 0)
+            {
+                height += EditGroupGap * scale;
+            }
+
+            height += EditGroupHeaderHeight * scale;
+            FillTokenChips(categories[index].Tags, editTags, categories[index].Hue);
+            height += MeasureChipFlow(width, scale);
+        }
+
+        var union = CategoryUnion(categories);
+        if (!HasUnlisted(editTags, union))
+        {
+            return height;
+        }
+
+        chipModels.Clear();
+        AppendOrphanChips(editTags, union);
+        return height + (EditGroupGap + EditGroupHeaderHeight) * scale + MeasureChipFlow(width, scale);
+    }
+
+    private void DrawEditTagCategories(float left, float width, float scale)
+    {
+        var categories = VelvetSuggestions.TagCategories;
+        for (var index = 0; index < categories.Length; index++)
+        {
+            if (index > 0)
+            {
+                Gap(EditGroupGap);
+            }
+
+            var category = categories[index];
+            DrawEditGroupHeader(Loc.T(category.Title), category.Hue, left, width);
+            FillTokenChips(category.Tags, editTags, category.Hue);
+            AlignEditCursor(left);
+            var clicked = DrawChipFlow(width, scale);
+            if (clicked >= 0)
+            {
+                ToggleToken(category.Tags, editTags, clicked);
+            }
+        }
+
+        var union = CategoryUnion(categories);
+        if (!HasUnlisted(editTags, union))
+        {
+            return;
+        }
+
+        Gap(EditGroupGap);
+        DrawEditGroupHeader(Loc.T(L.Velvet.CatOther), VelvetTheme.Moonlight, left, width);
+        chipModels.Clear();
+        AppendOrphanChips(editTags, union);
+        AlignEditCursor(left);
+        var removed = DrawChipFlow(width, scale);
+        if (removed >= 0)
+        {
+            RemoveOrphan(editTags, union, removed);
+        }
+    }
+
+    private static void DrawEditGroupHeader(string label, Vector4 hue, float left, float width)
+    {
+        var scale = UiScale.Current;
+        var origin = ImGui.GetCursorScreenPos();
+        var height = EditGroupHeaderHeight * scale;
+        Typography.Draw(ImGui.GetWindowDrawList(),
+            new Vector2(left, origin.Y + height * 0.5f - Typography.LineHeight(TextStyles.FootnoteEmphasized) * 0.5f),
+            Loc.Upper(label), VelvetTheme.Lerp(hue, VelvetTheme.OnAccent, 0.3f), TextStyles.FootnoteEmphasized);
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height));
+    }
+
+    private void FillEditChips(VelvetEditSection section)
+    {
+        chipModels.Clear();
+        switch (section)
+        {
+            case VelvetEditSection.Gender:
+                for (var index = 0; index < VelvetGender.All.Length; index++)
+                {
+                    var value = VelvetGender.All[index];
+                    AddOptionChip(VelvetGender.Label(value), VelvetGender.Has(editGender, value), VelvetTheme.Rose,
+                        null);
+                }
+
+                break;
+            case VelvetEditSection.Sexuality:
+                for (var index = 0; index < VelvetSexuality.All.Length; index++)
+                {
+                    var value = VelvetSexuality.All[index];
+                    AddOptionChip(VelvetSexuality.Label(value), VelvetSexuality.Has(editSexuality, value),
+                        VelvetTheme.Rose, null);
+                }
+
+                break;
+            case VelvetEditSection.Intent:
+                for (var index = 0; index < VelvetIntent.All.Length; index++)
+                {
+                    var intent = VelvetIntent.All[index];
+                    AddOptionChip(Loc.T(intent.Label), VelvetIntent.Has(editIntent, intent.Flag), intent.Hue,
+                        intent.Glyph);
+                }
+
+                break;
+            case VelvetEditSection.Role:
+                FillTokenChips(VelvetSuggestions.Roles, editRole, RoleTone);
+                AppendOrphanChips(editRole, VelvetSuggestions.Roles);
+                break;
+            case VelvetEditSection.Kinks:
+                FillTokenChips(VelvetSuggestions.Kinks, editKinks, KinkTone);
+                AppendOrphanChips(editKinks, VelvetSuggestions.Kinks);
+                break;
+            case VelvetEditSection.Limits:
+                FillTokenChips(VelvetSuggestions.Limits, editLimits, VelvetTheme.Gold);
+                AppendOrphanChips(editLimits, VelvetSuggestions.Limits);
+                break;
+            case VelvetEditSection.Relationship:
+                for (var index = 0; index < VelvetRelationship.All.Length; index++)
+                {
+                    var value = VelvetRelationship.All[index];
+                    AddOptionChip(VelvetRelationship.Label(value), editRelationship == value, VelvetTheme.Rose, null);
+                }
+
+                break;
+        }
+    }
+
+    private void FillTokenChips(string[] options, List<string> selected, Vector4 tone)
+    {
+        chipModels.Clear();
+        for (var index = 0; index < options.Length; index++)
+        {
+            var token = options[index];
+            AddOptionChip(token, selected.Contains(token), tone, null);
+        }
+    }
+
+    private void AppendOrphanChips(List<string> selected, string[] known)
+    {
+        for (var index = 0; index < selected.Count; index++)
+        {
+            var token = selected[index];
+            if (ContainsTag(known, token))
+            {
+                continue;
+            }
+
+            chipModels.Add(new VChipModel(token, VChipStyle.Solid, VelvetTheme.Moonlight, null,
+                true));
+        }
+    }
+
+    private void AddOptionChip(string label, bool selected, Vector4 tone, string? glyph)
+    {
+        chipModels.Add(selected
+            ? new VChipModel(label, VChipStyle.Solid, tone, PhoneIcons.Check)
+            : new VChipModel(label, VChipStyle.Ghost, VelvetTheme.Moonlight, glyph));
+    }
+
+    private void ToggleEditOption(VelvetEditSection section, int clicked)
+    {
+        switch (section)
+        {
+            case VelvetEditSection.Gender:
+                editGender = VelvetGender.Toggle(editGender, VelvetGender.All[clicked]);
+                break;
+            case VelvetEditSection.Sexuality:
+                editSexuality = VelvetSexuality.Toggle(editSexuality, VelvetSexuality.All[clicked]);
+                break;
+            case VelvetEditSection.Intent:
+                editIntent = VelvetIntent.Toggle(editIntent, VelvetIntent.All[clicked].Flag);
+                break;
+            case VelvetEditSection.Role:
+                ToggleToken(VelvetSuggestions.Roles, editRole, clicked);
+                break;
+            case VelvetEditSection.Kinks:
+                ToggleToken(VelvetSuggestions.Kinks, editKinks, clicked);
+                break;
+            case VelvetEditSection.Limits:
+                ToggleToken(VelvetSuggestions.Limits, editLimits, clicked);
+                break;
+            case VelvetEditSection.Relationship:
+                editRelationship = VelvetRelationship.All[clicked];
+                break;
+        }
+
+        editSummariesDirty = true;
+    }
+
+    private void ToggleToken(string[] options, List<string> selected, int clicked)
+    {
+        editSummariesDirty = true;
+        if (clicked >= options.Length)
+        {
+            RemoveOrphan(selected, options, clicked - options.Length);
+            return;
+        }
+
+        var token = options[clicked];
+        if (!selected.Remove(token))
+        {
+            selected.Add(token);
+        }
+    }
+
+    private void RemoveOrphan(List<string> selected, string[] known, int orphanIndex)
+    {
+        editSummariesDirty = true;
+        var seen = 0;
+        for (var index = 0; index < selected.Count; index++)
+        {
+            if (ContainsTag(known, selected[index]))
+            {
+                continue;
+            }
+
+            if (seen == orphanIndex)
+            {
+                selected.RemoveAt(index);
+                return;
+            }
+
+            seen++;
+        }
+    }
+
+    private void SyncEditSummaries()
+    {
+        if (!editSummariesDirty && ReferenceEquals(editSummaryLanguage, Loc.Current) &&
+            editSummaryRaceId == localRaceId)
+        {
+            return;
+        }
+
+        editSummariesDirty = false;
+        editSummaryLanguage = Loc.Current;
+        editSummaryRaceId = localRaceId;
+        editRaceDetected = localRaceId > 0
+            ? Loc.T(L.Velvet.RaceDetected, VelvetRace.Label(gameData, localRaceId))
+            : string.Empty;
+        for (var index = 0; index < EditSections.Length; index++)
+        {
+            editSummaries[index] = EditSectionSummary(EditSections[index]);
+        }
+    }
+
+    private string EditSectionSummary(VelvetEditSection section)
+    {
+        editSummaryLabels.Clear();
+        switch (section)
+        {
+            case VelvetEditSection.Race:
+                return editRace > 0 ? VelvetRace.Label(gameData, editRace) : Loc.T(L.Velvet.RaceMatchCharacter);
+            case VelvetEditSection.Relationship:
+                return VelvetRelationship.Label(editRelationship);
+            case VelvetEditSection.Gender:
+                editSummaryLabels.AddRange(VelvetGender.Labels(editGender));
+                break;
+            case VelvetEditSection.Sexuality:
+                editSummaryLabels.AddRange(VelvetSexuality.Labels(editSexuality));
+                break;
+            case VelvetEditSection.Intent:
+                for (var index = 0; index < VelvetIntent.All.Length; index++)
+                {
+                    if (VelvetIntent.Has(editIntent, VelvetIntent.All[index].Flag))
+                    {
+                        editSummaryLabels.Add(Loc.T(VelvetIntent.All[index].Label));
+                    }
+                }
+
+                break;
+            case VelvetEditSection.Role:
+                AddTokenLabels(editRole);
+                break;
+            case VelvetEditSection.Kinks:
+                AddTokenLabels(editKinks);
+                break;
+            case VelvetEditSection.Limits:
+                AddTokenLabels(editLimits);
+                break;
+            default:
+                AddTokenLabels(editTags);
+                break;
+        }
+
+        return editSummaryLabels.Count switch
+        {
+            0 => Loc.T(L.Velvet.EditNotSet),
+            1 => editSummaryLabels[0],
+            2 => string.Concat(editSummaryLabels[0], ", ", editSummaryLabels[1]),
+            _ => Loc.Plural(L.Velvet.EditChosenCount, editSummaryLabels.Count),
+        };
+    }
+
+    private void AddTokenLabels(List<string> tokens)
+    {
+        for (var index = 0; index < tokens.Count; index++)
+        {
+            editSummaryLabels.Add(tokens[index]);
         }
     }
 
@@ -387,26 +869,6 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private void DrawIntentEditor()
-    {
-        var scale = UiScale.Current;
-        var width = ImGui.GetContentRegionAvail().X;
-        chipModels.Clear();
-        for (var index = 0; index < VelvetIntent.All.Length; index++)
-        {
-            var def = VelvetIntent.All[index];
-            var selected = VelvetIntent.Has(editIntent, def.Flag);
-            chipModels.Add(new VChipModel(Loc.T(def.Label), selected ? VChipStyle.Solid : VChipStyle.Ghost,
-                selected ? def.Hue : VelvetTheme.Moonlight, def.Glyph));
-        }
-
-        var clicked = DrawChipFlow(width, scale);
-        if (clicked >= 0)
-        {
-            editIntent = VelvetIntent.Toggle(editIntent, VelvetIntent.All[clicked].Flag);
-        }
-    }
-
     private void DrawGenderPicker(ref int gender)
     {
         var scale = UiScale.Current;
@@ -449,27 +911,6 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private void DrawRelationshipEditor()
-    {
-        var scale = UiScale.Current;
-        var width = ImGui.GetContentRegionAvail().X;
-        var options = VelvetRelationship.All;
-        chipModels.Clear();
-        for (var index = 0; index < options.Length; index++)
-        {
-            var value = options[index];
-            var selected = editRelationship == value;
-            chipModels.Add(new VChipModel(VelvetRelationship.Label(value), selected ? VChipStyle.Solid : VChipStyle.Ghost,
-                selected ? VelvetTheme.Rose : VelvetTheme.Moonlight));
-        }
-
-        var clicked = DrawChipFlow(width, scale);
-        if (clicked >= 0)
-        {
-            editRelationship = options[clicked];
-        }
-    }
-
     private bool HasUnsavedEdits()
     {
         if (store.Me is not { } me)
@@ -485,6 +926,7 @@ internal sealed partial class VelvetShell
                || editSexuality != VelvetSexuality.Sanitize(me.Sexuality)
                || editIntent != VelvetIntent.Sanitize(me.LookingFor)
                || editRelationship != me.RelationshipStatus
+               || editRace != me.RaceOverride
                || Differs(editRole, VelvetTags.Parse(me.Dynamic))
                || Differs(editKinks, me.Kinks)
                || Differs(editTags, me.Tags)
@@ -526,7 +968,7 @@ internal sealed partial class VelvetShell
         var request = new UpdateVelvetProfileRequest(editIntro.Trim(), editPronouns.Trim(), dynamic, editTags.ToArray(),
             editLimits.ToArray(), VelvetIntent.Sanitize(editIntent), editRelationship, null,
             Gender: VelvetGender.Sanitize(editGender), Sexuality: VelvetSexuality.Sanitize(editSexuality),
-            Kinks: editKinks.ToArray());
+            Kinks: editKinks.ToArray(), Race: editRace);
         if (identityChanged)
         {
             store.UpdateIdentity(editDisplayName.Trim(), editHandle.Trim(),

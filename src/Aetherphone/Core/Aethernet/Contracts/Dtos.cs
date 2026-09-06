@@ -374,7 +374,8 @@ internal sealed record VelvetProfileDto(
     string? IntroLang = null,
     int Race = 0,
     int Presence = 0,
-    VelvetCardPhotoDto[]? Photos = null);
+    VelvetCardPhotoDto[]? Photos = null,
+    int RaceOverride = 0);
 
 internal sealed record VelvetCardPhotoDto(string Id, string Url, int Width, int Height);
 
@@ -394,7 +395,8 @@ internal sealed record UpdateVelvetProfileRequest(
     int? WhoCanMessage = null,
     int? Gender = null,
     int? Sexuality = null,
-    string[]? Kinks = null);
+    string[]? Kinks = null,
+    int? Race = null);
 
 internal sealed record GateAcceptRequest(int GateVersion);
 

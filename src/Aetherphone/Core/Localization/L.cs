@@ -4258,6 +4258,13 @@ internal static class L
         public static readonly LocPlural FitSharedKinks =
             new("velvet.fitSharedKinks", "{0} shared kink", "{0} shared kinks");
         public static readonly LocString CardRace = new("velvet.cardRace", "Race");
+        public static readonly LocString EditDetailsHeader = new("velvet.editDetailsHeader", "Details");
+        public static readonly LocString EditNotSet = new("velvet.editNotSet", "Not set");
+        public static readonly LocPlural EditChosenCount = new("velvet.editChosenCount", "{0} chosen", "{0} chosen");
+        public static readonly LocString RaceMatchCharacter = new("velvet.raceMatchCharacter", "Match my character");
+        public static readonly LocString RaceHelp = new("velvet.raceHelp",
+            "Choose the race people see on your card. Handy when mods change how your character looks.");
+        public static readonly LocString RaceDetected = new("velvet.raceDetected", "Your character is currently {0}.");
         public static readonly LocString FiltersTitle = new("velvet.filtersTitle", "Filters");
         public static readonly LocString PostTagsTitle = new("velvet.postTagsTitle", "Tags");
         public static readonly LocString PostTagsEmpty = new("velvet.postTagsEmpty", "Add tags");

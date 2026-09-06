@@ -27,6 +27,9 @@ internal sealed partial class VelvetShell
     private int DrawChipFlow(float width, float scale) =>
         VChipFlow.Draw(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(chipModels), width, scale);
 
+    private float MeasureChipFlow(float width, float scale) =>
+        VChipFlow.Measure(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(chipModels), width, scale);
+
     private static void DrawInsetHelpText(string text)
     {
         var scale = UiScale.Current;
