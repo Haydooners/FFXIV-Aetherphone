@@ -213,33 +213,42 @@ internal sealed partial class VelvetShell
         var open = (expandedEditSections & (1 << slot)) != 0;
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         var reveal = editReveal[slot].Step(open ? 1f : 0f, VDisclosure.RevealSmoothTime, delta);
+        Gap(VCard.Gap);
         var header = Reserve(VDisclosure.HeaderHeight);
-        if (VDisclosure.Header(drawList, header, EditSectionGlyph(section), Loc.T(EditSectionTitle(section)),
-                editSummaries[slot], reveal, 0f))
+        var inset = VDisclosure.PanelPadX * scale;
+        var innerWidth = MathF.Max(1f, header.Width - inset * 2f);
+        var visible = reveal > 0.001f
+            ? (EditSectionContentHeight(section, innerWidth, scale) + VDisclosure.PanelPadY * 2f * scale) * reveal
+            : 0f;
+        if (VDisclosure.Card(drawList, header, visible, EditSectionGlyph(section), EditSectionTone(section),
+                Loc.T(EditSectionTitle(section)), editSummaries[slot], reveal, scale))
         {
             expandedEditSections ^= 1 << slot;
         }
 
-        if (reveal > 0.001f)
+        if (visible <= 0f)
         {
-            var inset = VDisclosure.PanelPadX * scale;
-            var innerWidth = MathF.Max(1f, header.Width - inset * 2f);
-            var well = EditSectionContentHeight(section, innerWidth, scale) + VDisclosure.PanelPadY * 2f * scale;
-            var visible = (well + VDisclosure.RevealPadY * scale) * reveal;
-            var origin = ImGui.GetCursorScreenPos();
-            var panel = new Rect(new Vector2(header.Min.X, origin.Y), new Vector2(header.Max.X, origin.Y + well));
-            ImGui.PushClipRect(new Vector2(header.Min.X, origin.Y), new Vector2(header.Max.X, origin.Y + visible),
-                true);
-            VDisclosure.Well(drawList, panel, scale);
-            ImGui.SetCursorScreenPos(new Vector2(panel.Min.X + inset, origin.Y + VDisclosure.PanelPadY * scale));
-            DrawEditSectionContent(section, panel.Min.X + inset, innerWidth, scale);
-            ImGui.PopClipRect();
-            ImGui.SetCursorScreenPos(origin);
-            ImGui.Dummy(new Vector2(header.Width, visible));
+            return;
         }
 
-        FeedCell.Hairline(drawList, header.Min.X, header.Max.X, ImGui.GetCursorScreenPos().Y, VelvetTheme.Hairline);
+        var origin = ImGui.GetCursorScreenPos();
+        ImGui.PushClipRect(new Vector2(header.Min.X, origin.Y), new Vector2(header.Max.X, origin.Y + visible), true);
+        ImGui.SetCursorScreenPos(new Vector2(header.Min.X + inset, origin.Y + VDisclosure.PanelPadY * scale));
+        DrawEditSectionContent(section, header.Min.X + inset, innerWidth, scale);
+        ImGui.PopClipRect();
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(header.Width, visible));
     }
+
+    private static Vector4 EditSectionTone(VelvetEditSection section) =>
+        section switch
+        {
+            VelvetEditSection.Race => VelvetTheme.Moonlight,
+            VelvetEditSection.Role => RoleTone,
+            VelvetEditSection.Kinks => KinkTone,
+            VelvetEditSection.Limits => VelvetTheme.Gold,
+            _ => VelvetTheme.Rose,
+        };
 
     private static LocString EditSectionTitle(VelvetEditSection section) =>
         section switch

@@ -184,32 +184,30 @@ internal sealed partial class VelvetShell
         var open = (expandedFacets & (1 << slot)) != 0;
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         var reveal = facetReveal[slot].Step(open ? 1f : 0f, VDisclosure.RevealSmoothTime, delta);
-        var header = Reserve(VDisclosure.HeaderHeight);
-        if (VDisclosure.Header(drawList, header, string.Empty, Loc.T(FacetTitle(facet)),
-                FacetSummary(facet, include), reveal, pad))
+        Gap(VCard.Gap);
+        var row = Reserve(VDisclosure.HeaderHeight);
+        var header = new Rect(new Vector2(row.Min.X + pad, row.Min.Y), new Vector2(row.Max.X - pad, row.Max.Y));
+        var well = reveal > 0.001f ? FacetContentHeight(facet) * scale : 0f;
+        var visible = well * reveal;
+        if (VDisclosure.Card(drawList, header, visible, string.Empty, VelvetTheme.Rose, Loc.T(FacetTitle(facet)),
+                FacetSummary(facet, include), reveal, scale))
         {
             expandedFacets ^= 1 << slot;
         }
 
-        if (reveal > 0.001f)
+        if (visible <= 0f)
         {
-            var well = FacetContentHeight(facet) * scale;
-            var visible = (well + VDisclosure.RevealPadY * scale) * reveal;
-            var origin = ImGui.GetCursorScreenPos();
-            var panel = new Rect(new Vector2(header.Min.X + pad, origin.Y),
-                new Vector2(header.Max.X - pad, origin.Y + well));
-            ImGui.PushClipRect(new Vector2(header.Min.X, origin.Y),
-                new Vector2(header.Max.X, origin.Y + visible), true);
-            VDisclosure.Well(drawList, panel, scale);
-            Gap(VDisclosure.PanelPadY);
-            DrawFacetOptions(facet, include, panel, reveal >= 0.999f, ref changedInclude, ref changedMutes);
-            ImGui.PopClipRect();
-            ImGui.SetCursorScreenPos(origin);
-            ImGui.Dummy(new Vector2(header.Width, visible));
+            return;
         }
 
-        FeedCell.Hairline(drawList, header.Min.X + pad, header.Max.X - pad, ImGui.GetCursorScreenPos().Y,
-            VelvetTheme.Hairline);
+        var origin = ImGui.GetCursorScreenPos();
+        var panel = new Rect(new Vector2(header.Min.X, origin.Y), new Vector2(header.Max.X, origin.Y + well));
+        ImGui.PushClipRect(new Vector2(header.Min.X, origin.Y), new Vector2(header.Max.X, origin.Y + visible), true);
+        Gap(VDisclosure.PanelPadY);
+        DrawFacetOptions(facet, include, panel, reveal >= 0.999f, ref changedInclude, ref changedMutes);
+        ImGui.PopClipRect();
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(row.Width, visible));
     }
 
     private void DrawFacetOptions(VelvetFilterFacet facet, VelvetFilterSelection include, Rect panel, bool live,

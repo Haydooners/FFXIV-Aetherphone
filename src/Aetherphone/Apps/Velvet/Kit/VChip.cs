@@ -31,7 +31,9 @@ internal static class VChip
     private const float TintFill = 0.14f;
     private const float TintFillHover = 0.22f;
     private const float TintStroke = 0.32f;
-    private const float GhostHoverFill = 0.10f;
+    private const float GhostFill = 0.10f;
+    private const float GhostFillHover = 0.16f;
+    private const float GhostStroke = 0.16f;
 
     private static readonly TextStyle LabelStyle = TextStyles.Subheadline;
 
@@ -76,7 +78,8 @@ internal static class VChip
                 ink = VelvetTheme.ToneInk(chip.Tone);
                 break;
             default:
-                fill = hovered ? VelvetTheme.Alpha(VelvetTheme.Moonlight, GhostHoverFill) : VelvetTheme.PlumWell;
+                fill = VelvetTheme.Alpha(VelvetTheme.Moonlight, hovered ? GhostFillHover : GhostFill);
+                stroke = VelvetTheme.Alpha(VelvetTheme.Moonlight, GhostStroke);
                 ink = hovered ? VelvetTheme.TitleInk : VelvetTheme.BodyInk;
                 break;
         }

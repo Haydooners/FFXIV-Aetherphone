@@ -32,10 +32,11 @@ internal static class VCard
     public const float HeaderBlock = HeaderTile + HeaderGap;
     public const float RowHeight = Metrics.Size.Row;
 
+    public const float HeaderGlyph = 15f;
+
     private const float Radius = Metrics.Radius.Card;
     private const float ShadowOpacity = 0.5f;
     private const float TileAlpha = 0.18f;
-    private const float HeaderGlyph = 15f;
     private const float HeaderTitleGap = 10f;
     private const float RowTile = 26f;
     private const float RowGlyph = 15f;
@@ -133,7 +134,7 @@ internal static class VCard
         }
     }
 
-    private static void Tile(ImDrawListPtr drawList, Vector2 min, Vector2 max, string glyph, Vector4 tone,
+    public static void Tile(ImDrawListPtr drawList, Vector2 min, Vector2 max, string glyph, Vector4 tone,
         float glyphSize, float scale)
     {
         Squircle.Fill(drawList, min, max, Metrics.Radius.Sm * scale, VelvetTheme.Alpha(tone, TileAlpha).Packed());
