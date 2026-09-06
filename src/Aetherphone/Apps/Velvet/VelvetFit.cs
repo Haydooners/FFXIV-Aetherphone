@@ -12,6 +12,21 @@ internal enum VelvetFitKind
     NoConflicts,
 }
 
+internal enum VelvetTokenGroup
+{
+    None,
+    Kinks,
+    Tags,
+    Limits,
+}
+
+internal enum VelvetTokenMatch
+{
+    None,
+    Shared,
+    Conflict,
+}
+
 internal readonly record struct VelvetFitItem(VelvetFitKind Kind, string Token, int Value);
 
 internal static class VelvetFit
@@ -125,6 +140,33 @@ internal static class VelvetFit
         var count = SharedCount(other.Limits, me.Kinks) + SharedCount(me.Limits, other.Kinks);
         return IrlConflict(me, other) ? count + 1 : count;
     }
+
+    public static VelvetTokenMatch Match(VelvetProfileDto? me, VelvetTokenGroup group, string token)
+    {
+        if (me is null)
+        {
+            return VelvetTokenMatch.None;
+        }
+
+        switch (group)
+        {
+            case VelvetTokenGroup.Kinks:
+                return Contains(me.Limits, token) ? VelvetTokenMatch.Conflict
+                    : Contains(me.Kinks, token) ? VelvetTokenMatch.Shared : VelvetTokenMatch.None;
+            case VelvetTokenGroup.Tags:
+                return Contains(me.Tags, token) ? VelvetTokenMatch.Shared : VelvetTokenMatch.None;
+            case VelvetTokenGroup.Limits:
+                return LimitClashes(me, token) ? VelvetTokenMatch.Conflict
+                    : Contains(me.Limits, token) ? VelvetTokenMatch.Shared : VelvetTokenMatch.None;
+            default:
+                return VelvetTokenMatch.None;
+        }
+    }
+
+    private static bool LimitClashes(VelvetProfileDto me, string token) =>
+        Contains(me.Kinks, token)
+        || (string.Equals(token, IrlLimit, StringComparison.OrdinalIgnoreCase)
+            && VelvetIntent.Has(me.LookingFor, VelvetIntent.Irl));
 
     private static int AddConflicts(VelvetProfileDto me, VelvetProfileDto other, List<VelvetFitItem> items)
     {

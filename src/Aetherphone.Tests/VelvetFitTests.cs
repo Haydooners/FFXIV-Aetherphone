@@ -101,6 +101,24 @@ public sealed class VelvetFitTests
         Assert.True(VelvetFit.Score(null, complete) > VelvetFit.Score(null, empty));
     }
 
+    [Fact]
+    public void MatchMarksSharedTokensAndClashesAgainstTheViewer()
+    {
+        var me = Profile("me", kinks: new[] { "praise" }, limits: new[] { "gore" }, tags: new[] { "venue" },
+            lookingFor: VelvetIntent.Irl | VelvetIntent.Friends);
+
+        Assert.Equal(VelvetTokenMatch.Shared, VelvetFit.Match(me, VelvetTokenGroup.Kinks, "Praise"));
+        Assert.Equal(VelvetTokenMatch.Conflict, VelvetFit.Match(me, VelvetTokenGroup.Kinks, "gore"));
+        Assert.Equal(VelvetTokenMatch.None, VelvetFit.Match(me, VelvetTokenGroup.Kinks, "rigger"));
+        Assert.Equal(VelvetTokenMatch.Shared, VelvetFit.Match(me, VelvetTokenGroup.Tags, "venue"));
+        Assert.Equal(VelvetTokenMatch.None, VelvetFit.Match(me, VelvetTokenGroup.Tags, "praise"));
+        Assert.Equal(VelvetTokenMatch.Conflict, VelvetFit.Match(me, VelvetTokenGroup.Limits, "praise"));
+        Assert.Equal(VelvetTokenMatch.Conflict, VelvetFit.Match(me, VelvetTokenGroup.Limits, "irl"));
+        Assert.Equal(VelvetTokenMatch.Shared, VelvetFit.Match(me, VelvetTokenGroup.Limits, "gore"));
+        Assert.Equal(VelvetTokenMatch.None, VelvetFit.Match(me, VelvetTokenGroup.None, "praise"));
+        Assert.Equal(VelvetTokenMatch.None, VelvetFit.Match(null, VelvetTokenGroup.Kinks, "praise"));
+    }
+
     private static VelvetProfileDto Profile(string id, string[]? kinks = null, string[]? limits = null,
         string[]? tags = null, int lookingFor = VelvetIntent.Friends, string? avatar = "https://example/avatar.png",
         string intro = "Hello there") =>

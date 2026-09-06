@@ -309,6 +309,7 @@ internal sealed partial class VelvetShell
         var innerWidth = MathF.Max(1f, width - pad * 2f);
         ImGui.Indent(pad);
         DrawIntroBlock(user, innerWidth);
+        var viewer = ViewerAgainst(user);
         DrawAboutSection(L.Velvet.CardGender, VelvetGender.Labels(user.Gender), VChipStyle.Tint, VelvetTheme.Rose,
             innerWidth);
         DrawAboutSection(L.Velvet.CardSexuality, VelvetSexuality.Labels(user.Sexuality), VChipStyle.Tint,
@@ -318,13 +319,18 @@ internal sealed partial class VelvetShell
             DrawAboutSection(L.Velvet.CardRole, VelvetTags.Parse(user.Dynamic), VChipStyle.Tint, RoleTone,
                 innerWidth);
             DrawAboutSection(L.Velvet.CardKinks, user.Kinks ?? Array.Empty<string>(), VChipStyle.Tint, KinkTone,
-                innerWidth);
+                innerWidth, viewer, VelvetTokenGroup.Kinks);
         }
 
-        DrawAboutSection(L.Velvet.CardTags, user.Tags, VChipStyle.Tint, VelvetTheme.Rose, innerWidth);
-        DrawAboutSection(L.Velvet.CardLimits, user.Limits, VChipStyle.Outline, VelvetTheme.Gold, innerWidth);
+        DrawAboutSection(L.Velvet.CardTags, user.Tags, VChipStyle.Tint, VelvetTheme.Rose, innerWidth, viewer,
+            VelvetTokenGroup.Tags);
+        DrawAboutSection(L.Velvet.CardLimits, user.Limits, VChipStyle.Outline, VelvetTheme.Gold, innerWidth, viewer,
+            VelvetTokenGroup.Limits);
         ImGui.Unindent(pad);
     }
+
+    private VelvetProfileDto? ViewerAgainst(VelvetProfileDto user) =>
+        store.Me is { } me && me.UserId != user.UserId ? me : null;
 
     private void DrawIntroBlock(VelvetProfileDto user, float innerWidth)
     {
@@ -353,7 +359,7 @@ internal sealed partial class VelvetShell
     }
 
     private void DrawAboutSection(LocString title, string[] tokens, VChipStyle style, Vector4 tone,
-        float sectionWidth)
+        float sectionWidth, VelvetProfileDto? viewer = null, VelvetTokenGroup group = VelvetTokenGroup.None)
     {
         if (tokens.Length == 0)
         {
@@ -363,7 +369,7 @@ internal sealed partial class VelvetShell
         Gap(16f);
         VSectionHeader.Bar(Loc.T(title));
         Gap(4f);
-        DrawDisplayTokens(tokens, style, tone, sectionWidth);
+        DrawDisplayTokens(tokens, style, tone, sectionWidth, viewer, group);
     }
 
     private void AskDisconnect(string userId)
@@ -539,7 +545,8 @@ internal sealed partial class VelvetShell
         Gap(34f);
     }
 
-    private void DrawDisplayTokens(string[] tokens, VChipStyle style, Vector4 tone, float width = 0f)
+    private void DrawDisplayTokens(string[] tokens, VChipStyle style, Vector4 tone, float width = 0f,
+        VelvetProfileDto? viewer = null, VelvetTokenGroup group = VelvetTokenGroup.None)
     {
         if (tokens.Length == 0)
         {
@@ -555,9 +562,18 @@ internal sealed partial class VelvetShell
         chipModels.Clear();
         for (var index = 0; index < tokens.Length; index++)
         {
-            chipModels.Add(new VChipModel(tokens[index], style, tone));
+            chipModels.Add(TokenChip(tokens[index], style, tone, viewer, group));
         }
 
         DrawChipFlow(width, scale);
     }
+
+    private static VChipModel TokenChip(string token, VChipStyle style, Vector4 tone, VelvetProfileDto? viewer,
+        VelvetTokenGroup group) =>
+        VelvetFit.Match(viewer, group, token) switch
+        {
+            VelvetTokenMatch.Shared => new VChipModel(token, VChipStyle.Solid, tone, PhoneIcons.Check),
+            VelvetTokenMatch.Conflict => new VChipModel(token, style, VelvetTheme.Danger, PhoneIcons.X),
+            _ => new VChipModel(token, style, tone),
+        };
 }

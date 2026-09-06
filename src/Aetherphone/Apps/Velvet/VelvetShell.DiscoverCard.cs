@@ -130,12 +130,13 @@ internal sealed partial class VelvetShell
         ImGui.Indent(indent);
         Gap(DeckSectionGap);
         DrawDeckFit(innerWidth);
-        DrawCardColumn(profile, photos, innerWidth);
+        DrawCardColumn(profile, photos, innerWidth, ViewerAgainst(profile));
         ImGui.Unindent(indent);
         Gap(DeckActionBarHeight + DeckBottomPad);
     }
 
-    private void DrawCardColumn(VelvetProfileDto profile, VelvetCardPhotoDto[] photos, float innerWidth)
+    private void DrawCardColumn(VelvetProfileDto profile, VelvetCardPhotoDto[] photos, float innerWidth,
+        VelvetProfileDto? viewer)
     {
         var drawList = ImGui.GetWindowDrawList();
         DrawIntroBlock(profile, innerWidth);
@@ -150,12 +151,14 @@ internal sealed partial class VelvetShell
             DrawAboutSection(L.Velvet.CardRole, VelvetTags.Parse(profile.Dynamic), VChipStyle.Tint, RoleTone,
                 innerWidth);
             DrawAboutSection(L.Velvet.CardKinks, profile.Kinks ?? Array.Empty<string>(), VChipStyle.Tint, KinkTone,
-                innerWidth);
+                innerWidth, viewer, VelvetTokenGroup.Kinks);
         }
 
         DrawCardPhoto(drawList, photos, ref photoIndex, innerWidth);
-        DrawAboutSection(L.Velvet.CardTags, profile.Tags, VChipStyle.Tint, VelvetTheme.Rose, innerWidth);
-        DrawAboutSection(L.Velvet.CardLimits, profile.Limits, VChipStyle.Outline, VelvetTheme.Gold, innerWidth);
+        DrawAboutSection(L.Velvet.CardTags, profile.Tags, VChipStyle.Tint, VelvetTheme.Rose, innerWidth, viewer,
+            VelvetTokenGroup.Tags);
+        DrawAboutSection(L.Velvet.CardLimits, profile.Limits, VChipStyle.Outline, VelvetTheme.Gold, innerWidth,
+            viewer, VelvetTokenGroup.Limits);
         while (photoIndex < photos.Length)
         {
             DrawCardPhoto(drawList, photos, ref photoIndex, innerWidth);
@@ -207,7 +210,7 @@ internal sealed partial class VelvetShell
             ImGui.Dummy(new Vector2(width, cover.Max.Y - origin.Y));
             ImGui.Indent(inset);
             Gap(DeckSectionGap);
-            DrawCardColumn(me, photos, innerWidth);
+            DrawCardColumn(me, photos, innerWidth, null);
             ImGui.Unindent(inset);
             Gap(PreviewBottomPad);
         }
