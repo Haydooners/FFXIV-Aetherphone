@@ -274,6 +274,7 @@ internal sealed class ChatTranscript
     private string? flashMessageId;
     private float flashElapsed;
     private bool tailPending;
+    private float rowWidth;
 
     public void RequestSnapToBottom() => snapToBottom = true;
 
@@ -309,8 +310,11 @@ internal sealed class ChatTranscript
         var typingTarget = model.OtherTyping ? 1f : 0f;
         typingReveal += (typingTarget - typingReveal) * MathF.Min(1f, delta * 12f);
 
-        using (var surface = AppSurface.Begin(listRect, model.SidePadding))
+        var sidePadding = model.SidePadding * scale;
+        rowWidth = MathF.Max(1f, listRect.Width - sidePadding * 2f);
+        using (var surface = AppSurface.Begin(listRect))
         {
+            ImGui.Indent(sidePadding);
             if (model.Messages.Length == 0 && typingReveal < 0.01f)
             {
                 Typography.DrawCentered(new Vector2(listRect.Center.X, listRect.Min.Y + 60f * scale),
@@ -505,11 +509,11 @@ internal sealed class ChatTranscript
         }
     }
 
-    private static void DrawSenderLabel(TranscriptMessage message, PhoneTheme theme, bool mine)
+    private void DrawSenderLabel(TranscriptMessage message, PhoneTheme theme, bool mine)
     {
         var scale = UiScale.Current;
         var origin = ImGui.GetCursorScreenPos();
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var maxWidth = available - 4f * scale;
         var name = FirstName(message.SenderName);
         var nameStyle = new TextStyle(0.78f, FontWeight.SemiBold);
@@ -560,7 +564,7 @@ internal sealed class ChatTranscript
     private void DrawSystemMessage(TranscriptMessage message, in ChatTranscriptModel model)
     {
         var scale = UiScale.Current;
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var origin = ImGui.GetCursorScreenPos();
         var textSize = Typography.Measure(message.Body, 0.74f, FontWeight.Medium);
         var center = new Vector2(origin.X + available * 0.5f, origin.Y + 6f * scale + textSize.Y * 0.5f);
@@ -578,7 +582,7 @@ internal sealed class ChatTranscript
 
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var textSize = Typography.Measure(label, 0.72f, FontWeight.Medium);
         var chipWidth = textSize.X + 20f * scale;
         var chipHeight = textSize.Y + 8f * scale;
@@ -597,7 +601,7 @@ internal sealed class ChatTranscript
         var mine = message.SenderId == model.MyUserId;
         var deleted = (message.Flags & TranscriptFlags.Deleted) != 0;
         var drawList = ImGui.GetWindowDrawList();
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var paddingX = 11f * scale;
         var paddingY = 7f * scale;
         var wrap = available * 0.74f - paddingX * 2f;
@@ -755,7 +759,7 @@ internal sealed class ChatTranscript
         var scale = UiScale.Current;
         var mine = message.SenderId == model.MyUserId;
         var drawList = ImGui.GetWindowDrawList();
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var paddingX = 7f * scale;
         var paddingY = 7f * scale;
         var innerWidth = MathF.Min(available * 0.62f, 210f * scale);
@@ -910,7 +914,7 @@ internal sealed class ChatTranscript
         var mine = message.SenderId == model.MyUserId;
         var placeholder = (message.Flags & TranscriptFlags.Placeholder) != 0;
         var drawList = ImGui.GetWindowDrawList();
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var paddingX = 11f * scale;
         var paddingY = 9f * scale;
         var badgeRadius = 16f * scale;
@@ -1108,7 +1112,7 @@ internal sealed class ChatTranscript
         var mine = message.SenderId == model.MyUserId;
         var placeholder = (message.Flags & TranscriptFlags.Placeholder) != 0;
         var drawList = ImGui.GetWindowDrawList();
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var paddingX = 11f * scale;
         var paddingY = 9f * scale;
         var badgeRadius = 16f * scale;
@@ -1252,7 +1256,7 @@ internal sealed class ChatTranscript
         var mine = message.SenderId == model.MyUserId;
         var placeholder = (message.Flags & TranscriptFlags.Placeholder) != 0;
         var drawList = ImGui.GetWindowDrawList();
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var paddingX = 11f * scale;
         var paddingY = 9f * scale;
         var badgeRadius = 16f * scale;
@@ -1422,7 +1426,7 @@ internal sealed class ChatTranscript
         var scale = UiScale.Current;
         var mine = message.SenderId == model.MyUserId;
         var drawList = ImGui.GetWindowDrawList();
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var origin = ImGui.GetCursorScreenPos();
         var labelSize = Typography.Measure(context.ContextText, 0.74f);
         var labelX = mine ? origin.X + available - labelSize.X - 4f * scale : origin.X + 4f * scale;
@@ -1580,7 +1584,7 @@ internal sealed class ChatTranscript
         var scale = UiScale.Current;
         var mine = message.SenderId == model.MyUserId;
         var drawList = ImGui.GetWindowDrawList();
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var paddingX = 10f * scale;
         var paddingY = 8f * scale;
         var contentWidth = MathF.Min(available * 0.62f, 210f * scale);
@@ -1670,7 +1674,7 @@ internal sealed class ChatTranscript
         var scale = UiScale.Current;
         var mine = message.SenderId == model.MyUserId;
         var drawList = ImGui.GetWindowDrawList();
-        var available = ScrollLayout.StableContentWidth();
+        var available = rowWidth;
         var padding = 5f * scale;
         var aspect = message.MediaWidth > 0 && message.MediaHeight > 0
             ? (float)message.MediaHeight / message.MediaWidth

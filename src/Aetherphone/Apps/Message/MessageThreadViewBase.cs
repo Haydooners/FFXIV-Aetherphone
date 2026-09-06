@@ -21,7 +21,7 @@ internal abstract class MessageThreadViewBase : ChatThreadView<ChatMessageDto, C
     public const float ThreadPollSeconds = 3f;
     public const float TypingSendSeconds = 2.5f;
     public const float BubbleRounding = 9f;
-    public const float ThreadSidePadding = 24f;
+    public const float ThreadSidePadding = AppSurface.SidePadding;
 
     protected readonly DirectMessagesStore messages;
     private readonly WallpaperImageCache wallpapers;
