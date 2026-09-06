@@ -102,6 +102,15 @@ internal static class Typography
         }
     }
 
+    public static Vector2 MeasureExact(string text, float scale, FontWeight weight)
+    {
+        using (Plugin.Fonts.Push(scale, weight))
+        {
+            Plugin.Fonts.NoticeText(text);
+            return ImGui.CalcTextSize(text) * (scale / Plugin.Fonts.NearestScale(scale));
+        }
+    }
+
     public static float MeasureWrapped(string text, float wrapWidth, float fontScale,
         FontWeight weight = FontWeight.Regular)
     {
@@ -584,6 +593,19 @@ internal static class Typography
 
             drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize(), center - size * 0.5f, ImGui.GetColorU32(color),
                 text);
+        }
+    }
+
+    public static void DrawCenteredExact(ImDrawListPtr drawList, Vector2 center, string text, Vector4 color,
+        float scale, FontWeight weight)
+    {
+        using (Plugin.Fonts.Push(scale, weight))
+        {
+            Plugin.Fonts.NoticeText(text);
+            var ratio = scale / Plugin.Fonts.NearestScale(scale);
+            var fontSize = ImGui.GetFontSize() * ratio;
+            var size = ImGui.CalcTextSize(text) * ratio;
+            drawList.AddText(ImGui.GetFont(), fontSize, center - size * 0.5f, ImGui.GetColorU32(color), text);
         }
     }
 
