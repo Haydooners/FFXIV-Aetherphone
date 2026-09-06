@@ -505,7 +505,7 @@ internal sealed partial class VelvetShell
             DrawMedia(drawList, min, max, photos[index].Url, 0f);
             if (UiInteract.Click(min, max))
             {
-                OpenPhotoViewer(photos[index].Url);
+                OpenProfilePhotos(user.UserId, photos[index].Id);
             }
         }
 

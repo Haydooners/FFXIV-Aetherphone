@@ -457,6 +457,9 @@ internal sealed partial class VelvetShell : IResumableApp
             case VelvetScreenId.Encryption:
                 threadView.DrawEncryptionScreen(area);
                 break;
+            case VelvetScreenId.ProfilePhotos:
+                DrawProfilePhotos(area, view.Arg ?? string.Empty);
+                break;
             default:
                 DrawRoot(area);
                 break;
