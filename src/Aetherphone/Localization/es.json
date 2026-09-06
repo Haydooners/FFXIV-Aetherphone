@@ -2506,6 +2506,7 @@
   "velvet.deckCheckAgain": "Volver a buscar",
   "velvet.deckShowAgain": "Volver a mostrarlos",
   "velvet.deckPassedHidden": "{0} ocultos porque los descartaste. Cada día llega gente nueva.",
+  "velvet.deckSeenBefore": "Visto antes",
   "velvet.searchNone": "Nadie coincide",
   "velvet.searchNoneHint": "Prueba con otro nombre o etiqueta.",
   "velvet.fitSharedKinks.one": "{0} kink en común",

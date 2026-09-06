@@ -2506,6 +2506,7 @@
   "velvet.deckCheckAgain": "Erneut prüfen",
   "velvet.deckShowAgain": "Zeig sie mir wieder",
   "velvet.deckPassedHidden": "{0} ausgeblendet, weil du sie übersprungen hast. Jeden Tag kommen neue Leute dazu.",
+  "velvet.deckSeenBefore": "Schon gesehen",
   "velvet.searchNone": "Niemand passt",
   "velvet.searchNoneHint": "Versuche einen anderen Namen oder Tag.",
   "velvet.fitSharedKinks.one": "{0} gemeinsamer Kink",

@@ -31,6 +31,7 @@ internal sealed partial class VelvetShell
     private const float DeckPressShrink = 0.94f;
     private const float DeckTooltipSmoothTime = 0.11f;
     private const int DeckRefillBelow = 4;
+    private const int DeckRevisitPenalty = 1000;
     private const float FilterSummaryHeight = 30f;
     private const float FilterSummaryGlyphGap = 8f;
     private const string FilterSummarySeparator = " · ";
@@ -46,11 +47,13 @@ internal sealed partial class VelvetShell
 
     private readonly List<VelvetProfileDto> deck = new();
     private readonly List<int> deckScores = new();
+    private readonly HashSet<string> revisited = new(StringComparer.Ordinal);
     private readonly System.Text.StringBuilder filterSummaryBuilder = new();
     private VelvetProfileDto[] deckSource = Array.Empty<VelvetProfileDto>();
     private VelvetProfileDto? deckMe;
     private string deckTopId = string.Empty;
     private VelvetProfileDto? lastPassed;
+    private bool deckRecycled;
     private Spring cardSlide;
     private Spring passTooltipEase;
     private Spring connectTooltipEase;
@@ -73,6 +76,7 @@ internal sealed partial class VelvetShell
 
         SyncDeck();
         RefillDeck();
+        RecycleWhenDry();
         StepCard(body.Width);
         if (deck.Count == 0)
         {
@@ -102,6 +106,8 @@ internal sealed partial class VelvetShell
         deckMe = null;
         deckTopId = string.Empty;
         lastPassed = null;
+        revisited.Clear();
+        deckRecycled = false;
         cardSlide.SnapTo(0f);
         cardExit = 0;
         cardPressed = false;
@@ -140,11 +146,13 @@ internal sealed partial class VelvetShell
                 continue;
             }
 
-            InsertByScore(profile, VelvetFit.Score(me, profile));
+            var score = VelvetFit.Score(me, profile);
+            InsertByScore(profile, SeenBefore(profile.UserId) ? score - DeckRevisitPenalty : score);
         }
 
         AepLog.Info($"Velvet deck rebuilt: {deck.Count} cards from {source.Length} profiles, "
-            + $"{skippedConnected} already connected, {skippedRegion} out of region, {store.PassCount} passes held");
+            + $"{skippedConnected} already connected, {skippedRegion} out of region, {store.PassCount} passes held, "
+            + $"{revisited.Count} on a second look");
         PinDeckTop();
     }
 
@@ -210,6 +218,35 @@ internal sealed partial class VelvetShell
             store.LoadMoreDiscover();
         }
     }
+
+    private void RecycleWhenDry()
+    {
+        if (deck.Count >= DeckRefillBelow || deckRecycled || cardExit != 0 || store.PassCount == 0)
+        {
+            return;
+        }
+
+        if (!store.DiscoverLoaded || store.LoadingDiscover || store.LoadingMoreDiscover || store.HasMoreDiscover
+            || store.DiscoverFailed)
+        {
+            return;
+        }
+
+        AepLog.Info($"Velvet deck down to {deck.Count} cards with no pages left, "
+            + $"bringing back {store.PassCount} passes for a second look");
+        ShowPassesAgain();
+    }
+
+    private void ShowPassesAgain()
+    {
+        deckRecycled = true;
+        lastPassed = null;
+        store.CopyPassedIds(revisited);
+        store.ClearPasses();
+        ApplyDiscoverFilters();
+    }
+
+    private bool SeenBefore(string userId) => revisited.Count > 0 && revisited.Contains(userId);
 
     private void StepCard(float width)
     {
@@ -510,8 +547,7 @@ internal sealed partial class VelvetShell
         if (passCount > 0 && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckShowAgain), NextTone(ref lead),
                 "velvet.deck.showAgain"))
         {
-            store.ClearPasses();
-            ApplyDiscoverFilters();
+            ShowPassesAgain();
         }
 
         if (discoverInclude.RegionMask != 0 && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckWidenRegion),

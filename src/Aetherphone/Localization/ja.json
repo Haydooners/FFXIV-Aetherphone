@@ -2506,6 +2506,7 @@
   "velvet.deckCheckAgain": "もう一度確認",
   "velvet.deckShowAgain": "もう一度表示",
   "velvet.deckPassedHidden": "スキップしたため{0}人が非表示です。毎日新しい人が加わります。",
+  "velvet.deckSeenBefore": "以前に表示",
   "velvet.searchNone": "該当する人がいません",
   "velvet.searchNoneHint": "別の名前やタグで試してください。",
   "velvet.fitSharedKinks.one": "共通のキンク {0}件",

@@ -4252,6 +4252,7 @@ internal static class L
         public static readonly LocString DeckShowAgain = new("velvet.deckShowAgain", "Show them again");
         public static readonly LocString DeckPassedHidden =
             new("velvet.deckPassedHidden", "{0} hidden because you passed on them. New people arrive every day.");
+        public static readonly LocString DeckSeenBefore = new("velvet.deckSeenBefore", "Seen before");
         public static readonly LocString SearchNone = new("velvet.searchNone", "No one matches");
         public static readonly LocString SearchNoneHint = new("velvet.searchNoneHint", "Try a different name or tag.");
         public static readonly LocPlural FitSharedKinks =

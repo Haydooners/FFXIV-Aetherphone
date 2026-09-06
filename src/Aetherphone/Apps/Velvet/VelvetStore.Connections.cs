@@ -206,6 +206,16 @@ internal sealed partial class VelvetStore
         });
     }
 
+    public void CopyPassedIds(HashSet<string> into)
+    {
+        var passes = passedAt;
+        into.Clear();
+        foreach (var userId in passes.Keys)
+        {
+            into.Add(userId);
+        }
+    }
+
     public void ClearPasses()
     {
         if (passedAt.Count == 0)

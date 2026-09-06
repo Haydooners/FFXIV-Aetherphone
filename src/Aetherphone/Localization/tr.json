@@ -2506,6 +2506,7 @@
   "velvet.deckCheckAgain": "Tekrar bak",
   "velvet.deckShowAgain": "Onları tekrar göster",
   "velvet.deckPassedHidden": "Geçtiğin için {0} kişi gizli. Her gün yeni insanlar geliyor.",
+  "velvet.deckSeenBefore": "Daha önce gördün",
   "velvet.searchNone": "Eşleşen kimse yok",
   "velvet.searchNoneHint": "Başka bir isim ya da etiket dene.",
   "velvet.fitSharedKinks.one": "{0} ortak kink",

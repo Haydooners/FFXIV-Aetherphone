@@ -25,6 +25,7 @@ internal sealed partial class VelvetShell
     private const float DeckBadgeHeight = 24f;
     private const float DeckBadgePad = 10f;
     private const float DeckBadgeGlyphGap = 6f;
+    private const float DeckBadgeGap = 6f;
     private const float DeckPresenceDot = 4f;
     private const float DeckStampPad = 10f;
     private const float DeckStampStroke = 2.5f;
@@ -59,6 +60,7 @@ internal sealed partial class VelvetShell
     private int deckPhotoBadgeCount = -1;
     private string deckLockedTeaser = string.Empty;
     private int deckLockedCount = -1;
+    private string deckSeenLabel = string.Empty;
     private string stampPass = string.Empty;
     private string stampConnect = string.Empty;
     private LanguageInfo? stampLanguage;
@@ -266,6 +268,7 @@ internal sealed partial class VelvetShell
         stampLanguage = Loc.Current;
         stampPass = Loc.Upper(Loc.T(L.Velvet.DeckPass));
         stampConnect = Loc.Upper(Loc.T(L.Velvet.Connect));
+        deckSeenLabel = Loc.T(L.Velvet.DeckSeenBefore);
     }
 
     private static void DrawDeckStack(ImDrawListPtr drawList, Rect cover, float scale)
@@ -291,7 +294,9 @@ internal sealed partial class VelvetShell
             cover.Max, radius, VelvetTheme.Alpha(VelvetTheme.GroundBottom, 0f).Packed(),
             VelvetTheme.Alpha(VelvetTheme.GroundBottom, 0.94f).Packed());
 
-        DrawDeckPhotoBadge(drawList, photos.Length, cover, scale);
+        var badgeLeft = cover.Min.X + DeckCoverPad * scale;
+        badgeLeft = DrawDeckSeenBadge(drawList, profile.UserId, cover, badgeLeft, scale);
+        DrawDeckPhotoBadge(drawList, photos.Length, cover, badgeLeft, scale);
         DrawDeckPresence(drawList, profile.Presence, cover, scale);
 
         var textLeft = cover.Min.X + pad;
@@ -334,7 +339,7 @@ internal sealed partial class VelvetShell
         OpenProfile(profile.UserId);
     }
 
-    private void DrawDeckPhotoBadge(ImDrawListPtr drawList, int count, Rect cover, float scale)
+    private void DrawDeckPhotoBadge(ImDrawListPtr drawList, int count, Rect cover, float left, float scale)
     {
         if (count <= 1)
         {
@@ -347,17 +352,35 @@ internal sealed partial class VelvetShell
             deckPhotoBadge = Loc.Plural(L.Velvet.PhotoBadge, count);
         }
 
+        DrawDeckCoverBadge(drawList, deckPhotoBadge, PhoneIcons.Photo, VelvetTheme.RoseInk, cover, left, scale);
+    }
+
+    private float DrawDeckSeenBadge(ImDrawListPtr drawList, string userId, Rect cover, float left, float scale)
+    {
+        if (!SeenBefore(userId))
+        {
+            return left;
+        }
+
+        return DrawDeckCoverBadge(drawList, deckSeenLabel, PhoneIcons.ArrowBackUp, VelvetTheme.Moonlight, cover, left,
+            scale);
+    }
+
+    private static float DrawDeckCoverBadge(ImDrawListPtr drawList, string label, string glyph, Vector4 glyphInk,
+        Rect cover, float left, float scale)
+    {
         var glyphSize = VIcon.Small * scale;
-        var textSize = Typography.Measure(deckPhotoBadge, TextStyles.Footnote);
+        var textSize = Typography.Measure(label, TextStyles.Footnote);
         var pad = DeckBadgePad * scale;
-        var min = new Vector2(cover.Min.X + DeckCoverPad * scale, cover.Min.Y + DeckCoverPad * scale);
+        var min = new Vector2(left, cover.Min.Y + DeckCoverPad * scale);
         var max = new Vector2(min.X + pad * 2f + glyphSize + DeckBadgeGlyphGap * scale + textSize.X,
             min.Y + DeckBadgeHeight * scale);
         Squircle.Fill(drawList, min, max, DeckBadgeHeight * scale * 0.5f, DeckBadgeFill.Packed());
         var glyphCenter = new Vector2(min.X + pad + glyphSize * 0.5f, (min.Y + max.Y) * 0.5f);
-        PhoneIcon.Draw(drawList, glyphCenter, PhoneIcons.Photo, VelvetTheme.RoseInk, glyphSize);
+        PhoneIcon.Draw(drawList, glyphCenter, glyph, glyphInk, glyphSize);
         Typography.Draw(drawList, new Vector2(glyphCenter.X + glyphSize * 0.5f + DeckBadgeGlyphGap * scale,
-            glyphCenter.Y - textSize.Y * 0.5f), deckPhotoBadge, VelvetTheme.OnAccent, TextStyles.Footnote);
+            glyphCenter.Y - textSize.Y * 0.5f), label, VelvetTheme.OnAccent, TextStyles.Footnote);
+        return max.X + DeckBadgeGap * scale;
     }
 
     private static void DrawDeckPresence(ImDrawListPtr drawList, int presence, Rect cover, float scale)

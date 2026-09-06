@@ -2506,6 +2506,7 @@
   "velvet.deckCheckAgain": "Check again",
   "velvet.deckShowAgain": "Show them again",
   "velvet.deckPassedHidden": "{0} hidden because you passed on them. New people arrive every day.",
+  "velvet.deckSeenBefore": "Seen before",
   "velvet.searchNone": "No one matches",
   "velvet.searchNoneHint": "Try a different name or tag.",
   "velvet.fitSharedKinks.one": "{0} shared kink",

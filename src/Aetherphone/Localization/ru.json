@@ -2506,6 +2506,7 @@
   "velvet.deckCheckAgain": "Проверить снова",
   "velvet.deckShowAgain": "Показать снова",
   "velvet.deckPassedHidden": "{0} скрыто, потому что вы их пропустили. Новые люди приходят каждый день.",
+  "velvet.deckSeenBefore": "Уже видели",
   "velvet.searchNone": "Никого не найдено",
   "velvet.searchNoneHint": "Попробуйте другое имя или тег.",
   "velvet.fitSharedKinks.one": "{0} общий кинк",
