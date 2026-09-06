@@ -471,9 +471,13 @@ internal sealed partial class VelvetShell
             discoverFailure.Set(store.DiscoverFailure);
         }
 
+        var passCount = store.PassCount;
         var title = loading ? Loc.T(L.Velvet.DiscoverLoading)
             : failed ? Loc.T(L.Failure.CouldNotLoad) : Loc.T(L.Velvet.DeckEndTitle);
-        var hint = loading ? string.Empty : failed ? discoverFailure.Text() : Loc.T(L.Velvet.DeckEndHint);
+        var hint = loading ? string.Empty
+            : failed ? discoverFailure.Text()
+            : passCount > 0 ? Loc.T(L.Velvet.DeckPassedHidden, passCount)
+            : Loc.T(L.Velvet.DeckEndHint);
         var bottom = DrawEmpty(body, title, hint);
         if (loading)
         {
@@ -492,31 +496,31 @@ internal sealed partial class VelvetShell
             return;
         }
 
+        var lead = true;
+        if (passCount > 0 && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckShowAgain), NextTone(ref lead),
+                "velvet.deck.showAgain"))
+        {
+            store.ClearPasses();
+            ApplyDiscoverFilters();
+        }
+
         if (discoverInclude.RegionMask != 0 && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckWidenRegion),
-                ConfirmButtonTone.Primary, "velvet.deck.widen"))
+                NextTone(ref lead), "velvet.deck.widen"))
         {
             discoverInclude.RegionMask = 0;
             ApplyDiscoverFilters();
         }
 
         if (discoverInclude.AnyBesidesRegion && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.FilterClearAll),
-                discoverInclude.RegionMask != 0 ? ConfirmButtonTone.Neutral : ConfirmButtonTone.Primary,
-                "velvet.deck.clear"))
+                NextTone(ref lead), "velvet.deck.clear"))
         {
             discoverInclude.Clear();
             ApplyDiscoverFilters();
         }
 
         if (!discoverInclude.Any && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckCheckAgain),
-                ConfirmButtonTone.Primary, "velvet.deck.again"))
+                NextTone(ref lead), "velvet.deck.again"))
         {
-            ApplyDiscoverFilters();
-        }
-
-        if (store.HasPasses && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckStartOver),
-                ConfirmButtonTone.Neutral, "velvet.deck.startOver"))
-        {
-            store.ClearPasses();
             ApplyDiscoverFilters();
         }
 
@@ -525,6 +529,17 @@ internal sealed partial class VelvetShell
         {
             UndoPass();
         }
+    }
+
+    private static ConfirmButtonTone NextTone(ref bool lead)
+    {
+        if (!lead)
+        {
+            return ConfirmButtonTone.Neutral;
+        }
+
+        lead = false;
+        return ConfirmButtonTone.Primary;
     }
 
     private bool DrawEndAction(Rect body, ref float top, string label, ConfirmButtonTone tone, string id)

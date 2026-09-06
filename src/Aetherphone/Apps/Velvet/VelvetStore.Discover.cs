@@ -54,6 +54,8 @@ internal sealed partial class VelvetStore
             discoverFailureBox = null;
             discoverResults = WithoutNotInterested(page.Users);
             discoverCursor = page.NextCursor;
+            AepLog.Info($"Velvet discover returned {page.Users.Length} profiles, kept {discoverResults.Length} "
+                + $"after {passedAt.Count} local passes");
         }, () =>
         {
             loadingDiscover = false;
