@@ -2521,6 +2521,8 @@
   "velvet.feedNoneFiltered": "Ваши фильтры скрывают здесь всё.",
   "velvet.feedNone": "Пока ничего нет",
   "velvet.feedNoneHint": "Опубликуйте первым.",
+  "velvet.feedScopeAll": "Все",
+  "velvet.feedScopeConnections": "Связи",
   "velvet.audienceConnections": "Только связи",
   "velvet.audiencePublic": "Все в Velvet",
   "velvet.makePublic": "Поделиться со всеми",

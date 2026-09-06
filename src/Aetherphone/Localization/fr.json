@@ -2521,6 +2521,8 @@
   "velvet.feedNoneFiltered": "Vos filtres masquent tout ici.",
   "velvet.feedNone": "Rien de partagé pour l'instant",
   "velvet.feedNoneHint": "Sois la première personne à publier.",
+  "velvet.feedScopeAll": "Tout le monde",
+  "velvet.feedScopeConnections": "Connexions",
   "velvet.audienceConnections": "Connexions uniquement",
   "velvet.audiencePublic": "Tout le monde sur Velvet",
   "velvet.makePublic": "Partager avec tout le monde",

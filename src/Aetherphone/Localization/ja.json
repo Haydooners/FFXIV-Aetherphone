@@ -2521,6 +2521,8 @@
   "velvet.feedNoneFiltered": "フィルターがここのすべてを隠しています。",
   "velvet.feedNone": "まだ何もありません",
   "velvet.feedNoneHint": "最初に投稿してみましょう。",
+  "velvet.feedScopeAll": "みんな",
+  "velvet.feedScopeConnections": "つながり",
   "velvet.audienceConnections": "つながりのみ",
   "velvet.audiencePublic": "Velvetの全員",
   "velvet.makePublic": "全員に公開",

@@ -492,6 +492,11 @@ internal sealed partial class VelvetShell : IResumableApp
 
         DrawRootTopBar(headerRect);
 
+        if (activeTab == VelvetPage.Feed)
+        {
+            bodyRect = DrawFeedScopeTabs(bodyRect);
+        }
+
         switch (activeTab)
         {
             case VelvetPage.Feed:
