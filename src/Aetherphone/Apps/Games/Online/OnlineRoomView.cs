@@ -49,6 +49,11 @@ internal sealed class OnlineRoomView
         poolTable.Reset();
     }
 
+    private static readonly DropdownMenu.Item[] RuleSetOptions = [
+        new DropdownMenu.Item(Loc.T(L.Games.OnlineRuleDefault)),
+        new DropdownMenu.Item(Loc.T(L.Games.OnlineRuleHouse))
+    ];
+
     public bool WantsLandscape => LivePool(store.Room.State) && store.Room.RoomId.Length > 0;
 
     public void Draw(in PhoneContext context, Action back, AppSkin ui, bool landscape)
@@ -226,6 +231,8 @@ internal sealed class OnlineRoomView
         var isHost = IsHost(roster);
         rulesMenu.Gate();
 
+        var picked = rulesMenu.Draw(body, theme, RuleSetOptions);
+
         if (phase == GameRoomWire.PhaseFinished)
         {
             DrawFinishedBanner(theme, scale, held);
@@ -237,10 +244,6 @@ internal sealed class OnlineRoomView
             DrawInlineNotice(theme, scale);
         }
 
-        DropdownMenu.Item[] ruleSetOptions = [
-            new DropdownMenu.Item("Default"),
-            new DropdownMenu.Item("House Rules")
-        ];
         if (isHost && held.Snapshot.GameKind == GameRoomWire.UnoKind) {
             var pickOrigin = ImGui.GetCursorScreenPos();
             var pickWidth = ScrollLayout.StableContentWidth();
