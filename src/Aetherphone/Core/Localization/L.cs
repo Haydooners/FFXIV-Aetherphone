@@ -1703,6 +1703,108 @@ internal static class L
         public static readonly LocString SectionMessaging = new("changelog.sectionMessaging", "Messaging");
         public static readonly LocString SectionPhone = new("changelog.sectionPhone", "Phone");
 
+        public static readonly LocString[] Release1020Velvet =
+        {
+            new("changelog.r1020.2",
+                "Overhauled Velvet from top to bottom: the feed, discover, profiles, messages, the post composer and the filters are rebuilt on one shared chrome and drawn from bezel to bezel"),
+            new("changelog.r1020.3",
+                "Discover is now a card deck: one person at a time with their photos, a You two summary of what you have in common, and Pass, Say something and Connect in a bar at the bottom, with Undo for the last pass"),
+            new("changelog.r1020.4",
+                "Passing someone is no longer final: a pass expires after 30 days, and the deck offers those people back before it runs out of cards"),
+            new("changelog.r1020.5",
+                "Added a race filter to discover, and Edit profile lets you choose the race you are shown as"),
+            new("changelog.r1020.6",
+                "Added a spoken languages filter, and a discover card tells you when the two of you share a language"),
+            new("changelog.r1020.7",
+                "Added tag search to the feed: tap a tag on a post or search for one to see every post carrying it"),
+            new("changelog.r1020.8",
+                "Added caption editing to your own Velvet posts"),
+            new("changelog.r1020.9",
+                "Filters are one screen of rows now: the tick on a row shows only those people, the cross never shows them, and hiding someone moved to Safety"),
+            new("changelog.r1020.10",
+                "The region filter takes more than one pick"),
+            new("changelog.r1020.11",
+                "Profiles group the About tab into cards, stack the stats under the name and now carry the posts you shared"),
+            new("changelog.r1020.12",
+                "Discover cards and profiles mark the kinks, tags and limits the two of you share"),
+            new("changelog.r1020.13",
+                "Edit profile is folded into rows you open one at a time, led by your photo grid, where you set the cover and preview your card"),
+            new("changelog.r1020.14",
+                "Discover now asks for a profile photo before it deals the deck"),
+            new("changelog.r1020.15",
+                "Fixed feed filters matching the words in a post instead of the tags on it"),
+            new("changelog.r1020.16",
+                "Fixed a connection request quoting words nobody wrote"),
+        };
+
+        public static readonly LocString[] Release1020Message =
+        {
+            new("changelog.r1020.17",
+                "Overhauled ChocoChat: four tabs (Chats, Calls, Contacts and Settings), large titles, edge to edge rows with avatars, unread badges, pinned and muted marks, All, Unread, Favorites and Groups filters, and an Archived row"),
+            new("changelog.r1020.18",
+                "Added eight chat themes that recolor your bubbles, buttons and badges"),
+            new("changelog.r1020.19",
+                "Added chat wallpapers: a color, an optional pattern or one of your own photos, set for every chat or for one chat alone"),
+            new("changelog.r1020.20",
+                "Added pop-out chats: Pop out chat in the conversation menu floats a thread in its own window that you can drag, resize, fold down and keep using while the phone is closed"),
+            new("changelog.r1020.21",
+                "Added group photos, descriptions and admin roles, with Owner and Admin tags on members, a member sheet and Exit group"),
+            new("changelog.r1020.0",
+                "Added online dots: a green dot on the avatar in Chats and Contacts shows who is online right now, without opening the conversation"),
+            new("changelog.r1020.1",
+                "Group chats now show the sender's photo next to their messages and their name inside the bubble"),
+            new("changelog.r1020.22",
+                "Starred messages now carry a star in the thread"),
+            new("changelog.r1020.23",
+                "Fixed ChocoChat drawing inside the screen inset, rows, bubbles and the encryption screen now keep their distance from the bezel"),
+            new("changelog.r1020.24",
+                "Fixed the chat list showing a conversation as unmuted after it was muted from inside it"),
+            new("changelog.r1020.25",
+                "Fixed group photos, roles and notification settings falling out of step between members"),
+            new("changelog.r1020.26",
+                "Fixed the ChocoChat settings rows opening the wrong page in Settings"),
+        };
+
+        public static readonly LocString[] Release1020Linkpearl =
+        {
+            new("changelog.r1020.27",
+                "Long histories no longer drag the game down: a conversation with a full stream draws the part you are looking at and reaches further back as you scroll up"),
+            new("changelog.r1020.28",
+                "Fixed Open a Linkpearl chat showing on NPCs, and its switch moved to Settings > General, where it now starts off"),
+        };
+
+        public static readonly LocString[] Release1020AetherStream =
+        {
+            new("changelog.r1020.29",
+                "Fixed long videos losing their sound after 20 to 50 minutes while the picture kept playing"),
+        };
+
+        public static readonly LocString[] Release1020Music =
+        {
+            new("changelog.r1020.35",
+                "Fixed the Music icon carrying a badge at all times: it now lights only when a radio station you follow goes on air, and clears when you open the app"),
+        };
+
+        public static readonly LocString[] Release1020Settings =
+        {
+            new("changelog.r1020.36",
+                "Fixed the changelog slowing the game down while it was open, it now draws only the releases on screen instead of every release at once"),
+        };
+
+        public static readonly LocString[] Release1020Phone =
+        {
+            new("changelog.r1020.30",
+                "Fixed dropdown menus not responding inside pop-out windows"),
+            new("changelog.r1020.31",
+                "Fixed badge counts bursting out of the badge on smaller app icons"),
+            new("changelog.r1020.32",
+                "Fixed empty screens dropping their text and buttons far below the title, sometimes past the bottom of the screen"),
+            new("changelog.r1020.33",
+                "Fixed your social region following the character you are playing instead of the account you are signed into, every account now starts on Automatic and keeps its own choice"),
+            new("changelog.r1020.34",
+                "Fixed a layout slip after icon tiles that could shift whatever was drawn next on Activity, Collections, Dailies, Fishing, Health, Muster, Timers, Venues and Yellow Pages, contributed by BluntEXE"),
+        };
+
         public static readonly LocString[] Release1019Phone =
         {
             new("changelog.r1019.2",
