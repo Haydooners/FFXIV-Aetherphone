@@ -289,7 +289,7 @@ internal static class L
         public static readonly LocString Notes = new("app.notes", "Notes");
         public static readonly LocString Calculator = new("app.calculator", "Calculator");
         public static readonly LocString Linkpearl = new("app.linkpearl", "Linkpearl");
-        public static readonly LocString Message = new("app.message", "Message");
+        public static readonly LocString Message = new("app.message", "ChocoChat");
         public static readonly LocString Jobs = new("app.jobs", "Jobs");
         public static readonly LocString AppStore = new("app.appstore", "App Store");
         public static readonly LocString AetherStream = new("app.aetherstream", "MogCast");
@@ -612,7 +612,7 @@ internal static class L
         public static readonly LocString Handle = new("message.handle", "Handle");
         public static readonly LocString LocalTime = new("message.localTime", "Local time");
         public static readonly LocString Added = new("message.added", "Added");
-        public static readonly LocString SignInPrompt = new("message.signInPrompt", "Sign in to Aethernet in Settings to use Message");
+        public static readonly LocString SignInPrompt = new("message.signInPrompt", "Sign in to Aethernet in Settings to use ChocoChat");
         public static readonly LocString NoContacts = new("message.noContacts", "Add friends by number in the Contacts tab to call them");
         public static readonly LocString ReplyAction = new("message.replyAction", "Reply");
         public static readonly LocString InfoAction = new("message.infoAction", "Info");
@@ -1665,7 +1665,7 @@ internal static class L
         public static readonly LocString TellArchiveHint = new("settings.tellArchiveHint", "Tells are saved as plain text files on this PC so conversations survive a restart. They are never uploaded anywhere. Turn this off to keep new tells in memory only. Deleting a conversation also deletes its file.");
         public static readonly LocString ReadReceipts = new("settings.readReceipts", "Read receipts");
         public static readonly LocString LastSeenOnline = new("settings.lastSeenOnline", "Last seen online");
-        public static readonly LocString ChatPrivacyHint = new("settings.chatPrivacyHint", "These apply to the Message app. If you turn read receipts or last seen off, you will not send them and you will not see them from others either.");
+        public static readonly LocString ChatPrivacyHint = new("settings.chatPrivacyHint", "These apply to the ChocoChat app. If you turn read receipts or last seen off, you will not send them and you will not see them from others either.");
         public static readonly LocString Commands = new("settings.commands", "Commands");
         public static readonly LocString CommandsHint = new("settings.commandsHint", "Type these into the chat box. Reset brings the phone back to the middle of your screen if you ever move it out of view.");
         public static readonly LocString CommandToggle = new("settings.commandToggle", "Show or hide the phone");
@@ -3299,7 +3299,7 @@ internal static class L
         public static readonly LocString StateLocked = new("encryption.stateLocked", "Locked on this device");
         public static readonly LocString Intro = new("encryption.intro", "End-to-end encryption keeps your chats between you and the people you write to. Not even the Aethernet server can read them.");
         public static readonly LocString NotSignedIn = new("encryption.notSignedIn", "Sign in to your Aethernet account first.");
-        public static readonly LocString UnsupportedBody = new("encryption.unsupportedBody", "This computer cannot create the security key that encrypted chats need, so Messages and Velvet chats stay unavailable here. This usually happens when the game runs through Wine or Proton. The rest of Aetherphone works normally.");
+        public static readonly LocString UnsupportedBody = new("encryption.unsupportedBody", "This computer cannot create the security key that encrypted chats need, so ChocoChat and Velvet chats stay unavailable here. This usually happens when the game runs through Wine or Proton. The rest of Aetherphone works normally.");
         public static readonly LocString SettingUp = new("encryption.settingUp", "Setting up encryption…");
         public static readonly LocString UnsupportedSummary = new("encryption.unsupportedSummary", "This PC cannot set up encryption, so messages here are not encrypted.");
         public static readonly LocString ActiveHint = new("encryption.activeHint", "Encryption is active on this device. It works automatically. There is nothing to set up.");
@@ -6522,7 +6522,7 @@ internal static class L
         public static readonly LocString AppearanceBody = new("setup.appearanceBody", "Pick a light or dark look for your phone. Dynamic follows Eorzean time, so the phone turns dark after sunset.");
         public static readonly LocString AppearanceDynamic = new("setup.appearanceDynamic", "Dynamic");
         public static readonly LocString AccountTitle = new("setup.accountTitle", "Aethernet Account");
-        public static readonly LocString AccountBody = new("setup.accountBody", "One account unlocks every social app: Chirper, Aethergram, Message and more. Sign in with your character, no password needed.");
+        public static readonly LocString AccountBody = new("setup.accountBody", "One account unlocks every social app: Chirper, Aethergram, ChocoChat and more. Sign in with your character, no password needed.");
         public static readonly LocString SignedInTitle = new("setup.signedInTitle", "You're signed in");
         public static readonly LocString SignedInBody = new("setup.signedInBody", "Signed in as {0}. Next, make your profile yours.");
         public static readonly LocString IdTitle = new("setup.idTitle", "Create Your Aethernet ID");
