@@ -143,6 +143,7 @@ internal sealed class MinimizedPhone : IDisposable
         notifications.Changed += RefreshBadge;
         notifications.Presented += OnPresented;
         notifications.Vibration += OnVibration;
+        configuration.BadgeSettingsChanged += RefreshBadge;
         RefreshBadge();
     }
 
@@ -713,6 +714,14 @@ internal sealed class MinimizedPhone : IDisposable
 
     private void RefreshBadge()
     {
+        if (!configuration.IsAppBadgeEnabled(NotificationChannels.NotificationsAppId))
+        {
+            countValue = 0;
+            countLabel = string.Empty;
+            badgeAppId = null;
+            return;
+        }
+
         var unread = notifications.UnreadCount;
         if (unread != countValue)
         {
@@ -803,5 +812,6 @@ internal sealed class MinimizedPhone : IDisposable
         notifications.Changed -= RefreshBadge;
         notifications.Presented -= OnPresented;
         notifications.Vibration -= OnVibration;
+        configuration.BadgeSettingsChanged -= RefreshBadge;
     }
 }
