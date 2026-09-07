@@ -183,7 +183,9 @@ internal sealed class PhoneServices : IDisposable
     public required Hunts.HuntZoneCatalog HuntZoneCatalog { get; init; }
     public required Hunts.HuntZoneMapTextures HuntZoneMapTextures { get; init; }
     public required Hunts.HuntMobRewardCatalog HuntMobRewardCatalog { get; init; }
+    public required Hunts.HuntCandidateCache HuntCandidateCache { get; init; }
     public required Hunts.HuntsLauncher HuntsLauncher { get; init; }
+    public required Maps.HuntsMapMarkers HuntsMapMarkers { get; init; }
     public required Shell.MinimizedLayoutService MinimizedLayout { get; init; }
 
     public static PhoneServices Build(Configuration configuration, IChatGui chatGui, IDataManager dataManager,
@@ -367,6 +369,9 @@ internal sealed class PhoneServices : IDisposable
         var huntsClient = new HuntsClient(http, huntsAuthTokens);
         var hunts = new HuntsService(huntsClient, huntsAuthTokens, huntMobCatalog, gameData, characterWatch,
             notifications, configuration);
+        var huntCandidateCache = new HuntCandidateCache(huntMobCatalog, huntZoneCatalog, hunts);
+        var huntsMapMarkers = new Maps.HuntsMapMarkers(configuration, hunts, huntMobCatalog, huntZoneCatalog,
+            huntCandidateCache);
 
 
         return new PhoneServices
@@ -494,7 +499,9 @@ internal sealed class PhoneServices : IDisposable
             HuntZoneCatalog = huntZoneCatalog,
             HuntZoneMapTextures = huntZoneMapTextures,
             HuntMobRewardCatalog = huntMobRewardCatalog,
+            HuntCandidateCache = huntCandidateCache,
             HuntsLauncher = new Hunts.HuntsLauncher(),
+            HuntsMapMarkers = huntsMapMarkers,
         };
     }
 
@@ -572,5 +579,6 @@ internal sealed class PhoneServices : IDisposable
         Http.Dispose();
         Wallpapers.Dispose();
         WallpaperImages.Dispose();
+        HuntsMapMarkers.Dispose();
     }
 }
