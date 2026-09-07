@@ -5120,6 +5120,8 @@
   "changelog.r1020.44": "Behoben, dass die Prozentwerte des Spawn-Fensters von Faloop abwichen, sobald ein Fenster sein Cap überschritten hatte, und ein Fenster, dessen Werte nicht aufgehen, zeigt jetzt ein Fragezeichen statt 0 %",
   "changelog.r1020.45": "Behoben, dass ein Tipp auf einen Ätheryten der Gebietskarte nur eine Flagge setzte, statt dich dorthin zu bringen",
   "changelog.r1020.46": "Behoben, dass das Entfernen eines Widgets den Startbildschirm bis zum Neuladen des Plugins unbedienbar ließ, beigetragen von jambalong",
+  "changelog.r1020.47": "Schalter Kennzeichen anzeigen für jede App hinzugefügt, die eine Zahl auf ihrem Startbildschirmsymbol zeigt, auf der Seite Mitteilungen und Kennzeichen in den Einstellungen, beigetragen von Deldee",
+  "changelog.r1020.48": "Die Kennzeichen-Schalter aus Geldbörse, Täglich und Aktivität sind auf dieselbe Seite umgezogen, beigetragen von Deldee",
   "changelog.r1019.0": "Bildunterschriften lassen sich jetzt bearbeiten: Bildunterschrift bearbeiten im Menü eines eigenen Beitrags korrigiert den Text, ohne den Beitrag samt Likes und Kommentaren zu löschen",
   "changelog.r1019.1": "Beiträge mit bearbeiteter Bildunterschrift zeigen neben dem Zeitstempel den Hinweis Bearbeitet",
   "changelog.r1019.2": "App-Umschalter hinzugefügt: Halte die Leiste am unteren Bildschirmrand kurz gedrückt und alle zuletzt genutzten Apps reihen sich als Karten mit Live-Vorschau auf, tippe eine an, um dort weiterzumachen",

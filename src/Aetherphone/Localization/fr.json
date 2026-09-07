@@ -5120,6 +5120,8 @@
   "changelog.r1020.44": "Correction des pourcentages de fenêtre d'apparition qui s'écartaient de Faloop dès qu'une fenêtre dépassait son plafond, et une fenêtre dont les nombres ne tombent pas juste affiche désormais un point d'interrogation au lieu de 0 %",
   "changelog.r1020.45": "Correction d'une touche sur une éthéryte de la carte de zone qui posait un drapeau au lieu de vous y emmener",
   "changelog.r1020.46": "Correction du retrait d'un widget qui laissait l'écran d'accueil sans réponse jusqu'au rechargement du plugin, contribution de jambalong",
+  "changelog.r1020.47": "Ajout d'un interrupteur Afficher la pastille pour chaque application qui affiche un nombre sur son icône d'accueil, sur la page Notifications et pastilles des Réglages, contribution de Deldee",
+  "changelog.r1020.48": "Les interrupteurs de pastille qui se trouvaient dans Portefeuille, Quotidiens et Activité ont été déplacés sur cette même page, contribution de Deldee",
   "changelog.r1019.0": "Ajout de la modification de légende : Modifier la légende dans le menu d'une de vos publications corrige le texte sans supprimer la publication ni perdre ses J'aime et ses commentaires",
   "changelog.r1019.1": "Les publications dont la légende a été modifiée affichent la mention Modifié à côté de l'horodatage",
   "changelog.r1019.2": "Ajout d'un sélecteur d'applications : maintenez un instant la barre en bas de l'écran et toutes les applications laissées en cours s'alignent en cartes avec aperçu en direct, touchez-en une pour y revenir",

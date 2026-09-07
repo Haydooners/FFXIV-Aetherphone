@@ -1812,6 +1812,10 @@ internal static class L
 
         public static readonly LocString[] Release1020Settings =
         {
+            new("changelog.r1020.47",
+                "Added a Show badge switch for every app that puts a count on its home icon, on the Notifications and Badges page in Settings, contributed by Deldee"),
+            new("changelog.r1020.48",
+                "Moved the badge switches that lived inside Wallet, Dailies and Activity onto that same page, contributed by Deldee"),
             new("changelog.r1020.36",
                 "Fixed the changelog slowing the game down while it was open, it now draws only the releases on screen instead of every release at once"),
         };

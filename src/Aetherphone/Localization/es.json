@@ -5120,6 +5120,8 @@
   "changelog.r1020.44": "Corregido que los porcentajes de la ventana de aparición se desviaran de Faloop en cuanto una ventana superaba su tope, y una ventana cuyos números no cuadran ahora muestra un signo de interrogación en vez de 0 %",
   "changelog.r1020.45": "Corregido que tocar una eterita en el mapa de zona pusiera una bandera en vez de llevarte allí",
   "changelog.r1020.46": "Corregido que quitar un widget dejara la pantalla de inicio sin responder hasta recargar el plugin, contribución de jambalong",
+  "changelog.r1020.47": "Añadido un interruptor Mostrar globo para cada aplicación que pone un número en su icono de inicio, en la página Notificaciones y globos de Ajustes, contribución de Deldee",
+  "changelog.r1020.48": "Los interruptores de globo que estaban dentro de Cartera, Diarias y Actividad se han movido a esa misma página, contribución de Deldee",
   "changelog.r1019.0": "Ahora se puede editar la descripción: elige Editar descripción en el menú de una de tus publicaciones para corregir el texto sin borrar la publicación ni perder sus me gusta y comentarios",
   "changelog.r1019.1": "Las publicaciones con la descripción editada muestran la marca Editado junto a la fecha",
   "changelog.r1019.2": "Añadido un selector de aplicaciones: mantén pulsada un momento la barra inferior de la pantalla y todas las aplicaciones que dejaste a medias se alinean como tarjetas con vista previa en vivo, toca una para volver a ella",
