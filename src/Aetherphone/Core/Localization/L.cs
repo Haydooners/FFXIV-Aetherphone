@@ -1775,6 +1775,24 @@ internal static class L
                 "Fixed messages splitting into several when they fit in one: backspacing over a word that had just wrapped onto a new line turned the wrap into a real line break"),
         };
 
+        public static readonly LocString[] Release1020Hunts =
+        {
+            new("changelog.r1020.39",
+                "Added hunt markers on the game's own map and minimap: turn on Show Map Markers in the Settings tab and the candidate spawn points of the zone you are looking at are drawn there, contributed by Deldee"),
+            new("changelog.r1020.40",
+                "Added a legend in the corner that names every marker and tells you which instance the markers are following"),
+            new("changelog.r1020.41",
+                "Markers follow what hunters report: a spot ruled out and the spot the S rank has claimed stand apart from the ones still in play"),
+            new("changelog.r1020.42",
+                "Spots an S rank can never use stay grey, even where an A or B rank shares the same point"),
+            new("changelog.r1020.43",
+                "Notification settings moved into a Settings tab, where Show Map Markers and Reset Tutorial sit above them and work without a Faloop account"),
+            new("changelog.r1020.44",
+                "Fixed spawn window percentages drifting away from Faloop once a window passed its cap, and a window whose numbers do not work out now shows a question mark instead of 0%"),
+            new("changelog.r1020.45",
+                "Fixed tapping an aetheryte on a zone map dropping a flag instead of taking you there"),
+        };
+
         public static readonly LocString[] Release1020AetherStream =
         {
             new("changelog.r1020.29",
@@ -1807,6 +1825,8 @@ internal static class L
                 "Fixed your social region following the character you are playing instead of the account you are signed into, every account now starts on Automatic and keeps its own choice"),
             new("changelog.r1020.34",
                 "Fixed a layout slip after icon tiles that could shift whatever was drawn next on Activity, Collections, Dailies, Fishing, Health, Muster, Timers, Venues and Yellow Pages, contributed by BluntEXE"),
+            new("changelog.r1020.46",
+                "Fixed removing a widget leaving the home screen unresponsive until the plugin was reloaded, contributed by jambalong"),
         };
 
         public static readonly LocString[] Release1019Phone =

@@ -11,6 +11,7 @@ internal static class ChangelogData
             new(L.Apps.Velvet, L.Changelog.Release1020Velvet),
             new(L.Apps.Message, L.Changelog.Release1020Message),
             new(L.Apps.Linkpearl, L.Changelog.Release1020Linkpearl),
+            new(L.Apps.Hunts, L.Changelog.Release1020Hunts),
             new(L.Apps.AetherStream, L.Changelog.Release1020AetherStream),
             new(L.Apps.Music, L.Changelog.Release1020Music),
             new(L.Apps.Settings, L.Changelog.Release1020Settings),
