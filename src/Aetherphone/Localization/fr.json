@@ -5111,6 +5111,7 @@
   "changelog.r1020.34": "Correction d'un décalage de mise en page après les tuiles d'icônes qui pouvait déplacer ce qui était dessiné ensuite dans Activité, Collections, Quotidiens, Pêche, Santé, Muster, Minuteurs, Lieux et Yellow Pages, contribué par BluntEXE",
   "changelog.r1020.35": "Correction de l'icône Musique qui portait une pastille en permanence : elle ne s'allume plus que lorsqu'une radio que vous suivez passe à l'antenne, et disparaît dès que vous ouvrez l'app",
   "changelog.r1020.36": "Correction du journal des modifications qui ralentissait le jeu tant qu'il était ouvert, il ne dessine plus que les versions présentes à l'écran au lieu de toutes à la fois",
+  "changelog.r1020.37": "Correction des morceaux qui échouaient d'emblée quand le résolveur de liens était dépassé : Musique le met désormais à jour lui-même et réessaie, comme MogCast le fait déjà",
   "changelog.r1019.0": "Ajout de la modification de légende : Modifier la légende dans le menu d'une de vos publications corrige le texte sans supprimer la publication ni perdre ses J'aime et ses commentaires",
   "changelog.r1019.1": "Les publications dont la légende a été modifiée affichent la mention Modifié à côté de l'horodatage",
   "changelog.r1019.2": "Ajout d'un sélecteur d'applications : maintenez un instant la barre en bas de l'écran et toutes les applications laissées en cours s'alignent en cartes avec aperçu en direct, touchez-en une pour y revenir",

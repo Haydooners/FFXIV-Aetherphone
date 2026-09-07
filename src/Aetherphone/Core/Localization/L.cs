@@ -1765,6 +1765,8 @@ internal static class L
         {
             new("changelog.r1020.35",
                 "Fixed the Music icon carrying a badge at all times: it now lights only when a radio station you follow goes on air, and clears when you open the app"),
+            new("changelog.r1020.37",
+                "Fixed songs failing outright when the link resolver fell behind: Music now updates it on its own and retries, the way MogCast already does"),
         };
 
         public static readonly LocString[] Release1020Settings =

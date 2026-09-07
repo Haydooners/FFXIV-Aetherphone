@@ -5111,6 +5111,7 @@
   "changelog.r1020.34": "Corrigido um deslize de layout depois dos blocos de ícone que podia deslocar o que fosse desenhado em seguida em Atividade, Coleções, Diárias, Pesca, Saúde, Muster, Temporizadores, Locais e Yellow Pages, contribuído por BluntEXE",
   "changelog.r1020.35": "Corrigido o ícone de Música que exibia um selo o tempo todo: agora ele só acende quando uma rádio que você segue entra no ar e apaga ao abrir o aplicativo",
   "changelog.r1020.36": "Corrigido o registro de alterações que deixava o jogo lento enquanto estava aberto, agora ele desenha só as versões que aparecem na tela em vez de todas de uma vez",
+  "changelog.r1020.37": "Corrigido as músicas falharem por completo quando o resolvedor de links ficava desatualizado: o Música agora o atualiza por conta própria e tenta de novo, como o MogCast já faz",
   "changelog.r1019.0": "Agora é possível editar a legenda: escolha Editar legenda no menu de uma das suas publicações para corrigir o texto sem excluir a publicação e perder as curtidas e os comentários",
   "changelog.r1019.1": "Publicações com a legenda editada mostram a marca Editado ao lado da data",
   "changelog.r1019.2": "Adicionado um alternador de aplicativos: segure por um instante a barra na parte de baixo da tela e todos os aplicativos deixados pela metade se alinham como cartões com prévia ao vivo, toque em um para voltar a ele",
