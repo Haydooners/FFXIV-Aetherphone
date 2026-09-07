@@ -1800,6 +1800,8 @@ internal static class L
 
         public static readonly LocString[] Release1020AetherStream =
         {
+            new("changelog.r1020.51",
+                "The MogCast screen tilts and rolls as well as turns, so it can hang overhead, lean back against a wall, or sit at an angle, and a Flat Screen switch drops the cinema curve"),
             new("changelog.r1020.29",
                 "Fixed long videos losing their sound after 20 to 50 minutes while the picture kept playing"),
         };
@@ -4569,6 +4571,11 @@ internal static class L
             "Saved Presets");
         public static readonly LocString CastingScale = new("aetherstream.castingScale", "Scale");
         public static readonly LocString CastingRotate = new("aetherstream.castingRotate", "Rotate");
+        public static readonly LocString CastingTilt = new("aetherstream.castingTilt", "Tilt");
+        public static readonly LocString CastingRoll = new("aetherstream.castingRoll", "Roll");
+        public static readonly LocString CastingFlatScreen = new("aetherstream.castingFlatScreen", "Flat Screen");
+        public static readonly LocString CastingFlatScreenHint = new("aetherstream.castingFlatScreenHint",
+            "Off, the screen curves gently toward you like a cinema panel. On, it stays perfectly flat.");
         public static readonly LocString CastingRecenter = new("aetherstream.castingRecenter",
             "Recenter in front of me");
 

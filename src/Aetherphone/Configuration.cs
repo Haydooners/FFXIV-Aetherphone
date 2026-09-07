@@ -39,7 +39,10 @@ internal sealed class ScreenPositionPreset
     public float Y { get; set; }
     public float Z { get; set; }
     public float Yaw { get; set; }
+    public float Pitch { get; set; }
+    public float Roll { get; set; }
     public float Scale { get; set; } = 1.0f;
+    public bool Flat { get; set; }
 }
 
 [Serializable]
@@ -168,6 +171,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool VideoStreamApprovalRequired { get; set; }
     public bool VideoStreamDiscoverable { get; set; } = true;
     public bool VideoScreenVisible { get; set; } = true;
+    public bool VideoScreenCurved { get; set; } = true;
     public List<ScreenPositionPreset> ScreenPresets { get; set; } = new();
     public List<VideoQueueRecord> VideoQueue { get; set; } = new();
     public List<VideoLocalFileMapRecord> VideoLocalFileMap { get; set; } = new();

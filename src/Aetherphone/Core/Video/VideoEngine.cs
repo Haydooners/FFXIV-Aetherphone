@@ -101,6 +101,8 @@ internal sealed class VideoEngine : IDisposable
 
     internal Vector3 ScreenPosition { get; private set; }
     internal float ScreenYaw { get; private set; }
+    internal float ScreenPitch { get; private set; }
+    internal float ScreenRoll { get; private set; }
     internal float ScreenScale { get; private set; } = 1.0f;
     internal Vector3 ScreenSpawnAnchor { get; private set; }
 
@@ -192,7 +194,7 @@ internal sealed class VideoEngine : IDisposable
                 audioPositionSeen = false;
                 lastObservedFrameVersion = player.FrameVersion;
                 active = true;
-                screenPainter.SetTransform(ScreenPosition, ScreenYaw, ScreenScale);
+                screenPainter.SetTransform(ScreenPosition, ScreenYaw, ScreenPitch, ScreenRoll, ScreenScale);
                 return PlayStart.Started;
             }
             finally
@@ -738,21 +740,29 @@ internal sealed class VideoEngine : IDisposable
         var position = localPlayer.Position + forward * DefaultScreenSpawnDistance
             + new Vector3(0, DefaultScreenHeightOffset, 0);
         ScreenSpawnAnchor = position;
-        SetScreenTransform(position, yaw + MathF.PI, 1.0f);
+        SetScreenTransform(position, yaw + MathF.PI, 0f, 0f, 1.0f);
     }
 
     internal void RecenterScreen() => SpawnScreenInFrontOfLocalPlayer();
 
-    internal void SetScreenTransform(Vector3 position, float yaw, float scale)
+    internal void SetScreenTransform(Vector3 position, float yaw, float pitch, float roll, float scale)
     {
         ScreenPosition = position;
         ScreenYaw = yaw;
+        ScreenPitch = pitch;
+        ScreenRoll = roll;
         ScreenScale = Math.Clamp(scale, MinScreenScale, MaxScreenScale);
 
         if (active)
         {
-            screenPainter.SetTransform(ScreenPosition, ScreenYaw, ScreenScale);
+            screenPainter.SetTransform(ScreenPosition, ScreenYaw, ScreenPitch, ScreenRoll, ScreenScale);
         }
+    }
+
+    internal bool ScreenCurved
+    {
+        get => screenPainter.Curved;
+        set => screenPainter.Curved = value;
     }
 
     internal List<ScreenPositionPreset> GetScreenPresets() => [.. screenPresets];
@@ -768,7 +778,7 @@ internal sealed class VideoEngine : IDisposable
         screenPresets.Add(new ScreenPositionPreset
         {
             Name = name, X = ScreenPosition.X, Y = ScreenPosition.Y, Z = ScreenPosition.Z, Yaw = ScreenYaw,
-            Scale = ScreenScale,
+            Pitch = ScreenPitch, Roll = ScreenRoll, Scale = ScreenScale, Flat = !ScreenCurved,
         });
 
         Plugin.Cfg.ScreenPresets = screenPresets;
@@ -786,13 +796,14 @@ internal sealed class VideoEngine : IDisposable
     {
         var position = new Vector3(preset.X, preset.Y, preset.Z);
         ScreenSpawnAnchor = position;
-        SetScreenTransform(position, preset.Yaw, preset.Scale);
+        ScreenCurved = !preset.Flat;
+        SetScreenTransform(position, preset.Yaw, preset.Pitch, preset.Roll, preset.Scale);
     }
 
     internal void ApplyRemoteScreenTransform(Vector3 position, float yaw, float scale)
     {
         ScreenSpawnAnchor = position;
-        SetScreenTransform(position, yaw, scale);
+        SetScreenTransform(position, yaw, ScreenPitch, ScreenRoll, scale);
     }
 
     private void PrepareScreenForSession()
