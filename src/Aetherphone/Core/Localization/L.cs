@@ -1810,6 +1810,12 @@ internal static class L
                 "Fixed songs failing outright when the link resolver fell behind: Music now updates it on its own and retries, the way MogCast already does"),
         };
 
+        public static readonly LocString[] Release1020Games =
+        {
+            new("changelog.r1020.49",
+                "Fixed Uno showing an error instead of the table when you entered a new room with the same number of players as the last one"),
+        };
+
         public static readonly LocString[] Release1020Settings =
         {
             new("changelog.r1020.47",
