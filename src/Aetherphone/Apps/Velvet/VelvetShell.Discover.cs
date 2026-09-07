@@ -49,6 +49,7 @@ internal sealed partial class VelvetShell
     private const float EndActionHeight = 38f;
     private const float EndActionGap = 10f;
     private const float EndActionTop = 22f;
+    private const string DeckSurfaceId = "velvetDeckSurface";
 
     private static readonly Vector4 DeckShadow = new(0f, 0f, 0f, 0.30f);
     private static readonly TextStyle DeckSayStyle = TextStyles.SubheadlineEmphasized;
@@ -64,6 +65,7 @@ internal sealed partial class VelvetShell
     private string deckTopId = string.Empty;
     private VelvetProfileDto? lastPassed;
     private bool deckRecycled;
+    private int deckVersion;
     private Spring cardSlide;
     private Spring passTooltipEase;
     private Spring connectTooltipEase;
@@ -103,6 +105,7 @@ internal sealed partial class VelvetShell
 
         var top = deck[0];
         var barRect = new Rect(new Vector2(body.Min.X, body.Max.Y - DeckActionBarHeight * scale), body.Max);
+        using (ImRaii.PushId(DeckSurfaceId))
         using (var surface = AppSurface.BeginEdgeToEdge(body))
         {
             DrawDeckCard(top, body, in surface);
@@ -129,7 +132,7 @@ internal sealed partial class VelvetShell
         cardExit = 0;
         filterSummaryDirty = true;
         gridLabels.Clear();
-        gridLabelsLanguage = null;
+        deckVersion++;
         deckModeSynced = configuration.VelvetDiscoverDeck;
     }
 
@@ -147,10 +150,16 @@ internal sealed partial class VelvetShell
         }
 
         deckModeSynced = deckMode;
-        deckSource = Array.Empty<VelvetProfileDto>();
-        deckTopId = string.Empty;
-        lastPassed = null;
-        gridScrollTopPending = true;
+        if (deckMode)
+        {
+            PinDeckTop();
+        }
+    }
+
+    private void ToggleDeckMode()
+    {
+        configuration.VelvetDiscoverDeck = !configuration.VelvetDiscoverDeck;
+        configuration.Save();
     }
 
     private void SyncDeck()
@@ -163,10 +172,10 @@ internal sealed partial class VelvetShell
             return;
         }
 
+        deckVersion++;
         if (!deckModeSynced && sameSource && deckMe is not null)
         {
             deckMe = me;
-            FillGridLabels(0);
             return;
         }
 
@@ -178,7 +187,6 @@ internal sealed partial class VelvetShell
         {
             deck.Clear();
             deckScores.Clear();
-            gridLabels.Clear();
         }
 
         var floor = deck.Count;
@@ -213,7 +221,10 @@ internal sealed partial class VelvetShell
             return;
         }
 
-        FillGridLabels(floor);
+        if (!appended)
+        {
+            deckTopId = string.Empty;
+        }
     }
 
     private bool ExtendsDeckSource(VelvetProfileDto[] source)
@@ -263,6 +274,7 @@ internal sealed partial class VelvetShell
                 deckScores.RemoveAt(index);
                 deck.Insert(0, pinned);
                 deckScores.Insert(0, score);
+                deckVersion++;
                 break;
             }
         }

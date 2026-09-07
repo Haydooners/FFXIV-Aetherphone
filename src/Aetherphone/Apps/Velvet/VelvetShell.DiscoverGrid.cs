@@ -6,11 +6,13 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Onboarding;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetShell
 {
+    private const string ListSurfaceId = "velvetListSurface";
     private const int GridFillBelow = 8;
     private const float GridGap = 10f;
     private const float GridCardAspect = 0.82f;
@@ -26,9 +28,9 @@ internal sealed partial class VelvetShell
     private readonly List<GridLabel> gridLabels = new();
     private readonly List<VelvetFitItem> gridFitScratch = new();
     private LanguageInfo? gridLabelsLanguage;
+    private int gridLabelsVersion = -1;
     private string gridHiddenLabel = string.Empty;
     private int gridHiddenCount = -1;
-    private bool gridScrollTopPending;
     private bool deckModeSynced;
 
     private readonly record struct GridLabel(string NameId, string MetaLine, string PhotoBadge, string Fit,
@@ -46,14 +48,9 @@ internal sealed partial class VelvetShell
         EnsureStamps();
         EnsureGridLabels();
         var scale = UiScale.Current;
-        using (var surface = AppSurface.BeginEdgeToEdge(body))
+        using (ImRaii.PushId(ListSurfaceId))
+        using (AppSurface.BeginEdgeToEdge(body))
         {
-            if (gridScrollTopPending)
-            {
-                surface.JumpToTop();
-                gridScrollTopPending = false;
-            }
-
             var drawList = ImGui.GetWindowDrawList();
             var width = ScrollLayout.StableContentWidth();
             var inset = DeckCardInset * scale;
@@ -223,24 +220,16 @@ internal sealed partial class VelvetShell
 
     private void EnsureGridLabels()
     {
-        if (ReferenceEquals(gridLabelsLanguage, Loc.Current) && gridLabels.Count == deck.Count)
+        if (gridLabelsVersion == deckVersion && ReferenceEquals(gridLabelsLanguage, Loc.Current))
         {
             return;
         }
 
-        FillGridLabels(0);
-    }
-
-    private void FillGridLabels(int from)
-    {
+        gridLabelsVersion = deckVersion;
         gridLabelsLanguage = Loc.Current;
         gridHiddenCount = -1;
-        if (gridLabels.Count > from)
-        {
-            gridLabels.RemoveRange(from, gridLabels.Count - from);
-        }
-
-        for (var index = from; index < deck.Count; index++)
+        gridLabels.Clear();
+        for (var index = 0; index < deck.Count; index++)
         {
             gridLabels.Add(GridLabelOf(deck[index]));
         }

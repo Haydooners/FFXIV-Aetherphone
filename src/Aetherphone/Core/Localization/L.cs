@@ -1727,7 +1727,7 @@ internal static class L
         public static readonly LocString[] Release1020Velvet =
         {
             new("changelog.r1020.50",
-                "Added a One person at a time switch to Velvet's settings that turns Discover into a card deck with Pass and Connect"),
+                "Added a One person at a time button to Discover's header in Velvet, which turns the list into a card deck with Pass and Connect"),
             new("changelog.r1020.2",
                 "Overhauled Velvet from top to bottom: the feed, discover, profiles, messages, the composer and the filters"),
             new("changelog.r1020.3",
@@ -4440,8 +4440,6 @@ internal static class L
         public static readonly LocString DiscoverableHelp =
             new("velvet.discoverableHelp", "When on, your profile can be found by others in Discover.");
         public static readonly LocString DeckModeLabel = new("velvet.deckModeLabel", "One person at a time");
-        public static readonly LocString DeckModeHelp = new("velvet.deckModeHelp",
-            "Meet people one card at a time with Pass and Connect, instead of scrolling through them.");
         public static readonly LocString WhoCanMessage = new("velvet.whoCanMessage", "Who can message you");
         public static readonly LocString WhoEveryone = new("velvet.whoEveryone", "Everyone");
         public static readonly LocString WhoFriends = new("velvet.whoFriends", "Friends");
