@@ -20,4 +20,10 @@ internal static class MapPixelMath
         var scale = Math.Max(sizeFactor, 1) / 100f;
         return (rawPixel - FullCanvasSize / 2f) / scale - offset;
     }
+
+    public static float ToCanvasPixel(float world, int sizeFactor, int offset)
+    {
+        var scale = Math.Max(sizeFactor, 1) / 100f;
+        return (world + offset) * scale + FullCanvasSize / 2f;
+    }
 }

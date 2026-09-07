@@ -41,7 +41,7 @@ internal sealed partial class HuntsApp : IPhoneApp
     private readonly HuntsService hunts;
     private readonly HuntMobCatalog mobCatalog;
     private readonly HuntZoneCatalog zoneCatalog;
-    private readonly HuntZoneMapTextures zoneMapTextures;
+    private readonly ZoneMapTextures zoneMapTextures;
     private readonly HuntMobRewardCatalog rewardCatalog;
     private readonly HuntCandidateCache candidateCache;
     private readonly Configuration configuration;
@@ -69,7 +69,7 @@ internal sealed partial class HuntsApp : IPhoneApp
     private readonly Comparison<HuntWindowDto> compareByPercentageDescending;
 
     public HuntsApp(HuntsService hunts, HuntMobCatalog mobCatalog, HuntZoneCatalog zoneCatalog,
-        HuntZoneMapTextures zoneMapTextures, HuntMobRewardCatalog rewardCatalog, HuntCandidateCache candidateCache,
+        ZoneMapTextures zoneMapTextures, HuntMobRewardCatalog rewardCatalog, HuntCandidateCache candidateCache,
         Configuration configuration, ConfirmService confirm, HuntsLauncher launcher, HuntsMapMarkers huntsMapMarkers)
     {
         this.hunts = hunts;

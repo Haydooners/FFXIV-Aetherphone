@@ -377,7 +377,7 @@ internal sealed partial class HuntsApp
 
         var zone = zoneCatalog.FindZone(detailMapZoneId);
         var territoryId = zoneCatalog.ResolveTerritoryId(detailMapZoneId);
-        var texture = zoneMapTextures.Resolve(territoryId);
+        var texture = zoneMapTextures.ForTerritory(territoryId);
         if (zone is null || texture is null)
         {
             detailMapHovered = false;
