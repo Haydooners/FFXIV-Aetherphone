@@ -14,18 +14,9 @@ namespace Aetherphone.Apps.Velvet;
 internal sealed partial class VelvetShell
 {
     private const float FabRadius = 27f;
-    private const float FeedConnectWidth = 76f;
-    private const float FeedConnectHeight = 28f;
-    private const float FeedConnectGap = 8f;
 
     private readonly FeedVirtualizer feedVirtualizer = new(400f);
     private readonly Dictionary<string, string[]> feedTagLabels = new(StringComparer.Ordinal);
-    private readonly HashSet<string> feedConnectedIds = new(StringComparer.Ordinal);
-    private readonly HashSet<string> feedRequestedIds = new(StringComparer.Ordinal);
-    private readonly HashSet<string> feedIncomingIds = new(StringComparer.Ordinal);
-    private VelvetConnectionDto[] feedConnectionsSource = Array.Empty<VelvetConnectionDto>();
-    private VelvetConnectionDto[] feedSentSource = Array.Empty<VelvetConnectionDto>();
-    private VelvetConnectionDto[] feedRequestsSource = Array.Empty<VelvetConnectionDto>();
     private bool feedScrollTopPending;
 
     private void DrawFeed(Rect area)
@@ -36,7 +27,6 @@ internal sealed partial class VelvetShell
             store.RefreshFeed();
         }
 
-        SyncFeedRelations();
         using (var surface = AppSurface.BeginEdgeToEdge(area))
         {
             if (feedScrollTopPending)
@@ -92,44 +82,6 @@ internal sealed partial class VelvetShell
             router.Push(VelvetView.Compose);
         }
     }
-
-    private void SyncFeedRelations()
-    {
-        if (!store.ConnectionsLoaded && !store.LoadingConnections)
-        {
-            store.RefreshConnections();
-        }
-
-        if (!store.SentRequestsLoaded && !store.LoadingSentRequests)
-        {
-            store.RefreshSentRequests();
-        }
-
-        SyncIdSet(ref feedConnectionsSource, store.Connections, feedConnectedIds);
-        SyncIdSet(ref feedSentSource, store.SentRequests, feedRequestedIds);
-        SyncIdSet(ref feedRequestsSource, store.Requests, feedIncomingIds);
-    }
-
-    private static void SyncIdSet(ref VelvetConnectionDto[] tracked, VelvetConnectionDto[] source,
-        HashSet<string> ids)
-    {
-        if (ReferenceEquals(tracked, source))
-        {
-            return;
-        }
-
-        tracked = source;
-        ids.Clear();
-        for (var index = 0; index < source.Length; index++)
-        {
-            ids.Add(source[index].UserId);
-        }
-    }
-
-    private bool CanConnectFromFeed(string ownerId) =>
-        store.ConnectionsLoaded && store.Me is { } me && me.UserId != ownerId
-        && !feedConnectedIds.Contains(ownerId) && !feedRequestedIds.Contains(ownerId)
-        && !feedIncomingIds.Contains(ownerId);
 
     private void RefreshFeed()
     {
@@ -302,17 +254,6 @@ internal sealed partial class VelvetShell
             string.Empty, entry.OwnerAvatarUrl, images, lodestone, -1, null, Frames.Of(entry.OwnerFrameId));
         var nameLeft = avatarCenter.X + avatarRadius + PostCardMetrics.NameGap * scale;
         var headerTextRight = origin.X + width - inset - 34f * scale;
-        var connectable = CanConnectFromFeed(entry.OwnerId);
-        var connectRect = default(Rect);
-        if (connectable)
-        {
-            var connectHalf = FeedConnectHeight * scale * 0.5f;
-            connectRect = new Rect(
-                new Vector2(headerTextRight - FeedConnectWidth * scale, avatarCenter.Y - connectHalf),
-                new Vector2(headerTextRight, avatarCenter.Y + connectHalf));
-            headerTextRight = connectRect.Min.X - FeedConnectGap * scale;
-        }
-
         var headerTextMaxWidth = MathF.Max(1f, headerTextRight - nameLeft);
         var nameTop = origin.Y + padY;
         var nameSize = Typography.Measure(authorName, TextStyles.Headline);
@@ -345,12 +286,6 @@ internal sealed partial class VelvetShell
                 Loc.T(L.Velvet.More)))
         {
             OpenPostSheet(entry, true);
-        }
-
-        if (connectable && SocialPill.Outline(drawList, connectRect, Loc.T(L.Velvet.Connect), VelvetInk.Shared,
-                TextStyles.FootnoteEmphasized, connectRect.Height * 0.5f, VelvetInk.Shared.ButtonFill))
-        {
-            RequestIntro(entry.OwnerId, entry.OwnerDisplayName, entry.OwnerHandle, entry.OwnerAvatarUrl);
         }
 
         var photos = PostMedia.Photos(entry.MediaUrls, entry.MediaUrl);
