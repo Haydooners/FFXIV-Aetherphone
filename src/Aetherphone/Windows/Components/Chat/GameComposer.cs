@@ -51,17 +51,15 @@ internal sealed class GameComposer
     private readonly List<DropdownMenu.Item> menuItems = new(24);
     private readonly List<string> menuKeys = new(24);
     private readonly List<string> splitScratch = new(MessageSplitter.MaxParts);
+    private readonly SoftWrapBuffer wrapped = new(SoftWrap.WrapText);
     private readonly ImGui.ImGuiInputTextCallbackPtrDelegate multilineCallback;
     private string conversationKey = string.Empty;
     private string draft = string.Empty;
-    private string display = string.Empty;
-    private string wrappedSource = string.Empty;
     private string countedSource = string.Empty;
     private string countedIndicator = string.Empty;
     private float wrappedWidth;
     private int countedBudget = -1;
     private int countedParts = 1;
-    private int lineCount = 1;
     private int capacityBytes;
     private long lastEnterMilliseconds;
     private bool wrappedMultiline;
@@ -135,7 +133,7 @@ internal sealed class GameComposer
         }
 
         Rewrap(WrapWidthOf(InnerWidth(barWidth, channel, scale), scale));
-        var visible = Math.Clamp(lineCount, MinimumLines, MaxLines);
+        var visible = Math.Clamp(wrapped.LineCount, MinimumLines, MaxLines);
         return baseHeight + (visible - 1) * ImGui.GetTextLineHeight();
     }
 
@@ -182,8 +180,7 @@ internal sealed class GameComposer
         if (Multiline != wrappedMultiline)
         {
             wrappedMultiline = Multiline;
-            wrappedSource = string.Empty;
-            wrappedWidth = 0f;
+            wrapped.Reset(draft);
         }
 
         if (Multiline)
@@ -253,10 +250,7 @@ internal sealed class GameComposer
     private void Adopt(string text)
     {
         draft = text;
-        wrappedSource = string.Empty;
-        wrappedWidth = 0f;
-        display = text;
-        lineCount = 1;
+        wrapped.Reset(text);
         pendingSync = true;
     }
 
@@ -287,7 +281,7 @@ internal sealed class GameComposer
     {
         var wrapWidth = WrapWidthOf(innerWidth, scale);
         Rewrap(wrapWidth);
-        var visible = Math.Clamp(lineCount, MinimumLines, MaxLines);
+        var visible = Math.Clamp(wrapped.LineCount, MinimumLines, MaxLines);
         var boxHeight = visible * ImGui.GetTextLineHeight() + ImGui.GetStyle().FramePadding.Y * 2f;
         ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + Metrics.Space.Sm * scale,
             (fieldMin.Y + fieldMax.Y) * 0.5f - boxHeight * 0.5f));
@@ -297,12 +291,13 @@ internal sealed class GameComposer
             focus = false;
         }
 
-        Plugin.Fonts.NoticeText(display);
+        Plugin.Fonts.NoticeText(wrapped.Display);
         var bufferBytes = capacityBytes * 4 + 1024;
+        var field = wrapped.Display;
         using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
         using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
         {
-            ImGui.InputTextMultiline("##linkpearl.composer", ref display, bufferBytes,
+            ImGui.InputTextMultiline("##linkpearl.composer", ref field, bufferBytes,
                 new Vector2(innerWidth, boxHeight),
                 ImGuiInputTextFlags.CallbackEdit | ImGuiInputTextFlags.CallbackCharFilter |
                 ImGuiInputTextFlags.CallbackAlways, multilineCallback);
@@ -350,9 +345,9 @@ internal sealed class GameComposer
     private void SyncBuffer(ImGuiInputTextCallbackDataPtr data)
     {
         data.DeleteChars(0, data.BufTextLen);
-        if (display.Length > 0)
+        if (wrapped.Display.Length > 0)
         {
-            data.InsertChars(0, display);
+            data.InsertChars(0, wrapped.Display);
         }
 
         data.CursorPos = data.BufTextLen;
@@ -382,21 +377,20 @@ internal sealed class GameComposer
     {
         var current = Encoding.UTF8.GetString(data.BufSpan[..data.BufTextLen]);
         var charCursor = CharIndexOf(current, data.CursorPos);
-        var logical = Unwrap(current, wrappedWidth, charCursor, out var logicalCursor);
+        var logical = wrapped.Merge(draft, current, charCursor, out var logicalCursor);
         logical = CapBytes(logical, capacityBytes, ref logicalCursor);
-        var wrapped = Wrap(logical, wrappedWidth);
         draft = logical;
-        wrappedSource = logical;
-        lineCount = CountLines(wrapped);
-        if (string.Equals(wrapped, current, StringComparison.Ordinal))
+        wrapped.Rewrap(logical, wrappedWidth);
+        var text = wrapped.Display;
+        if (string.Equals(text, current, StringComparison.Ordinal))
         {
             return;
         }
 
-        var displayCursor = DisplayIndexOf(wrapped, logical, logicalCursor);
-        var byteCursor = Encoding.UTF8.GetByteCount(wrapped.AsSpan(0, displayCursor));
+        var displayCursor = wrapped.DisplayIndexOf(logicalCursor);
+        var byteCursor = Encoding.UTF8.GetByteCount(text.AsSpan(0, displayCursor));
         data.DeleteChars(0, data.BufTextLen);
-        data.InsertChars(0, wrapped);
+        data.InsertChars(0, text);
         data.CursorPos = byteCursor;
         data.SelectionStart = byteCursor;
         data.SelectionEnd = byteCursor;
@@ -404,15 +398,11 @@ internal sealed class GameComposer
 
     private void Rewrap(float width)
     {
-        if (MathF.Abs(width - wrappedWidth) < 0.5f && string.Equals(wrappedSource, draft, StringComparison.Ordinal))
-        {
-            return;
-        }
-
         wrappedWidth = width;
-        wrappedSource = draft;
-        display = Wrap(draft, width);
-        lineCount = CountLines(display);
+        if (wrapped.Rewrap(draft, width))
+        {
+            pendingSync = true;
+        }
     }
 
     private bool ConsumeEnter()
@@ -516,110 +506,6 @@ internal sealed class GameComposer
     private static float WrapWidthOf(float innerWidth, float scale) =>
         MathF.Max(1f, innerWidth - ImGui.GetStyle().FramePadding.X * 2f - 4f * scale);
 
-    private static string Wrap(string logical, float width)
-    {
-        if (logical.IndexOf('\n') < 0)
-        {
-            return SoftWrap.WrapText(logical, width);
-        }
-
-        var builder = new StringBuilder(logical.Length + 16);
-        var start = 0;
-        while (true)
-        {
-            var found = logical.IndexOf('\n', start);
-            var stop = found < 0 ? logical.Length : found;
-            builder.Append(SoftWrap.WrapText(logical[start..stop], width));
-            if (found < 0)
-            {
-                break;
-            }
-
-            builder.Append('\n');
-            start = found + 1;
-        }
-
-        return builder.ToString();
-    }
-
-    private static string Unwrap(string display, float width, int displayCursor, out int logicalCursor)
-    {
-        if (display.IndexOf('\n') < 0)
-        {
-            logicalCursor = Math.Clamp(displayCursor, 0, display.Length);
-            return display;
-        }
-
-        var builder = new StringBuilder(display.Length);
-        var lineStart = 0;
-        var index = 0;
-        logicalCursor = -1;
-        while (index < display.Length)
-        {
-            if (index == displayCursor)
-            {
-                logicalCursor = builder.Length;
-            }
-
-            if (display[index] != '\n')
-            {
-                builder.Append(display[index]);
-                index++;
-                continue;
-            }
-
-            if (!IsSoftBreak(display, lineStart, index, width))
-            {
-                builder.Append('\n');
-            }
-
-            index++;
-            lineStart = index;
-        }
-
-        if (logicalCursor < 0)
-        {
-            logicalCursor = builder.Length;
-        }
-
-        return builder.ToString();
-    }
-
-    private static bool IsSoftBreak(string display, int lineStart, int newlineIndex, float width)
-    {
-        var wordEnd = newlineIndex + 1;
-        while (wordEnd < display.Length && display[wordEnd] != '\n' && !char.IsWhiteSpace(display[wordEnd]))
-        {
-            wordEnd++;
-        }
-
-        if (wordEnd == newlineIndex + 1)
-        {
-            return false;
-        }
-
-        var probe = string.Concat(display.AsSpan(lineStart, newlineIndex - lineStart),
-            display.AsSpan(newlineIndex + 1, wordEnd - newlineIndex - 1));
-        return SoftWrap.WrapText(probe, width).Contains('\n');
-    }
-
-    private static int DisplayIndexOf(string display, string logical, int logicalCursor)
-    {
-        var logicalIndex = 0;
-        var displayIndex = 0;
-        while (displayIndex < display.Length && logicalIndex < logicalCursor)
-        {
-            if (logicalIndex < logical.Length && display[displayIndex] == logical[logicalIndex])
-            {
-                logicalIndex++;
-            }
-
-            displayIndex++;
-        }
-
-        return displayIndex;
-    }
-
     private static int CharIndexOf(string text, int byteIndex)
     {
         if (byteIndex <= 0)
@@ -689,20 +575,6 @@ internal sealed class GameComposer
         }
 
         return false;
-    }
-
-    private static int CountLines(string text)
-    {
-        var lines = 1;
-        for (var index = 0; index < text.Length; index++)
-        {
-            if (text[index] == '\n')
-            {
-                lines++;
-            }
-        }
-
-        return lines;
     }
 
     private static float ChipWidthOf(GameChannel channel, float scale) =>
