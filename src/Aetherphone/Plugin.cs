@@ -7,6 +7,7 @@ using Aetherphone.Core.Game;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Message;
 using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Platform;
@@ -75,7 +76,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly AetherStreamScreenWindow screenWindow;
     private readonly UpdateChipWindow updateChipWindow;
     private readonly LinkpearlPopouts linkpearlPopouts;
-    private readonly MessagePopouts messagePopouts;
+    private readonly IMessagePopouts messagePopouts;
     private readonly PopoutPresence linkpearlPresence;
     private readonly LinkpearlHotkey linkpearlHotkey;
     private readonly AppGate linkpearlGate;
