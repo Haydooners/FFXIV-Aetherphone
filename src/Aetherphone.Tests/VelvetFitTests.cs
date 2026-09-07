@@ -1,6 +1,7 @@
 using Aetherphone.Apps.Velvet;
 using Aetherphone.Apps.Velvet.Kit;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Localization;
 using Xunit;
 
 namespace Aetherphone.Tests;
@@ -101,10 +102,55 @@ public sealed class VelvetFitTests
         Assert.True(VelvetFit.Score(null, complete) > VelvetFit.Score(null, empty));
     }
 
+    [Fact]
+    public void MatchMarksSharedTokensAndClashesAgainstTheViewer()
+    {
+        var me = Profile("me", kinks: new[] { "praise" }, limits: new[] { "gore" }, tags: new[] { "venue" },
+            lookingFor: VelvetIntent.Irl | VelvetIntent.Friends);
+
+        Assert.Equal(VelvetTokenMatch.Shared, VelvetFit.Match(me, VelvetTokenGroup.Kinks, "Praise"));
+        Assert.Equal(VelvetTokenMatch.Conflict, VelvetFit.Match(me, VelvetTokenGroup.Kinks, "gore"));
+        Assert.Equal(VelvetTokenMatch.None, VelvetFit.Match(me, VelvetTokenGroup.Kinks, "rigger"));
+        Assert.Equal(VelvetTokenMatch.Shared, VelvetFit.Match(me, VelvetTokenGroup.Tags, "venue"));
+        Assert.Equal(VelvetTokenMatch.None, VelvetFit.Match(me, VelvetTokenGroup.Tags, "praise"));
+        Assert.Equal(VelvetTokenMatch.Conflict, VelvetFit.Match(me, VelvetTokenGroup.Limits, "praise"));
+        Assert.Equal(VelvetTokenMatch.Conflict, VelvetFit.Match(me, VelvetTokenGroup.Limits, "irl"));
+        Assert.Equal(VelvetTokenMatch.Shared, VelvetFit.Match(me, VelvetTokenGroup.Limits, "gore"));
+        Assert.Equal(VelvetTokenMatch.None, VelvetFit.Match(me, VelvetTokenGroup.None, "praise"));
+        Assert.Equal(VelvetTokenMatch.None, VelvetFit.Match(null, VelvetTokenGroup.Kinks, "praise"));
+    }
+
+    [Fact]
+    public void SharedLanguageIsAFitRowAndAGapIsAWarning()
+    {
+        var english = SpokenLanguages.FlagOf("en");
+        var german = SpokenLanguages.FlagOf("de");
+        var japanese = SpokenLanguages.FlagOf("ja");
+        var me = Profile("me", languages: english | german);
+        var bilingual = Profile("bilingual", languages: german | japanese);
+        var japaneseOnly = Profile("japanese", languages: japanese);
+        var unset = Profile("unset");
+        var items = new List<VelvetFitItem>();
+
+        VelvetFit.Describe(me, bilingual, items);
+        var shared = Assert.Single(items);
+        Assert.Equal(VelvetFitKind.SharedLanguage, shared.Kind);
+        Assert.Equal(german, shared.Value);
+
+        VelvetFit.Describe(me, japaneseOnly, items);
+        Assert.Equal(VelvetFitKind.NoSharedLanguage, Assert.Single(items).Kind);
+
+        VelvetFit.Describe(me, unset, items);
+        Assert.Empty(items);
+
+        Assert.True(VelvetFit.Score(me, bilingual) > VelvetFit.Score(me, unset));
+        Assert.True(VelvetFit.Score(me, unset) > VelvetFit.Score(me, japaneseOnly));
+    }
+
     private static VelvetProfileDto Profile(string id, string[]? kinks = null, string[]? limits = null,
         string[]? tags = null, int lookingFor = VelvetIntent.Friends, string? avatar = "https://example/avatar.png",
-        string intro = "Hello there") =>
+        string intro = "Hello there", int languages = 0) =>
         new(id, id, id, 0, intro, string.Empty, string.Empty, tags ?? Array.Empty<string>(),
             limits ?? Array.Empty<string>(), lookingFor, 0, 0, string.Empty, string.Empty, 0, true, avatar, 0,
-            Kinks: kinks);
+            Kinks: kinks, Languages: languages);
 }

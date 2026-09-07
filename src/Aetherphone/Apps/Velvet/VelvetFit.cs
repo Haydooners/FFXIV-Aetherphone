@@ -1,5 +1,6 @@
 using Aetherphone.Apps.Velvet.Kit;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Localization;
 
 namespace Aetherphone.Apps.Velvet;
 
@@ -8,8 +9,25 @@ internal enum VelvetFitKind
     SharedKinks,
     SharedIntent,
     SharedTag,
+    SharedLanguage,
     Conflict,
+    NoSharedLanguage,
     NoConflicts,
+}
+
+internal enum VelvetTokenGroup
+{
+    None,
+    Kinks,
+    Tags,
+    Limits,
+}
+
+internal enum VelvetTokenMatch
+{
+    None,
+    Shared,
+    Conflict,
 }
 
 internal readonly record struct VelvetFitItem(VelvetFitKind Kind, string Token, int Value);
@@ -25,6 +43,8 @@ internal static class VelvetFit
     private const int IntroWeight = 2;
     private const int SharedKinkWeight = 2;
     private const int ConflictWeight = 2;
+    private const int SharedLanguageWeight = 2;
+    private const int LanguageGapWeight = 2;
     private const int OnlineWeight = 40;
     private const int AwayWeight = 20;
     private const string IrlLimit = "irl";
@@ -44,6 +64,7 @@ internal static class VelvetFit
         }
 
         var conflicts = AddConflicts(me, other, items);
+        AddLanguage(me, other, items);
         var sharedIntent = me.LookingFor & other.LookingFor & DeliberateIntents;
         if (sharedIntent != 0)
         {
@@ -101,8 +122,35 @@ internal static class VelvetFit
         score += BitOperations.PopCount((uint)(me.LookingFor & other.LookingFor & DeliberateIntents));
         score += SharedCount(me.Tags, other.Tags);
         score -= ConflictCount(me, other) * ConflictWeight;
+        score += LanguageScore(me, other);
         return score;
     }
+
+    private static int LanguageScore(VelvetProfileDto me, VelvetProfileDto other)
+    {
+        if (!BothChoseLanguages(me, other))
+        {
+            return 0;
+        }
+
+        return VelvetLanguages.Shared(me.Languages, other.Languages) != 0 ? SharedLanguageWeight : -LanguageGapWeight;
+    }
+
+    private static void AddLanguage(VelvetProfileDto me, VelvetProfileDto other, List<VelvetFitItem> items)
+    {
+        if (!BothChoseLanguages(me, other))
+        {
+            return;
+        }
+
+        var shared = VelvetLanguages.Shared(me.Languages, other.Languages);
+        items.Add(shared != 0
+            ? new VelvetFitItem(VelvetFitKind.SharedLanguage, string.Empty, SpokenLanguages.Primary(shared))
+            : new VelvetFitItem(VelvetFitKind.NoSharedLanguage, string.Empty, 0));
+    }
+
+    private static bool BothChoseLanguages(VelvetProfileDto me, VelvetProfileDto other) =>
+        VelvetLanguages.Sanitize(me.Languages) != 0 && VelvetLanguages.Sanitize(other.Languages) != 0;
 
     public static int SharedCount(string[]? first, string[]? second)
     {
@@ -125,6 +173,33 @@ internal static class VelvetFit
         var count = SharedCount(other.Limits, me.Kinks) + SharedCount(me.Limits, other.Kinks);
         return IrlConflict(me, other) ? count + 1 : count;
     }
+
+    public static VelvetTokenMatch Match(VelvetProfileDto? me, VelvetTokenGroup group, string token)
+    {
+        if (me is null)
+        {
+            return VelvetTokenMatch.None;
+        }
+
+        switch (group)
+        {
+            case VelvetTokenGroup.Kinks:
+                return Contains(me.Limits, token) ? VelvetTokenMatch.Conflict
+                    : Contains(me.Kinks, token) ? VelvetTokenMatch.Shared : VelvetTokenMatch.None;
+            case VelvetTokenGroup.Tags:
+                return Contains(me.Tags, token) ? VelvetTokenMatch.Shared : VelvetTokenMatch.None;
+            case VelvetTokenGroup.Limits:
+                return LimitClashes(me, token) ? VelvetTokenMatch.Conflict
+                    : Contains(me.Limits, token) ? VelvetTokenMatch.Shared : VelvetTokenMatch.None;
+            default:
+                return VelvetTokenMatch.None;
+        }
+    }
+
+    private static bool LimitClashes(VelvetProfileDto me, string token) =>
+        Contains(me.Kinks, token)
+        || (string.Equals(token, IrlLimit, StringComparison.OrdinalIgnoreCase)
+            && VelvetIntent.Has(me.LookingFor, VelvetIntent.Irl));
 
     private static int AddConflicts(VelvetProfileDto me, VelvetProfileDto other, List<VelvetFitItem> items)
     {

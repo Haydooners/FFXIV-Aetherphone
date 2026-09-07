@@ -30,35 +30,6 @@ internal static class VSectionHeader
         ImGui.Dummy(new Vector2(width, 22f * scale));
     }
 
-    public static void Bar(string label, string trailing = "")
-    {
-        var scale = UiScale.Current;
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var drawList = ImGui.GetWindowDrawList();
-        var barWidth = 3f * scale;
-        var barHeight = 15f * scale;
-        Squircle.Fill(drawList, new Vector2(origin.X, origin.Y + 2f * scale),
-            new Vector2(origin.X + barWidth, origin.Y + 2f * scale + barHeight), barWidth * 0.5f,
-            VelvetTheme.Rose.Packed());
-        var barLabelLeft = origin.X + barWidth + 9f * scale;
-        var barLabelMaxWidth = origin.X + width - barLabelLeft;
-        if (trailing.Length > 0)
-        {
-            var size = Typography.Measure(trailing, TextStyles.Subheadline);
-            barLabelMaxWidth -= size.X + 8f * scale;
-            Typography.Draw(new Vector2(origin.X + width - size.X, origin.Y + 1f * scale), trailing,
-                VelvetTheme.MutedInk, TextStyles.Subheadline);
-        }
-
-        barLabelMaxWidth = MathF.Max(1f, barLabelMaxWidth);
-        Typography.Draw(new Vector2(barLabelLeft, origin.Y), Typography.FitText(label, barLabelMaxWidth,
-            TextStyles.Headline), VelvetTheme.TitleInk, TextStyles.Headline);
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, 26f * scale));
-    }
-
     public static void Card(string glyph, string label, string trailing = "")
     {
         var scale = UiScale.Current;

@@ -191,6 +191,7 @@ internal sealed partial class VelvetShell : IResumableApp
         router.Reset();
         activeTab = VelvetPage.Discover;
         messagesTab = VelvetMessagesTab.Chats;
+        ResetChatsSearch();
         profileTab = VelvetProfileTab.About;
         avatarLightbox.Reset();
         store.ClearDiscover();
@@ -341,7 +342,7 @@ internal sealed partial class VelvetShell : IResumableApp
         if (sinceHeartbeat >= HeartbeatSeconds)
         {
             sinceHeartbeat = 0f;
-            store.Heartbeat(SocialRegion.EffectiveCode(configuration, gameData), LocalRaceIsLalafell, localRaceId);
+            store.Heartbeat(LocalRaceIsLalafell, localRaceId);
         }
     }
 
@@ -451,11 +452,17 @@ internal sealed partial class VelvetShell : IResumableApp
             case VelvetScreenId.PostTags:
                 DrawPostTags(area);
                 break;
+            case VelvetScreenId.TagPosts:
+                DrawTagPosts(area, view.Arg ?? string.Empty);
+                break;
             case VelvetScreenId.EditCaption:
                 DrawEditCaption(area);
                 break;
             case VelvetScreenId.Encryption:
                 threadView.DrawEncryptionScreen(area);
+                break;
+            case VelvetScreenId.UserPosts:
+                DrawUserPosts(area, view.Arg ?? string.Empty);
                 break;
             default:
                 DrawRoot(area);
@@ -491,6 +498,11 @@ internal sealed partial class VelvetShell : IResumableApp
         }
 
         DrawRootTopBar(headerRect);
+
+        if (activeTab == VelvetPage.Feed)
+        {
+            bodyRect = DrawFeedScopeTabs(bodyRect);
+        }
 
         switch (activeTab)
         {

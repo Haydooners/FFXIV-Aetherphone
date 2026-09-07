@@ -231,7 +231,11 @@ internal sealed partial class VelvetShell
             if (post.Tags.Length > 0)
             {
                 ImGui.SetCursorScreenPos(new Vector2(innerX, ImGui.GetCursorScreenPos().Y));
-                DrawDisplayTokens(post.Tags, VChipStyle.Tint, VelvetTheme.Rose, innerWidth);
+                var tappedTag = DrawDisplayTokens(post.Tags, VelvetTheme.Rose, innerWidth);
+                if (tappedTag >= 0)
+                {
+                    OpenTagPosts(post.Tags[tappedTag]);
+                }
             }
 
             var viewerOwnsPost = store.Me is { } viewer && viewer.UserId == post.OwnerId;

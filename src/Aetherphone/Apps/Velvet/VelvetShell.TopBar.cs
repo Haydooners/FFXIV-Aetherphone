@@ -1,5 +1,6 @@
 using Aetherphone.Apps.Velvet.Kit;
 using Aetherphone.Core;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Onboarding;
@@ -20,8 +21,19 @@ internal sealed partial class VelvetShell
     private const float SpinnerGap = 12f;
     private const float SpinnerRadius = 7f;
     private const float HeaderAnchorHalf = 18f;
+    private const float FeedTabRowHeight = 44f;
+    private const float FeedTabUnderline = 2f;
+    private const float FeedTabSmoothTime = 0.09f;
 
     private static readonly TextStyle WordmarkStyle = new(1.4f, FontWeight.Bold);
+    private static readonly TextStyle FeedTabStyle = new(1.07f, FontWeight.SemiBold);
+    private static readonly TextStyle FeedTabIdleStyle = new(1.07f, FontWeight.Medium);
+    private static readonly UnderlineTabStyle FeedTabsStyle = new(FeedTabStyle, FeedTabIdleStyle,
+        VelvetTheme.TitleInk, VelvetTheme.MutedInk, VelvetTheme.Rose, FeedTabUnderline, SocialChrome.CellPadX,
+        FeedTabSmoothTime);
+
+    private Spring feedTabSlide;
+
     private void DrawRootTopBar(Rect area)
     {
         var scale = UiScale.Current;
@@ -66,6 +78,7 @@ internal sealed partial class VelvetShell
             VelvetPage.Discover => 3,
             VelvetPage.Feed => 2,
             VelvetPage.Me => 2,
+            VelvetPage.Messages => 2,
             _ => 1,
         };
 
@@ -117,6 +130,15 @@ internal sealed partial class VelvetShell
             case VelvetPage.Feed:
                 DrawFilterIcon(area, drawList, radius, VelvetPage.Feed, null);
                 break;
+            case VelvetPage.Messages:
+                if (messagesTab == VelvetMessagesTab.Chats && SocialChrome.DrawHeaderIcon(drawList,
+                        SocialChrome.HeaderSlot(area, 1), radius, PhoneIcons.Search, TopBarIconSize,
+                        Loc.T(L.Common.Search), VelvetInk.Shared, VelvetTheme.TitleInk, chatsSearchOpen))
+                {
+                    ToggleChatsSearch();
+                }
+
+                break;
             case VelvetPage.Me:
                 if (store.Me is { } profile && SocialChrome.DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 1),
                         radius, PhoneIcons.Dots, TopBarIconSize, Loc.T(L.Velvet.More), VelvetInk.Shared,
@@ -127,6 +149,25 @@ internal sealed partial class VelvetShell
 
                 break;
         }
+    }
+
+    private Rect DrawFeedScopeTabs(Rect area)
+    {
+        var scale = UiScale.Current;
+        var row = new Rect(area.Min, new Vector2(area.Max.X, area.Min.Y + FeedTabRowHeight * scale));
+        var picked = UnderlineTabs.Draw(row, Loc.T(L.Velvet.FeedScopeAll), Loc.T(L.Velvet.FeedScopeConnections),
+            store.FeedScope == VelvetFeedScope.Connections, ref feedTabSlide, VelvetInk.Shared, FeedTabsStyle);
+        if (picked >= 0)
+        {
+            var scope = picked == 1 ? VelvetFeedScope.Connections : VelvetFeedScope.All;
+            if (scope != store.FeedScope)
+            {
+                store.SetFeedScope(scope);
+                feedScrollTopPending = true;
+            }
+        }
+
+        return new Rect(new Vector2(area.Min.X, row.Max.Y), area.Max);
     }
 
     private void DrawFilterIcon(Rect area, ImDrawListPtr drawList, float radius, VelvetPage surface, string? anchorKey)

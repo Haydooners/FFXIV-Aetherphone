@@ -79,6 +79,8 @@ internal static class AppSurface
 
         public readonly bool Dragging => surface.Dragging;
 
+        public readonly bool Scrolling => surface.Scrolling;
+
         public readonly bool FreshVisit => freshVisit;
 
         public readonly void JumpToTop() => surface.JumpToTop();

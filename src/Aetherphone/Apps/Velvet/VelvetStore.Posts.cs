@@ -18,14 +18,143 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetStore
 {
+    private readonly RetryGate userPostsGate = new RetryGate(TimeSpan.FromSeconds(15));
+    private volatile string? userPostsUserId;
+    private volatile VelvetPostDto[] userPosts = Array.Empty<VelvetPostDto>();
+    private volatile int userPostsTotal;
+    private volatile string? userPostsCursor;
+    private volatile bool userPostsLoadingMore;
+    private volatile bool userPostsLoading;
+    private volatile bool userPostsLoaded;
+    private volatile bool userPostsFailed;
+
+    private readonly RetryGate tagGate = new RetryGate(TimeSpan.FromSeconds(15));
+    private readonly FeedLane<VelvetPostDto> tagLane = new(ByNewestFirst, ByCreatedAtUnix);
+    private volatile VelvetDiscoverFilter tagFilter = VelvetDiscoverFilter.Empty;
+    private volatile string[] tagQuery = Array.Empty<string>();
+    private volatile string tagToken = string.Empty;
+    private volatile bool tagPostsLoaded;
+    private volatile int tagEpoch;
+
+    public string? UserPostsUserId => userPostsUserId;
+    public VelvetPostDto[] UserPosts => userPosts;
+    public int UserPostsTotal => userPostsTotal;
+    public bool UserPostsLoaded => userPostsLoaded;
+    public bool UserPostsFailed => userPostsFailed;
+    public bool UserPostsLoadingMore => userPostsLoadingMore;
+    public bool HasMoreUserPosts => userPostsCursor is not null;
+
+    public string TagToken => tagToken;
+    public VelvetPostDto[] TagPosts => tagLane.Items;
+    public bool TagPostsLoaded => tagPostsLoaded;
+    public bool TagPostsLoadingMore => tagLane.LoadingMore;
+    public bool HasMoreTagPosts => tagLane.HasMore;
+    public ITrimmable TagPostsSource => tagLane;
+
+    public void EnsureUserPosts(string userId)
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        if (userPostsUserId == userId && (userPostsLoaded || userPostsLoading))
+        {
+            return;
+        }
+
+        if (userPostsUserId != userId)
+        {
+            userPostsGate.Reset();
+        }
+
+        if (!userPostsGate.TryPass())
+        {
+            return;
+        }
+
+        userPostsUserId = userId;
+        userPosts = Array.Empty<VelvetPostDto>();
+        userPostsTotal = 0;
+        userPostsCursor = null;
+        userPostsLoaded = false;
+        userPostsFailed = false;
+        userPostsLoading = true;
+        work.Run("user posts", async token =>
+        {
+            var page = await client.UserPostsAsync(userId, null, token).ConfigureAwait(false);
+            if (userPostsUserId != userId)
+            {
+                return;
+            }
+
+            if (page is null)
+            {
+                userPostsFailed = true;
+                return;
+            }
+
+            userPosts = page.Items;
+            userPostsTotal = page.TotalCount;
+            userPostsCursor = page.NextCursor;
+            userPostsLoaded = true;
+        }, () => userPostsLoading = false);
+    }
+
+    public void LoadMoreUserPosts()
+    {
+        var userId = userPostsUserId;
+        var cursor = userPostsCursor;
+        if (!session.IsSignedIn || userId is null || cursor is null || userPostsLoadingMore || userPostsLoading)
+        {
+            return;
+        }
+
+        userPostsLoadingMore = true;
+        work.Run("user posts more", async token =>
+        {
+            var page = await client.UserPostsAsync(userId, cursor, token).ConfigureAwait(false);
+            if (page is null || userPostsUserId != userId)
+            {
+                return;
+            }
+
+            userPosts = CopyOnWrite.AppendPageById(userPosts, page.Items);
+            userPostsTotal = page.TotalCount;
+            userPostsCursor = page.NextCursor;
+        }, () => userPostsLoadingMore = false);
+    }
+
+    private void ResetTagPosts()
+    {
+        tagEpoch++;
+        tagToken = string.Empty;
+        tagQuery = Array.Empty<string>();
+        tagFilter = VelvetDiscoverFilter.Empty;
+        tagPostsLoaded = false;
+        tagGate.Reset();
+        tagLane.Clear();
+    }
+
+    private void ResetUserPosts()
+    {
+        userPostsUserId = null;
+        userPosts = Array.Empty<VelvetPostDto>();
+        userPostsTotal = 0;
+        userPostsCursor = null;
+        userPostsLoaded = false;
+        userPostsFailed = false;
+    }
+
     public void SetFeedScope(VelvetFeedScope scope)
     {
         feedScope = (int)scope;
     }
 
-    public void SetFeedFilter(VelvetDiscoverFilter filter, string region)
+    public void SetFeedFilter(VelvetDiscoverFilter filter, string region, string[] postTags)
     {
-        if (feedFilter.Matches(filter) && string.Equals(feedRegion, region, StringComparison.Ordinal))
+        if (feedFilter.Matches(filter) && string.Equals(feedRegion, region, StringComparison.Ordinal)
+            && VelvetDiscoverFilter.SameTokens(feedPostTags, postTags))
         {
             return;
         }
@@ -33,6 +162,7 @@ internal sealed partial class VelvetStore
         feedEpoch++;
         feedFilter = filter;
         feedRegion = region;
+        feedPostTags = postTags;
         for (var index = 0; index < feedLanes.Length; index++)
         {
             feedLanes[index].Clear();
@@ -55,10 +185,12 @@ internal sealed partial class VelvetStore
         var epoch = feedEpoch;
         var filter = feedFilter;
         var region = feedRegion;
+        var postTags = feedPostTags;
         lane.Loading = true;
         work.Run("feed", async token =>
         {
-            var page = await client.FeedAsync(ScopeKey(scope), filter, region, null, token).ConfigureAwait(false);
+            var page = await client.FeedAsync(ScopeKey(scope), filter, region, postTags, null, token)
+                .ConfigureAwait(false);
             if (page is not null && epoch == feedEpoch)
             {
                 lane.ApplyRefresh(page.Items, page.NextCursor);
@@ -100,15 +232,89 @@ internal sealed partial class VelvetStore
         var epoch = feedEpoch;
         var filter = feedFilter;
         var region = feedRegion;
+        var postTags = feedPostTags;
         lane.LoadingMore = true;
         work.Run("feed more", async token =>
         {
-            var page = await client.FeedAsync(ScopeKey(scope), filter, region, cursor, token).ConfigureAwait(false);
+            var page = await client.FeedAsync(ScopeKey(scope), filter, region, postTags, cursor, token)
+                .ConfigureAwait(false);
             if (page is not null && epoch == feedEpoch)
             {
                 lane.ApplyMore(page.Items, page.NextCursor);
             }
         }, () => lane.LoadingMore = false);
+    }
+
+    public void EnsureTagPosts(string token, VelvetDiscoverFilter filter)
+    {
+        if (!session.IsSignedIn)
+        {
+            return;
+        }
+
+        var sameQuery = string.Equals(tagToken, token, StringComparison.Ordinal) && tagFilter.Matches(filter);
+        if (sameQuery && (tagPostsLoaded || tagLane.Loading))
+        {
+            return;
+        }
+
+        if (!sameQuery)
+        {
+            tagGate.Reset();
+        }
+
+        if (!tagGate.TryPass())
+        {
+            return;
+        }
+
+        var epoch = ++tagEpoch;
+        var query = new[] { token };
+        tagToken = token;
+        tagQuery = query;
+        tagFilter = filter;
+        tagPostsLoaded = false;
+        tagLane.Clear();
+        tagLane.Loading = true;
+        work.Run("tag posts", async cancel =>
+        {
+            var page = await client.FeedAsync("all", filter, string.Empty, query, null, cancel).ConfigureAwait(false);
+            if (page is null || epoch != tagEpoch)
+            {
+                return;
+            }
+
+            tagLane.ApplyRefresh(page.Items, page.NextCursor);
+            tagPostsLoaded = true;
+        }, () =>
+        {
+            if (epoch == tagEpoch)
+            {
+                tagLane.Loading = false;
+            }
+        });
+    }
+
+    public void LoadMoreTagPosts()
+    {
+        var cursor = tagLane.Cursor;
+        if (!session.IsSignedIn || cursor is null || tagLane.LoadingMore || tagLane.Loading)
+        {
+            return;
+        }
+
+        var epoch = tagEpoch;
+        var filter = tagFilter;
+        var query = tagQuery;
+        tagLane.LoadingMore = true;
+        work.Run("tag posts more", async cancel =>
+        {
+            var page = await client.FeedAsync("all", filter, string.Empty, query, cursor, cancel).ConfigureAwait(false);
+            if (page is not null && epoch == tagEpoch)
+            {
+                tagLane.ApplyMore(page.Items, page.NextCursor);
+            }
+        }, () => tagLane.LoadingMore = false);
     }
 
     private static string ScopeKey(VelvetFeedScope scope) =>
@@ -421,6 +627,7 @@ internal sealed partial class VelvetStore
         }
 
         userPosts = CopyOnWrite.Replace(userPosts, post);
+        tagLane.Items = CopyOnWrite.Replace(tagLane.Items, post);
         if (fetchedPost?.Id == post.Id)
         {
             fetchedPost = post;

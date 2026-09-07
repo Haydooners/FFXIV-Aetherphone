@@ -108,6 +108,7 @@ internal sealed partial class MessageApp
         {
             configuration.MessageStarredMessages.Remove(entry);
             configuration.Save();
+            threadView.InvalidateTranscript();
         }
         else if (cell.Tapped && !overUnstar)
         {

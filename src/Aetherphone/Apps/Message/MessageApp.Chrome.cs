@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Message;
 using Aetherphone.Core.Social;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
@@ -12,6 +13,11 @@ namespace Aetherphone.Apps.Message;
 internal sealed partial class MessageApp
 {
     private const float CellPadX = SocialChrome.CellPadX;
+    private const float PresenceDotFactor = 0.22f;
+    private const float PresenceDotMinRadius = 3.5f;
+    private const float PresenceDotRing = 2f;
+    private const float PresenceDotOffset = 0.72f;
+    private const int PresenceDotSegments = 20;
     private const float HeaderIconSize = 24f;
     private const float ActionRowHeight = 56f;
     private const float ActionTileRadius = 20f;
@@ -35,6 +41,7 @@ internal sealed partial class MessageApp
     private static readonly TextStyle RowMetaStyle = TextStyles.Footnote;
     private static readonly TextStyle SectionStyle = TextStyles.FootnoteEmphasized;
     private static readonly TextStyle RoleTagStyle = TextStyles.Caption1;
+    private static readonly Vector4 OnlineDot = new(0.204f, 0.816f, 0.478f, 1f);
 
     private SocialInk ink = MessageThemes.InkFor(string.Empty);
     private MessageTheme activeTheme = MessageThemes.All[0];
@@ -76,8 +83,14 @@ internal sealed partial class MessageApp
         FeedCell.Hairline(drawList, textLeft, cell.Bounds.Max.X, cell.Bounds.Max.Y, ui.Hairline);
     }
 
-    private void DrawConversationAvatar(ImDrawListPtr drawList, ConversationDto item, Vector2 center, float radius) =>
+    private void DrawConversationAvatar(ImDrawListPtr drawList, ConversationDto item, Vector2 center, float radius)
+    {
         ConversationAvatar.Draw(drawList, item, center, radius, theme, ui, images, lodestone);
+        if (!item.IsGroup && ChatPresence.IsOnline(item.Presence))
+        {
+            DrawPresenceDot(drawList, center, radius);
+        }
+    }
 
     private void DrawGroupAvatar(ImDrawListPtr drawList, Vector2 center, float radius, string title,
         string? avatarUrl) =>
@@ -87,6 +100,21 @@ internal sealed partial class MessageApp
     {
         AvatarView.DrawRemote(drawList, center, radius, theme, ContactBook.DisplayLabel(contact), string.Empty,
             contact.AvatarUrl, images, lodestone, 0.95f, 32, 1f, Frames.Of(contact.FrameId));
+        if (ChatPresence.IsOnline(contact.Presence))
+        {
+            DrawPresenceDot(drawList, center, radius);
+        }
+    }
+
+    private void DrawPresenceDot(ImDrawListPtr drawList, Vector2 avatarCenter, float avatarRadius)
+    {
+        var scale = UiScale.Current;
+        var dotRadius = MathF.Max(PresenceDotMinRadius * scale, avatarRadius * PresenceDotFactor);
+        var offset = avatarRadius * PresenceDotOffset;
+        var center = new Vector2(avatarCenter.X + offset, avatarCenter.Y + offset);
+        drawList.AddCircleFilled(center, dotRadius + PresenceDotRing * scale,
+            ImGui.GetColorU32(ui.Palette.BackdropTop), PresenceDotSegments);
+        drawList.AddCircleFilled(center, dotRadius, ImGui.GetColorU32(OnlineDot), PresenceDotSegments);
     }
 
     private void DrawMemberAvatar(ImDrawListPtr drawList, ConversationMemberDto member, Vector2 center, float radius)

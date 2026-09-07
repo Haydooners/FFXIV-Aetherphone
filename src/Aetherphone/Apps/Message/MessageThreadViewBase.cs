@@ -5,6 +5,7 @@ using Aetherphone.Core.Crypto;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Lodestone;
 using Aetherphone.Core.Media;
+using Aetherphone.Core.Message;
 using Aetherphone.Core.Net;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Report;
@@ -16,12 +17,15 @@ using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Apps.Message;
 
-internal abstract class MessageThreadViewBase : ChatThreadView<ChatMessageDto, ConversationDto>
+internal abstract class MessageThreadViewBase : ChatThreadView<ChatMessageDto, ConversationDto>,
+    IChatTranscriptSenders
 {
     public const float ThreadPollSeconds = 3f;
     public const float TypingSendSeconds = 2.5f;
     public const float BubbleRounding = 9f;
-    public const float ThreadSidePadding = 24f;
+    public const float ThreadSidePadding = AppSurface.SidePadding;
+    private const float SenderAvatarMonogramScale = 0.9f;
+    private const int SenderAvatarSegments = 24;
 
     protected readonly DirectMessagesStore messages;
     private readonly WallpaperImageCache wallpapers;
@@ -69,6 +73,31 @@ internal abstract class MessageThreadViewBase : ChatThreadView<ChatMessageDto, C
         MessageThemes.IncomingBubble, MessageThemes.IncomingInk, BubbleRounding, true);
 
     protected override float TranscriptSidePadding => ThreadSidePadding;
+
+    protected override IChatTranscriptSenders? Senders => this;
+
+    public void DrawAvatar(ImDrawListPtr drawList, in TranscriptMessage message, Vector2 center, float radius)
+    {
+        var member = FindMember(message.SenderId);
+        var avatarUrl = member is null ? message.SenderAvatarUrl : member.AvatarUrl;
+        AvatarView.DrawRemote(drawList, center, radius, Theme, message.SenderName, string.Empty, avatarUrl, images,
+            lodestone, SenderAvatarMonogramScale, SenderAvatarSegments, 1f,
+            member is null ? null : Frames.Of(member.FrameId));
+    }
+
+    private ConversationMemberDto? FindMember(string userId)
+    {
+        var members = messages.Members;
+        for (var index = 0; index < members.Length; index++)
+        {
+            if (members[index].UserId == userId)
+            {
+                return members[index];
+            }
+        }
+
+        return null;
+    }
 
     public bool SearchOpen => searchController.Open;
 
@@ -219,7 +248,7 @@ internal abstract class MessageThreadViewBase : ChatThreadView<ChatMessageDto, C
             return string.Empty;
         }
 
-        if (conversation.Presence == 1)
+        if (ChatPresence.IsOnline(conversation.Presence))
         {
             return Loc.T(L.Message.PresenceOnline);
         }
@@ -247,12 +276,13 @@ internal abstract class MessageThreadViewBase : ChatThreadView<ChatMessageDto, C
             }
 
             var senderName = isGroup ? message.SenderDisplayName : string.Empty;
+            var senderAvatar = isGroup ? message.SenderAvatarUrl : null;
             var tint = isGroup ? SenderTint.Of(message.SenderDisplayName) : default;
             if (message.Deleted)
             {
                 mapped[index] = new TranscriptMessage(message.Id, message.SenderId,
                     Loc.T(L.Message.DeletedBody), 0, message.CreatedAtUnix, 0, 0, null, senderName, tint,
-                    TranscriptFlags.Deleted);
+                    TranscriptFlags.Deleted, senderAvatarUrl: senderAvatar);
                 continue;
             }
 
@@ -283,15 +313,35 @@ internal abstract class MessageThreadViewBase : ChatThreadView<ChatMessageDto, C
             mapped[index] = new TranscriptMessage(message.Id, message.SenderId, message.Body, message.Kind,
                 message.CreatedAtUnix, message.MediaWidth, message.MediaHeight, message.ReadAtUnix, senderName,
                 tint, MessageFlags(message), message.ReplyToId, replySender, replyBody, replyKind,
-                message.DurationSecs, reactions, message.SenderBadges, message.SenderBadgeIds);
+                message.DurationSecs, reactions, message.SenderBadges, message.SenderBadgeIds,
+                senderAvatarUrl: senderAvatar);
         }
 
         return mapped;
     }
 
+    protected bool IsStarred(string messageId)
+    {
+        var starred = configuration.MessageStarredMessages;
+        for (var index = 0; index < starred.Count; index++)
+        {
+            if (starred[index].MessageId == messageId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private byte MessageFlags(ChatMessageDto message)
     {
         byte flags = 0;
+        if (IsStarred(message.Id))
+        {
+            flags |= TranscriptFlags.Starred;
+        }
+
         if (message.Forwarded)
         {
             flags |= TranscriptFlags.Forwarded;

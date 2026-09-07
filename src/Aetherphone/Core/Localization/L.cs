@@ -289,7 +289,7 @@ internal static class L
         public static readonly LocString Notes = new("app.notes", "Notes");
         public static readonly LocString Calculator = new("app.calculator", "Calculator");
         public static readonly LocString Linkpearl = new("app.linkpearl", "Linkpearl");
-        public static readonly LocString Message = new("app.message", "Message");
+        public static readonly LocString Message = new("app.message", "ChocoChat");
         public static readonly LocString Jobs = new("app.jobs", "Jobs");
         public static readonly LocString AppStore = new("app.appstore", "App Store");
         public static readonly LocString AetherStream = new("app.aetherstream", "MogCast");
@@ -612,7 +612,7 @@ internal static class L
         public static readonly LocString Handle = new("message.handle", "Handle");
         public static readonly LocString LocalTime = new("message.localTime", "Local time");
         public static readonly LocString Added = new("message.added", "Added");
-        public static readonly LocString SignInPrompt = new("message.signInPrompt", "Sign in to Aethernet in Settings to use Message");
+        public static readonly LocString SignInPrompt = new("message.signInPrompt", "Sign in to Aethernet in Settings to use ChocoChat");
         public static readonly LocString NoContacts = new("message.noContacts", "Add friends by number in the Contacts tab to call them");
         public static readonly LocString ReplyAction = new("message.replyAction", "Reply");
         public static readonly LocString InfoAction = new("message.infoAction", "Info");
@@ -1599,6 +1599,8 @@ internal static class L
         public static readonly LocString LockPositionHint = new("settings.lockPositionHint", "The phone stays where you put it, and dragging inside it scrolls instead of moving the window.");
         public static readonly LocString MarketContextMenu = new("settings.marketContextMenu", "Market search in menus");
         public static readonly LocString MarketContextMenuHint = new("settings.marketContextMenuHint", "Shows \"Search the Market\" option in the in-game context menu when right-clicking on an item.");
+        public static readonly LocString LinkpearlContextMenu = new("settings.linkpearlContextMenu", "Linkpearl chat in menus");
+        public static readonly LocString LinkpearlContextMenuHint = new("settings.linkpearlContextMenuHint", "Shows \"Open a Linkpearl chat\" option in the in-game context menu when right-clicking on a player.");
         public static readonly LocString ScrollWhileIdle = new("settings.scrollWhileIdle", "Scroll While Idle");
         public static readonly LocString ScrollWhileIdleHint = new("settings.scrollWhileIdleHint", "Your character scrolls through their phone (Tomescroll emote) while standing still and out of combat. Does nothing if you haven't unlocked the emote.");
         public static readonly LocString ShowInGpose = new("settings.showInGpose", "Show in Group Pose");
@@ -1663,7 +1665,7 @@ internal static class L
         public static readonly LocString TellArchiveHint = new("settings.tellArchiveHint", "Tells are saved as plain text files on this PC so conversations survive a restart. They are never uploaded anywhere. Turn this off to keep new tells in memory only. Deleting a conversation also deletes its file.");
         public static readonly LocString ReadReceipts = new("settings.readReceipts", "Read receipts");
         public static readonly LocString LastSeenOnline = new("settings.lastSeenOnline", "Last seen online");
-        public static readonly LocString ChatPrivacyHint = new("settings.chatPrivacyHint", "These apply to the Message app. If you turn read receipts or last seen off, you will not send them and you will not see them from others either.");
+        public static readonly LocString ChatPrivacyHint = new("settings.chatPrivacyHint", "These apply to the ChocoChat app. If you turn read receipts or last seen off, you will not send them and you will not see them from others either.");
         public static readonly LocString Commands = new("settings.commands", "Commands");
         public static readonly LocString CommandsHint = new("settings.commandsHint", "Type these into the chat box. Reset brings the phone back to the middle of your screen if you ever move it out of view.");
         public static readonly LocString CommandToggle = new("settings.commandToggle", "Show or hide the phone");
@@ -1700,6 +1702,90 @@ internal static class L
     {
         public static readonly LocString SectionMessaging = new("changelog.sectionMessaging", "Messaging");
         public static readonly LocString SectionPhone = new("changelog.sectionPhone", "Phone");
+
+        public static readonly LocString[] Release1020Velvet =
+        {
+            new("changelog.r1020.2",
+                "Overhauled Velvet from top to bottom: the feed, discover, profiles, messages, the composer and the filters"),
+            new("changelog.r1020.3",
+                "Discover is now a card deck, one person at a time with their photos"),
+            new("changelog.r1020.5",
+                "Added a race filter, and you pick the race you are shown as"),
+            new("changelog.r1020.6",
+                "Added a spoken languages filter"),
+            new("changelog.r1020.7",
+                "Added tag search to the feed"),
+            new("changelog.r1020.8",
+                "Added caption editing to your own posts"),
+            new("changelog.r1020.9",
+                "Filters are one screen of rows now, and hiding someone moved to Safety"),
+            new("changelog.r1020.11",
+                "Profiles group About into cards and carry the posts you shared"),
+            new("changelog.r1020.12",
+                "Discover cards and profiles mark what the two of you share"),
+            new("changelog.r1020.13",
+                "Edit profile is rows you open one at a time, led by your photo grid"),
+        };
+
+        public static readonly LocString[] Release1020Message =
+        {
+            new("changelog.r1020.17",
+                "Overhauled ChocoChat from top to bottom: four tabs for chats, calls, contacts and settings"),
+            new("changelog.r1020.18",
+                "Added eight chat themes that recolor your bubbles, buttons and badges"),
+            new("changelog.r1020.19",
+                "Added chat wallpapers: a color, an optional pattern or one of your own photos, set for every chat or for one chat alone"),
+            new("changelog.r1020.20",
+                "Added pop-out chats: Pop out chat in the conversation menu floats a thread in its own window that you can drag, resize, fold down and keep using while the phone is closed"),
+            new("changelog.r1020.21",
+                "Added group photos, descriptions and admin roles, with Owner and Admin tags on members, a member sheet and Exit group"),
+            new("changelog.r1020.0",
+                "Added online dots: a green dot on the avatar in Chats and Contacts shows who is online right now, without opening the conversation"),
+            new("changelog.r1020.1",
+                "Group chats now show the sender's photo next to their messages and their name inside the bubble"),
+            new("changelog.r1020.22",
+                "Starred messages now carry a star in the thread"),
+        };
+
+        public static readonly LocString[] Release1020Linkpearl =
+        {
+            new("changelog.r1020.27",
+                "Long histories no longer drag the game down: a conversation with a full stream draws the part you are looking at and reaches further back as you scroll up"),
+            new("changelog.r1020.28",
+                "Fixed Open a Linkpearl chat showing on NPCs, and its switch moved to Settings > General, where it now starts off"),
+        };
+
+        public static readonly LocString[] Release1020AetherStream =
+        {
+            new("changelog.r1020.29",
+                "Fixed long videos losing their sound after 20 to 50 minutes while the picture kept playing"),
+        };
+
+        public static readonly LocString[] Release1020Music =
+        {
+            new("changelog.r1020.35",
+                "Fixed the Music icon carrying a badge at all times: it now lights only when a radio station you follow goes on air, and clears when you open the app"),
+        };
+
+        public static readonly LocString[] Release1020Settings =
+        {
+            new("changelog.r1020.36",
+                "Fixed the changelog slowing the game down while it was open, it now draws only the releases on screen instead of every release at once"),
+        };
+
+        public static readonly LocString[] Release1020Phone =
+        {
+            new("changelog.r1020.30",
+                "Fixed dropdown menus not responding inside pop-out windows"),
+            new("changelog.r1020.31",
+                "Fixed badge counts bursting out of the badge on smaller app icons"),
+            new("changelog.r1020.32",
+                "Fixed empty screens dropping their text and buttons far below the title, sometimes past the bottom of the screen"),
+            new("changelog.r1020.33",
+                "Fixed your social region following the character you are playing instead of the account you are signed into, every account now starts on Automatic and keeps its own choice"),
+            new("changelog.r1020.34",
+                "Fixed a layout slip after icon tiles that could shift whatever was drawn next on Activity, Collections, Dailies, Fishing, Health, Muster, Timers, Venues and Yellow Pages, contributed by BluntEXE"),
+        };
 
         public static readonly LocString[] Release1019Phone =
         {
@@ -3130,7 +3216,7 @@ internal static class L
     {
         public static readonly LocString Title = new("profile.title", "Profile");
         public static readonly LocString RegionSection = new("profile.regionSection", "Region");
-        public static readonly LocString RegionHelp = new("profile.regionHelp", "Your region shows on your social profiles in place of your character name and home world.");
+        public static readonly LocString RegionHelp = new("profile.regionHelp", "Your region shows on your social profiles in place of your character name and home world. Each account keeps its own choice.");
         public static readonly LocString RegionAutomatic = new("profile.regionAutomatic", "Automatic");
         public static readonly LocString TimeZoneSection = new("profile.timeZoneSection", "Time zone");
         public static readonly LocString TimeZoneHelp = new("profile.timeZoneHelp", "Show your local time on your profile so others can find a moment that works for both of you.");
@@ -3297,7 +3383,7 @@ internal static class L
         public static readonly LocString StateLocked = new("encryption.stateLocked", "Locked on this device");
         public static readonly LocString Intro = new("encryption.intro", "End-to-end encryption keeps your chats between you and the people you write to. Not even the Aethernet server can read them.");
         public static readonly LocString NotSignedIn = new("encryption.notSignedIn", "Sign in to your Aethernet account first.");
-        public static readonly LocString UnsupportedBody = new("encryption.unsupportedBody", "This computer cannot create the security key that encrypted chats need, so Messages and Velvet chats stay unavailable here. This usually happens when the game runs through Wine or Proton. The rest of Aetherphone works normally.");
+        public static readonly LocString UnsupportedBody = new("encryption.unsupportedBody", "This computer cannot create the security key that encrypted chats need, so ChocoChat and Velvet chats stay unavailable here. This usually happens when the game runs through Wine or Proton. The rest of Aetherphone works normally.");
         public static readonly LocString SettingUp = new("encryption.settingUp", "Setting up encryption…");
         public static readonly LocString UnsupportedSummary = new("encryption.unsupportedSummary", "This PC cannot set up encryption, so messages here are not encrypted.");
         public static readonly LocString ActiveHint = new("encryption.activeHint", "Encryption is active on this device. It works automatically. There is nothing to set up.");
@@ -3735,8 +3821,6 @@ internal static class L
         public static readonly LocString HotkeyKey = new("linkpearl.hotkeyKey", "Key");
         public static readonly LocString HotkeyNoModifier = new("linkpearl.hotkeyNoModifier", "None");
         public static readonly LocString HotkeyHint = new("linkpearl.hotkeyHint", "Press the chord to pop out your latest chat, press it again to walk down the recent list.");
-        public static readonly LocString PlayerContextMenu = new("linkpearl.playerContextMenu", "Add to the player menu");
-        public static readonly LocString PlayerContextMenuHint = new("linkpearl.playerContextMenuHint", "Right click a player in the game to start a chat with them.");
         public static readonly LocString ContextMenuEntry = new("linkpearl.contextMenuEntry", "Open a Linkpearl chat");
         public static readonly LocString FilterAll = new("linkpearl.filterAll", "All");
         public static readonly LocString FilterTells = new("linkpearl.filterTells", "Tells");
@@ -4106,7 +4190,6 @@ internal static class L
         public static readonly LocString EditCaptionFailed = new("velvet.editCaptionFailed", "Couldn't save the caption");
         public static readonly LocString EditedStamp = new("velvet.editedStamp", "{0} · Edited");
         public static readonly LocString PronounsLabel = new("velvet.pronounsLabel", "Pronouns");
-        public static readonly LocString DynamicLabel = new("velvet.dynamicLabel", "Your vibe");
         public static readonly LocString DiscoverableLabel = new("velvet.discoverableLabel", "Appear in Discover");
         public static readonly LocString Save = new("velvet.save", "Save");
         public static readonly LocString Saving = new("velvet.saving", "Saving…");
@@ -4176,15 +4259,17 @@ internal static class L
         public static readonly LocString LookingForOne = new("velvet.lookingForOne", "Looking for {0}");
         public static readonly LocString Photos = new("velvet.photos", "Photos");
         public static readonly LocString MyPhotos = new("velvet.myPhotos", "My photos");
+        public static readonly LocString Posts = new("velvet.posts", "Posts");
+        public static readonly LocString NoPostsShared = new("velvet.noPostsShared", "No posts yet.");
+        public static readonly LocString NoPostsMine = new("velvet.noPostsMine", "You have not shared any posts yet.");
+        public static readonly LocString ConnectToSeePosts = new("velvet.connectToSeePosts", "Connect with {0} to see their posts");
+        public static readonly LocPlural ConnectToUnlockPosts =
+            new("velvet.connectToUnlockPosts", "Connect to unlock {0} post", "Connect to unlock {0} posts");
         public static readonly LocString ProfileConnections = new("velvet.profileConnections", "Connections");
-        public static readonly LocString NoPhotosShared = new("velvet.noPhotosShared", "No photos shared yet.");
-        public static readonly LocString NoPhotosMine = new("velvet.noPhotosMine", "You have not shared any photos yet.");
-        public static readonly LocString ConnectToSeePhotos = new("velvet.connectToSeePhotos", "Connect with {0} to see their photos");
-        public static readonly LocPlural ConnectToUnlock =
-            new("velvet.connectToUnlock", "Connect to unlock {0} photo", "Connect to unlock {0} photos");
         public static readonly LocString IntroTitle = new("velvet.introTitle", "Send an intro");
         public static readonly LocString IntroduceYourselfTo = new("velvet.introduceYourselfTo", "Introduce yourself to {0}");
         public static readonly LocString YourIntro = new("velvet.yourIntro", "Your intro");
+        public static readonly LocString TheirIntro = new("velvet.theirIntro", "Their intro");
         public static readonly LocString IntroSheetHint = new("velvet.introSheetHint", "Your intro lands in their Requests. A reply accepts you.");
         public static readonly LocString SendIntro = new("velvet.sendIntro", "Send intro");
         public static readonly LocString Reply = new("velvet.reply", "Reply");
@@ -4234,13 +4319,13 @@ internal static class L
         public static readonly LocString PreviewCard = new("velvet.previewCard", "Preview my card");
         public static readonly LocString CardPreviewTitle = new("velvet.cardPreviewTitle", "Your card");
         public static readonly LocString CoverBadge = new("velvet.coverBadge", "Cover");
-        public static readonly LocString ObPhotoHint =
-            new("velvet.obPhotoHint", "This is your cover on Discover. Add at least one photo to be seen.");
         public static readonly LocString FitTitle = new("velvet.fitTitle", "You two");
         public static readonly LocString FitBoth = new("velvet.fitBoth", "Both {0}");
         public static readonly LocString FitBothHereFor = new("velvet.fitBothHereFor", "Both here for {0}");
         public static readonly LocString FitConflict = new("velvet.fitConflict", "Limit conflict: {0}");
         public static readonly LocString FitNoConflicts = new("velvet.fitNoConflicts", "No limit conflicts");
+        public static readonly LocString FitBothSpeak = new("velvet.fitBothSpeak", "Both speak {0}");
+        public static readonly LocString FitNoSharedLanguage = new("velvet.fitNoSharedLanguage", "No shared language");
         public static readonly LocString DeckPass = new("velvet.deckPass", "Pass");
         public static readonly LocString DeckSay = new("velvet.deckSay", "Say something");
         public static readonly LocString DeckUndo = new("velvet.deckUndo", "Undo");
@@ -4249,22 +4334,38 @@ internal static class L
             new("velvet.deckEndHint", "Widen your filters or check again later. New people arrive every day.");
         public static readonly LocString DeckWidenRegion = new("velvet.deckWidenRegion", "Widen region");
         public static readonly LocString DeckCheckAgain = new("velvet.deckCheckAgain", "Check again");
+        public static readonly LocString DeckShowAgain = new("velvet.deckShowAgain", "Show them again");
+        public static readonly LocString DeckPassedHidden =
+            new("velvet.deckPassedHidden", "{0} hidden because you passed on them. New people arrive every day.");
+        public static readonly LocString DeckSeenBefore = new("velvet.deckSeenBefore", "Seen before");
         public static readonly LocString SearchNone = new("velvet.searchNone", "No one matches");
         public static readonly LocString SearchNoneHint = new("velvet.searchNoneHint", "Try a different name or tag.");
+        public static readonly LocString SearchPeopleSection = new("velvet.searchPeopleSection", "People");
         public static readonly LocPlural FitSharedKinks =
             new("velvet.fitSharedKinks", "{0} shared kink", "{0} shared kinks");
+        public static readonly LocPlural CardShared =
+            new("velvet.cardShared", "{0} you share", "{0} you share");
         public static readonly LocString CardRace = new("velvet.cardRace", "Race");
+        public static readonly LocString EditDetailsHeader = new("velvet.editDetailsHeader", "Details");
+        public static readonly LocString EditNotSet = new("velvet.editNotSet", "Not set");
+        public static readonly LocPlural EditChosenCount = new("velvet.editChosenCount", "{0} chosen", "{0} chosen");
+        public static readonly LocString RaceMatchCharacter = new("velvet.raceMatchCharacter", "Match my character");
+        public static readonly LocString RaceHelp = new("velvet.raceHelp",
+            "Choose the race people see on your card. Handy when mods change how your character looks.");
+        public static readonly LocString RaceDetected = new("velvet.raceDetected", "Your character is currently {0}.");
         public static readonly LocString FiltersTitle = new("velvet.filtersTitle", "Filters");
         public static readonly LocString PostTagsTitle = new("velvet.postTagsTitle", "Tags");
         public static readonly LocString PostTagsEmpty = new("velvet.postTagsEmpty", "Add tags");
         public static readonly LocString PostTagsHint =
-            new("velvet.postTagsHint", "Tag what this post contains so people can filter it out.");
+            new("velvet.postTagsHint", "Tag what this post contains so people can find it or filter it out.");
         public static readonly LocPlural PostTagsRemaining =
             new("velvet.postTagsRemaining", "{0} tag left", "{0} tags left");
         public static readonly LocString FeedNone = new("velvet.feedNone", "Nothing shared yet");
         public static readonly LocString FeedNoneHint = new("velvet.feedNoneHint", "Be the first to post.");
         public static readonly LocString FeedNoneFiltered =
             new("velvet.feedNoneFiltered", "Your filters are hiding everything here.");
+        public static readonly LocString FeedScopeAll = new("velvet.feedScopeAll", "Everyone");
+        public static readonly LocString FeedScopeConnections = new("velvet.feedScopeConnections", "Connections");
         public static readonly LocString AudienceConnections = new("velvet.audienceConnections", "Connections only");
         public static readonly LocString AudiencePublic = new("velvet.audiencePublic", "Everyone on Velvet");
         public static readonly LocString MakePublic = new("velvet.makePublic", "Share with everyone");
@@ -4316,6 +4417,9 @@ internal static class L
         public static readonly LocString CardAbout = new("velvet.cardAbout", "About");
         public static readonly LocString CardIntent = new("velvet.cardIntent", "Intent");
         public static readonly LocString CardRole = new("velvet.cardRole", "Role");
+        public static readonly LocString RoleDom = new("velvet.roleDom", "Dominant");
+        public static readonly LocString RoleSub = new("velvet.roleSub", "Submissive");
+        public static readonly LocString RoleSwitch = new("velvet.roleSwitch", "Switch");
         public static readonly LocString CardRelationship = new("velvet.cardRelationship", "Relationship");
         public static readonly LocString CardTags = new("velvet.cardTags", "Tags");
         public static readonly LocString CardLimits = new("velvet.cardLimits", "Limits");
@@ -4336,6 +4440,7 @@ internal static class L
         public static readonly LocString SexualityPan = new("velvet.sexualityPan", "Pan");
         public static readonly LocString SexualityAsexual = new("velvet.sexualityAsexual", "Asexual");
         public static readonly LocString SexualityDemisexual = new("velvet.sexualityDemisexual", "Demisexual");
+        public static readonly LocString CardLanguages = new("velvet.cardLanguages", "Languages");
         public static readonly LocString CardKinks = new("velvet.cardKinks", "Kinks");
         public static readonly LocString LikesTitle = new("velvet.likesTitle", "Likes");
         public static readonly LocString NoLikes = new("velvet.noLikes", "No likes yet.");
@@ -4354,18 +4459,9 @@ internal static class L
         public static readonly LocString ObSubReady =
             new("velvet.obSubReady", "A couple of last touches, then step inside.");
         public static readonly LocString Continue = new("velvet.continue", "Continue");
-        public static readonly LocString ObHandleHelp = new("velvet.obHandleHelp",
-            "Your handle is how people @mention you. You can change all of this later from Edit profile.");
+        public static readonly LocString ObHandleRules =
+            new("velvet.obHandleRules", "3 to 15 characters: letters, numbers, or _");
         public static readonly LocString AddPhoto = new("velvet.addPhoto", "Add a photo");
-        public static readonly LocString YourRole = new("velvet.yourRole", "Your role");
-        public static readonly LocString RoleErpHelp =
-            new("velvet.roleErpHelp", "Optional. Shown because you are here for ERP.");
-        public static readonly LocString VibeOptionalHelp =
-            new("velvet.vibeOptionalHelp", "Optional. A few tags help the right people find you.");
-        public static readonly LocString ObDiscoverableHelp = new("velvet.obDiscoverableHelp",
-            "When on, your profile can be found by others. When off, only people you connect with can see you.");
-        public static readonly LocString ObConductHelp = new("velvet.obConductHelp",
-            "Velvet is for adults. Be kind and discreet, and remember block and report are always one tap away.");
     }
 
     internal static class Calculator
@@ -6501,7 +6597,7 @@ internal static class L
         public static readonly LocString AppearanceBody = new("setup.appearanceBody", "Pick a light or dark look for your phone. Dynamic follows Eorzean time, so the phone turns dark after sunset.");
         public static readonly LocString AppearanceDynamic = new("setup.appearanceDynamic", "Dynamic");
         public static readonly LocString AccountTitle = new("setup.accountTitle", "Aethernet Account");
-        public static readonly LocString AccountBody = new("setup.accountBody", "One account unlocks every social app: Chirper, Aethergram, Message and more. Sign in with your character, no password needed.");
+        public static readonly LocString AccountBody = new("setup.accountBody", "One account unlocks every social app: Chirper, Aethergram, ChocoChat and more. Sign in with your character, no password needed.");
         public static readonly LocString SignedInTitle = new("setup.signedInTitle", "You're signed in");
         public static readonly LocString SignedInBody = new("setup.signedInBody", "Signed in as {0}. Next, make your profile yours.");
         public static readonly LocString IdTitle = new("setup.idTitle", "Create Your Aethernet ID");

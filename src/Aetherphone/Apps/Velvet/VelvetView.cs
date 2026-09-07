@@ -36,8 +36,10 @@ internal enum VelvetScreenId
     Search,
     CardPreview,
     PostTags,
+    TagPosts,
     EditCaption,
     Encryption,
+    UserPosts,
 }
 
 internal readonly record struct VelvetView(VelvetScreenId Screen, string? Arg = null)
@@ -66,6 +68,8 @@ internal readonly record struct VelvetView(VelvetScreenId Screen, string? Arg = 
     public static VelvetView Intro(string userId) => new(VelvetScreenId.Intro, userId);
     public static VelvetView Reactions(string messageId) => new(VelvetScreenId.Reactions, messageId);
     public static VelvetView RequestDetail(string userId) => new(VelvetScreenId.RequestDetail, userId);
+    public static VelvetView UserPosts(string userId) => new(VelvetScreenId.UserPosts, userId);
+    public static VelvetView TagPosts(string token) => new(VelvetScreenId.TagPosts, token);
 }
 
 internal enum VelvetMessagesTab

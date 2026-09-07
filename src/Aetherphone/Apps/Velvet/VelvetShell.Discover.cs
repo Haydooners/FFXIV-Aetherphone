@@ -22,15 +22,26 @@ internal sealed partial class VelvetShell
     private const float DeckUndoHeight = 24f;
     private const float DeckUndoPad = 14f;
     private const float DeckCommitFraction = 0.32f;
-    private const float DeckDragSlop = 10f;
-    private const float DeckDragAxisBias = 1.2f;
     private const float DeckExitOverhang = 48f;
     private const float DeckExitSmoothTime = 0.16f;
-    private const float DeckReturnSmoothTime = 0.14f;
     private const float DeckSettleEpsilon = 2f;
     private const float DeckPressShrink = 0.94f;
     private const float DeckTooltipSmoothTime = 0.11f;
+    private const float DeckHoverSmoothTime = 0.11f;
+    private const float DeckHoverGrow = 0.06f;
+    private const float DeckHoverTopLift = 0.18f;
+    private const float DeckHoverBottomLift = 0.10f;
+    private const float DeckRimAlpha = 0.30f;
+    private const float DeckRimWeight = 1.5f;
+    private const float DeckGlowReach = 8f;
+    private const float DeckSayGrow = 2f;
+    private const float DeckIdleFillAlpha = 0.6f;
+    private const float DeckIdleInkAlpha = 0.5f;
+    private const string DeckPassId = "velvetDeckPass";
+    private const string DeckSayId = "velvetDeckSay";
+    private const string DeckConnectId = "velvetDeckConnect";
     private const int DeckRefillBelow = 4;
+    private const int DeckRevisitPenalty = 1000;
     private const float FilterSummaryHeight = 30f;
     private const float FilterSummaryGlyphGap = 8f;
     private const string FilterSummarySeparator = " · ";
@@ -46,18 +57,20 @@ internal sealed partial class VelvetShell
 
     private readonly List<VelvetProfileDto> deck = new();
     private readonly List<int> deckScores = new();
+    private readonly HashSet<string> revisited = new(StringComparer.Ordinal);
     private readonly System.Text.StringBuilder filterSummaryBuilder = new();
     private VelvetProfileDto[] deckSource = Array.Empty<VelvetProfileDto>();
     private VelvetProfileDto? deckMe;
     private string deckTopId = string.Empty;
     private VelvetProfileDto? lastPassed;
+    private bool deckRecycled;
     private Spring cardSlide;
     private Spring passTooltipEase;
     private Spring connectTooltipEase;
+    private Spring passHoverEase;
+    private Spring sayHoverEase;
+    private Spring connectHoverEase;
     private int cardExit;
-    private bool cardPressed;
-    private bool cardDragging;
-    private Vector2 cardPressPosition;
     private string filterSummary = string.Empty;
     private bool filterSummaryDirty = true;
     private LanguageInfo? filterSummaryLanguage;
@@ -73,6 +86,7 @@ internal sealed partial class VelvetShell
 
         SyncDeck();
         RefillDeck();
+        RecycleWhenDry();
         StepCard(body.Width);
         if (deck.Count == 0)
         {
@@ -102,10 +116,10 @@ internal sealed partial class VelvetShell
         deckMe = null;
         deckTopId = string.Empty;
         lastPassed = null;
+        revisited.Clear();
+        deckRecycled = false;
         cardSlide.SnapTo(0f);
         cardExit = 0;
-        cardPressed = false;
-        cardDragging = false;
         filterSummaryDirty = true;
     }
 
@@ -122,30 +136,43 @@ internal sealed partial class VelvetShell
         deckMe = me;
         deck.Clear();
         deckScores.Clear();
-        var regionMask = discoverInclude.RegionMask;
+        var allowedRegions = AllowedRegions(discoverInclude);
+        var skippedConnected = 0;
+        var skippedRegion = 0;
         for (var index = 0; index < source.Length; index++)
         {
             var profile = source[index];
-            if (profile.ConnectionState != VelvetConnectionState.None || !RegionAllowed(profile, regionMask))
+            if (profile.ConnectionState != VelvetConnectionState.None)
             {
+                skippedConnected++;
                 continue;
             }
 
-            InsertByScore(profile, VelvetFit.Score(me, profile));
+            if (!RegionAllowed(profile, allowedRegions))
+            {
+                skippedRegion++;
+                continue;
+            }
+
+            var score = VelvetFit.Score(me, profile);
+            InsertByScore(profile, SeenBefore(profile.UserId) ? score - DeckRevisitPenalty : score);
         }
 
+        AepLog.Info($"Velvet deck rebuilt: {deck.Count} cards from {source.Length} profiles, "
+            + $"{skippedConnected} already connected, {skippedRegion} out of region, {store.PassCount} passes held, "
+            + $"{revisited.Count} on a second look");
         PinDeckTop();
     }
 
-    private bool RegionAllowed(VelvetProfileDto profile, int regionMask)
+    private bool RegionAllowed(VelvetProfileDto profile, int allowedRegions)
     {
-        if (regionMask == 0)
+        if (allowedRegions == SocialRegion.AllMask)
         {
             return true;
         }
 
         var regionIndex = Array.IndexOf(SocialRegion.Codes, RegionCodeOf(profile));
-        return regionIndex >= 0 && SocialRegion.MaskShows(regionMask, regionIndex);
+        return regionIndex >= 0 && (allowedRegions & (1 << regionIndex)) != 0;
     }
 
     private void InsertByScore(VelvetProfileDto profile, int score)
@@ -200,24 +227,48 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private void StepCard(float width)
+    private void RecycleWhenDry()
     {
-        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        if (cardExit != 0)
+        if (deck.Count >= DeckRefillBelow || deckRecycled || cardExit != 0 || store.PassCount == 0)
         {
-            var target = cardExit * (width + DeckExitOverhang * UiScale.Current);
-            cardSlide.Step(target, DeckExitSmoothTime, delta);
-            if (MathF.Abs(cardSlide.Value - target) <= DeckSettleEpsilon)
-            {
-                CommitCardExit();
-            }
-
             return;
         }
 
-        if (!cardDragging && cardSlide.Value != 0f)
+        if (!store.DiscoverLoaded || store.LoadingDiscover || store.LoadingMoreDiscover || store.HasMoreDiscover
+            || store.DiscoverFailed)
         {
-            cardSlide.Step(0f, DeckReturnSmoothTime, delta);
+            return;
+        }
+
+        AepLog.Info($"Velvet deck down to {deck.Count} cards with no pages left, "
+            + $"bringing back {store.PassCount} passes for a second look");
+        ShowPassesAgain();
+    }
+
+    private void ShowPassesAgain()
+    {
+        deckRecycled = true;
+        lastPassed = null;
+        store.CopyPassedIds(revisited);
+        store.ClearPasses();
+        ApplyDiscoverFilters();
+    }
+
+    private bool SeenBefore(string userId) => revisited.Count > 0 && revisited.Contains(userId);
+
+    private void StepCard(float width)
+    {
+        if (cardExit == 0)
+        {
+            return;
+        }
+
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        var target = cardExit * (width + DeckExitOverhang * UiScale.Current);
+        cardSlide.Step(target, DeckExitSmoothTime, delta);
+        if (MathF.Abs(cardSlide.Value - target) <= DeckSettleEpsilon)
+        {
+            CommitCardExit();
         }
     }
 
@@ -277,71 +328,6 @@ internal sealed partial class VelvetShell
         OnDeckTopChanged();
     }
 
-    private void DriveCardGesture(Rect cardArea, in AppSurface.SurfaceScope surface, float width)
-    {
-        if (cardExit != 0)
-        {
-            cardPressed = false;
-            cardDragging = false;
-            return;
-        }
-
-        if (surface.Dragging)
-        {
-            cardPressed = false;
-            cardDragging = false;
-            return;
-        }
-
-        var scale = UiScale.Current;
-        var mouse = ImGui.GetMousePos();
-        if (!cardPressed)
-        {
-            if (UiInteract.Hover(cardArea.Min, cardArea.Max) && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-            {
-                cardPressed = true;
-                cardDragging = false;
-                cardPressPosition = mouse;
-            }
-
-            return;
-        }
-
-        var move = mouse - cardPressPosition;
-        if (!ImGui.IsMouseDown(ImGuiMouseButton.Left))
-        {
-            cardPressed = false;
-            if (!cardDragging)
-            {
-                return;
-            }
-
-            cardDragging = false;
-            UiInteract.BlockThisFrame();
-            if (MathF.Abs(move.X) >= width * DeckCommitFraction)
-            {
-                cardExit = move.X < 0f ? -1 : 1;
-            }
-
-            return;
-        }
-
-        if (!cardDragging)
-        {
-            if (MathF.Abs(move.X) <= DeckDragSlop * scale || MathF.Abs(move.X) <= MathF.Abs(move.Y) * DeckDragAxisBias)
-            {
-                return;
-            }
-
-            cardDragging = true;
-            surface.CancelDrag();
-            UiInteract.CancelPendingTap();
-        }
-
-        cardSlide.SnapTo(move.X);
-        UiInteract.BlockThisFrame();
-    }
-
     private void DrawDeckActions(Rect bar, VelvetProfileDto top)
     {
         var scale = UiScale.Current;
@@ -364,19 +350,21 @@ internal sealed partial class VelvetShell
             new Vector2(passCenter.X + radius + DeckActionGap * scale, rowCenterY - sayHalf),
             new Vector2(connectCenter.X - radius - DeckActionGap * scale, rowCenterY + sayHalf));
 
-        if (DrawDeckCircle(drawList, passCenter, radius, PhoneIcons.X, VelvetTheme.CardHi, VelvetTheme.BodyInk,
-                Loc.T(L.Velvet.DeckPass), barHovered, live, ref passTooltipEase))
+        if (DrawDeckCircle(drawList, DeckPassId, passCenter, radius, PhoneIcons.X, VelvetTheme.CardHi,
+                VelvetTheme.Card, VelvetTheme.BodyInk, 0f, Loc.T(L.Velvet.DeckPass), barHovered, live,
+                ref passHoverEase, ref passTooltipEase))
         {
             PassTop();
         }
 
         if (DrawDeckSay(drawList, sayRect, barHovered, live))
         {
-            RequestIntro(top.UserId, DisplayNameOf(top.DisplayName, top.Handle));
+            RequestIntro(top.UserId, top.DisplayName, top.Handle, top.AvatarUrl);
         }
 
-        if (DrawDeckCircle(drawList, connectCenter, radius, PhoneIcons.HeartFilled, VelvetTheme.Rose,
-                VelvetTheme.OnAccent, Loc.T(L.Velvet.Connect), barHovered, live, ref connectTooltipEase))
+        if (DrawDeckCircle(drawList, DeckConnectId, connectCenter, radius, PhoneIcons.HeartFilled, VelvetTheme.Rose,
+                VelvetTheme.RoseDeep, VelvetTheme.OnAccent, DeckGlowReach, Loc.T(L.Velvet.Connect), barHovered, live,
+                ref connectHoverEase, ref connectTooltipEase))
         {
             ConnectTop();
         }
@@ -397,24 +385,35 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private static bool DrawDeckCircle(ImDrawListPtr drawList, Vector2 center, float radius, string glyph, Vector4 fill,
-        Vector4 ink, string tooltip, bool barHovered, bool live, ref Spring tooltipEase)
+    private static bool DrawDeckCircle(ImDrawListPtr drawList, string id, Vector2 center, float radius, string glyph,
+        Vector4 fill, Vector4 deep, Vector4 ink, float glowReach, string tooltip, bool barHovered, bool live,
+        ref Spring hoverEase, ref Spring tooltipEase)
     {
         var scale = UiScale.Current;
         var extent = new Vector2(radius, radius);
         var hovered = live && barHovered && ImGui.IsMouseHoveringRect(center - extent, center + extent);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var drawRadius = pressed ? radius * DeckPressShrink : radius;
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        var eased = Math.Clamp(hoverEase.Step(hovered ? 1f : 0f, DeckHoverSmoothTime, delta), 0f, 1f);
+        var drawRadius = radius * (1f + DeckHoverGrow * eased) * PressFx.Scale(id, pressed, DeckPressShrink);
+        var fillAlpha = live ? 1f : DeckIdleFillAlpha;
         drawList.AddCircleFilled(center + new Vector2(0f, 2f * scale), drawRadius, DeckShadow.Packed(), 40);
-        var body = hovered ? VelvetTheme.Lerp(fill, VelvetTheme.OnAccent, 0.10f) : fill;
-        drawList.AddCircleFilled(center, drawRadius, (live ? body : VelvetTheme.Alpha(body, 0.6f)).Packed(), 40);
-        PhoneIcon.Draw(drawList, center, glyph, live ? ink : VelvetTheme.Alpha(ink, 0.5f), VIcon.CardAction * scale);
+        AccentGloss.Circle(drawList, center, drawRadius,
+            DeckBodyTone(fill, DeckHoverTopLift * eased, fillAlpha),
+            DeckBodyTone(deep, DeckHoverBottomLift * eased, fillAlpha), scale, eased, glowReach);
+        if (eased > 0.001f)
+        {
+            drawList.AddCircle(center, drawRadius,
+                VelvetTheme.Alpha(VelvetTheme.OnAccent, DeckRimAlpha * eased).Packed(), 48, DeckRimWeight * scale);
+        }
+
+        PhoneIcon.Draw(drawList, center, glyph, live ? ink : VelvetTheme.Alpha(ink, DeckIdleInkAlpha),
+            VIcon.CardAction * scale * drawRadius / radius);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         HoverTooltip.Enqueue(new Rect(center - extent, center + extent), tooltip,
             tooltipEase.Step(hovered ? 1f : 0f, DeckTooltipSmoothTime, delta), HoverLabelSide.Above);
         return UiInteract.Click(center - extent, center + extent, hovered);
@@ -424,16 +423,30 @@ internal sealed partial class VelvetShell
     {
         var scale = UiScale.Current;
         var hovered = live && barHovered && ImGui.IsMouseHoveringRect(rect.Min, rect.Max);
-        var rounding = rect.Height * 0.5f;
-        var fill = !live ? VelvetTheme.Alpha(VelvetTheme.Rose, 0.5f)
-            : hovered ? VelvetTheme.RoseBright : VelvetTheme.Rose;
-        drawList.AddRectFilled(rect.Min + new Vector2(0f, 2f * scale), rect.Max + new Vector2(0f, 2f * scale),
+        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        var eased = Math.Clamp(sayHoverEase.Step(hovered ? 1f : 0f, DeckHoverSmoothTime, delta), 0f, 1f);
+        var grow = DeckSayGrow * scale * eased;
+        var shrink = rect.Height * 0.5f * (1f - PressFx.Scale(DeckSayId, pressed, DeckPressShrink));
+        var inset = new Vector2(shrink - grow, shrink - grow);
+        var body = new Rect(rect.Min + inset, rect.Max - inset);
+        var rounding = body.Height * 0.5f;
+        var fillAlpha = live ? 1f : DeckIdleFillAlpha;
+        drawList.AddRectFilled(body.Min + new Vector2(0f, 2f * scale), body.Max + new Vector2(0f, 2f * scale),
             DeckShadow.Packed(), rounding);
-        Squircle.Fill(drawList, rect.Min, rect.Max, rounding, fill.Packed());
-        var maxLabelWidth = MathF.Max(1f, rect.Width - DeckSayPad * 2f * scale);
-        Typography.DrawCentered(drawList, rect.Center,
+        AccentGloss.Pill(drawList, body.Min, body.Max,
+            DeckBodyTone(VelvetTheme.Rose, DeckHoverTopLift * eased, fillAlpha),
+            DeckBodyTone(VelvetTheme.RoseDeep, DeckHoverBottomLift * eased, fillAlpha), scale, eased, DeckGlowReach);
+        if (eased > 0.001f)
+        {
+            Squircle.Stroke(drawList, body.Min, body.Max, rounding,
+                VelvetTheme.Alpha(VelvetTheme.OnAccent, DeckRimAlpha * eased).Packed(), DeckRimWeight * scale);
+        }
+
+        var maxLabelWidth = MathF.Max(1f, body.Width - DeckSayPad * 2f * scale);
+        Typography.DrawCentered(drawList, body.Center,
             Typography.FitText(Loc.T(L.Velvet.DeckSay), maxLabelWidth, DeckSayStyle),
-            live ? VelvetTheme.OnAccent : VelvetTheme.Alpha(VelvetTheme.OnAccent, 0.6f), DeckSayStyle);
+            live ? VelvetTheme.OnAccent : VelvetTheme.Alpha(VelvetTheme.OnAccent, DeckIdleFillAlpha), DeckSayStyle);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -441,6 +454,9 @@ internal sealed partial class VelvetShell
 
         return UiInteract.Click(rect.Min, rect.Max, hovered);
     }
+
+    private static Vector4 DeckBodyTone(Vector4 tone, float lift, float alpha) =>
+        VelvetTheme.Alpha(VelvetTheme.Lerp(tone, VelvetTheme.OnAccent, lift), alpha);
 
     private static bool DrawDeckGhost(ImDrawListPtr drawList, Rect rect, string label, bool barHovered, bool live)
     {
@@ -463,17 +479,20 @@ internal sealed partial class VelvetShell
     private void DrawDeckEmpty(Rect body)
     {
         var scale = UiScale.Current;
-        var loading = store.LoadingDiscover || store.LoadingMoreDiscover
-            || (store.HasMoreDiscover && !store.DiscoverFailed);
+        var loading = store.LoadingDiscover || store.LoadingMoreDiscover;
         var failed = !loading && store.DiscoverFailed;
         if (failed)
         {
             discoverFailure.Set(store.DiscoverFailure);
         }
 
+        var passCount = store.PassCount;
         var title = loading ? Loc.T(L.Velvet.DiscoverLoading)
             : failed ? Loc.T(L.Failure.CouldNotLoad) : Loc.T(L.Velvet.DeckEndTitle);
-        var hint = loading ? string.Empty : failed ? discoverFailure.Text() : Loc.T(L.Velvet.DeckEndHint);
+        var hint = loading ? string.Empty
+            : failed ? discoverFailure.Text()
+            : passCount > 0 ? Loc.T(L.Velvet.DeckPassedHidden, passCount)
+            : Loc.T(L.Velvet.DeckEndHint);
         var bottom = DrawEmpty(body, title, hint);
         if (loading)
         {
@@ -492,23 +511,31 @@ internal sealed partial class VelvetShell
             return;
         }
 
-        if (discoverInclude.RegionMask != 0 && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckWidenRegion),
-                ConfirmButtonTone.Primary, "velvet.deck.widen"))
+        var lead = true;
+        if (passCount > 0 && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckShowAgain), NextTone(ref lead),
+                "velvet.deck.showAgain"))
+        {
+            ShowPassesAgain();
+        }
+
+        if ((discoverInclude.RegionMask != 0 || mutes.RegionMask != 0)
+            && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckWidenRegion), NextTone(ref lead),
+                "velvet.deck.widen"))
         {
             discoverInclude.RegionMask = 0;
-            ApplyDiscoverFilters();
+            mutes.RegionMask = 0;
+            ApplyMutesEverywhere();
         }
 
         if (discoverInclude.AnyBesidesRegion && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.FilterClearAll),
-                discoverInclude.RegionMask != 0 ? ConfirmButtonTone.Neutral : ConfirmButtonTone.Primary,
-                "velvet.deck.clear"))
+                NextTone(ref lead), "velvet.deck.clear"))
         {
             discoverInclude.Clear();
             ApplyDiscoverFilters();
         }
 
         if (!discoverInclude.Any && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckCheckAgain),
-                ConfirmButtonTone.Primary, "velvet.deck.again"))
+                NextTone(ref lead), "velvet.deck.again"))
         {
             ApplyDiscoverFilters();
         }
@@ -518,6 +545,17 @@ internal sealed partial class VelvetShell
         {
             UndoPass();
         }
+    }
+
+    private static ConfirmButtonTone NextTone(ref bool lead)
+    {
+        if (!lead)
+        {
+            return ConfirmButtonTone.Neutral;
+        }
+
+        lead = false;
+        return ConfirmButtonTone.Primary;
     }
 
     private bool DrawEndAction(Rect body, ref float top, string label, ConfirmButtonTone tone, string id)
@@ -574,7 +612,7 @@ internal sealed partial class VelvetShell
         var include = discoverInclude;
         for (var index = 0; index < SocialRegion.Codes.Length; index++)
         {
-            if (SocialRegion.MaskShows(include.RegionMask, index))
+            if ((include.RegionMask & (1 << index)) != 0)
             {
                 AppendSummary(SocialRegion.Codes[index]);
             }
@@ -600,6 +638,7 @@ internal sealed partial class VelvetShell
 
         AppendMaskSummary(include.Gender, VelvetGender.All, GenderLabelOf);
         AppendMaskSummary(include.Sexuality, VelvetSexuality.All, SexualityLabelOf);
+        AppendMaskSummary(include.Languages, VelvetLanguages.All, LanguageLabelOf);
         var statuses = VelvetRelationship.All;
         for (var index = 0; index < statuses.Length; index++)
         {
@@ -624,6 +663,7 @@ internal sealed partial class VelvetShell
 
     private static readonly Func<int, string> GenderLabelOf = VelvetGender.Label;
     private static readonly Func<int, string> SexualityLabelOf = VelvetSexuality.Label;
+    private static readonly Func<int, string> LanguageLabelOf = VelvetLanguages.Label;
 
     private void AppendMaskSummary(int mask, int[] options, Func<int, string> labelOf)
     {
@@ -640,7 +680,7 @@ internal sealed partial class VelvetShell
     {
         foreach (var token in tokens)
         {
-            AppendSummary(token);
+            AppendSummary(VelvetTokenLabels.Of(token));
         }
     }
 
@@ -658,6 +698,7 @@ internal sealed partial class VelvetShell
         BitOperations.PopCount((uint)selection.Intent) + BitOperations.PopCount((uint)selection.Gender)
         + BitOperations.PopCount((uint)selection.Sexuality) + BitOperations.PopCount((uint)selection.Relationship)
         + BitOperations.PopCount((uint)selection.Race) + BitOperations.PopCount((uint)selection.RegionMask)
+        + BitOperations.PopCount((uint)selection.Languages)
         + selection.Roles.Count + selection.Kinks.Count + selection.Limits.Count + selection.Tags.Count;
 
     private string RegionCodeOf(VelvetProfileDto profile) =>

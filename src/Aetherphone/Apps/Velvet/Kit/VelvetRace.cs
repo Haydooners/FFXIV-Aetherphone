@@ -31,7 +31,29 @@ internal static class VelvetRace
         return count;
     }
 
-    public static string Label(GameData gameData, int raceId) => gameData.RaceName((uint)raceId, false);
+    private static readonly string[] LabelCache = new string[9];
+
+    public static string Label(GameData gameData, int raceId)
+    {
+        if (raceId < 1 || raceId > 8)
+        {
+            return string.Empty;
+        }
+
+        var cached = LabelCache[raceId];
+        if (cached is not null)
+        {
+            return cached;
+        }
+
+        var label = gameData.RaceName((uint)raceId, false);
+        if (label.Length > 0)
+        {
+            LabelCache[raceId] = label;
+        }
+
+        return label;
+    }
 
     private static int MaskOf(int[] raceIds)
     {

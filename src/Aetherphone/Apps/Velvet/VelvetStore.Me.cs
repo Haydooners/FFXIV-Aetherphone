@@ -238,13 +238,14 @@ internal sealed partial class VelvetStore
         return found ? order : null;
     }
 
-    public void UpdateIdentity(string displayName, string handle, Action<bool> onComplete)
+    public void UpdateIdentity(string displayName, string handle, Action<bool> onComplete,
+        Action<AepFailure>? onFailure = null)
     {
         work.Run("identity update", async token =>
         {
             var request = new UpdateProfileRequest(displayName.Length > 0 ? displayName : null,
                 handle.Length > 0 ? handle : null, null);
-            var updated = await account.UpdateProfileAsync(request, token).ConfigureAwait(false);
+            var updated = await account.UpdateProfileAsync(request, token, null, onFailure).ConfigureAwait(false);
             if (updated is null)
             {
                 return false;

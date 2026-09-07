@@ -7,8 +7,8 @@ internal enum VChipStyle
 {
     Solid,
     Tint,
-    Outline,
     Ghost,
+    Match,
 }
 
 internal readonly record struct VChipModel(
@@ -20,20 +20,39 @@ internal readonly record struct VChipModel(
 
 internal static class VChip
 {
-    public const float Height = 30f;
+    public const float Height = 32f;
+
+    private const float PadX = 13f;
+    private const float GlyphSlot = 20f;
+    private const float GlyphInset = 6f;
+    private const float RemoveSlot = 16f;
+    private const float RemoveGlyph = 12f;
+    private const float RemoveInset = 12f;
+    private const float SolidHoverMix = 0.12f;
+    private const float TintFill = 0.14f;
+    private const float TintFillHover = 0.22f;
+    private const float TintStroke = 0.32f;
+    private const float GhostFill = 0.10f;
+    private const float GhostFillHover = 0.16f;
+    private const float GhostStroke = 0.16f;
+    private const float MatchFill = 0.22f;
+    private const float MatchFillHover = 0.30f;
+    private const float MatchStroke = 0.85f;
+
+    private static readonly TextStyle LabelStyle = TextStyles.Subheadline;
 
     public static float Width(string label, bool hasIcon, bool removable, float scale)
     {
-        var textSize = Typography.Measure(label, TextStyles.Footnote);
-        var width = textSize.X + Metrics.Space.Md * 2f * scale;
+        var textSize = Typography.Measure(label, LabelStyle);
+        var width = textSize.X + PadX * 2f * scale;
         if (hasIcon)
         {
-            width += 20f * scale;
+            width += GlyphSlot * scale;
         }
 
         if (removable)
         {
-            width += 16f * scale;
+            width += RemoveSlot * scale;
         }
 
         return width;
@@ -50,46 +69,52 @@ internal static class VChip
 
         Vector4 fill;
         Vector4 ink;
+        var stroke = VelvetTheme.Hairline;
         switch (chip.Style)
         {
             case VChipStyle.Solid:
-                fill = hovered ? Vector4.Lerp(chip.Tone, VelvetTheme.OnAccent, 0.12f) : chip.Tone;
+                fill = hovered ? Vector4.Lerp(chip.Tone, VelvetTheme.OnAccent, SolidHoverMix) : chip.Tone;
                 ink = VelvetTheme.OnAccent;
                 break;
             case VChipStyle.Tint:
-                fill = VelvetTheme.Alpha(chip.Tone, hovered ? 0.24f : 0.16f);
-                ink = Vector4.Lerp(chip.Tone, VelvetTheme.OnAccent, 0.55f);
+                fill = VelvetTheme.Alpha(chip.Tone, hovered ? TintFillHover : TintFill);
+                stroke = VelvetTheme.Alpha(chip.Tone, TintStroke);
+                ink = VelvetTheme.ToneInk(chip.Tone);
                 break;
-            case VChipStyle.Outline:
-                fill = VelvetTheme.Alpha(chip.Tone, hovered ? 0.14f : 0.06f);
-                ink = Vector4.Lerp(chip.Tone, VelvetTheme.OnAccent, 0.45f);
+            case VChipStyle.Match:
+                fill = VelvetTheme.Alpha(chip.Tone, hovered ? MatchFillHover : MatchFill);
+                stroke = VelvetTheme.Alpha(chip.Tone, MatchStroke);
+                ink = VelvetTheme.ToneInk(chip.Tone);
                 break;
             default:
-                fill = hovered ? VelvetTheme.Alpha(VelvetTheme.Moonlight, 0.10f) : VelvetTheme.PlumWell;
+                fill = VelvetTheme.Alpha(VelvetTheme.Moonlight, hovered ? GhostFillHover : GhostFill);
+                stroke = VelvetTheme.Alpha(VelvetTheme.Moonlight, GhostStroke);
                 ink = hovered ? VelvetTheme.TitleInk : VelvetTheme.BodyInk;
                 break;
         }
 
         Squircle.Fill(drawList, min, max, radius, fill.Packed());
-        if (chip.Style == VChipStyle.Outline)
+        if (chip.Style != VChipStyle.Solid)
         {
-            Squircle.Stroke(drawList, min, max, radius, chip.Tone.Packed(), Metrics.Stroke.Thin * scale);
+            var strokeWidth = chip.Style == VChipStyle.Match ? Metrics.Stroke.Ring : Metrics.Stroke.Hairline;
+            Squircle.Stroke(drawList, min, max, radius, stroke.Packed(), strokeWidth * scale);
         }
 
-        var cursorX = min.X + Metrics.Space.Md * scale;
+        var cursorX = min.X + PadX * scale;
         if (chip.Glyph is { } glyph)
         {
-            PhoneIcon.Draw(drawList, new Vector2(cursorX + 6f * scale, centerY), glyph, ink, VIcon.Chip * scale);
-            cursorX += 20f * scale;
+            PhoneIcon.Draw(drawList, new Vector2(cursorX + GlyphInset * scale, centerY), glyph, ink,
+                VIcon.Chip * scale);
+            cursorX += GlyphSlot * scale;
         }
 
-        var textSize = Typography.Measure(chip.Label, TextStyles.Footnote);
-        Typography.Draw(drawList, new Vector2(cursorX, centerY - textSize.Y * 0.5f), chip.Label, ink,
-            TextStyles.Footnote);
+        var textSize = Typography.Measure(chip.Label, LabelStyle);
+        Typography.Draw(drawList, new Vector2(cursorX, centerY - textSize.Y * 0.5f), chip.Label, ink, LabelStyle);
 
         if (chip.Removable)
         {
-            PhoneIcon.Draw(drawList, new Vector2(max.X - 12f * scale, centerY), PhoneIcons.X, ink, 12f * scale);
+            PhoneIcon.Draw(drawList, new Vector2(max.X - RemoveInset * scale, centerY), PhoneIcons.X, ink,
+                RemoveGlyph * scale);
         }
 
         if (hovered)

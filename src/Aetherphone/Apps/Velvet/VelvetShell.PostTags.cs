@@ -60,9 +60,10 @@ internal sealed partial class VelvetShell
         for (var index = 0; index < options.Length; index++)
         {
             var token = options[index];
+            var label = VelvetTokenLabels.Of(token);
             chipModels.Add(post.HasTag(token)
-                ? new VChipModel(token, VChipStyle.Solid, accent, PhoneIcons.Check)
-                : new VChipModel(token, VChipStyle.Ghost, VelvetTheme.Moonlight));
+                ? new VChipModel(label, VChipStyle.Solid, accent, PhoneIcons.Check)
+                : new VChipModel(label, VChipStyle.Ghost, VelvetTheme.Moonlight));
         }
 
         var clicked = DrawChipFlow(width, scale);

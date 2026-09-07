@@ -54,6 +54,8 @@ internal sealed partial class VelvetStore
             discoverFailureBox = null;
             discoverResults = WithoutNotInterested(page.Users);
             discoverCursor = page.NextCursor;
+            AepLog.Info($"Velvet discover returned {page.Users.Length} profiles, kept {discoverResults.Length} "
+                + $"after {passedAt.Count} local passes");
         }, () =>
         {
             loadingDiscover = false;
@@ -83,7 +85,9 @@ internal sealed partial class VelvetStore
             if (page is not null && epoch == discoverEpoch)
             {
                 discoverResults = AppendUniqueDiscover(discoverResults, WithoutNotInterested(page.Users));
-                discoverCursor = page.NextCursor;
+                discoverCursor = page.Users.Length > 0 ? page.NextCursor : null;
+                AepLog.Info($"Velvet discover page returned {page.Users.Length} profiles, "
+                    + $"deck pool now {discoverResults.Length}");
             }
         }, () => loadingMoreDiscover = false);
     }
@@ -252,7 +256,7 @@ internal sealed partial class VelvetStore
         });
     }
 
-    public void Heartbeat(string region, bool? isLalafell, int raceId)
+    public void Heartbeat(bool? isLalafell, int raceId)
     {
         if (!session.IsSignedIn)
         {
@@ -261,81 +265,7 @@ internal sealed partial class VelvetStore
 
         var offset = SocialTimeZone.EffectiveOffsetMinutes(configuration);
         work.Run("heartbeat", async token =>
-            await client.HeartbeatAsync(offset, region, isLalafell, raceId, token).ConfigureAwait(false));
-    }
-
-    public void EnsureUserPosts(string userId)
-    {
-        if (!session.IsSignedIn)
-        {
-            return;
-        }
-
-        if (userPostsUserId == userId && (userPostsLoaded || userPostsLoading))
-        {
-            return;
-        }
-
-        if (userPostsUserId != userId)
-        {
-            userPostsGate.Reset();
-        }
-
-        if (!userPostsGate.TryPass())
-        {
-            return;
-        }
-
-        userPostsUserId = userId;
-        userPosts = Array.Empty<VelvetPostDto>();
-        userPostsTotal = 0;
-        userPostsCursor = null;
-        userPostsLoaded = false;
-        userPostsFailed = false;
-        userPostsLoading = true;
-        work.Run("user posts", async token =>
-        {
-            var page = await client.UserPostsAsync(userId, null, token).ConfigureAwait(false);
-            if (userPostsUserId != userId)
-            {
-                return;
-            }
-
-            if (page is null)
-            {
-                userPostsFailed = true;
-                return;
-            }
-
-            userPosts = page.Items;
-            userPostsTotal = page.TotalCount;
-            userPostsCursor = page.NextCursor;
-            userPostsLoaded = true;
-        }, () => userPostsLoading = false);
-    }
-
-    public void LoadMoreUserPosts()
-    {
-        var userId = userPostsUserId;
-        var cursor = userPostsCursor;
-        if (!session.IsSignedIn || userId is null || cursor is null || userPostsLoadingMore || userPostsLoading)
-        {
-            return;
-        }
-
-        userPostsLoadingMore = true;
-        work.Run("user posts more", async token =>
-        {
-            var page = await client.UserPostsAsync(userId, cursor, token).ConfigureAwait(false);
-            if (page is null || userPostsUserId != userId)
-            {
-                return;
-            }
-
-            userPosts = CopyOnWrite.AppendPageById(userPosts, page.Items);
-            userPostsTotal = page.TotalCount;
-            userPostsCursor = page.NextCursor;
-        }, () => userPostsLoadingMore = false);
+            await client.HeartbeatAsync(offset, isLalafell, raceId, token).ConfigureAwait(false));
     }
 
     public void RefreshRequests()

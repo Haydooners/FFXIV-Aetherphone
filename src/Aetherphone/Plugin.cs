@@ -19,6 +19,7 @@ using Aetherphone.Windows;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.ClientState.Keys;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
 using Dalamud.Game.Config;
 using Dalamud.Game.Gui.ContextMenu;
@@ -576,20 +577,20 @@ public sealed class Plugin : IDalamudPlugin
 
     private void AddLinkpearlMenuItem(IMenuOpenedArgs args)
     {
-        if (!Cfg.LinkpearlPlayerContextMenu || !linkpearlGate.Open)
+        if (!Cfg.LinkpearlContextMenu || !linkpearlGate.Open)
         {
             return;
         }
 
         if (args.Target is not MenuTargetDefault target || target.TargetName.Length == 0 ||
-            target.TargetHomeWorld.RowId == 0 || target.TargetObject?.ObjectKind != ObjectKind.Pc)
+            target.TargetObject is not (null or IPlayerCharacter))
         {
             return;
         }
 
         var name = target.TargetName;
         var world = services.GameData.WorldName(target.TargetHomeWorld.RowId);
-        if (services.GameData.IsLocalPlayer(name, world))
+        if (world.Length == 0 || services.GameData.IsLocalPlayer(name, world))
         {
             return;
         }

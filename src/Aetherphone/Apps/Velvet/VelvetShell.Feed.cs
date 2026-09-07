@@ -13,12 +13,13 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetShell
 {
+    private const float FabRadius = 27f;
     private const float FeedConnectWidth = 76f;
     private const float FeedConnectHeight = 28f;
     private const float FeedConnectGap = 8f;
 
     private readonly FeedVirtualizer feedVirtualizer = new(400f);
-    private readonly Dictionary<string, string> feedTagLines = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string[]> feedTagLabels = new(StringComparer.Ordinal);
     private readonly HashSet<string> feedConnectedIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> feedRequestedIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> feedIncomingIds = new(StringComparer.Ordinal);
@@ -49,7 +50,7 @@ internal sealed partial class VelvetShell
 
             stories.DrawTray(theme);
             var width = ScrollLayout.StableContentWidth();
-            var feed = store.Feed;
+            var feed = AllowedRegions(feedInclude) == 0 ? Array.Empty<VelvetPostDto>() : store.Feed;
             if (feed.Length == 0)
             {
                 var emptyRect = new Rect(new Vector2(area.Min.X, ImGui.GetCursorScreenPos().Y), area.Max);
@@ -85,7 +86,7 @@ internal sealed partial class VelvetShell
         }
 
         if (ComposeFab.Draw(area, "velvetCompose", VelvetTheme.Rose, PhoneIcons.Plus,
-                Loc.T(L.Velvet.Share), "velvet.compose"))
+                Loc.T(L.Velvet.Share), "velvet.compose", VelvetTheme.RoseDeep, FabRadius, true))
         {
             post.Open();
             router.Push(VelvetView.Compose);
@@ -143,7 +144,7 @@ internal sealed partial class VelvetShell
 
     private void RefreshFeedContent()
     {
-        feedTagLines.Clear();
+        feedTagLabels.Clear();
         store.RefreshFeed();
         stories.RefreshTray();
     }
@@ -154,21 +155,26 @@ internal sealed partial class VelvetShell
         return post.EditedAtUnix is null ? time : Loc.T(L.Velvet.EditedStamp, time);
     }
 
-    private string TagLineFor(VelvetPostDto entry)
+    private string[] TagLabelsFor(VelvetPostDto entry)
     {
         if (entry.Tags.Length == 0)
         {
-            return string.Empty;
+            return Array.Empty<string>();
         }
 
-        if (feedTagLines.TryGetValue(entry.Id, out var cached))
+        if (feedTagLabels.TryGetValue(entry.Id, out var cached) && cached.Length == entry.Tags.Length)
         {
             return cached;
         }
 
-        var line = "#" + string.Join("  #", entry.Tags);
-        feedTagLines[entry.Id] = line;
-        return line;
+        var labels = new string[entry.Tags.Length];
+        for (var index = 0; index < entry.Tags.Length; index++)
+        {
+            labels[index] = "#" + VelvetTokenLabels.Of(entry.Tags[index]);
+        }
+
+        feedTagLabels[entry.Id] = labels;
+        return labels;
     }
 
     private void StartStoryCompose()
@@ -270,10 +276,8 @@ internal sealed partial class VelvetShell
         var captionHeight = captionText.Length == 0
             ? 0f
             : captionTextHeight + translateHeight + PostCardMetrics.CaptionGap * scale;
-        var tagsLine = TagLineFor(entry);
-        var tagsHeight = tagsLine.Length == 0
-            ? 0f
-            : Typography.MeasureWrappedBlock(tagsLine, TextStyles.Footnote, innerWidth).Y;
+        var tagLabels = TagLabelsFor(entry);
+        var tagsHeight = VTagRun.Height(tagLabels, innerWidth, scale);
         var cellHeight = padY + headerBlock + PostCardMetrics.MediaGap * scale + mediaHeight
             + PostCardMetrics.ActionsGap * scale + actionsHeight + PostCardMetrics.TextGap * scale
             + captionHeight + tagsHeight + padY;
@@ -346,7 +350,7 @@ internal sealed partial class VelvetShell
         if (connectable && SocialPill.Outline(drawList, connectRect, Loc.T(L.Velvet.Connect), VelvetInk.Shared,
                 TextStyles.FootnoteEmphasized, connectRect.Height * 0.5f, VelvetInk.Shared.ButtonFill))
         {
-            RequestIntro(entry.OwnerId, authorName);
+            RequestIntro(entry.OwnerId, entry.OwnerDisplayName, entry.OwnerHandle, entry.OwnerAvatarUrl);
         }
 
         var photos = PostMedia.Photos(entry.MediaUrls, entry.MediaUrl);
@@ -417,10 +421,14 @@ internal sealed partial class VelvetShell
             lineY += captionHeight;
         }
 
-        if (tagsLine.Length > 0)
+        if (tagLabels.Length > 0)
         {
-            Typography.DrawWrappedLeft(new Vector2(innerX, lineY), tagsLine, VelvetTheme.RoseInk, TextStyles.Footnote,
-                innerWidth);
+            var tappedTag = VTagRun.Draw(drawList, new Vector2(innerX, lineY), innerWidth, tagLabels,
+                VelvetTheme.RoseInk, VelvetTheme.RoseGlow, scale);
+            if (tappedTag >= 0)
+            {
+                OpenTagPosts(entry.Tags[tappedTag]);
+            }
         }
 
         FeedCell.End(drawList, cell, VelvetTheme.Hairline);

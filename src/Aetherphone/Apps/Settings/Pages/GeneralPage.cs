@@ -35,7 +35,7 @@ internal sealed class GeneralPage : ISettingsPage
         {
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
             var translationRow = translation.Enabled ? 1 : 0;
-            var card = GroupCard.Begin(theme, 5 + translationRow);
+            var card = GroupCard.Begin(theme, 6 + translationRow);
             var showInGpose = SettingsRow.Bool(card.NextRow(), Loc.T(L.Settings.ShowInGpose),
                 configuration.ShowInGpose, theme, null, Loc.T(L.Settings.ShowInGposeHint));
             var importScreenshots = SettingsRow.Bool(card.NextRow(), Loc.T(L.Settings.ImportScreenshots),
@@ -47,6 +47,8 @@ internal sealed class GeneralPage : ISettingsPage
                 configuration.ShowSensitiveContent, theme, null, Loc.T(L.Settings.ShowSensitiveHint));
             var marketContextMenu = SettingsRow.Bool(card.NextRow(), Loc.T(L.Settings.MarketContextMenu),
                 configuration.MarketContextMenu, theme, null, Loc.T(L.Settings.MarketContextMenuHint));
+            var linkpearlContextMenu = SettingsRow.Bool(card.NextRow(), Loc.T(L.Settings.LinkpearlContextMenu),
+                configuration.LinkpearlContextMenu, theme, null, Loc.T(L.Settings.LinkpearlContextMenuHint));
             var autoTranslate = configuration.AutoTranslatePosts;
             if (translationRow > 0)
             {
@@ -88,6 +90,12 @@ internal sealed class GeneralPage : ISettingsPage
             if (marketContextMenu != configuration.MarketContextMenu)
             {
                 configuration.MarketContextMenu = marketContextMenu;
+                configuration.Save();
+            }
+
+            if (linkpearlContextMenu != configuration.LinkpearlContextMenu)
+            {
+                configuration.LinkpearlContextMenu = linkpearlContextMenu;
                 configuration.Save();
             }
 

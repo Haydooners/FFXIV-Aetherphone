@@ -73,12 +73,12 @@ internal sealed partial class MessageApp
                 CanDelete = true,
                 CanReport = true,
                 CanTranslate = true,
-                IsStarred = app.IsStarred,
+                IsStarred = IsStarred,
                 MyReactionTo = store.MyReactionTo,
                 OnReply = BeginReply,
                 OnForward = id => app.router.Push(MessageRoute.Forward(id)),
                 OnCopy = CopyMessage,
-                OnStar = app.ToggleStar,
+                OnStar = ToggleStar,
                 OnEdit = BeginEdit,
                 OnInfo = id =>
                 {
@@ -90,6 +90,12 @@ internal sealed partial class MessageApp
                 OnTranslate = TranslateMessage,
                 OnReact = store.SetReaction,
             };
+        }
+
+        private void ToggleStar(string messageId)
+        {
+            app.ToggleStar(messageId);
+            InvalidateTranscript();
         }
 
         protected override void OpenImageView(string messageId) => app.router.Push(MessageRoute.ImageView(messageId));
@@ -342,20 +348,6 @@ internal sealed partial class MessageApp
         }
 
         router.Pop();
-    }
-
-    private bool IsStarred(string messageId)
-    {
-        var starred = configuration.MessageStarredMessages;
-        for (var index = 0; index < starred.Count; index++)
-        {
-            if (starred[index].MessageId == messageId)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private int StarredCountIn(string conversationId)
