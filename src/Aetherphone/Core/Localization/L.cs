@@ -5446,6 +5446,18 @@ internal static class L
         public static readonly LocString Coin = new("minimized.coin", "Aether Coin");
         public static readonly LocString Ventures = new("minimized.ventures", "Ventures");
         public static readonly LocString Rings = new("minimized.rings", "Activity rings");
+        public static readonly LocString Shape = new("minimized.shape", "Shape");
+        public static readonly LocString ShapePhone = new("minimized.shapePhone", "Mini phone");
+        public static readonly LocString ShapeMinimap = new("minimized.shapeMinimap", "Minimap");
+        public static readonly LocString ShapeHint = new("minimized.shapeHint", "Choose what the phone collapses into. The minimap draws the zone map around you, so it can sit where the game minimap does.");
+        public static readonly LocString Wallpaper = new("minimized.wallpaper", "Show wallpaper");
+        public static readonly LocString WallpaperHint = new("minimized.wallpaperHint", "Paints your home wallpaper behind the mini phone, dimmed so the clock stays readable.");
+        public static readonly LocString Size = new("minimized.size", "Size");
+        public static readonly LocString SizeSmall = new("minimized.sizeSmall", "Small");
+        public static readonly LocString SizeMedium = new("minimized.sizeMedium", "Medium");
+        public static readonly LocString SizeLarge = new("minimized.sizeLarge", "Large");
+        public static readonly LocString MinimapHint = new("minimized.minimapHint", "The map faces north and shows your heading, the zone name and your coordinates. Tap it to open the phone, hold it to close.");
+        public static readonly LocString NoMap = new("minimized.noMap", "No map here");
     }
 
     internal static class Time

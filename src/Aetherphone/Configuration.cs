@@ -80,6 +80,9 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public Vector2? MinimizedPosition { get; set; }
     public Vector2? LandscapePosition { get; set; }
     public MinimizedLayout? MinimizedLayout { get; set; }
+    public MinimizedShape MinimizedShape { get; set; } = MinimizedShape.Phone;
+    public MinimizedMapSize MinimizedMapSize { get; set; } = MinimizedMapSize.Medium;
+    public bool MinimizedWallpaper { get; set; }
     public bool DoNotDisturb { get; set; }
     public bool QuietWhileBusy { get; set; } = true;
     public bool Vibration { get; set; } = true;
