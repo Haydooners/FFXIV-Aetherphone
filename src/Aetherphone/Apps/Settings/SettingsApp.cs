@@ -21,6 +21,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
     public string DisplayName => Loc.T(L.Apps.Settings);
     public string Glyph => "S";
     public int BadgeCount => configuration.HasUnseenChangelog ? 1 : 0;
+    public bool HasBadge => true;
     public bool BadgeAsDot => true;
     public bool WantsSystemTheme => true;
     public ShareKindSet AcceptedShares => ShareKindSet.Photo;
