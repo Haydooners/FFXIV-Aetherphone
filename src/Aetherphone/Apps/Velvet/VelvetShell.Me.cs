@@ -30,6 +30,7 @@ internal sealed partial class VelvetShell
     private const float SettingsSegmentPadY = 10f;
     private const float SettingsTextInset = VCard.Pad;
     private const float SettingsHelpGap = 8f;
+    private const float SettingsCardGap = 12f;
     private const float SettingsSectionGap = 18f;
     private const float SettingsTopGap = 6f;
     private const float SettingsBottomGap = 40f;
@@ -59,6 +60,10 @@ internal sealed partial class VelvetShell
                 DrawDiscoveryCard(drawList, width, me, scale);
                 Gap(SettingsHelpGap);
                 DrawSettingsFootnote(Loc.T(L.Velvet.DiscoverableHelp), scale);
+                Gap(SettingsCardGap);
+                DrawDeckModeCard(drawList, width, scale);
+                Gap(SettingsHelpGap);
+                DrawSettingsFootnote(Loc.T(L.Velvet.DeckModeHelp), scale);
 
                 Gap(SettingsSectionGap);
                 VSectionHeader.Overline(Loc.T(L.Velvet.WhoCanMessage), string.Empty, SettingsTextInset * scale);
@@ -94,6 +99,26 @@ internal sealed partial class VelvetShell
         store.UpdateProfile(
             new UpdateVelvetProfileRequest(null, null, null, null, null, null, null, discoverable),
             _ => editBusy = false);
+    }
+
+    private void DrawDeckModeCard(ImDrawListPtr drawList, float width, float scale)
+    {
+        var rowHeight = SettingsRowHeight * scale;
+        var card = VCard.Begin(drawList, width, rowHeight, scale, SettingsCardPadY);
+        var row = new Rect(card.ContentOrigin,
+            new Vector2(card.ContentOrigin.X + card.ContentWidth, card.ContentOrigin.Y + rowHeight));
+        var labelWidth = card.ContentWidth - (VToggle.TrackWidth + Metrics.Space.Md) * scale;
+        VCard.RowLabel(drawList, card.ContentOrigin, rowHeight, PhoneIcons.UserSquareRounded, VelvetTheme.Rose,
+            Loc.T(L.Velvet.DeckModeLabel), labelWidth, scale);
+        var deckMode = VToggle.Draw(drawList, "velvetDeckMode", row, configuration.VelvetDiscoverDeck, scale);
+        VCard.End(card);
+        if (deckMode == configuration.VelvetDiscoverDeck)
+        {
+            return;
+        }
+
+        configuration.VelvetDiscoverDeck = deckMode;
+        configuration.Save();
     }
 
     private void DrawWhoCard(ImDrawListPtr drawList, float width, VelvetProfileDto me, float scale)

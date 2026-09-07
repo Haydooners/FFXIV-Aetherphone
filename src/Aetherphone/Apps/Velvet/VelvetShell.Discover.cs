@@ -84,8 +84,15 @@ internal sealed partial class VelvetShell
             ApplyDiscoverFilters();
         }
 
+        SyncDeckMode();
         SyncDeck();
-        RefillDeck();
+        if (!deckModeSynced)
+        {
+            DrawDiscoverGrid(body);
+            return;
+        }
+
+        RefillDeck(DeckRefillBelow);
         RecycleWhenDry();
         StepCard(body.Width);
         if (deck.Count == 0)
@@ -121,25 +128,64 @@ internal sealed partial class VelvetShell
         cardSlide.SnapTo(0f);
         cardExit = 0;
         filterSummaryDirty = true;
+        gridLabels.Clear();
+        gridLabelsLanguage = null;
+        deckModeSynced = configuration.VelvetDiscoverDeck;
+    }
+
+    private void SyncDeckMode()
+    {
+        var deckMode = configuration.VelvetDiscoverDeck;
+        if (deckMode == deckModeSynced)
+        {
+            return;
+        }
+
+        if (cardExit != 0)
+        {
+            CommitCardExit();
+        }
+
+        deckModeSynced = deckMode;
+        deckSource = Array.Empty<VelvetProfileDto>();
+        deckTopId = string.Empty;
+        lastPassed = null;
+        gridScrollTopPending = true;
     }
 
     private void SyncDeck()
     {
         var source = store.DiscoverResults;
         var me = store.Me;
-        if (ReferenceEquals(source, deckSource) && ReferenceEquals(me, deckMe))
+        var sameSource = ReferenceEquals(source, deckSource);
+        if (sameSource && ReferenceEquals(me, deckMe))
         {
             return;
         }
 
+        if (!deckModeSynced && sameSource && deckMe is not null)
+        {
+            deckMe = me;
+            FillGridLabels(0);
+            return;
+        }
+
+        var appended = !deckModeSynced && ReferenceEquals(me, deckMe) && ExtendsDeckSource(source);
+        var firstNew = appended ? deckSource.Length : 0;
         deckSource = source;
         deckMe = me;
-        deck.Clear();
-        deckScores.Clear();
+        if (!appended)
+        {
+            deck.Clear();
+            deckScores.Clear();
+            gridLabels.Clear();
+        }
+
+        var floor = deck.Count;
         var allowedRegions = AllowedRegions(discoverInclude);
         var skippedConnected = 0;
         var skippedRegion = 0;
-        for (var index = 0; index < source.Length; index++)
+        for (var index = firstNew; index < source.Length; index++)
         {
             var profile = source[index];
             if (profile.ConnectionState != VelvetConnectionState.None)
@@ -155,13 +201,26 @@ internal sealed partial class VelvetShell
             }
 
             var score = VelvetFit.Score(me, profile);
-            InsertByScore(profile, SeenBefore(profile.UserId) ? score - DeckRevisitPenalty : score);
+            InsertByScore(profile, SeenBefore(profile.UserId) ? score - DeckRevisitPenalty : score, floor);
         }
 
-        AepLog.Info($"Velvet deck rebuilt: {deck.Count} cards from {source.Length} profiles, "
-            + $"{skippedConnected} already connected, {skippedRegion} out of region, {store.PassCount} passes held, "
-            + $"{revisited.Count} on a second look");
-        PinDeckTop();
+        AepLog.Info($"Velvet deck {(appended ? "extended" : "rebuilt")}: {deck.Count} cards from {source.Length} "
+            + $"profiles, {skippedConnected} already connected, {skippedRegion} out of region, {store.PassCount} "
+            + $"passes held, {revisited.Count} on a second look");
+        if (deckModeSynced)
+        {
+            PinDeckTop();
+            return;
+        }
+
+        FillGridLabels(floor);
+    }
+
+    private bool ExtendsDeckSource(VelvetProfileDto[] source)
+    {
+        var known = deckSource.Length;
+        return known > 0 && source.Length > known && ReferenceEquals(source[0], deckSource[0])
+            && ReferenceEquals(source[known - 1], deckSource[known - 1]);
     }
 
     private bool RegionAllowed(VelvetProfileDto profile, int allowedRegions)
@@ -175,10 +234,10 @@ internal sealed partial class VelvetShell
         return regionIndex >= 0 && (allowedRegions & (1 << regionIndex)) != 0;
     }
 
-    private void InsertByScore(VelvetProfileDto profile, int score)
+    private void InsertByScore(VelvetProfileDto profile, int score, int floor)
     {
         var at = deck.Count;
-        while (at > 0 && deckScores[at - 1] < score)
+        while (at > floor && deckScores[at - 1] < score)
         {
             at--;
         }
@@ -218,10 +277,9 @@ internal sealed partial class VelvetShell
         OnDeckTopChanged();
     }
 
-    private void RefillDeck()
+    private void RefillDeck(int below)
     {
-        if (deck.Count < DeckRefillBelow && store.HasMoreDiscover && !store.LoadingDiscover
-            && !store.LoadingMoreDiscover)
+        if (deck.Count < below && store.HasMoreDiscover && !store.LoadingDiscover && !store.LoadingMoreDiscover)
         {
             store.LoadMoreDiscover();
         }
