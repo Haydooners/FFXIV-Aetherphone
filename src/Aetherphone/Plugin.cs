@@ -7,6 +7,7 @@ using Aetherphone.Core.Game;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Message;
 using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Platform;
@@ -19,6 +20,7 @@ using Aetherphone.Windows;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.GamePad;
 using Dalamud.Game.ClientState.Keys;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
 using Dalamud.Game.Config;
 using Dalamud.Game.Gui.ContextMenu;
@@ -76,6 +78,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly UpdateChipWindow updateChipWindow;
     private readonly HuntsMapMarkersIndicatorWindow huntsMapMarkersIndicatorWindow;
     private readonly LinkpearlPopouts linkpearlPopouts;
+    private readonly IMessagePopouts messagePopouts;
     private readonly PopoutPresence linkpearlPresence;
     private readonly LinkpearlHotkey linkpearlHotkey;
     private readonly AppGate linkpearlGate;
@@ -161,6 +164,15 @@ public sealed class Plugin : IDalamudPlugin
             {
                 windowSystem.AddWindow(linkpearlPopouts.Windows[index]);
             }
+
+            messagePopouts = bundle.MessagePopouts;
+            for (var index = 0; index < messagePopouts.Windows.Count; index++)
+            {
+                windowSystem.AddWindow(messagePopouts.Windows[index]);
+            }
+
+            messagePopouts.OpenInPhone = OpenMessageConversation;
+            messagePopouts.Restore();
 
             linkpearlPopouts.OpenInPhone = OpenLinkpearlConversation;
             linkpearlPopouts.LookUpInPhone = OpenLinkpearlLookup;
@@ -292,6 +304,12 @@ public sealed class Plugin : IDalamudPlugin
         Framework.Update += OnAutoOpenTick;
     }
 
+    private void OpenMessageConversation(string conversationId)
+    {
+        services.DmLauncher.RequestConversation(conversationId);
+        ShowPhoneApp("message");
+    }
+
     private void OpenLinkpearlConversation(string conversationKey)
     {
         services.LinkpearlLauncher.Request(conversationKey);
@@ -384,6 +402,7 @@ public sealed class Plugin : IDalamudPlugin
         phoneWindow.PersistPositions();
         linkpearlPresence.Dispose();
         linkpearlPopouts.Dispose();
+        messagePopouts.Dispose();
         windowSystem.RemoveAllWindows();
         videoDebugWindow.Dispose();
         streamSuggestions.Dispose();
@@ -564,20 +583,20 @@ public sealed class Plugin : IDalamudPlugin
 
     private void AddLinkpearlMenuItem(IMenuOpenedArgs args)
     {
-        if (!Cfg.LinkpearlPlayerContextMenu || !linkpearlGate.Open)
+        if (!Cfg.LinkpearlContextMenu || !linkpearlGate.Open)
         {
             return;
         }
 
         if (args.Target is not MenuTargetDefault target || target.TargetName.Length == 0 ||
-            target.TargetHomeWorld.RowId == 0)
+            target.TargetObject is not (null or IPlayerCharacter))
         {
             return;
         }
 
         var name = target.TargetName;
         var world = services.GameData.WorldName(target.TargetHomeWorld.RowId);
-        if (services.GameData.IsLocalPlayer(name, world))
+        if (world.Length == 0 || services.GameData.IsLocalPlayer(name, world))
         {
             return;
         }

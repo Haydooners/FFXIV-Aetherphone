@@ -58,6 +58,7 @@ internal sealed class PhoneServices : IDisposable
     public required Windows.Components.ArtworkCache Artwork { get; init; }
     public required WeatherService Weather { get; init; }
     public required WeatherControl WeatherControl { get; init; }
+    public required GameUiVisibility GameUiVisibility { get; init; }
     public required NotificationService Notifications { get; init; }
     public required SocialNotificationService SocialNotifications { get; init; }
     public required ModerationNoticeService ModerationNotices { get; init; }
@@ -66,6 +67,7 @@ internal sealed class PhoneServices : IDisposable
     public required ModerationNoticePresenter ModerationPresenter { get; init; }
     public required ModerationNoticeArchive ModerationArchive { get; init; }
     public required SafetyLauncher SafetyLauncher { get; init; }
+    public required SettingsLauncher SettingsLauncher { get; init; }
     public required SoundService Sound { get; init; }
     public required UiSoundService UiSound { get; init; }
     public required FrameworkTicker UiSoundTicker { get; init; }
@@ -202,6 +204,7 @@ internal sealed class PhoneServices : IDisposable
         var weather = new WeatherService(dataManager, clientState);
         var weatherControl = new WeatherControl(weather, framework, clientState, condition,
             installer.Gate("skywatcher"));
+        var gameUiVisibility = new GameUiVisibility(framework, Plugin.PluginInterface);
         var soundBundledRoot = Path.Combine(Plugin.PluginInterface.AssemblyLocation.DirectoryName ?? string.Empty,
             "Sounds");
         var soundUserRoot = Path.Combine(configDirectory.FullName, "Sounds");
@@ -386,6 +389,7 @@ internal sealed class PhoneServices : IDisposable
             Artwork = new Windows.Components.ArtworkCache(textures),
             Weather = weather,
             WeatherControl = weatherControl,
+            GameUiVisibility = gameUiVisibility,
             Notifications = notifications,
             SocialNotifications = socialNotifications,
             ModerationNotices = moderationNotices,
@@ -393,6 +397,7 @@ internal sealed class PhoneServices : IDisposable
             ModerationPresenter = moderationPresenter,
             ModerationArchive = moderationArchive,
             SafetyLauncher = safetyLauncher,
+            SettingsLauncher = new SettingsLauncher(),
             Sound = sound,
             UiSound = uiSound,
             UiSoundTicker = uiSoundTicker,
@@ -505,6 +510,7 @@ internal sealed class PhoneServices : IDisposable
         CharacterSwitcher.Dispose();
         CharacterWatch.Dispose();
         WeatherControl.Dispose();
+        GameUiVisibility.Dispose();
         SocialNotifications.Dispose();
         ModerationPresenter.Dispose();
         ModerationNotices.Dispose();
