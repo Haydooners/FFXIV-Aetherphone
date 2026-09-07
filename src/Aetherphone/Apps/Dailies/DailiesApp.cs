@@ -44,7 +44,6 @@ internal sealed class DailiesApp : IPhoneApp
     public int BadgeCount => outstandingCount;
     public bool HasBadge => true;
 
-    private readonly Configuration configuration;
     private readonly GameData gameData;
     private readonly DailyCheckStore checkStore;
     private readonly DailyAutoStatus[] autoStatuses;
@@ -58,7 +57,6 @@ internal sealed class DailiesApp : IPhoneApp
 
     public DailiesApp(Configuration configuration, GameData gameData)
     {
-        this.configuration = configuration;
         this.gameData = gameData;
         checkStore = new DailyCheckStore(configuration);
         autoStatuses = new DailyAutoStatus[DailyCatalog.Items.Length];
