@@ -63,6 +63,19 @@ public sealed class ConfigurationBadgeMigrationTests
     }
 
     [Fact]
+    public void SettingABadgePreferenceRaisesTheChangedEvent()
+    {
+        var configuration = JsonConvert.DeserializeObject<Configuration>("{}")!;
+        var raised = 0;
+        configuration.BadgeSettingsChanged += () => raised++;
+
+        configuration.ApplyAppBadgeEnabled("notifications", false);
+
+        Assert.Equal(1, raised);
+        Assert.False(configuration.IsAppBadgeEnabled("notifications"));
+    }
+
+    [Fact]
     public void MigrationDoesNothingOnceAlreadyMarkedMigrated()
     {
         const string json =

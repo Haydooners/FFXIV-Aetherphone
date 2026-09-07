@@ -8,6 +8,7 @@ internal readonly record struct NotificationChannel(string AppId, LocString Name
 internal static class NotificationChannels
 {
     public const string PhoneChannel = "phone";
+    public const string NotificationsAppId = "notifications";
 
     public static readonly IReadOnlyList<NotificationChannel> All = new NotificationChannel[]
     {

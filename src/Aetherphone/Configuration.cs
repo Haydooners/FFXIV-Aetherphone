@@ -732,13 +732,21 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
 
     public string ResolveNotificationToken(string appId) => AppSoundOverride(appId) ?? NotificationSound;
 
+    public event Action? BadgeSettingsChanged;
+
     public bool IsAppBadgeEnabled(string appId) =>
         !BadgeSettings.TryGetValue(appId, out var enabled) || enabled;
 
     public void SetAppBadgeEnabled(string appId, bool enabled)
     {
-        BadgeSettings[appId] = enabled;
+        ApplyAppBadgeEnabled(appId, enabled);
         Save();
+    }
+
+    internal void ApplyAppBadgeEnabled(string appId, bool enabled)
+    {
+        BadgeSettings[appId] = enabled;
+        BadgeSettingsChanged?.Invoke();
     }
 
     public void MigrateBadgeSettings()

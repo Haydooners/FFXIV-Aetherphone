@@ -202,7 +202,7 @@ Whether the count actually reaches the tile is a separate, generic on/off switch
 
 The toggle is not a separate screen: Settings > Notifications and Badges (`NotificationsPage`) builds one row per app from the live app list (`AppBundle.Apps`, threaded into `SettingsApp`/`NotificationsPage` the same way it already reaches `AppStoreApp`), showing any app that either has a notification channel (`NotificationChannels.Contains`) or `HasBadge`. `AppNotificationPage` then draws whichever sections apply to that app, top to bottom: Alerts (only when it has a channel), a "Show badge" row under Home Screen (only when `HasBadge` is true), then Sound (only when it has a channel and notifications are enabled). An app can have either, both, or (for most apps, which set neither) no row at all.
 
-The minimized phone also shows `NotificationService.UnreadCount` as a badge (`MinimizedPhone.DrawBadge` in src/Aetherphone/Windows/Components/MinimizedPhone.cs).
+The minimized phone also shows `NotificationService.UnreadCount` as a badge (`MinimizedPhone.DrawBadge` in src/Aetherphone/Windows/Components/Chrome/MinimizedPhone.cs), and the DTR bar entry appends the same count (`Plugin.UpdateDtrBadge`). Both read `NotificationsApp`'s badge preference, so turning that app's badge off clears all three surfaces. Neither recomputes per frame: they refresh on `NotificationService.Changed` and on `Configuration.BadgeSettingsChanged`, which `SetAppBadgeEnabled` raises.
 
 ## Social notification types
 

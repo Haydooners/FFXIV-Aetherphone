@@ -196,6 +196,7 @@ public sealed class Plugin : IDalamudPlugin
             dtrEntry = DtrBar.Get(AepConstants.Name);
             dtrEntry.OnClick = _ => phoneWindow.ToggleShell();
             services.Notifications.Changed += UpdateDtrBadge;
+            Cfg.BadgeSettingsChanged += UpdateDtrBadge;
             UpdateDtrBadge();
             services.MarketIndex.EnsureBuilt();
             ContextMenu.OnMenuOpened += OnMenuOpened;
@@ -257,6 +258,7 @@ public sealed class Plugin : IDalamudPlugin
         if (services is not null)
         {
             services.Notifications.Changed -= UpdateDtrBadge;
+            Cfg.BadgeSettingsChanged -= UpdateDtrBadge;
             services.Calls.IncomingCallPresented -= OnIncomingCall;
         }
 
@@ -397,6 +399,7 @@ public sealed class Plugin : IDalamudPlugin
         Framework.Update -= OnVideoFrameworkUpdate;
         Framework.Update -= OnLinkpearlPresenceTick;
         services.Notifications.Changed -= UpdateDtrBadge;
+        Cfg.BadgeSettingsChanged -= UpdateDtrBadge;
         services.Calls.IncomingCallPresented -= OnIncomingCall;
         ContextMenu.OnMenuOpened -= OnMenuOpened;
         dtrEntry.Remove();
@@ -486,7 +489,9 @@ public sealed class Plugin : IDalamudPlugin
 
     private void UpdateDtrBadge()
     {
-        var unread = Cfg.IsAppBadgeEnabled("notifications") ? services.Notifications.UnreadCount : 0;
+        var unread = Cfg.IsAppBadgeEnabled(NotificationChannels.NotificationsAppId)
+            ? services.Notifications.UnreadCount
+            : 0;
         dtrEntry.Text = unread > 0 ? $"{AepConstants.Name} ({unread})" : AepConstants.Name;
     }
 
