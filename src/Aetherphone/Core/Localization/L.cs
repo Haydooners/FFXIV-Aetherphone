@@ -1753,6 +1753,8 @@ internal static class L
                 "Long histories no longer drag the game down: a conversation with a full stream draws the part you are looking at and reaches further back as you scroll up"),
             new("changelog.r1020.28",
                 "Fixed Open a Linkpearl chat showing on NPCs, and its switch moved to Settings > General, where it now starts off"),
+            new("changelog.r1020.38",
+                "Fixed messages splitting into several when they fit in one: backspacing over a word that had just wrapped onto a new line turned the wrap into a real line break"),
         };
 
         public static readonly LocString[] Release1020AetherStream =

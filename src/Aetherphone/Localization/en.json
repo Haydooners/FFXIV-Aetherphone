@@ -5112,6 +5112,7 @@
   "changelog.r1020.35": "Fixed the Music icon carrying a badge at all times: it now lights only when a radio station you follow goes on air, and clears when you open the app",
   "changelog.r1020.36": "Fixed the changelog slowing the game down while it was open, it now draws only the releases on screen instead of every release at once",
   "changelog.r1020.37": "Fixed songs failing outright when the link resolver fell behind: Music now updates it on its own and retries, the way MogCast already does",
+  "changelog.r1020.38": "Fixed messages splitting into several when they fit in one: backspacing over a word that had just wrapped onto a new line turned the wrap into a real line break",
   "changelog.r1019.0": "Added caption editing: choose Edit caption from the menu on one of your posts to fix the text without deleting the post and losing its likes and comments",
   "changelog.r1019.1": "Posts with an edited caption show an Edited mark next to the timestamp",
   "changelog.r1019.2": "Added an app switcher: hold the home bar for a moment and every app you left mid-use lines up as a live preview card, tap one to jump back in",

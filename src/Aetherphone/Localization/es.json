@@ -5112,6 +5112,7 @@
   "changelog.r1020.35": "Corregido que el icono de Música llevara un distintivo en todo momento: ahora solo se enciende cuando una emisora que sigues entra en directo y se apaga al abrir la app",
   "changelog.r1020.36": "Corregido que el registro de cambios ralentizara el juego mientras estaba abierto, ahora dibuja solo las versiones que se ven en pantalla en lugar de todas a la vez",
   "changelog.r1020.37": "Corregido que las canciones fallaran por completo cuando el resolutor de enlaces quedaba desactualizado: Música ahora lo actualiza por su cuenta y vuelve a intentarlo, como ya hace MogCast",
+  "changelog.r1020.38": "Corregido que los mensajes se dividieran en varios cuando cabían en uno: borrar una palabra que acababa de saltar a una línea nueva convertía ese salto en un salto de línea real",
   "changelog.r1019.0": "Ahora se puede editar la descripción: elige Editar descripción en el menú de una de tus publicaciones para corregir el texto sin borrar la publicación ni perder sus me gusta y comentarios",
   "changelog.r1019.1": "Las publicaciones con la descripción editada muestran la marca Editado junto a la fecha",
   "changelog.r1019.2": "Añadido un selector de aplicaciones: mantén pulsada un momento la barra inferior de la pantalla y todas las aplicaciones que dejaste a medias se alinean como tarjetas con vista previa en vivo, toca una para volver a ella",

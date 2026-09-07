@@ -5112,6 +5112,7 @@
   "changelog.r1020.35": "Behoben, dass das Musik-Symbol dauerhaft eine Markierung trug: Sie leuchtet jetzt nur noch, wenn ein von dir gefolgter Radiosender auf Sendung geht, und verschwindet, sobald du die App öffnest",
   "changelog.r1020.36": "Behoben, dass das Änderungsprotokoll das Spiel ausbremste, solange es offen war, es zeichnet jetzt nur noch die Versionen auf dem Bildschirm statt aller auf einmal",
   "changelog.r1020.37": "Behoben, dass Songs komplett ausfielen, wenn die Link-Auflösung veraltet war: Musik aktualisiert sie jetzt selbst und versucht es erneut, so wie MogCast es bereits tut",
+  "changelog.r1020.38": "Behoben, dass Nachrichten in mehrere zerfielen, obwohl sie in eine passten: Ein Wort zu löschen, das gerade in eine neue Zeile gerutscht war, machte aus dem Umbruch einen echten Zeilenumbruch",
   "changelog.r1019.0": "Bildunterschriften lassen sich jetzt bearbeiten: Bildunterschrift bearbeiten im Menü eines eigenen Beitrags korrigiert den Text, ohne den Beitrag samt Likes und Kommentaren zu löschen",
   "changelog.r1019.1": "Beiträge mit bearbeiteter Bildunterschrift zeigen neben dem Zeitstempel den Hinweis Bearbeitet",
   "changelog.r1019.2": "App-Umschalter hinzugefügt: Halte die Leiste am unteren Bildschirmrand kurz gedrückt und alle zuletzt genutzten Apps reihen sich als Karten mit Live-Vorschau auf, tippe eine an, um dort weiterzumachen",
