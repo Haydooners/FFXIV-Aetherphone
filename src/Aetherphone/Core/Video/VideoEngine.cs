@@ -36,6 +36,7 @@ internal sealed class VideoEngine : IDisposable
     private const long AudioReopenEscalationWindowMilliseconds = 60 * 1000;
     private const double StallPositionTolerance = 0.05;
     private const double StallEndGuardSeconds = 5.0;
+    private const double AudioTrackEndGuardSeconds = 30.0;
 
     private static readonly Regex YouTubeHost =
         new(@"^\w+://[^/]*youtube\.\w+/|^\w+://youtu\.be/", RegexOptions.Compiled);
@@ -187,6 +188,8 @@ internal sealed class VideoEngine : IDisposable
                 lastObservedPosition = startSeconds;
                 stallProgressAtTicks = Environment.TickCount64;
                 framesProgressAtTicks = stallProgressAtTicks;
+                audioProgressAtTicks = stallProgressAtTicks;
+                audioPositionSeen = false;
                 lastObservedFrameVersion = player.FrameVersion;
                 active = true;
                 screenPainter.SetTransform(ScreenPosition, ScreenYaw, ScreenScale);
@@ -346,27 +349,27 @@ internal sealed class VideoEngine : IDisposable
             framesProgressAtTicks = now;
         }
 
-        if (info.CoreIdle || !info.HasAudioPosition)
+        if (info.CoreIdle || (!info.HasAudioPosition && !audioPositionSeen))
         {
             lastObservedAudioPosition = info.AudioPositionSeconds;
             audioProgressAtTicks = now;
         }
-        else if (!audioPositionSeen
-                 || Math.Abs(info.AudioPositionSeconds - lastObservedAudioPosition) > StallPositionTolerance)
+        else if (info.HasAudioPosition
+                 && (!audioPositionSeen
+                     || Math.Abs(info.AudioPositionSeconds - lastObservedAudioPosition) > StallPositionTolerance))
         {
             audioPositionSeen = true;
             lastObservedAudioPosition = info.AudioPositionSeconds;
             audioProgressAtTicks = now;
         }
 
-        var nearEnd = info.DurationSeconds > 0d
-            && info.PositionSeconds >= info.DurationSeconds - StallEndGuardSeconds;
+        var endGuardSeconds = info.HasAudioPosition ? StallEndGuardSeconds : AudioTrackEndGuardSeconds;
+        var nearEnd = info.DurationSeconds > 0d && info.PositionSeconds >= info.DurationSeconds - endGuardSeconds;
         var positionWindow = info.CoreIdle ? BufferingWatchdogMilliseconds : StallWatchdogMilliseconds;
         var positionStalled = (player.SawHttpForbidden || player.SawStreamError)
             && now - stallProgressAtTicks >= positionWindow;
         var framesStalled = info.HasMovingVideo && now - framesProgressAtTicks >= StallWatchdogMilliseconds;
-        var audioStalled = audioPositionSeen && info.HasAudioPosition && !nearEnd
-            && now - audioProgressAtTicks >= StallWatchdogMilliseconds;
+        var audioStalled = audioPositionSeen && !nearEnd && now - audioProgressAtTicks >= StallWatchdogMilliseconds;
         if (!positionStalled && !framesStalled && !audioStalled)
         {
             ForgiveRestartsAfterHealthyPlayback(info, now);
@@ -377,7 +380,10 @@ internal sealed class VideoEngine : IDisposable
         framesProgressAtTicks = now;
         audioProgressAtTicks = now;
         healthyPlaybackSinceTicks = now;
-        var stall = positionStalled ? "position" : framesStalled ? "video frames" : "audio";
+        var stall = positionStalled ? "position"
+            : framesStalled ? "video frames"
+            : info.HasAudioPosition ? "audio"
+            : "audio (track ended)";
 
         if (RefusedStreamUrl() is { } refusedUrl)
         {
@@ -409,7 +415,7 @@ internal sealed class VideoEngine : IDisposable
         {
             audioReopenAtTicks = now;
             AepLog.Warning(
-                $"[Video] Playback audio stalled; seeking to {info.PositionSeconds:F1}s to reopen the audio track.");
+                $"[Video] Playback {stall} stalled; seeking to {info.PositionSeconds:F1}s to reopen the audio track.");
             player.Seek(info.PositionSeconds);
             return;
         }
@@ -436,7 +442,6 @@ internal sealed class VideoEngine : IDisposable
         lastObservedPosition = info.PositionSeconds;
         lastObservedFrameVersion = frameVersion;
         lastObservedAudioPosition = info.AudioPositionSeconds;
-        audioPositionSeen = false;
         stallProgressAtTicks = now;
         framesProgressAtTicks = now;
         audioProgressAtTicks = now;
