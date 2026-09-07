@@ -152,7 +152,23 @@ internal sealed partial class VelvetShell
         deckModeSynced = deckMode;
         if (deckMode)
         {
+            DropRequestedFromDeck();
             PinDeckTop();
+        }
+    }
+
+    private void DropRequestedFromDeck()
+    {
+        for (var index = deck.Count - 1; index >= 0; index--)
+        {
+            if (deck[index].ConnectionState == VelvetConnectionState.None)
+            {
+                continue;
+            }
+
+            deck.RemoveAt(index);
+            deckScores.RemoveAt(index);
+            deckVersion++;
         }
     }
 
@@ -175,6 +191,13 @@ internal sealed partial class VelvetShell
         deckVersion++;
         if (!deckModeSynced && sameSource && deckMe is not null)
         {
+            deckMe = me;
+            return;
+        }
+
+        if (!deckModeSynced && !sameSource && TryPatchDeck(source))
+        {
+            deckSource = source;
             deckMe = me;
             return;
         }
@@ -225,6 +248,40 @@ internal sealed partial class VelvetShell
         {
             deckTopId = string.Empty;
         }
+    }
+
+    private bool TryPatchDeck(VelvetProfileDto[] source)
+    {
+        if (deck.Count == 0 || source.Length != deckSource.Length)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < deck.Count; index++)
+        {
+            var replacement = FindProfile(source, deck[index].UserId);
+            if (replacement is null)
+            {
+                return false;
+            }
+
+            deck[index] = replacement;
+        }
+
+        return true;
+    }
+
+    private static VelvetProfileDto? FindProfile(VelvetProfileDto[] source, string userId)
+    {
+        for (var index = 0; index < source.Length; index++)
+        {
+            if (source[index].UserId == userId)
+            {
+                return source[index];
+            }
+        }
+
+        return null;
     }
 
     private bool ExtendsDeckSource(VelvetProfileDto[] source)
