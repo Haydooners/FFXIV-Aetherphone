@@ -148,7 +148,6 @@ internal sealed class OnlineUnoTable
     {
         using var surface = AppSurface.Begin(body, true);
         ImGui.Dummy(new Vector2(MathF.Max(1f, body.Width - 32f * scale), body.Height - 16f * scale));
-        var ruleSet = store.ActiveRuleSet != 0 ? store.ActiveRuleSet : board.RuleSet;
         var drawList = ImGui.GetWindowDrawList();
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         var accent = Core.Apps.AppAccents.For("games");
@@ -266,7 +265,6 @@ internal sealed class OnlineUnoTable
         if (board.RoundIndex != seenRound)
         {
             seenRound = board.RoundIndex;
-            AepLog.Debug($"Round started. Active RuleSet: {store.ActiveRuleSet}");
             pileCount = 0;
             flightCount = 0;
             slotCount = 0;
@@ -302,7 +300,7 @@ internal sealed class OnlineUnoTable
             }
         }
 
-        for (var seat = 0; seat < players.Length && seat < previousCounts.Length; seat++)
+        for (var seat = 0; seat < players.Length; seat++)
         {
             var count = players[seat].CardCount;
             if (previousCounts[seat] > 1 && count == 1 && !first)
@@ -672,7 +670,17 @@ internal sealed class OnlineUnoTable
             return;
         }
 
-        for (var seat = 0; seat < players.Length && seat < seatCounts.Length; seat++)
+        var pickingTarget = sevenPendingCard >= 0;
+        const float HitRadius = 36f;
+
+        if (pickingTarget)
+        {
+            var promptText = Loc.T(L.Games.OnlinePickTarget);
+            var promptPos = Absolute(new Vector2(deckAnchor.X, 10f * scale));
+            Typography.DrawCentered(drawList, promptPos, promptText, accent, TextStyles.Caption1);
+        }
+
+        for (var seat = 0; seat < players.Length; seat++)
         {
             if (seat == mySeat)
             {
@@ -680,13 +688,19 @@ internal sealed class OnlineUnoTable
             }
 
             var player = players[seat];
-            if (sevenPendingCard >= 0 && ImGui.IsItemClicked(ImGuiMouseButton.Left))
+            var anchor = Absolute(seatAnchors[seat]);
+
+            if (pickingTarget)
             {
-                store.SendPlay(sevenPendingCard, seat);
-                sevenPendingCard = -1;
+                var hitRadius = HitRadius * scale;
+                ProgressRing.Glow(anchor, hitRadius, accent, 0.3f + 0.25f * Pulse.Wave(Pulse.Calm));
+                if (UiInteract.HoverClickCircle(anchor, hitRadius))
+                {
+                    store.SendPlay(sevenPendingCard, seat);
+                    sevenPendingCard = -1;
+                }
             }
 
-            var anchor = Absolute(seatAnchors[seat]);
             var dim = player.Away ? 0.35f : 1f;
             var onTurn = board.TurnSeat == seat && board.WinnerSeat < 0;
             if (onTurn)
@@ -765,6 +779,23 @@ internal sealed class OnlineUnoTable
         }
 
         UnoCardArt.DrawBack(drawList, topRect, scale, canDraw ? 1f : 0.8f);
+        if (board.PendingDrawCount > 1)
+        {
+            var badgeText = $"+{board.PendingDrawCount}";
+            var badgeSize = Typography.Measure(badgeText, TextStyles.FootnoteEmphasized);
+            var badgePadding = new Vector2(10f * scale, 4f * scale);
+            var badgeBox = badgeSize + badgePadding;
+            var badgeCenter = topRect.Center;
+            var badgeMin = badgeCenter - badgeBox * 0.5f;
+            var badgeMax = badgeCenter + badgeBox * 0.5f;
+
+            var bgCol = ImGui.GetColorU32(new Vector4(0.85f, 0.18f, 0.18f, 0.95f));
+            var borderCol = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.85f));
+            drawList.AddRectFilled(badgeMin, badgeMax, bgCol, 6f * scale);
+            drawList.AddRect(badgeMin, badgeMax, borderCol, 6f * scale, 1.5f * scale);
+            Typography.DrawCentered(drawList, badgeCenter, badgeText, theme.TextStrong, TextStyles.FootnoteEmphasized);
+        }
+
         if (canDraw)
         {
             Squircle.Stroke(drawList, topRect.Min, topRect.Max, cardWidth * 0.18f,
@@ -787,8 +818,12 @@ internal sealed class OnlineUnoTable
         Material.Frosted(drawList, pillCenter - pillSize * 0.5f, pillCenter + pillSize * 0.5f, pillSize.Y * 0.5f,
             scale, 0.95f);
         Typography.DrawCentered(drawList, pillCenter, countLabel, theme.TextStrong, TextStyles.Caption1);
+
+        var deckLabel = board.PendingDrawCount > 1
+            ? $"{Loc.T(L.Games.OnlineDeck)} (+{board.PendingDrawCount})"
+            : Loc.T(L.Games.OnlineDeck);
         Typography.DrawCentered(drawList, new Vector2(deckCenter.X, pillCenter.Y + 18f * scale),
-            Loc.T(L.Games.OnlineDeck), theme.TextMuted, TextStyles.Caption2);
+            deckLabel, board.PendingDrawCount > 1 ? accent : theme.TextMuted, TextStyles.Caption2);
 
         for (var index = 0; index < pileCount; index++)
         {
@@ -893,8 +928,11 @@ internal sealed class OnlineUnoTable
 
         if (myTurn && !pending && board.WinnerSeat < 0 && !AnyPlayable(hand, board))
         {
+            var noPlayableMsg = board.PendingDrawCount > 1
+                ? $"{Loc.T(L.Games.OnlineNoPlayable)} (+{board.PendingDrawCount})"
+                : Loc.T(L.Games.OnlineNoPlayable);
             Typography.DrawCentered(drawList, new Vector2(centerX, baseY + 126f * scale),
-                Typography.FitText(Loc.T(L.Games.OnlineNoPlayable), body.Width - 32f * scale, TextStyles.Footnote),
+                Typography.FitText(noPlayableMsg, body.Width - 32f * scale, TextStyles.Footnote),
                 theme.TextMuted, TextStyles.Footnote);
         }
     }

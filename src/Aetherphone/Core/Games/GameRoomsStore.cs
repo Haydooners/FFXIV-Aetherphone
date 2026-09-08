@@ -237,7 +237,6 @@ internal sealed class GameRoomsStore : IDisposable
     public void SendStart(int ruleSet = 0)
     {
         ActiveRuleSet = ruleSet;
-        AepLog.Debug($"Starting game with ruleset: {ActiveRuleSet}");
         SendAction(GameRoomWire.ActionStart, ruleSet, -1);
     }
 
