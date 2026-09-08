@@ -1739,6 +1739,7 @@ internal static class L
     {
         public static readonly LocString SectionMessaging = new("changelog.sectionMessaging", "Messaging");
         public static readonly LocString SectionPhone = new("changelog.sectionPhone", "Phone");
+        public static readonly LocString SectionSocial = new("changelog.sectionSocial", "Chirper and Aethergram");
 
         public static readonly LocString[] Release1020Velvet =
         {
@@ -1868,28 +1869,16 @@ internal static class L
                 "Fixed removing a widget leaving the home screen unresponsive until the plugin was reloaded, contributed by jambalong"),
         };
 
-        public static readonly LocString[] Release1020Chirper =
+        public static readonly LocString[] Release1020Social =
         {
             new("changelog.r1020.53",
-                "Added a For You tab: the chirps you have not seen yet, in the order you are most likely to enjoy them. How a chirp's own readers responded counts, and so do the people you interact with and players who like what you like. The author's follower count never does"),
+                "Added a For You tab with a new smart feed to both apps: the posts you have not seen yet, ordered by how people actually responded, who you interact with, and players who share your taste"),
             new("changelog.r1020.54",
-                "Latest keeps the newest-first feed with an Everyone or Following switch, and the tab you leave open is remembered"),
+                "Latest sits beside it with the newest-first feed and an Everyone or Following switch"),
             new("changelog.r1020.55",
-                "For You ends in a You're all caught up line. Older chirps continue below it, and How your feed works is one tap away"),
+                "For You switches on in waves. Until yours does, it shows the newest posts as before"),
             new("changelog.r1020.56",
-                "Chirps from people you do not follow say why they are there: liked by people with your taste, new and shown to you first, or suggested for you"),
-            new("changelog.r1020.57",
-                "Posting hour no longer decides who sees you. A chirp made while most players are asleep waits for them instead of expiring, and every new chirp reaches a few people before it competes on numbers"),
-            new("changelog.r1020.58",
-                "For You is switching on in waves. Until yours does, the tab shows the newest chirps as before"),
-        };
-
-        public static readonly LocString[] Release1020Aethergram =
-        {
-            new("changelog.r1020.59",
-                "Added a For You tab with the same ranking as Chirper: unseen photos first, ordered by how their viewers responded and by the people and tastes around you. Hearts weigh less here, comments, saves and sends more"),
-            new("changelog.r1020.60",
-                "Latest keeps the newest-first feed with an Everyone or Following switch, Explore browses it, and Settings gained How your feed works"),
+                "Give it about a week. The feed learns from what people actually read and react to, so it gets better as it goes"),
         };
 
         public static readonly LocString[] Release10110Phone =
