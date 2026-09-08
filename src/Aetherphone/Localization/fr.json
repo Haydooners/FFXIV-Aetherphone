@@ -5145,6 +5145,7 @@
   "changelog.r1020.47": "Ajout d'un interrupteur Afficher la pastille pour chaque application qui affiche un nombre sur son icône d'accueil, sur la page Notifications et pastilles des Réglages, contribution de Deldee",
   "changelog.r1020.48": "Les interrupteurs de pastille qui se trouvaient dans Portefeuille, Quotidiens et Activité ont été déplacés sur cette même page, contribution de Deldee",
   "changelog.r1020.49": "Correction d'Uno qui affichait une erreur au lieu de la table en entrant dans un nouveau salon avec le même nombre de joueurs que le précédent",
+  "changelog.r1020.52": "Les résultats des sondages restent désormais masqués jusqu'à votre vote : choisissez une option et les barres, les décomptes et le total se déploient, et un sondage clos montre son résultat à tout le monde",
   "changelog.r10110.0": "Correction d'un problème où le téléphone provoquait des erreurs Trop de requêtes, la communication en arrière-plan avec le serveur est désormais bien plus légère",
   "changelog.r1019.0": "Ajout de la modification de légende : Modifier la légende dans le menu d'une de vos publications corrige le texte sans supprimer la publication ni perdre ses J'aime et ses commentaires",
   "changelog.r1019.1": "Les publications dont la légende a été modifiée affichent la mention Modifié à côté de l'horodatage",

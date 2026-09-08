@@ -5145,6 +5145,7 @@
   "changelog.r1020.47": "Added a Show badge switch for every app that puts a count on its home icon, on the Notifications and Badges page in Settings, contributed by Deldee",
   "changelog.r1020.48": "Moved the badge switches that lived inside Wallet, Dailies and Activity onto that same page, contributed by Deldee",
   "changelog.r1020.49": "Fixed Uno showing an error instead of the table when you entered a new room with the same number of players as the last one",
+  "changelog.r1020.52": "Poll results now stay hidden until you vote: pick an option and the bars, the counts and the total unfold, and a poll that has closed shows its tally to everyone",
   "changelog.r10110.0": "Fixed an issue where the phone was causing Too many requests errors, background communication with the server is now much lighter",
   "changelog.r1019.0": "Added caption editing: choose Edit caption from the menu on one of your posts to fix the text without deleting the post and losing its likes and comments",
   "changelog.r1019.1": "Posts with an edited caption show an Edited mark next to the timestamp",

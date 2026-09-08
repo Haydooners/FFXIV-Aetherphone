@@ -1824,6 +1824,12 @@ internal static class L
                 "Fixed Uno showing an error instead of the table when you entered a new room with the same number of players as the last one"),
         };
 
+        public static readonly LocString[] Release1020Polls =
+        {
+            new("changelog.r1020.52",
+                "Poll results now stay hidden until you vote: pick an option and the bars, the counts and the total unfold, and a poll that has closed shows its tally to everyone"),
+        };
+
         public static readonly LocString[] Release1020Settings =
         {
             new("changelog.r1020.47",

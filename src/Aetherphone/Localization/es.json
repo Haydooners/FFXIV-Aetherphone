@@ -5145,6 +5145,7 @@
   "changelog.r1020.47": "Añadido un interruptor Mostrar globo para cada aplicación que pone un número en su icono de inicio, en la página Notificaciones y globos de Ajustes, contribución de Deldee",
   "changelog.r1020.48": "Los interruptores de globo que estaban dentro de Cartera, Diarias y Actividad se han movido a esa misma página, contribución de Deldee",
   "changelog.r1020.49": "Corregido que Uno mostrara un error en lugar de la mesa al entrar en una sala nueva con el mismo número de jugadores que la anterior",
+  "changelog.r1020.52": "Los resultados de las encuestas ahora quedan ocultos hasta que votas: elige una opción y las barras, los recuentos y el total se despliegan, y una encuesta cerrada muestra su resultado a todo el mundo",
   "changelog.r10110.0": "Corregido un problema por el que el teléfono provocaba errores de Demasiadas solicitudes, la comunicación en segundo plano con el servidor ahora es mucho más ligera",
   "changelog.r1019.0": "Ahora se puede editar la descripción: elige Editar descripción en el menú de una de tus publicaciones para corregir el texto sin borrar la publicación ni perder sus me gusta y comentarios",
   "changelog.r1019.1": "Las publicaciones con la descripción editada muestran la marca Editado junto a la fecha",
