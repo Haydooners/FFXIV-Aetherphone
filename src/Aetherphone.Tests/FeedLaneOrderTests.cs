@@ -60,9 +60,11 @@ public sealed class FeedLaneOrderTests
     public void AChronologicalLaneStillSortsAndTrims()
     {
         var lane = new FeedLane<Entry>(static (left, right) => right.Stamp.CompareTo(left.Stamp), static entry => entry.Stamp);
-        lane.ApplyRefresh(new[] { new Entry("old", 1), new Entry("new", 3) }, "cursor");
+        lane.ApplyRefresh(new[] { new Entry("new", 3), new Entry("old", 1) }, "cursor");
 
-        Assert.Equal(new[] { "new", "old" }, Ids(lane.Items));
+        lane.ApplyMore(new[] { new Entry("mid", 2) }, "cursor");
+
+        Assert.Equal(new[] { "new", "mid", "old" }, Ids(lane.Items));
         Assert.False(lane.KeepsServerOrder);
 
         lane.Trim(1);
