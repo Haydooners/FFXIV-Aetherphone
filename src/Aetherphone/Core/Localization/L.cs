@@ -5535,6 +5535,7 @@ internal static class L
         public static readonly LocString Empty = new("polls.empty", "No polls yet");
         public static readonly LocString EmptySubtitle = new("polls.emptySubtitle", "New polls will land here.");
         public static readonly LocString FinalResults = new("polls.finalResults", "Final results");
+        public static readonly LocString HiddenResults = new("polls.hiddenResults", "Vote to see results");
         public static readonly LocPlural Votes = new("polls.votes", "{0} vote", "{0} votes");
     }
 
@@ -6410,8 +6411,8 @@ internal static class L
         public static readonly LocString NotesRemindersBody = new("onboarding.notesRemindersBody", "Switch to the Reminders tab for a simple to-do list. Give one a due date and the phone nudges you when it's time.");
         public static readonly LocString CalculatorBody = new("onboarding.calculatorBody", "A simple calculator for quick everyday sums, with a running tape of your recent results to scroll back through.");
         public static readonly LocString PollsBody = new("onboarding.pollsBody", "Community polls from across Aethernet. Tap an option to cast your vote and see where everyone stands.");
-        public static readonly LocString PollsResultsTitle = new("onboarding.pollsResultsTitle", "Live results");
-        public static readonly LocString PollsResultsBody = new("onboarding.pollsResultsBody", "Every vote updates the bars in real time. Once a poll closes, you'll see the final tally.");
+        public static readonly LocString PollsResultsTitle = new("onboarding.pollsResultsTitle", "Results after you vote");
+        public static readonly LocString PollsResultsBody = new("onboarding.pollsResultsBody", "Nobody sees the tally before voting. Pick an option and the bars appear, live from then on.");
         public static readonly LocString ChirperTabsTitle = new("onboarding.chirperTabsTitle", "Two feeds");
         public static readonly LocString ChirperTabsBody = new("onboarding.chirperTabsBody", "For You shows chirps from everyone; Following keeps it to the people you follow. Swap between them any time.");
         public static readonly LocString ChirperSearchTitle = new("onboarding.chirperSearchTitle", "Find people");
