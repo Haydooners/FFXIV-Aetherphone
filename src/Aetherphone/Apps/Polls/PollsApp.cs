@@ -423,7 +423,7 @@ internal sealed class PollsApp : IPhoneApp
 
     private static bool ResultsVisible(PollDto poll)
     {
-        return poll.Closed || poll.MyVote >= 0;
+        return poll.MyVote >= 0;
     }
 
     private static string[] CountLabels(string[] reuse, int[] counts)
@@ -440,12 +440,12 @@ internal sealed class PollsApp : IPhoneApp
     private static string FooterText(PollDto poll)
     {
         var stamp = poll.Closed ? Loc.T(L.Polls.FinalResults) : TimeText.Short(poll.CreatedAtUnix);
-        if (!ResultsVisible(poll))
+        if (ResultsVisible(poll))
         {
-            return $"{Loc.T(L.Polls.HiddenResults)} · {stamp}";
+            return $"{Loc.Plural(L.Polls.Votes, poll.TotalVotes)} · {stamp}";
         }
 
-        return $"{Loc.Plural(L.Polls.Votes, poll.TotalVotes)} · {stamp}";
+        return poll.Closed ? stamp : $"{Loc.T(L.Polls.HiddenResults)} · {stamp}";
     }
 
     private sealed class PollMotion

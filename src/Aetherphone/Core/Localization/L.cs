@@ -1827,7 +1827,7 @@ internal static class L
         public static readonly LocString[] Release1020Polls =
         {
             new("changelog.r1020.52",
-                "Poll results now stay hidden until you vote: pick an option and the bars, the counts and the total unfold, and a poll that has closed shows its tally to everyone"),
+                "Poll results now stay hidden until you vote: the bars, the counts and the total only appear once you pick an option"),
         };
 
         public static readonly LocString[] Release1020Settings =

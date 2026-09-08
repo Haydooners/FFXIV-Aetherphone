@@ -5145,7 +5145,7 @@
   "changelog.r1020.47": "Adicionada uma chave Mostrar contador para cada aplicativo que coloca um número no ícone da tela inicial, na página Notificações e contadores em Ajustes, contribuição de Deldee",
   "changelog.r1020.48": "As chaves de contador que ficavam dentro de Carteira, Diárias e Atividade foram movidas para essa mesma página, contribuição de Deldee",
   "changelog.r1020.49": "Corrigido o Uno mostrar um erro em vez da mesa ao entrar em uma sala nova com o mesmo número de jogadores da anterior",
-  "changelog.r1020.52": "Os resultados das enquetes agora ficam escondidos até você votar: escolha uma opção e as barras, as contagens e o total se abrem, e uma enquete encerrada mostra o resultado para todos",
+  "changelog.r1020.52": "Os resultados das enquetes agora ficam escondidos até você votar: as barras, as contagens e o total só aparecem depois que você escolhe uma opção",
   "changelog.r10110.0": "Corrigido um problema em que o telefone causava erros de Solicitações demais, a comunicação em segundo plano com o servidor agora é muito mais leve",
   "changelog.r1019.0": "Agora é possível editar a legenda: escolha Editar legenda no menu de uma das suas publicações para corrigir o texto sem excluir a publicação e perder as curtidas e os comentários",
   "changelog.r1019.1": "Publicações com a legenda editada mostram a marca Editado ao lado da data",
