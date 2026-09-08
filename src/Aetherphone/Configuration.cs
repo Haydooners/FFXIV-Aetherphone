@@ -97,6 +97,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool AethergramShowCommentMedia { get; set; } = true;
     public int ChirperFeedRegionMask { get; set; }
     public int AethergramFeedRegionMask { get; set; }
+    public int ChirperFeedScope { get; set; }
+    public int AethergramFeedScope { get; set; }
     public bool ShowSensitiveContent { get; set; }
     public Dictionary<string, AppNotificationSetting> NotificationSettings { get; set; } = new();
     public bool NotifyDailyReset { get; set; }

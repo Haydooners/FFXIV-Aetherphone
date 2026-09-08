@@ -38,6 +38,7 @@ namespace Aetherphone.Core.Aethernet;
 [JsonSerializable(typeof(PhotoTagPage))]
 [JsonSerializable(typeof(PostDto))]
 [JsonSerializable(typeof(FeedPage))]
+[JsonSerializable(typeof(FeedItemNote))]
 [JsonSerializable(typeof(FeedSeenRequest))]
 [JsonSerializable(typeof(FeedSignalRequest))]
 [JsonSerializable(typeof(UserSearchResult))]
