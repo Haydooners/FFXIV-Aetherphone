@@ -241,6 +241,7 @@ internal sealed partial class VelvetShell : IResumableApp
 
     public void OnClosed()
     {
+        store.FlushFeedSignals();
         postSheet.Close();
         threadSheet.Close();
         profileMenu.Close();
@@ -537,6 +538,12 @@ internal sealed partial class VelvetShell : IResumableApp
         {
             UrlActions.AskThenOpen(layout.Urls[hit.TargetIndex]);
         }
+    }
+
+    private void OpenProfileFromPost(string userId, string postId)
+    {
+        store.ReportFeedSignal(postId, FeedSignalKinds.ProfileOpen);
+        OpenProfile(userId);
     }
 
     private void OpenProfile(string userId)

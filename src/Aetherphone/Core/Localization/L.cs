@@ -59,6 +59,18 @@ internal static class L
 
     internal static class Social
     {
+        public static readonly LocString FeedLatest = new("social.feedLatest", "Latest");
+        public static readonly LocString FeedEveryone = new("social.feedEveryone", "Everyone");
+        public static readonly LocString FeedCaughtUp = new("social.feedCaughtUp", "You're all caught up");
+        public static readonly LocString FeedCaughtUpHint = new("social.feedCaughtUpHint", "Older posts continue below");
+        public static readonly LocString FeedSuggested = new("social.feedSuggested", "Suggested for you");
+        public static readonly LocString FeedSuggestedTaste = new("social.feedSuggestedTaste", "Liked by people with your taste");
+        public static readonly LocString FeedSuggestedFresh = new("social.feedSuggestedFresh", "New post, you are among the first to see it");
+        public static readonly LocString FeedHowItWorks = new("social.feedHowItWorks", "How your feed works");
+        public static readonly LocString FeedHowItWorksIntro = new("social.feedHowItWorksIntro", "For You shows the posts you have not seen yet, in the order we think you will enjoy them. Latest is every post, newest first, and it is always one tap away.");
+        public static readonly LocString FeedHowItWorksQuality = new("social.feedHowItWorksQuality", "A post rises on how the people who saw it responded, never on how many followers its author has. Comments and replies count far more than a heart.");
+        public static readonly LocString FeedHowItWorksPeople = new("social.feedHowItWorksPeople", "People you interact with, and players who like the same posts you do, lift what appears for you.");
+        public static readonly LocString FeedHowItWorksFair = new("social.feedHowItWorksFair", "Posting hour does not decide reach. A post made while most players are asleep waits for them instead of expiring, and every new post is shown to a few people before it competes on numbers.");
         public static readonly LocString RoleManagement = new("social.roleManagement", "Management");
         public static readonly LocString RoleDeveloper = new("social.roleDeveloper", "Developer");
         public static readonly LocString RoleModerator = new("social.roleModerator", "Moderator");
