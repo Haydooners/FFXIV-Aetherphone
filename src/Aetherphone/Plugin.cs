@@ -110,6 +110,7 @@ public sealed class Plugin : IDalamudPlugin
             Cfg.MigrateMessage();
             Cfg.MigrateMessagesMerge();
             Cfg.MigrateSetupCompleted();
+            Cfg.SkipOnboardingOnBeta();
             Cfg.MigrateChirperMediaFilters();
             Cfg.MigratePhoneWidth();
             Cfg.MigrateControlPanelRepack();

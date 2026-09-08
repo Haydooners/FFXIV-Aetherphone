@@ -411,6 +411,19 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
         Save();
     }
 
+    public void SkipOnboardingOnBeta()
+    {
+        if (!AepConstants.IsBeta || SetupCompleted)
+        {
+            return;
+        }
+
+        WelcomeShown = true;
+        SetupCompleted = true;
+        TutorialsEnabled = false;
+        Save();
+    }
+
     public void MigrateChirperMediaFilters()
     {
         if (ChirperShowMediaPosts)
