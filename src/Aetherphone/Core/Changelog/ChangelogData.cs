@@ -8,6 +8,8 @@ internal static class ChangelogData
     {
         new ChangelogEntry("1.0.2.0", "2026-09-07", new ChangelogSection[]
         {
+            new(L.Apps.Chirper, L.Changelog.Release1020Chirper),
+            new(L.Apps.Aethergram, L.Changelog.Release1020Aethergram),
             new(L.Apps.Velvet, L.Changelog.Release1020Velvet),
             new(L.Apps.Message, L.Changelog.Release1020Message),
             new(L.Apps.Linkpearl, L.Changelog.Release1020Linkpearl),
