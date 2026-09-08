@@ -832,6 +832,8 @@
   "settings.plugin": "Plugin",
   "settings.version": "Versão",
   "settings.command": "Comando",
+  "settings.testServer": "Servidor de teste",
+  "settings.testServerHint": "As versões beta se conectam ao servidor de teste do Aethernet, que tem contas, mensagens e publicações próprias. Desative isto para usar o servidor principal. Ao trocar você sai da conta, então entre novamente no outro servidor.",
   "settings.copySupportInfo": "Copiar info de suporte",
   "settings.supportInfoCopied": "Copiado para a área de transferência",
   "settings.supportAetherphone": "Apoiar o Aetherphone",

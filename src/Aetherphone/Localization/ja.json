@@ -832,6 +832,8 @@
   "settings.plugin": "プラグイン",
   "settings.version": "バージョン",
   "settings.command": "コマンド",
+  "settings.testServer": "テストサーバー",
+  "settings.testServerHint": "ベータ版はAethernetのテストサーバーに接続します。アカウント、メッセージ、投稿はすべてテストサーバー専用です。本番サーバーを使うにはこれをオフにしてください。切り替えるとサインアウトするので、もう一方のサーバーで改めてサインインしてください。",
   "settings.copySupportInfo": "サポート情報をコピー",
   "settings.supportInfoCopied": "クリップボードにコピーしました",
   "settings.supportAetherphone": "Aetherphoneを応援",

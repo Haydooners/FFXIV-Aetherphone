@@ -832,6 +832,8 @@
   "settings.plugin": "Eklenti",
   "settings.version": "Sürüm",
   "settings.command": "Komut",
+  "settings.testServer": "Test sunucusu",
+  "settings.testServerHint": "Beta sürümleri, kendi hesapları, mesajları ve gönderileri olan Aethernet test sunucusuna bağlanır. Canlı sunucuyu kullanmak için bunu kapat. Geçiş yaptığında oturumun kapanır, diğer sunucuda yeniden giriş yaparsın.",
   "settings.copySupportInfo": "Destek bilgisini kopyala",
   "settings.supportInfoCopied": "Panoya kopyalandı",
   "settings.supportAetherphone": "Aetherphone'a destek ol",

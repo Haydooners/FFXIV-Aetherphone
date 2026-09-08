@@ -179,10 +179,12 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public List<VideoQueueRecord> VideoQueue { get; set; } = new();
     public List<VideoLocalFileMapRecord> VideoLocalFileMap { get; set; } = new();
     public bool GameSoundsCleared { get; set; }
-    #if DEBUG
-    public const string DefaultAethernetBaseUrl = "https://aethernet-dev-production.up.railway.app";
+    public const string TestAethernetBaseUrl = "https://aethernet-dev-production.up.railway.app";
+    public const string LiveAethernetBaseUrl = "https://api.aetherphone.net";
+    #if DEBUG || BETA
+    public const string DefaultAethernetBaseUrl = TestAethernetBaseUrl;
     #else
-    public const string DefaultAethernetBaseUrl = "https://api.aetherphone.net";
+    public const string DefaultAethernetBaseUrl = LiveAethernetBaseUrl;
     #endif
     private const string LegacyAethernetHost = "ffxiv-aethernet-production.up.railway.app";
     public string AethernetBaseUrl { get; set; } = DefaultAethernetBaseUrl;
@@ -878,7 +880,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
             return true;
         }
 
-#if DEBUG
+#if DEBUG || BETA
         return false;
 #else
         return parsed.IsLoopback;

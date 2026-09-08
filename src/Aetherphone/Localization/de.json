@@ -832,6 +832,8 @@
   "settings.plugin": "Plugin",
   "settings.version": "Version",
   "settings.command": "Befehl",
+  "settings.testServer": "Testserver",
+  "settings.testServerHint": "Beta-Versionen verbinden sich mit dem Aethernet-Testserver, der eigene Konten, Nachrichten und Beiträge führt. Schalte das aus, um stattdessen den Live-Server zu nutzen. Beim Wechsel wirst du abgemeldet und meldest dich auf dem anderen Server neu an.",
   "settings.copySupportInfo": "Supportinfos kopieren",
   "settings.supportInfoCopied": "In die Zwischenablage kopiert",
   "settings.supportAetherphone": "Aetherphone unterstützen",

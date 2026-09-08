@@ -1665,6 +1665,10 @@ internal static class L
         public static readonly LocString Plugin = new("settings.plugin", "Plugin");
         public static readonly LocString Version = new("settings.version", "Version");
         public static readonly LocString Command = new("settings.command", "Command");
+        public static readonly LocString TestServer = new("settings.testServer", "Test server");
+
+        public static readonly LocString TestServerHint = new("settings.testServerHint",
+            "Beta builds talk to the Aethernet test server, which keeps its own accounts, messages and posts. Turn this off to use the live server instead. Switching signs you out, so you sign in again on the other server.");
         public static readonly LocString CopySupportInfo = new("settings.copySupportInfo", "Copy Support Info");
         public static readonly LocString SupportInfoCopied = new("settings.supportInfoCopied", "Copied to clipboard");
         public static readonly LocString SupportAetherphone = new("settings.supportAetherphone", "Support Aetherphone");

@@ -832,6 +832,8 @@
   "settings.plugin": "插件",
   "settings.version": "版本",
   "settings.command": "命令",
+  "settings.testServer": "测试服务器",
+  "settings.testServerHint": "测试版会连接到 Aethernet 测试服务器，它有独立的账号、消息和帖子。关闭此项即可改用正式服务器。切换时会退出登录，请在另一个服务器上重新登录。",
   "settings.copySupportInfo": "复制支持信息",
   "settings.supportInfoCopied": "已复制到剪贴板",
   "settings.supportAetherphone": "支持 Aetherphone",

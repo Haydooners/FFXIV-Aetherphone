@@ -832,6 +832,8 @@
   "settings.plugin": "Plugin",
   "settings.version": "Version",
   "settings.command": "Command",
+  "settings.testServer": "Test server",
+  "settings.testServerHint": "Beta builds talk to the Aethernet test server, which keeps its own accounts, messages and posts. Turn this off to use the live server instead. Switching signs you out, so you sign in again on the other server.",
   "settings.copySupportInfo": "Copy Support Info",
   "settings.supportInfoCopied": "Copied to clipboard",
   "settings.supportAetherphone": "Support Aetherphone",
