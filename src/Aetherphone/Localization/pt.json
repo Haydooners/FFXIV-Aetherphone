@@ -3327,6 +3327,7 @@
   "minimized.sizeMedium": "Médio",
   "minimized.sizeLarge": "Grande",
   "minimized.minimapHint": "O mapa aponta para o norte e mostra sua direção, o nome da zona e suas coordenadas. Toque para abrir o telefone, segure para fechar.",
+  "minimized.minimapZoomHint": "Role a roda sobre o mapa para aproximar ou afastar, ou use os botões de mais e menos que aparecem ao passar o cursor.",
   "minimized.noMap": "Sem mapa aqui",
   "time.now": "agora",
   "time.justNow": "agora mesmo",

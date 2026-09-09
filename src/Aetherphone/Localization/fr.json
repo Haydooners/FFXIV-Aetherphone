@@ -3327,6 +3327,7 @@
   "minimized.sizeMedium": "Moyenne",
   "minimized.sizeLarge": "Grande",
   "minimized.minimapHint": "La carte est orientée au nord et montre votre direction, le nom de la zone et vos coordonnées. Touchez pour ouvrir le téléphone, maintenez pour le fermer.",
+  "minimized.minimapZoomHint": "Faites défiler la molette sur la carte pour zoomer, ou utilisez les boutons plus et moins qui apparaissent au survol.",
   "minimized.noMap": "Pas de carte ici",
   "time.now": "à l'instant",
   "time.justNow": "à l'instant",

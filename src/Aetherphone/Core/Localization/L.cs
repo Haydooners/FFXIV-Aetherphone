@@ -5507,6 +5507,7 @@ internal static class L
         public static readonly LocString SizeMedium = new("minimized.sizeMedium", "Medium");
         public static readonly LocString SizeLarge = new("minimized.sizeLarge", "Large");
         public static readonly LocString MinimapHint = new("minimized.minimapHint", "The map faces north and shows your heading, the zone name and your coordinates. Tap it to open the phone, hold it to close.");
+        public static readonly LocString MinimapZoomHint = new("minimized.minimapZoomHint", "Scroll the wheel over the map to zoom, or use the plus and minus buttons that fade in when you hover it.");
         public static readonly LocString NoMap = new("minimized.noMap", "No map here");
     }
 

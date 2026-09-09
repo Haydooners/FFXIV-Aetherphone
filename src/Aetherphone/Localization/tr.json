@@ -3327,6 +3327,7 @@
   "minimized.sizeMedium": "Orta",
   "minimized.sizeLarge": "Büyük",
   "minimized.minimapHint": "Harita kuzeye bakar; baktığın yönü, bölge adını ve koordinatlarını gösterir. Telefonu açmak için dokun, kapatmak için basılı tut.",
+  "minimized.minimapZoomHint": "Yakınlaştırmak için haritanın üzerinde tekerleği kaydır ya da imleci getirince beliren artı ve eksi düğmelerini kullan.",
   "minimized.noMap": "Burada harita yok",
   "time.now": "şimdi",
   "time.justNow": "az önce",

@@ -82,6 +82,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public MinimizedLayout? MinimizedLayout { get; set; }
     public MinimizedShape MinimizedShape { get; set; } = MinimizedShape.Phone;
     public MinimizedMapSize MinimizedMapSize { get; set; } = MinimizedMapSize.Medium;
+    public int MinimizedMapZoom { get; set; } = MinimizedShapes.DefaultMapZoom;
     public bool MinimizedWallpaper { get; set; }
     public bool DoNotDisturb { get; set; }
     public bool QuietWhileBusy { get; set; } = true;

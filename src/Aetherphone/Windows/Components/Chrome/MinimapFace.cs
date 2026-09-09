@@ -1,15 +1,27 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Maps;
+using Aetherphone.Core.Shell;
 using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 
 namespace Aetherphone.Windows.Components;
 
+internal readonly struct MinimapZoomResult
+{
+    public readonly int Step;
+    public readonly bool Hovered;
+
+    public MinimapZoomResult(int step, bool hovered)
+    {
+        Step = step;
+        Hovered = hovered;
+    }
+}
+
 internal static class MinimapFace
 {
-    private const float SpanYalms = 62f;
     private const float ScrimHeight = 20f;
     private const float LabelInset = 6f;
     private const float LabelGap = 3f;
@@ -22,21 +34,26 @@ internal static class MinimapFace
     private const float ConeTipStretch = 1.08f;
     private const float EmptyIconSize = 22f;
     private const float EmptyGap = 7f;
+    private const float ZoomRadius = 9f;
+    private const float ZoomGap = 5f;
+    private const float ZoomInset = 7f;
+    private const float ZoomIconScale = 0.84f;
+    private const float ZoomRevealFloor = 0.05f;
     private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 Ink = new(0f, 0f, 0f, 1f);
 
-    public static void Draw(ImDrawListPtr drawList, Rect screen, MinimapReader reader, PhoneTheme theme, float alpha,
-        float scale)
+    public static bool Draw(ImDrawListPtr drawList, Rect screen, MinimapReader reader, PhoneTheme theme, float alpha,
+        float scale, float span)
     {
         drawList.AddRectFilled(screen.Min, screen.Max,
             ImGui.GetColorU32(Palette.WithAlpha(theme.ScreenBase, alpha)));
         if (reader.Texture is not { } texture || !reader.HasPlayer)
         {
             DrawEmpty(drawList, screen, reader, theme, alpha, scale);
-            return;
+            return false;
         }
 
-        var halfU = SpanYalms * 0.5f * reader.PixelsPerYalm / MapPixelMath.FullCanvasSize;
+        var halfU = span * 0.5f * reader.PixelsPerYalm / MapPixelMath.FullCanvasSize;
         var halfV = halfU * screen.Height / MathF.Max(screen.Width, 1f);
         var uv0 = new Vector2(CenterUv(reader.PlayerU, halfU) - halfU, CenterUv(reader.PlayerV, halfV) - halfV);
         var uv1 = new Vector2(uv0.X + halfU * 2f, uv0.Y + halfV * 2f);
@@ -46,6 +63,57 @@ internal static class MinimapFace
             screen.Min.Y + (reader.PlayerV - uv0.Y) / (uv1.Y - uv0.Y) * screen.Height);
         DrawPlayer(drawList, player, reader.Facing, theme, alpha, scale);
         DrawLabels(drawList, screen, reader.ZoneName, reader.Coordinates, alpha, scale);
+        return true;
+    }
+
+    public static MinimapZoomResult DrawZoom(ImDrawListPtr drawList, Rect screen, PhoneTheme theme, float alpha,
+        float scale, int zoom, bool active)
+    {
+        if (alpha <= ZoomRevealFloor)
+        {
+            return new MinimapZoomResult(0, false);
+        }
+
+        var radius = ZoomRadius * scale;
+        var x = screen.Max.X - ZoomInset * scale - radius;
+        var offset = ZoomGap * 0.5f * scale + radius;
+        var step = 0;
+        var hovered = false;
+        if (ZoomButton(drawList, new Vector2(x, screen.Center.Y - offset), radius, FontAwesomeIcon.Plus, theme, alpha,
+                scale, active, zoom < MinimizedShapes.MapZoomCount - 1, ref hovered))
+        {
+            step = 1;
+        }
+
+        if (ZoomButton(drawList, new Vector2(x, screen.Center.Y + offset), radius, FontAwesomeIcon.Minus, theme, alpha,
+                scale, active, zoom > 0, ref hovered))
+        {
+            step = -1;
+        }
+
+        return new MinimapZoomResult(step, hovered);
+    }
+
+    private static bool ZoomButton(ImDrawListPtr drawList, Vector2 center, float radius, FontAwesomeIcon icon,
+        PhoneTheme theme, float alpha, float scale, bool active, bool enabled, ref bool hovered)
+    {
+        var corner = new Vector2(radius, radius);
+        var over = active && UiInteract.Hover(center - corner, center + corner);
+        hovered |= over;
+        drawList.AddCircleFilled(center, radius,
+            ImGui.GetColorU32(Palette.WithAlpha(Ink, (over ? 0.74f : 0.52f) * alpha)), 24);
+        drawList.AddCircle(center, radius,
+            ImGui.GetColorU32(Palette.WithAlpha(White, (over ? 0.34f : 0.18f) * alpha)), 24, 1f * scale);
+        var tint = over && enabled ? theme.Accent : White;
+        var strength = enabled ? over ? 1f : 0.88f : 0.32f;
+        ProgressRing.CenterIcon(drawList, center, icon, Palette.WithAlpha(tint, strength * alpha),
+            radius * ZoomIconScale);
+        if (over)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        return enabled && UiInteract.Click(center - corner, center + corner, over);
     }
 
     private static void DrawEmpty(ImDrawListPtr drawList, Rect screen, MinimapReader reader, PhoneTheme theme,

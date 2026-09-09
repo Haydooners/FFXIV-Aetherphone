@@ -61,6 +61,8 @@ internal sealed class MinimizedPhone : IDisposable
     private const float ExpandSmoothTime = 0.17f;
     private const float CardSmoothTime = 0.20f;
     private const float HoldSmoothTime = 0.07f;
+    private const float ZoomSmoothTime = 0.18f;
+    private const float ZoomSaveDelay = 0.9f;
     private const float ControlThreshold = 0.6f;
     private const float CalmWallpaperScrim = 0.30f;
     private const float HarshWallpaperScrim = 0.58f;
@@ -86,6 +88,9 @@ internal sealed class MinimizedPhone : IDisposable
     private Spring dnd;
     private Spring card;
     private Spring hold;
+    private Spring mapSpan;
+    private float zoomSaveDue;
+    private bool zoomDirty;
     private PhoneNotification? cardNotification;
     private bool cardDismissed;
     private float cardElapsed;
@@ -145,6 +150,7 @@ internal sealed class MinimizedPhone : IDisposable
         feed = new MinimizedFeed(services.Weather, services.Coins, services.AethernetSession, services.Activity,
             services.GameData);
         minimap = new MinimapReader(services.ZoneMapTextures);
+        mapSpan = new Spring(MinimizedShapes.MapSpan(configuration.MinimizedMapZoom));
         notifications.Changed += RefreshBadge;
         notifications.Presented += OnPresented;
         notifications.Vibration += OnVibration;
@@ -245,7 +251,7 @@ internal sealed class MinimizedPhone : IDisposable
         dl.PushClipRect(screen.Min, screen.Max, true);
         if (minimapShape)
         {
-            MinimapFace.Draw(dl, screen, minimap, theme, alpha, scale);
+            DrawMinimap(dl, screen, theme, alpha, scale, bodyHovered);
         }
         else
         {
@@ -287,6 +293,45 @@ internal sealed class MinimizedPhone : IDisposable
         }
 
         return HandleGesture(body, scale, delta, bodyHovered, controlHovered);
+    }
+
+    private void DrawMinimap(ImDrawListPtr dl, Rect screen, PhoneTheme theme, float alpha, float scale,
+        bool bodyHovered)
+    {
+        if (!MinimapFace.Draw(dl, screen, minimap, theme, alpha, scale, mapSpan.Value))
+        {
+            return;
+        }
+
+        var reveal = Math.Clamp(hover.Value, 0f, 1f);
+        var zoom = MinimapFace.DrawZoom(dl, screen, theme, alpha * reveal, scale, configuration.MinimizedMapZoom,
+            frameInteractive && !dragging);
+        controlHovered |= zoom.Hovered;
+        StepZoom(zoom.Step);
+        if (!frameInteractive || !bodyHovered || pressed)
+        {
+            return;
+        }
+
+        StepZoom(Math.Sign(ImGui.GetIO().MouseWheel));
+    }
+
+    private void StepZoom(int step)
+    {
+        if (step == 0)
+        {
+            return;
+        }
+
+        var next = MinimizedShapes.ClampZoom(configuration.MinimizedMapZoom + step);
+        if (next == configuration.MinimizedMapZoom)
+        {
+            return;
+        }
+
+        configuration.MinimizedMapZoom = next;
+        zoomSaveDue = clock + ZoomSaveDelay;
+        zoomDirty = true;
     }
 
     private void DrawParts(ImDrawListPtr dl, Rect screen, float scale)
@@ -523,6 +568,12 @@ internal sealed class MinimizedPhone : IDisposable
         expand.Step(wantsExpand ? 1f : 0f, ExpandSmoothTime, delta);
         var holdTarget = pressed && !dragging ? Math.Clamp(held / HoldSeconds, 0f, 1f) : 0f;
         hold.Step(holdTarget, HoldSmoothTime, delta);
+        mapSpan.Step(MinimizedShapes.MapSpan(configuration.MinimizedMapZoom), ZoomSmoothTime, delta);
+        if (zoomDirty && clock >= zoomSaveDue)
+        {
+            zoomDirty = false;
+            configuration.Save();
+        }
     }
 
     private void AdvanceCard(float delta, bool bodyHovered)
@@ -651,7 +702,8 @@ internal sealed class MinimizedPhone : IDisposable
             }
         }
 
-        if (!pressed && bodyHovered && !musicHovered && !callHovered && !cardHovered && expand.Value < 0.5f)
+        if (!pressed && bodyHovered && !hoveredControl && !musicHovered && !callHovered && !cardHovered &&
+            expand.Value < 0.5f)
         {
             var viewport = ImGui.GetMainViewport();
             var side = body.Max.Y + TooltipClearance * scale > viewport.Pos.Y + viewport.Size.Y
@@ -878,6 +930,12 @@ internal sealed class MinimizedPhone : IDisposable
 
     public void Dispose()
     {
+        if (zoomDirty)
+        {
+            zoomDirty = false;
+            configuration.Save();
+        }
+
         notifications.Changed -= RefreshBadge;
         notifications.Presented -= OnPresented;
         notifications.Vibration -= OnVibration;

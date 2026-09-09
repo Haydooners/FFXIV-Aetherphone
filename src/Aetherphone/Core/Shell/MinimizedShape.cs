@@ -19,8 +19,12 @@ internal static class MinimizedShapes
 {
     public const int ShapeCount = 2;
     public const int MapSizeCount = 3;
+    public const int MapZoomCount = 7;
+    public const int DefaultMapZoom = 3;
 
     private static readonly float[] MapSides = { 118f, 148f, 184f };
+
+    private static readonly float[] MapSpans = { 140f, 108f, 82f, 62f, 46f, 34f, 24f };
 
     private static readonly LocString[] ShapeLabels =
     {
@@ -33,6 +37,10 @@ internal static class MinimizedShapes
     };
 
     public static float MapSide(MinimizedMapSize size) => MapSides[(int)size];
+
+    public static float MapSpan(int zoom) => MapSpans[ClampZoom(zoom)];
+
+    public static int ClampZoom(int zoom) => Math.Clamp(zoom, 0, MapZoomCount - 1);
 
     public static LocString Label(MinimizedShape shape) => ShapeLabels[(int)shape];
 

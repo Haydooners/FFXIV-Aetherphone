@@ -3327,6 +3327,7 @@
   "minimized.sizeMedium": "中",
   "minimized.sizeLarge": "大",
   "minimized.minimapHint": "マップは北が上で、向き、エリア名、座標を表示します。タップで電話を開き、長押しで閉じます。",
+  "minimized.minimapZoomHint": "マップの上でホイールを回すとズームできます。カーソルを合わせると現れるプラスとマイナスのボタンでも調整できます。",
   "minimized.noMap": "ここにマップはありません",
   "time.now": "たった今",
   "time.justNow": "たった今",

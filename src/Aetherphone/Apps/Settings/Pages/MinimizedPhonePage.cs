@@ -99,6 +99,8 @@ internal sealed class MinimizedPhonePage : ISettingsPage
 
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
         SettingsSection.Hint(Loc.T(L.Minimized.MinimapHint), theme);
+        ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
+        SettingsSection.Hint(Loc.T(L.Minimized.MinimapZoomHint), theme);
     }
 
     private void DrawPhoneSettings(PhoneTheme theme, float scale)

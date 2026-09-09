@@ -3327,6 +3327,7 @@
   "minimized.sizeMedium": "Mittel",
   "minimized.sizeLarge": "Groß",
   "minimized.minimapHint": "Die Karte ist nach Norden ausgerichtet und zeigt deine Blickrichtung, den Gebietsnamen und deine Koordinaten. Tippe zum Öffnen, halte zum Schließen.",
+  "minimized.minimapZoomHint": "Scrolle mit dem Mausrad über der Karte, um zu zoomen, oder nutze die Plus und Minus Tasten, die beim Überfahren eingeblendet werden.",
   "minimized.noMap": "Hier gibt es keine Karte",
   "time.now": "gerade eben",
   "time.justNow": "gerade eben",
