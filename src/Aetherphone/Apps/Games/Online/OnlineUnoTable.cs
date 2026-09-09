@@ -1096,8 +1096,37 @@ internal sealed class OnlineUnoTable
             else
             {
                 var mySeatIndex = SeatOf(board.Players ?? Array.Empty<UnoPlayerDto>(), store.AccountId);
-                var opponentSeat = mySeatIndex == 0 ? 1 : 0;
-                store.SendPlay(picked.Card, opponentSeat);
+                var opponentSeat = -1;
+                if (board.Players != null)
+                {
+                    for (var i = 0; i < board.Players.Length; i++)
+                    {
+                        var player = board.Players[i];
+                        if (player.Seat != mySeatIndex && !player.Away)
+                        {
+                            opponentSeat = player.Seat;
+                            break;
+                        }
+                    }
+
+                    if (opponentSeat < 0)
+                    {
+                        for (var i = 0; i < board.Players.Length; i++)
+                        {
+                            var player = board.Players[i];
+                            if (player.Seat != mySeatIndex)
+                            {
+                                opponentSeat = player.Seat;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (opponentSeat >= 0)
+                {
+                    store.SendPlay(picked.Card, opponentSeat);
+                }
             }
         }
         else
