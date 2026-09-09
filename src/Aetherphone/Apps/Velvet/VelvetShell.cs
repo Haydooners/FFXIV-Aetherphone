@@ -69,6 +69,9 @@ internal sealed partial class VelvetShell : IResumableApp
     private readonly PhotoViewerOverlay photoViewer = new();
     private readonly AvatarLightbox avatarLightbox = new();
     private readonly PhotoCarousel carousel = new();
+    private readonly DoubleTapLike doubleTapLike = new();
+    private readonly DeferredTap pendingDetailTap = new();
+    private readonly DeferredTap pendingPhotoTap = new();
     private readonly PullToRefresh pullToRefresh = new();
     private readonly AvatarComposer avatar;
     private readonly AvatarComposer cardPhotos;
@@ -297,6 +300,7 @@ internal sealed partial class VelvetShell : IResumableApp
         screenRect = screen;
         ui.Backdrop(screen);
         ConsumeSharedPhoto();
+        AdvancePendingTaps();
         stories.Advance();
         if (photoViewer.Active)
         {

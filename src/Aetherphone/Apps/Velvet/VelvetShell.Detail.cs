@@ -115,8 +115,7 @@ internal sealed partial class VelvetShell
             var result = DrawPostCarousel(drawList, imageRect, post, photos, 0f);
             if (result.Tapped && !UiInteract.InputBlocked && result.Index < photos.Length)
             {
-                var mediaUrl = photos[result.Index];
-                photoViewer.Open(this, () => images.Get(mediaUrl));
+                pendingPhotoTap.Arm(photos[result.Index]);
             }
 
             var actionsY = imageRect.Max.Y + 22f * scale;

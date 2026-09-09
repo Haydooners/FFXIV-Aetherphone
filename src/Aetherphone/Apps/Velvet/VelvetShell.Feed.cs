@@ -298,7 +298,7 @@ internal sealed partial class VelvetShell
             0f);
         if (result.Tapped && !UiInteract.InputBlocked)
         {
-            OpenPostDetail(entry.Id);
+            pendingDetailTap.Arm(entry.Id);
         }
 
         var actionCenterY = actionsTop + actionsHeight * 0.5f;
@@ -388,13 +388,53 @@ internal sealed partial class VelvetShell
         var result = carousel.Draw(drawList, rect, entry.Id, photos, rounding,
             (list, min, max, radius, url) => DrawMedia(list, min, max, url ?? string.Empty, radius, scanStatus,
                 veiled));
-        if (!veiled || !result.Tapped)
+        if (result.Tapped && doubleTapLike.SwallowedTap(entry.Id))
         {
-            return result;
+            result = result with { Tapped = false };
         }
 
-        SensitiveReveals.Reveal(entry.Id);
-        return result with { Tapped = false };
+        if (result.InputConsumed)
+        {
+            CancelPendingTaps();
+        }
+        else if (veiled)
+        {
+            if (result.Tapped)
+            {
+                SensitiveReveals.Reveal(entry.Id);
+                result = result with { Tapped = false };
+            }
+        }
+        else if (doubleTapLike.Tapped(rect, entry.Id))
+        {
+            CancelPendingTaps();
+            if (entry.MyReaction < 0)
+            {
+                store.ToggleReaction(entry, 0);
+            }
+        }
+
+        doubleTapLike.DrawBurst(drawList, rect, entry.Id);
+        return result;
+    }
+
+    private void CancelPendingTaps()
+    {
+        pendingDetailTap.Cancel();
+        pendingPhotoTap.Cancel();
+    }
+
+    private void AdvancePendingTaps()
+    {
+        if (pendingDetailTap.Ready(out var detailPostId))
+        {
+            OpenPostDetail(detailPostId);
+        }
+
+        if (pendingPhotoTap.Ready(out var photoUrl))
+        {
+            photoViewer.Open(this, () => images.Get(photoUrl));
+        }
     }
 
     private void DrawMedia(ImDrawListPtr drawList, Vector2 min, Vector2 max, string url, float rounding,

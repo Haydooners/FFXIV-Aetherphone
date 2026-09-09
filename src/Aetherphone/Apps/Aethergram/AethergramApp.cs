@@ -84,8 +84,6 @@ internal sealed partial class AethergramApp : IResumableApp
     private const float CardCaptionScale = 0.95f;
     private const int GridColumns = 3;
     private const int PostSheetMaxItems = 4;
-    private const float LikeBurstDuration = 0.9f;
-    private const float LikeBurstSize = 84f;
 
     public string Id => "aethergram";
     public Vector4 Accent => AppAccents.For(Id);
@@ -153,8 +151,8 @@ internal sealed partial class AethergramApp : IResumableApp
     private readonly PhotoViewerOverlay photoViewer = new();
     private readonly AvatarLightbox avatarLightbox = new();
     private readonly PhotoCarousel carousel = new();
-    private string? pendingViewUrl;
-    private double pendingViewAt;
+    private readonly DoubleTapLike doubleTapLike = new();
+    private readonly DeferredTap pendingPhotoTap = new();
     private readonly AppSkin ui = new(AppPalettes.Aethergram);
     private readonly SocialProfilePages profile;
     private readonly RichTextCache bodyLayouts = new(scanHashtags: true);
@@ -197,8 +195,6 @@ internal sealed partial class AethergramApp : IResumableApp
     private string composeStatus = string.Empty;
     private volatile int composeOutcome;
     private string commentDraft = string.Empty;
-    private string likeBurstPostId = string.Empty;
-    private double likeBurstStart;
     private string hashtagTitle = string.Empty;
     private string hashtagTitleTag = string.Empty;
     private readonly ActionSheet inboxRowSheet = new();
@@ -1091,7 +1087,7 @@ internal sealed partial class AethergramApp : IResumableApp
             (list, min, max, radius, url) => DrawGramImage(list, new Rect(min, max), url, radius, scanStatus, veiled));
         if (result.InputConsumed)
         {
-            pendingViewUrl = null;
+            pendingPhotoTap.Cancel();
         }
         else if (veiled)
         {
@@ -1111,7 +1107,7 @@ internal sealed partial class AethergramApp : IResumableApp
             theme, ImGui.GetIO().DeltaTime);
         if (tags.InputConsumed)
         {
-            pendingViewUrl = null;
+            pendingPhotoTap.Cancel();
         }
 
         if (tags.OpenUserId is { } taggedUserId)
@@ -1119,7 +1115,7 @@ internal sealed partial class AethergramApp : IResumableApp
             OpenProfile(taggedUserId);
         }
 
-        DrawLikeBurst(imageRect, post.Id);
+        doubleTapLike.DrawBurst(ImGui.GetWindowDrawList(), imageRect, post.Id);
         return result.Index;
     }
 
@@ -1130,74 +1126,29 @@ internal sealed partial class AethergramApp : IResumableApp
             return;
         }
 
-        if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
+        if (doubleTapLike.Tapped(imageRect, post.Id))
         {
-            pendingViewUrl = null;
+            pendingPhotoTap.Cancel();
             if (post.MyReaction < 0)
             {
                 store.ToggleLike(post);
             }
 
-            likeBurstPostId = post.Id;
-            likeBurstStart = ImGui.GetTime();
             return;
         }
 
         if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && page < photos.Length)
         {
-            pendingViewUrl = photos[page];
-            pendingViewAt = ImGui.GetTime();
+            pendingPhotoTap.Arm(photos[page]);
         }
     }
 
     private void AdvancePendingPhotoView()
     {
-        if (pendingViewUrl is not { } url)
+        if (pendingPhotoTap.Ready(out var url))
         {
-            return;
+            photoViewer.Open(this, () => GifMedia.Texture(images, url, ImGui.GetTime()));
         }
-
-        if (DragScrollHost.AnyDragging)
-        {
-            pendingViewUrl = null;
-            return;
-        }
-
-        if (ImGui.GetTime() - pendingViewAt < 0.30)
-        {
-            return;
-        }
-
-        pendingViewUrl = null;
-        photoViewer.Open(this, () => GifMedia.Texture(images, url, ImGui.GetTime()));
-    }
-
-    private void DrawLikeBurst(Rect imageRect, string postId)
-    {
-        if (likeBurstPostId != postId)
-        {
-            return;
-        }
-
-        var elapsed = (float)(ImGui.GetTime() - likeBurstStart);
-        if (elapsed >= LikeBurstDuration)
-        {
-            likeBurstPostId = string.Empty;
-            return;
-        }
-
-        var scale = UiScale.Current;
-        var appear = Math.Clamp(elapsed / 0.22f, 0f, 1f);
-        var back = appear - 1f;
-        var pop = MathF.Max(1f + back * back * (2.70158f * back + 1.70158f), 0.05f);
-        var alpha = elapsed < 0.55f ? 1f : 1f - (elapsed - 0.55f) / (LikeBurstDuration - 0.55f);
-        var rise = elapsed < 0.55f ? 0f : (elapsed - 0.55f) * 46f * scale;
-        var center = new Vector2(imageRect.Center.X, imageRect.Center.Y - rise);
-        var drawList = ImGui.GetWindowDrawList();
-        var size = LikeBurstSize * scale * pop;
-        PhoneIcon.Draw(drawList, center + new Vector2(0f, 2f * scale), PhoneIcons.HeartFilled,
-            new Vector4(0f, 0f, 0f, 0.35f * alpha), size);
-        PhoneIcon.Draw(drawList, center, PhoneIcons.HeartFilled, new Vector4(1f, 1f, 1f, alpha), size);
     }
 
     private void DrawGramImage(Rect rect, string? url, float rounding, string? scanStatus = null) =>
