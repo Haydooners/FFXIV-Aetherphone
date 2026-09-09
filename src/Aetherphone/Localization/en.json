@@ -5140,6 +5140,7 @@
   "changelog.r1020.0": "Added online dots: a green dot on the avatar in Chats and Contacts shows who is online right now, without opening the conversation",
   "changelog.r1020.1": "Group chats now show the sender's photo next to their messages and their name inside the bubble",
   "changelog.r1020.22": "Starred messages now carry a star in the thread",
+  "changelog.r1020.59": "Shift and Enter now makes a new line in a message, in ChocoChat, Aethergram, Velvet and Yellow Pages inquiries, and the box grows as you type. Enter still sends",
   "changelog.r1020.27": "Long histories no longer drag the game down: a conversation with a full stream draws the part you are looking at and reaches further back as you scroll up",
   "changelog.r1020.28": "Fixed Open a Linkpearl chat showing on NPCs, and its switch moved to Settings > General, where it now starts off",
   "changelog.r1020.51": "The MogCast screen tilts and rolls as well as turns, so it can hang overhead, lean back against a wall, or sit at an angle, and a Flat Screen switch drops the cinema curve",

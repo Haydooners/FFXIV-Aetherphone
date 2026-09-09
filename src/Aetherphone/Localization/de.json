@@ -5140,6 +5140,7 @@
   "changelog.r1020.0": "Online-Punkte hinzugefügt: ein grüner Punkt auf dem Avatar in Chats und Kontakte zeigt, wer gerade online ist, ohne die Unterhaltung zu öffnen",
   "changelog.r1020.1": "Gruppenchats zeigen jetzt das Foto des Absenders neben seinen Nachrichten und seinen Namen in der Sprechblase",
   "changelog.r1020.22": "Markierte Nachrichten tragen jetzt einen Stern im Verlauf",
+  "changelog.r1020.59": "Umschalt und Eingabe fügt jetzt eine neue Zeile in eine Nachricht ein, in ChocoChat, Aethergram, Velvet und Yellow Pages Anfragen, und das Feld wächst beim Tippen mit. Eingabe sendet weiterhin",
   "changelog.r1020.27": "Lange Verläufe bremsen das Spiel nicht mehr aus: eine Unterhaltung mit vollem Verlauf zeichnet nur den sichtbaren Teil und reicht weiter zurück, während du nach oben scrollst",
   "changelog.r1020.28": "Behoben, dass Linkpearl-Chat öffnen bei NPCs erschien, und der Schalter dafür ist nach Einstellungen > Allgemein gewandert, wo er jetzt aus startet",
   "changelog.r1020.51": "Der MogCast-Bildschirm lässt sich jetzt nicht nur drehen, sondern auch neigen und rollen, hängt so über dir, lehnt an einer Wand oder steht schräg, und ein Schalter für einen flachen Bildschirm nimmt die Kinowölbung heraus",

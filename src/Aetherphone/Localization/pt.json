@@ -5140,6 +5140,7 @@
   "changelog.r1020.0": "Adicionados pontos de presença: um ponto verde no avatar em Conversas e Contatos mostra quem está online agora, sem abrir a conversa",
   "changelog.r1020.1": "Os chats em grupo agora mostram a foto do remetente ao lado das mensagens e o nome dentro do balão",
   "changelog.r1020.22": "As mensagens favoritas agora levam uma estrela no histórico",
+  "changelog.r1020.59": "Shift e Enter agora criam uma nova linha na mensagem, no ChocoChat, Aethergram, Velvet e nas consultas do Yellow Pages, e o campo cresce enquanto você escreve. Enter continua enviando",
   "changelog.r1020.27": "Históricos longos não travam mais o jogo: uma conversa com o registro cheio desenha só a parte que você está vendo e alcança mais para trás conforme você rola para cima",
   "changelog.r1020.28": "Corrigido o Abrir uma conversa do Linkpearl aparecendo em NPCs, e o interruptor dele passou para Ajustes > Geral, onde agora começa desligado",
   "changelog.r1020.51": "A tela do MogCast agora inclina e rola além de girar, então pode ficar suspensa acima de você, encostada em uma parede ou em ângulo, e um botão de tela plana tira a curva de cinema",

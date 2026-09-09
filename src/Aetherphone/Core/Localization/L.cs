@@ -1790,6 +1790,8 @@ internal static class L
                 "Group chats now show the sender's photo next to their messages and their name inside the bubble"),
             new("changelog.r1020.22",
                 "Starred messages now carry a star in the thread"),
+            new("changelog.r1020.59",
+                "Shift and Enter now makes a new line in a message, in ChocoChat, Aethergram, Velvet and Yellow Pages inquiries, and the box grows as you type. Enter still sends"),
         };
 
         public static readonly LocString[] Release1020Linkpearl =

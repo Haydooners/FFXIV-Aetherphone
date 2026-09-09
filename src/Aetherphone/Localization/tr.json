@@ -5140,6 +5140,7 @@
   "changelog.r1020.0": "Çevrimiçi noktaları eklendi: Sohbetler ve Kişiler'de avatarın üzerindeki yeşil nokta, konuşmayı açmadan kimin şu anda çevrimiçi olduğunu gösterir",
   "changelog.r1020.1": "Grup sohbetleri artık gönderenin fotoğrafını mesajlarının yanında, adını ise balonun içinde gösteriyor",
   "changelog.r1020.22": "Yıldızlı mesajlar artık yazışmanın içinde de bir yıldız taşıyor",
+  "changelog.r1020.59": "Shift ve Enter artık mesajda yeni satır açıyor: ChocoChat, Aethergram, Velvet ve Yellow Pages taleplerinde kutu yazdıkça büyüyor, Enter yine gönderiyor",
   "changelog.r1020.27": "Uzun geçmişler artık oyunu yavaşlatmıyor: akışı dolu bir konuşma yalnızca baktığınız bölümü çiziyor ve yukarı kaydırdıkça daha geriye uzanıyor",
   "changelog.r1020.28": "Linkpearl sohbeti aç seçeneğinin NPC'lerde görünmesi düzeltildi, anahtarı da Ayarlar > Genel bölümüne taşındı ve artık kapalı başlıyor",
   "changelog.r1020.51": "MogCast ekranı artık dönmenin yanı sıra eğiliyor ve yatıyor, böylece tepende asılı durabilir, duvara yaslanabilir ya da açılı oturabilir, düz ekran anahtarı da sinema kavisini kaldırıyor",
