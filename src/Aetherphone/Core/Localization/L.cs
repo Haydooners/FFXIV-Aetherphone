@@ -258,6 +258,11 @@ internal static class L
         public static readonly LocString NoticeFrameRevokedBodyOne = new("moderation.notice.frameRevokedBodyOne", "The {0} frame was removed from your account and no longer sits around your picture. If you think this was a mistake, reach out to us on our Discord server.");
         public static readonly LocString NoticeFrameRevokedBodyMany = new("moderation.notice.frameRevokedBodyMany", "These frames were removed from your account: {0}. They no longer sit around your picture. If you think this was a mistake, reach out to us on our Discord server.");
         public static readonly LocString NoticeFrameRevokedBodyFallback = new("moderation.notice.frameRevokedBodyFallback", "An avatar frame was removed from your account. If you think this was a mistake, reach out to us on our Discord server.");
+        public static readonly LocString NoticeNameResetTitle = new("moderation.notice.nameResetTitle", "Your name was reset");
+        public static readonly LocString NoticeNameResetIntro = new("moderation.notice.nameResetIntro", "A moderator reset the name you go by, so it is back to the random handle a new account starts with. Open Settings and pick a new one whenever you like.");
+        public static readonly LocString NoticeNameResetHandle = new("moderation.notice.nameResetHandle", "You are now {0}");
+        public static readonly LocString NoticeNameResetWhere = new("moderation.notice.nameResetWhere", "Reset on: {0}");
+        public static readonly LocString NoticeNameResetLabel = new("moderation.notice.nameResetLabel", "New handle");
     }
 
     internal static class Apps
