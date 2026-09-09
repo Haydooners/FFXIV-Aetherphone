@@ -119,7 +119,9 @@ internal sealed partial class VelvetShell
         {
             case VelvetPage.Discover:
                 DrawFilterIcon(area, drawList, radius, VelvetPage.Discover, "velvet.discover.filter");
-                if (SocialChrome.DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 2), radius, PhoneIcons.Search,
+                var searchCenter = SocialChrome.HeaderSlot(area, 2);
+                UiAnchors.Report("velvet.discover.search", AnchorBox(searchCenter, HeaderAnchorHalf * scale));
+                if (SocialChrome.DrawHeaderIcon(drawList, searchCenter, radius, PhoneIcons.Search,
                         TopBarIconSize, Loc.T(L.Common.Search), VelvetInk.Shared, VelvetTheme.TitleInk))
                 {
                     OpenSearch();

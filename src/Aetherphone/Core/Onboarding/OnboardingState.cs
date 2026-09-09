@@ -3,6 +3,7 @@ namespace Aetherphone.Core.Onboarding;
 internal static class OnboardingState
 {
     private static bool replayWelcomeRequested;
+    private static string? requestedAppTour;
     public static bool Enabled => Plugin.Cfg.TutorialsEnabled;
 
     public static bool HasCompleted(string id, int version) =>
@@ -44,6 +45,21 @@ internal static class OnboardingState
         }
 
         Plugin.Cfg.Save();
+    }
+
+    public static void RequestAppTour(string appId)
+    {
+        Reset(appId);
+        requestedAppTour = appId;
+    }
+
+    public static void ClearAppTourRequest() => requestedAppTour = null;
+
+    public static bool ConsumeAppTourRequest(out string appId)
+    {
+        appId = requestedAppTour ?? string.Empty;
+        requestedAppTour = null;
+        return appId.Length > 0;
     }
 
     public static void RequestReplayWelcome() => replayWelcomeRequested = true;

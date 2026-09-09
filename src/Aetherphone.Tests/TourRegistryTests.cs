@@ -36,7 +36,7 @@ public sealed class TourRegistryTests
         { "fishing", (2, 4) },
         { "notifications", (2, 2) },
         { "message", (2, 7) },
-        { "velvet", (3, 8) },
+        { "velvet", (4, 7) },
         { "feedback", (2, 4) },
         { "polls", (2, 3) },
         { "appstore", (1, 5) },

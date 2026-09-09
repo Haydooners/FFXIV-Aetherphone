@@ -1772,6 +1772,8 @@ internal static class L
                 "Connect on a Discover card or a Velvet profile now opens the intro sheet, where you write a line or tap Just connect me"),
             new("changelog.r1020.61",
                 "Velvet's Messages switches between Chats and Requests with the same tab row the feed uses, and tapping the Velvet wordmark in Discover jumps the list back to the top"),
+            new("changelog.r1020.65",
+                "Setting up your Velvet profile now hands you straight to a walk around the app: Discover, search, filters, the feed, messages and your own profile"),
             new("changelog.r1020.66",
                 "Double click a post's photo in Velvet to like it, with the same heart burst Aethergram has: it works in the feed, on tag and profile posts, and in the post detail"),
         };
@@ -6436,17 +6438,17 @@ internal static class L
         public static readonly LocString FishingBody = new("onboarding.fishingBody", "Bite windows, handy tips and the best spots for the fish worth chasing.");
         public static readonly LocString NotificationsBody = new("onboarding.notificationsBody", "A running history of everything your phone has pinged you about, so nothing slips past you.");
         public static readonly LocString VelvetDiscoverTitle = new("onboarding.velvetDiscoverTitle", "Discover people");
-        public static readonly LocString VelvetDiscoverBody = new("onboarding.velvetDiscoverBody", "Browse profiles filtered by what people are looking for, and send a connection request when you find someone interesting.");
+        public static readonly LocString VelvetDiscoverBody = new("onboarding.velvetDiscoverBody", "Everyone open to meeting people shows up here as a card. Tap one to read their profile, or tap the heart to send a connection request.");
+        public static readonly LocString VelvetSearchTitle = new("onboarding.velvetSearchTitle", "Find someone");
+        public static readonly LocString VelvetSearchBody = new("onboarding.velvetSearchBody", "Look someone up by name or handle, or type a tag to see the posts carrying it.");
         public static readonly LocString VelvetFilterTitle = new("onboarding.velvetFilterTitle", "Filter by intent");
         public static readonly LocString VelvetFilterBody = new("onboarding.velvetFilterBody", "Narrow the people here to exactly what you want, from ERP to gpose to just making friends.");
         public static readonly LocString VelvetFeedTitle = new("onboarding.velvetFeedTitle", "The live feed");
         public static readonly LocString VelvetFeedBody = new("onboarding.velvetFeedBody", "This is the live feed, where people share photos and posts across Velvet. Everything here stays inside Velvet.");
-        public static readonly LocString VelvetActivityTitle = new("onboarding.velvetActivityTitle", "Your activity");
-        public static readonly LocString VelvetActivityBody = new("onboarding.velvetActivityBody", "Likes, comments and new intros land here. Tap the bell any time to catch up.");
         public static readonly LocString VelvetMessagesTitle = new("onboarding.velvetMessagesTitle", "Requests and messages");
         public static readonly LocString VelvetMessagesBody = new("onboarding.velvetMessagesBody", "Accept or decline requests, then chat privately with the connections you make.");
         public static readonly LocString VelvetProfileTitle = new("onboarding.velvetProfileTitle", "Your profile");
-        public static readonly LocString VelvetProfileBody = new("onboarding.velvetProfileBody", "Set up your intro, vibe, tags and limits, and choose whether you're discoverable to others.");
+        public static readonly LocString VelvetProfileBody = new("onboarding.velvetProfileBody", "Everything you just set up lives here. Open Edit profile to change your photos, cards and limits, or switch off Appear in Discover to step back.");
         public static readonly LocString VelvetKindTitle = new("onboarding.velvetKindTitle", "Consent and Respect");
         public static readonly LocString VelvetKindBody = new("onboarding.velvetKindBody", "This space is for everyone. Discriminatory, hateful or harmful content isn't welcome and can get you banned.");
         public static readonly LocString FeedbackIntroBody = new("onboarding.feedbackIntroBody", "Tell the developer what you think: suggestions, bug reports, feature ideas, or just a hello.");
@@ -6480,8 +6482,6 @@ internal static class L
         public static readonly LocString AethergramActivityBody = new("onboarding.aethergramActivityBody", "Hearts, comments and new followers show up under this tab the moment they happen.");
         public static readonly LocString AethergramProfileTitle = new("onboarding.aethergramProfileTitle", "Your profile");
         public static readonly LocString AethergramProfileBody = new("onboarding.aethergramProfileBody", "Tap your avatar to set up your profile and watch your grid fill up with your shots.");
-        public static readonly LocString VelvetComposeTitle = new("onboarding.velvetComposeTitle", "Share to the feed");
-        public static readonly LocString VelvetComposeBody = new("onboarding.velvetComposeBody", "Post thoughts and photos for your connections. Everything you share stays inside Velvet.");
         public static readonly LocString MessageCallsTitle = new("onboarding.messageCallsTitle", "Voice calls");
         public static readonly LocString MessageContactsTitle = new("onboarding.messageContactsTitle", "Your address book");
         public static readonly LocString MessageContactsBody = new("onboarding.messageContactsBody", "Friends you add by number live in Contacts. Tap the tab to take a look.");

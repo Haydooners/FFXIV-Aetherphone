@@ -32,21 +32,21 @@ internal static partial class TourRegistry
                 GuideStep.Note(L.Onboarding.AethergramSafeTitle, L.Onboarding.AethergramSafeBody),
                 GuideStep.Note(L.Onboarding.AethergramKindTitle, L.Onboarding.AethergramKindBody),
             });
-        Add(tours, "velvet", 3,
+        Add(tours, "velvet", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.VelvetDiscoverTitle, L.Onboarding.VelvetDiscoverBody,
                     "velvet.discover.card"),
+                GuideStep.Point(L.Onboarding.VelvetSearchTitle, L.Onboarding.VelvetSearchBody,
+                    "velvet.discover.search"),
                 GuideStep.Point(L.Onboarding.VelvetFilterTitle, L.Onboarding.VelvetFilterBody, "velvet.discover.filter"),
                 GuideStep.Tap(L.Onboarding.VelvetFeedTitle, L.Onboarding.VelvetFeedBody, "velvet.tab.feed",
                     "velvet.tab.feed"),
-                GuideStep.Point(L.Onboarding.VelvetComposeTitle, L.Onboarding.VelvetComposeBody, "velvet.compose"),
                 GuideStep.Tap(L.Onboarding.VelvetMessagesTitle, L.Onboarding.VelvetMessagesBody, "velvet.tab.messages",
                     "velvet.tab.messages"),
                 GuideStep.Tap(L.Onboarding.VelvetProfileTitle, L.Onboarding.VelvetProfileBody, "velvet.tab.me",
                     "velvet.tab.me"),
-                GuideStep.Point(L.Onboarding.VelvetActivityTitle, L.Onboarding.VelvetActivityBody, "velvet.activity"),
-                GuideStep.Note(L.Onboarding.VelvetKindTitle, L.Onboarding.VelvetKindBody),
+                GuideStep.Note(L.Onboarding.VelvetKindTitle, L.Onboarding.VelvetKindBody, "velvet.tab.discover"),
             });
         Add(tours, "muster", 1,
             new[]

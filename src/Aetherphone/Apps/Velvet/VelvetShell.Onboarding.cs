@@ -4,6 +4,7 @@ using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Net;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Social;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -673,5 +674,7 @@ internal sealed partial class VelvetShell
         configuration.VelvetOnboardedVersion = Configuration.VelvetOnboardVersion;
         configuration.Save();
         store.UpdateProfile(BuildEditRequest(onboardDiscoverable, onboardWho), _ => { });
+        activeTab = VelvetPage.Discover;
+        OnboardingState.RequestAppTour(Id);
     }
 }

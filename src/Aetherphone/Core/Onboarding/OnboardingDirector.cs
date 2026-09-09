@@ -113,6 +113,7 @@ internal sealed class OnboardingDirector
             exiting = false;
             presence.SnapTo(0f);
             GuideIntents.Clear();
+            OnboardingState.ClearAppTourRequest();
             return;
         }
 
@@ -155,6 +156,11 @@ internal sealed class OnboardingDirector
         if (OnboardingState.ConsumeReplayWelcome())
         {
             pendingWelcome = true;
+        }
+
+        if (OnboardingState.ConsumeAppTourRequest(out var requestedAppId))
+        {
+            pendingAppId = requestedAppId;
         }
 
         if (pendingResume && suspended.HasValue && CanStart(suspended.Value, atHome, currentAppId))
