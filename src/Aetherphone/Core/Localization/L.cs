@@ -1872,6 +1872,12 @@ internal static class L
 
         public static readonly LocString[] Release1020Phone =
         {
+            new("changelog.r1020.62",
+                "The minimized phone can now collapse into a live minimap: a square, in three sizes, that draws the zone map around you with your heading and your coordinates, so the phone can sit where the game minimap does. Pick the shape under Settings > Appearance > Minimized phone"),
+            new("changelog.r1020.63",
+                "The minimap zooms: roll the wheel over it, or use the plus and minus buttons that fade in when you hover it"),
+            new("changelog.r1020.64",
+                "Added a wallpaper backdrop to the mini phone: your home wallpaper shows behind the clock, dimmed so the text stays readable. Turn it on under Settings > Appearance > Minimized phone"),
             new("changelog.r1020.30",
                 "Fixed dropdown menus not responding inside pop-out windows"),
             new("changelog.r1020.31",
