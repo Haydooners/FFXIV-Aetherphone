@@ -1848,6 +1848,14 @@ internal static class L
                 "Poll results now stay hidden until you vote: the bars, the counts and the total only appear once you pick an option"),
         };
 
+        public static readonly LocString[] Release1020Notes =
+        {
+            new("changelog.r1020.57",
+                "Notes now wraps a long line onto the next line instead of running it off the side of the screen, and the wrap is only for reading: the note is stored exactly as you typed it"),
+            new("changelog.r1020.58",
+                "Added a copy button to a note, so what you paste elsewhere comes out as the clean paragraphs you wrote"),
+        };
+
         public static readonly LocString[] Release1020Settings =
         {
             new("changelog.r1020.47",
@@ -4896,6 +4904,7 @@ internal static class L
         public static readonly LocString NewNote = new("notes.newNote", "New Note");
         public static readonly LocString Untitled = new("notes.untitled", "New Note");
         public static readonly LocString NoAdditionalText = new("notes.noAdditionalText", "No additional text");
+        public static readonly LocString CopyNote = new("notes.copyNote", "Copy Note");
         public static readonly LocString DeleteNote = new("notes.deleteNote", "Delete Note");
         public static readonly LocString DeleteNoteConfirm = new("notes.deleteNoteConfirm", "Delete this note?");
         public static readonly LocString NewReminder = new("notes.newReminder", "New Reminder");

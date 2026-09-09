@@ -17,6 +17,7 @@ internal static class ChangelogData
             new(L.Apps.Music, L.Changelog.Release1020Music),
             new(L.Apps.Games, L.Changelog.Release1020Games),
             new(L.Apps.Polls, L.Changelog.Release1020Polls),
+            new(L.Apps.Notes, L.Changelog.Release1020Notes),
             new(L.Apps.Settings, L.Changelog.Release1020Settings),
             new(L.Changelog.SectionPhone, L.Changelog.Release1020Phone),
         }),

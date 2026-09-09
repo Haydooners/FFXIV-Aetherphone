@@ -51,25 +51,18 @@ internal sealed class GameComposer
     private readonly List<DropdownMenu.Item> menuItems = new(24);
     private readonly List<string> menuKeys = new(24);
     private readonly List<string> splitScratch = new(MessageSplitter.MaxParts);
-    private readonly SoftWrapBuffer wrapped = new(SoftWrap.WrapText);
-    private readonly ImGui.ImGuiInputTextCallbackPtrDelegate multilineCallback;
+    private readonly SoftWrapEditor editor = new();
     private string conversationKey = string.Empty;
-    private string draft = string.Empty;
     private string countedSource = string.Empty;
     private string countedIndicator = string.Empty;
-    private float wrappedWidth;
     private int countedBudget = -1;
     private int countedParts = 1;
     private int capacityBytes;
     private long lastEnterMilliseconds;
-    private bool wrappedMultiline;
-    private bool pendingSync;
     private bool enterPressed;
     private bool focus;
 
-    public GameComposer() => multilineCallback = OnMultilineCallback;
-
-    public string Draft => draft;
+    public string Draft => editor.Text;
 
     public void Gate() => channelMenu.Gate();
 
@@ -86,26 +79,26 @@ internal sealed class GameComposer
             return;
         }
 
-        ChatDrafts.Store(conversationKey, draft);
+        ChatDrafts.Store(conversationKey, editor.Text);
         conversationKey = nextConversationKey;
-        Adopt(ChatDrafts.Load(nextConversationKey));
+        editor.Adopt(ChatDrafts.Load(nextConversationKey));
         focus = false;
         channelMenu.Close();
     }
 
     public void Unbind()
     {
-        ChatDrafts.Store(conversationKey, draft);
+        ChatDrafts.Store(conversationKey, editor.Text);
         ChatDrafts.Flush();
         conversationKey = string.Empty;
-        Adopt(string.Empty);
+        editor.Adopt(string.Empty);
         focus = false;
         channelMenu.Close();
     }
 
     public void Reset()
     {
-        Adopt(string.Empty);
+        editor.Adopt(string.Empty);
         focus = false;
         channelMenu.Close();
         emoji.Close();
@@ -113,13 +106,13 @@ internal sealed class GameComposer
 
     public void Refill(string text)
     {
-        Adopt(text);
+        editor.Adopt(text);
         focus = true;
     }
 
     public void Clear()
     {
-        Adopt(string.Empty);
+        editor.Adopt(string.Empty);
         ChatDrafts.Store(conversationKey, string.Empty);
     }
 
@@ -132,8 +125,8 @@ internal sealed class GameComposer
             return baseHeight;
         }
 
-        Rewrap(WrapWidthOf(InnerWidth(barWidth, channel, scale), scale));
-        var visible = Math.Clamp(wrapped.LineCount, MinimumLines, MaxLines);
+        editor.Rewrap(WrapWidthOf(InnerWidth(barWidth, channel, scale), scale));
+        var visible = Math.Clamp(editor.LineCount, MinimumLines, MaxLines);
         return baseHeight + (visible - 1) * ImGui.GetTextLineHeight();
     }
 
@@ -177,12 +170,6 @@ internal sealed class GameComposer
 
         var innerWidth = MathF.Max(1f, fieldMax.X - fieldMin.X - Metrics.Space.Md * scale);
         enterPressed = false;
-        if (Multiline != wrappedMultiline)
-        {
-            wrappedMultiline = Multiline;
-            wrapped.Reset(draft);
-        }
-
         if (Multiline)
         {
             DrawMultiline(fieldMin, fieldMax, innerWidth, theme, scale);
@@ -192,22 +179,30 @@ internal sealed class GameComposer
             DrawSingleLine(fieldMin, fieldMax, innerWidth, theme, scale);
         }
 
-        emoji.DrawSuggestions(bar, model.Screen, theme, ref draft);
-        var pickedEmoji = emoji.DrawPanel(bar, model.Screen, theme);
-        if (pickedEmoji is not null && Encoding.UTF8.GetByteCount(draft) + pickedEmoji.Length <= capacityBytes)
+        var suggested = editor.Text;
+        emoji.DrawSuggestions(bar, model.Screen, theme, ref suggested);
+        if (!string.Equals(suggested, editor.Text, StringComparison.Ordinal))
         {
-            Adopt(draft + pickedEmoji);
+            editor.Adopt(suggested);
         }
 
-        if (ChatCommands.TryAbsorb(draft, out var absorbed, out var remainder) && Offered(model.Channels, absorbed.Key))
+        var pickedEmoji = emoji.DrawPanel(bar, model.Screen, theme);
+        if (pickedEmoji is not null &&
+            Encoding.UTF8.GetByteCount(editor.Text) + pickedEmoji.Length <= capacityBytes)
         {
-            Adopt(remainder);
+            editor.Append(pickedEmoji);
+        }
+
+        if (ChatCommands.TryAbsorb(editor.Text, out var absorbed, out var remainder) &&
+            Offered(model.Channels, absorbed.Key))
+        {
+            editor.Adopt(remainder);
             channelKey = absorbed.Key;
         }
 
-        ChatDrafts.Store(conversationKey, draft);
-        var used = Encoding.UTF8.GetByteCount(draft);
-        var hasText = HasContent(draft);
+        ChatDrafts.Store(conversationKey, editor.Text);
+        var used = Encoding.UTF8.GetByteCount(editor.Text);
+        var hasText = editor.HasContent;
         var parts = hasText && Splitting ? PartCount(budget, indicator) : 1;
         DrawSend(drawList, sendCenter, sendDiameter, hasText, used, capacityBytes, parts, theme, scale);
         var submitted = ConsumeEnter();
@@ -227,7 +222,7 @@ internal sealed class GameComposer
             return new GameComposerResult(false, false, string.Empty, channelKey);
         }
 
-        var text = draft.Trim();
+        var text = editor.Text.Trim();
         focus = true;
         return new GameComposerResult(true, text[0] == '/', text, channelKey);
     }
@@ -247,13 +242,6 @@ internal sealed class GameComposer
         GameChannels.TryByKey(model.ActiveChannel, out channel) && channel.CanSend &&
         (!channel.NeedsTarget || model.SendTarget.Length > 0);
 
-    private void Adopt(string text)
-    {
-        draft = text;
-        wrapped.Reset(text);
-        pendingSync = true;
-    }
-
     private void DrawSingleLine(Vector2 fieldMin, Vector2 fieldMax, float innerWidth, PhoneTheme theme, float scale)
     {
         ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + Metrics.Space.Sm * scale,
@@ -265,23 +253,28 @@ internal sealed class GameComposer
             focus = false;
         }
 
-        Plugin.Fonts.NoticeText(draft);
+        var line = editor.Text;
+        Plugin.Fonts.NoticeText(line);
         using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
         using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
         {
-            if (ImGui.InputTextWithHint("##linkpearl.composer", Loc.T(L.Messages.Placeholder), ref draft,
+            if (ImGui.InputTextWithHint("##linkpearl.composer", Loc.T(L.Messages.Placeholder), ref line,
                     Math.Max(1, capacityBytes), ImGuiInputTextFlags.EnterReturnsTrue))
             {
                 enterPressed = true;
             }
         }
+
+        if (!string.Equals(line, editor.Text, StringComparison.Ordinal))
+        {
+            editor.Adopt(line);
+        }
     }
 
     private void DrawMultiline(Vector2 fieldMin, Vector2 fieldMax, float innerWidth, PhoneTheme theme, float scale)
     {
-        var wrapWidth = WrapWidthOf(innerWidth, scale);
-        Rewrap(wrapWidth);
-        var visible = Math.Clamp(wrapped.LineCount, MinimumLines, MaxLines);
+        editor.Rewrap(WrapWidthOf(innerWidth, scale));
+        var visible = Math.Clamp(editor.LineCount, MinimumLines, MaxLines);
         var boxHeight = visible * ImGui.GetTextLineHeight() + ImGui.GetStyle().FramePadding.Y * 2f;
         ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + Metrics.Space.Sm * scale,
             (fieldMin.Y + fieldMax.Y) * 0.5f - boxHeight * 0.5f));
@@ -291,24 +284,16 @@ internal sealed class GameComposer
             focus = false;
         }
 
-        Plugin.Fonts.NoticeText(wrapped.Display);
-        var bufferBytes = capacityBytes * 4 + 1024;
-        var field = wrapped.Display;
         using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
         using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
         {
-            ImGui.InputTextMultiline("##linkpearl.composer", ref field, bufferBytes,
-                new Vector2(innerWidth, boxHeight),
-                ImGuiInputTextFlags.CallbackEdit | ImGuiInputTextFlags.CallbackCharFilter |
-                ImGuiInputTextFlags.CallbackAlways, multilineCallback);
+            if (editor.Draw("##linkpearl.composer", new Vector2(innerWidth, boxHeight), 0, capacityBytes))
+            {
+                enterPressed = true;
+            }
         }
 
-        if (!ImGui.IsItemActive())
-        {
-            pendingSync = false;
-        }
-
-        if (draft.Length > 0)
+        if (editor.Text.Length > 0)
         {
             return;
         }
@@ -318,91 +303,6 @@ internal sealed class GameComposer
             new Vector2(fieldMin.X + Metrics.Space.Sm * scale + padding.X,
                 (fieldMin.Y + fieldMax.Y) * 0.5f - boxHeight * 0.5f + padding.Y),
             Loc.T(L.Messages.Placeholder), theme.TextMuted, TextStyles.Body);
-    }
-
-    private int OnMultilineCallback(ImGuiInputTextCallbackDataPtr data)
-    {
-        if (data.EventFlag == ImGuiInputTextFlags.CallbackCharFilter)
-        {
-            return FilterCharacter(data);
-        }
-
-        if (data.EventFlag == ImGuiInputTextFlags.CallbackAlways)
-        {
-            if (pendingSync)
-            {
-                pendingSync = false;
-                SyncBuffer(data);
-            }
-
-            return 0;
-        }
-
-        ApplyWrap(data);
-        return 0;
-    }
-
-    private void SyncBuffer(ImGuiInputTextCallbackDataPtr data)
-    {
-        data.DeleteChars(0, data.BufTextLen);
-        if (wrapped.Display.Length > 0)
-        {
-            data.InsertChars(0, wrapped.Display);
-        }
-
-        data.CursorPos = data.BufTextLen;
-        data.SelectionStart = data.CursorPos;
-        data.SelectionEnd = data.CursorPos;
-    }
-
-    private int FilterCharacter(ImGuiInputTextCallbackDataPtr data)
-    {
-        if (data.EventChar == '\r')
-        {
-            data.EventChar = 0;
-            return 0;
-        }
-
-        if (data.EventChar != '\n' || ImGui.GetIO().KeyShift)
-        {
-            return 0;
-        }
-
-        enterPressed = true;
-        data.EventChar = 0;
-        return 0;
-    }
-
-    private void ApplyWrap(ImGuiInputTextCallbackDataPtr data)
-    {
-        var current = Encoding.UTF8.GetString(data.BufSpan[..data.BufTextLen]);
-        var charCursor = CharIndexOf(current, data.CursorPos);
-        var logical = wrapped.Merge(draft, current, charCursor, out var logicalCursor);
-        logical = CapBytes(logical, capacityBytes, ref logicalCursor);
-        draft = logical;
-        wrapped.Rewrap(logical, wrappedWidth);
-        var text = wrapped.Display;
-        if (string.Equals(text, current, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        var displayCursor = wrapped.DisplayIndexOf(logicalCursor);
-        var byteCursor = Encoding.UTF8.GetByteCount(text.AsSpan(0, displayCursor));
-        data.DeleteChars(0, data.BufTextLen);
-        data.InsertChars(0, text);
-        data.CursorPos = byteCursor;
-        data.SelectionStart = byteCursor;
-        data.SelectionEnd = byteCursor;
-    }
-
-    private void Rewrap(float width)
-    {
-        wrappedWidth = width;
-        if (wrapped.Rewrap(draft, width))
-        {
-            pendingSync = true;
-        }
     }
 
     private bool ConsumeEnter()
@@ -426,22 +326,22 @@ internal sealed class GameComposer
 
     private int PartCount(int budget, string indicator)
     {
-        if (countedBudget == budget && string.Equals(countedSource, draft, StringComparison.Ordinal) &&
+        if (countedBudget == budget && string.Equals(countedSource, editor.Text, StringComparison.Ordinal) &&
             string.Equals(countedIndicator, indicator, StringComparison.Ordinal))
         {
             return countedParts;
         }
 
         countedBudget = budget;
-        countedSource = draft;
+        countedSource = editor.Text;
         countedIndicator = indicator;
-        if (draft.IndexOf('\n') < 0 && Encoding.UTF8.GetByteCount(draft) <= budget)
+        if (countedSource.IndexOf('\n') < 0 && Encoding.UTF8.GetByteCount(countedSource) <= budget)
         {
             countedParts = 1;
             return countedParts;
         }
 
-        MessageSplitter.Split(draft, budget, indicator, splitScratch);
+        MessageSplitter.Split(countedSource, budget, indicator, splitScratch);
         countedParts = Math.Max(1, splitScratch.Count);
         return countedParts;
     }
@@ -505,77 +405,6 @@ internal sealed class GameComposer
 
     private static float WrapWidthOf(float innerWidth, float scale) =>
         MathF.Max(1f, innerWidth - ImGui.GetStyle().FramePadding.X * 2f - 4f * scale);
-
-    private static int CharIndexOf(string text, int byteIndex)
-    {
-        if (byteIndex <= 0)
-        {
-            return 0;
-        }
-
-        var bytes = 0;
-        var index = 0;
-        while (index < text.Length && bytes < byteIndex)
-        {
-            var runeLength = RuneLength(text, index);
-            bytes += Encoding.UTF8.GetByteCount(text.AsSpan(index, runeLength));
-            index += runeLength;
-        }
-
-        return index;
-    }
-
-    private static string CapBytes(string text, int capacity, ref int cursor)
-    {
-        if (capacity <= 0)
-        {
-            cursor = 0;
-            return string.Empty;
-        }
-
-        if (Encoding.UTF8.GetByteCount(text) <= capacity)
-        {
-            return text;
-        }
-
-        var bytes = 0;
-        var index = 0;
-        while (index < text.Length)
-        {
-            var runeLength = RuneLength(text, index);
-            var runeBytes = Encoding.UTF8.GetByteCount(text.AsSpan(index, runeLength));
-            if (bytes + runeBytes > capacity)
-            {
-                break;
-            }
-
-            bytes += runeBytes;
-            index += runeLength;
-        }
-
-        if (cursor > index)
-        {
-            cursor = index;
-        }
-
-        return text[..index];
-    }
-
-    private static int RuneLength(string text, int index) =>
-        char.IsHighSurrogate(text[index]) && index + 1 < text.Length && char.IsLowSurrogate(text[index + 1]) ? 2 : 1;
-
-    private static bool HasContent(string text)
-    {
-        for (var index = 0; index < text.Length; index++)
-        {
-            if (!char.IsWhiteSpace(text[index]))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     private static float ChipWidthOf(GameChannel channel, float scale) =>
         Typography.Measure(ShortName(channel), TextStyles.Caption1).X + 18f * scale;

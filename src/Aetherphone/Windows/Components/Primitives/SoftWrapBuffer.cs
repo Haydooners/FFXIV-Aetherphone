@@ -72,6 +72,17 @@ internal sealed class SoftWrapBuffer
         return merged;
     }
 
+    public int LogicalIndexOf(int displayIndex)
+    {
+        var soft = 0;
+        while (soft < breaks.Count && breaks[soft] < displayIndex)
+        {
+            soft++;
+        }
+
+        return displayIndex - soft;
+    }
+
     public int DisplayIndexOf(int logicalIndex)
     {
         var displayIndex = logicalIndex;
@@ -81,17 +92,6 @@ internal sealed class SoftWrapBuffer
         }
 
         return Math.Clamp(displayIndex, 0, display.Length);
-    }
-
-    private int LogicalIndexOf(int displayIndex)
-    {
-        var soft = 0;
-        while (soft < breaks.Count && breaks[soft] < displayIndex)
-        {
-            soft++;
-        }
-
-        return displayIndex - soft;
     }
 
     private string Wrap(string logical, float wrapWidth)
