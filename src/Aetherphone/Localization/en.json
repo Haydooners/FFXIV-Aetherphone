@@ -5125,6 +5125,7 @@
   "changelog.r1020.61": "Velvet's Messages switches between Chats and Requests with the same tab row the feed uses, and tapping the Velvet wordmark in Discover jumps the list back to the top",
   "changelog.r1020.65": "Setting up your Velvet profile now hands you straight to a walk around the app: Discover, search, filters, the feed, messages and your own profile",
   "changelog.r1020.66": "Double click a post's photo in Velvet to like it, with the same heart burst Aethergram has: it works in the feed, on tag and profile posts, and in the post detail",
+  "changelog.r1020.68": "A comment's like count now sits next to the heart instead of under it, where it slipped past the bottom of the row",
   "changelog.r1020.17": "Overhauled ChocoChat from top to bottom: four tabs for chats, calls, contacts and settings",
   "changelog.r1020.18": "Added eight chat themes that recolor your bubbles, buttons and badges",
   "changelog.r1020.19": "Added chat wallpapers: a color, an optional pattern or one of your own photos, set for every chat or for one chat alone",

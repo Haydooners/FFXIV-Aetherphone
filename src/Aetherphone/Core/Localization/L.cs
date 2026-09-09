@@ -1776,6 +1776,8 @@ internal static class L
                 "Setting up your Velvet profile now hands you straight to a walk around the app: Discover, search, filters, the feed, messages and your own profile"),
             new("changelog.r1020.66",
                 "Double click a post's photo in Velvet to like it, with the same heart burst Aethergram has: it works in the feed, on tag and profile posts, and in the post detail"),
+            new("changelog.r1020.68",
+                "A comment's like count now sits next to the heart instead of under it, where it slipped past the bottom of the row"),
         };
 
         public static readonly LocString[] Release1020Message =

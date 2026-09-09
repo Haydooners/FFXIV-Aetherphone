@@ -5125,6 +5125,7 @@
   "changelog.r1020.61": "As mensagens do Velvet alternam entre Conversas e Pedidos com a mesma linha de separadores do feed, e tocar no logótipo Velvet em Descobrir leva a lista de volta ao topo",
   "changelog.r1020.65": "Ao terminar de configurar seu perfil do Velvet, o app agora te leva para um passeio: Descobrir, a busca, os filtros, o feed, as mensagens e seu próprio perfil",
   "changelog.r1020.66": "Clica duas vezes na foto de uma publicação do Velvet para gostar dela, com o mesmo coração que rebenta no Aethergram: funciona no feed, nas publicações por etiqueta e de perfil, e no detalhe da publicação",
+  "changelog.r1020.68": "O número de gostos de um comentário fica agora ao lado do coração em vez de por baixo, onde saía para fora do fundo da linha",
   "changelog.r1020.17": "ChocoChat reformulado de cima a baixo: quatro abas para conversas, chamadas, contatos e ajustes",
   "changelog.r1020.18": "Adicionados oito temas de conversa que recolorem seus balões, botões e contadores",
   "changelog.r1020.19": "Adicionados papéis de parede para as conversas: uma cor, um padrão opcional ou uma das suas fotos, para todas as conversas ou só para uma",

@@ -5125,6 +5125,7 @@
   "changelog.r1020.61": "Velvets Nachrichten wechseln zwischen Chats und Anfragen jetzt über dieselbe Tab-Zeile wie der Feed, und ein Tipp auf den Velvet-Schriftzug in Entdecken springt in der Liste zurück nach oben",
   "changelog.r1020.65": "Wenn du dein Velvet-Profil eingerichtet hast, führt dich die App jetzt direkt herum: Entdecken, Suche, Filter, der Feed, Nachrichten und dein eigenes Profil",
   "changelog.r1020.66": "Ein Doppelklick auf das Foto eines Beitrags in Velvet gibt ihm ein Like, mit demselben aufplatzenden Herz wie in Aethergram: im Feed, bei Tag- und Profilbeiträgen und in der Beitragsansicht",
+  "changelog.r1020.68": "Die Like-Zahl eines Kommentars steht jetzt neben dem Herz statt darunter, wo sie über den unteren Rand der Zeile hinausrutschte",
   "changelog.r1020.17": "ChocoChat von Grund auf überarbeitet: vier Tabs für Chats, Anrufe, Kontakte und Einstellungen",
   "changelog.r1020.18": "Acht Chat-Designs hinzugefügt, die deine Sprechblasen, Schaltflächen und Zähler einfärben",
   "changelog.r1020.19": "Chat-Hintergründe hinzugefügt: eine Farbe, ein optionales Muster oder eines deiner eigenen Fotos, für alle Chats oder nur für einen",

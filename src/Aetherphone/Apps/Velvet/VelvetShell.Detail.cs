@@ -20,6 +20,7 @@ internal sealed partial class VelvetShell
     private static readonly TextStyle CommentBodyStyle = new(CommentTextScale, FontWeight.Regular);
     private const float CommentHeadHeight = 18f;
     private const float CommentPadY = 10f;
+    private const float CommentActionWidth = 44f;
 
     private string commentsPostId = string.Empty;
     private string commentDraft = string.Empty;
@@ -290,7 +291,7 @@ internal sealed partial class VelvetShell
         var pad = SocialChrome.CellPadX * scale;
         var avatarRadius = 15f * scale;
         var textLeft = pad + avatarRadius * 2f + 10f * scale;
-        var wrapWidth = MathF.Max(1f, width - pad - 26f * scale - textLeft);
+        var wrapWidth = MathF.Max(1f, width - pad - CommentActionWidth * scale - textLeft);
         var authorName = DisplayNameOf(comment.AuthorDisplayName, comment.AuthorHandle);
         var commentKey = new TranslationKey(TranslationSurface.Comment, comment.Id);
         var commentView = translation.View(commentKey, comment.Text, comment.Lang);
@@ -374,8 +375,8 @@ internal sealed partial class VelvetShell
             }
         }
 
-        if (CommentHeart.Draw(ui, new Vector2(trailingX - 6f * scale, origin.Y + 30f * scale), comment.Liked,
-                comment.LikeCount, VelvetTheme.MutedInk, VelvetTheme.MutedInk, Loc.T(L.Velvet.Like), out _))
+        if (CommentHeart.Draw(ui, new Vector2(trailingX + 3f * scale, origin.Y + 30f * scale), comment.Liked,
+                comment.LikeCount, VelvetTheme.MutedInk, VelvetTheme.MutedInk, Loc.T(L.Velvet.Like)))
         {
             store.ToggleCommentLike(comment);
         }
