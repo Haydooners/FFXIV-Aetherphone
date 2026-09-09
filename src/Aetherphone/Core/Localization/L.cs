@@ -1767,7 +1767,7 @@ internal static class L
             new("changelog.r1020.12",
                 "Discover cards and profiles mark what the two of you share"),
             new("changelog.r1020.13",
-                "Edit profile is rows you open one at a time, led by your photo grid"),
+                "Edit profile is rows you open one at a time, led by your card photo"),
             new("changelog.r1020.60",
                 "Connect on a Discover card or a Velvet profile now opens the intro sheet, where you write a line or tap Just connect me"),
             new("changelog.r1020.61",
@@ -4427,14 +4427,12 @@ internal static class L
             new("velvet.filterPickHint",
                 "Tick a row to see only those, cross it out to never see it. Leave a row alone to see everything.");
         public static readonly LocString FilterShowResults = new("velvet.filterShowResults", "Show results");
-        public static readonly LocString PhotosSection = new("velvet.photosSection", "Your photos");
-        public static readonly LocString PhotosHint =
-            new("velvet.photosHint", "Your first photo is the cover people see on Discover. Tap a photo to make it the cover or remove it.");
-        public static readonly LocString MakeCover = new("velvet.makeCover", "Make it the cover");
+        public static readonly LocString PhotoSection = new("velvet.photoSection", "Your photo");
+        public static readonly LocString PhotoHint =
+            new("velvet.photoHint", "This is the photo people see on Discover. Tap it to swap it or take it down.");
         public static readonly LocString RemovePhoto = new("velvet.removePhoto", "Remove photo");
         public static readonly LocString PreviewCard = new("velvet.previewCard", "Preview my card");
         public static readonly LocString CardPreviewTitle = new("velvet.cardPreviewTitle", "Your card");
-        public static readonly LocString CoverBadge = new("velvet.coverBadge", "Cover");
         public static readonly LocString FitTitle = new("velvet.fitTitle", "You two");
         public static readonly LocString FitBoth = new("velvet.fitBoth", "Both {0}");
         public static readonly LocString FitBothHereFor = new("velvet.fitBothHereFor", "Both here for {0}");

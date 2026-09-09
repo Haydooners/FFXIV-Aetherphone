@@ -19,8 +19,8 @@ namespace Aetherphone.Apps.Velvet;
 internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto, VelvetThreadDto>
 {
     private const int PostSize = 1080;
-    private const int CardPhotoWidth = 864;
-    private const int CardPhotoHeight = 1080;
+    private const int CardPhotoWidth = 1200;
+    private const int CardPhotoHeight = 984;
     private readonly VelvetClient client;
     private readonly AccountClient account;
     private readonly Configuration configuration;

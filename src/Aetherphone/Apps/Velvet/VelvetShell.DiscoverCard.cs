@@ -12,10 +12,8 @@ namespace Aetherphone.Apps.Velvet;
 internal sealed partial class VelvetShell
 {
     private const float CardInset = 12f;
-    private const float CardCoverAspect = 1.2f;
     private const float CardCoverMaxShare = 0.62f;
     private const float CardCoverRadius = 18f;
-    private const float CardPhotoRadius = 14f;
     private const float CardCoverLead = 6f;
     private const float CardScrimShare = 0.55f;
     private const float CardCoverPad = 16f;
@@ -60,13 +58,9 @@ internal sealed partial class VelvetShell
         photoViewer.Open(this, viewerSource);
     }
 
-    private void DrawCardColumn(VelvetProfileDto profile, VelvetCardPhotoDto[] photos, float innerWidth,
-        VelvetProfileDto? viewer)
+    private void DrawCardColumn(VelvetProfileDto profile, float innerWidth, VelvetProfileDto? viewer)
     {
-        var drawList = ImGui.GetWindowDrawList();
         DrawIntroCard(profile, innerWidth);
-        var photoIndex = 1;
-        DrawCardPhoto(drawList, photos, ref photoIndex, innerWidth);
         DrawFactsCard(profile, innerWidth);
         if (VelvetIntent.IncludesErp(profile.LookingFor))
         {
@@ -74,15 +68,10 @@ internal sealed partial class VelvetShell
                 VelvetTokenGroup.Kinks);
         }
 
-        DrawCardPhoto(drawList, photos, ref photoIndex, innerWidth);
         DrawTokenCard(L.Velvet.CardTags, PhoneIcons.Hash, VelvetTheme.Rose, profile.Tags, innerWidth, viewer,
             VelvetTokenGroup.Tags);
         DrawTokenCard(L.Velvet.CardLimits, PhoneIcons.Shield, VelvetTheme.Gold, profile.Limits, innerWidth, viewer,
             VelvetTokenGroup.Limits);
-        while (photoIndex < photos.Length)
-        {
-            DrawCardPhoto(drawList, photos, ref photoIndex, innerWidth);
-        }
     }
 
     private void OpenCardPreview()
@@ -121,7 +110,7 @@ internal sealed partial class VelvetShell
             var inset = CardInset * scale;
             var origin = ImGui.GetCursorScreenPos();
             var innerWidth = MathF.Max(1f, width - inset * 2f);
-            var coverHeight = MathF.Min(innerWidth * CardCoverAspect, body.Height * CardCoverMaxShare);
+            var coverHeight = MathF.Min(innerWidth * GridCardAspect, body.Height * CardCoverMaxShare);
             var coverTop = origin.Y + CardCoverLead * scale;
             var cover = new Rect(new Vector2(origin.X + inset, coverTop),
                 new Vector2(origin.X + inset + innerWidth, coverTop + coverHeight));
@@ -130,7 +119,7 @@ internal sealed partial class VelvetShell
             ImGui.Dummy(new Vector2(width, cover.Max.Y - origin.Y));
             ImGui.Indent(inset);
             Gap(CardColumnLead);
-            DrawCardColumn(me, photos, innerWidth, null);
+            DrawCardColumn(me, innerWidth, null);
             ImGui.Unindent(inset);
             Gap(PreviewBottomPad);
         }
@@ -303,30 +292,6 @@ internal sealed partial class VelvetShell
             VelvetTheme.PresenceColor(presence).Packed(), 16);
         Typography.Draw(drawList, new Vector2(min.X + pad + dot * 2f + CardBadgeGlyphGap * scale,
             centerY - textSize.Y * 0.5f), label, VelvetTheme.OnAccent, TextStyles.Footnote);
-    }
-
-    private void DrawCardPhoto(ImDrawListPtr drawList, VelvetCardPhotoDto[] photos, ref int photoIndex,
-        float innerWidth)
-    {
-        if (photoIndex >= photos.Length)
-        {
-            return;
-        }
-
-        var photo = photos[photoIndex];
-        photoIndex++;
-        var scale = UiScale.Current;
-        Gap(VCard.Gap);
-        var height = PostAspects.TallDisplayHeight(innerWidth, photo.Width, photo.Height);
-        var min = ImGui.GetCursorScreenPos();
-        var max = new Vector2(min.X + innerWidth, min.Y + height);
-        DrawMedia(drawList, min, max, photo.Url, CardPhotoRadius * scale);
-        if (UiInteract.Click(min, max))
-        {
-            OpenPhotoViewer(photo.Url);
-        }
-
-        ImGui.Dummy(new Vector2(innerWidth, height));
     }
 
     private void DrawCoverImage(ImDrawListPtr drawList, Vector2 min, Vector2 max, string url, float rounding,

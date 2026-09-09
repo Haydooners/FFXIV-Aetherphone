@@ -135,7 +135,7 @@ internal sealed partial class VelvetShell : IResumableApp
             new AvatarComposerLabels(L.Velvet.ChangePhoto, L.Velvet.ImportFromPc, L.Velvet.NoPhotos,
                 L.Velvet.MoveAndScale, L.Velvet.Use, L.Velvet.Saving, L.Velvet.GestureHint), library,
             wallpaperImages, confirm, () => store.AvatarFailure);
-        cardPhotos = new AvatarComposer(() => store.CardPhotoBusy, store.AddCardPhoto,
+        cardPhotos = new AvatarComposer(() => store.CardPhotoBusy, store.SetCardPhoto,
             new AvatarComposerLabels(L.Velvet.AddPhoto, L.Velvet.ImportFromPc, L.Velvet.NoPhotos,
                 L.Velvet.MoveAndScale, L.Velvet.Use, L.Velvet.Saving, L.Velvet.GestureHint), library,
             wallpaperImages, confirm, () => store.CardPhotoFailure, CardPhotoAspect);

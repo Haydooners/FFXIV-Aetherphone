@@ -112,7 +112,7 @@ internal sealed partial class VelvetStore
         }, onComplete, () => avatarBusy = false);
     }
 
-    public void AddCardPhoto(string sourcePath, WallpaperCrop crop, Action<bool> onComplete)
+    public void SetCardPhoto(string sourcePath, WallpaperCrop crop, Action<bool> onComplete)
     {
         if (cardPhotoBusy)
         {
@@ -120,7 +120,8 @@ internal sealed partial class VelvetStore
         }
 
         cardPhotoBusy = true;
-        work.Run("card photo add", async token =>
+        var replaced = me?.Photos;
+        work.Run("card photo set", async token =>
         {
             var baked = ImageProcessor.BakeCroppedJpeg(sourcePath, crop, CardPhotoWidth, CardPhotoHeight);
             var upload = await media.UploadUrlAsync("image/jpeg", "velvet", token).ConfigureAwait(false);
@@ -148,6 +149,18 @@ internal sealed partial class VelvetStore
             }
 
             me = updated;
+            if (replaced is not null)
+            {
+                for (var index = 0; index < replaced.Length; index++)
+                {
+                    var dropped = await client.RemoveCardPhotoAsync(replaced[index].Id, token).ConfigureAwait(false);
+                    if (dropped is not null)
+                    {
+                        me = dropped;
+                    }
+                }
+            }
+
             return true;
         }, onComplete, () => cardPhotoBusy = false);
     }
@@ -169,36 +182,6 @@ internal sealed partial class VelvetStore
         });
     }
 
-    public void MakeCardPhotoCover(string photoId)
-    {
-        if (me is not { Photos: { Length: > 1 } photos } current)
-        {
-            return;
-        }
-
-        var order = CoverFirst(photos, photoId);
-        if (order is null)
-        {
-            return;
-        }
-
-        var reordered = new VelvetCardPhotoDto[order.Length];
-        for (var index = 0; index < order.Length; index++)
-        {
-            reordered[index] = Array.Find(photos, photo => photo.Id == order[index])!;
-        }
-
-        me = current with { Photos = reordered };
-        work.Run("card photo cover", async token =>
-        {
-            var updated = await client.ReorderCardPhotosAsync(order, token).ConfigureAwait(false);
-            if (updated is not null)
-            {
-                me = updated;
-            }
-        });
-    }
-
     private static VelvetCardPhotoDto[] WithoutPhoto(VelvetCardPhotoDto[] photos, string photoId)
     {
         var kept = new List<VelvetCardPhotoDto>(photos.Length);
@@ -211,31 +194,6 @@ internal sealed partial class VelvetStore
         }
 
         return kept.Count == photos.Length ? photos : kept.ToArray();
-    }
-
-    private static string[]? CoverFirst(VelvetCardPhotoDto[] photos, string photoId)
-    {
-        var order = new string[photos.Length];
-        var cursor = 1;
-        var found = false;
-        for (var index = 0; index < photos.Length; index++)
-        {
-            if (photos[index].Id == photoId)
-            {
-                order[0] = photoId;
-                found = true;
-                continue;
-            }
-
-            if (cursor < order.Length)
-            {
-                order[cursor] = photos[index].Id;
-            }
-
-            cursor++;
-        }
-
-        return found ? order : null;
     }
 
     public void UpdateIdentity(string displayName, string handle, Action<bool> onComplete,

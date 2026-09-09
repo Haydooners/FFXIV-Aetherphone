@@ -35,7 +35,7 @@ internal sealed partial class VelvetShell
     private const float OnboardCtaBottom = 26f;
     private const float OnboardCtaDisabledFill = 0.28f;
     private const float OnboardCtaDisabledInk = 0.55f;
-    private const float OnboardPhotoHeight = 200f;
+    private const float OnboardPhotoWidth = 240f;
     private const float OnboardPhotoBlock = 236f;
     private const float OnboardPhotoHintGap = 10f;
     private const float OnboardPhotoBadgeRadius = 14f;
@@ -50,7 +50,6 @@ internal sealed partial class VelvetShell
     private const float OnboardIntentTile = 44f;
     private const float OnboardIntentGlyph = 22f;
     private const float OnboardIntentCheckRadius = 11f;
-    private const float OnboardCoverAspect = 1.05f;
     private const float OnboardCoverMaxShare = 0.62f;
     private const float OnboardCoverInset = 12f;
     private const float OnboardSettingsRowHeight = 52f;
@@ -346,14 +345,14 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var block = Reserve(OnboardPhotoBlock);
         var drawList = ImGui.GetWindowDrawList();
-        var tileHeight = OnboardPhotoHeight * scale;
-        var tileWidth = tileHeight * CardPhotoAspect;
+        var tileWidth = OnboardPhotoWidth * scale;
+        var tileHeight = tileWidth * GridCardAspect;
         var min = new Vector2(block.Center.X - tileWidth * 0.5f, block.Min.Y);
         var max = new Vector2(min.X + tileWidth, min.Y + tileHeight);
         var photos = store.Me is { } me ? CardPhotos(me) : NoCardPhotos;
         var busy = store.CardPhotoBusy;
         var tapped = photos.Length > 0
-            ? DrawCardPhotoTile(drawList, min, max, photos[0], true)
+            ? DrawCardPhotoTile(drawList, min, max, photos[0])
             : DrawEmptyPhotoSlot(drawList, min, max, true, busy);
 
         if (photos.Length > 0)
@@ -374,7 +373,7 @@ internal sealed partial class VelvetShell
                 VelvetTheme.RoseInk, TextStyles.Footnote);
         }
 
-        if (tapped && !busy && photos.Length < MaxCardPhotos)
+        if (tapped && !busy)
         {
             cardPhotos.Open();
             onboardPhotoEditing = true;
@@ -618,7 +617,7 @@ internal sealed partial class VelvetShell
                 var inset = OnboardCoverInset * scale;
                 var origin = ImGui.GetCursorScreenPos();
                 var innerWidth = MathF.Max(1f, width - inset * 2f);
-                var coverHeight = MathF.Min(innerWidth * OnboardCoverAspect, body.Height * OnboardCoverMaxShare);
+                var coverHeight = MathF.Min(innerWidth * GridCardAspect, body.Height * OnboardCoverMaxShare);
                 var cover = new Rect(new Vector2(origin.X + inset, origin.Y),
                     new Vector2(origin.X + inset + innerWidth, origin.Y + coverHeight));
                 DrawCardCover(drawList, preview, CardPhotos(me), cover, scale, onboardPreviewNameId,

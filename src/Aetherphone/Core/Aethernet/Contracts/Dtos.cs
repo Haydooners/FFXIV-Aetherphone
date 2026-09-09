@@ -393,8 +393,6 @@ internal sealed record VelvetCardPhotoDto(string Id, string Url, int Width, int 
 
 internal sealed record AddVelvetCardPhotoRequest(string MediaKey, int Width, int Height);
 
-internal sealed record ReorderVelvetCardPhotosRequest(string[] PhotoIds);
-
 internal sealed record UpdateVelvetProfileRequest(
     string? Intro,
     string? Pronouns,
