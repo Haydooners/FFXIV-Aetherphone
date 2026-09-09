@@ -5124,6 +5124,7 @@
   "changelog.r1020.60": "Se connecter sur une carte Découvrir ou un profil Velvet ouvre maintenant la fiche d'intro, où tu écris une ligne ou touches Connecte-moi, c'est tout",
   "changelog.r1020.61": "Les messages de Velvet passent de Discussions à Demandes avec la même rangée d'onglets que le fil, et toucher le logo Velvet dans Découvrir ramène la liste en haut",
   "changelog.r1020.66": "Double-clique sur la photo d'une publication Velvet pour l'aimer, avec le même cœur qui éclate que dans Aethergram : dans le fil, sur les publications par tag et de profil, et dans le détail de la publication",
+  "changelog.r1020.68": "Le nombre de j'aime d'un commentaire s'affiche maintenant à côté du cœur au lieu d'en dessous, où il débordait sous la ligne",
   "changelog.r1020.65": "Une fois votre profil Velvet configuré, l'app vous fait maintenant faire le tour : Découvrir, la recherche, les filtres, le fil, les messages et votre propre profil",
   "changelog.r1020.17": "ChocoChat revu de fond en comble : quatre onglets pour les discussions, les appels, les contacts et les réglages",
   "changelog.r1020.18": "Ajout de huit thèmes de chat qui recolorent vos bulles, vos boutons et vos compteurs",
