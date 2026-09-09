@@ -1772,6 +1772,8 @@ internal static class L
                 "Connect on a Discover card or a Velvet profile now opens the intro sheet, where you write a line or tap Just connect me"),
             new("changelog.r1020.61",
                 "Velvet's Messages switches between Chats and Requests with the same tab row the feed uses, and tapping the Velvet wordmark in Discover jumps the list back to the top"),
+            new("changelog.r1020.66",
+                "Double click a post's photo in Velvet to like it, with the same heart burst Aethergram has: it works in the feed, on tag and profile posts, and in the post detail"),
         };
 
         public static readonly LocString[] Release1020Message =
@@ -1850,6 +1852,12 @@ internal static class L
         {
             new("changelog.r1020.52",
                 "Poll results now stay hidden until you vote: the bars, the counts and the total only appear once you pick an option"),
+        };
+
+        public static readonly LocString[] Release1020Calendar =
+        {
+            new("changelog.r1020.67",
+                "The day's events under the month grid now scroll instead of stopping after the three that fit, so a busy day shows all of them"),
         };
 
         public static readonly LocString[] Release1020Notes =
