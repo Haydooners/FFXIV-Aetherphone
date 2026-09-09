@@ -14,30 +14,54 @@ internal static class CalendarDayList
     private const float CellPaddingY = 8f;
     private const float AccentBarWidth = 3f;
     private const float AccentBarInset = 8f;
+    private const float HeaderGapY = 8f;
+    private const float ListTailPadding = 8f;
 
-    public static float Draw(AppSkin ui, Rect area, DateTime selectedDate,
+    public static void Draw(AppSkin ui, Rect area, DateTime selectedDate,
         FrozenDictionary<long, ParsedEvent[]> events, float scale, Action<Guid> onDeleteCustom)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var cursorY = area.Min.Y;
-
         var dateLabel = selectedDate.ToString("dddd, MMMM d", Loc.Culture);
-        Typography.Draw(new Vector2(area.Min.X + FeedCell.PadX * scale, cursorY), dateLabel, ui.TitleInk,
+        Typography.Draw(new Vector2(area.Min.X + FeedCell.PadX * scale, area.Min.Y), dateLabel, ui.TitleInk,
             TextStyles.Headline);
-        var labelHeight = Typography.Measure(dateLabel, TextStyles.Headline).Y;
-        cursorY += labelHeight + 8f * scale;
+        var listTop = area.Min.Y + Typography.Measure(dateLabel, TextStyles.Headline).Y + HeaderGapY * scale;
 
         var dayKey = selectedDate.Date.Ticks;
         var dayEvents = events.TryGetValue(dayKey, out var found) ? found : Array.Empty<ParsedEvent>();
 
         if (dayEvents.Length == 0)
         {
-            Typography.Draw(new Vector2(area.Min.X + FeedCell.PadX * scale, cursorY), Loc.T(L.Calendar.NoEvents),
+            Typography.Draw(new Vector2(area.Min.X + FeedCell.PadX * scale, listTop), Loc.T(L.Calendar.NoEvents),
                 ui.MutedInk, TextStyles.Subheadline);
-            return cursorY + Typography.Measure(Loc.T(L.Calendar.NoEvents), TextStyles.Subheadline).Y + 8f * scale;
+            return;
         }
 
-        var contentWidth = area.Width;
+        var listKey = ImGui.GetID("##calendarAgenda");
+        ImGui.SetCursorScreenPos(new Vector2(area.Min.X, listTop));
+        var listSize = new Vector2(area.Width, MathF.Max(1f, ImGui.GetContentRegionAvail().Y));
+        using (ImRaii.PushStyle(ImGuiStyleVar.WindowPadding, Vector2.Zero))
+        using (var list = ImRaii.Child("##calendarAgenda", listSize, false,
+                   DragScrollHost.ScrollFlags(ImGuiWindowFlags.NoBackground)))
+        {
+            if (!list)
+            {
+                return;
+            }
+
+            AppSurface.ResetScrollOnNewVisit();
+            var surface = DragScrollHost.Begin(listKey);
+            if (ConsumeDayChange(dayKey))
+            {
+                surface.JumpToTop();
+            }
+
+            DrawCells(ui, dayEvents, scale, onDeleteCustom);
+        }
+    }
+
+    private static void DrawCells(AppSkin ui, ParsedEvent[] dayEvents, float scale, Action<Guid> onDeleteCustom)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var contentWidth = ScrollLayout.StableContentWidth();
         var hlScale = TextStyles.BodyEmphasized.Scale;
         var hlWeight = TextStyles.BodyEmphasized.Weight;
         var fnScale = TextStyles.Footnote.Scale;
@@ -46,9 +70,10 @@ internal static class CalendarDayList
         for (var index = 0; index < dayEvents.Length; index++)
         {
             var dayEvent = dayEvents[index];
-            var cellMin = new Vector2(area.Min.X, cursorY);
+            var cellMin = ImGui.GetCursorScreenPos();
             var nameSize = Typography.Measure(dayEvent.Name, hlScale, hlWeight);
-            var dateSize = Typography.Measure(FormatDateRange(dayEvent), fnScale, fnWeight);
+            var dateRange = FormatDateRange(dayEvent);
+            var dateSize = Typography.Measure(dateRange, fnScale, fnWeight);
             var textHeight = nameSize.Y + 3f * scale + dateSize.Y;
             var cellHeight = Math.Max(textHeight + CellPaddingY * 2f * scale, 40f * scale);
             var cellMax = new Vector2(cellMin.X + contentWidth, cellMin.Y + cellHeight);
@@ -72,7 +97,7 @@ internal static class CalendarDayList
             var textMaxWidth = MathF.Max(1f, cellMax.X - textStartX - trailing);
             Marquee.DrawLeft(new MarqueeId("calendar.day.", dayEvent.Name + "." + index), dayEvent.Name, textStartX, textStartY,
                 textMaxWidth, new TextStyle(hlScale, hlWeight), ui.TitleInk, cellHovered);
-            var dateFitted = Typography.FitText(FormatDateRange(dayEvent), textMaxWidth, fnScale, fnWeight);
+            var dateFitted = Typography.FitText(dateRange, textMaxWidth, fnScale, fnWeight);
             Typography.Draw(drawList, new Vector2(textStartX, textStartY + nameSize.Y + 3f * scale),
                 dateFitted, ui.MutedInk, fnScale, fnWeight);
 
@@ -86,11 +111,25 @@ internal static class CalendarDayList
             }
 
             FeedCell.Hairline(drawList, cellMin.X, cellMax.X, cellMax.Y, ui.Hairline);
-            cursorY = cellMax.Y;
+            ImGui.SetCursorScreenPos(cellMin);
+            ImGui.Dummy(new Vector2(contentWidth, cellHeight));
         }
 
-        cursorY += 8f * scale;
-        return cursorY;
+        ImGui.Dummy(new Vector2(0f, ListTailPadding * scale));
+    }
+
+    private static bool ConsumeDayChange(long dayKey)
+    {
+        var storage = ImGui.GetStateStorage();
+        var stampKey = ImGui.GetID("##calendarAgendaDay");
+        var stamp = (int)(dayKey / TimeSpan.TicksPerDay);
+        if (storage.GetInt(stampKey, 0) == stamp)
+        {
+            return false;
+        }
+
+        storage.SetInt(stampKey, stamp);
+        return true;
     }
 
     private static void DrawDeleteButton(ImDrawListPtr drawList, Vector2 cellMax, float scale, AppSkin ui,
