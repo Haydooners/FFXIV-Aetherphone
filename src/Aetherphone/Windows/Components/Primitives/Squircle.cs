@@ -29,12 +29,16 @@ internal static class Squircle
     }
 
     public static void FillImage(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, ImTextureID texture,
-        uint tint)
+        uint tint) =>
+        FillImage(drawList, min, max, radius, texture, tint, Vector2.Zero, Vector2.One);
+
+    public static void FillImage(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, ImTextureID texture,
+        uint tint, Vector2 uv0, Vector2 uv1)
     {
         var box = CornerBox(min, max, radius);
         if (box <= DegenerateBox)
         {
-            drawList.AddImage(texture, min, max, Vector2.Zero, Vector2.One, tint);
+            drawList.AddImage(texture, min, max, uv0, uv1, tint);
             return;
         }
 
@@ -43,7 +47,7 @@ internal static class Squircle
         var firstVertex = drawList.VtxBuffer.Size;
         TracePath(drawList, min, max, box);
         drawList.PathFillConvex(tint);
-        MapLinearUv(drawList, firstVertex, min, max);
+        MapLinearUv(drawList, firstVertex, min, max, uv0, uv1);
         BindTexture(drawList, firstCommand, texture);
         drawList.AddDrawCmd();
     }
@@ -58,7 +62,8 @@ internal static class Squircle
         }
     }
 
-    private static void MapLinearUv(ImDrawListPtr drawList, int firstVertex, Vector2 min, Vector2 max)
+    private static void MapLinearUv(ImDrawListPtr drawList, int firstVertex, Vector2 min, Vector2 max, Vector2 uv0,
+        Vector2 uv1)
     {
         var width = max.X - min.X;
         var height = max.Y - min.Y;
@@ -71,8 +76,9 @@ internal static class Squircle
         for (var index = firstVertex; index < vertices.Length; index++)
         {
             ref var vertex = ref vertices[index];
-            vertex.Uv = new Vector2(Math.Clamp((vertex.Pos.X - min.X) / width, 0f, 1f),
-                Math.Clamp((vertex.Pos.Y - min.Y) / height, 0f, 1f));
+            var amountX = Math.Clamp((vertex.Pos.X - min.X) / width, 0f, 1f);
+            var amountY = Math.Clamp((vertex.Pos.Y - min.Y) / height, 0f, 1f);
+            vertex.Uv = new Vector2(uv0.X + (uv1.X - uv0.X) * amountX, uv0.Y + (uv1.Y - uv0.Y) * amountY);
         }
     }
 

@@ -14,7 +14,6 @@ internal sealed partial class VelvetShell
 {
     private const float MessagesSearchHeight = 52f;
     private const float MessagesSearchRevealSeconds = 0.12f;
-    private const float MessagesHeadingHeight = 44f;
 
     private const int IntroLimit = 140;
     private const float HeroAvatarRadius = 38f;
@@ -33,6 +32,9 @@ internal sealed partial class VelvetShell
     private const float IntroHintGap = 10f;
     private const float IntroSendGap = 18f;
     private const float IntroSendHeight = 48f;
+    private const float IntroSkipGap = 16f;
+    private const float IntroSkipHintGap = 8f;
+    private const float IntroSkipHeight = 44f;
     private const float IntroBottomGap = 32f;
     private const float RequestTopGap = 18f;
     private const float RequestMetaGap = 10f;
@@ -42,8 +44,6 @@ internal sealed partial class VelvetShell
     private const float RequestSecondaryGap = 10f;
     private const float RequestBottomGap = 32f;
 
-    private static readonly TextStyle MessagesHeadingStyle = TextStyles.Title3;
-    private static readonly TextStyle MessagesLinkStyle = TextStyles.SubheadlineEmphasized;
     private static readonly TextStyle HeroNameStyle = TextStyles.Title2;
     private static readonly TextStyle HeroHandleStyle = TextStyles.Subheadline;
     private static readonly TextStyle IntroSendStyle = TextStyles.SubheadlineEmphasized;
@@ -55,6 +55,10 @@ internal sealed partial class VelvetShell
     private bool chatsSearchOpen;
     private bool chatsSearchFocus;
     private Spring chatsSearchReveal = new(0f);
+    private Spring messagesTabSlide;
+    private string messagesRequestsLabel = string.Empty;
+    private int messagesRequestsCount = -1;
+    private LanguageInfo? messagesRequestsLanguage;
     private string introName = string.Empty;
     private string introHandle = string.Empty;
     private string? introAvatarUrl;
@@ -75,7 +79,7 @@ internal sealed partial class VelvetShell
         using (AppSurface.BeginEdgeToEdge(area))
         {
             var width = ScrollLayout.StableContentWidth();
-            DrawMessagesHeading(width, pad);
+            DrawMessagesTabs(width);
             if (messagesTab == VelvetMessagesTab.Chats)
             {
                 DrawChatsSearchRow(width, pad, scale);
@@ -92,42 +96,40 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private void DrawMessagesHeading(float width, float pad)
+    private void DrawMessagesTabs(float width)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
-        var height = MessagesHeadingHeight * scale;
-        var centerY = origin.Y + height * 0.5f;
-        var showingRequests = messagesTab == VelvetMessagesTab.Requests;
-        var heading = Loc.T(showingRequests ? L.Velvet.Requests : L.Velvet.ChatsTab);
-        var requestCount = store.RequestCount;
-        var link = showingRequests
-            ? Loc.T(L.Velvet.ChatsTab)
-            : requestCount > 0 ? Loc.T(L.Velvet.RequestsCount, requestCount) : Loc.T(L.Velvet.Requests);
-        var linkSize = Typography.Measure(link, MessagesLinkStyle);
-        var linkMin = new Vector2(origin.X + width - pad - linkSize.X, centerY - linkSize.Y * 0.5f);
-        var linkMax = new Vector2(origin.X + width - pad, centerY + linkSize.Y * 0.5f);
-        var headingHeight = Typography.LineHeight(MessagesHeadingStyle);
-        Typography.Draw(drawList, new Vector2(origin.X + pad, centerY - headingHeight * 0.5f),
-            Typography.FitText(heading, MathF.Max(1f, linkMin.X - 12f * scale - origin.X - pad),
-                MessagesHeadingStyle), VelvetTheme.TitleInk, MessagesHeadingStyle);
-        var hovered = UiInteract.Hover(linkMin, linkMax);
-        Typography.Draw(drawList, linkMin, link, VelvetTheme.RoseInk, MessagesLinkStyle);
-        if (hovered)
+        var height = FeedTabRowHeight * scale;
+        var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
+        var picked = UnderlineTabs.Draw(row, Loc.T(L.Velvet.ChatsTab), RequestsTabLabel(),
+            messagesTab == VelvetMessagesTab.Requests, ref messagesTabSlide, VelvetInk.Shared, FeedTabsStyle);
+        if (picked >= 0)
         {
-            drawList.AddLine(new Vector2(linkMin.X, linkMax.Y), linkMax, ImGui.GetColorU32(VelvetTheme.RoseInk), 1f);
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(linkMin, linkMax, hovered))
-        {
-            messagesTab = showingRequests ? VelvetMessagesTab.Chats : VelvetMessagesTab.Requests;
-            CloseChatsSearch();
+            var tab = picked == 1 ? VelvetMessagesTab.Requests : VelvetMessagesTab.Chats;
+            if (tab != messagesTab)
+            {
+                messagesTab = tab;
+                CloseChatsSearch();
+            }
         }
 
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height));
+    }
+
+    private string RequestsTabLabel()
+    {
+        var count = store.RequestCount;
+        if (messagesRequestsCount == count && ReferenceEquals(messagesRequestsLanguage, Loc.Current))
+        {
+            return messagesRequestsLabel;
+        }
+
+        messagesRequestsCount = count;
+        messagesRequestsLanguage = Loc.Current;
+        messagesRequestsLabel = count > 0 ? Loc.T(L.Velvet.RequestsCount, count) : Loc.T(L.Velvet.Requests);
+        return messagesRequestsLabel;
     }
 
     private void DrawChatsSearchRow(float width, float pad, float scale)
@@ -504,7 +506,7 @@ internal sealed partial class VelvetShell
             if (profile is not null)
             {
                 EnsureFit(profile);
-                DrawDeckFit(contentWidth);
+                DrawCardFit(contentWidth);
                 DrawIntroCard(profile, contentWidth);
             }
 
@@ -633,6 +635,20 @@ internal sealed partial class VelvetShell
 
             ImGui.SetCursorScreenPos(sendOrigin);
             ImGui.Dummy(new Vector2(width, IntroSendHeight * scale));
+            Gap(IntroSkipGap);
+            DrawInsetHelpText(Loc.T(L.Velvet.IntroSkipHint));
+            Gap(IntroSkipHintGap);
+            var skipOrigin = ImGui.GetCursorScreenPos();
+            var skip = new Rect(new Vector2(skipOrigin.X + inset, skipOrigin.Y),
+                new Vector2(skipOrigin.X + inset + contentWidth, skipOrigin.Y + IntroSkipHeight * scale));
+            if (SocialPill.Flat(drawList, skip, Loc.T(L.Velvet.JustConnectMe), VelvetTheme.Card, VelvetTheme.CardHi,
+                    VelvetTheme.Hairline, VelvetTheme.TitleInk, IntroSendStyle, skip.Height * 0.5f))
+            {
+                ConnectWithoutIntro(userId);
+            }
+
+            ImGui.SetCursorScreenPos(skipOrigin);
+            ImGui.Dummy(new Vector2(width, IntroSkipHeight * scale));
             Gap(IntroBottomGap);
         }
     }
@@ -741,6 +757,13 @@ internal sealed partial class VelvetShell
     private void SendIntro(string userId)
     {
         store.SendIntro(userId, introText.Trim(), _ => { });
+        introText = string.Empty;
+        router.Pop();
+    }
+
+    private void ConnectWithoutIntro(string userId)
+    {
+        store.Connect(userId);
         introText = string.Empty;
         router.Pop();
     }

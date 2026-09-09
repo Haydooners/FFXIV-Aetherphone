@@ -55,7 +55,7 @@ internal sealed partial class VelvetStore
             discoverResults = WithoutNotInterested(page.Users);
             discoverCursor = page.NextCursor;
             AepLog.Info($"Velvet discover returned {page.Users.Length} profiles, kept {discoverResults.Length} "
-                + $"after {passedAt.Count} local passes");
+                + $"after {notInterestedIds.Count} marked not interested");
         }, () =>
         {
             loadingDiscover = false;
@@ -87,7 +87,7 @@ internal sealed partial class VelvetStore
                 discoverResults = AppendUniqueDiscover(discoverResults, WithoutNotInterested(page.Users));
                 discoverCursor = page.Users.Length > 0 ? page.NextCursor : null;
                 AepLog.Info($"Velvet discover page returned {page.Users.Length} profiles, "
-                    + $"deck pool now {discoverResults.Length}");
+                    + $"discover pool now {discoverResults.Length}");
             }
         }, () => loadingMoreDiscover = false);
     }
@@ -137,52 +137,19 @@ internal sealed partial class VelvetStore
         searchLoaded = false;
     }
 
-    public void RestoreToDiscover(VelvetProfileDto profile)
-    {
-        discoverResults = PrependDiscover(discoverResults, profile);
-        ForgetNotInterested(profile.UserId);
-    }
-
-    private static VelvetProfileDto[] PrependDiscover(VelvetProfileDto[] existing, VelvetProfileDto profile)
-    {
-        var merged = new VelvetProfileDto[existing.Length + 1];
-        merged[0] = profile;
-        var cursor = 1;
-        for (var index = 0; index < existing.Length; index++)
-        {
-            if (existing[index].UserId != profile.UserId)
-            {
-                merged[cursor] = existing[index];
-                cursor++;
-            }
-        }
-
-        if (cursor == merged.Length)
-        {
-            return merged;
-        }
-
-        var trimmed = new VelvetProfileDto[cursor];
-        Array.Copy(merged, trimmed, cursor);
-        return trimmed;
-    }
-
     private VelvetProfileDto[] WithoutNotInterested(VelvetProfileDto[] incoming)
     {
         var notInterested = notInterestedIds;
-        var passes = passedAt;
-        if (notInterested.Count == 0 && passes.Count == 0)
+        if (notInterested.Count == 0)
         {
             return incoming;
         }
 
-        var now = UnixNow();
         var kept = new VelvetProfileDto[incoming.Length];
         var count = 0;
         for (var index = 0; index < incoming.Length; index++)
         {
-            var userId = incoming[index].UserId;
-            if (!notInterested.Contains(userId) && !PassActive(passes, userId, now))
+            if (!notInterested.Contains(incoming[index].UserId))
             {
                 kept[count] = incoming[index];
                 count++;

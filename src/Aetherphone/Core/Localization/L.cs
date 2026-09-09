@@ -1748,8 +1748,6 @@ internal static class L
 
         public static readonly LocString[] Release1020Velvet =
         {
-            new("changelog.r1020.50",
-                "Added a One person at a time button to Discover's header in Velvet, which turns the list into a card deck with Pass and Connect"),
             new("changelog.r1020.2",
                 "Overhauled Velvet from top to bottom: the feed, discover, profiles, messages, the composer and the filters"),
             new("changelog.r1020.3",
@@ -1770,6 +1768,10 @@ internal static class L
                 "Discover cards and profiles mark what the two of you share"),
             new("changelog.r1020.13",
                 "Edit profile is rows you open one at a time, led by your photo grid"),
+            new("changelog.r1020.60",
+                "Connect on a Discover card or a Velvet profile now opens the intro sheet, where you write a line or tap Just connect me"),
+            new("changelog.r1020.61",
+                "Velvet's Messages switches between Chats and Requests with the same tab row the feed uses, and tapping the Velvet wordmark in Discover jumps the list back to the top"),
         };
 
         public static readonly LocString[] Release1020Message =
@@ -4379,12 +4381,14 @@ internal static class L
         public static readonly LocPlural ConnectToUnlockPosts =
             new("velvet.connectToUnlockPosts", "Connect to unlock {0} post", "Connect to unlock {0} posts");
         public static readonly LocString ProfileConnections = new("velvet.profileConnections", "Connections");
-        public static readonly LocString IntroTitle = new("velvet.introTitle", "Send an intro");
+        public static readonly LocString IntroTitle = new("velvet.introTitle", "Connect with");
         public static readonly LocString IntroduceYourselfTo = new("velvet.introduceYourselfTo", "Introduce yourself to {0}");
         public static readonly LocString YourIntro = new("velvet.yourIntro", "Your intro");
         public static readonly LocString TheirIntro = new("velvet.theirIntro", "Their intro");
         public static readonly LocString IntroSheetHint = new("velvet.introSheetHint", "Your intro lands in their Requests. A reply accepts you.");
         public static readonly LocString SendIntro = new("velvet.sendIntro", "Send intro");
+        public static readonly LocString IntroSkipHint = new("velvet.introSkipHint", "Don't know what to write?");
+        public static readonly LocString JustConnectMe = new("velvet.justConnectMe", "Just connect me");
         public static readonly LocString Reply = new("velvet.reply", "Reply");
         public static readonly LocString Activity = new("velvet.activity", "Activity");
         public static readonly LocString Post = new("velvet.post", "Post");
@@ -4412,7 +4416,6 @@ internal static class L
         public static readonly LocString DiscoverNone = new("velvet.discoverNone", "No one here yet.");
         public static readonly LocString DiscoverNoneHint =
             new("velvet.discoverNoneHint", "Try clearing filters or check back later.");
-        public static readonly LocPlural PhotoBadge = new("velvet.photoBadge", "{0} photo", "{0} photos");
         public static readonly LocString FilterClearAll = new("velvet.filterClearAll", "Clear all");
         public static readonly LocString FilterDone = new("velvet.filterDone", "Done");
         public static readonly LocString FilterAny = new("velvet.filterAny", "Any");
@@ -4439,18 +4442,11 @@ internal static class L
         public static readonly LocString FitNoConflicts = new("velvet.fitNoConflicts", "No limit conflicts");
         public static readonly LocString FitBothSpeak = new("velvet.fitBothSpeak", "Both speak {0}");
         public static readonly LocString FitNoSharedLanguage = new("velvet.fitNoSharedLanguage", "No shared language");
-        public static readonly LocString DeckPass = new("velvet.deckPass", "Pass");
-        public static readonly LocString DeckSay = new("velvet.deckSay", "Say something");
-        public static readonly LocString DeckUndo = new("velvet.deckUndo", "Undo");
-        public static readonly LocString DeckEndTitle = new("velvet.deckEndTitle", "You have met everyone");
-        public static readonly LocString DeckEndHint =
-            new("velvet.deckEndHint", "Widen your filters or check again later. New people arrive every day.");
-        public static readonly LocString DeckWidenRegion = new("velvet.deckWidenRegion", "Widen region");
-        public static readonly LocString DeckCheckAgain = new("velvet.deckCheckAgain", "Check again");
-        public static readonly LocString DeckShowAgain = new("velvet.deckShowAgain", "Show them again");
-        public static readonly LocString DeckPassedHidden =
-            new("velvet.deckPassedHidden", "{0} hidden because you passed on them. New people arrive every day.");
-        public static readonly LocString DeckSeenBefore = new("velvet.deckSeenBefore", "Seen before");
+        public static readonly LocString DiscoverEndTitle = new("velvet.discoverEndTitle", "You have met everyone");
+        public static readonly LocString DiscoverEndHint =
+            new("velvet.discoverEndHint", "Widen your filters or check again later. New people arrive every day.");
+        public static readonly LocString DiscoverWidenRegion = new("velvet.discoverWidenRegion", "Widen region");
+        public static readonly LocString DiscoverCheckAgain = new("velvet.discoverCheckAgain", "Check again");
         public static readonly LocString SearchNone = new("velvet.searchNone", "No one matches");
         public static readonly LocString SearchNoneHint = new("velvet.searchNoneHint", "Try a different name or tag.");
         public static readonly LocString SearchPeopleSection = new("velvet.searchPeopleSection", "People");
@@ -4497,7 +4493,6 @@ internal static class L
         public static readonly LocString DiscoveryHeader = new("velvet.discoveryHeader", "Discovery");
         public static readonly LocString DiscoverableHelp =
             new("velvet.discoverableHelp", "When on, your profile can be found by others in Discover.");
-        public static readonly LocString DeckModeLabel = new("velvet.deckModeLabel", "One person at a time");
         public static readonly LocString WhoCanMessage = new("velvet.whoCanMessage", "Who can message you");
         public static readonly LocString WhoEveryone = new("velvet.whoEveryone", "Everyone");
         public static readonly LocString WhoFriends = new("velvet.whoFriends", "Friends");

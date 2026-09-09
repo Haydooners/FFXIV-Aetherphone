@@ -1,47 +1,22 @@
 using Aetherphone.Apps.Velvet.Kit;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
-using Aetherphone.Core.Animation;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Social;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetShell
 {
-    private const float DeckActionBarHeight = 100f;
-    private const float DeckActionRadius = 27f;
-    private const float DeckActionGap = 14f;
-    private const float DeckActionBottomPad = 12f;
-    private const float DeckSayHeight = 48f;
-    private const float DeckSayPad = 12f;
-    private const float DeckUndoTop = 6f;
-    private const float DeckUndoHeight = 24f;
-    private const float DeckUndoPad = 14f;
-    private const float DeckCommitFraction = 0.32f;
-    private const float DeckExitOverhang = 48f;
-    private const float DeckExitSmoothTime = 0.16f;
-    private const float DeckSettleEpsilon = 2f;
-    private const float DeckPressShrink = 0.94f;
-    private const float DeckTooltipSmoothTime = 0.11f;
-    private const float DeckHoverSmoothTime = 0.11f;
-    private const float DeckHoverGrow = 0.06f;
-    private const float DeckHoverTopLift = 0.18f;
-    private const float DeckHoverBottomLift = 0.10f;
-    private const float DeckRimAlpha = 0.30f;
-    private const float DeckRimWeight = 1.5f;
-    private const float DeckGlowReach = 8f;
-    private const float DeckSayGrow = 2f;
-    private const float DeckIdleFillAlpha = 0.6f;
-    private const float DeckIdleInkAlpha = 0.5f;
-    private const string DeckPassId = "velvetDeckPass";
-    private const string DeckSayId = "velvetDeckSay";
-    private const string DeckConnectId = "velvetDeckConnect";
-    private const int DeckRefillBelow = 4;
-    private const int DeckRevisitPenalty = 1000;
+    private const float CardPressShrink = 0.94f;
+    private const float CardHoverGrow = 0.06f;
+    private const float CardHoverTopLift = 0.18f;
+    private const float CardHoverBottomLift = 0.10f;
+    private const float CardRimAlpha = 0.30f;
+    private const float CardRimWeight = 1.5f;
+    private const float CardGlowReach = 8f;
     private const float FilterSummaryHeight = 30f;
     private const float FilterSummaryGlyphGap = 8f;
     private const string FilterSummarySeparator = " · ";
@@ -49,170 +24,78 @@ internal sealed partial class VelvetShell
     private const float EndActionHeight = 38f;
     private const float EndActionGap = 10f;
     private const float EndActionTop = 22f;
-    private const string DeckSurfaceId = "velvetDeckSurface";
 
-    private static readonly Vector4 DeckShadow = new(0f, 0f, 0f, 0.30f);
-    private static readonly TextStyle DeckSayStyle = TextStyles.SubheadlineEmphasized;
-    private static readonly TextStyle DeckUndoStyle = TextStyles.FootnoteEmphasized;
+    private static readonly Vector4 CardShadow = new(0f, 0f, 0f, 0.30f);
     private static readonly TextStyle FilterSummaryStyle = TextStyles.FootnoteEmphasized;
 
-    private readonly List<VelvetProfileDto> deck = new();
-    private readonly List<int> deckScores = new();
-    private readonly HashSet<string> revisited = new(StringComparer.Ordinal);
+    private readonly List<VelvetProfileDto> cards = new();
+    private readonly List<int> cardScores = new();
     private readonly System.Text.StringBuilder filterSummaryBuilder = new();
-    private VelvetProfileDto[] deckSource = Array.Empty<VelvetProfileDto>();
-    private VelvetProfileDto? deckMe;
-    private string deckTopId = string.Empty;
-    private VelvetProfileDto? lastPassed;
-    private bool deckRecycled;
-    private int deckVersion;
-    private Spring cardSlide;
-    private Spring passTooltipEase;
-    private Spring connectTooltipEase;
-    private Spring passHoverEase;
-    private Spring sayHoverEase;
-    private Spring connectHoverEase;
-    private int cardExit;
+    private VelvetProfileDto[] cardSource = Array.Empty<VelvetProfileDto>();
+    private VelvetProfileDto? cardViewer;
+    private int cardsVersion;
     private string filterSummary = string.Empty;
     private bool filterSummaryDirty = true;
     private LanguageInfo? filterSummaryLanguage;
 
     private void DrawDiscover(Rect area)
     {
-        var scale = UiScale.Current;
         var body = discoverInclude.Any || mutes.Any ? DrawFilterSummary(area) : area;
         if (!store.DiscoverLoaded && !store.LoadingDiscover)
         {
             ApplyDiscoverFilters();
         }
 
-        SyncDeckMode();
-        SyncDeck();
-        if (!deckModeSynced)
-        {
-            DrawDiscoverGrid(body);
-            return;
-        }
-
-        RefillDeck(DeckRefillBelow);
-        RecycleWhenDry();
-        StepCard(body.Width);
-        if (deck.Count == 0)
-        {
-            DrawDeckEmpty(body);
-            return;
-        }
-
-        var top = deck[0];
-        var barRect = new Rect(new Vector2(body.Min.X, body.Max.Y - DeckActionBarHeight * scale), body.Max);
-        using (ImRaii.PushId(DeckSurfaceId))
-        using (var surface = AppSurface.BeginEdgeToEdge(body))
-        {
-            DrawDeckCard(top, body, in surface);
-        }
-
-        DrawDeckActions(barRect, top);
-        if (deck.Count > 1)
-        {
-            images.Get(deck[1].AvatarUrl);
-        }
+        SyncCards();
+        DrawDiscoverGrid(body);
     }
 
-    private void ResetDeck()
+    private void ResetCards()
     {
-        deck.Clear();
-        deckScores.Clear();
-        deckSource = Array.Empty<VelvetProfileDto>();
-        deckMe = null;
-        deckTopId = string.Empty;
-        lastPassed = null;
-        revisited.Clear();
-        deckRecycled = false;
-        cardSlide.SnapTo(0f);
-        cardExit = 0;
+        cards.Clear();
+        cardScores.Clear();
+        cardSource = Array.Empty<VelvetProfileDto>();
+        cardViewer = null;
         filterSummaryDirty = true;
         gridLabels.Clear();
-        deckVersion++;
-        deckModeSynced = configuration.VelvetDiscoverDeck;
+        cardsVersion++;
     }
 
-    private void SyncDeckMode()
-    {
-        var deckMode = configuration.VelvetDiscoverDeck;
-        if (deckMode == deckModeSynced)
-        {
-            return;
-        }
-
-        if (cardExit != 0)
-        {
-            CommitCardExit();
-        }
-
-        deckModeSynced = deckMode;
-        if (deckMode)
-        {
-            DropRequestedFromDeck();
-            PinDeckTop();
-        }
-    }
-
-    private void DropRequestedFromDeck()
-    {
-        for (var index = deck.Count - 1; index >= 0; index--)
-        {
-            if (deck[index].ConnectionState == VelvetConnectionState.None)
-            {
-                continue;
-            }
-
-            deck.RemoveAt(index);
-            deckScores.RemoveAt(index);
-            deckVersion++;
-        }
-    }
-
-    private void ToggleDeckMode()
-    {
-        configuration.VelvetDiscoverDeck = !configuration.VelvetDiscoverDeck;
-        configuration.Save();
-    }
-
-    private void SyncDeck()
+    private void SyncCards()
     {
         var source = store.DiscoverResults;
         var me = store.Me;
-        var sameSource = ReferenceEquals(source, deckSource);
-        if (sameSource && ReferenceEquals(me, deckMe))
+        var sameSource = ReferenceEquals(source, cardSource);
+        if (sameSource && ReferenceEquals(me, cardViewer))
         {
             return;
         }
 
-        deckVersion++;
-        if (!deckModeSynced && sameSource && deckMe is not null)
+        cardsVersion++;
+        if (sameSource && cardViewer is not null)
         {
-            deckMe = me;
+            cardViewer = me;
             return;
         }
 
-        if (!deckModeSynced && !sameSource && TryPatchDeck(source))
+        if (!sameSource && TryPatchCards(source))
         {
-            deckSource = source;
-            deckMe = me;
+            cardSource = source;
+            cardViewer = me;
             return;
         }
 
-        var appended = !deckModeSynced && ReferenceEquals(me, deckMe) && ExtendsDeckSource(source);
-        var firstNew = appended ? deckSource.Length : 0;
-        deckSource = source;
-        deckMe = me;
+        var appended = ReferenceEquals(me, cardViewer) && ExtendsCardSource(source);
+        var firstNew = appended ? cardSource.Length : 0;
+        cardSource = source;
+        cardViewer = me;
         if (!appended)
         {
-            deck.Clear();
-            deckScores.Clear();
+            cards.Clear();
+            cardScores.Clear();
         }
 
-        var floor = deck.Count;
+        var floor = cards.Count;
         var allowedRegions = AllowedRegions(discoverInclude);
         var skippedConnected = 0;
         var skippedRegion = 0;
@@ -231,41 +114,29 @@ internal sealed partial class VelvetShell
                 continue;
             }
 
-            var score = VelvetFit.Score(me, profile);
-            InsertByScore(profile, SeenBefore(profile.UserId) ? score - DeckRevisitPenalty : score, floor);
+            InsertByScore(profile, VelvetFit.Score(me, profile), floor);
         }
 
-        AepLog.Info($"Velvet deck {(appended ? "extended" : "rebuilt")}: {deck.Count} cards from {source.Length} "
-            + $"profiles, {skippedConnected} already connected, {skippedRegion} out of region, {store.PassCount} "
-            + $"passes held, {revisited.Count} on a second look");
-        if (deckModeSynced)
-        {
-            PinDeckTop();
-            return;
-        }
-
-        if (!appended)
-        {
-            deckTopId = string.Empty;
-        }
+        AepLog.Info($"Velvet discover {(appended ? "extended" : "rebuilt")}: {cards.Count} cards from {source.Length} "
+            + $"profiles, {skippedConnected} already connected, {skippedRegion} out of region");
     }
 
-    private bool TryPatchDeck(VelvetProfileDto[] source)
+    private bool TryPatchCards(VelvetProfileDto[] source)
     {
-        if (deck.Count == 0 || source.Length != deckSource.Length)
+        if (cards.Count == 0 || source.Length != cardSource.Length)
         {
             return false;
         }
 
-        for (var index = 0; index < deck.Count; index++)
+        for (var index = 0; index < cards.Count; index++)
         {
-            var replacement = FindProfile(source, deck[index].UserId);
+            var replacement = FindProfile(source, cards[index].UserId);
             if (replacement is null)
             {
                 return false;
             }
 
-            deck[index] = replacement;
+            cards[index] = replacement;
         }
 
         return true;
@@ -284,11 +155,11 @@ internal sealed partial class VelvetShell
         return null;
     }
 
-    private bool ExtendsDeckSource(VelvetProfileDto[] source)
+    private bool ExtendsCardSource(VelvetProfileDto[] source)
     {
-        var known = deckSource.Length;
-        return known > 0 && source.Length > known && ReferenceEquals(source[0], deckSource[0])
-            && ReferenceEquals(source[known - 1], deckSource[known - 1]);
+        var known = cardSource.Length;
+        return known > 0 && source.Length > known && ReferenceEquals(source[0], cardSource[0])
+            && ReferenceEquals(source[known - 1], cardSource[known - 1]);
     }
 
     private bool RegionAllowed(VelvetProfileDto profile, int allowedRegions)
@@ -304,306 +175,39 @@ internal sealed partial class VelvetShell
 
     private void InsertByScore(VelvetProfileDto profile, int score, int floor)
     {
-        var at = deck.Count;
-        while (at > floor && deckScores[at - 1] < score)
+        var at = cards.Count;
+        while (at > floor && cardScores[at - 1] < score)
         {
             at--;
         }
 
-        deck.Insert(at, profile);
-        deckScores.Insert(at, score);
+        cards.Insert(at, profile);
+        cardScores.Insert(at, score);
     }
 
-    private void PinDeckTop()
+    private void RefillCards(int below)
     {
-        if (deckTopId.Length > 0)
-        {
-            for (var index = 1; index < deck.Count; index++)
-            {
-                if (deck[index].UserId != deckTopId)
-                {
-                    continue;
-                }
-
-                var pinned = deck[index];
-                var score = deckScores[index];
-                deck.RemoveAt(index);
-                deckScores.RemoveAt(index);
-                deck.Insert(0, pinned);
-                deckScores.Insert(0, score);
-                deckVersion++;
-                break;
-            }
-        }
-
-        var topId = deck.Count > 0 ? deck[0].UserId : string.Empty;
-        if (topId == deckTopId)
-        {
-            return;
-        }
-
-        deckTopId = topId;
-        OnDeckTopChanged();
-    }
-
-    private void RefillDeck(int below)
-    {
-        if (deck.Count < below && store.HasMoreDiscover && !store.LoadingDiscover && !store.LoadingMoreDiscover)
+        if (cards.Count < below && store.HasMoreDiscover && !store.LoadingDiscover && !store.LoadingMoreDiscover)
         {
             store.LoadMoreDiscover();
         }
     }
 
-    private void RecycleWhenDry()
+    private void RefreshDiscover()
     {
-        if (deck.Count >= DeckRefillBelow || deckRecycled || cardExit != 0 || store.PassCount == 0)
+        if (!store.IsSignedIn || store.LoadingDiscover)
         {
             return;
         }
 
-        if (!store.DiscoverLoaded || store.LoadingDiscover || store.LoadingMoreDiscover || store.HasMoreDiscover
-            || store.DiscoverFailed)
-        {
-            return;
-        }
-
-        AepLog.Info($"Velvet deck down to {deck.Count} cards with no pages left, "
-            + $"bringing back {store.PassCount} passes for a second look");
-        ShowPassesAgain();
-    }
-
-    private void ShowPassesAgain()
-    {
-        deckRecycled = true;
-        lastPassed = null;
-        store.CopyPassedIds(revisited);
-        store.ClearPasses();
+        gridScrollTopPending = true;
         ApplyDiscoverFilters();
     }
 
-    private bool SeenBefore(string userId) => revisited.Count > 0 && revisited.Contains(userId);
-
-    private void StepCard(float width)
-    {
-        if (cardExit == 0)
-        {
-            return;
-        }
-
-        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        var target = cardExit * (width + DeckExitOverhang * UiScale.Current);
-        cardSlide.Step(target, DeckExitSmoothTime, delta);
-        if (MathF.Abs(cardSlide.Value - target) <= DeckSettleEpsilon)
-        {
-            CommitCardExit();
-        }
-    }
-
-    private void CommitCardExit()
-    {
-        var direction = cardExit;
-        cardExit = 0;
-        cardSlide.SnapTo(0f);
-        if (deck.Count == 0)
-        {
-            return;
-        }
-
-        var top = deck[0];
-        deckTopId = string.Empty;
-        if (direction < 0)
-        {
-            lastPassed = top;
-            store.PassFromDiscover(top.UserId);
-        }
-        else
-        {
-            lastPassed = null;
-            store.Connect(top.UserId);
-        }
-
-        SyncDeck();
-    }
-
-    private void PassTop()
-    {
-        if (cardExit == 0 && deck.Count > 0)
-        {
-            cardExit = -1;
-        }
-    }
-
-    private void ConnectTop()
-    {
-        if (cardExit == 0 && deck.Count > 0)
-        {
-            cardExit = 1;
-        }
-    }
-
-    private void UndoPass()
-    {
-        if (lastPassed is not { } restored)
-        {
-            return;
-        }
-
-        lastPassed = null;
-        deckTopId = restored.UserId;
-        store.RestoreToDiscover(restored);
-        SyncDeck();
-        OnDeckTopChanged();
-    }
-
-    private void DrawDeckActions(Rect bar, VelvetProfileDto top)
-    {
-        var scale = UiScale.Current;
-        ImGui.SetCursorScreenPos(bar.Min);
-        using var overlay = ImRaii.Child("##velvetDeckActions", bar.Size, false,
-            ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.FillVerticalGradient(drawList, bar.Min, bar.Max, 0f,
-            VelvetTheme.Alpha(VelvetTheme.GroundBottom, 0f).Packed(),
-            VelvetTheme.Alpha(VelvetTheme.GroundBottom, 0.96f).Packed());
-        var barHovered = UiInteract.HoverOverlay(bar);
-        var live = cardExit == 0;
-        var radius = DeckActionRadius * scale;
-        var pad = SocialChrome.CellPadX * scale;
-        var rowCenterY = bar.Max.Y - DeckActionBottomPad * scale - radius;
-        var passCenter = new Vector2(bar.Min.X + pad + radius, rowCenterY);
-        var connectCenter = new Vector2(bar.Max.X - pad - radius, rowCenterY);
-        var sayHalf = DeckSayHeight * scale * 0.5f;
-        var sayRect = new Rect(
-            new Vector2(passCenter.X + radius + DeckActionGap * scale, rowCenterY - sayHalf),
-            new Vector2(connectCenter.X - radius - DeckActionGap * scale, rowCenterY + sayHalf));
-
-        if (DrawDeckCircle(drawList, DeckPassId, passCenter, radius, PhoneIcons.X, VelvetTheme.CardHi,
-                VelvetTheme.Card, VelvetTheme.BodyInk, 0f, Loc.T(L.Velvet.DeckPass), barHovered, live,
-                ref passHoverEase, ref passTooltipEase))
-        {
-            PassTop();
-        }
-
-        if (DrawDeckSay(drawList, sayRect, barHovered, live))
-        {
-            RequestIntro(top.UserId, top.DisplayName, top.Handle, top.AvatarUrl);
-        }
-
-        if (DrawDeckCircle(drawList, DeckConnectId, connectCenter, radius, PhoneIcons.HeartFilled, VelvetTheme.Rose,
-                VelvetTheme.RoseDeep, VelvetTheme.OnAccent, DeckGlowReach, Loc.T(L.Velvet.Connect), barHovered, live,
-                ref connectHoverEase, ref connectTooltipEase))
-        {
-            ConnectTop();
-        }
-
-        if (lastPassed is null)
-        {
-            return;
-        }
-
-        var undoLabel = Loc.T(L.Velvet.DeckUndo);
-        var undoWidth = Typography.Measure(undoLabel, DeckUndoStyle).X + DeckUndoPad * 2f * scale;
-        var undoTop = bar.Min.Y + DeckUndoTop * scale;
-        var undoRect = new Rect(new Vector2(bar.Center.X - undoWidth * 0.5f, undoTop),
-            new Vector2(bar.Center.X + undoWidth * 0.5f, undoTop + DeckUndoHeight * scale));
-        if (DrawDeckGhost(drawList, undoRect, undoLabel, barHovered, live))
-        {
-            UndoPass();
-        }
-    }
-
-    private static bool DrawDeckCircle(ImDrawListPtr drawList, string id, Vector2 center, float radius, string glyph,
-        Vector4 fill, Vector4 deep, Vector4 ink, float glowReach, string tooltip, bool barHovered, bool live,
-        ref Spring hoverEase, ref Spring tooltipEase)
-    {
-        var scale = UiScale.Current;
-        var extent = new Vector2(radius, radius);
-        var hovered = live && barHovered && ImGui.IsMouseHoveringRect(center - extent, center + extent);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        var eased = Math.Clamp(hoverEase.Step(hovered ? 1f : 0f, DeckHoverSmoothTime, delta), 0f, 1f);
-        var drawRadius = radius * (1f + DeckHoverGrow * eased) * PressFx.Scale(id, pressed, DeckPressShrink);
-        var fillAlpha = live ? 1f : DeckIdleFillAlpha;
-        drawList.AddCircleFilled(center + new Vector2(0f, 2f * scale), drawRadius, DeckShadow.Packed(), 40);
-        AccentGloss.Circle(drawList, center, drawRadius,
-            DeckBodyTone(fill, DeckHoverTopLift * eased, fillAlpha),
-            DeckBodyTone(deep, DeckHoverBottomLift * eased, fillAlpha), scale, eased, glowReach);
-        if (eased > 0.001f)
-        {
-            drawList.AddCircle(center, drawRadius,
-                VelvetTheme.Alpha(VelvetTheme.OnAccent, DeckRimAlpha * eased).Packed(), 48, DeckRimWeight * scale);
-        }
-
-        PhoneIcon.Draw(drawList, center, glyph, live ? ink : VelvetTheme.Alpha(ink, DeckIdleInkAlpha),
-            VIcon.CardAction * scale * drawRadius / radius);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        HoverTooltip.Enqueue(new Rect(center - extent, center + extent), tooltip,
-            tooltipEase.Step(hovered ? 1f : 0f, DeckTooltipSmoothTime, delta), HoverLabelSide.Above);
-        return UiInteract.Click(center - extent, center + extent, hovered);
-    }
-
-    private bool DrawDeckSay(ImDrawListPtr drawList, Rect rect, bool barHovered, bool live)
-    {
-        var scale = UiScale.Current;
-        var hovered = live && barHovered && ImGui.IsMouseHoveringRect(rect.Min, rect.Max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        var eased = Math.Clamp(sayHoverEase.Step(hovered ? 1f : 0f, DeckHoverSmoothTime, delta), 0f, 1f);
-        var grow = DeckSayGrow * scale * eased;
-        var shrink = rect.Height * 0.5f * (1f - PressFx.Scale(DeckSayId, pressed, DeckPressShrink));
-        var inset = new Vector2(shrink - grow, shrink - grow);
-        var body = new Rect(rect.Min + inset, rect.Max - inset);
-        var rounding = body.Height * 0.5f;
-        var fillAlpha = live ? 1f : DeckIdleFillAlpha;
-        drawList.AddRectFilled(body.Min + new Vector2(0f, 2f * scale), body.Max + new Vector2(0f, 2f * scale),
-            DeckShadow.Packed(), rounding);
-        AccentGloss.Pill(drawList, body.Min, body.Max,
-            DeckBodyTone(VelvetTheme.Rose, DeckHoverTopLift * eased, fillAlpha),
-            DeckBodyTone(VelvetTheme.RoseDeep, DeckHoverBottomLift * eased, fillAlpha), scale, eased, DeckGlowReach);
-        if (eased > 0.001f)
-        {
-            Squircle.Stroke(drawList, body.Min, body.Max, rounding,
-                VelvetTheme.Alpha(VelvetTheme.OnAccent, DeckRimAlpha * eased).Packed(), DeckRimWeight * scale);
-        }
-
-        var maxLabelWidth = MathF.Max(1f, body.Width - DeckSayPad * 2f * scale);
-        Typography.DrawCentered(drawList, body.Center,
-            Typography.FitText(Loc.T(L.Velvet.DeckSay), maxLabelWidth, DeckSayStyle),
-            live ? VelvetTheme.OnAccent : VelvetTheme.Alpha(VelvetTheme.OnAccent, DeckIdleFillAlpha), DeckSayStyle);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(rect.Min, rect.Max, hovered);
-    }
-
-    private static Vector4 DeckBodyTone(Vector4 tone, float lift, float alpha) =>
+    private static Vector4 CardBodyTone(Vector4 tone, float lift, float alpha) =>
         VelvetTheme.Alpha(VelvetTheme.Lerp(tone, VelvetTheme.OnAccent, lift), alpha);
 
-    private static bool DrawDeckGhost(ImDrawListPtr drawList, Rect rect, string label, bool barHovered, bool live)
-    {
-        var scale = UiScale.Current;
-        var hovered = live && barHovered && ImGui.IsMouseHoveringRect(rect.Min, rect.Max);
-        var rounding = rect.Height * 0.5f;
-        Squircle.Fill(drawList, rect.Min, rect.Max, rounding,
-            (hovered ? VelvetTheme.CardHi : VelvetTheme.Card).Packed());
-        Squircle.Stroke(drawList, rect.Min, rect.Max, rounding, VelvetTheme.Hairline.Packed(),
-            Metrics.Stroke.Hairline * scale);
-        Typography.DrawCentered(drawList, rect.Center, label, VelvetTheme.TitleInk, DeckUndoStyle);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(rect.Min, rect.Max, hovered);
-    }
-
-    private void DrawDeckEmpty(Rect body)
+    private void DrawDiscoverEmpty(Rect body)
     {
         var scale = UiScale.Current;
         var loading = store.LoadingDiscover || store.LoadingMoreDiscover;
@@ -613,13 +217,9 @@ internal sealed partial class VelvetShell
             discoverFailure.Set(store.DiscoverFailure);
         }
 
-        var passCount = store.PassCount;
         var title = loading ? Loc.T(L.Velvet.DiscoverLoading)
-            : failed ? Loc.T(L.Failure.CouldNotLoad) : Loc.T(L.Velvet.DeckEndTitle);
-        var hint = loading ? string.Empty
-            : failed ? discoverFailure.Text()
-            : passCount > 0 ? Loc.T(L.Velvet.DeckPassedHidden, passCount)
-            : Loc.T(L.Velvet.DeckEndHint);
+            : failed ? Loc.T(L.Failure.CouldNotLoad) : Loc.T(L.Velvet.DiscoverEndTitle);
+        var hint = loading ? string.Empty : failed ? discoverFailure.Text() : Loc.T(L.Velvet.DiscoverEndHint);
         var bottom = DrawEmpty(body, title, hint);
         if (loading)
         {
@@ -630,7 +230,7 @@ internal sealed partial class VelvetShell
         if (failed)
         {
             if (DrawEndAction(body, ref actionTop, Loc.T(L.Common.Retry), ConfirmButtonTone.Primary,
-                    "velvet.deck.retry"))
+                    "velvet.discover.retry"))
             {
                 ApplyDiscoverFilters();
             }
@@ -639,15 +239,9 @@ internal sealed partial class VelvetShell
         }
 
         var lead = true;
-        if (passCount > 0 && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckShowAgain), NextTone(ref lead),
-                "velvet.deck.showAgain"))
-        {
-            ShowPassesAgain();
-        }
-
         if ((discoverInclude.RegionMask != 0 || mutes.RegionMask != 0)
-            && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckWidenRegion), NextTone(ref lead),
-                "velvet.deck.widen"))
+            && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DiscoverWidenRegion), NextTone(ref lead),
+                "velvet.discover.widen"))
         {
             discoverInclude.RegionMask = 0;
             mutes.RegionMask = 0;
@@ -655,22 +249,16 @@ internal sealed partial class VelvetShell
         }
 
         if (discoverInclude.AnyBesidesRegion && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.FilterClearAll),
-                NextTone(ref lead), "velvet.deck.clear"))
+                NextTone(ref lead), "velvet.discover.clear"))
         {
             discoverInclude.Clear();
             ApplyDiscoverFilters();
         }
 
-        if (!discoverInclude.Any && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckCheckAgain),
-                NextTone(ref lead), "velvet.deck.again"))
+        if (!discoverInclude.Any && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DiscoverCheckAgain),
+                NextTone(ref lead), "velvet.discover.again"))
         {
             ApplyDiscoverFilters();
-        }
-
-        if (lastPassed is not null && DrawEndAction(body, ref actionTop, Loc.T(L.Velvet.DeckUndo),
-                ConfirmButtonTone.Neutral, "velvet.deck.undo"))
-        {
-            UndoPass();
         }
     }
 

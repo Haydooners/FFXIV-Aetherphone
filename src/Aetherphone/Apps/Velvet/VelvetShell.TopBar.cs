@@ -49,15 +49,14 @@ internal sealed partial class VelvetShell
         var titleLeft = logoCenter.X + logoSize * 0.5f + LogoGap * scale;
         var titleRight = SocialChrome.HeaderSlot(area, RootTrailingSlots(activeTab) - 1).X
             - SocialChrome.HeaderIconRadius * scale - TitleIconGap * scale;
-        var titleHeight = Typography.LineHeight(WordmarkStyle);
         var title = Typography.FitText(DisplayName, MathF.Max(1f, titleRight - titleLeft), WordmarkStyle);
         var titleSize = Typography.Measure(title, WordmarkStyle);
-        var titleMin = new Vector2(titleLeft - TitleHitPad * scale, rowCenterY - titleHeight * 0.5f - TitleHitPadY * scale);
+        var titleTop = rowCenterY - titleSize.Y * 0.5f;
+        var titleMin = new Vector2(titleLeft - TitleHitPad * scale, titleTop - TitleHitPadY * scale);
         var titleMax = new Vector2(titleLeft + titleSize.X + TitleHitPad * scale,
-            rowCenterY + titleHeight * 0.5f + TitleHitPadY * scale);
+            titleTop + titleSize.Y + TitleHitPadY * scale);
         UiInteract.HoverHighlight(drawList, titleMin, titleMax, TitleHitRounding * scale);
-        Typography.Draw(drawList, new Vector2(titleLeft, rowCenterY - titleHeight * 0.5f), title, VelvetTheme.TitleInk,
-            WordmarkStyle);
+        Typography.Draw(drawList, new Vector2(titleLeft, titleTop), title, VelvetTheme.TitleInk, WordmarkStyle);
         if (UiInteract.HoverClick(titleMin, titleMax))
         {
             RefreshRootTab();
@@ -75,7 +74,7 @@ internal sealed partial class VelvetShell
     private static int RootTrailingSlots(VelvetPage tab) =>
         tab switch
         {
-            VelvetPage.Discover => 4,
+            VelvetPage.Discover => 3,
             VelvetPage.Feed => 2,
             VelvetPage.Me => 2,
             VelvetPage.Messages => 2,
@@ -98,7 +97,7 @@ internal sealed partial class VelvetShell
                 RefreshFeed();
                 break;
             case VelvetPage.Discover:
-                ApplyDiscoverFilters();
+                RefreshDiscover();
                 break;
         }
     }
@@ -124,13 +123,6 @@ internal sealed partial class VelvetShell
                         TopBarIconSize, Loc.T(L.Common.Search), VelvetInk.Shared, VelvetTheme.TitleInk))
                 {
                     OpenSearch();
-                }
-
-                if (SocialChrome.DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 3), radius,
-                        PhoneIcons.UserSquareRounded, TopBarIconSize, Loc.T(L.Velvet.DeckModeLabel), VelvetInk.Shared,
-                        VelvetTheme.TitleInk, configuration.VelvetDiscoverDeck))
-                {
-                    ToggleDeckMode();
                 }
 
                 break;

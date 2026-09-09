@@ -44,7 +44,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private volatile bool introBusy;
     private volatile VelvetProfileDto[] discoverResults = Array.Empty<VelvetProfileDto>();
     private volatile HashSet<string> notInterestedIds = EmptyIds;
-    private volatile Dictionary<string, long> passedAt = EmptyPasses;
     private volatile bool loadingDiscover;
     private volatile bool discoverLoaded;
     private volatile AepFailureBox? discoverFailureBox;
@@ -101,8 +100,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private volatile VelvetProfileDto[] notInterested = Array.Empty<VelvetProfileDto>();
     private readonly VelvetNotInterestedArchive notInterestedArchive;
     private static readonly HashSet<string> EmptyIds = new(StringComparer.Ordinal);
-    private static readonly Dictionary<string, long> EmptyPasses = new(StringComparer.Ordinal);
-    private const long PassLifetimeSeconds = 30L * 24L * 60L * 60L;
     private volatile bool notInterestedIdsLoaded;
     private volatile bool notInterestedLoaded;
     private volatile bool loadingNotInterested;
@@ -214,7 +211,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     public AepFailure DiscoverFailure => discoverFailureBox?.Failure ?? AepFailure.None;
     public bool HasMoreDiscover => discoverCursor is not null;
     public bool LoadingMoreDiscover => loadingMoreDiscover;
-    public int PassCount => passedAt.Count;
     public VelvetProfileDto[] SearchResults => searchResults;
     public bool LoadingSearch => loadingSearch;
     public bool SearchLoaded => searchLoaded;
@@ -295,7 +291,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         ResetTagPosts();
 
         notInterestedIds = EmptyIds;
-        passedAt = EmptyPasses;
         notInterestedLoaded = false;
         searchEpoch++;
         searchResults = Array.Empty<VelvetProfileDto>();
@@ -676,14 +671,13 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
                 return;
             }
 
-            var snapshot = await Task.Run(() => notInterestedArchive.Load(accountId), token).ConfigureAwait(false);
+            var storedIds = await Task.Run(() => notInterestedArchive.Load(accountId), token).ConfigureAwait(false);
             if (epoch != accountEpoch)
             {
                 return;
             }
 
-            notInterestedIds = MergeNotInterested(notInterestedIds, snapshot.UserIds);
-            passedAt = MergePasses(passedAt, snapshot.Passes, UnixNow());
+            notInterestedIds = MergeNotInterested(notInterestedIds, storedIds);
             discoverResults = WithoutNotInterested(discoverResults);
             loaded = true;
         }
@@ -699,30 +693,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
                 notInterestedIdsLoadTask = null;
             }
         }
-    }
-
-    private static long UnixNow() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-    private static bool PassActive(Dictionary<string, long> passes, string userId, long now) =>
-        passes.TryGetValue(userId, out var stamp) && now - stamp < PassLifetimeSeconds;
-
-    private static Dictionary<string, long> MergePasses(Dictionary<string, long> existing,
-        Dictionary<string, long> incoming, long now)
-    {
-        var merged = new Dictionary<string, long>(existing, StringComparer.Ordinal);
-        var changed = false;
-        foreach (var (userId, stamp) in incoming)
-        {
-            if (now - stamp >= PassLifetimeSeconds || merged.ContainsKey(userId))
-            {
-                continue;
-            }
-
-            merged[userId] = stamp;
-            changed = true;
-        }
-
-        return changed ? merged : existing;
     }
 
     private static HashSet<string> MergeNotInterested(HashSet<string> existing, string[] incoming)

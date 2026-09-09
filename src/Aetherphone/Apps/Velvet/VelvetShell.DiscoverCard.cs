@@ -3,7 +3,6 @@ using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Media;
-using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Social;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -12,37 +11,29 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetShell
 {
-    private const float DeckCardInset = 12f;
-    private const float DeckCoverAspect = 1.2f;
-    private const float DeckCoverMaxShare = 0.62f;
-    private const float DeckCoverRadius = 18f;
-    private const float DeckPhotoRadius = 14f;
-    private const float DeckStackPeek = 6f;
-    private const float DeckStackShrink = 10f;
-    private const float DeckScrimShare = 0.55f;
-    private const float DeckCoverPad = 16f;
-    private const float DeckCoverLineGap = 4f;
-    private const float DeckBadgeHeight = 24f;
-    private const float DeckBadgePad = 10f;
-    private const float DeckBadgeGlyphGap = 6f;
-    private const float DeckBadgeGap = 6f;
-    private const float DeckPresenceDot = 4f;
-    private const float DeckStampPad = 10f;
-    private const float DeckStampStroke = 2.5f;
-    private const float DeckStampMinProgress = 0.05f;
-    private const float DeckColumnLead = 4f;
-    private const float DeckFitRowHeight = 24f;
-    private const float DeckFitGlyphGap = 8f;
-    private const float DeckBottomPad = 24f;
-    private const float DeckIndentEpsilon = 0.01f;
+    private const float CardInset = 12f;
+    private const float CardCoverAspect = 1.2f;
+    private const float CardCoverMaxShare = 0.62f;
+    private const float CardCoverRadius = 18f;
+    private const float CardPhotoRadius = 14f;
+    private const float CardCoverLead = 6f;
+    private const float CardScrimShare = 0.55f;
+    private const float CardCoverPad = 16f;
+    private const float CardCoverLineGap = 4f;
+    private const float CardBadgeHeight = 24f;
+    private const float CardBadgePad = 10f;
+    private const float CardBadgeGlyphGap = 6f;
+    private const float CardPresenceDot = 4f;
+    private const float CardColumnLead = 4f;
+    private const float CardFitRowHeight = 24f;
+    private const float CardFitGlyphGap = 8f;
     private const float PreviewBottomPad = 40f;
 
-    private static readonly TextStyle DeckNameStyle = TextStyles.Title2;
-    private static readonly TextStyle DeckMetaStyle = TextStyles.Subheadline;
-    private static readonly TextStyle DeckIntentStyle = TextStyles.SubheadlineEmphasized;
-    private static readonly TextStyle DeckStampStyle = TextStyles.Title3;
-    private static readonly TextStyle DeckFitStyle = TextStyles.Subheadline;
-    private static readonly Vector4 DeckBadgeFill = new(0.03f, 0.01f, 0.06f, 0.55f);
+    private static readonly TextStyle CardNameStyle = TextStyles.Title2;
+    private static readonly TextStyle CardMetaStyle = TextStyles.Subheadline;
+    private static readonly TextStyle CardIntentStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle CardFitStyle = TextStyles.Subheadline;
+    private static readonly Vector4 CardBadgeFill = new(0.03f, 0.01f, 0.06f, 0.55f);
     private static readonly VelvetCardPhotoDto[] NoCardPhotos = Array.Empty<VelvetCardPhotoDto>();
 
     private readonly List<VelvetFitItem> fitItems = new();
@@ -50,17 +41,8 @@ internal sealed partial class VelvetShell
     private string fitUserId = string.Empty;
     private VelvetProfileDto? fitMe;
     private LanguageInfo? fitLanguage;
-    private string deckNameId = string.Empty;
-    private string deckMetaLine = string.Empty;
     private string previewNameId = string.Empty;
     private string previewMetaLine = string.Empty;
-    private string deckPhotoBadge = string.Empty;
-    private int deckPhotoBadgeCount = -1;
-    private string deckSeenLabel = string.Empty;
-    private string stampPass = string.Empty;
-    private string stampConnect = string.Empty;
-    private LanguageInfo? stampLanguage;
-    private bool deckScrollTopPending;
     private string viewerUrl = string.Empty;
 
     private static VelvetCardPhotoDto[] CardPhotos(VelvetProfileDto profile) => profile.Photos ?? NoCardPhotos;
@@ -76,63 +58,6 @@ internal sealed partial class VelvetShell
     {
         viewerUrl = url;
         photoViewer.Open(this, viewerSource);
-    }
-
-    private void OnDeckTopChanged()
-    {
-        fitUserId = string.Empty;
-        deckPhotoBadgeCount = -1;
-        deckScrollTopPending = true;
-        if (deck.Count == 0)
-        {
-            return;
-        }
-
-        var top = deck[0];
-        deckNameId = "velvet.deck.name." + top.UserId;
-        deckMetaLine = CardMetaLine(top);
-    }
-
-    private void DrawDeckCard(VelvetProfileDto profile, Rect body, in AppSurface.SurfaceScope surface)
-    {
-        var scale = UiScale.Current;
-        if (deckScrollTopPending)
-        {
-            surface.JumpToTop();
-            deckScrollTopPending = false;
-        }
-
-        EnsureFit(profile);
-        EnsureStamps();
-        var photos = CardPhotos(profile);
-        var drawList = ImGui.GetWindowDrawList();
-        var width = ScrollLayout.StableContentWidth();
-        var inset = DeckCardInset * scale;
-        var offsetX = cardSlide.Value;
-        var origin = ImGui.GetCursorScreenPos();
-        var innerWidth = MathF.Max(1f, width - inset * 2f);
-        var left = origin.X + inset + offsetX;
-        var coverHeight = MathF.Min(innerWidth * DeckCoverAspect, body.Height * DeckCoverMaxShare);
-        var coverTop = origin.Y + DeckStackPeek * scale;
-        var cover = new Rect(new Vector2(left, coverTop), new Vector2(left + innerWidth, coverTop + coverHeight));
-        if (deck.Count > 1)
-        {
-            DrawDeckStack(drawList, cover, scale);
-        }
-
-        DrawCardCover(drawList, profile, photos, cover, scale, deckNameId, deckMetaLine);
-        DrawDeckStamp(drawList, cover, innerWidth, scale);
-        UiAnchors.Report("velvet.discover.card", cover);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, cover.Max.Y - origin.Y));
-
-        var indent = MathF.Abs(inset + offsetX) < DeckIndentEpsilon ? DeckIndentEpsilon : inset + offsetX;
-        ImGui.Indent(indent);
-        Gap(DeckColumnLead);
-        DrawDeckFit(innerWidth);
-        DrawCardColumn(profile, photos, innerWidth, ViewerAgainst(profile));
-        ImGui.Unindent(indent);
-        Gap(DeckActionBarHeight + DeckBottomPad);
     }
 
     private void DrawCardColumn(VelvetProfileDto profile, VelvetCardPhotoDto[] photos, float innerWidth,
@@ -193,18 +118,18 @@ internal sealed partial class VelvetShell
             var photos = CardPhotos(me);
             var drawList = ImGui.GetWindowDrawList();
             var width = ScrollLayout.StableContentWidth();
-            var inset = DeckCardInset * scale;
+            var inset = CardInset * scale;
             var origin = ImGui.GetCursorScreenPos();
             var innerWidth = MathF.Max(1f, width - inset * 2f);
-            var coverHeight = MathF.Min(innerWidth * DeckCoverAspect, body.Height * DeckCoverMaxShare);
-            var coverTop = origin.Y + DeckStackPeek * scale;
+            var coverHeight = MathF.Min(innerWidth * CardCoverAspect, body.Height * CardCoverMaxShare);
+            var coverTop = origin.Y + CardCoverLead * scale;
             var cover = new Rect(new Vector2(origin.X + inset, coverTop),
                 new Vector2(origin.X + inset + innerWidth, coverTop + coverHeight));
             DrawCardCover(drawList, me, photos, cover, scale, previewNameId, previewMetaLine);
             ImGui.SetCursorScreenPos(origin);
             ImGui.Dummy(new Vector2(width, cover.Max.Y - origin.Y));
             ImGui.Indent(inset);
-            Gap(DeckColumnLead);
+            Gap(CardColumnLead);
             DrawCardColumn(me, photos, innerWidth, null);
             ImGui.Unindent(inset);
             Gap(PreviewBottomPad);
@@ -236,6 +161,40 @@ internal sealed partial class VelvetShell
         }
     }
 
+    private void DrawCardFit(float innerWidth)
+    {
+        if (fitLabels.Count == 0)
+        {
+            return;
+        }
+
+        var scale = UiScale.Current;
+        var drawList = ImGui.GetWindowDrawList();
+        var glyphSize = VIcon.Chip * scale;
+        var rowHeight = CardFitRowHeight * scale;
+        Gap(VCard.Gap);
+        var card = VCard.Begin(drawList, innerWidth, VCard.HeaderBlock * scale + rowHeight * fitLabels.Count, scale);
+        VCard.Header(drawList, card.ContentOrigin, card.ContentWidth, PhoneIcons.HeartHandshake, VelvetTheme.Rose,
+            Loc.T(L.Velvet.FitTitle), scale);
+        var textLeft = card.ContentOrigin.X + glyphSize + CardFitGlyphGap * scale;
+        var textWidth = MathF.Max(1f, card.ContentWidth - glyphSize - CardFitGlyphGap * scale);
+        var rowTop = card.ContentOrigin.Y + VCard.HeaderBlock * scale;
+        for (var index = 0; index < fitLabels.Count; index++)
+        {
+            var conflict = VelvetFit.Warns(fitItems[index].Kind);
+            var tone = conflict ? VelvetTheme.Danger : VelvetTheme.Online;
+            var ink = conflict ? VelvetTheme.ToneInk(VelvetTheme.Danger) : VelvetTheme.BodyInk;
+            var centerY = rowTop + rowHeight * 0.5f;
+            PhoneIcon.Draw(drawList, new Vector2(card.ContentOrigin.X + glyphSize * 0.5f, centerY),
+                conflict ? PhoneIcons.X : PhoneIcons.Check, tone, glyphSize);
+            Typography.Draw(drawList, new Vector2(textLeft, centerY - Typography.LineHeight(CardFitStyle) * 0.5f),
+                Typography.FitText(fitLabels[index], textWidth, CardFitStyle), ink, CardFitStyle);
+            rowTop += rowHeight;
+        }
+
+        VCard.End(card);
+    }
+
     private static string FitLabel(in VelvetFitItem item) =>
         item.Kind switch
         {
@@ -248,65 +207,39 @@ internal sealed partial class VelvetShell
             _ => Loc.T(L.Velvet.FitNoConflicts),
         };
 
-    private void EnsureStamps()
-    {
-        if (ReferenceEquals(stampLanguage, Loc.Current))
-        {
-            return;
-        }
-
-        stampLanguage = Loc.Current;
-        stampPass = Loc.Upper(Loc.T(L.Velvet.DeckPass));
-        stampConnect = Loc.Upper(Loc.T(L.Velvet.Connect));
-        deckSeenLabel = Loc.T(L.Velvet.DeckSeenBefore);
-    }
-
-    private static void DrawDeckStack(ImDrawListPtr drawList, Rect cover, float scale)
-    {
-        var shrink = DeckStackShrink * scale;
-        var peek = DeckStackPeek * scale;
-        var radius = DeckCoverRadius * scale;
-        Squircle.Fill(drawList, new Vector2(cover.Min.X + shrink, cover.Min.Y - peek),
-            new Vector2(cover.Max.X - shrink, cover.Min.Y + radius * 2f), radius,
-            VelvetTheme.Alpha(VelvetTheme.CardHi, 0.75f).Packed());
-    }
-
     private void DrawCardCover(ImDrawListPtr drawList, VelvetProfileDto profile, VelvetCardPhotoDto[] photos,
         Rect cover, float scale, string nameId, string metaLine, bool interactive = true)
     {
         var name = DisplayNameOf(profile.DisplayName, profile.Handle);
-        var radius = DeckCoverRadius * scale;
-        var pad = DeckCoverPad * scale;
+        var radius = CardCoverRadius * scale;
+        var pad = CardCoverPad * scale;
         var coverIsPhoto = photos.Length > 0;
         var coverUrl = coverIsPhoto ? photos[0].Url : profile.AvatarUrl ?? string.Empty;
         DrawCoverImage(drawList, cover.Min, cover.Max, coverUrl, radius, name);
-        Squircle.FillVerticalGradient(drawList, new Vector2(cover.Min.X, cover.Max.Y - cover.Height * DeckScrimShare),
+        Squircle.FillVerticalGradient(drawList, new Vector2(cover.Min.X, cover.Max.Y - cover.Height * CardScrimShare),
             cover.Max, radius, VelvetTheme.Alpha(VelvetTheme.GroundBottom, 0f).Packed(),
             VelvetTheme.Alpha(VelvetTheme.GroundBottom, 0.94f).Packed());
 
-        var badgeLeft = cover.Min.X + DeckCoverPad * scale;
-        badgeLeft = DrawDeckSeenBadge(drawList, profile.UserId, cover, badgeLeft, scale);
-        DrawDeckPhotoBadge(drawList, photos.Length, cover, badgeLeft, scale);
-        DrawDeckPresence(drawList, profile.Presence, cover, pad, scale);
+        DrawCardPresence(drawList, profile.Presence, cover, pad, scale);
 
         var textLeft = cover.Min.X + pad;
         var textWidth = MathF.Max(1f, cover.Width - pad * 2f);
         var intent = VelvetIntent.Summary(profile.LookingFor);
-        var intentHeight = Typography.LineHeight(DeckIntentStyle);
+        var intentHeight = Typography.LineHeight(CardIntentStyle);
         var intentY = cover.Max.Y - pad - intentHeight;
-        var metaHeight = Typography.LineHeight(DeckMetaStyle);
-        var metaY = intentY - DeckCoverLineGap * scale - metaHeight;
-        var nameHeight = Typography.LineHeight(DeckNameStyle);
-        var nameY = metaY - DeckCoverLineGap * scale - nameHeight;
+        var metaHeight = Typography.LineHeight(CardMetaStyle);
+        var metaY = intentY - CardCoverLineGap * scale - metaHeight;
+        var nameHeight = Typography.LineHeight(CardNameStyle);
+        var nameY = metaY - CardCoverLineGap * scale - nameHeight;
 
         var textBlock = new Rect(new Vector2(textLeft, nameY), new Vector2(textLeft + textWidth, cover.Max.Y - pad));
         var textHovered = interactive && UiInteract.Hover(textBlock.Min, textBlock.Max);
         UserName.Draw(drawList, nameId, name, profile.Badges, profile.BadgeIds, textLeft, nameY, textWidth,
-            DeckNameStyle, VelvetTheme.TitleInk, textHovered, false);
+            CardNameStyle, VelvetTheme.TitleInk, textHovered, false);
         Typography.Draw(drawList, new Vector2(textLeft, metaY),
-            Typography.FitText(metaLine, textWidth, DeckMetaStyle), VelvetTheme.BodyInk, DeckMetaStyle);
+            Typography.FitText(metaLine, textWidth, CardMetaStyle), VelvetTheme.BodyInk, CardMetaStyle);
         Typography.Draw(drawList, new Vector2(textLeft, intentY),
-            Typography.FitText(intent, textWidth, DeckIntentStyle), VelvetTheme.RoseInk, DeckIntentStyle);
+            Typography.FitText(intent, textWidth, CardIntentStyle), VelvetTheme.RoseInk, CardIntentStyle);
 
         if (!interactive)
         {
@@ -334,51 +267,23 @@ internal sealed partial class VelvetShell
         OpenProfile(profile.UserId);
     }
 
-    private void DrawDeckPhotoBadge(ImDrawListPtr drawList, int count, Rect cover, float left, float scale)
-    {
-        if (count <= 1)
-        {
-            return;
-        }
-
-        if (deckPhotoBadgeCount != count)
-        {
-            deckPhotoBadgeCount = count;
-            deckPhotoBadge = Loc.Plural(L.Velvet.PhotoBadge, count);
-        }
-
-        DrawDeckCoverBadge(drawList, deckPhotoBadge, PhoneIcons.Photo, VelvetTheme.RoseInk, cover, left, scale);
-    }
-
-    private float DrawDeckSeenBadge(ImDrawListPtr drawList, string userId, Rect cover, float left, float scale)
-    {
-        if (!SeenBefore(userId))
-        {
-            return left;
-        }
-
-        return DrawDeckCoverBadge(drawList, deckSeenLabel, PhoneIcons.ArrowBackUp, VelvetTheme.Moonlight, cover, left,
-            scale);
-    }
-
-    private static float DrawDeckCoverBadge(ImDrawListPtr drawList, string label, string glyph, Vector4 glyphInk,
+    private static void DrawCardCoverBadge(ImDrawListPtr drawList, string label, string glyph, Vector4 glyphInk,
         Rect cover, float left, float scale)
     {
         var glyphSize = VIcon.Small * scale;
         var textSize = Typography.Measure(label, TextStyles.Footnote);
-        var pad = DeckBadgePad * scale;
-        var min = new Vector2(left, cover.Min.Y + DeckCoverPad * scale);
-        var max = new Vector2(min.X + pad * 2f + glyphSize + DeckBadgeGlyphGap * scale + textSize.X,
-            min.Y + DeckBadgeHeight * scale);
-        Squircle.Fill(drawList, min, max, DeckBadgeHeight * scale * 0.5f, DeckBadgeFill.Packed());
+        var pad = CardBadgePad * scale;
+        var min = new Vector2(left, cover.Min.Y + CardCoverPad * scale);
+        var max = new Vector2(min.X + pad * 2f + glyphSize + CardBadgeGlyphGap * scale + textSize.X,
+            min.Y + CardBadgeHeight * scale);
+        Squircle.Fill(drawList, min, max, CardBadgeHeight * scale * 0.5f, CardBadgeFill.Packed());
         var glyphCenter = new Vector2(min.X + pad + glyphSize * 0.5f, (min.Y + max.Y) * 0.5f);
         PhoneIcon.Draw(drawList, glyphCenter, glyph, glyphInk, glyphSize);
-        Typography.Draw(drawList, new Vector2(glyphCenter.X + glyphSize * 0.5f + DeckBadgeGlyphGap * scale,
+        Typography.Draw(drawList, new Vector2(glyphCenter.X + glyphSize * 0.5f + CardBadgeGlyphGap * scale,
             glyphCenter.Y - textSize.Y * 0.5f), label, VelvetTheme.OnAccent, TextStyles.Footnote);
-        return max.X + DeckBadgeGap * scale;
     }
 
-    private static void DrawDeckPresence(ImDrawListPtr drawList, int presence, Rect cover, float inset, float scale)
+    private static void DrawCardPresence(ImDrawListPtr drawList, int presence, Rect cover, float inset, float scale)
     {
         if (!VelvetTheme.PresenceActive(presence))
         {
@@ -387,77 +292,17 @@ internal sealed partial class VelvetShell
 
         var label = VelvetPresence.Label(presence);
         var textSize = Typography.Measure(label, TextStyles.Footnote);
-        var pad = DeckBadgePad * scale;
-        var dot = DeckPresenceDot * scale;
+        var pad = CardBadgePad * scale;
+        var dot = CardPresenceDot * scale;
         var top = cover.Min.Y + inset;
-        var max = new Vector2(cover.Max.X - inset, top + DeckBadgeHeight * scale);
-        var min = new Vector2(max.X - pad * 2f - dot * 2f - DeckBadgeGlyphGap * scale - textSize.X, top);
+        var max = new Vector2(cover.Max.X - inset, top + CardBadgeHeight * scale);
+        var min = new Vector2(max.X - pad * 2f - dot * 2f - CardBadgeGlyphGap * scale - textSize.X, top);
         var centerY = (min.Y + max.Y) * 0.5f;
-        Squircle.Fill(drawList, min, max, DeckBadgeHeight * scale * 0.5f, DeckBadgeFill.Packed());
+        Squircle.Fill(drawList, min, max, CardBadgeHeight * scale * 0.5f, CardBadgeFill.Packed());
         drawList.AddCircleFilled(new Vector2(min.X + pad + dot, centerY), dot,
             VelvetTheme.PresenceColor(presence).Packed(), 16);
-        Typography.Draw(drawList, new Vector2(min.X + pad + dot * 2f + DeckBadgeGlyphGap * scale,
+        Typography.Draw(drawList, new Vector2(min.X + pad + dot * 2f + CardBadgeGlyphGap * scale,
             centerY - textSize.Y * 0.5f), label, VelvetTheme.OnAccent, TextStyles.Footnote);
-    }
-
-    private void DrawDeckStamp(ImDrawListPtr drawList, Rect cover, float innerWidth, float scale)
-    {
-        var slide = cardSlide.Value;
-        var progress = MathF.Min(1f, MathF.Abs(slide) / MathF.Max(1f, innerWidth * DeckCommitFraction));
-        if (progress < DeckStampMinProgress)
-        {
-            return;
-        }
-
-        var passing = slide < 0f;
-        var label = passing ? stampPass : stampConnect;
-        var tone = VelvetTheme.Alpha(passing ? VelvetTheme.Moonlight : VelvetTheme.RoseGlow, progress);
-        var textSize = Typography.Measure(label, DeckStampStyle);
-        var pad = DeckStampPad * scale;
-        var inset = DeckCoverPad * scale;
-        var top = cover.Min.Y + inset + DeckBadgeHeight * scale + pad;
-        var min = passing
-            ? new Vector2(cover.Max.X - inset - textSize.X - pad * 2f, top)
-            : new Vector2(cover.Min.X + inset, top);
-        var max = new Vector2(min.X + textSize.X + pad * 2f, top + textSize.Y + pad);
-        Squircle.Fill(drawList, min, max, Metrics.Radius.Sm * scale,
-            VelvetTheme.Alpha(VelvetTheme.GroundBottom, 0.45f * progress).Packed());
-        Squircle.Stroke(drawList, min, max, Metrics.Radius.Sm * scale, tone.Packed(), DeckStampStroke * scale);
-        Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad * 0.5f), label, tone, DeckStampStyle);
-    }
-
-    private void DrawDeckFit(float innerWidth)
-    {
-        if (fitLabels.Count == 0)
-        {
-            return;
-        }
-
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var glyphSize = VIcon.Chip * scale;
-        var rowHeight = DeckFitRowHeight * scale;
-        Gap(VCard.Gap);
-        var card = VCard.Begin(drawList, innerWidth, VCard.HeaderBlock * scale + rowHeight * fitLabels.Count, scale);
-        VCard.Header(drawList, card.ContentOrigin, card.ContentWidth, PhoneIcons.HeartHandshake, VelvetTheme.Rose,
-            Loc.T(L.Velvet.FitTitle), scale);
-        var textLeft = card.ContentOrigin.X + glyphSize + DeckFitGlyphGap * scale;
-        var textWidth = MathF.Max(1f, card.ContentWidth - glyphSize - DeckFitGlyphGap * scale);
-        var rowTop = card.ContentOrigin.Y + VCard.HeaderBlock * scale;
-        for (var index = 0; index < fitLabels.Count; index++)
-        {
-            var conflict = VelvetFit.Warns(fitItems[index].Kind);
-            var tone = conflict ? VelvetTheme.Danger : VelvetTheme.Online;
-            var ink = conflict ? VelvetTheme.ToneInk(VelvetTheme.Danger) : VelvetTheme.BodyInk;
-            var centerY = rowTop + rowHeight * 0.5f;
-            PhoneIcon.Draw(drawList, new Vector2(card.ContentOrigin.X + glyphSize * 0.5f, centerY),
-                conflict ? PhoneIcons.X : PhoneIcons.Check, tone, glyphSize);
-            Typography.Draw(drawList, new Vector2(textLeft, centerY - Typography.LineHeight(DeckFitStyle) * 0.5f),
-                Typography.FitText(fitLabels[index], textWidth, DeckFitStyle), ink, DeckFitStyle);
-            rowTop += rowHeight;
-        }
-
-        VCard.End(card);
     }
 
     private void DrawCardPhoto(ImDrawListPtr drawList, VelvetCardPhotoDto[] photos, ref int photoIndex,
@@ -475,7 +320,7 @@ internal sealed partial class VelvetShell
         var height = PostAspects.TallDisplayHeight(innerWidth, photo.Width, photo.Height);
         var min = ImGui.GetCursorScreenPos();
         var max = new Vector2(min.X + innerWidth, min.Y + height);
-        DrawMedia(drawList, min, max, photo.Url, DeckPhotoRadius * scale);
+        DrawMedia(drawList, min, max, photo.Url, CardPhotoRadius * scale);
         if (UiInteract.Click(min, max))
         {
             OpenPhotoViewer(photo.Url);
@@ -490,7 +335,7 @@ internal sealed partial class VelvetShell
         var texture = url.Length > 0 ? images.Get(url) : null;
         if (texture is null)
         {
-            drawList.AddRectFilled(min, max, VelvetTheme.PlumWell.Packed(), rounding, ImDrawFlags.RoundCornersAll);
+            Squircle.Fill(drawList, min, max, rounding, VelvetTheme.PlumWell.Packed());
             Squircle.FillVerticalGradient(drawList, min, max, rounding,
                 VelvetTheme.Alpha(VelvetTheme.CardHi, 0.6f).Packed(), VelvetTheme.Alpha(VelvetTheme.PlumWell, 0f).Packed());
             var monogram = fallbackName.Length > 0 ? fallbackName[..1].ToUpperInvariant() : "?";
@@ -502,6 +347,6 @@ internal sealed partial class VelvetShell
         }
 
         var (uv0, uv1) = ImageFit.Cover(texture.Size.X, texture.Size.Y, max.X - min.X, max.Y - min.Y, focusY);
-        drawList.AddImageRounded(texture.Handle, min, max, uv0, uv1, 0xFFFFFFFFu, rounding, ImDrawFlags.RoundCornersAll);
+        Squircle.FillImage(drawList, min, max, rounding, texture.Handle, 0xFFFFFFFFu, uv0, uv1);
     }
 }

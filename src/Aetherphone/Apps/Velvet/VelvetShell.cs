@@ -196,7 +196,7 @@ internal sealed partial class VelvetShell : IResumableApp
         profileTab = VelvetProfileTab.About;
         avatarLightbox.Reset();
         store.ClearDiscover();
-        ResetDeck();
+        ResetCards();
         discoverInclude.Clear();
         feedInclude.Clear();
         RefreshAndConsumeLaunch();

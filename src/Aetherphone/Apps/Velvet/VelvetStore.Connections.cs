@@ -180,64 +180,7 @@ internal sealed partial class VelvetStore
                 notInterestedIds = new HashSet<string>(current, StringComparer.Ordinal) { userId };
             }
 
-            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedIds, passedAt), token)
-                .ConfigureAwait(false);
-        });
-    }
-
-    public void PassFromDiscover(string userId)
-    {
-        discoverResults = RemoveDiscover(discoverResults, userId);
-
-        var accountId = MyUserId;
-        var epoch = accountEpoch;
-        var stamp = UnixNow();
-        work.Run("discover pass save", async token =>
-        {
-            await EnsureNotInterestedLoadedAsync(token).ConfigureAwait(false);
-            if (epoch != accountEpoch)
-            {
-                return;
-            }
-
-            passedAt = new Dictionary<string, long>(passedAt, StringComparer.Ordinal) { [userId] = stamp };
-            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedIds, passedAt), token)
-                .ConfigureAwait(false);
-        });
-    }
-
-    public void CopyPassedIds(HashSet<string> into)
-    {
-        var passes = passedAt;
-        into.Clear();
-        foreach (var userId in passes.Keys)
-        {
-            into.Add(userId);
-        }
-    }
-
-    public void ClearPasses()
-    {
-        if (passedAt.Count == 0)
-        {
-            return;
-        }
-
-        passedAt = EmptyPasses;
-        discoverLoaded = false;
-
-        var accountId = MyUserId;
-        var epoch = accountEpoch;
-        work.Run("discover passes clear", async token =>
-        {
-            await EnsureNotInterestedLoadedAsync(token).ConfigureAwait(false);
-            if (epoch != accountEpoch)
-            {
-                return;
-            }
-
-            passedAt = EmptyPasses;
-            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedIds, passedAt), token)
+            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedIds), token)
                 .ConfigureAwait(false);
         });
     }
@@ -269,15 +212,7 @@ internal sealed partial class VelvetStore
                 notInterestedIds = trimmed;
             }
 
-            var passes = passedAt;
-            if (passes.ContainsKey(userId))
-            {
-                var trimmedPasses = new Dictionary<string, long>(passes, StringComparer.Ordinal);
-                trimmedPasses.Remove(userId);
-                passedAt = trimmedPasses;
-            }
-
-            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedIds, passedAt), token)
+            await Task.Run(() => notInterestedArchive.Save(accountId, notInterestedIds), token)
                 .ConfigureAwait(false);
         });
     }
