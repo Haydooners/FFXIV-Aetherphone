@@ -41,6 +41,7 @@ internal sealed class OnlineUnoTable
     private const int OrbitSegments = 64;
     private const int PileDepth = 4;
     private const int SeatFanLimit = 8;
+    private const float SeatHitRadius = 36f;
     private const long DepartureGraceMilliseconds = 1_500;
 
     private static readonly Vector4 DangerTint = new(0.85f, 0.35f, 0.32f, 1f);
@@ -112,6 +113,14 @@ internal sealed class OnlineUnoTable
     private float bannerProgress = 1f;
     private int wildPendingCard = -1;
     private int wildOpenedFrame = -1;
+    private int sevenPendingCard = -1;
+    private int sevenOpenedFrame = -1;
+    private int lastPendingDrawCount;
+    private int pendingLabelCount = -1;
+    private LanguageInfo? pendingLabelLanguage;
+    private string pendingStackBadge = string.Empty;
+    private string pendingDeckLabel = string.Empty;
+    private string pendingNoPlayableLabel = string.Empty;
 
     private Vector2 origin;
     private float uiScale = 1f;
@@ -137,6 +146,8 @@ internal sealed class OnlineUnoTable
         ambientColor = int.MinValue;
         bannerProgress = 1f;
         wildPendingCard = -1;
+        sevenPendingCard = -1;
+        lastPendingDrawCount = 0;
         particles.Clear();
         seatAnchors = Array.Empty<Vector2>();
         previousCounts = Array.Empty<int>();
@@ -172,6 +183,13 @@ internal sealed class OnlineUnoTable
         var ambient = StepAmbient(board.ActiveColor, delta);
         GameScene.Ambient(drawList, body, ambient);
 
+        if (board.RuleSet == GameRoomWire.RuleSetHouse)
+        {
+            var badgePos = origin + new Vector2(16f * scale, 16f * scale);
+            Typography.Draw(drawList, badgePos, Loc.T(L.Games.OnlineRuleHouse), theme.TextMuted, TextStyles.Caption1);
+        }
+
+        SyncPendingLabels(board.PendingDrawCount);
         ObserveBoard(board, players, mySeat, myTurn, accent, scale);
         ReconcileHand(hand, scale);
         AdvanceFlights(delta);
@@ -205,7 +223,7 @@ internal sealed class OnlineUnoTable
 
     private void EnsureSeatBuffers(int count)
     {
-        if (seatAnchors.Length == count)
+        if (seatAnchors.Length == count && seatCounts.Length == count && previousCounts.Length == count)
         {
             return;
         }
@@ -265,6 +283,12 @@ internal sealed class OnlineUnoTable
             slotCount = 0;
             seenActionCount = -1;
             lastTurnSeat = -2;
+            sevenPendingCard = -1;
+        }
+
+        if (!myTurn)
+        {
+            sevenPendingCard = -1;
         }
 
         var first = seenActionCount < 0;
@@ -283,6 +307,7 @@ internal sealed class OnlineUnoTable
         }
 
         SyncPile(board, scale);
+        lastPendingDrawCount = board.PendingDrawCount;
 
         if (board.TurnSeat != lastTurnSeat)
         {
@@ -333,8 +358,14 @@ internal sealed class OnlineUnoTable
             case GameRoomWire.UnoDrawEvent:
                 if (seatKnown && seat != mySeat)
                 {
-                    AddFlight(-1, deckAnchor, seatAnchors[seat], TableCardWidth * scale, SeatCardWidth * scale,
-                        0f, 0f, 0f, false, false);
+                    var drawn = board.RuleSet == GameRoomWire.RuleSetHouse && lastPendingDrawCount > 1
+                        ? lastPendingDrawCount
+                        : 1;
+                    for (var index = 0; index < drawn; index++)
+                    {
+                        AddFlight(-1, deckAnchor, seatAnchors[seat], TableCardWidth * scale, SeatCardWidth * scale,
+                            0f, 0f, index * DealStaggerSeconds, false, false);
+                    }
                 }
 
                 break;
@@ -377,7 +408,17 @@ internal sealed class OnlineUnoTable
             }
         }
 
-        if (penalty == 0 || seat < 0 || players.Length < 2)
+        if (board.RuleSet == GameRoomWire.RuleSetHouse && GameRoomWire.IsZero(board.LastCard))
+        {
+            ShowBanner(Loc.T(L.Games.OnlineHandsRotated), accent);
+        }
+
+        if (board.RuleSet == GameRoomWire.RuleSetHouse && GameRoomWire.IsSeven(board.LastCard))
+        {
+            ShowBanner(Loc.T(L.Games.OnlineHandSwapped), accent);
+        }
+
+        if (penalty == 0 || seat < 0 || players.Length < 2 || board.RuleSet == GameRoomWire.RuleSetHouse)
         {
             return;
         }
@@ -395,6 +436,53 @@ internal sealed class OnlineUnoTable
             AddFlight(-1, deckAnchor, seatAnchors[victim], TableCardWidth * scale, SeatCardWidth * scale, 0f, 0f,
                 FlightSeconds * 0.5f + index * DealStaggerSeconds, false, false);
         }
+    }
+
+    private void SyncPendingLabels(int pending)
+    {
+        if (pending == pendingLabelCount && ReferenceEquals(Loc.Current, pendingLabelLanguage))
+        {
+            return;
+        }
+
+        pendingLabelCount = pending;
+        pendingLabelLanguage = Loc.Current;
+        if (pending <= 1)
+        {
+            pendingStackBadge = string.Empty;
+            pendingDeckLabel = Loc.T(L.Games.OnlineDeck);
+            pendingNoPlayableLabel = Loc.T(L.Games.OnlineNoPlayable);
+            return;
+        }
+
+        var count = pending.ToString(Loc.Culture);
+        pendingStackBadge = string.Concat("+", count);
+        pendingDeckLabel = string.Concat(Loc.T(L.Games.OnlineDeck), " (+", count, ")");
+        pendingNoPlayableLabel = string.Concat(Loc.T(L.Games.OnlineNoPlayable), " (+", count, ")");
+    }
+
+    private int SoleOpponentSeat(UnoRoomStateDto board)
+    {
+        var players = board.Players ?? Array.Empty<UnoPlayerDto>();
+        var mySeat = SeatOf(players, store.AccountId);
+        var found = -1;
+        for (var index = 0; index < players.Length; index++)
+        {
+            var player = players[index];
+            if (player.Seat == mySeat || player.Away)
+            {
+                continue;
+            }
+
+            if (found >= 0)
+            {
+                return -1;
+            }
+
+            found = player.Seat;
+        }
+
+        return found;
     }
 
     private bool HoldsCard(int card)
@@ -655,6 +743,14 @@ internal sealed class OnlineUnoTable
             return;
         }
 
+        var pickingTarget = sevenPendingCard >= 0;
+        if (pickingTarget)
+        {
+            var promptPos = Absolute(new Vector2((deckAnchor.X + discardAnchor.X) * 0.5f, 10f * scale));
+            Typography.DrawCentered(drawList, promptPos, Loc.T(L.Games.OnlinePickTarget), accent,
+                TextStyles.Caption1);
+        }
+
         for (var seat = 0; seat < players.Length; seat++)
         {
             if (seat == mySeat)
@@ -664,6 +760,18 @@ internal sealed class OnlineUnoTable
 
             var player = players[seat];
             var anchor = Absolute(seatAnchors[seat]);
+
+            if (pickingTarget && !player.Away)
+            {
+                var hitRadius = SeatHitRadius * scale;
+                ProgressRing.Glow(anchor, hitRadius, accent, 0.3f + 0.25f * Pulse.Wave(Pulse.Calm));
+                if (UiInteract.HoverClickCircle(anchor, hitRadius))
+                {
+                    store.SendPlay(sevenPendingCard, seat);
+                    sevenPendingCard = -1;
+                }
+            }
+
             var dim = player.Away ? 0.35f : 1f;
             var onTurn = board.TurnSeat == seat && board.WinnerSeat < 0;
             if (onTurn)
@@ -692,6 +800,12 @@ internal sealed class OnlineUnoTable
             var name = Typography.FitText(player.DisplayName, nameWidth, TextStyles.Caption1);
             Typography.DrawCentered(drawList, new Vector2(anchor.X, anchor.Y + 40f * scale), name,
                 (onTurn ? theme.TextStrong : theme.TextMuted) with { W = dim }, TextStyles.Caption1);
+        }
+
+        if (sevenPendingCard >= 0 && ImGui.GetFrameCount() != sevenOpenedFrame
+            && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+        {
+            sevenPendingCard = -1;
         }
     }
 
@@ -725,7 +839,8 @@ internal sealed class OnlineUnoTable
         ProgressRing.Glow(discardCenter, cardWidth * 1.1f, ambient, 0.6f);
         DrawOrbit(drawList, theme, scale, board.Clockwise, (deckCenter + discardCenter) * 0.5f);
 
-        var canDraw = myTurn && !board.PendingDraw && !store.ActInFlight && board.WinnerSeat < 0;
+        var canDraw = myTurn && !board.PendingDraw && !store.ActInFlight && board.WinnerSeat < 0
+            && sevenPendingCard < 0;
         var deckRect = UnoCardArt.RectAround(deckCenter, cardWidth);
         var deckHovered = canDraw && UiInteract.Hover(deckRect.Min, deckRect.Max);
         var lift = deckLift.Step(deckHovered ? -6f * scale : 0f, 0.12f, delta);
@@ -742,6 +857,23 @@ internal sealed class OnlineUnoTable
         }
 
         UnoCardArt.DrawBack(drawList, topRect, scale, canDraw ? 1f : 0.8f);
+        if (board.PendingDrawCount > 1)
+        {
+            var badgeSize = Typography.Measure(pendingStackBadge, TextStyles.FootnoteEmphasized);
+            var badgePadding = new Vector2(10f * scale, 4f * scale);
+            var badgeBox = badgeSize + badgePadding;
+            var badgeCenter = topRect.Center;
+            var badgeMin = badgeCenter - badgeBox * 0.5f;
+            var badgeMax = badgeCenter + badgeBox * 0.5f;
+
+            var bgCol = ImGui.GetColorU32(new Vector4(0.85f, 0.18f, 0.18f, 0.95f));
+            var borderCol = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.85f));
+            drawList.AddRectFilled(badgeMin, badgeMax, bgCol, 6f * scale);
+            drawList.AddRect(badgeMin, badgeMax, borderCol, 6f * scale, 1.5f * scale);
+            Typography.DrawCentered(drawList, badgeCenter, pendingStackBadge, theme.TextStrong,
+                TextStyles.FootnoteEmphasized);
+        }
+
         if (canDraw)
         {
             Squircle.Stroke(drawList, topRect.Min, topRect.Max, cardWidth * 0.18f,
@@ -764,8 +896,9 @@ internal sealed class OnlineUnoTable
         Material.Frosted(drawList, pillCenter - pillSize * 0.5f, pillCenter + pillSize * 0.5f, pillSize.Y * 0.5f,
             scale, 0.95f);
         Typography.DrawCentered(drawList, pillCenter, countLabel, theme.TextStrong, TextStyles.Caption1);
+
         Typography.DrawCentered(drawList, new Vector2(deckCenter.X, pillCenter.Y + 18f * scale),
-            Loc.T(L.Games.OnlineDeck), theme.TextMuted, TextStyles.Caption2);
+            pendingDeckLabel, board.PendingDrawCount > 1 ? accent : theme.TextMuted, TextStyles.Caption2);
 
         for (var index = 0; index < pileCount; index++)
         {
@@ -871,7 +1004,7 @@ internal sealed class OnlineUnoTable
         if (myTurn && !pending && board.WinnerSeat < 0 && !AnyPlayable(hand, board))
         {
             Typography.DrawCentered(drawList, new Vector2(centerX, baseY + 126f * scale),
-                Typography.FitText(Loc.T(L.Games.OnlineNoPlayable), body.Width - 32f * scale, TextStyles.Footnote),
+                Typography.FitText(pendingNoPlayableLabel, body.Width - 32f * scale, TextStyles.Footnote),
                 theme.TextMuted, TextStyles.Footnote);
         }
     }
@@ -880,7 +1013,8 @@ internal sealed class OnlineUnoTable
     {
         for (var index = 0; index < hand.Length; index++)
         {
-            if (GameRoomWire.IsPlayable(hand[index], board.ActiveColor, board.DiscardTop))
+            if (GameRoomWire.IsPlayable(hand[index], board.ActiveColor, board.DiscardTop,
+            board.RuleSet, board.PendingDrawCount))
             {
                 return true;
             }
@@ -922,7 +1056,7 @@ internal sealed class OnlineUnoTable
         var fanAngle = FanMaxAngle * MathF.Min(1f, count / 7f);
 
         var hovered = -1;
-        var interactive = wildPendingCard < 0 && board.WinnerSeat < 0;
+        var interactive = wildPendingCard < 0 && sevenPendingCard < 0 && board.WinnerSeat < 0;
         var bandMin = new Vector2(body.Min.X, handTop - HoverLift * scale - 8f * scale);
         var bandMax = new Vector2(body.Max.X, body.Max.Y);
         if (interactive && UiInteract.Hover(bandMin, bandMax))
@@ -946,7 +1080,8 @@ internal sealed class OnlineUnoTable
         {
             ref var slot = ref slots[index];
             var playable = myTurn && board.WinnerSeat < 0
-                && GameRoomWire.IsPlayable(slot.Card, board.ActiveColor, board.DiscardTop)
+                && GameRoomWire.IsPlayable(slot.Card, board.ActiveColor, board.DiscardTop,
+                board.RuleSet, board.PendingDrawCount)
                 && (!pending || slot.Card == mine!.PendingDrawnCard);
             var lifted = index == hovered && playable;
             if (lifted)
@@ -1023,6 +1158,19 @@ internal sealed class OnlineUnoTable
                 swatchScales[swatch].SnapTo(0.6f);
             }
         }
+        else if (board.RuleSet == GameRoomWire.RuleSetHouse && GameRoomWire.IsSeven(picked.Card))
+        {
+            var soleOpponent = SoleOpponentSeat(board);
+            if (soleOpponent >= 0)
+            {
+                store.SendPlay(picked.Card, soleOpponent);
+            }
+            else
+            {
+                sevenPendingCard = picked.Card;
+                sevenOpenedFrame = ImGui.GetFrameCount();
+            }
+        }
         else
         {
             store.SendPlay(picked.Card, -1);
@@ -1039,7 +1187,8 @@ internal sealed class OnlineUnoTable
         }
 
         var playable = myTurn && board.WinnerSeat < 0
-            && GameRoomWire.IsPlayable(slot.Card, board.ActiveColor, board.DiscardTop)
+            && GameRoomWire.IsPlayable(slot.Card, board.ActiveColor, board.DiscardTop,
+            board.RuleSet, board.PendingDrawCount)
             && (!pending || slot.Card == mine!.PendingDrawnCard);
         var alpha = !myTurn ? 0.88f : playable ? 1f : 0.5f;
         var center = Absolute(new Vector2(slot.X.Value, slot.Y.Value));

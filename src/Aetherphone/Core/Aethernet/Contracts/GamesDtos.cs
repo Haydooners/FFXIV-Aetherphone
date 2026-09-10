@@ -81,6 +81,8 @@ internal sealed record UnoPlayerDto(
     int Wins = 0);
 
 internal sealed record UnoRoomStateDto(
+    int RuleSet = 0,
+    int PendingDrawCount = 0,
     long RoundIndex = 0,
     string HostUserId = "",
     UnoPlayerDto[]? Players = null,

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Aetherphone.Apps.Games.Framework;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
@@ -21,12 +22,17 @@ internal sealed class OnlineRoomView
     private const float RosterRowHeight = 56f;
     private const long NoticeMilliseconds = 4_000;
 
+    private static readonly LocString[] RuleSetLabels = [L.Games.OnlineRuleDefault, L.Games.OnlineRuleHouse];
+
     private readonly GameRoomsStore store;
+    private readonly DropdownMenu rulesMenu = new();
+    private readonly List<DropdownMenu.Item> rulesMenuItems = new();
     private readonly OnlineUnoTable unoTable;
     private readonly OnlineChessTable chessTable;
     private readonly OnlinePoolTable poolTable;
 
     private string inlineReason = string.Empty;
+    private int selectedRuleSet;
     private long noticeAtTick;
     private long copiedAtTick;
 
@@ -41,6 +47,9 @@ internal sealed class OnlineRoomView
     public void Enter()
     {
         inlineReason = string.Empty;
+        selectedRuleSet = GameRoomWire.RuleSetDefault;
+        rulesMenuItems.Clear();
+        rulesMenu.Close();
         unoTable.Reset();
         chessTable.Reset();
         poolTable.Reset();
@@ -221,6 +230,8 @@ internal sealed class OnlineRoomView
         var roster = held.Roster!;
         var players = roster.Players;
         var isHost = IsHost(roster);
+        rulesMenu.Gate();
+        var picked = DrawRulesMenu(body, theme);
 
         if (phase == GameRoomWire.PhaseFinished)
         {
@@ -231,6 +242,27 @@ internal sealed class OnlineRoomView
         if (inlineReason.Length > 0 && Environment.TickCount64 - noticeAtTick < NoticeMilliseconds)
         {
             DrawInlineNotice(theme, scale);
+        }
+
+        if (isHost && held.Snapshot.GameKind == GameRoomWire.UnoKind)
+        {
+            var pickOrigin = ImGui.GetCursorScreenPos();
+            var pickWidth = ScrollLayout.StableContentWidth();
+            var dropdownRect = new Rect(pickOrigin, new Vector2(pickOrigin.X + pickWidth, pickOrigin.Y + 36f * scale));
+
+            var label = Loc.T(RuleSetLabels[selectedRuleSet]);
+            if (GameHud.Button(new Vector2(dropdownRect.Center.X, dropdownRect.Center.Y),
+                new Vector2(pickWidth, 36f * scale), label, accent, theme))
+            {
+                OpenRulesMenu(dropdownRect);
+            }
+
+            if (picked >= 0)
+            {
+                selectedRuleSet = picked;
+            }
+
+            ImGui.Dummy(new Vector2(pickWidth, 40f * scale));
         }
 
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
@@ -261,7 +293,7 @@ internal sealed class OnlineRoomView
             if (GameHud.Button(primaryCenter, buttonSize, label, enough ? accent : theme.TextMuted, theme)
                 && enough && !store.ActInFlight)
             {
-                store.SendStart();
+                store.SendStart(selectedRuleSet);
             }
 
             if (!enough)
@@ -290,6 +322,34 @@ internal sealed class OnlineRoomView
 
         ImGui.SetCursorScreenPos(leaveOrigin);
         ImGui.Dummy(new Vector2(width, 40f * scale + Metrics.Space.Lg * scale));
+    }
+
+    private int DrawRulesMenu(Rect body, PhoneTheme theme)
+    {
+        if (!rulesMenu.Open || rulesMenuItems.Count == 0)
+        {
+            return -1;
+        }
+
+        var picked = rulesMenu.Draw(body, theme, CollectionsMarshal.AsSpan(rulesMenuItems));
+        if (picked >= 0)
+        {
+            rulesMenuItems.Clear();
+        }
+
+        return picked;
+    }
+
+    private void OpenRulesMenu(Rect anchor)
+    {
+        rulesMenuItems.Clear();
+        for (var index = 0; index < RuleSetLabels.Length; index++)
+        {
+            rulesMenuItems.Add(new DropdownMenu.Item(Loc.T(RuleSetLabels[index]), string.Empty, false,
+                index == selectedRuleSet));
+        }
+
+        rulesMenu.Toggle("uno.ruleset", anchor);
     }
 
     private void DrawFinishedBanner(PhoneTheme theme, float scale, GameRoomState held)

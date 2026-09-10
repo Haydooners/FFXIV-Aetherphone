@@ -232,9 +232,9 @@ internal sealed class GameRoomsStore : IDisposable
         Interlocked.Exchange(ref roomAttemptedAtTick, 0);
     }
 
-    public void SendStart()
+    public void SendStart(int ruleSet = GameRoomWire.RuleSetDefault)
     {
-        SendAction(GameRoomWire.ActionStart, -1, -1);
+        SendAction(GameRoomWire.ActionStart, ruleSet, -1);
     }
 
     public void SendPlay(int card, int chosenColor)
