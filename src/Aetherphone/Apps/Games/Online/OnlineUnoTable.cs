@@ -139,6 +139,7 @@ internal sealed class OnlineUnoTable
         bannerProgress = 1f;
         wildPendingCard = -1;
         particles.Clear();
+        seatAnchors = Array.Empty<Vector2>();
         previousCounts = Array.Empty<int>();
         seatCounts = Array.Empty<Spring>();
     }
@@ -210,7 +211,7 @@ internal sealed class OnlineUnoTable
 
     private void EnsureSeatBuffers(int count)
     {
-        if (seatAnchors.Length == count)
+        if (seatAnchors.Length == count && seatCounts.Length == count && previousCounts.Length == count)
         {
             return;
         }
