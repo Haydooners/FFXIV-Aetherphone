@@ -72,7 +72,7 @@ https://raw.githubusercontent.com/XeldarAlz/DalamudPlugins/main/repo.json
 
 **Enabled** kutusunu işaretleyin, **+** düğmesine tıklayın, ardından **Save and Close** deyin. `/xlplugins` → **All Plugins** açın, **Aetherphone** araması yapın ve kurun.
 
-Oyunun Çin sürümünde mi oynuyorsunuz? Telefon bunu algılar, orada kullanılamayan uygulamaları (Music, AetherStream ve News) gizler ve Lodestone yerine Rising Stones (石之家) profilinizle giriş yapmanızı sağlar.
+Oyunun Çin sürümünde mi oynuyorsunuz? Telefon bunu algılar, Lodestone yerine Rising Stones (石之家) profilinizle giriş yapmanızı sağlar ve ihtiyaç duyan uygulamaları Çin dünyalarına ve Çin haber akışına yönlendirir.
 
 ## Komutlar
 

@@ -72,7 +72,7 @@ https://raw.githubusercontent.com/XeldarAlz/DalamudPlugins/main/repo.json
 
 Marque **Enabled**, clique em **+** e depois em **Save and Close**. Abra `/xlplugins` → **All Plugins**, busque **Aetherphone** e instale.
 
-Você joga a versão chinesa do jogo? O telefone a detecta, oculta os aplicativos indisponíveis por lá (Music, AetherStream e News) e faz seu login pelo seu perfil do Rising Stones (石之家) em vez do Lodestone.
+Você joga a versão chinesa do jogo? O telefone a detecta, faz seu login pelo perfil do Rising Stones (石之家) em vez do Lodestone e aponta os apps que precisam disso para os mundos e o feed de notícias chineses.
 
 ## Comandos
 

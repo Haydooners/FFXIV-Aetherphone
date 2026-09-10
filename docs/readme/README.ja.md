@@ -72,7 +72,7 @@ https://raw.githubusercontent.com/XeldarAlz/DalamudPlugins/main/repo.json
 
 **Enabled** にチェックを入れ、**+** をクリックし、**Save and Close** を押します。`/xlplugins` → **All Plugins** を開き、**Aetherphone** を検索してインストールします。
 
-中国版でプレイしていますか？電話がそれを検出し、そこで利用できないアプリ（Music、AetherStream、News）を非表示にして、Lodestone の代わりに Rising Stones（石之家）のプロフィールでサインインします。
+中国版でプレイしていますか？電話がそれを検出し、Lodestone の代わりに Rising Stones（石之家）のプロフィールでサインインし、必要なアプリは中国版のワールドとニュースフィードを参照します。
 
 ## コマンド
 
