@@ -48,11 +48,11 @@ Check the tracker for anything labeled `good first issue`. Self-contained UI wor
 
 ## Security
 
-Please don't file public issues for security problems; see [SECURITY.md](SECURITY.md).
+Please don't file public issues for security problems; see [SECURITY.md](.github/SECURITY.md).
 
 ## Code of conduct
 
-See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Be decent.
+See [CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md). Be decent.
 
 ## License
 

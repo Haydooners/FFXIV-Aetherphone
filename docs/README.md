@@ -43,6 +43,8 @@ Every doc opens with one paragraph saying what it covers and when to read it, th
 
 Two exceptions keep their own format: [the art asset specification](ART-ASSET-SPEC.md), written for artists, numbered and table first, and [accent colors](design-accents.md), a short design rationale without the standard sections. Even [the translator guide](translating.md), a step-by-step walkthrough for contributors who are not engineers, follows the standard shape.
 
+`readme/` is not part of this doc set. It holds the eight translations of the user-facing project README, which follow the README's shape rather than the one described above. The English README stays at the repo root because GitHub renders only that one.
+
 ## All docs
 
 ### Orientation

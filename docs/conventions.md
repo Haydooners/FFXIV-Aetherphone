@@ -187,7 +187,7 @@ ci: stop pinging the role in commit announcements
 - **One concern per PR.** Keep the diff focused (CONTRIBUTING.md). A fix and a refactor are two PRs.
 - **No AI attribution.** Do not add co-author trailers or generated-with footers to commits or PR bodies. Commit messages carry substantive content only. This is the going-forward policy, not a description of history: a few dozen commits merged before mid-August 2026 still carry Co-authored-by trailers. Do not copy them.
 - **Declare your AI involvement level in the PR description** when you went past autocomplete, using the six level names in [AI usage](ai-usage.md). That doc is the disclosure seam; this rule is only about keeping commit messages free of boilerplate.
-- **Update the README when user-visible behavior changes**: commands, layout, settings (CONTRIBUTING.md). The README has eight translated siblings (README.fr.md and friends); update at least README.md.
+- **Update the README when user-visible behavior changes**: commands, layout, settings (CONTRIBUTING.md). The README has eight translations under docs/readme/ (README.fr.md and friends); update at least README.md at the repo root.
 - Release versioning is not part of a feature PR: the version lives in Directory.Build.props and CI fails if it drifts from repo.json (.github/workflows/ci.yml). See [Testing and release](testing-and-release.md).
 
 ## Gotchas

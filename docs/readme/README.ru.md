@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src/Aetherphone/Images/Icon.png" width="180" alt="Aetherphone icon" />
+  <img src="../../src/Aetherphone/Images/Icon.png" width="180" alt="Aetherphone icon" />
 </p>
 
 <h1 align="center">Aetherphone</h1>
@@ -10,11 +10,11 @@
   <a href="https://github.com/XeldarAlz/FFXIV-Aetherphone/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/XeldarAlz/FFXIV-Aetherphone?style=flat-square&color=blue"></a>
   <a href="https://github.com/XeldarAlz/FFXIV-Aetherphone/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/XeldarAlz/FFXIV-Aetherphone/total?style=flat-square&color=blue&cacheSeconds=300"></a>
   <a href="https://github.com/XeldarAlz/FFXIV-Aetherphone/actions/workflows/release.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/XeldarAlz/FFXIV-Aetherphone/release.yml?style=flat-square"></a>
-  <a href="LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue?style=flat-square"></a>
+  <a href="../../LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue?style=flat-square"></a>
 </p>
 
 <p align="center">
-  <a href="README.md"><img alt="English" src="https://img.shields.io/badge/English-lightgrey?style=flat-square"></a>
+  <a href="../../README.md"><img alt="English" src="https://img.shields.io/badge/English-lightgrey?style=flat-square"></a>
   <a href="README.de.md"><img alt="Deutsch" src="https://img.shields.io/badge/Deutsch-lightgrey?style=flat-square"></a>
   <a href="README.fr.md"><img alt="Français" src="https://img.shields.io/badge/Fran%C3%A7ais-lightgrey?style=flat-square"></a>
   <a href="README.es.md"><img alt="Español" src="https://img.shields.io/badge/Espa%C3%B1ol-lightgrey?style=flat-square"></a>
@@ -36,7 +36,7 @@
 ---
 
 <p align="center">
-  <img src="src/Aetherphone/Images/screenshots/Home.png" width="280" alt="Aetherphone in-game" />
+  <img src="../../src/Aetherphone/Images/screenshots/Home.png" width="280" alt="Aetherphone in-game" />
 </p>
 
 ## Что это такое
@@ -91,7 +91,7 @@ https://raw.githubusercontent.com/XeldarAlz/DalamudPlugins/main/repo.json
 
 Aetherphone имеет открытый исходный код, и вклад приветствуется. Начните с документации для разработчиков (на английском), затем прочитайте руководство по участию. Хотите вместо этого улучшить один из восьми переводов? Для этого не нужны ни код, ни сборка, ни git: руководство переводчика проведёт вас по всем шагам прямо в браузере.
 
-→ [Документация для разработчиков](docs/README.md) · [Руководство по участию](CONTRIBUTING.md) · [Руководство переводчика](docs/translating.md)
+→ [Документация для разработчиков](../README.md) · [Руководство по участию](../../CONTRIBUTING.md) · [Руководство переводчика](../translating.md)
 
 ## Ещё от меня
 
@@ -103,8 +103,8 @@ Aetherphone имеет открытый исходный код, и вклад �
 
 Использование онлайн-функций означает принятие условий обслуживания. Политика конфиденциальности описывает, что сервис Aethernet делает с вашими данными; офлайн-функции остаются на вашем компьютере, хотя некоторые приложения получают публичные игровые данные напрямую из сторонних сервисов, что политика также охватывает.
 
-→ [Условия обслуживания](TERMS.md) · [Политика конфиденциальности](PRIVACY.md) · [Политика товарных знаков и названия](TRADEMARK.md)
+→ [Условия обслуживания](../../TERMS.md) · [Политика конфиденциальности](../../PRIVACY.md) · [Политика товарных знаков и названия](../../TRADEMARK.md)
 
 ## Лицензия
 
-AGPL-3.0-or-later. См. [LICENSE.md](LICENSE.md).
+AGPL-3.0-or-later. См. [LICENSE.md](../../LICENSE.md).
