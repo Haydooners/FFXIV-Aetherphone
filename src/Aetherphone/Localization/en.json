@@ -5116,6 +5116,7 @@
   "changelog.sectionMessaging": "Messaging",
   "changelog.sectionPhone": "Phone",
   "changelog.sectionSocial": "Chirper and Aethergram",
+  "changelog.r1021.0": "Fixed pasted text sending itself: text you paste with a line break in it now waits in the box until you press Enter",
   "changelog.r1020.2": "Overhauled Velvet from top to bottom: the feed, discover, profiles, messages, the composer and the filters",
   "changelog.r1020.3": "Discover shows people as a scrolling list of photo cards, each with a line about what you two share",
   "changelog.r1020.5": "Added a race filter, and you pick the race you are shown as",

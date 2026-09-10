@@ -1746,6 +1746,12 @@ internal static class L
         public static readonly LocString SectionPhone = new("changelog.sectionPhone", "Phone");
         public static readonly LocString SectionSocial = new("changelog.sectionSocial", "Chirper and Aethergram");
 
+        public static readonly LocString[] Release1021Message =
+        {
+            new("changelog.r1021.0",
+                "Fixed pasted text sending itself: text you paste with a line break in it now waits in the box until you press Enter"),
+        };
+
         public static readonly LocString[] Release1020Velvet =
         {
             new("changelog.r1020.2",
