@@ -1850,6 +1850,8 @@ internal static class L
         {
             new("changelog.r1020.49",
                 "Fixed Uno showing an error instead of the table when you entered a new room with the same number of players as the last one"),
+            new("changelog.r1020.69",
+                "Added House Rules to Uno: the host picks the rule set when they deal, then +2 and +4 cards stack onto a running count, a seven swaps hands with the player you tap, and a zero rotates every hand one seat along the direction of play, contributed by Haydooners"),
         };
 
         public static readonly LocString[] Release1020Polls =

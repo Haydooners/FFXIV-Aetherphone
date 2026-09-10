@@ -5167,6 +5167,7 @@
   "changelog.r1020.47": "Schalter Kennzeichen anzeigen für jede App hinzugefügt, die eine Zahl auf ihrem Startbildschirmsymbol zeigt, auf der Seite Mitteilungen und Kennzeichen in den Einstellungen, beigetragen von Deldee",
   "changelog.r1020.48": "Die Kennzeichen-Schalter aus Geldbörse, Täglich und Aktivität sind auf dieselbe Seite umgezogen, beigetragen von Deldee",
   "changelog.r1020.49": "Behoben, dass Uno statt des Tisches einen Fehler zeigte, wenn man einen neuen Raum mit derselben Spielerzahl wie im vorherigen betrat",
+  "changelog.r1020.69": "Uno hat jetzt Hausregeln: Der Host wählt beim Geben das Regelwerk, dann stapeln sich +2 und +4 zu einer laufenden Summe, eine Sieben tauscht die Hand mit dem Spieler, den du antippst, und eine Null schiebt alle Hände einen Platz in Spielrichtung weiter, beigetragen von Haydooners",
   "changelog.r1020.52": "Umfrageergebnisse bleiben jetzt verborgen, bis du abgestimmt hast: die Balken, die Zahlen und die Gesamtsumme erscheinen erst, wenn du eine Option wählst",
   "changelog.r1020.53": "Beide Apps haben einen neuen Tab Für dich mit einem intelligenten Feed: die Beiträge, die du noch nicht gesehen hast, geordnet danach, wie Leute tatsächlich reagiert haben, mit wem du interagierst und welche Spieler deinen Geschmack teilen",
   "changelog.r1020.54": "Daneben liegt Neueste mit dem Feed neueste zuerst und einem Schalter Alle oder Folge ich",

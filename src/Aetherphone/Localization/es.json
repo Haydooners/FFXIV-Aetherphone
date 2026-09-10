@@ -5167,6 +5167,7 @@
   "changelog.r1020.47": "Añadido un interruptor Mostrar globo para cada aplicación que pone un número en su icono de inicio, en la página Notificaciones y globos de Ajustes, contribución de Deldee",
   "changelog.r1020.48": "Los interruptores de globo que estaban dentro de Cartera, Diarias y Actividad se han movido a esa misma página, contribución de Deldee",
   "changelog.r1020.49": "Corregido que Uno mostrara un error en lugar de la mesa al entrar en una sala nueva con el mismo número de jugadores que la anterior",
+  "changelog.r1020.69": "Añadidas las Reglas de la casa a Uno: el anfitrión elige el conjunto de reglas al repartir, y entonces las cartas +2 y +4 se acumulan en un contador, un siete intercambia la mano con el jugador que toques y un cero rota todas las manos un asiento en el sentido del juego, contribución de Haydooners",
   "changelog.r1020.52": "Los resultados de las encuestas ahora quedan ocultos hasta que votas: las barras, los recuentos y el total solo aparecen cuando eliges una opción",
   "changelog.r1020.53": "Ambas apps tienen una nueva pestaña Para ti con un feed inteligente: las publicaciones que aún no has visto, ordenadas según cómo respondió la gente de verdad, con quién interactúas y qué jugadores comparten tus gustos",
   "changelog.r1020.54": "A su lado está Recientes, con el feed de más nuevo a más antiguo y un interruptor Todos o Siguiendo",

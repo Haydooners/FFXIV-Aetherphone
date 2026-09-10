@@ -5167,6 +5167,7 @@
   "changelog.r1020.47": "Adicionada uma chave Mostrar contador para cada aplicativo que coloca um número no ícone da tela inicial, na página Notificações e contadores em Ajustes, contribuição de Deldee",
   "changelog.r1020.48": "As chaves de contador que ficavam dentro de Carteira, Diárias e Atividade foram movidas para essa mesma página, contribuição de Deldee",
   "changelog.r1020.49": "Corrigido o Uno mostrar um erro em vez da mesa ao entrar em uma sala nova com o mesmo número de jogadores da anterior",
+  "changelog.r1020.69": "Adicionadas Regras da Casa ao Uno: o anfitrião escolhe o conjunto de regras ao distribuir, e então as cartas +2 e +4 se acumulam em uma contagem, um sete troca a mão com o jogador que você tocar e um zero rotaciona todas as mãos um assento no sentido do jogo, contribuição de Haydooners",
   "changelog.r1020.52": "Os resultados das enquetes agora ficam escondidos até você votar: as barras, as contagens e o total só aparecem depois que você escolhe uma opção",
   "changelog.r1020.53": "Os dois apps ganharam uma aba Para você com um feed inteligente: as publicações que você ainda não viu, ordenadas por como as pessoas realmente reagiram, com quem você interage e quais jogadores compartilham o seu gosto",
   "changelog.r1020.54": "Ao lado fica Recentes, com o feed do mais novo ao mais antigo e um seletor Todos ou Seguindo",

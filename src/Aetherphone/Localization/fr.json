@@ -5167,6 +5167,7 @@
   "changelog.r1020.47": "Ajout d'un interrupteur Afficher la pastille pour chaque application qui affiche un nombre sur son icône d'accueil, sur la page Notifications et pastilles des Réglages, contribution de Deldee",
   "changelog.r1020.48": "Les interrupteurs de pastille qui se trouvaient dans Portefeuille, Quotidiens et Activité ont été déplacés sur cette même page, contribution de Deldee",
   "changelog.r1020.49": "Correction d'Uno qui affichait une erreur au lieu de la table en entrant dans un nouveau salon avec le même nombre de joueurs que le précédent",
+  "changelog.r1020.69": "Ajout des Règles maison à Uno : l'hôte choisit le jeu de règles à la distribution, puis les cartes +2 et +4 s'empilent sur un total courant, un sept échange la main avec le joueur que vous touchez et un zéro fait tourner toutes les mains d'une place dans le sens du jeu, contribution de Haydooners",
   "changelog.r1020.52": "Les résultats des sondages restent désormais masqués jusqu'à votre vote : les barres, les décomptes et le total n'apparaissent qu'une fois que vous avez choisi une option",
   "changelog.r1020.53": "Les deux applis ont un nouvel onglet Pour vous avec un fil intelligent : les publications que vous n'avez pas encore vues, ordonnées selon la réaction réelle des gens, les personnes avec qui vous interagissez et les joueurs qui partagent vos goûts",
   "changelog.r1020.54": "À côté, Récents garde le fil du plus récent au plus ancien avec un sélecteur Tout le monde ou Abonnements",
