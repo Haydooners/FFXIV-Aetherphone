@@ -1,6 +1,6 @@
 # Aetherphone Privacy Policy
 
-**Last updated:** 26 August 2026
+**Last updated:** 10 September 2026
 
 This policy explains what Aethernet, the online service behind Aetherphone's social features, does with your personal data.
 
@@ -64,27 +64,38 @@ Some things you may choose to share are treated as sensitive: sharing your in-ga
 
 We use a small number of service providers, each processing data only on our instructions:
 
-- **Railway**, hosting the application and its database
-- **Cloudflare**, object storage for the images, video, and audio you upload, plus network delivery and abuse filtering
+- **A hosting provider**, which runs the application and its database
+- **A storage and network provider**, which holds the images, video, and audio you upload and our backups, and filters abusive traffic
+- **A server provider**, which hosts the community radio streaming server. When you listen to or broadcast on a community station your phone connects to that server directly, so it sees your IP address.
 - **Patreon**, only if you choose to link it
 
 A current list of named sub-processors is available on request at the address above.
 
 We may disclose data where we are legally required to, or where it is necessary to investigate a serious safety issue. We will tell you when we are permitted to.
 
+## Services Aethernet contacts on your behalf
+
+To verify that you control a character, our server, not your machine, talks to the service you chose. Each receives only what verification needs, and each has its own privacy policy:
+
+- **The Lodestone** (Square Enix): your character name and home world, to find your profile and read the verification code you placed on it
+- **XIVAuth** (xivauth.net): a sign-in you complete in your browser, after which XIVAuth tells us which characters you have verified there. We send XIVAuth nothing about your Aethernet account.
+- **Rising Stones** (Shanghai Shengqu), on the Chinese game client: your Rising Stones identifier, to read the verification code you placed on your profile
+- **Patreon**, if you link it: a sign-in you complete in your browser, after which Patreon tells us your membership status, and tells us again when it changes
+
 ## Third-party services the plugin contacts directly
 
-Some apps fetch public game data straight from independent third-party services, from your machine, without going through Aethernet and without needing an account. These services are not our processors and we have no agreement with them: each one receives your IP address and the request itself (for example the item, region, or page you asked for), and each has its own privacy policy. We do not send them your Aethernet account data.
+Some apps fetch public data straight from independent third-party services, from your machine, without going through Aethernet and without needing an account. These services are not our processors and we have no agreement with them: each one receives your IP address and the request itself (for example the item, region, or page you asked for), and each has its own privacy policy. We do not send them your Aethernet account data. Two of them receive an identifier from the game: FFXIV Collect receives your Lodestone character ID to look up your collection, and the Lodestone receives your character name and home world to fetch your portrait.
 
 - **Universalis** (universalis.app): market board prices
 - **Lodestone News** (lodestonenews.com): the News app's articles
-- **The housing data service** (housing-api.yozoracho.dev): housing plot listings
-- **FFXIV Collect** (ffxivcollect.com): the Collections app's catalogues
+- **The housing data services** (housing-api.yozoracho.dev, and house.ffxiv.cyou on the Chinese client): housing plot listings
+- **FFXIV Collect** (ffxivcollect.com): the Collections app's catalogues and your collection progress
 - **FFXIV Venues and Partake** (api.ffxivvenues.com, api.partake.gg): venue and event listings
-- **Radio Browser** (all.api.radio-browser.info): the Music app's radio station directory
-- **GitHub** (raw.githubusercontent.com, api.github.com): the Shortcuts app's plugin catalogue, and the mpv and yt-dlp downloads AetherStream needs to play video
-- **YouTube** (youtube.com, i.ytimg.com): video streams and thumbnails when you play a YouTube link in AetherStream
-- **The Lodestone** (na.finalfantasyxiv.com): sign-in verification and character portraits
+- **Rolladeck** (xivrolladeck.com): the Music app's live DJ and venue list
+- **Radio Browser** (all.api.radio-browser.info): the Music app's radio station directory. Choosing a station then connects your phone to whichever server that station streams from; community stations stream from our own server, described above.
+- **GitHub** (raw.githubusercontent.com, api.github.com, github.com): the Shortcuts app's plugin catalogue, and the mpv, yt-dlp, and deno downloads AetherStream needs to play video
+- **YouTube** (youtube.com, googlevideo.com, i.ytimg.com): video streams and thumbnails when you play a YouTube link in AetherStream
+- **The Lodestone** (na.finalfantasyxiv.com and its image servers): character portraits, and the profile page the phone opens in your browser so you can paste your verification code
 
 ## International transfers
 
