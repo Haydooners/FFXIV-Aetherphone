@@ -218,6 +218,11 @@ internal sealed class SoftWrapEditor
             return 0;
         }
 
+        if (!ImGui.IsKeyPressed(ImGuiKey.Enter) && !ImGui.IsKeyPressed(ImGuiKey.KeypadEnter))
+        {
+            return 0;
+        }
+
         enterPressed = true;
         data.EventChar = 0;
         return 0;
