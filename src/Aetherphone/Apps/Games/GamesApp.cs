@@ -224,6 +224,7 @@ internal sealed partial class GamesApp : IPhoneApp
 
         if (route == GameRoute.OnlineHub)
         {
+            PaintViewBackdrop(area);
             onlineHub.Draw(context, back, ui);
             return;
         }
@@ -237,7 +238,14 @@ internal sealed partial class GamesApp : IPhoneApp
             return;
         }
 
+        PaintViewBackdrop(area);
         DrawLauncher(area);
+    }
+
+    private void PaintViewBackdrop(Rect area)
+    {
+        ui.Body(area);
+        GameScene.Ambient(ImGui.GetWindowDrawList(), screenRect, games[featuredIndex].Accent);
     }
 
     private void OpenOnlineHub(string preferredKind)
