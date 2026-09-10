@@ -1120,10 +1120,12 @@ internal abstract class SocialFeedStore : IDisposable
     private void ApplySensitiveEverywhere(string postId, bool sensitive)
     {
         forYouLane.Items = MapSensitive(forYouLane.Items, postId, sensitive);
+        latestLane.Items = MapSensitive(latestLane.Items, postId, sensitive);
         followingLane.Items = MapSensitive(followingLane.Items, postId, sensitive);
         profileLane.Items = MapSensitive(profileLane.Items, postId, sensitive);
         taggedLane.Items = MapSensitive(taggedLane.Items, postId, sensitive);
         savedLane.Items = MapSensitive(savedLane.Items, postId, sensitive);
+        likedLane.Items = MapSensitive(likedLane.Items, postId, sensitive);
         if (detailPost is { } current && current.Id == postId)
         {
             detailPost = current with { Sensitive = sensitive };
@@ -1138,9 +1140,11 @@ internal abstract class SocialFeedStore : IDisposable
     private void ApplySavedEverywhere(string postId, bool saved)
     {
         forYouLane.Items = MapSaved(forYouLane.Items, postId, saved);
+        latestLane.Items = MapSaved(latestLane.Items, postId, saved);
         followingLane.Items = MapSaved(followingLane.Items, postId, saved);
         profileLane.Items = MapSaved(profileLane.Items, postId, saved);
         taggedLane.Items = MapSaved(taggedLane.Items, postId, saved);
+        likedLane.Items = MapSaved(likedLane.Items, postId, saved);
         savedLane.Items = saved
             ? MapSaved(savedLane.Items, postId, true)
             : CopyOnWrite.RemoveById(savedLane.Items, postId);
@@ -1195,9 +1199,11 @@ internal abstract class SocialFeedStore : IDisposable
     private void RemoveAuthorEverywhere(string userId)
     {
         forYouLane.Items = BlockedContent.Purge(forYouLane.Items, userId);
+        latestLane.Items = BlockedContent.Purge(latestLane.Items, userId);
         followingLane.Items = BlockedContent.Purge(followingLane.Items, userId);
         profileLane.Items = BlockedContent.Purge(profileLane.Items, userId);
         taggedLane.Items = BlockedContent.Purge(taggedLane.Items, userId);
+        likedLane.Items = BlockedContent.Purge(likedLane.Items, userId);
         detailComments = CopyOnWrite.RemoveWhere(detailComments, comment => comment.AuthorId == userId);
         discoverResults = CopyOnWrite.RemoveWhere(discoverResults, user => user.Id == userId);
         if (detailPost is not { } current)
@@ -1577,6 +1583,7 @@ internal abstract class SocialFeedStore : IDisposable
     protected void AcceptCreatedPost(PostDto created)
     {
         forYouLane.Items = CopyOnWrite.Prepend(forYouLane.Items, created);
+        latestLane.Items = CopyOnWrite.Prepend(latestLane.Items, created);
         followingLane.Items = CopyOnWrite.Prepend(followingLane.Items, created);
         if (profileUserId is not null && profileUserId == created.AuthorId)
         {
@@ -1587,11 +1594,13 @@ internal abstract class SocialFeedStore : IDisposable
     protected void ReplacePost(PostDto updated)
     {
         forYouLane.Items = CopyOnWrite.Replace(forYouLane.Items, updated);
+        latestLane.Items = CopyOnWrite.Replace(latestLane.Items, updated);
         followingLane.Items = CopyOnWrite.Replace(followingLane.Items, updated);
         profileLane.Items = CopyOnWrite.Replace(profileLane.Items, updated);
         savedLane.Items = CopyOnWrite.Replace(savedLane.Items, updated);
         taggedLane.Items = CopyOnWrite.Replace(taggedLane.Items, updated);
         hashtagLane.Items = CopyOnWrite.Replace(hashtagLane.Items, updated);
+        likedLane.Items = CopyOnWrite.Replace(likedLane.Items, updated);
         if (detailPost is { } current && current.Id == updated.Id)
         {
             detailPost = updated;
@@ -1601,11 +1610,13 @@ internal abstract class SocialFeedStore : IDisposable
     protected void RemovePost(string postId)
     {
         forYouLane.Items = CopyOnWrite.RemoveById(forYouLane.Items, postId);
+        latestLane.Items = CopyOnWrite.RemoveById(latestLane.Items, postId);
         followingLane.Items = CopyOnWrite.RemoveById(followingLane.Items, postId);
         profileLane.Items = CopyOnWrite.RemoveById(profileLane.Items, postId);
         savedLane.Items = CopyOnWrite.RemoveById(savedLane.Items, postId);
         taggedLane.Items = CopyOnWrite.RemoveById(taggedLane.Items, postId);
         hashtagLane.Items = CopyOnWrite.RemoveById(hashtagLane.Items, postId);
+        likedLane.Items = CopyOnWrite.RemoveById(likedLane.Items, postId);
         if (detailPost is { } current && current.Id == postId)
         {
             detailPost = null;
@@ -1618,11 +1629,13 @@ internal abstract class SocialFeedStore : IDisposable
     protected void BumpCommentCount(string postId, int delta)
     {
         forYouLane.Items = MapCommentCount(forYouLane.Items, postId, delta);
+        latestLane.Items = MapCommentCount(latestLane.Items, postId, delta);
         followingLane.Items = MapCommentCount(followingLane.Items, postId, delta);
         profileLane.Items = MapCommentCount(profileLane.Items, postId, delta);
         savedLane.Items = MapCommentCount(savedLane.Items, postId, delta);
         taggedLane.Items = MapCommentCount(taggedLane.Items, postId, delta);
         hashtagLane.Items = MapCommentCount(hashtagLane.Items, postId, delta);
+        likedLane.Items = MapCommentCount(likedLane.Items, postId, delta);
         if (detailPost is { } current && current.Id == postId)
         {
             detailPost = current with { CommentCount = Math.Max(0, current.CommentCount + delta) };
@@ -1635,10 +1648,12 @@ internal abstract class SocialFeedStore : IDisposable
         userListResults = MapFollow(userListResults, userId, following, requested);
         followRequests = MapFollow(followRequests, userId, following, requested);
         forYouLane.Items = MapFollowByAuthor(forYouLane.Items, userId, following);
+        latestLane.Items = MapFollowByAuthor(latestLane.Items, userId, following);
         followingLane.Items = MapFollowByAuthor(followingLane.Items, userId, following);
         profileLane.Items = MapFollowByAuthor(profileLane.Items, userId, following);
         taggedLane.Items = MapFollowByAuthor(taggedLane.Items, userId, following);
         savedLane.Items = MapFollowByAuthor(savedLane.Items, userId, following);
+        likedLane.Items = MapFollowByAuthor(likedLane.Items, userId, following);
         if (detailPost is { } post && post.AuthorId == userId && post.IsFollowing != following)
         {
             detailPost = post with { IsFollowing = following };

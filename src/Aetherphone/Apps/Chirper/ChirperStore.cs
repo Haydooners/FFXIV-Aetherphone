@@ -152,6 +152,8 @@ internal sealed class ChirperStore : SocialFeedStore
 
         forYouLane.Items = CopyOnWrite.RemoveWhere(forYouLane.Items,
             post => post.RepostOfId == originalId && post.AuthorId == me.Id);
+        latestLane.Items = CopyOnWrite.RemoveWhere(latestLane.Items,
+            post => post.RepostOfId == originalId && post.AuthorId == me.Id);
         followingLane.Items = CopyOnWrite.RemoveWhere(followingLane.Items,
             post => post.RepostOfId == originalId && post.AuthorId == me.Id);
         profileLane.Items = CopyOnWrite.RemoveWhere(profileLane.Items,
