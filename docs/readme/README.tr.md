@@ -41,20 +41,24 @@
 
 ## Nedir
 
-Aetherphone, FINAL FANTASY XIV içinde ekrana gerçek bir akıllı telefon getiren, ücretsiz ve açık kaynaklı bir Dalamud eklentisidir: ana ekranı, uygulama değiştiricisi, bildirimleri, zil sesleri ve temalandırılabilir duvar kağıtları olan, sabitlenmiş ve her zaman açık bir cihaz. Uygulamaların arkasında Aetherphone kullanıcıları için kendi sosyal ağı çalışır; böylece uygulamalar yalnızca yerel olarak değil, karakterler ve oturumlar arasında çalışır.
-
-Gizlilik ve güvenlik her şeyden önce gelir: metin mesajları, ekler ve sesli notlar uçtan uca şifrelidir, aramalar aktarım sırasında şifrelenir; gönderiler ile görseller, net içerik kuralları çerçevesinde insanlardan oluşan bir moderasyon ekibi tarafından incelenir.
+Aetherphone, FINAL FANTASY XIV için tam anlamıyla çalışan ilk ve tek telefon eklentisidir: ana ekranı, uygulama değiştiricisi ve bildirimleri olan, sabitlenmiş ve her zaman açık bir cihaz. Uygulamaların arkasında kendi sosyal ağı çalışır; paylaştıkların, gönderdiklerin ve kaydettiklerin yalnızca kendi bilgisayarında kalmaz, karakterler, dünyalar ve oturumlar arasında seninle gelir.
 
 ## Öne çıkanlar
 
-- **Sosyal**: bir mikroblog, bir fotoğraf akışı ve sesli notlar ile grup aramalarına sahip özel mesajlaşma, ayrıca isteğe bağlı bir 18+ yardımcı uygulama.
-- **Oyun sohbeti**: oyundaki tüm sohbet kanalları telefonda; sekmeleri kendin oluşturursun, tell mesajları ise ayrı konuşmalar olarak gelir.
-- **Araçlar**: bir pazar takipçisi, bir konut tarayıcısı, mekan ve etkinlik rehberi, canlı topluluk radyo istasyonları ve Rolladeck DJ listeleriyle oyun içi müzik, hava durumu, bir cüzdan, zamanlayıcılar ve sıfırlamalar, bir fotoğraf kitaplığı ve kamera, kısayollar ve bir cep mini oyun salonu; 40 uygulama arasında.
-- **Birlikte izleyin**: YouTube dahil videolar oyun içindeki bir ekranda, birlikte izleyen herkes için eşitlenmiş oynatmayla. Yerel dosyalar da çalışır: her izleyici kendi kopyasını seçer ve eşitlenmiş kalır.
-- **Kumarhane**: oyun parasıyla blackjack, slotlar, kazı kazan kartları, ortak bir çark ve tombala. Gerçek para yoktur ve hiçbir şeyin nakit değeri yoktur.
-- **Kendine göre yap**: istediğin vurgu rengi, duvar kağıtları, Lodestone karakter portreleri, özel zil sesleri, göze batmayan arayüz sesleri, yazı boyutu yakınlaştırması ve istediğin boyuta sürükleyebileceğin bir telefon. Küçültülmüşken yalnızca seçtiğin parçaları, seçtiğin sırayla gösterir: saat, tarih, şimdi çalıyor, aramalar, bildirim kartları, okunmamış rozeti ve Eorzea saati, hava, sonraki sıfırlama, gil, Aether Coin, hizmetkâr görevleri ve etkinlik halkaları için widget'lar, istersen duvar kâğıdının üzerinde. Bunun yerine canlı bir bölge mini haritasına da katlanabilir; üç boyutu var, böylece arayüzünde oyunun mini haritasının yerini alabilir.
+- **Arayüzünün içinde yaşayan bir telefon.** İstediğin yere sürükle, istediğin boyuta getir, yalnızca seçtiğin widget'ları gösteren bir şeride küçült. Canlı bir bölge mini haritasına katlanıp oyunun mini haritasının yerini de alabilir.
+- **Hangi dünyada olursa olsun herkese yaz.** ChocoChat, dünya ya da veri merkezi fark etmeksizin her Aetherphone kullanıcısına ulaşır; sesli notlar, grup sohbetleri ve doğrudan kişi kartından başlattığın sesli aramalar var. Parti yok, arkadaş listesi yok, seyahat yok.
+- **Kendi sosyal uygulamaların.** Kısa gönderiler için Chirper, fotoğraflar için Aethergram ve isteğe bağlı 18+ yardımcı uygulama Velvet. Tek bir kimlik hepsinde geçerli ve karakter değiştirsen de seninle gelir.
+- **Oyundaki her sohbet kanalı, yeniden düzenlenmiş.** Linkpearl oyun sohbetinin tamamını kendi kurduğun sekmelere taşır; tell'ler ayrı birer konuşma olur, her kanalın kendi renkleri olur ve yazma alanı oyunun kesip atacağı uzun mesajları bölüp aralıklarla gönderir.
+- **Telefon kapalıyken sohbet.** Herhangi bir konuşmayı yüzen bir pencereye çıkar, pencereleri sekme olarak birleştir, savaşta ve görevlerde kendiliğinden gizlenip sonra geri gelmelerini sağla.
+- **Oyunu seninle oynayan uygulamalar.** Her mekanikte senin yerinin işaretlendiği baskın kopya kağıtlarıyla Strats, işaretler ve trenler için Avlar, okyanus seferleri için Balıkçılık, ayrıca Pazar, Housing, Haritalar, Mekanlar, Günlükler, Koleksiyonlar ve Envanter.
+- **Günlük işler de burada.** Notlar, Takvim, sıfırlamalar ve hizmetkarlar için Zamanlayıcılar, Hesap Makinesi, Cüzdan, Kamera ve Fotoğraflar, Saat, hava için Gökgözcü ve hotbar makrosundan tetikleyebileceğin Kısayollar.
+- **Birlikte izle, birlikte dinle.** MogCast videoyu oyun dünyasındaki bir ekrana yansıtır ve oynatmayı oradaki herkes için eşitler; Müzik ise canlı topluluk radyolarını ve Rolladeck DJ setlerini oyunun içine getirir.
+- **Senin dilini konuşur.** Gönderilerde, profillerde ve özel mesajlarda tek dokunuşla çeviri; akışlar ve sohbetler geleni anında çevirebilir.
+- **Mola da dahil.** Gamba oyun parasıyla oynanan bir kumarhane: blackjack, slotlar, kazı kazan, tombala ve ortak bir çark, ve hiçbirinin nakit değeri yok. Oyunlar ise Doom'un da içinde olduğu otuzu aşkın oyunluk bir atari salonu; Uno, Satranç ve Bilardo'yu arkadaşlarınla çevrimiçi oynayabilirsin.
+- **Kendine göre ayarla.** Kendi duvar kağıtların, kendi zil ve bildirim seslerin, istediğin vurgu rengi, Lodestone karakter portreleri, göze batmayan arayüz sesleri ve yazı boyutu yakınlaştırması.
+- **Tasarımı gereği özel.** Mesajlar, ekler ve sesli notlar uçtan uca şifreli, aramalar aktarım sırasında şifreli, herkese açık gönderi ve görselleri ise insanlardan oluşan bir moderasyon ekibi inceliyor.
 
-Tüm özellik turu, ekran görüntüleri ve ayrıntılar web sitesinde:
+Toplam 42 uygulama. Tüm özellik turu, ekran görüntüleri ve ayrıntılar web sitesinde:
 
 → **[www.aetherphone.net](https://www.aetherphone.net/)**
 

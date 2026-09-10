@@ -41,20 +41,24 @@
 
 ## Was es ist
 
-Aetherphone ist ein kostenloses, quelloffenes Dalamud-Plugin, das ein echtes Smartphone auf den Bildschirm von FINAL FANTASY XIV bringt: ein angedocktes, dauerhaft sichtbares Gerät mit Startbildschirm, App-Umschalter, Benachrichtigungen, Klingeltönen und individuell gestaltbaren Hintergründen. Hinter den Apps läuft ein eigenes soziales Netzwerk für Aetherphone-Nutzer, sodass sie über Charaktere und Sitzungen hinweg funktionieren, nicht nur lokal.
-
-Privatsphäre und Sicherheit stehen an erster Stelle: Textnachrichten, Anhänge und Sprachnotizen sind Ende-zu-Ende-verschlüsselt, Anrufe sind auf dem Transportweg verschlüsselt, und Beiträge und Bilder werden von einem menschlichen Moderationsteam nach klaren Inhaltsregeln geprüft.
+Aetherphone ist das erste und einzige voll funktionsfähige Telefon-Plugin für FINAL FANTASY XIV: ein angedocktes, dauerhaft sichtbares Gerät mit Startbildschirm, App-Umschalter und Benachrichtigungen. Hinter den Apps läuft ein eigenes soziales Netzwerk, sodass alles, was du postest, sendest und speicherst, dir über Charaktere, Welten und Sitzungen hinweg folgt, statt nur auf deinem Rechner zu liegen.
 
 ## Highlights
 
-- **Soziales**: ein Microblog, ein Foto-Feed und private Nachrichten mit Sprachnotizen und Gruppenanrufen, dazu eine optionale Companion-App ab 18.
-- **Spielchat**: jeder Chat-Kanal des Spiels auf dem Telefon, in selbst zusammengestellten Tabs, mit Tells als eigenen Unterhaltungen.
-- **Werkzeuge**: ein Marktbrett-Tracker, ein Housing-Browser, ein Verzeichnis für Locations und Events, In-Game-Musik mit Live-Community-Radiosendern und Rolladeck-DJ-Listings, Wetter, eine Geldbörse, Timer und Resets, eine Fotobibliothek und Kamera, Kurzbefehle sowie eine Taschenspielhalle voller Minispiele, unter 40 Apps.
-- **Gemeinsam schauen**: Videos, auch von YouTube, auf einem Bildschirm im Spiel, mit synchroner Wiedergabe für alle, die zuschauen. Auch lokale Dateien funktionieren: Jeder Zuschauer wählt seine eigene Kopie und bleibt synchron.
-- **Casino**: Spielgeld-Blackjack, Slots, Rubbellose, ein gemeinsames Rad und Bingo. Kein echtes Geld, und nichts hat einen Geldwert.
-- **Mach es zu deinem**: jede Akzentfarbe, Hintergründe, Lodestone-Charakterporträts, eigene Klingeltöne, dezente Bedienungstöne, ein Textgrößen-Zoom und ein Telefon, das du auf jede Größe ziehen kannst. Minimiert zeigt es nur die Teile, die du auswählst, in deiner Reihenfolge: Uhr, Datum, Wiedergabe, Anrufe, Mitteilungskarten, Ungelesen-Abzeichen sowie Widgets für Eorzea-Zeit, Wetter, den nächsten Reset, Gil, Aether Coin, Unternehmungen und deine Aktivitätsringe, auf Wunsch vor deinem Hintergrundbild. Es kann sich stattdessen auch zu einer lebendigen Gebiets-Minikarte zusammenfalten, in drei Größen, sodass es in deinem Layout den Platz der Spiel-Minikarte einnehmen kann.
+- **Ein Telefon in deinem HUD.** Zieh es überallhin, skaliere es nach Belieben und minimiere es zu einer Leiste, die nur die Widgets deiner Wahl zeigt. Es lässt sich auch zu einer Live-Zonenkarte zusammenklappen und kann die Minimap des Spiels ersetzen.
+- **Schreib jedem, auf jeder Welt.** ChocoChat erreicht jede Person mit Aetherphone, egal auf welcher Welt oder in welchem Rechenzentrum, mit Sprachnachrichten, Gruppenchats und Sprachanrufen direkt aus einem Kontakt heraus. Keine Gruppe, keine Freundesliste, keine Reise nötig.
+- **Eigene soziale Apps.** Chirper für kurze Beiträge, Aethergram für Fotos und Velvet als optionale 18+-Begleit-App. Eine Identität gilt in allen dreien und folgt dir über deine Charaktere hinweg.
+- **Jeder Chatkanal des Spiels, neu sortiert.** Linkpearl bringt den kompletten Spielchat in Tabs, die du selbst zusammenstellst, mit Flüstern als eigene Unterhaltungen, Farben pro Kanal und einem Eingabefeld, das zu lange Nachrichten aufteilt und getaktet abschickt.
+- **Chatten bei geschlossenem Telefon.** Löse jede Unterhaltung als schwebendes Fenster heraus, führe Fenster zu Tabs zusammen und lass sie sich im Kampf und in Instanzen ausblenden und danach von selbst zurückkommen.
+- **Apps, die mitspielen.** Strats für Raid-Spickzettel mit deiner Position bei jeder Mechanik, Jagden für Marken und Züge, Angeln für Ozeanfahrten, dazu Markt, Housing, Karten, Locations, Täglich, Sammlungen und Inventar.
+- **Und der Alltagskram.** Notizen, Kalender, Timer für Resets und Gehilfen, Rechner, Geldbörse, Kamera und Fotos, Uhr, Wetterwart fürs Wetter und Kurzbefehle, die du per Hotbar-Makro auslösen kannst.
+- **Gemeinsam schauen und hören.** MogCast wirft Videos auf eine Leinwand in der Spielwelt, synchron für alle Anwesenden, und Musik holt Community-Radiosender und Rolladeck-DJ-Sets ins Spiel.
+- **Spricht deine Sprache.** Übersetzung mit einem Tipp bei Beiträgen, Profilen und privaten Nachrichten, und Feeds wie Chats können alles gleich beim Eintreffen übersetzen.
+- **Auszeit inklusive.** Gamba ist ein Casino mit Spielgeld: Blackjack, Automaten, Rubbellose, Bingo und ein gemeinsames Glücksrad, und nichts davon hat einen Geldwert. Spiele ist eine Arcade mit über dreißig Titeln, Doom darunter, dazu Uno, Schach und Billard online gegen Freunde.
+- **Mach es zu deinem.** Eigene Hintergrundbilder, eigene Klingel- und Benachrichtigungstöne, jede Akzentfarbe, Lodestone-Charakterporträts, dezente Oberflächenklänge und eine Textgröße zum Zoomen.
+- **Privat von Grund auf.** Nachrichten, Anhänge und Sprachnachrichten sind Ende-zu-Ende-verschlüsselt, Anrufe werden bei der Übertragung verschlüsselt, und ein Team aus Menschen prüft öffentliche Beiträge und Bilder.
 
-Die vollständige Feature-Tour, Screenshots und Details findest du auf der Website:
+42 Apps insgesamt. Die vollständige Feature-Tour, Screenshots und Details findest du auf der Website:
 
 → **[www.aetherphone.net](https://www.aetherphone.net/)**
 

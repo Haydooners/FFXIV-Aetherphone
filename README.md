@@ -41,24 +41,24 @@
 
 ## What it is
 
-Aetherphone is a free, open-source Dalamud plugin that puts a real smartphone on screen in FINAL FANTASY XIV: a docked, always-on device with a home screen, an app switcher, notifications, ringtones, and themeable wallpapers. Behind the apps runs its own social network for Aetherphone users, so they work across characters and sessions, not just locally.
-
-Privacy and safety come first: text messages, attachments, and voice notes are end-to-end encrypted, calls are encrypted in transit, and posts and images are reviewed by a human moderation team under clear content rules.
+Aetherphone is the first and only fully working phone plugin for FINAL FANTASY XIV: a docked, always-on device with a home screen, an app switcher, and notifications. Behind the apps runs its own social network, so what you post, send, and save carries across characters, worlds, and sessions instead of living only on your machine.
 
 ## Highlights
 
-- **Social**: a microblog, a photo feed, and ChocoChat, a WhatsApp-style messenger with voice notes, group chats (photos, descriptions, admins and sender photos beside each message), online dots on your contacts, chat themes, wallpapers and group calls, plus an optional 18+ companion app. Any ChocoChat conversation pops out into its own floating window from the more options menu, so it keeps going while the phone is closed. Messages can run to several lines: Shift and Enter starts a new one, the box grows as you type, and Enter sends.
-- **Speaks your language**: posts, comments, profiles, ads, event and venue descriptions, stories, and private messages written in another language get a one-tap Translate link; feeds can translate automatically, and any chat can be set to translate new messages as they arrive.
-- **Game chat**: every game chat channel on the phone, in tabs you build yourself, with tells as their own conversations. Pin and mute any conversation from its row, start tabs from ready-made presets, and pop any conversation out into a small floating window that keeps chatting while the phone is closed or minimized, with new tells able to pop up on their own.
-- **Pop-out chat windows**: group several conversations into one window as tabs, or drag one window onto another to merge them. Fold a window down to its title bar when you want it out of the way, let it fade while you are not looking at it, and have every window hide itself in combat or in a duty and come back afterwards. A hotkey opens and cycles your recent chats, and a switch in General settings adds a chat entry to the game's right-click menu on players.
-- **Writing in game chat**: a composer that wraps to several lines, splits a message too long for the game into parts and paces them out, keeps a draft per conversation, and remembers what you sent in case a line never arrived. Type an emoji shortcode like `:smile:` and see it drawn, pick one from a button in the composer, and run a slash command straight from the box.
-- **Chat your way**: give any channel its own colors for names and messages, tell a channel never to mark you unread, hide your own lines in it, or let the phone be the only place it shows and keep it out of the game's chat log. From any chat line, invite, friend, blacklist, target, or open someone's adventurer plate.
-- **Utilities**: a market board tracker, a housing browser, a hunt train tracker, a venue and event directory, raid strategy cheatsheets from WTFDIG with your spot marked on every mechanic, in-game music with live community radio stations and Rolladeck DJ listings, weather, a wallet, timers and resets, a photo library and camera, shortcuts, and a pocket arcade of mini-games with Doom among them, among 42 apps.
-- **Watch together**: cast video, YouTube included, onto an in-world screen, with playback synced for everyone watching along. Local files work too: each viewer picks their own copy and stays in sync.
-- **Casino**: play-money blackjack, slots, scratch cards, a communal wheel, and bingo. No real money, and nothing has cash value.
-- **Make it yours**: any accent color, wallpapers, Lodestone character portraits, custom ringtones, subtle interface sounds, a text-size zoom, and a phone you can drag to any size. Minimized, it shows only the pieces you pick, in the order you pick: clock, date, Now Playing, calls, alert cards, unread badge, and widgets for Eorzea time, weather, the next reset, gil, Aether Coin, ventures, and your activity rings, over your wallpaper if you want it. It can also collapse into a live zone minimap instead, in three sizes, so it can take the place of the game minimap on your layout.
+- **A phone that lives in your HUD.** Drag it anywhere, size it how you like, and minimize it into a strip that shows only the widgets you pick. It can also fold into a live zone minimap and take the game minimap's place.
+- **Message anyone, on any world.** ChocoChat reaches every Aetherphone user no matter their world or data center, with voice notes, group chats, and voice calls you place straight from a contact. No party, no friend list, no travel.
+- **Social apps of your own.** Chirper for short posts, Aethergram for photos, and Velvet, an optional 18+ companion. One identity carries across all of them and follows you between characters.
+- **Every game chat channel, reorganized.** Linkpearl puts all of game chat in tabs you build yourself, with tells as their own conversations, per-channel colors, and a composer that splits and paces messages the game would cut off.
+- **Chat with the phone closed.** Pop any conversation into a floating window, merge windows into tabs, and let them hide during combat and duties, then come back on their own.
+- **Apps that play the game with you.** Strats for raid cheatsheets with your spot marked on each mechanic, Hunts for marks and trains, Fishing for ocean voyages, plus Market, Housing, Maps, Venues, Dailies, Collections, and Inventory.
+- **The everyday utilities too.** Notes, Calendar, Timers for resets and retainers, Calculator, Wallet, Camera and Photos, Clock, Skywatcher for weather, and Shortcuts you can fire from a hotbar macro.
+- **Watch and listen together.** MogCast casts video onto an in-world screen with playback synced for everyone present, and Music brings live community radio and Rolladeck DJ sets in game.
+- **Speaks your language.** One-tap translation on posts, profiles, and private messages, with feeds and chats able to translate everything as it arrives.
+- **Downtime built in.** Gamba is a play-money casino with blackjack, slots, scratch cards, bingo, and a communal wheel, and nothing there has cash value. Games is an arcade of thirty-plus titles with Doom among them, plus Uno, Chess, and Pool against friends online.
+- **Make it yours.** Custom wallpapers, your own ringtone and notification sounds, any accent color, Lodestone character portraits, subtle interface sounds, and a text-size zoom.
+- **Private by design.** Messages, attachments, and voice notes are end-to-end encrypted, calls are encrypted in transit, and a human moderation team reviews public posts and images.
 
-Full feature tour, screenshots, and details live on the website:
+Forty-two apps in all. Full feature tour, screenshots, and details live on the website:
 
 → **[www.aetherphone.net](https://www.aetherphone.net/)**
 

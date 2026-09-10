@@ -41,20 +41,24 @@
 
 ## Ce que c'est
 
-Aetherphone est un plugin Dalamud gratuit et open source qui place un véritable smartphone à l'écran dans FINAL FANTASY XIV : un appareil ancré et toujours visible, avec un écran d'accueil, un sélecteur d'applications, des notifications, des sonneries et des fonds d'écran personnalisables. Derrière les applications tourne son propre réseau social pour les utilisateurs d'Aetherphone, si bien qu'elles fonctionnent d'un personnage à l'autre et d'une session à l'autre, pas seulement en local.
-
-La confidentialité et la sécurité passent avant tout : les messages texte, les pièces jointes et les notes vocales sont chiffrés de bout en bout, les appels sont chiffrés en transit, et les publications et images sont examinées par une équipe de modération humaine selon des règles de contenu claires.
+Aetherphone est le premier et le seul plugin de téléphone pleinement fonctionnel pour FINAL FANTASY XIV : un appareil ancré, toujours affiché, avec écran d'accueil, sélecteur d'applications et notifications. Derrière les applications tourne son propre réseau social, si bien que ce que vous publiez, envoyez et enregistrez vous suit d'un personnage, d'un monde et d'une session à l'autre au lieu de rester sur votre machine.
 
 ## Points forts
 
-- **Social** : un microblog, un fil de photos et une messagerie privée avec notes vocales et appels de groupe, plus une application compagnon optionnelle réservée aux plus de 18 ans.
-- **Chat du jeu** : tous les canaux de discussion du jeu sur le téléphone, dans des onglets que vous composez vous-même, avec les tells en conversations à part.
-- **Utilitaires** : un suivi du marché, un navigateur de terrains, un répertoire de lieux et d'événements, de la musique en jeu avec des stations de radio communautaires en direct et des listes de DJs Rolladeck, la météo, un portefeuille, des minuteurs et réinitialisations, une photothèque et un appareil photo, des raccourcis, et une salle d'arcade de poche de mini-jeux, parmi 40 applications.
-- **Regarder ensemble** : des vidéos, y compris YouTube, sur un écran en jeu, avec une lecture synchronisée pour tous ceux qui regardent avec vous. Les fichiers locaux fonctionnent aussi : chaque spectateur choisit sa propre copie et reste synchronisé.
-- **Casino** : blackjack, machines à sous, cartes à gratter, une roue commune et un bingo, le tout en argent fictif. Pas d'argent réel, et rien n'a de valeur monétaire.
-- **Personnalisez** : n'importe quelle couleur d'accent, des fonds d'écran, des portraits de personnage du Lodestone, des sonneries personnalisées, des sons d'interface discrets, un zoom de la taille du texte et un téléphone redimensionnable à volonté. Réduit, il n'affiche que les éléments que vous choisissez, dans votre ordre : horloge, date, lecture en cours, appels, cartes de notification, pastille de non lus, ainsi que des widgets pour l'heure d'Éorzéa, la météo, la prochaine réinitialisation, les gils, l'Aether Coin, les missions de servants et vos anneaux d'activité, sur votre fond d'écran si vous le voulez. Il peut aussi se replier en minicarte vivante de la zone, en trois tailles, pour prendre la place de la minicarte du jeu dans votre interface.
+- **Un téléphone intégré à votre HUD.** Déplacez-le où vous voulez, donnez-lui la taille qui vous convient et réduisez-le en un bandeau qui n'affiche que les widgets de votre choix. Il peut aussi se replier en minicarte de zone en direct et prendre la place de celle du jeu.
+- **Écrivez à n'importe qui, sur n'importe quel monde.** ChocoChat atteint tout utilisateur d'Aetherphone quels que soient son monde et son centre de données, avec messages vocaux, discussions de groupe et appels vocaux lancés directement depuis un contact. Sans équipe, sans liste d'amis et sans voyage.
+- **Vos propres applications sociales.** Chirper pour les messages courts, Aethergram pour les photos et Velvet, une application compagnon 18+ facultative. Une seule identité vaut pour toutes et vous suit d'un personnage à l'autre.
+- **Tous les canaux de discussion du jeu, réorganisés.** Linkpearl place l'ensemble du tchat du jeu dans des onglets que vous composez vous-même, avec les messages privés en conversations distinctes, des couleurs par canal et une zone de saisie qui découpe et cadence les messages que le jeu tronquerait.
+- **Discutez téléphone fermé.** Détachez n'importe quelle conversation dans une fenêtre flottante, fusionnez les fenêtres en onglets, et laissez-les disparaître en combat et en donjon puis revenir d'elles-mêmes.
+- **Des applications qui jouent avec vous.** Strats pour les antisèches de raid avec votre place indiquée à chaque mécanique, Chasses pour les marques et les trains, Pêche pour les sorties en mer, plus Marché, Housing, Cartes, Lieux, Quotidiens, Collections et Inventaire.
+- **Et le quotidien aussi.** Notes, Calendrier, Minuteurs pour les resets et les servants, Calculatrice, Portefeuille, Appareil photo et Photos, Horloge, Météorologue pour la météo, et Raccourcis déclenchables depuis une macro de barre d'action.
+- **Regarder et écouter ensemble.** MogCast projette de la vidéo sur un écran dans le monde du jeu, avec une lecture synchronisée pour toutes les personnes présentes, et Musique fait entrer les radios communautaires et les sets DJ Rolladeck dans le jeu.
+- **Parle votre langue.** Traduction en un geste sur les publications, les profils et les messages privés, et les fils comme les discussions peuvent tout traduire à l'arrivée.
+- **De quoi souffler.** Gamba est un casino en argent fictif : blackjack, machines à sous, tickets à gratter, bingo et une roue commune, et rien n'y a de valeur marchande. Jeux est une salle d'arcade de plus de trente titres, dont Doom, avec Uno, les Échecs et le Billard en ligne entre amis.
+- **À votre image.** Vos propres fonds d'écran, vos sonneries et vos sons de notification, la couleur d'accentuation de votre choix, les portraits de personnage du Lodestone, des sons d'interface discrets et un zoom sur la taille du texte.
+- **Privé par conception.** Les messages, les pièces jointes et les messages vocaux sont chiffrés de bout en bout, les appels sont chiffrés en transit, et une équipe humaine de modération examine les publications et images publiques.
 
-La présentation complète des fonctionnalités, les captures d'écran et les détails se trouvent sur le site :
+42 applications au total. La présentation complète des fonctionnalités, les captures d'écran et les détails se trouvent sur le site :
 
 → **[www.aetherphone.net](https://www.aetherphone.net/)**
 
