@@ -45,7 +45,7 @@ internal sealed class OnlineHub
 
     public void Enter(string preferredKind)
     {
-        this.preferredKind = preferredKind; 
+        this.preferredKind = preferredKind;
         inlineReason = string.Empty;
         codeBuffer = string.Empty;
         unoHint = Loc.T(L.Games.OnlineHostHint,

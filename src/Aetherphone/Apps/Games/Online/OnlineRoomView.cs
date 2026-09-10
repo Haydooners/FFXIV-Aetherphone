@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Aetherphone.Apps.Games.Framework;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
@@ -8,7 +9,6 @@ using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
-
 
 namespace Aetherphone.Apps.Games.Online;
 
@@ -22,6 +22,8 @@ internal sealed class OnlineRoomView
     private const float RosterRowHeight = 56f;
     private const long NoticeMilliseconds = 4_000;
 
+    private static readonly LocString[] RuleSetLabels = [L.Games.OnlineRuleDefault, L.Games.OnlineRuleHouse];
+
     private readonly GameRoomsStore store;
     private readonly DropdownMenu rulesMenu = new();
     private readonly List<DropdownMenu.Item> rulesMenuItems = new();
@@ -30,7 +32,7 @@ internal sealed class OnlineRoomView
     private readonly OnlinePoolTable poolTable;
 
     private string inlineReason = string.Empty;
-    private int selectedRuleSetIndex;
+    private int selectedRuleSet;
     private long noticeAtTick;
     private long copiedAtTick;
 
@@ -45,12 +47,13 @@ internal sealed class OnlineRoomView
     public void Enter()
     {
         inlineReason = string.Empty;
+        selectedRuleSet = GameRoomWire.RuleSetDefault;
+        rulesMenuItems.Clear();
+        rulesMenu.Close();
         unoTable.Reset();
         chessTable.Reset();
         poolTable.Reset();
     }
-
-    private static readonly LocString[] RuleSetLabels = [L.Games.OnlineRuleDefault, L.Games.OnlineRuleHouse];
 
     public bool WantsLandscape => LivePool(store.Room.State) && store.Room.RoomId.Length > 0;
 
@@ -228,9 +231,7 @@ internal sealed class OnlineRoomView
         var players = roster.Players;
         var isHost = IsHost(roster);
         rulesMenu.Gate();
-
-        var picked = rulesMenuItems.Count > 0 ? rulesMenu.Draw(body, theme, System.Runtime.InteropServices.CollectionsMarshal
-            .AsSpan(rulesMenuItems)) : -1;
+        var picked = DrawRulesMenu(body, theme);
 
         if (phase == GameRoomWire.PhaseFinished)
         {
@@ -249,16 +250,16 @@ internal sealed class OnlineRoomView
             var pickWidth = ScrollLayout.StableContentWidth();
             var dropdownRect = new Rect(pickOrigin, new Vector2(pickOrigin.X + pickWidth, pickOrigin.Y + 36f * scale));
 
-            var label = Loc.T(RuleSetLabels[selectedRuleSetIndex]);
+            var label = Loc.T(RuleSetLabels[selectedRuleSet]);
             if (GameHud.Button(new Vector2(dropdownRect.Center.X, dropdownRect.Center.Y),
                 new Vector2(pickWidth, 36f * scale), label, accent, theme))
             {
                 OpenRulesMenu(dropdownRect);
             }
 
-            if (picked >= 0 && picked != selectedRuleSetIndex)
+            if (picked >= 0)
             {
-                selectedRuleSetIndex = picked;
+                selectedRuleSet = picked;
             }
 
             ImGui.Dummy(new Vector2(pickWidth, 40f * scale));
@@ -292,7 +293,7 @@ internal sealed class OnlineRoomView
             if (GameHud.Button(primaryCenter, buttonSize, label, enough ? accent : theme.TextMuted, theme)
                 && enough && !store.ActInFlight)
             {
-                store.SendStart(selectedRuleSetIndex);
+                store.SendStart(selectedRuleSet);
             }
 
             if (!enough)
@@ -323,16 +324,32 @@ internal sealed class OnlineRoomView
         ImGui.Dummy(new Vector2(width, 40f * scale + Metrics.Space.Lg * scale));
     }
 
+    private int DrawRulesMenu(Rect body, PhoneTheme theme)
+    {
+        if (!rulesMenu.Open || rulesMenuItems.Count == 0)
+        {
+            return -1;
+        }
+
+        var picked = rulesMenu.Draw(body, theme, CollectionsMarshal.AsSpan(rulesMenuItems));
+        if (picked >= 0)
+        {
+            rulesMenuItems.Clear();
+        }
+
+        return picked;
+    }
+
     private void OpenRulesMenu(Rect anchor)
     {
         rulesMenuItems.Clear();
         for (var index = 0; index < RuleSetLabels.Length; index++)
         {
             rulesMenuItems.Add(new DropdownMenu.Item(Loc.T(RuleSetLabels[index]), string.Empty, false,
-                index == selectedRuleSetIndex));
+                index == selectedRuleSet));
         }
 
-        rulesMenu.Toggle("uno_ruleset", anchor);
+        rulesMenu.Toggle("uno.ruleset", anchor);
     }
 
     private void DrawFinishedBanner(PhoneTheme theme, float scale, GameRoomState held)

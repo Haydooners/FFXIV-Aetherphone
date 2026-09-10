@@ -49,6 +49,18 @@ public sealed class UnoRulesTests
     }
 
     [Fact]
+    public void PendingDraw_HouseRulesBlocksDrawTwoOnAWildDrawFour()
+    {
+        // Wild +4 on top, holding Red +2
+        var houseRules = GameRoomWire.IsPlayable(
+            RedDrawTwo, activeColor: 0, topCard: WildDrawFour,
+            GameRoomWire.RuleSetHouse, pendingDrawCount: 4
+        );
+
+        Assert.False(houseRules);
+    }
+
+    [Fact]
     public void PendingDraw_NormalMatchingCardBlockedInBothRuleSets()
     {
         // Red 2 on top of Red +2 during pending draw
