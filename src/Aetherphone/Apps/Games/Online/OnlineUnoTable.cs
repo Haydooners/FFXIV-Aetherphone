@@ -977,6 +977,19 @@ internal sealed class OnlineUnoTable
         }
 
         var count = slotCount;
+        
+        if (count > 0)
+        {
+            var badgeCenter = Absolute(new Vector2(handAnchor.X + halfSpan + cardWidth * 0.5f + 16f * scale, handAnchor.Y - 12f * scale));
+            var badgeRadius = 11f * scale;
+            drawList.AddCircleFilled(badgeCenter, badgeRadius,
+                ImGui.GetColorU32(new Vector4(0.06f, 0.06f, 0.08f, 0.92f)), 24);
+            drawList.AddCircle(badgeCenter, badgeRadius,
+                ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.35f)), 24, 1f * scale);
+            Typography.DrawCentered(drawList, badgeCenter, count.ToString(Loc.Culture),
+                theme.TextStrong, TextStyles.FootnoteEmphasized);
+        }
+
         var available = body.Width - 24f * scale;
         var step = count <= 1
             ? 0f
