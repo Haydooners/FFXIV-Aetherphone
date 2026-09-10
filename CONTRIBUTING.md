@@ -36,6 +36,7 @@ The full developer documentation lives in [`docs/`](docs/README.md): the archite
 3. Keep the diff focused. One concern per PR.
 4. Match the existing style; the rules are written down in [docs/conventions.md](docs/conventions.md). Code is self-documenting; comments explain *why* (or a hard-coded constant), never *what*. No heavy abstractions "for later."
 5. If your change affects what a user sees or types (commands, layout, settings), update the README.
+6. If you used AI beyond autocomplete, say which level in the PR description; if you added an asset, say where it came from. Both are one line, and [docs/ai-usage.md](docs/ai-usage.md) explains the level names and why we ask.
 
 ## Translations
 

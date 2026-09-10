@@ -17,6 +17,7 @@ This page is the rulebook for code, copy, and commits in the Aetherphone client 
 | src/Aetherphone/Core/Localization/L.cs | Source of truth for every user-visible string |
 | src/Aetherphone/Core/Localization/TimeText.cs | The single seam for clock and time formatting |
 | src/Aetherphone/Core/Localization/LocAudit.cs | Debug-build audit that reports missing translation keys |
+| docs/ai-usage.md | AI involvement level to declare in a PR, and asset provenance rules |
 
 ## Philosophy
 
@@ -185,6 +186,7 @@ ci: stop pinging the role in commit announcements
 - The summary is a lowercase sentence fragment, no trailing period, and describes the user-visible outcome, not the diff.
 - **One concern per PR.** Keep the diff focused (CONTRIBUTING.md). A fix and a refactor are two PRs.
 - **No AI attribution.** Do not add co-author trailers or generated-with footers to commits or PR bodies. Commit messages carry substantive content only. This is the going-forward policy, not a description of history: a few dozen commits merged before mid-August 2026 still carry Co-authored-by trailers. Do not copy them.
+- **Declare your AI involvement level in the PR description** when you went past autocomplete, using the six level names in [AI usage](ai-usage.md). That doc is the disclosure seam; this rule is only about keeping commit messages free of boilerplate.
 - **Update the README when user-visible behavior changes**: commands, layout, settings (CONTRIBUTING.md). The README has eight translated siblings (README.fr.md and friends); update at least README.md.
 - Release versioning is not part of a feature PR: the version lives in Directory.Build.props and CI fails if it drifts from repo.json (.github/workflows/ci.yml). See [Testing and release](testing-and-release.md).
 

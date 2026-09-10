@@ -43,6 +43,15 @@ deploys independently, so say what has to be live on the server before this can
 merge, and how the client behaves against the old server in the meantime.
 -->
 
+## AI involvement
+
+<!--
+One of: Assist, Pair, Copilot, Auto. Delete this section if you used no AI or
+only autocomplete and inline suggestions. Nobody is judged for the level, only
+for an undeclared one. Level definitions and why we ask: docs/ai-usage.md.
+New asset in this PR? Say where it came from on the same line.
+-->
+
 ## Checklist
 
 Gates (CI enforces all of these):
@@ -63,3 +72,4 @@ Quality:
 - [ ] Draw-path code allocates nothing per frame and uses the shared `Windows/Components/` widgets, `TextStyles`, and `Metrics` tokens
 - [ ] README updated if this changes what a user sees or types; the relevant page under `docs/` still tells the truth
 - [ ] Commit messages and this PR body carry no AI attribution trailers
+- [ ] AI involvement declared above if it went past autocomplete, and any new asset has a provenance line (docs/ai-usage.md)
