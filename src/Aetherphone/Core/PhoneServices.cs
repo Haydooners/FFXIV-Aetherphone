@@ -26,6 +26,7 @@ using Aetherphone.Core.Playback;
 using Aetherphone.Core.Radio;
 using Aetherphone.Core.Report;
 using Aetherphone.Core.Runtime;
+using Aetherphone.Core.Recruit;
 using Aetherphone.Core.Sharing;
 using Aetherphone.Core.Shell;
 using Aetherphone.Core.Shortcuts;
@@ -154,6 +155,7 @@ internal sealed class PhoneServices : IDisposable
     public required StratsManifestStore StratsManifest { get; init; }
     public required StratsGuideStore StratsGuides { get; init; }
     public required MusterStore Musters { get; init; }
+    public required RecruitStore Recruit {get; init; }
     public required MusterLauncher MusterLauncher { get; init; }
 
     public required RadioLauncher RadioLauncher { get; init; }
@@ -344,6 +346,7 @@ internal sealed class PhoneServices : IDisposable
             Apps.AppAccents.For("casino"));
         var gameRooms = new Games.GameRoomsStore(aethernetSession, aethernet.Games, visibility,
             realtimeSignals);
+        var recruit = new RecruitStore(aethernetSession, aethernet.Recruit, realtimeSignals);
         var musters = new MusterStore(aethernetSession, aethernet.Musters, notifications, configuration,
             visibility, realtimeSignals, installer.Gate(MusterStore.AppId));
         var yellowPages = new YellowPagesStore(aethernetSession, aethernet.Ads, aethernet.Media, configuration,
@@ -420,6 +423,7 @@ internal sealed class PhoneServices : IDisposable
             RemoteImages = remoteImages,
             BadgeCatalog = badgeCatalog,
             FrameCatalog = frameCatalog,
+            Recruit = recruit,
             Loadout = loadoutStore,
             Coins = coins,
             CoinCatalog = coinCatalog,
@@ -529,6 +533,7 @@ internal sealed class PhoneServices : IDisposable
         Housing.Dispose();
         Venues.Dispose();
         Hunts.Dispose();
+        Recruit.Dispose();
         StratsManifest.Dispose();
         StratsGuides.Dispose();
         Musters.Dispose();

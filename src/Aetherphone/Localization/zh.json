@@ -6248,5 +6248,6 @@
   "onboarding.stratsRoleTitle": "你的职能",
   "onboarding.stratsRoleBody": "选择你的职能和小队。每张示意图都会高亮你的站位。",
   "onboarding.stratsChipsTitle": "攻略与选项",
-  "onboarding.stratsChipsBody": "在社区攻略及其变体之间切换。你的选择会按副本记住。"
+  "onboarding.stratsChipsBody": "在社区攻略及其变体之间切换。你的选择会按副本记住。",
+  "app.recruit": "Recruit"
 }

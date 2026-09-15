@@ -6248,5 +6248,6 @@
   "onboarding.stratsRoleTitle": "Rolün",
   "onboarding.stratsRoleBody": "Rolünü ve grubunu seç. Her diyagram nerede durduğunu vurgular.",
   "onboarding.stratsChipsTitle": "Stratlar ve seçenekler",
-  "onboarding.stratsChipsBody": "Topluluk stratları ve varyantları arasında geçiş yap. Seçimin her savaş için hatırlanır."
+  "onboarding.stratsChipsBody": "Topluluk stratları ve varyantları arasında geçiş yap. Seçimin her savaş için hatırlanır.",
+  "app.recruit": "Recruit"
 }

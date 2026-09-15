@@ -6248,5 +6248,6 @@
   "onboarding.stratsRoleTitle": "あなたのロール",
   "onboarding.stratsRoleBody": "ロールとパーティを選びましょう。すべての図で立ち位置が強調されます。",
   "onboarding.stratsChipsTitle": "攻略法とオプション",
-  "onboarding.stratsChipsBody": "コミュニティの攻略法とそのバリエーションを切り替えられます。選択はコンテンツごとに記憶されます。"
+  "onboarding.stratsChipsBody": "コミュニティの攻略法とそのバリエーションを切り替えられます。選択はコンテンツごとに記憶されます。",
+  "app.recruit": "Recruit"
 }

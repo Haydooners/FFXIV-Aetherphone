@@ -301,6 +301,9 @@ namespace Aetherphone.Core.Aethernet;
 [JsonSerializable(typeof(PoolTraceDto))]
 [JsonSerializable(typeof(PoolRoomStateDto))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
+[JsonSerializable(typeof(RecruitListingDto))]
+[JsonSerializable(typeof(RecruitListingDto[]))]
+[JsonSerializable(typeof(CreateRecruitRequest))]
 internal sealed partial class AethernetJsonContext : JsonSerializerContext
 {
 }

@@ -16,6 +16,7 @@ internal static class AppAccents
         ["health"] = AccentRing.Lime,
         ["camera"] = AccentRing.Slate,
         ["photos"] = AccentRing.Gold,
+        ["recruit"] = AccentRing.Red,
         ["collections"] = AccentRing.Indigo,
         ["skywatcher"] = AccentRing.Cyan,
         ["venues"] = AccentRing.Orchid,

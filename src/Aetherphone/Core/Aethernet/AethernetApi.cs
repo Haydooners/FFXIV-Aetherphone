@@ -29,6 +29,7 @@ internal sealed class AethernetApi
         Coins = new CoinsClient(net);
         Casino = new CasinoClient(net);
         Games = new GamesClient(net);
+        Recruit = new RecruitClient(net);
     }
 
     public AuthClient Auth { get; }
@@ -52,4 +53,5 @@ internal sealed class AethernetApi
     public CoinsClient Coins { get; }
     public CasinoClient Casino { get; }
     public GamesClient Games { get; }
+    public RecruitClient Recruit { get; }
 }

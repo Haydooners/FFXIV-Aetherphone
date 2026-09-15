@@ -6248,5 +6248,6 @@
   "onboarding.stratsRoleTitle": "Tu rol",
   "onboarding.stratsRoleBody": "Elige tu rol y tu grupo. Cada diagrama resalta dónde te colocas.",
   "onboarding.stratsChipsTitle": "Estrategias y opciones",
-  "onboarding.stratsChipsBody": "Cambia entre estrategias de la comunidad y sus variantes. Tu elección se recuerda por combate."
+  "onboarding.stratsChipsBody": "Cambia entre estrategias de la comunidad y sus variantes. Tu elección se recuerda por combate.",
+  "app.recruit": "Recruit"
 }

@@ -6248,5 +6248,6 @@
   "onboarding.stratsRoleTitle": "Deine Rolle",
   "onboarding.stratsRoleBody": "Wähle deine Rolle und Gruppe. Jedes Diagramm hebt hervor, wo du stehst.",
   "onboarding.stratsChipsTitle": "Strats und Optionen",
-  "onboarding.stratsChipsBody": "Wechsle zwischen Community-Strats und ihren Varianten. Deine Wahl wird pro Kampf gespeichert."
+  "onboarding.stratsChipsBody": "Wechsle zwischen Community-Strats und ihren Varianten. Deine Wahl wird pro Kampf gespeichert.",
+  "app.recruit": "Recruit"
 }

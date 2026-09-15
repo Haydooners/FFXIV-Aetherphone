@@ -6248,5 +6248,6 @@
   "onboarding.stratsRoleTitle": "Ваша роль",
   "onboarding.stratsRoleBody": "Выберите роль и группу. Каждая схема подсвечивает, где вы стоите.",
   "onboarding.stratsChipsTitle": "Стратегии и варианты",
-  "onboarding.stratsChipsBody": "Переключайтесь между стратегиями сообщества и их вариантами. Выбор запоминается для каждого боя."
+  "onboarding.stratsChipsBody": "Переключайтесь между стратегиями сообщества и их вариантами. Выбор запоминается для каждого боя.",
+  "app.recruit": "Recruit"
 }

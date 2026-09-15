@@ -302,6 +302,7 @@ internal static class L
         public static readonly LocString Announcements = new("app.announcements", "Announcements");
         public static readonly LocString Muster = new("app.muster", "Muster");
         public static readonly LocString YellowPages = new("app.yellowpages", "Yellow Pages");
+        public static readonly LocString Recruit = new("app.recruit", "Recruit");
         public static readonly LocString Calendar = new("app.calendar", "Calendar");
         public static readonly LocString Notes = new("app.notes", "Notes");
         public static readonly LocString Calculator = new("app.calculator", "Calculator");
@@ -450,6 +451,9 @@ internal static class L
         public static readonly LocString ChirperSub = new("storeCopy.chirperSub", "Short posts, whole realm");
         public static readonly LocString ChirperBody = new("storeCopy.chirperBody",
             "Follow adventurers across every world, post what you are up to, and catch the timeline between duties.");
+        public static readonly LocString RecruitSub = new("storeCopy.recruitSub", "Find or Create your next static");
+        public static readonly LocString RecruitBody = new("storeCopy.recruitBody",
+            "Recruit new players for your static, Find fills on raid nights, and find a new static!");
         public static readonly LocString AethergramSub = new("storeCopy.aethergramSub", "Your screenshots, shared");
         public static readonly LocString AethergramBody = new("storeCopy.aethergramBody",
             "Post your best shots, build a grid worth scrolling, and see what everyone else is capturing.");

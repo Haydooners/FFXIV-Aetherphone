@@ -6248,5 +6248,6 @@
   "onboarding.stratsRoleTitle": "Your role",
   "onboarding.stratsRoleBody": "Choose your role and party. Every diagram highlights where you stand.",
   "onboarding.stratsChipsTitle": "Strats and options",
-  "onboarding.stratsChipsBody": "Switch between community strats and their variants. Your choice is remembered per fight."
+  "onboarding.stratsChipsBody": "Switch between community strats and their variants. Your choice is remembered per fight.",
+  "app.recruit": "Recruit"
 }

@@ -39,6 +39,7 @@ using Aetherphone.Apps.Strats;
 using Aetherphone.Apps.Venues;
 using Aetherphone.Apps.Wallet;
 using Aetherphone.Apps.YellowPages;
+using Aetherphone.Apps.Recruit;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Telephony;
@@ -117,6 +118,7 @@ internal static class AppRegistry
         apps.Add(new ClockApp(services.Configuration, services.Confirm));
         apps.Add(new NotesApp(services.Configuration, services.Confirm));
         apps.Add(new CalculatorApp());
+        apps.Add(new RecruitApp(services.Recruit));
         apps.Add(new AetherStreamApp(video, screen, videoQueue, services.Configuration, services.Confirm,
             services.RemoteImages, services.Http, services.AethernetSession, services.Lodestone, watchAlong,
             streamSuggestions, services.AetherStreamLauncher, screenWindow));

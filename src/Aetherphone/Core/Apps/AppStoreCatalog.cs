@@ -42,6 +42,7 @@ internal static class AppStoreCatalog
         ["announcements"] = new(L.StoreCopy.AnnouncementsSub, L.StoreCopy.AnnouncementsBody, StoreCategory.Social),
         ["venues"] = new(L.StoreCopy.VenuesSub, L.StoreCopy.VenuesBody, StoreCategory.Social),
         ["strats"] = new(L.StoreCopy.StratsSub, L.StoreCopy.StratsBody, StoreCategory.Adventure),
+        ["recruit"] = new(L.StoreCopy.RecruitSub, L.StoreCopy.RecruitBody, StoreCategory.Adventure),
         ["muster"] = new(L.StoreCopy.MusterSub, L.StoreCopy.MusterBody, StoreCategory.Social),
         ["yellowpages"] = new(L.StoreCopy.YellowPagesSub, L.StoreCopy.YellowPagesBody, StoreCategory.Social),
         ["messages"] = new(L.StoreCopy.LinkpearlSub, L.StoreCopy.LinkpearlBody, StoreCategory.Chat),
