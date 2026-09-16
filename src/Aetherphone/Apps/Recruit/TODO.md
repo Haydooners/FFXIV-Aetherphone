@@ -1,3 +1,12 @@
-1. Start looking into adding FFLogs intigration, phone user profiles, theyd probably either have to manually link or claim their accounts. If not just grab the character from FFLogs associated to the users name and world and display information somehow. 
+Make PF screen update live with new party finder listings
 
+sort PF menu by Duty Category
+
+Show how many slots and what roles are still needed in a PF, info may be inaccurate depending on the last refresh.
+
+Color code the duty category tag because why not
+
+play with different BG Colors, idk if I like the green.
+
+might decouple the PF screen from the main one, its becoming pretty big and dont want to clutter the main RecruitApp.cs
 

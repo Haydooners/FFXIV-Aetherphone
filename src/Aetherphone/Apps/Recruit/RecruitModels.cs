@@ -8,6 +8,7 @@ internal enum ListingKind
     StaticLfm,
     PlayerLfg,
     SingleNightFill,
+    PartyFinder,
 }
 
 internal enum StaticCategory 
@@ -162,6 +163,7 @@ internal static class RecruitCatalog
             ListingKind.StaticLfm => "Static LFM",
             ListingKind.PlayerLfg => "Player LFG",
             ListingKind.SingleNightFill => "Fill",
+            ListingKind.PartyFinder => "Party Finder",
             _ => kind.ToString(),
         };
     }
@@ -192,6 +194,19 @@ internal static class RecruitCatalog
         };
     }
 }
+
+internal sealed record PartyFinderListing(
+    ulong ListingId,
+    string DutyName,
+    string CategoryName,
+    string Comment,
+    string AuthorName,
+    string WorldName,
+    byte SlotsFilled,
+    byte TotalSlots,
+    ushort ItemLevel,
+    DateTime ReadAt
+);
 
 internal sealed record RecruitListing(
     string Id,

@@ -11,9 +11,11 @@ internal sealed class RecruitStore : IDisposable
     private readonly AethernetSession session;
     private readonly RealtimeSignalBus signals;
     private readonly List<RecruitListing> listings = new();
+    private readonly List<PartyFinderListing> pfListings = new();
     private readonly RecruitClient client;
     private readonly object lockObj = new();
     public bool IsSignedIn => session.IsSignedIn;
+    public IReadOnlyList<PartyFinderListing> PartyFinderListings => pfListings;
 
     public RecruitStore(AethernetSession session, RecruitClient client, RealtimeSignalBus signals)
     {
@@ -33,6 +35,18 @@ internal sealed class RecruitStore : IDisposable
                 return listings.ToArray();
             }
         }
+    }
+
+    public void RefreshPartyFinder()
+    {
+        pfListings.RemoveAll(l => (DateTime.UtcNow - l.ReadAt).TotalMinutes > 15);
+        PartyFinderReader.RequestServerData();
+        PartyFinderReader.Read(pfListings);
+    }
+
+    public void RemovePartyFinderListing(ulong listingId)
+    {
+        pfListings.RemoveAll(l => l.ListingId == listingId);
     }
 
     public void Add(RecruitListing listing)
