@@ -241,8 +241,8 @@ internal sealed record RecruitListing(
                 Duty: RecruitCatalog.Duties[0],
                 Playstyle: StaticCategory.MidCore,
                 SelectedDays: RaidDays.Tuesday | RaidDays.Thursday | RaidDays.Saturday,
-                StartMinuteOfDay: 20 * 60,       // 8:00 PM
-                EndMinuteOfDay: 23 * 60,         // 11:00 PM
+                StartMinuteOfDay: 20 * 60,       
+                EndMinuteOfDay: 23 * 60,         
                 Timezone: RaidTimezone.EST,
                 RolesNeeded: new List<RaidRole> { RaidRole.BarrierHealer, RaidRole.Caster },
                 Tags: new List<string> { "Midcore", "Voice Req" },
@@ -258,8 +258,8 @@ internal sealed record RecruitListing(
                 Duty: RecruitCatalog.Duties[9],
                 Playstyle: StaticCategory.Hardcore,
                 SelectedDays: RaidDays.Saturday,
-                StartMinuteOfDay: 21 * 60,       // 9:00 PM
-                EndMinuteOfDay: 24 * 60 % 1440,  // 12:00 AM
+                StartMinuteOfDay: 21 * 60,       
+                EndMinuteOfDay: 24 * 60 % 1440,  
                 Timezone: RaidTimezone.EST,
                 RolesNeeded: new List<RaidRole> { RaidRole.Tank },
                 Tags: new List<string> { "Reclear", "Single Night" },
@@ -275,8 +275,8 @@ internal sealed record RecruitListing(
                 Duty: RecruitCatalog.Duties[1],
                 Playstyle: StaticCategory.Hardcore,
                 SelectedDays: RaidDays.Monday | RaidDays.Wednesday | RaidDays.Friday,
-                StartMinuteOfDay: 19 * 60,       // 7:00 PM
-                EndMinuteOfDay: 22 * 60,         // 10:00 PM
+                StartMinuteOfDay: 19 * 60,       
+                EndMinuteOfDay: 22 * 60,         
                 Timezone: RaidTimezone.PST,
                 RolesNeeded: new List<RaidRole> { RaidRole.Melee, RaidRole.Caster },
                 Tags: new List<string> { "Hardcore"},
@@ -292,8 +292,8 @@ internal sealed record RecruitListing(
                 Duty: RecruitCatalog.Duties[1],
                 Playstyle: StaticCategory.Hardcore,
                 SelectedDays: RaidDays.Monday | RaidDays.Wednesday | RaidDays.Friday,
-                StartMinuteOfDay: 19 * 60,       // 7:00 PM
-                EndMinuteOfDay: 22 * 60,         // 10:00 PM
+                StartMinuteOfDay: 19 * 60,       
+                EndMinuteOfDay: 22 * 60,         
                 Timezone: RaidTimezone.PST,
                 RolesNeeded: new List<RaidRole> { RaidRole.Melee, RaidRole.Caster },
                 Tags: new List<string> { "Hardcore"},
