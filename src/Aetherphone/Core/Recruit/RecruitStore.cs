@@ -16,14 +16,17 @@ internal sealed class RecruitStore : IDisposable
     private readonly object lockObj = new();
     public bool IsSignedIn => session.IsSignedIn;
     public IReadOnlyList<PartyFinderListing> PartyFinderListings => pfListings;
+    public event Action? OnPartyFinderUpdated;
 
     public RecruitStore(AethernetSession session, RecruitClient client, RealtimeSignalBus signals)
     {
         this.session = session;
         this.client = client;
         this.signals = signals;
-
         listings.AddRange(RecruitListing.CreateSampleListings());
+        PartyFinderReader.Initialize();
+
+        PartyFinderReader.OnListingsUpdate += HandlePartyFinderUpdated;
     }
 
     public IReadOnlyList<RecruitListing> Listings
@@ -37,11 +40,22 @@ internal sealed class RecruitStore : IDisposable
         }
     }
 
-    public void RefreshPartyFinder()
+    private void HandlePartyFinderUpdated()
     {
-        pfListings.RemoveAll(l => (DateTime.UtcNow - l.ReadAt).TotalMinutes > 15);
-        PartyFinderReader.RequestServerData();
-        PartyFinderReader.Read(pfListings);
+        lock (lockObj){
+            PartyFinderReader.Read(pfListings);
+        }
+
+        OnPartyFinderUpdated?.Invoke();
+    }
+
+    public void RefreshPartyFinder(bool force = false)
+    {
+        lock (lockObj){
+            pfListings.RemoveAll(listing => (DateTime.UtcNow - listing.ReadAt).TotalMinutes > 15);
+        }
+
+        PartyFinderReader.TriggerSilentRefresh(force);
     }
 
     public void RemovePartyFinderListing(ulong listingId)
@@ -158,5 +172,7 @@ internal sealed class RecruitStore : IDisposable
 
     public void Dispose()
     {
+        PartyFinderReader.OnListingsUpdate -= HandlePartyFinderUpdated;
+        PartyFinderReader.Dispose();
     }
 }

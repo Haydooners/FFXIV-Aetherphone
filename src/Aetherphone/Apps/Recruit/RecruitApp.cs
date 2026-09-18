@@ -69,6 +69,8 @@ internal sealed partial class RecruitApp : IPhoneApp
     private ContentCategory? selectedCategory;
     private ListingKind? selectedKind;
     private PhoneContext currentContext;
+    private DateTime lastPfPollTime = DateTime.MinValue;
+    private static readonly TimeSpan PfAutoRefreshInterval = TimeSpan.FromSeconds(30);
 
     public RecruitApp(RecruitStore store)
     {
@@ -161,7 +163,8 @@ internal sealed partial class RecruitApp : IPhoneApp
 
         if (UiInteract.Click(refreshMin, refreshMax, refreshHovered))
         {
-            store.RefreshPartyFinder();
+            lastPfPollTime = DateTime.UtcNow;
+            store.RefreshPartyFinder(force: true);
         }
 
         var chipsTopY = area.Min.Y + headerHeight + 8f * scale;
@@ -178,17 +181,21 @@ internal sealed partial class RecruitApp : IPhoneApp
             var isPfSelected = selectedKind == ListingKind.PartyFinder;
             if (isPfSelected)
             {
+                if ((DateTime.UtcNow - lastPfPollTime) > PfAutoRefreshInterval){
+                    lastPfPollTime = DateTime.UtcNow;
+                    store.RefreshPartyFinder();
+                }
+
                 var pfListings = store.PartyFinderListings;
                 for (var index = 0; index < pfListings.Count; index++){
                     DrawPartyFinderCard(width, scale, theme, accent, pfListings[index]);
                     ImGui.Dummy(new Vector2(0f, 8f * scale));
                 }
 
-                if (pfListings.Count == 0)
-                {
+                if (pfListings.Count == 0){
                     Typography.DrawCentered(ImGui.GetWindowDrawList(),
                         ImGui.GetCursorScreenPos() + new Vector2(width * 0.5f, 40f * scale),
-                        "No in-game Party Finder listings in memory.\nOpen Party Finder in-game to refresh.", theme.TextMuted, TextStyles.Body);
+                        "No in-game Party Finder listings found.\nTap Refresh to search.", theme.TextMuted, TextStyles.Body);
                 }
             }
             else{
@@ -294,7 +301,8 @@ internal sealed partial class RecruitApp : IPhoneApp
                 };
 
                 if (selectedKind == ListingKind.PartyFinder){
-                    store.RefreshPartyFinder();
+                    lastPfPollTime = DateTime.UtcNow;
+                    store.RefreshPartyFinder(force: true);
                 }
             }
         }
