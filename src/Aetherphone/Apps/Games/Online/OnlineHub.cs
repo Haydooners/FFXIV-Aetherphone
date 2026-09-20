@@ -179,6 +179,11 @@ internal sealed class OnlineHub
             return Loc.T(L.Games.OnlinePoolHostHint);
         }
 
+        if (string.Equals(kind, GameRoomWire.ConnectFourKind, StringComparison.Ordinal))
+        {
+            return Loc.T(L.Games.OnlineConnectFourHostHint);
+        }
+
         if (unoHint.Length == 0)
         {
             unoHint = Loc.T(L.Games.OnlineHostHint,
