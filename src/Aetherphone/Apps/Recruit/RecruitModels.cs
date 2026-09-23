@@ -40,6 +40,19 @@ internal enum RaidRole
     Caster,
 }
 
+internal enum PfCategory
+{
+    All = 0,
+    HighEnd = 1,
+    Raids = 2,
+    Trials = 3,
+    Dungeons = 4,
+    DeepDungeon = 5,
+    FieldOps = 6,
+    HuntAndMaps = 7,
+    Other = 8,
+}
+
 [Flags]
 internal enum RaidDays : byte
 {

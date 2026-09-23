@@ -199,7 +199,7 @@ internal sealed partial class RecruitApp
         for (var kindIndex = 0; kindIndex < Kinds.Length; kindIndex++){
             var kind = Kinds[kindIndex];
             var active = createKind == kind;
-            var label = KindLabels[kindIndex];
+            var label = StaticKindLabels[kindIndex];
             if (AppSkin.FlowChip(ref cursorX, centerY, 6f * scale, label, active, theme)){
                 createKind = kind;
             }

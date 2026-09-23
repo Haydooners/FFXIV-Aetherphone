@@ -18,7 +18,13 @@ internal enum RecruitScreen
     Browse,
     Detail,
     Create,
-}
+};
+
+internal enum RecruitTab
+{
+    PartyFinder,
+    Statics,
+};
 
 internal sealed partial class RecruitApp : IPhoneApp
 {
@@ -47,16 +53,28 @@ internal sealed partial class RecruitApp : IPhoneApp
         "Extreme",
         "Criterion",
         "Deep Dungeon",
-        "Casual / Other",
+        "Other",
     };
 
-    private static readonly string[] KindLabels =
+    private static readonly string[] PfCategoryLabels =
+    {
+        "All Duties",
+        "High-End",
+        "Raids",
+        "Trials",
+        "Dungeons",
+        "Deep Dungeon",
+        "Field Ops",
+        "Hunts & Maps",
+        "Other",
+    };
+
+    private static readonly string[] StaticKindLabels =
     {
         "All",
-        "LFG",
         "LFM",
+        "LFG",
         "Fill",
-        "PF",
     };
 
     private readonly AppSkin ui = new(AppPalettes.Tinted(new Vector4(0.027f, 0.569f, 0.408f, 1.0f)));
@@ -64,6 +82,8 @@ internal sealed partial class RecruitApp : IPhoneApp
     private readonly RouterDraw<RecruitScreen> drawView;
 
     private RecruitListing? selectedListing;
+    private PfCategory? selectedPfCategory;
+    private int currentPfPage = 1;
     private readonly DropdownMenu categoryFilterMenu = new();
     private readonly List<DropdownMenu.Item> categoryFilterItems = new();
     private ContentCategory? selectedCategory;
@@ -71,6 +91,10 @@ internal sealed partial class RecruitApp : IPhoneApp
     private PhoneContext currentContext;
     private DateTime lastPfPollTime = DateTime.MinValue;
     private static readonly TimeSpan PfAutoRefreshInterval = TimeSpan.FromSeconds(30);
+
+    private RecruitTab activeTab = RecruitTab.Statics;
+    private readonly BottomTabBar bottomNav = new();
+    private readonly NavTab[] navTabs = new NavTab[3];
 
     public RecruitApp(RecruitStore store)
     {
@@ -81,6 +105,10 @@ internal sealed partial class RecruitApp : IPhoneApp
 
     public void OnOpened()
     {
+        if (activeTab == RecruitTab.PartyFinder){
+            lastPfPollTime = DateTime.UtcNow;
+            store.RefreshPartyFinder(force: true);
+        }
     }
 
     public void OnClosed()
@@ -96,6 +124,7 @@ internal sealed partial class RecruitApp : IPhoneApp
 
         var screen = SceneChrome.ScreenFrom(content, context.Theme, scale);
         ui.Backdrop(screen);
+        categoryFilterMenu.Gate();
 
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         router.Draw(content, AppSkin.Transparent, delta, drawView);
@@ -105,7 +134,7 @@ internal sealed partial class RecruitApp : IPhoneApp
     {
         switch (view){
             case RecruitScreen.Browse:
-                DrawBrowseScreen(currentContext, area);
+                DrawRoot(area);
                 break;
             case RecruitScreen.Detail:
                 DrawDetailScreen(currentContext, area);
@@ -116,131 +145,459 @@ internal sealed partial class RecruitApp : IPhoneApp
         }
     }
 
-    private void DrawBrowseScreen(in PhoneContext context, Rect area)
+    private void DrawRoot(Rect area)
     {
         var scale = UiScale.Current;
         var theme = ui.Theme;
-        var accent = Accent;
+        var barHeight = BottomTabBar.LabelledHeight * scale;
+        var navRect = new Rect(new Vector2(area.Min.X, area.Max.Y - barHeight), area.Max);
+        var tabArea = new Rect(area.Min, new Vector2(area.Max.X, navRect.Min.Y));
 
+        switch (activeTab)
+        {
+            case RecruitTab.PartyFinder:
+                DrawPartyFinderTab(tabArea, scale, theme);
+                break;
+            case RecruitTab.Statics:
+            default:
+                DrawStaticsTab(tabArea, scale, theme);
+                break;
+        }
+
+        DrawBottomNav(navRect);
+        var pickedCategory = categoryFilterMenu.Draw(
+            area,
+            theme,
+            System.Runtime.InteropServices.CollectionsMarshal.AsSpan(categoryFilterItems));
+        if (pickedCategory >= 0){
+            if (activeTab == RecruitTab.PartyFinder){
+                selectedPfCategory = pickedCategory == 0 ? null : (PfCategory)pickedCategory;
+                currentPfPage = 1;
+            }
+            else{
+                selectedCategory = pickedCategory == 0 ? null : AllCategories[pickedCategory - 1];
+            }
+        }
+    }
+
+    private void DrawBottomNav(Rect bar)
+    {
+        var pfCount = store.PartyFinderListings.Count;
+        navTabs[0] = new NavTab(FontAwesomeIcon.Search, "Statics", Badge: pfCount);
+        navTabs[1] = new NavTab(FontAwesomeIcon.Plus, "New Listing", Raised: true);
+        navTabs[2] = new NavTab(FontAwesomeIcon.Users, "Party Finder");
+
+        var activeSlot = activeTab == RecruitTab.PartyFinder ? 0 : 2;
+        var tapped = bottomNav.Draw(bar, ui, currentContext.Theme, navTabs, activeSlot, showLabels: true);
+
+        if (tapped >= 0){
+            if (tapped == 1){
+                router.Push(RecruitScreen.Create);
+            }
+            else{
+                var nextTab = tapped == 0 ? RecruitTab.Statics : RecruitTab.PartyFinder;
+                if (nextTab != activeTab){
+                    activeTab = nextTab;
+                    if (activeTab == RecruitTab.PartyFinder){
+                        lastPfPollTime = DateTime.UtcNow;
+                        store.RefreshPartyFinder(force: true);
+                    }
+                }
+            }
+        }
+    }
+
+    private void DrawPartyFinderTab(Rect area, float scale, PhoneTheme theme)
+    {
+        var accent = Accent;
         var headerHeight = AppHeader.Height * scale;
         var headerCenterY = area.Min.Y + headerHeight * 0.5f;
+        Typography.DrawCentered(new Vector2(area.Center.X, headerCenterY), "Party Finder", theme.TextStrong, 1.15f, FontWeight.SemiBold);
 
-        Typography.DrawCentered(new Vector2(area.Center.X, headerCenterY), "Recruit", theme.TextStrong, 1.15f, FontWeight.SemiBold);
+        var refreshCenter = new Vector2(area.Max.X - 22f * scale, headerCenterY);
+        if (ui.IconButton(refreshCenter, 14f * scale, IconGlyph.Of(FontAwesomeIcon.Sync), theme.TextMuted, AppSkin.Transparent, 0.85f, "Refresh")){
+            lastPfPollTime = DateTime.UtcNow;
+            store.RefreshPartyFinder(force: true);
+        }
 
-        var filterLabel = selectedCategory.HasValue ? DutyCategoryLabel(selectedCategory.Value) : "Filter";
-        var filterText = $"{filterLabel}";
-        var filterSize = Typography.Measure(filterText, TextStyles.Subheadline);
-        var filterWidth = MathF.Max(72f * scale, filterSize.X + 24f * scale);
-        var filterHeight = 30f * scale;
-        var filterMin = new Vector2(area.Min.X + 2f * scale, headerCenterY - filterHeight * 0.5f);
-        var filterMax = new Vector2(filterMin.X + filterWidth, filterMin.Y + filterHeight);
+        var filterRowTop = area.Min.Y + headerHeight + 2f * scale;
+        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + 12f * scale, filterRowTop));
+        DrawPartyFinderToolbar(area.Width, scale, theme, accent);
+
+        if ((DateTime.UtcNow - lastPfPollTime) > PfAutoRefreshInterval){
+            lastPfPollTime = DateTime.UtcNow;
+            store.RefreshPartyFinder();
+        }
+
+        var pfListings = store.PartyFinderListings;
+        var totalMatchingCount = 0;
+        for (var checkIndex = 0; checkIndex < pfListings.Count; checkIndex++){
+            if (!selectedPfCategory.HasValue || MatchesPfCategory(pfListings[checkIndex], selectedPfCategory.Value)){
+                totalMatchingCount++;
+            }
+        }
+
+        const int pageSize = 50;
+        var totalPages = Math.Max(1, (int)Math.Ceiling((float)totalMatchingCount / pageSize));
+        if (currentPfPage > totalPages){
+            currentPfPage = totalPages;
+        }
+        if (currentPfPage < 1){
+            currentPfPage = 1;
+        }
+
+        var pagerTop = filterRowTop + 36f * scale;
+        var pagerHeight = 28f * scale;
+        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + 12f * scale, pagerTop));
+        DrawPfPaginationBar(area.Width - 24f * scale, pagerHeight, scale, theme, accent, totalPages);
+
+        var top = pagerTop + pagerHeight + 6f * scale;
+        var body = new Rect(new Vector2(area.Min.X, top), area.Max);
+        using (AppSurface.Begin(body))
+        {
+            var width = ScrollLayout.StableContentWidth();
+            ImGui.Dummy(new Vector2(0f, 6f * scale));
+            var startIndex = (currentPfPage - 1) * pageSize;
+            var endIndex = Math.Min(startIndex + pageSize, totalMatchingCount);
+            var matchingIndex = 0;
+            var renderedCount = 0;
+
+            for (var index = 0; index < pfListings.Count; index++){
+                var listing = pfListings[index];
+                if (selectedPfCategory.HasValue && !MatchesPfCategory(listing, selectedPfCategory.Value)){
+                    continue;
+                }
+
+                if (matchingIndex >= startIndex && matchingIndex < endIndex){
+                    DrawPartyFinderCard(width, scale, theme, accent, listing);
+                    ImGui.Dummy(new Vector2(0f, 8f * scale));
+                    renderedCount++;
+                }
+                matchingIndex++;
+            }
+
+            if (renderedCount == 0){
+                Typography.DrawCentered(ImGui.GetWindowDrawList(),
+                    ImGui.GetCursorScreenPos() + new Vector2(width * 0.5f, 40f * scale),
+                    "No in-game Party Finder listings found.\nTap Refresh to search.", theme.TextMuted, TextStyles.Body);
+            }
+            ImGui.Dummy(new Vector2(0f, 16f * scale));
+        }
+    }
+
+    private void DrawPfPaginationBar(float width, float height, float scale, PhoneTheme theme, Vector4 accent, int totalPages)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var min = ImGui.GetCursorScreenPos();
+        var max = min + new Vector2(width, height);
+
+        var bg = theme.SurfaceMuted;
+        bg.W *= 0.5f;
+        Squircle.Fill(drawList, min, max, 8f * scale, ImGui.GetColorU32(bg));
+        Squircle.Stroke(drawList, min, max, 8f * scale, ImGui.GetColorU32(Palette.WithAlpha(theme.Hairline, 0.4f)), 1f * scale);
+        var btnWidth = 32f * scale;
+        var hasPrev = currentPfPage > 1;
+        var hasNext = currentPfPage < totalPages;
+
+        var prevMin = min + new Vector2(2f * scale, 2f * scale);
+        var prevMax = new Vector2(min.X + btnWidth, max.Y - 2f * scale);
+        var prevHovered = ImGui.IsMouseHoveringRect(prevMin, prevMax);
+
+        if (hasPrev && prevHovered){
+            Squircle.Fill(drawList, prevMin, prevMax, 6f * scale, ImGui.GetColorU32(Palette.WithAlpha(accent, 0.25f)));
+        }
+        var prevColor = hasPrev ? (prevHovered ? theme.TextStrong : theme.TextStrong) : theme.TextMuted;
+        Typography.DrawCentered(drawList, (prevMin + prevMax) * 0.5f, "<", prevColor, 0.9f, FontWeight.SemiBold);
+
+        var nextMin = new Vector2(max.X - btnWidth, min.Y + 2f * scale);
+        var nextMax = max - new Vector2(2f * scale, 2f * scale);
+        var nextHovered = ImGui.IsMouseHoveringRect(nextMin, nextMax);
+
+        if (hasNext && nextHovered){
+            Squircle.Fill(drawList, nextMin, nextMax, 6f * scale, ImGui.GetColorU32(Palette.WithAlpha(accent, 0.25f)));
+        }
+        var nextColor = hasNext ? (nextHovered ? theme.TextStrong : theme.TextStrong) : theme.TextMuted;
+        Typography.DrawCentered(drawList, (nextMin + nextMax) * 0.5f, ">", nextColor, 0.9f, FontWeight.SemiBold);
+
+        var centerPos = new Vector2((min.X + max.X) * 0.5f, (min.Y + max.Y) * 0.5f);
+        var pageText = $"Page {currentPfPage} of {totalPages}";
+        Typography.DrawCentered(drawList, centerPos, pageText, theme.TextStrong, 0.85f, FontWeight.Medium);
+
+        ImGui.SetCursorScreenPos(min);
+        ImGui.InvisibleButton("##PfPaginationBar", new Vector2(width, height));
+        if (ImGui.IsItemClicked()){
+            var mousePos = ImGui.GetMousePos();
+            if (hasPrev && mousePos.X >= prevMin.X && mousePos.X <= prevMax.X){
+                currentPfPage--;
+            }
+            else if (hasNext && mousePos.X >= nextMin.X && mousePos.X <= nextMax.X){
+                currentPfPage++;
+            }
+        }
+    }
+
+    private void DrawStaticsTab(Rect area, float scale, PhoneTheme theme)
+    {
+        var accent = Accent;
+        var headerHeight = AppHeader.Height * scale;
+        var headerCenterY = area.Min.Y + headerHeight * 0.5f;
+        Typography.DrawCentered(new Vector2(area.Center.X, headerCenterY), "Statics", theme.TextStrong, 1.15f, FontWeight.SemiBold);
+        var filterRowTop = area.Min.Y + headerHeight + 2f * scale;
+        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + 12f * scale, filterRowTop));
+        DrawFilterAndKindRow(area.Width, scale, theme, accent);
+        var top = filterRowTop + 34f * scale;
+        var body = new Rect(new Vector2(area.Min.X, top), area.Max);
+
+        using (AppSurface.Begin(body))
+        {
+            var width = ScrollLayout.StableContentWidth();
+            ImGui.Dummy(new Vector2(0f, 6f * scale));
+            var listings = store.Listings;
+            var renderedCount = 0;
+
+            for (var listingIndex = 0; listingIndex < listings.Count; listingIndex++){
+                var listing = listings[listingIndex];
+                if (listing.Kind == ListingKind.PartyFinder){
+                    continue;
+                }
+                if (selectedKind.HasValue && listing.Kind != selectedKind.Value){
+                    continue;
+                }
+                if (selectedCategory.HasValue && listing.Duty.Category != selectedCategory.Value){
+                    continue;
+                }
+                DrawListingCard(width, scale, theme, accent, listing);
+                ImGui.Dummy(new Vector2(0f, 8f * scale));
+                renderedCount++;
+            }
+            if (renderedCount == 0){
+                Typography.DrawCentered(ImGui.GetWindowDrawList(),
+                    ImGui.GetCursorScreenPos() + new Vector2(width * 0.5f, 40f * scale),
+                    "No listings match your filter", theme.TextMuted, TextStyles.Body);
+            }
+            ImGui.Dummy(new Vector2(0f, 16f * scale));
+        }
+    }
+
+    private void DrawPartyFinderToolbar(float totalWidth, float scale, PhoneTheme theme, Vector4 accent)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var origin = ImGui.GetCursorScreenPos();
+        var height = 32f * scale;
+        var usableWidth = totalWidth - 24f * scale;
+        var barMin = origin;
+        var barMax = new Vector2(barMin.X + usableWidth, barMin.Y + height);
+        var hovered = UiInteract.Hover(barMin, barMax);
+
+        if (hovered){
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+        
+        var isFiltered = selectedPfCategory.HasValue;
+        var bg = isFiltered
+            ? Palette.WithAlpha(accent, hovered ? 0.22f : 0.14f)
+            : (hovered ? Palette.WithAlpha(theme.GroupedCard, 0.95f) : Palette.WithAlpha(theme.GroupedCard, 0.70f));
+        var border = isFiltered
+            ? Palette.WithAlpha(accent, hovered ? 0.75f : 0.55f)
+            : Palette.WithAlpha(theme.TextMuted, hovered ? 0.35f : 0.18f);
+        Squircle.Fill(drawList, barMin, barMax, Metrics.Radius.Field * scale, ImGui.GetColorU32(bg));
+        Squircle.Stroke(drawList, barMin, barMax, Metrics.Radius.Field * scale, ImGui.GetColorU32(border), 1f * scale);
+
+        var centerY = (barMin.Y + barMax.Y) * 0.5f;
+        var iconColor = isFiltered ? accent : (hovered ? theme.TextStrong : theme.TextMuted);
+        var currentIcon = selectedPfCategory.HasValue ? PfCategoryIcon(selectedPfCategory.Value) : IconGlyph.Of(FontAwesomeIcon.Filter);
+
+        var iconCenter = new Vector2(barMin.X + 16f * scale, centerY);
+        AppSkin.Icon(drawList, iconCenter, currentIcon, iconColor, 0.75f);
+
+        var textStartX = barMin.X + 32f * scale;
+        var currentLabel = selectedPfCategory.HasValue ? PfCategoryLabels[(int)selectedPfCategory.Value] : "All Duties";
+        if (isFiltered){
+            var prefix = "Category: ";
+            var prefixSize = Typography.Measure(prefix, TextStyles.Caption2);
+            Typography.Draw(drawList, new Vector2(textStartX, centerY - prefixSize.Y * 0.5f), prefix, theme.TextMuted, TextStyles.Caption2);
+            var valueStartX = textStartX + prefixSize.X;
+            var valueSize = Typography.Measure(currentLabel, TextStyles.Caption1);
+            Typography.Draw(drawList, new Vector2(valueStartX, centerY - valueSize.Y * 0.5f), currentLabel, theme.TextStrong, TextStyles.Caption1);
+        }
+        else{
+            var labelSize = Typography.Measure(currentLabel, TextStyles.Caption1);
+            Typography.Draw(drawList, new Vector2(textStartX, centerY - labelSize.Y * 0.5f), currentLabel, hovered ? theme.TextStrong : theme.TextMuted, TextStyles.Caption1);
+        }
+
+        var chevronRight = barMax.X - 14f * scale;
+        AppSkin.Icon(drawList, new Vector2(chevronRight, centerY), IconGlyph.Of(FontAwesomeIcon.ChevronDown), iconColor, 0.60f);
+        var count = store.PartyFinderListings.Count;
+        if (count > 0){
+            var countText = count == 1 ? "1 listing" : $"{count} listings";
+            var countSize = Typography.Measure(countText, TextStyles.Caption2);
+            var countPos = new Vector2(chevronRight - 14f * scale - countSize.X, centerY - countSize.Y * 0.5f);
+            Typography.Draw(drawList, countPos, countText, theme.TextMuted, TextStyles.Caption2);
+        }
+        if (UiInteract.Click(barMin, barMax, hovered)){
+            OpenPfCategoryFilterMenu(new Rect(barMin, barMax));
+        }
+    }
+
+    private void OpenPfCategoryFilterMenu(Rect anchor)
+    {
+        categoryFilterItems.Clear();
+        categoryFilterItems.Add(new DropdownMenu.Item("All Duties", Selected: !selectedPfCategory.HasValue));
+        for (var index = 1; index < PfCategoryLabels.Length; index++){
+            var category = (PfCategory)index;
+            categoryFilterItems.Add(new DropdownMenu.Item(PfCategoryLabels[index], Selected: selectedPfCategory == category));
+        }
+        categoryFilterMenu.Toggle("recruit_pf_category_filter", anchor);
+    }
+
+    private static string PfCategoryIcon(PfCategory category) => category switch
+    {
+        PfCategory.HighEnd => IconGlyph.Of(FontAwesomeIcon.Skull),
+        PfCategory.Raids => IconGlyph.Of(FontAwesomeIcon.ShieldAlt),
+        PfCategory.Trials => IconGlyph.Of(FontAwesomeIcon.Crosshairs),
+        PfCategory.Dungeons => IconGlyph.Of(FontAwesomeIcon.Dungeon),
+        PfCategory.DeepDungeon => IconGlyph.Of(FontAwesomeIcon.LayerGroup),
+        PfCategory.FieldOps => IconGlyph.Of(FontAwesomeIcon.MapMarkedAlt),
+        PfCategory.HuntAndMaps => IconGlyph.Of(FontAwesomeIcon.Compass),
+        PfCategory.Other => IconGlyph.Of(FontAwesomeIcon.EllipsisH),
+        _ => IconGlyph.Of(FontAwesomeIcon.ListUl),
+    };
+
+    private static bool MatchesPfCategory(PartyFinderListing listing, PfCategory category)
+    {
+        var categoryName = listing.CategoryName;
+
+        return category switch
+        {
+            PfCategory.HighEnd =>
+                categoryName.Contains("HighEnd", StringComparison.OrdinalIgnoreCase) ||
+                categoryName.Contains("High-End", StringComparison.OrdinalIgnoreCase),
+
+            PfCategory.Raids =>
+                categoryName.Contains("Raid", StringComparison.OrdinalIgnoreCase) &&
+                !categoryName.Contains("HighEnd", StringComparison.OrdinalIgnoreCase),
+
+            PfCategory.Trials =>
+                categoryName.Contains("Trial", StringComparison.OrdinalIgnoreCase) &&
+                !categoryName.Contains("HighEnd", StringComparison.OrdinalIgnoreCase),
+
+            PfCategory.Dungeons =>
+                (categoryName.Contains("Dungeon", StringComparison.OrdinalIgnoreCase) &&
+                 !categoryName.Contains("Deep", StringComparison.OrdinalIgnoreCase)) ||
+                categoryName.Contains("Roulette", StringComparison.OrdinalIgnoreCase),
+
+            PfCategory.DeepDungeon =>
+                categoryName.Contains("Deep", StringComparison.OrdinalIgnoreCase),
+
+            PfCategory.FieldOps =>
+                categoryName.Contains("Field", StringComparison.OrdinalIgnoreCase) ||
+                categoryName.Contains("Foray", StringComparison.OrdinalIgnoreCase),
+
+            PfCategory.HuntAndMaps =>
+                categoryName.Contains("Hunt", StringComparison.OrdinalIgnoreCase) ||
+                categoryName.Contains("Treasure", StringComparison.OrdinalIgnoreCase),
+
+            PfCategory.Other =>
+                categoryName.Contains("Other", StringComparison.OrdinalIgnoreCase) ||
+                categoryName.Contains("None", StringComparison.OrdinalIgnoreCase) ||
+                categoryName.Contains("GoldSaucer", StringComparison.OrdinalIgnoreCase) ||
+                categoryName.Contains("Quest", StringComparison.OrdinalIgnoreCase) ||
+                categoryName.Contains("Fate", StringComparison.OrdinalIgnoreCase) ||
+                categoryName.Contains("PvP", StringComparison.OrdinalIgnoreCase),
+            _ => true,
+        };
+    }
+
+
+    private void DrawFilterAndKindRow(float totalWidth, float scale, PhoneTheme theme, Vector4 accent)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var origin = ImGui.GetCursorScreenPos();
+        var height = 28f * scale;
+        var usableWidth = totalWidth - 24f * scale;
+        var filterLabel = selectedCategory.HasValue ? DutyCategoryLabel(selectedCategory.Value) : "All Duties";
+        var labelSize = Typography.Measure(filterLabel, TextStyles.Caption1);
+        var chevronReserve = 14f * scale;
+        var filterPillWidth = 96f * scale;
+        var filterMin = origin;
+        var filterMax = new Vector2(filterMin.X + filterPillWidth, filterMin.Y + height);
         var filterHovered = UiInteract.Hover(filterMin, filterMax);
-        var filterDrawList = ImGui.GetWindowDrawList();
 
-        Squircle.Fill(filterDrawList, filterMin, filterMax, 6f * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.SurfaceMuted, filterHovered ? 0.9f : 0.6f)));
-        Squircle.Stroke(filterDrawList, filterMin, filterMax, 6f * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(filterHovered ? accent : theme.TextMuted, 0.35f)), 1f * scale);
-        Typography.DrawCentered(filterDrawList, (filterMin + filterMax) * 0.5f, filterText, theme.TextStrong, TextStyles.Subheadline);
+        if (filterHovered){
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        var isFiltered = selectedCategory.HasValue;
+        var filterBg = isFiltered
+            ? Palette.WithAlpha(accent, filterHovered ? 0.28f : 0.18f)
+            : (filterHovered ? Palette.WithAlpha(theme.GroupedCard, 0.95f) : theme.GroupedCard);
+        var filterBorder = isFiltered
+            ? Palette.WithAlpha(accent, 0.70f)
+            : Palette.WithAlpha(theme.TextMuted, filterHovered ? 0.40f : 0.20f);
+        Squircle.Fill(drawList, filterMin, filterMax, 7f * scale, ImGui.GetColorU32(filterBg));
+        Squircle.Stroke(drawList, filterMin, filterMax, 7f * scale, ImGui.GetColorU32(filterBorder), 1f * scale);
+
+        var filterInk = isFiltered ? theme.TextStrong : (filterHovered ? theme.TextStrong : theme.TextMuted);
+        var maxTextWidth = filterPillWidth - chevronReserve - 12f * scale;
+        var fittedText = Typography.FitText(filterLabel, maxTextWidth, TextStyles.Caption1);
+        var fittedSize = Typography.Measure(fittedText, TextStyles.Caption1);
+        var totalContentWidth = fittedSize.X + 4f * scale + 10f * scale;
+        var contentStartX = (filterMin.X + filterMax.X - totalContentWidth) * 0.5f;
+        var textCenterY = (filterMin.Y + filterMax.Y) * 0.5f;
+
+        Typography.Draw(drawList, new Vector2(contentStartX, textCenterY - fittedSize.Y * 0.5f), fittedText, filterInk, TextStyles.Caption1);
+        var chevronCenter = new Vector2(contentStartX + fittedSize.X + 4f * scale + 5f * scale, textCenterY);
+        AppSkin.Icon(drawList, chevronCenter, IconGlyph.Of(FontAwesomeIcon.ChevronDown), filterInk, 0.60f);
 
         if (UiInteract.Click(filterMin, filterMax, filterHovered)){
             OpenCategoryFilterMenu(new Rect(filterMin, filterMax));
         }
 
-        var refreshMax = new Vector2(area.Max.X - 12f * scale, filterMin.Y + 28f * scale);
-        var refreshMin = new Vector2(refreshMax.X - 72f * scale, filterMin.Y);
-        var refreshHovered = UiInteract.Hover(refreshMin, refreshMax);
+        var sepX = filterMax.X + 7f * scale;
+        drawList.AddLine(
+            new Vector2(sepX, origin.Y + 4f * scale),
+            new Vector2(sepX, origin.Y + height - 4f * scale),
+            ImGui.GetColorU32(Palette.WithAlpha(theme.TextMuted, 0.25f)), 1f * scale);
+        var chipsStartX = sepX + 7f * scale;
+        var chipsAvailableWidth = (origin.X + usableWidth) - chipsStartX;
+        var chipGap = 5f * scale;
+        var chipWidth = (chipsAvailableWidth - (StaticKindLabels.Length - 1) * chipGap) / StaticKindLabels.Length;
 
-        if (refreshHovered){
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
+        for (var index = 0; index < StaticKindLabels.Length; index++){
+            var label = StaticKindLabels[index];
+            var active = index switch{
+                0 => !selectedKind.HasValue,
+                1 => selectedKind == ListingKind.StaticLfm,
+                2 => selectedKind == ListingKind.PlayerLfg,
+                3 => selectedKind == ListingKind.SingleNightFill,
+                _ => false,
+            };
 
-        Squircle.Fill(filterDrawList, refreshMin, refreshMax, 6f * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.GroupedCard, refreshHovered ? 0.95f : 0.70f)));
-        Squircle.Stroke(filterDrawList, refreshMin, refreshMax, 6f * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(refreshHovered ? accent : theme.TextMuted, 0.35f)), 1f * scale);
-        Typography.DrawCentered(filterDrawList, (refreshMin + refreshMax) * 0.5f, "Refresh", theme.TextStrong, TextStyles.Subheadline);
-
-        if (UiInteract.Click(refreshMin, refreshMax, refreshHovered))
-        {
-            lastPfPollTime = DateTime.UtcNow;
-            store.RefreshPartyFinder(force: true);
-        }
-
-        var chipsTopY = area.Min.Y + headerHeight + 8f * scale;
-        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + 12f * scale, chipsTopY + 2f * scale));
-        DrawKindChips(area.Width, scale, theme, accent);
-
-        var top = chipsTopY + 40f * scale;
-        var body = new Rect(new Vector2(area.Min.X, top), area.Max);
-        using (AppSurface.Begin(body)){
-
-            var width = ScrollLayout.StableContentWidth();
-            ImGui.Dummy(new Vector2(0f, 6f * scale));
-            
-            var isPfSelected = selectedKind == ListingKind.PartyFinder;
-            if (isPfSelected)
-            {
-                if ((DateTime.UtcNow - lastPfPollTime) > PfAutoRefreshInterval){
-                    lastPfPollTime = DateTime.UtcNow;
-                    store.RefreshPartyFinder();
-                }
-
-                var pfListings = store.PartyFinderListings;
-                for (var index = 0; index < pfListings.Count; index++){
-                    DrawPartyFinderCard(width, scale, theme, accent, pfListings[index]);
-                    ImGui.Dummy(new Vector2(0f, 8f * scale));
-                }
-
-                if (pfListings.Count == 0){
-                    Typography.DrawCentered(ImGui.GetWindowDrawList(),
-                        ImGui.GetCursorScreenPos() + new Vector2(width * 0.5f, 40f * scale),
-                        "No in-game Party Finder listings found.\nTap Refresh to search.", theme.TextMuted, TextStyles.Body);
-                }
+            var min = new Vector2(chipsStartX + index * (chipWidth + chipGap), origin.Y);
+            var max = new Vector2(min.X + chipWidth, min.Y + height);
+            var hovered = UiInteract.Hover(min, max);
+            var fill = active
+                ? Palette.WithAlpha(theme.Accent, 0.92f)
+                : (hovered ? Palette.WithAlpha(theme.GroupedCard, 0.95f) : theme.GroupedCard);
+            Squircle.Fill(drawList, min, max, 7f * scale, ImGui.GetColorU32(fill));
+            if (!active){
+                Squircle.Stroke(drawList, min, max, 7f * scale,
+                    ImGui.GetColorU32(Palette.WithAlpha(theme.TextMuted, hovered ? 0.35f : 0.15f)), 1f * scale);
             }
-            else{
-                var listings = store.Listings;
-                var renderedCount = 0;
-                for (var listingIndex = 0; listingIndex < listings.Count; listingIndex++){
-                    var listing = listings[listingIndex];
-                    if (listing.Kind == ListingKind.PartyFinder){
-                        continue;
-                    }
 
-                    if (selectedKind.HasValue && listing.Kind != selectedKind.Value){
-                        continue;
-                    }
-
-                    if (selectedCategory.HasValue && listing.Duty.Category != selectedCategory.Value){
-                        continue;
-                    }
-
-                    DrawListingCard(width, scale, theme, accent, listing);
-                    ImGui.Dummy(new Vector2(0f, 8f * scale));
-                    renderedCount++;
-                }
-
-                if (renderedCount == 0){
-                    Typography.DrawCentered(ImGui.GetWindowDrawList(),
-                    ImGui.GetCursorScreenPos() + new Vector2(width * 0.5f, 40f * scale),
-                    "No listings match your filter", theme.TextMuted, TextStyles.Body);
-                }
-
-                ImGui.Dummy(new Vector2(0f, 60f * scale));
+            var ink = active ? theme.TextStrong : (hovered ? theme.TextStrong : theme.TextMuted);
+            Typography.DrawCentered(drawList, (min + max) * 0.5f, label, ink, 0.88f, active ? FontWeight.SemiBold : FontWeight.Medium);
+            if (hovered){
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
             }
-        }
-
-        if (ComposeFab.Draw(area, "##recruitCreateFab", Accent, IconGlyph.Of(FontAwesomeIcon.Plus), "New Listing")){
-            router.Push(RecruitScreen.Create);
-        }
-
-        var pickedCategory = categoryFilterMenu.Draw(
-            area,
-            theme,
-            System.Runtime.InteropServices.CollectionsMarshal.AsSpan(categoryFilterItems));
-
-        if (pickedCategory >= 0){
-            selectedCategory = pickedCategory == 0 ? null : AllCategories[pickedCategory - 1];
+            if (UiInteract.Click(min, max, hovered)){
+                selectedKind = index switch{
+                    1 => ListingKind.StaticLfm,
+                    2 => ListingKind.PlayerLfg,
+                    3 => ListingKind.SingleNightFill,
+                    _ => null,
+                };
+            }
         }
     }
 
@@ -255,57 +612,6 @@ internal sealed partial class RecruitApp : IPhoneApp
         }
 
         categoryFilterMenu.Toggle("recruit_category_filter", anchor);
-    }
-
-    private void DrawKindChips(float width, float scale, PhoneTheme theme, Vector4 accent)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var height = 32f * scale;
-        var gap = 5f * scale;
-        var totalWidth = width - 24f * scale;
-        var chipWidth = (totalWidth - (KindLabels.Length - 1) * gap) / KindLabels.Length;
-
-        for (var index = 0; index < KindLabels.Length; index++){
-            var label = KindLabels[index];
-            var active = index switch{
-                0 => !selectedKind.HasValue,
-                1 => selectedKind == ListingKind.PlayerLfg,
-                2 => selectedKind == ListingKind.StaticLfm,
-                3 => selectedKind == ListingKind.SingleNightFill,
-                4 => selectedKind == ListingKind.PartyFinder,
-                _ => false,
-            };
-
-            var min = new Vector2(origin.X + index * (chipWidth + gap), origin.Y);
-            var max = new Vector2(min.X + chipWidth, min.Y + height);
-            var hovered = UiInteract.Hover(min, max);
-            var fill = active
-                ? Palette.WithAlpha(theme.Accent, 0.92f)
-                : (hovered ? Palette.WithAlpha(theme.GroupedCard, 0.95f) : theme.GroupedCard);
-            Squircle.Fill(drawList, min, max, 8f * scale, ImGui.GetColorU32(fill));
-            var ink = active || hovered ? theme.TextStrong : theme.TextMuted;
-            Typography.DrawCentered(drawList, (min + max) * 0.5f, label, ink, 0.92f, FontWeight.Medium);
-
-            if (hovered){
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            if (UiInteract.Click(min, max, hovered)){
-                selectedKind = index switch{
-                    1 => ListingKind.PlayerLfg,
-                    2 => ListingKind.StaticLfm,
-                    3 => ListingKind.SingleNightFill,
-                    4 => ListingKind.PartyFinder,
-                    _ => null,
-                };
-
-                if (selectedKind == ListingKind.PartyFinder){
-                    lastPfPollTime = DateTime.UtcNow;
-                    store.RefreshPartyFinder(force: true);
-                }
-            }
-        }
     }
 
     private void DrawListingCard(float width, float scale, PhoneTheme theme, Vector4 accent, RecruitListing listing)
@@ -372,10 +678,21 @@ internal sealed partial class RecruitApp : IPhoneApp
         var padY = 12f * scale;
         var contentWidth = width - padX * 2f;
         var titleSize = Typography.Measure(listing.DutyName, 1.05f, FontWeight.SemiBold);
-        var commentHeight = Typography.MeasureWrapped(listing.Comment, contentWidth, TextStyles.Footnote.Scale, TextStyles.Footnote.Weight);
+
+        var hasComment = !string.IsNullOrWhiteSpace(listing.Comment);
+        var commentHeight = hasComment
+            ? Typography.MeasureWrappedBlock(listing.Comment, TextStyles.Footnote, contentWidth).Y
+            : 0f;
+        
         var metaText = $"Posted by: {listing.AuthorName} · {listing.WorldName}";
         var metaSize = Typography.Measure(metaText, TextStyles.Caption1);
-        var cardHeight = padY + 22f * scale + 6f * scale + titleSize.Y + 6f * scale + commentHeight + 8f * scale + metaSize.Y + padY;
+
+        var badgeHeight = 18f * scale;
+        var badgeToTitleGap = 8f * scale;
+        var titleToCommentGap = hasComment ? 6f * scale : 0f;
+        var commentToMetaGap = 10f * scale;
+        var cardHeight = padY + badgeHeight + badgeToTitleGap + titleSize.Y + titleToCommentGap + commentHeight + commentToMetaGap + metaSize.Y + padY;
+
         var max = min + new Vector2(width, cardHeight);
         var hovered = UiInteract.Hover(min, max);
 
@@ -425,13 +742,17 @@ internal sealed partial class RecruitApp : IPhoneApp
         Squircle.Fill(drawList, catBadgeMin, catBadgeMax, 4f * scale, ImGui.GetColorU32(Palette.WithAlpha(theme.SurfaceMuted, 0.7f)));
         Typography.DrawCentered(drawList, (catBadgeMin + catBadgeMax) * 0.5f, listing.CategoryName.ToUpperInvariant(), theme.TextMuted, 0.75f, FontWeight.SemiBold);
 
-        var curY = min.Y + padY + 26f * scale;
+        var curY = pfBadgeMax.Y + badgeToTitleGap;
         Typography.Draw(drawList, new Vector2(min.X + padX, curY), listing.DutyName, theme.TextStrong, 1.05f, FontWeight.SemiBold);
+        curY += titleSize.Y;
 
-        curY += titleSize.Y + 6f * scale;
-        Typography.DrawWrappedLeft(new Vector2(min.X + padX, curY), listing.Comment, theme.TextMuted,TextStyles.Footnote, contentWidth);
+        if (hasComment){
+            curY += titleToCommentGap;
+            var drawnCommentHeight = Typography.DrawWrappedLeft(new Vector2(min.X + padX, curY), listing.Comment, theme.TextMuted, TextStyles.Footnote, contentWidth);
+            curY += drawnCommentHeight;
+        }
 
-        curY += commentHeight + 8f * scale;
+        curY += commentToMetaGap;
         Typography.Draw(drawList, new Vector2(min.X + padX, curY), metaText, theme.TextMuted, TextStyles.Caption1);
         ImGui.Dummy(new Vector2(width, cardHeight));
     }

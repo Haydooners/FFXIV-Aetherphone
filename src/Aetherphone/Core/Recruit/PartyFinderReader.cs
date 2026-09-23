@@ -9,6 +9,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Gui.PartyFinder.Types;
 using Dalamud.Game.ClientState.Conditions;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
@@ -25,6 +26,8 @@ internal static unsafe class PartyFinderReader
     private static bool initialized;
     private static short savedX = 200;
     private static short savedY = 200;
+    public static int TotalListingsCount { get; private set; } = 50;
+    public static int CurrentPageNumber { get; private set; } = 1;
 
     public static void Initialize()
     {
@@ -38,13 +41,15 @@ internal static unsafe class PartyFinderReader
 
         Plugin.AddonLifecycle.RegisterListener(AddonEvent.PreSetup, "LookingForGroup", OnPreSetup);
         Plugin.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "LookingForGroup", OnPreDraw);
-        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "LookingForGroup", OnPostUpdate);
+        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroup", OnPostUpdate);
+        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "LookingForGroup", OnPostUpdate);
         Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostClose, "LookingForGroup", OnPostClose);
     }
 
     public static void Dispose()
     {
-        if (initialized){
+        if (!initialized)
+        {
             return;
         }
 
@@ -155,8 +160,26 @@ internal static unsafe class PartyFinderReader
         {
             return;
         }
+
+        try
+        {
+            var lfgAddon = (AddonLookingForGroup*)addon;
+            var textNode = lfgAddon->CategoryCountTextNodes[0].Value;
+            if (textNode != null)
+            {
+                var text = textNode->NodeText.ToString();
+                if (int.TryParse(text, out var parsedTotal) && parsedTotal > 0)
+                {
+                    TotalListingsCount = parsedTotal;
+                }
+            }
+        }
+        catch
+        {
+            TotalListingsCount = Math.Max(50, (int)agent->NumberOfListingsDisplayed);
+        }
         
-        if (agent->NumberOfListingsDisplayed > 0)
+        if (type == AddonEvent.PostRefresh || agent->NumberOfListingsDisplayed > 0)
         {
             OnListingsUpdate?.Invoke();
             if (isSilentRefresh)
