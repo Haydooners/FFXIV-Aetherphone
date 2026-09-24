@@ -183,25 +183,27 @@ internal sealed partial class RecruitApp : IPhoneApp
     private void DrawBottomNav(Rect bar)
     {
         var pfCount = store.PartyFinderListings.Count;
-        navTabs[0] = new NavTab(FontAwesomeIcon.Search, "Statics", Badge: pfCount);
+        navTabs[0] = new NavTab(FontAwesomeIcon.Search, "Statics");
         navTabs[1] = new NavTab(FontAwesomeIcon.Plus, "New Listing", Raised: true);
-        navTabs[2] = new NavTab(FontAwesomeIcon.Users, "Party Finder");
-
-        var activeSlot = activeTab == RecruitTab.PartyFinder ? 0 : 2;
+        navTabs[2] = new NavTab(FontAwesomeIcon.Users, "Party Finder", Badge: pfCount);
+        var activeSlot = activeTab == RecruitTab.PartyFinder ? 2 : 0;
         var tapped = bottomNav.Draw(bar, ui, currentContext.Theme, navTabs, activeSlot, showLabels: true);
-
         if (tapped >= 0){
             if (tapped == 1){
                 router.Push(RecruitScreen.Create);
             }
             else{
-                var nextTab = tapped == 0 ? RecruitTab.Statics : RecruitTab.PartyFinder;
+                var nextTab = tapped == 2 ? RecruitTab.PartyFinder : RecruitTab.Statics;
                 if (nextTab != activeTab){
                     activeTab = nextTab;
                     if (activeTab == RecruitTab.PartyFinder){
                         lastPfPollTime = DateTime.UtcNow;
                         store.RefreshPartyFinder(force: true);
                     }
+                }
+                else if (activeTab == RecruitTab.PartyFinder){
+                    lastPfPollTime = DateTime.UtcNow;
+                    store.RefreshPartyFinder(force: true);
                 }
             }
         }
@@ -220,15 +222,6 @@ internal sealed partial class RecruitApp : IPhoneApp
             store.RefreshPartyFinder(force: true);
         }
 
-        var filterRowTop = area.Min.Y + headerHeight + 2f * scale;
-        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + 12f * scale, filterRowTop));
-        DrawPartyFinderToolbar(area.Width, scale, theme, accent);
-
-        if ((DateTime.UtcNow - lastPfPollTime) > PfAutoRefreshInterval){
-            lastPfPollTime = DateTime.UtcNow;
-            store.RefreshPartyFinder();
-        }
-
         var pfListings = store.PartyFinderListings;
         var totalMatchingCount = 0;
         for (var checkIndex = 0; checkIndex < pfListings.Count; checkIndex++){
@@ -236,9 +229,20 @@ internal sealed partial class RecruitApp : IPhoneApp
                 totalMatchingCount++;
             }
         }
+        var filterRowTop = area.Min.Y + headerHeight + 2f * scale;
+        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + 12f * scale, filterRowTop));
+        DrawPartyFinderToolbar(area.Width, scale, theme, accent, totalMatchingCount);
 
+        if ((DateTime.UtcNow - lastPfPollTime) > PfAutoRefreshInterval){
+            lastPfPollTime = DateTime.UtcNow;
+            store.RefreshPartyFinder();
+        }
+
+        var knownTotal = selectedPfCategory.HasValue
+            ? totalMatchingCount
+            : Math.Max(totalMatchingCount, PartyFinderReader.TotalListingsCount);
         const int pageSize = 50;
-        var totalPages = Math.Max(1, (int)Math.Ceiling((float)totalMatchingCount / pageSize));
+        var totalPages = Math.Max(1, (int)Math.Ceiling((float)knownTotal / pageSize));
         if (currentPfPage > totalPages){
             currentPfPage = totalPages;
         }
@@ -277,9 +281,12 @@ internal sealed partial class RecruitApp : IPhoneApp
             }
 
             if (renderedCount == 0){
+                var emptyMsg = knownTotal > totalMatchingCount && currentPfPage > 1
+                    ? $"Page {currentPfPage} listings are syncing...\nTap Refresh if they do not appear."
+                    : "No in-game Party Finder listings found.\nTap Refresh to search.";
                 Typography.DrawCentered(ImGui.GetWindowDrawList(),
                     ImGui.GetCursorScreenPos() + new Vector2(width * 0.5f, 40f * scale),
-                    "No in-game Party Finder listings found.\nTap Refresh to search.", theme.TextMuted, TextStyles.Body);
+                    emptyMsg, theme.TextMuted, TextStyles.Body);
             }
             ImGui.Dummy(new Vector2(0f, 16f * scale));
         }
@@ -290,7 +297,6 @@ internal sealed partial class RecruitApp : IPhoneApp
         var drawList = ImGui.GetWindowDrawList();
         var min = ImGui.GetCursorScreenPos();
         var max = min + new Vector2(width, height);
-
         var bg = theme.SurfaceMuted;
         bg.W *= 0.5f;
         Squircle.Fill(drawList, min, max, 8f * scale, ImGui.GetColorU32(bg));
@@ -298,42 +304,41 @@ internal sealed partial class RecruitApp : IPhoneApp
         var btnWidth = 32f * scale;
         var hasPrev = currentPfPage > 1;
         var hasNext = currentPfPage < totalPages;
-
         var prevMin = min + new Vector2(2f * scale, 2f * scale);
         var prevMax = new Vector2(min.X + btnWidth, max.Y - 2f * scale);
         var prevHovered = ImGui.IsMouseHoveringRect(prevMin, prevMax);
 
         if (hasPrev && prevHovered){
             Squircle.Fill(drawList, prevMin, prevMax, 6f * scale, ImGui.GetColorU32(Palette.WithAlpha(accent, 0.25f)));
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            if (UiInteract.Click(prevMin, prevMax, prevHovered)){
+                currentPfPage--;
+            }
         }
+
         var prevColor = hasPrev ? (prevHovered ? theme.TextStrong : theme.TextStrong) : theme.TextMuted;
         Typography.DrawCentered(drawList, (prevMin + prevMax) * 0.5f, "<", prevColor, 0.9f, FontWeight.SemiBold);
-
         var nextMin = new Vector2(max.X - btnWidth, min.Y + 2f * scale);
         var nextMax = max - new Vector2(2f * scale, 2f * scale);
         var nextHovered = ImGui.IsMouseHoveringRect(nextMin, nextMax);
-
         if (hasNext && nextHovered){
             Squircle.Fill(drawList, nextMin, nextMax, 6f * scale, ImGui.GetColorU32(Palette.WithAlpha(accent, 0.25f)));
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            if (UiInteract.Click(nextMin, nextMax, nextHovered)){
+                currentPfPage++;
+                if (store.PartyFinderListings.Count < PartyFinderReader.TotalListingsCount){
+                    store.RefreshPartyFinder();
+                }
+            }
         }
+
         var nextColor = hasNext ? (nextHovered ? theme.TextStrong : theme.TextStrong) : theme.TextMuted;
         Typography.DrawCentered(drawList, (nextMin + nextMax) * 0.5f, ">", nextColor, 0.9f, FontWeight.SemiBold);
-
         var centerPos = new Vector2((min.X + max.X) * 0.5f, (min.Y + max.Y) * 0.5f);
         var pageText = $"Page {currentPfPage} of {totalPages}";
         Typography.DrawCentered(drawList, centerPos, pageText, theme.TextStrong, 0.85f, FontWeight.Medium);
-
-        ImGui.SetCursorScreenPos(min);
-        ImGui.InvisibleButton("##PfPaginationBar", new Vector2(width, height));
-        if (ImGui.IsItemClicked()){
-            var mousePos = ImGui.GetMousePos();
-            if (hasPrev && mousePos.X >= prevMin.X && mousePos.X <= prevMax.X){
-                currentPfPage--;
-            }
-            else if (hasNext && mousePos.X >= nextMin.X && mousePos.X <= nextMax.X){
-                currentPfPage++;
-            }
-        }
+        ImGui.SetCursorScreenPos(new Vector2(min.X, max.Y));
+        ImGui.Dummy(new Vector2(width, 0));
     }
 
     private void DrawStaticsTab(Rect area, float scale, PhoneTheme theme)
@@ -379,7 +384,7 @@ internal sealed partial class RecruitApp : IPhoneApp
         }
     }
 
-    private void DrawPartyFinderToolbar(float totalWidth, float scale, PhoneTheme theme, Vector4 accent)
+    private void DrawPartyFinderToolbar(float totalWidth, float scale, PhoneTheme theme, Vector4 accent, int count)
     {
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
@@ -427,7 +432,6 @@ internal sealed partial class RecruitApp : IPhoneApp
 
         var chevronRight = barMax.X - 14f * scale;
         AppSkin.Icon(drawList, new Vector2(chevronRight, centerY), IconGlyph.Of(FontAwesomeIcon.ChevronDown), iconColor, 0.60f);
-        var count = store.PartyFinderListings.Count;
         if (count > 0){
             var countText = count == 1 ? "1 listing" : $"{count} listings";
             var countSize = Typography.Measure(countText, TextStyles.Caption2);

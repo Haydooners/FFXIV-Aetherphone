@@ -4,6 +4,7 @@ using System.Text;
 using Aetherphone.Apps.Recruit;
 using Aetherphone.Core;
 using Aetherphone.Core.Game;
+using Aetherphone.Core.GameChat;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Gui.PartyFinder.Types;
@@ -20,12 +21,12 @@ internal static unsafe class PartyFinderReader
 {
     public static event System.Action? OnListingsUpdate;
     private static readonly List<PartyFinderListing> cachedListings = new();
-    private static bool isSilentRefresh;
+    private static bool openedForSync;
+    private static bool closeScheduled;
+    private static int syncedPagesCount = 1;
     private static DateTime lastRefreshRequest = DateTime.MinValue;
-    private static readonly TimeSpan RefreshCooldown = TimeSpan.FromSeconds(8);
+    private static readonly TimeSpan RefreshCooldown = TimeSpan.FromSeconds(5);
     private static bool initialized;
-    private static short savedX = 200;
-    private static short savedY = 200;
     public static int TotalListingsCount { get; private set; } = 50;
     public static int CurrentPageNumber { get; private set; } = 1;
 
@@ -39,11 +40,8 @@ internal static unsafe class PartyFinderReader
 
         initialized = true;
 
-        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PreSetup, "LookingForGroup", OnPreSetup);
-        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, "LookingForGroup", OnPreDraw);
-        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "LookingForGroup", OnPostUpdate);
-        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "LookingForGroup", OnPostUpdate);
-        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostClose, "LookingForGroup", OnPostClose);
+        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "LookingForGroup", OnPostUpdate);
+    Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostClose, "LookingForGroup", OnPostClose);
     }
 
     public static void Dispose()
@@ -57,7 +55,7 @@ internal static unsafe class PartyFinderReader
 
         initialized = false;
 
-        Plugin.AddonLifecycle.UnregisterListener(OnPreSetup, OnPreDraw, OnPostUpdate, OnPostClose);
+        Plugin.AddonLifecycle.UnregisterListener(OnPostUpdate, OnPostClose);
     }
 
     private static void OnReceiveListing(IPartyFinderListing listing, IPartyFinderListingEventArgs args)
@@ -102,52 +100,16 @@ internal static unsafe class PartyFinderReader
 
     private static void OnPostClose(AddonEvent type, AddonArgs addonArgs)
     {
-        isSilentRefresh = false;
+        openedForSync = false;
+        closeScheduled = false;
+        syncedPagesCount = 1;
     }
 
-    private static void OnPreSetup(AddonEvent type, AddonArgs addonArgs)
+    private static void OnReceiveEvent(AddonEvent type, AddonArgs addonArgs)
     {
-        var addon = (AtkUnitBase*)addonArgs.Addon.Address;
-        if (addon == null)
+        if (addonArgs is AddonReceiveEventArgs receiveArgs)
         {
-            return;
-        }
-
-        if (isSilentRefresh)
-        {
-            if (addon->X > -5000 && addon->Y > -5000)
-            {
-                savedX = addon->X;
-                savedY = addon->Y;
-            }
-            addon->IsVisible = false;
-            addon->SetPosition(-9999, -9999);
-        }
-        else
-        {
-            addon->IsVisible = true;
-            if (addon->X < 0 || addon->Y < 0)
-            {
-                addon->SetPosition(savedX > 0 ? savedX : (short)200, savedY > 0 ? savedY : (short)200);
-            }
-        }
-    }
-
-    private static void OnPreDraw(AddonEvent type, AddonArgs addonArgs)
-    {
-        var addon = (AtkUnitBase*)addonArgs.Addon.Address;
-        if (addon == null)
-        {
-            return;
-        }
-
-        if (isSilentRefresh)
-        {
-            addon->IsVisible = false;
-        }
-        else
-        {
-            addon->IsVisible = true;
+            Plugin.Log.Information($"[PF Event] Type={receiveArgs.AtkEventType} Param={receiveArgs.EventParam}");
         }
     }
 
@@ -155,12 +117,10 @@ internal static unsafe class PartyFinderReader
     {
         var agent = AgentLookingForGroup.Instance();
         var addon = (AtkUnitBase*)addonArgs.Addon.Address;
-
         if (agent == null || addon == null)
         {
             return;
         }
-
         try
         {
             var lfgAddon = (AddonLookingForGroup*)addon;
@@ -179,27 +139,148 @@ internal static unsafe class PartyFinderReader
             TotalListingsCount = Math.Max(50, (int)agent->NumberOfListingsDisplayed);
         }
         
-        if (type == AddonEvent.PostRefresh || agent->NumberOfListingsDisplayed > 0)
+        OnListingsUpdate?.Invoke();
+        var totalPages = Math.Max(1, (int)Math.Ceiling((float)TotalListingsCount / 50));
+        var maxSyncPages = Math.Min(totalPages, 5);
+        if (openedForSync && !closeScheduled && agent->NumberOfListingsDisplayed > 0)
         {
-            OnListingsUpdate?.Invoke();
-            if (isSilentRefresh)
+            if (syncedPagesCount < maxSyncPages)
             {
-                isSilentRefresh = false;
-                Plugin.Framework.RunOnFrameworkThread(() =>
+                closeScheduled = true;
+                _ = Task.Delay(600).ContinueWith(_ =>
                 {
-                    var currentAgent = AgentLookingForGroup.Instance();
-                    var currentAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
-                    if (currentAddon != null)
+                    Plugin.Framework.RunOnFrameworkThread(() =>
                     {
-                        currentAddon->SetPosition(savedX > 0 ? savedX : (short)200, savedY > 0 ? savedY : (short)200);
-                        currentAddon->IsVisible = true;
-                    }
-                    if (currentAgent != null)
-                    {
-                        currentAgent->HideAddon();
-                    }
+                        if (!openedForSync)
+                        {
+                            return;
+                        }
+                        var currentAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
+                        if (currentAddon != null && currentAddon->IsVisible)
+                        {
+                            syncedPagesCount++;
+                            closeScheduled = false;
+                            ChangePage(currentAddon, 1);
+                            return;
+                        }
+                        CloseSyncAddon();
+                    });
                 });
             }
+            else
+            {
+                closeScheduled = true;
+                _ = Task.Delay(600).ContinueWith(_ =>
+                {
+                    Plugin.Framework.RunOnFrameworkThread(() =>
+                    {
+                        if (openedForSync)
+                        {
+                            CloseSyncAddon();
+                        }
+                    });
+                });
+            }
+        }
+    }
+
+    private static void ChangePage(AtkUnitBase* addon, int direction)
+    {
+        if (addon == null)
+        {
+            return;
+        }
+
+        var buttonParam = direction > 0 ? 9 : 8;
+        Plugin.Log.Information($"[PF PageTurn] Turning page using native ButtonClick Param={buttonParam}...");
+        var atkEvent = stackalloc AtkEvent[1];
+        var atkEventData = stackalloc AtkEventData[1];
+        addon->ReceiveEvent(AtkEventType.ButtonClick, buttonParam, atkEvent, atkEventData);
+    }
+
+    private static void CloseSyncAddon()
+    {
+        openedForSync = false;
+        closeScheduled = false;
+        syncedPagesCount = 1;
+        OnListingsUpdate?.Invoke();
+        var currentAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
+
+        if (currentAddon != null && currentAddon->IsVisible)
+        {
+            ChatSender.TrySend("/partyfinder");
+        }
+    }
+
+    private static AtkComponentButton* FindNextPageButton(AtkUnitBase* addon)
+    {
+        if (addon == null)  { 
+            return null;
+        }
+        AtkTextNode* pageTextNode = null;
+        for (var i = 0; i < addon->UldManager.NodeListCount; i++)
+        {
+            var node = addon->UldManager.NodeList[i];
+            if (node == null || (int)node->Type != 3){
+                continue;
+            }
+            var textNode = (AtkTextNode*)node;
+            var text = textNode->NodeText.ToString().Trim();
+            if (text.Length >= 3 && text.Contains('/'))
+            {
+                var slashIdx = text.IndexOf('/');
+                var left = text[..slashIdx].Trim();
+                var right = text[(slashIdx + 1)..].Trim();
+                if (int.TryParse(left, out _) && int.TryParse(right, out _))
+                {
+                    pageTextNode = textNode;
+                    break;
+                }
+            }
+        }
+
+        if (pageTextNode == null){
+            return null;
+        }
+        AtkComponentButton* bestNextBtn = null;
+        var bestDist = float.MaxValue;
+        for (var i = 0; i < addon->UldManager.NodeListCount; i++)
+        {
+            var node = addon->UldManager.NodeList[i];
+            if (node == null || (int)node->Type != 1006){
+                continue;
+            }
+            var compNode = (AtkComponentNode*)node;
+            if (compNode->Component == null || (int)compNode->Component->GetComponentType() != 1){
+                continue;
+            }
+            if (Math.Abs(node->Y - pageTextNode->Y) > 20){
+                continue;
+            }
+            if (node->X > pageTextNode->X)
+            {
+                var dist = node->X - pageTextNode->X;
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    bestNextBtn = (AtkComponentButton*)compNode->Component;
+                }
+            }
+        }
+        return bestNextBtn;
+    }
+
+    private static void ClickButton(AtkComponentButton* button, AtkUnitBase* addon)
+    {
+        if (button == null){ 
+            return; 
+        }
+        var atkEvent = stackalloc AtkEvent[1];
+        var atkEventData = stackalloc AtkEventData[1];
+        button->ReceiveEvent(AtkEventType.ButtonClick, 0, atkEvent, atkEventData);
+        if (button->OwnerNode != null && addon != null)
+        {
+            addon->ReceiveEvent(AtkEventType.ButtonClick, (int)button->OwnerNode->NodeId, atkEvent, atkEventData);
         }
     }
 
@@ -208,66 +289,70 @@ internal static unsafe class PartyFinderReader
         if (!Plugin.ClientState.IsLoggedIn){
             return false;
         }
-
         if (Plugin.Condition[ConditionFlag.InCombat] ||
             Plugin.Condition[ConditionFlag.BoundByDuty] ||
             Plugin.Condition[ConditionFlag.OccupiedInCutSceneEvent])
         {
             return false;
         }
-
         var gameMain = GameMain.Instance();
         if (gameMain == null || gameMain->CurrentContentFinderConditionId != 0){
             return false;
         }
-
         if (!force && (DateTime.UtcNow - lastRefreshRequest) < RefreshCooldown){
-            return false;
-        }
-
-        var agent = AgentLookingForGroup.Instance();
-        if (agent == null){
             return false;
         }
 
         lastRefreshRequest = DateTime.UtcNow;
         var existingAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
         if (existingAddon != null && existingAddon->IsVisible){
-            isSilentRefresh = false;
-            return agent->RequestListingsUpdate();
+            openedForSync = false;
+            var agent = AgentLookingForGroup.Instance();
+            return agent != null && agent->RequestListingsUpdate();
         }
-
-        isSilentRefresh = true;
-        agent->ShowAddon();
+        openedForSync = true;
+        closeScheduled = false;
+        syncedPagesCount = 1;
+        lock (cachedListings)
+        {
+            cachedListings.Clear();
+        }
+        Plugin.Framework.RunOnFrameworkThread(() =>
+        {
+            ChatSender.TrySend("/partyfinder");
+        });
+        _ = Task.Delay(6000).ContinueWith(_ =>
+        {
+            if (openedForSync)
+            {
+                Plugin.Framework.RunOnFrameworkThread(() =>
+                {
+                    if (openedForSync)
+                    {
+                        openedForSync = false;
+                        closeScheduled = false;
+                        OnListingsUpdate?.Invoke();
+                        var currentAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
+                        if (currentAddon != null && currentAddon->IsVisible)
+                        {
+                            ChatSender.TrySend("/partyfinder");
+                        }
+                    }
+                });
+            }
+        });
         return true;
     }
 
     public static void Read(List<PartyFinderListing> destination)
     {
-        if (!Plugin.ClientState.IsLoggedIn)
-        {
+        if (!Plugin.ClientState.IsLoggedIn){
             return;
         }
-        var agent = AgentLookingForGroup.Instance();
-        if (agent == null || agent->NumberOfListingsDisplayed == 0)
-        {
-            return;
-        }
-        destination.Clear();
-
-        var activeIds = agent->Listings.ListingIds;
-        var count = Math.Min((int)agent->NumberOfListingsDisplayed, activeIds.Length);
         lock (cachedListings)
         {
-            for (var i = 0; i < count; i++)
-            {
-                var id = activeIds[i];
-                var found = cachedListings.Find(l => l.ListingId == id);
-                if (found != null)
-                {
-                    destination.Add(found);
-                }
-            }
+            destination.Clear();
+            destination.AddRange(cachedListings);
         }
     }
 
