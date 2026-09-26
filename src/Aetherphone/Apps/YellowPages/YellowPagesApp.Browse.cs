@@ -17,8 +17,12 @@ internal sealed partial class YellowPagesApp
     private const float RailCardWidth = 156f;
     private const float RailCardHeight = 176f;
     private const float RailCardRounding = 16f;
-    private const float IntentTileHeight = 92f;
     private const float IntentTileGap = 8f;
+    private const float IntentGlyphTop = 30f;
+    private const float IntentGlyphRadius = 17f;
+    private const float IntentLabelGap = 8f;
+    private const float IntentTextInset = 6f;
+    private const float IntentLineSpacing = 1.15f;
     private const float ScopePillHeight = 28f;
     private const float DirectionRowHeight = 46f;
     private const float LoadMoreHeight = 40f;
@@ -30,6 +34,8 @@ internal sealed partial class YellowPagesApp
     private static readonly TextStyle RailMetaStyle = TextStyles.Caption1;
     private static readonly TextStyle IntentLabelStyle = TextStyles.FootnoteEmphasized;
     private static readonly TextStyle ScopePillStyle = TextStyles.FootnoteEmphasized;
+
+    private static readonly Dictionary<string, string[]> IntentLabelWords = new(StringComparer.Ordinal);
 
     private readonly List<AdDto> openSection = new();
     private readonly List<AdDto> latestSection = new();
@@ -322,12 +328,28 @@ internal sealed partial class YellowPagesApp
         var pad = CellPadX * scale;
         var gap = IntentTileGap * scale;
         var tileWidth = (width - pad * 2f - gap * (intents.Length - 1)) / intents.Length;
-        var tileHeight = IntentTileHeight * scale;
+        var textWidth = tileWidth - IntentTextInset * 2f * scale;
+        var labelStyle = IntentLabelStyle;
+        var maxLines = 1;
+        for (var index = 0; index < intents.Length; index++)
+        {
+            labelStyle = FitLabelStyle(Loc.T(AdIntents.Label(intents[index])), textWidth, labelStyle);
+        }
+
+        for (var index = 0; index < intents.Length; index++)
+        {
+            maxLines = Math.Max(maxLines,
+                Typography.CountWrappedLines(Loc.T(AdIntents.Label(intents[index])), labelStyle, textWidth));
+        }
+
+        var labelTop = (IntentGlyphTop + IntentGlyphRadius + IntentLabelGap) * scale;
+        var tileHeight = labelTop + maxLines * Typography.LineHeight(labelStyle) * IntentLineSpacing
+            + IntentTextInset * scale;
         for (var index = 0; index < intents.Length; index++)
         {
             var min = new Vector2(origin.X + pad + (tileWidth + gap) * index, origin.Y);
             var max = new Vector2(min.X + tileWidth, min.Y + tileHeight);
-            if (DrawIntentTile(drawList, intents[index], min, max, scale))
+            if (DrawIntentTile(drawList, intents[index], min, max, labelStyle, textWidth, scale))
             {
                 OpenIntent(intents[index]);
             }
@@ -337,7 +359,8 @@ internal sealed partial class YellowPagesApp
         ImGui.Dummy(new Vector2(width, tileHeight + Metrics.Space.Md * scale));
     }
 
-    private bool DrawIntentTile(ImDrawListPtr drawList, int intent, Vector2 min, Vector2 max, float scale)
+    private bool DrawIntentTile(ImDrawListPtr drawList, int intent, Vector2 min, Vector2 max, in TextStyle labelStyle,
+        float textWidth, float scale)
     {
         var rounding = 16f * scale;
         var hovered = UiInteract.Hover(min, max);
@@ -350,20 +373,54 @@ internal sealed partial class YellowPagesApp
         Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(hovered ? Ink.ChipHover : Ink.ChipFill));
         Squircle.Stroke(drawList, min, max, rounding, ImGui.GetColorU32(Ink.ChipStroke), 1f);
         var tint = intent == AdIntents.Wanted ? YellowPagesKit.WantedTint : Ink.Accent;
-        var glyphCenter = new Vector2(center.X, min.Y + 30f * scale);
-        var glyphRadius = 17f * scale;
+        var glyphCenter = new Vector2(center.X, min.Y + IntentGlyphTop * scale);
+        var glyphRadius = IntentGlyphRadius * scale;
         AccentGloss.Circle(drawList, glyphCenter, glyphRadius, Palette.Lighten(tint, 0.18f), Palette.Darken(tint, 0.2f),
             scale, hovered ? 0.9f : 0.35f, 0f);
         AppSkin.Icon(drawList, glyphCenter, IconGlyph.Of(AdIntents.Icon(intent)), YellowPagesKit.White, 0.82f);
         var label = Loc.T(AdIntents.Label(intent));
-        Typography.DrawWrappedCentered(drawList, label, IntentLabelStyle, Ink.TitleInk,
-            new Vector2(center.X, glyphCenter.Y + glyphRadius + 8f * scale), max.X - min.X - 10f * scale);
+        Typography.DrawWrappedCentered(drawList, label, labelStyle, Ink.TitleInk,
+            new Vector2(center.X, glyphCenter.Y + glyphRadius + IntentLabelGap * scale), textWidth, IntentLineSpacing);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
         return UiInteract.Click(min, max, hovered);
+    }
+
+    private static string[] WordsOf(string label)
+    {
+        if (!IntentLabelWords.TryGetValue(label, out var words))
+        {
+            words = label.Split(' ');
+            IntentLabelWords[label] = words;
+        }
+
+        return words;
+    }
+
+    private static TextStyle FitLabelStyle(string label, float maxWidth, in TextStyle style)
+    {
+        var words = WordsOf(label);
+        var widestWord = string.Empty;
+        var widestWidth = 0f;
+        for (var index = 0; index < words.Length; index++)
+        {
+            var width = Typography.Measure(words[index], style).X;
+            if (width > widestWidth)
+            {
+                widestWidth = width;
+                widestWord = words[index];
+            }
+        }
+
+        if (widestWidth <= maxWidth)
+        {
+            return style;
+        }
+
+        return style with { Scale = Typography.FitScale(widestWord, maxWidth, style.Scale, 0.6f, style.Weight) };
     }
 
     private void DrawCategory(Rect area, int intent)
