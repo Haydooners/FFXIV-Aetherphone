@@ -165,7 +165,7 @@ internal static class VenueCard
         if (venue.CanTeleport)
         {
             var rect = new Rect(new Vector2(left, top), new Vector2(left + split, top + height));
-            if (SocialPill.Accent(drawList, rect, Loc.T(L.Venues.Teleport), ink, ActionStyle, height * 0.5f))
+            if (SocialPill.Accent(drawList, rect, Loc.T(L.Travel.GoThere), ink, ActionStyle, height * 0.5f))
             {
                 action = VenueCardAction.Teleport;
             }
@@ -226,7 +226,7 @@ internal static class VenueCard
         var metaRight = card.Max.X - pad;
         if (venue.CanTeleport)
         {
-            var label = Loc.T(L.Venues.Teleport);
+            var label = Loc.T(L.Travel.GoThere);
             var goWidth = Typography.Measure(label, GoStyle).X + (GoGlyph + 6f + 28f) * scale;
             var go = new Rect(new Vector2(card.Max.X - pad - goWidth, bottomRowTop),
                 new Vector2(card.Max.X - pad, bottomRowTop + bottomRowHeight));

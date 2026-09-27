@@ -578,7 +578,7 @@ internal sealed partial class VenuesApp
         var pad = CellPadX * scale;
         var top = bar.Min.Y + (bar.Height - CtaHeight * scale) * 0.5f;
         var button = new Rect(new Vector2(bar.Min.X + pad, top), new Vector2(bar.Max.X - pad, top + CtaHeight * scale));
-        if (SocialPill.Accent(drawList, button, Loc.T(L.Venues.Teleport), Ink, TextStyles.Headline,
+        if (SocialPill.Accent(drawList, button, Loc.T(L.Travel.GoThere), Ink, TextStyles.Headline,
                 button.Height * 0.5f))
         {
             Teleport(venue);
