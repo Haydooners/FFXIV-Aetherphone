@@ -1967,6 +1967,8 @@ internal static class L
                 "Added the full venue directory, including venues without a posted schedule"),
             new("changelog.r1035.22",
                 "Added a Filters page for sources and tags, and a switch for notifications about new openings nearby"),
+            new("changelog.r1035.26",
+                "Reordered the venue page: the description, details and links come first, and tags moved to a compact row at the bottom"),
         };
 
         public static readonly LocString[] Release1035Linkpearl =

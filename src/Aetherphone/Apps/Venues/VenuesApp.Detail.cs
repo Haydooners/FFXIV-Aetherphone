@@ -100,10 +100,10 @@ internal sealed partial class VenuesApp
             DrawDetailHero(venue, scale);
             DrawDetailTitle(venue, scale);
             DrawNowPlaying(venue, scale);
-            DrawDetailTags(venue, scale);
             DrawAbout(venue, scale);
             DrawInfoCard(venue, scale);
             DrawLinks(venue, scale);
+            DrawDetailTags(venue, scale);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Xl * scale));
         }
 
@@ -215,6 +215,14 @@ internal sealed partial class VenuesApp
             cursorY += statusHeight;
         }
 
+        if (detailText.Status.Kind == VenueStatusKind.Open)
+        {
+            cursorY += 2f * scale;
+            cursorY += Typography.DrawWrappedLeft(new Vector2(left, cursorY), Loc.T(L.Venues.ScheduledOpen),
+                Ink.FaintInk, HintStyle, width - pad * 2f);
+            ImGui.SetCursorScreenPos(origin);
+        }
+
         if (detailText.HostLine.Length > 0)
         {
             cursorY += 3f * scale;
@@ -229,15 +237,8 @@ internal sealed partial class VenuesApp
 
     private void DrawNowPlaying(VenueEvent venue, float scale)
     {
-        var nowUtc = DateTime.UtcNow;
-        var confirmed = venue.IsConfirmedLive(nowUtc);
-        if (!confirmed)
+        if (!venue.IsConfirmedLive(DateTime.UtcNow))
         {
-            if (detailText.Status.Kind == VenueStatusKind.Open)
-            {
-                DrawHint(Loc.T(L.Venues.ScheduledOpen), scale);
-            }
-
             return;
         }
 
@@ -337,36 +338,21 @@ internal sealed partial class VenuesApp
         var width = ScrollLayout.StableContentWidth();
         var left = origin.X + CellPadX * scale;
         var right = origin.X + width - CellPadX * scale;
-        var gap = Metrics.Space.Sm * scale;
-        var chipHeight = VenueChips.LargeHeight(scale);
-        var lineHeight = chipHeight + gap;
+        var gap = Metrics.Space.Xs * scale;
+        var lineHeight = VenueChips.Height(scale) + gap;
         var cursorX = left;
         var cursorY = origin.Y;
         for (var index = 0; index < venue.Tags.Count; index++)
         {
             var tag = venue.Tags[index];
-            var chipWidth = VenueChips.MeasureLarge(tag, scale);
+            var chipWidth = VenueChips.Measure(tag, scale);
             if (cursorX + chipWidth > right && cursorX > left)
             {
                 cursorX = left;
                 cursorY += lineHeight;
             }
 
-            var min = new Vector2(cursorX, cursorY);
-            var max = new Vector2(cursorX + chipWidth, cursorY + chipHeight);
-            var hovered = UiInteract.Hover(min, max);
-            VenueChips.DrawLarge(drawList, min, tag, IsTagSelected(tag), hovered, scale);
-            if (hovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            if (UiInteract.Click(min, max, hovered))
-            {
-                ToggleTag(tag);
-                visibleCards = PageSize;
-            }
-
+            VenueChips.Draw(drawList, new Vector2(cursorX, cursorY), tag, scale);
             cursorX += chipWidth + gap;
         }
 
