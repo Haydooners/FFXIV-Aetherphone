@@ -112,8 +112,8 @@ internal static class WorldGeography
         }
 
         var byRegion = new Dictionary<int, List<GeoDataCenterInfo>>();
-        dataCenterByName = new Dictionary<string, GeoDataCenterInfo>(StringComparer.OrdinalIgnoreCase);
-        dataCenterByWorld = new Dictionary<string, GeoDataCenterInfo>(StringComparer.OrdinalIgnoreCase);
+        var byName = new Dictionary<string, GeoDataCenterInfo>(StringComparer.OrdinalIgnoreCase);
+        var byWorld = new Dictionary<string, GeoDataCenterInfo>(StringComparer.OrdinalIgnoreCase);
         foreach (var group in Plugin.DataManager.GetExcelSheet<WorldDCGroupType>())
         {
             var regionId = (int)group.Region.RowId;
@@ -131,10 +131,10 @@ internal static class WorldGeography
 
             worlds.Sort(StringComparer.OrdinalIgnoreCase);
             var info = new GeoDataCenterInfo(name, (int)group.RowId, regionId, worlds.ToArray());
-            dataCenterByName[name] = info;
+            byName[name] = info;
             for (var index = 0; index < info.Worlds.Length; index++)
             {
-                dataCenterByWorld[info.Worlds[index]] = info;
+                byWorld[info.Worlds[index]] = info;
             }
 
             if (!byRegion.TryGetValue(regionId, out var list))
@@ -156,6 +156,8 @@ internal static class WorldGeography
             }
         }
 
+        dataCenterByName = byName;
+        dataCenterByWorld = byWorld;
         return result.ToArray();
     }
 }

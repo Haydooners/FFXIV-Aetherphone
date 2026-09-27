@@ -1972,6 +1972,10 @@ internal static class L
                 "Reordered the venue page: the description, details and links come first, and tags moved to a compact row at the bottom"),
             new("changelog.r1035.27",
                 "A popup now explains that Lifestream must be installed and enabled before Go there can travel automatically"),
+            new("changelog.r1035.29",
+                "Fixed the Events tab leaving out posted events at venues that also have a weekly schedule"),
+            new("changelog.r1035.30",
+                "Fixed the region and data center filters hiding directory venues that only list a world"),
         };
 
         public static readonly LocString[] Release1035Linkpearl =

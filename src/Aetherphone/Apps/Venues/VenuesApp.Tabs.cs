@@ -23,19 +23,19 @@ internal sealed partial class VenuesApp
         for (var index = 0; index < events.Count; index++)
         {
             var venue = events[index];
-            var live = venue.IsLive(nowUtc);
+            var live = venue.IsEventOn(nowUtc);
             var group = live
                 ? Loc.Upper(Loc.T(L.Venues.LiveNowLabel))
                 : Loc.Culture.TextInfo.ToUpper(
-                    TimeText.FutureDayLabel(new DateTimeOffset(venue.StartUtc!.Value).ToUnixTimeSeconds()));
+                    TimeText.FutureDayLabel(new DateTimeOffset(venue.EventStartUtc!.Value).ToUnixTimeSeconds()));
             if (!string.Equals(group, currentGroup, StringComparison.Ordinal))
             {
                 agenda.Add(new VenueAgendaEntry(-1, group, string.Empty, string.Empty, false));
                 currentGroup = group;
             }
 
-            var start = venue.StartUtc is { } startUtc ? TimeText.Clock(startUtc.ToLocalTime()) : string.Empty;
-            var end = venue.EndUtc is { } endUtc ? TimeText.Clock(endUtc.ToLocalTime()) : string.Empty;
+            var start = venue.EventStartUtc is { } startUtc ? TimeText.Clock(startUtc.ToLocalTime()) : string.Empty;
+            var end = venue.EventEndUtc is { } endUtc ? TimeText.Clock(endUtc.ToLocalTime()) : string.Empty;
             agenda.Add(new VenueAgendaEntry(index, string.Empty, start, end, live));
         }
     }
