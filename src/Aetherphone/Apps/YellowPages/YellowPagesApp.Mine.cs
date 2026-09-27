@@ -37,8 +37,9 @@ internal sealed partial class YellowPagesApp
         var listRect = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
         var mine = store.Mine;
         var nowUnix = NowUnix();
-        using (AppSurface.BeginEdgeToEdge(listRect))
+        using (var surface = AppSurface.BeginEdgeToEdge(listRect))
         {
+            ConsumeScrollTop(surface);
             if (mine.Length == 0)
             {
                 if (store.Syncing && !store.Primed)
@@ -304,8 +305,9 @@ internal sealed partial class YellowPagesApp
         var listRect = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
         var saved = store.Saved;
         var nowUnix = NowUnix();
-        using (AppSurface.BeginEdgeToEdge(listRect))
+        using (var surface = AppSurface.BeginEdgeToEdge(listRect))
         {
+            ConsumeScrollTop(surface);
             if (saved.Length == 0)
             {
                 if (store.SavedLoading && !store.SavedLoadedOnce)

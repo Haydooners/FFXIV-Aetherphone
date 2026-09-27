@@ -70,8 +70,9 @@ internal sealed partial class YellowPagesApp
         DrawHairline(drawList, area.Min.X, area.Max.X, area.Min.Y + AppHeader.Height * scale);
         var listRect = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
         var threads = inquiries.Threads;
-        using (AppSurface.BeginEdgeToEdge(listRect))
+        using (var surface = AppSurface.BeginEdgeToEdge(listRect))
         {
+            ConsumeScrollTop(surface);
             DrawInboxSearch(scale);
             DrawInboxFilterRail(scale);
             RefreshInboxFilter(threads, false);

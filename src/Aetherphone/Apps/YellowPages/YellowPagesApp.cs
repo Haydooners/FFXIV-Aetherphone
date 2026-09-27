@@ -384,6 +384,7 @@ internal sealed partial class YellowPagesApp : IPhoneApp
         }
 
         activeTab = tab;
+        rootScrollTopPending = true;
         switch (tab)
         {
             case YellowPagesTab.Saved:
@@ -471,6 +472,7 @@ internal sealed partial class YellowPagesApp : IPhoneApp
 
     private void RefreshCurrentList()
     {
+        rootScrollTopPending = true;
         var route = router.Current;
         if (route.Screen == YellowPagesScreen.Category)
         {

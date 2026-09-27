@@ -24,6 +24,15 @@ internal sealed partial class YellowPagesApp
     private const float IntentTextInset = 6f;
     private const float IntentLineSpacing = 1.15f;
     private const float ScopePillHeight = 28f;
+    private const float ScopePillChrome = 30f;
+    private const float ScopePillMaxShare = 0.42f;
+    private const float ScopePillTitleGap = 12f;
+    private const float WordmarkMinScale = 1f;
+    private const float WordmarkHitPad = 6f;
+    private const float WordmarkHitPadY = 4f;
+    private const float WordmarkHitRounding = 8f;
+    private const float WordmarkSpinnerGap = 12f;
+    private const float WordmarkSpinnerRadius = 7f;
     private const float DirectionRowHeight = 46f;
     private const float LoadMoreHeight = 40f;
     private const double SearchDebounceSeconds = 0.6;
@@ -51,6 +60,7 @@ internal sealed partial class YellowPagesApp
     private string browseSearchApplied = string.Empty;
     private double browseSearchEditedAt;
     private int railStart;
+    private bool rootScrollTopPending;
 
     private AdCardContext CardContext(long nowUnix) => new(images, nowUnix, configuration.YellowPagesCompactCards);
 
@@ -61,8 +71,9 @@ internal sealed partial class YellowPagesApp
         EnsureDirectoryFilter(YellowPagesScreen.Root, 0, AdDirections.Any);
         DrawBrowseTopBar(area);
         var listRect = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
-        using (AppSurface.BeginEdgeToEdge(listRect))
+        using (var surface = AppSurface.BeginEdgeToEdge(listRect))
         {
+            ConsumeScrollTop(surface);
             DrawSearchRow(scale);
             EnsureBrowseSections(nowUnix);
             if (openSection.Count > 0)
@@ -88,29 +99,23 @@ internal sealed partial class YellowPagesApp
         }
     }
 
+    private void ConsumeScrollTop(in AppSurface.SurfaceScope surface)
+    {
+        if (!rootScrollTopPending)
+        {
+            return;
+        }
+
+        surface.JumpToTop();
+        rootScrollTopPending = false;
+    }
+
     private void DrawBrowseTopBar(Rect area)
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
-        var wordmark = DisplayName;
-        var wordmarkSize = Typography.Measure(wordmark, WordmarkStyle);
-        var wordmarkLeft = area.Min.X + CellPadX * scale;
-        Typography.Draw(drawList, new Vector2(wordmarkLeft, rowCenterY - wordmarkSize.Y * 0.5f), wordmark,
-            Ink.TitleInk, WordmarkStyle);
-        if (store.Syncing || store.DirectoryLoading)
-        {
-            LoadingPulse.Spinner(new Vector2(wordmarkLeft + wordmarkSize.X + 14f * scale, rowCenterY), 7f * scale,
-                Ink.Accent);
-        }
-
-        if (DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 0), PhoneIcons.Refresh, Loc.T(L.Common.Refresh)))
-        {
-            store.SyncNow();
-            RefreshBrowse();
-        }
-
-        var optionsCenter = SocialChrome.HeaderSlot(area, 1);
+        var optionsCenter = SocialChrome.HeaderSlot(area, 0);
         if (DrawHeaderIcon(drawList, optionsCenter, PhoneIcons.AdjustmentsHorizontal, Loc.T(L.YellowPages.OptionsTitle),
                 optionsMenu.IsOpenFor("yellowpages.options")))
         {
@@ -119,15 +124,54 @@ internal sealed partial class YellowPagesApp
         }
 
         var pillRight = optionsCenter.X - SocialChrome.HeaderIconRadius * scale - 8f * scale;
-        DrawScopePill(new Vector2(pillRight, rowCenterY), scale);
+        var pillWidth = DrawScopePill(new Vector2(pillRight, rowCenterY), area.Width * ScopePillMaxShare, scale);
+        DrawWordmark(drawList, area.Min.X + CellPadX * scale, pillRight - pillWidth - ScopePillTitleGap * scale,
+            rowCenterY, scale);
     }
 
-    private void DrawScopePill(Vector2 rightCenter, float scale)
+    private void DrawWordmark(ImDrawListPtr drawList, float left, float right, float centerY, float scale)
+    {
+        var wordmark = DisplayName;
+        var maxWidth = MathF.Max(1f, right - left);
+        var style = WordmarkStyle with
+        {
+            Scale = Typography.FitScale(wordmark, maxWidth, WordmarkStyle.Scale, WordmarkMinScale, WordmarkStyle.Weight),
+        };
+        var title = Typography.FitText(wordmark, maxWidth, style);
+        var titleSize = Typography.Measure(title, style);
+        var titleTop = centerY - titleSize.Y * 0.5f;
+        var hitMin = new Vector2(left - WordmarkHitPad * scale, titleTop - WordmarkHitPadY * scale);
+        var hitMax = new Vector2(left + titleSize.X + WordmarkHitPad * scale,
+            titleTop + titleSize.Y + WordmarkHitPadY * scale);
+        UiInteract.HoverHighlight(drawList, hitMin, hitMax, WordmarkHitRounding * scale);
+        Typography.Draw(drawList, new Vector2(left, titleTop), title, Ink.TitleInk, style);
+        if (UiInteract.HoverClick(hitMin, hitMax))
+        {
+            store.SyncNow();
+            RefreshBrowse();
+            rootScrollTopPending = true;
+        }
+
+        if (!store.Syncing && !store.DirectoryLoading)
+        {
+            return;
+        }
+
+        var spinnerCenterX = hitMax.X + WordmarkSpinnerGap * scale;
+        if (spinnerCenterX + WordmarkSpinnerRadius * scale <= right)
+        {
+            LoadingPulse.Spinner(new Vector2(spinnerCenterX, centerY), WordmarkSpinnerRadius * scale, Ink.Accent);
+        }
+    }
+
+    private float DrawScopePill(Vector2 rightCenter, float maxWidth, float scale)
     {
         var drawList = ImGui.GetWindowDrawList();
         var label = ScopePillLabel();
-        var labelSize = Typography.Measure(label, ScopePillStyle);
-        var width = labelSize.X + 30f * scale;
+        var chrome = ScopePillChrome * scale;
+        var fitted = Typography.FitText(label, MathF.Max(1f, maxWidth - chrome), ScopePillStyle);
+        var labelSize = Typography.Measure(fitted, ScopePillStyle);
+        var width = labelSize.X + chrome;
         var half = ScopePillHeight * scale * 0.5f;
         var rect = new Rect(new Vector2(rightCenter.X - width, rightCenter.Y - half),
             new Vector2(rightCenter.X, rightCenter.Y + half));
@@ -138,10 +182,15 @@ internal sealed partial class YellowPagesApp
             ImGui.GetColorU32(open ? Ink.AccentWash : hovered ? Ink.ChipHover : Ink.ChipFill));
         Squircle.Stroke(drawList, rect.Min, rect.Max, half,
             ImGui.GetColorU32(open ? Palette.WithAlpha(Ink.AccentLink, 0.6f) : Ink.ChipStroke), 1f);
-        Typography.Draw(drawList, new Vector2(rect.Min.X + 11f * scale, rect.Center.Y - labelSize.Y * 0.5f), label,
+        Typography.Draw(drawList, new Vector2(rect.Min.X + 11f * scale, rect.Center.Y - labelSize.Y * 0.5f), fitted,
             Ink.AccentLink, ScopePillStyle);
         PhoneIcon.Draw(drawList, new Vector2(rect.Max.X - 11f * scale, rect.Center.Y), PhoneIcons.ChevronDown,
             Palette.WithAlpha(Ink.AccentLink, 0.85f), 12f * scale);
+        if (fitted.Length < label.Length)
+        {
+            HoverTooltip.Show(rect, label, HoverLabelSide.Below);
+        }
+
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -151,6 +200,8 @@ internal sealed partial class YellowPagesApp
         {
             scopeMenu.Toggle("yellowpages.scope", rect);
         }
+
+        return width;
     }
 
     private string ScopePillLabel()
@@ -365,6 +416,8 @@ internal sealed partial class YellowPagesApp
         float textWidth, float scale)
     {
         var rounding = 16f * scale;
+        var restMin = min;
+        var restMax = max;
         var hovered = UiInteract.Hover(min, max);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var press = PressFx.Scale("yellowpages.intent." + intent, pressed, 0.96f);
@@ -388,7 +441,7 @@ internal sealed partial class YellowPagesApp
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        return UiInteract.Click(min, max, hovered);
+        return UiInteract.Click(restMin, restMax, hovered);
     }
 
     private static string[] WordsOf(string label)
@@ -430,17 +483,19 @@ internal sealed partial class YellowPagesApp
         var scale = UiScale.Current;
         var direction = DirectionFor(intent);
         EnsureDirectoryFilter(YellowPagesScreen.Category, IntentMask(intent), direction);
-        var pillReserve = Typography.Measure(ScopePillLabel(), ScopePillStyle).X / scale + 38f;
-        SocialChrome.DrawScreenHeader(area, Loc.T(AdIntents.Label(intent)), Ink, back, ScreenTitleStyle, pillReserve,
-            string.Empty, true, false);
-        DrawScopePill(new Vector2(area.Max.X - CellPadX * scale, area.Min.Y + AppHeader.Height * scale * 0.5f), scale);
+        var pillWidth = DrawScopePill(
+            new Vector2(area.Max.X - CellPadX * scale, area.Min.Y + AppHeader.Height * scale * 0.5f),
+            area.Width * ScopePillMaxShare, scale);
+        SocialChrome.DrawScreenHeader(area, Loc.T(AdIntents.Label(intent)), Ink, back, ScreenTitleStyle,
+            pillWidth / scale + 8f, string.Empty, true, false);
         DrawHairline(ImGui.GetWindowDrawList(), area.Min.X, area.Max.X, area.Min.Y + AppHeader.Height * scale);
         var listRect = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
         var loading = DirectoryStale();
         var directory = loading ? Array.Empty<AdDto>() : store.Directory;
         var nowUnix = NowUnix();
-        using (AppSurface.BeginEdgeToEdge(listRect))
+        using (var surface = AppSurface.BeginEdgeToEdge(listRect))
         {
+            ConsumeScrollTop(surface);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Xs * scale));
             DrawCategoryChips(intent, scale);
             if (AdIntents.SupportsDirection(intent))
