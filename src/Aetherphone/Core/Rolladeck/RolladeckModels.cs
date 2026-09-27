@@ -85,7 +85,10 @@ internal sealed class LiveDjEntry
 
 internal sealed class OpenVenueEntry
 {
-    [JsonPropertyName("id")]        public string? Id         { get; set; }
+    [JsonPropertyName("id")]
+    [JsonConverter(typeof(FlexibleStringConverter))]
+    public string? Id { get; set; }
+
     [JsonPropertyName("name")]      public string? Name       { get; set; }
     [JsonPropertyName("slug")]      public string? Slug       { get; set; }
     [JsonPropertyName("server")]    public string? Server     { get; set; }
@@ -170,7 +173,10 @@ internal sealed class DirectoryResponse
 
 internal sealed class DirectoryVenueEntry
 {
-    [JsonPropertyName("id")]         public string? Id         { get; set; }
+    [JsonPropertyName("id")]
+    [JsonConverter(typeof(FlexibleStringConverter))]
+    public string? Id { get; set; }
+
     [JsonPropertyName("name")]       public string? Name       { get; set; }
     [JsonPropertyName("slug")]       public string? Slug       { get; set; }
     [JsonPropertyName("server")]     public string? Server     { get; set; }
