@@ -6,8 +6,7 @@ namespace Aetherphone.Windows;
 
 internal static class TeleportActions
 {
-    public static void AskThenTravel(ConfirmService confirm, string placeName, string address, string destination,
-        bool lifestreamAvailable)
+    public static void AskThenTravel(ConfirmService confirm, string placeName, string address, string destination)
     {
         if (string.IsNullOrWhiteSpace(destination))
         {
@@ -16,11 +15,18 @@ internal static class TeleportActions
 
         var where = ConfirmSection.Chip(Loc.T(L.Common.OpenLinkDestination),
             address.Length > 0 ? address : destination);
-        if (!lifestreamAvailable)
+        if (!LifestreamBridge.IsAvailable())
         {
-            confirm.Alert(Loc.T(L.Common.TravelNeedsLifestreamTitle),
-                [ConfirmSection.Paragraph(Loc.T(L.Common.TravelNeedsLifestream)), where], string.Empty,
-                Loc.T(L.Common.Close));
+            confirm.Ask(new ConfirmRequest
+            {
+                Title = Loc.T(L.Common.TravelNeedsLifestreamTitle),
+                Message = string.Empty,
+                Sections = [ConfirmSection.Paragraph(Loc.T(L.Common.TravelNeedsLifestream)), where],
+                ConfirmLabel = Loc.T(L.Common.TravelLifestreamPage),
+                CancelLabel = Loc.T(L.Common.Close),
+                Danger = false,
+                Confirm = () => UrlActions.OpenInBrowser(LifestreamBridge.ProjectUrl),
+            });
             return;
         }
 

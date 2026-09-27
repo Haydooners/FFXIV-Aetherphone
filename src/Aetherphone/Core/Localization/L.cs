@@ -35,7 +35,8 @@ internal static class L
             "Lifestream will move your character there automatically, changing worlds and teleporting on the way.");
         public static readonly LocString TravelNeedsLifestreamTitle = new("common.travelNeedsLifestreamTitle", "Lifestream needed");
         public static readonly LocString TravelNeedsLifestream = new("common.travelNeedsLifestream",
-            "Install and enable the Lifestream plugin to go there automatically.");
+            "Install and enable the Lifestream plugin to go there automatically. Its page explains what it does and how to install it.");
+        public static readonly LocString TravelLifestreamPage = new("common.travelLifestreamPage", "Open Lifestream page");
         public static readonly LocString TravelConfirm = new("common.travelConfirm", "Travel");
         public static readonly LocString OpenLinkConfirm = new("common.openLinkConfirm", "Open link");
         public static readonly LocString OpenInWindow = new("common.openInWindow", "Open in a window");
@@ -1110,7 +1111,6 @@ internal static class L
         public static readonly LocString Website = new("venues.website", "Website");
         public static readonly LocString WatchOnTwitch = new("venues.watchOnTwitch", "Watch on Twitch");
         public static readonly LocString GoToVenue = new("venues.goToVenue", "Go to venue");
-        public static readonly LocString NeedsLifestream = new("venues.needsLifestream", "Lifestream is not installed");
         public static readonly LocString Details = new("venues.details", "Details");
         public static readonly LocString NextOpening = new("venues.nextOpening", "Next opening");
         public static readonly LocString DataCenter = new("venues.dataCenter", "Data Center");

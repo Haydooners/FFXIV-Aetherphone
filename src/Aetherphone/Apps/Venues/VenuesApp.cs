@@ -72,7 +72,6 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
     private int favoritesStamp;
     private int tagsStamp;
     private int visibleCards = PageSize;
-    private bool lifestreamAvailable;
     private string pendingVenueId = string.Empty;
     private PhoneTheme theme = PhoneTheme.Default;
     private Rect screenRect;
@@ -101,7 +100,6 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         activeTab = VenueTab.Discover;
         search = string.Empty;
         ResetScrollState();
-        lifestreamAvailable = LifestreamBridge.IsAvailable();
         venues.EnsureFresh(false);
     }
 
@@ -513,7 +511,7 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
             return;
         }
 
-        TeleportActions.AskThenTravel(confirm, venue.Title, venue.PlaceLine, venue.TeleportCode!, lifestreamAvailable);
+        TeleportActions.AskThenTravel(confirm, venue.Title, venue.PlaceLine, venue.TeleportCode!);
     }
 
     private static bool DrawHeaderIcon(ImDrawListPtr drawList, Vector2 center, string glyph, string tooltip,
