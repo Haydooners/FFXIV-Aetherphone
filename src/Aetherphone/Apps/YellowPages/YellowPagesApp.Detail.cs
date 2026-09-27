@@ -580,16 +580,13 @@ internal sealed partial class YellowPagesApp
         var pad = CellPadX * scale;
         var innerWidth = width - pad * 2f;
         var cursorY = origin.Y;
+        var address = AdText.Location(ad);
         cursorY += DrawLocationLine(drawList, ad.AddressNote, new Vector2(origin.X + pad, cursorY), innerWidth,
             SectionRowEmphasis, Ink.TitleInk, scale);
-        cursorY += DrawLocationLine(drawList, AdText.PlaceLine(ad), new Vector2(origin.X + pad, cursorY), innerWidth,
-            SectionRowStyle, Ink.BodyInk, scale);
-        if (ad.Ward > 0 && ad.Plot > 0)
-        {
-            cursorY += DrawLocationLine(drawList, Loc.T(L.YellowPages.WardPlot, ad.Ward, ad.Plot),
-                new Vector2(origin.X + pad, cursorY), innerWidth, SectionRowStyle, Ink.BodyInk, scale);
-        }
-
+        cursorY += DrawLocationLine(drawList, LocationShare.Headline(in address), new Vector2(origin.X + pad, cursorY),
+            innerWidth, SectionRowStyle, Ink.BodyInk, scale);
+        cursorY += DrawLocationLine(drawList, LocationShare.DetailLine(in address), new Vector2(origin.X + pad, cursorY),
+            innerWidth, SectionRowStyle, Ink.BodyInk, scale);
         cursorY += Metrics.Space.Sm * scale;
         var gap = Metrics.Space.Sm * scale;
         var buttonHeight = LocationButtonHeight * scale;

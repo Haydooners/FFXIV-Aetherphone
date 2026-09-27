@@ -7486,7 +7486,6 @@ internal static class L
         public static readonly LocString ScheduleYourTime = new("yellowpages.scheduleYourTime", "Weekly · your time ({0})");
         public static readonly LocString RenewedAgo = new("yellowpages.renewedAgo", "renewed {0}");
         public static readonly LocString WhereSection = new("yellowpages.whereSection", "Where");
-        public static readonly LocString WardPlot = new("yellowpages.wardPlot", "Ward {0}, Plot {1}");
         public static readonly LocString FlagOnMap = new("yellowpages.flagOnMap", "Set map flag");
         public static readonly LocString CopyDetails = new("yellowpages.copyDetails", "Copy details");
         public static readonly LocString Copied = new("yellowpages.copied", "Copied");
