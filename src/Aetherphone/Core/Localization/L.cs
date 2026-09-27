@@ -1969,6 +1969,14 @@ internal static class L
                 "Added a Filters page for sources and tags, and a switch for notifications about new openings nearby"),
         };
 
+        public static readonly LocString[] Release1035Linkpearl =
+        {
+            new("changelog.r1035.24",
+                "Added a pop-out option to open new tells as an unread tab without switching away from the one you are typing in"),
+            new("changelog.r1035.25",
+                "Added a pop-out option to pop up new tells while the phone is open too"),
+        };
+
         public static readonly LocString[] Release1035Music =
         {
             new("changelog.r1035.23",
@@ -4450,6 +4458,8 @@ internal static class L
         public static readonly LocString NewCount = new("linkpearl.newCount", "{0} new");
         public static readonly LocString PopoutTabsHint = new("linkpearl.popoutTabsHint", "Drag a pop-out onto another to merge them into one window.");
         public static readonly LocString PopoutOutgoingTells = new("linkpearl.popoutOutgoingTells", "Pop up tells you send too");
+        public static readonly LocString PopoutTellsWhilePhoneOpen = new("linkpearl.popoutTellsWhilePhoneOpen", "Also while the phone is open");
+        public static readonly LocString PopoutTellsInBackground = new("linkpearl.popoutTellsInBackground", "Pop up new tells without switching to them");
         public static readonly LocString PopoutCloseOnLogout = new("linkpearl.popoutCloseOnLogout", "Close pop-outs when you log out");
         public static readonly LocString PopoutFlash = new("linkpearl.popoutFlash", "Flash the bar on a new message");
         public static readonly LocString PopoutFade = new("linkpearl.popoutFade", "Fade while you are away from it");
