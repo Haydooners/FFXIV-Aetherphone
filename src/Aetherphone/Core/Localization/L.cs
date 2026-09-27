@@ -1902,6 +1902,14 @@ internal static class L
         public static readonly LocString SectionAethergramVelvet = new("changelog.sectionAethergramVelvet", "Aethergram and Velvet");
         public static readonly LocString SectionChirperAethergramVelvet = new("changelog.sectionChirperAethergramVelvet", "Chirper, Aethergram and Velvet");
 
+        public static readonly LocString[] Release1036YellowPages =
+        {
+            new("changelog.r1036.0",
+                "Added a repeat cadence to place ads: a venue can open every week or every 2 to 8 weeks, and you pick the week it starts"),
+            new("changelog.r1036.1",
+                "Fixed an ad's Where section showing less of the address than the New ad screen"),
+        };
+
         public static readonly LocString[] Release1035AethergramVelvet =
         {
             new("changelog.r1035.0",

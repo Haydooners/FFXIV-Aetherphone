@@ -5509,6 +5509,8 @@
   "changelog.r1033.5": "Akış filtrelerine Hassas gramları göster eklendi: hassas olarak işaretlenen gramları akışlarınızın dışında tutmak için kapatın",
   "changelog.r1033.6": "Fotoğraftaki bir etiketin X düğmesinin etiketi kaldırmaması düzeltildi",
   "changelog.r1033.7": "Kararlılık iyileştirildi: para birimi miktarları artık ekran çizilirken değil, oyunla aynı adımda okunuyor, Deldee katkısıyla",
+  "changelog.r1036.0": "Mekân ilanlarına tekrar sıklığı eklendi: bir mekân her hafta ya da 2 ila 8 haftada bir açılabilir ve başlayacağı haftayı sen seçersin",
+  "changelog.r1036.1": "Bir ilanın Nerede bölümünün adresi Yeni ilan ekranından daha eksik göstermesi düzeltildi",
   "changelog.r1035.0": "Sabitlenmiş gönderiler eklendi: gönderi menüsünden en fazla üç gönderiyi profilinin en üstüne sabitle, en son sabitlenen önce gelir, ızgarada bir raptiye rozeti ve gönderide Sabitlendi etiketi görünür",
   "changelog.r1035.1": "Gönderi arşivi eklendi: bir gönderiyi arşivleyerek silmeden profilinden ve tüm akışlardan kaldır, sonra profil menüsündeki yeni Arşiv ekranından geri getir; beğenileri ve yorumlarıyla eski yerine döner",
   "changelog.r1035.2": "Sabitlenmiş sohbetler eklendi: sohbet menüsünden en fazla üç sohbeti gelen kutusunun en üstüne sabitle",
