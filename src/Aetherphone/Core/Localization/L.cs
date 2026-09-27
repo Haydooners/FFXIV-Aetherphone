@@ -1110,7 +1110,6 @@ internal static class L
         public static readonly LocString Discord = new("venues.discord", "Discord");
         public static readonly LocString Website = new("venues.website", "Website");
         public static readonly LocString WatchOnTwitch = new("venues.watchOnTwitch", "Watch on Twitch");
-        public static readonly LocString GoToVenue = new("venues.goToVenue", "Go to venue");
         public static readonly LocString Details = new("venues.details", "Details");
         public static readonly LocString NextOpening = new("venues.nextOpening", "Next opening");
         public static readonly LocString DataCenter = new("venues.dataCenter", "Data Center");
