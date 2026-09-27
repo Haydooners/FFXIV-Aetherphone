@@ -1,6 +1,6 @@
-namespace Aetherphone.Core.Venues;
+namespace Aetherphone.Core.Geography;
 
-internal enum VenueScopeKind : byte
+internal enum GeoScopeKind : byte
 {
     MyDataCenter,
     Everywhere,
