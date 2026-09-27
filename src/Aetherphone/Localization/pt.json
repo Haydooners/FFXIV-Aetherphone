@@ -5530,6 +5530,8 @@
   "changelog.r1035.22": "Adicionada uma página de filtros para fontes e tags, e um botão para notificações de novas aberturas por perto",
   "changelog.r1035.26": "Página do local reorganizada: a descrição, os detalhes e os links vêm primeiro, e as tags passam para uma linha compacta no fim",
   "changelog.r1035.27": "Um aviso agora explica que o Lifestream precisa estar instalado e ativado para que «Ir para lá» possa viajar automaticamente",
+  "changelog.r1035.29": "Corrigida a aba Eventos, que deixava de fora eventos publicados de locais que também têm um horário semanal",
+  "changelog.r1035.30": "Corrigidos os filtros de região e centro de dados, que escondiam locais do diretório que informam apenas um mundo",
   "changelog.r1035.23": "Corrigido o Teleportar na seção de DJs ao vivo, que enviava um comando quebrado ao Lifestream",
   "changelog.r1035.24": "Adicionada uma opção do chat flutuante para abrir novos tells como aba não lida, sem sair da aba em que você está escrevendo",
   "changelog.r1035.25": "Adicionada uma opção do chat flutuante para mostrar novos tells também com o celular aberto",

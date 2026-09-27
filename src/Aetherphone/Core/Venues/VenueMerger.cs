@@ -100,6 +100,7 @@ internal static class VenueMerger
     private static VenueEvent Enrich(VenueEvent listing, VenueEvent rolladeck)
     {
         var adoptOpening = !listing.HasOpening && rolladeck.HasOpening;
+        var adoptEvent = !listing.IsEvent && rolladeck.IsEvent;
         return listing with
         {
             Sources = listing.Sources | VenueSources.Rolladeck,
@@ -111,8 +112,9 @@ internal static class VenueMerger
             RolladeckUrl = rolladeck.RolladeckUrl,
             StartUtc = adoptOpening ? rolladeck.StartUtc : listing.StartUtc,
             EndUtc = adoptOpening ? rolladeck.EndUtc : listing.EndUtc,
-            IsEvent = adoptOpening ? rolladeck.IsEvent : listing.IsEvent,
-            EventName = adoptOpening ? rolladeck.EventName : listing.EventName,
+            EventStartUtc = adoptEvent ? rolladeck.EventStartUtc : listing.EventStartUtc,
+            EventEndUtc = adoptEvent ? rolladeck.EventEndUtc : listing.EventEndUtc,
+            EventName = adoptEvent ? rolladeck.EventName : listing.EventName,
         };
     }
 

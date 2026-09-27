@@ -67,7 +67,8 @@ internal sealed record VenueEvent
     public required string? ListingUrl { get; init; }
     public required int AttendeeCount { get; init; }
     public VenueAddress Address { get; init; }
-    public bool IsEvent { get; init; }
+    public DateTime? EventStartUtc { get; init; }
+    public DateTime? EventEndUtc { get; init; }
     public string EventName { get; init; } = string.Empty;
     public string? RolladeckUrl { get; init; }
     public string? TwitchUrl { get; init; }
@@ -79,17 +80,22 @@ internal sealed record VenueEvent
 
     public bool CanTeleport => !string.IsNullOrEmpty(TeleportCode);
     public bool HasOpening => StartUtc.HasValue;
+    public bool IsEvent => EventStartUtc.HasValue;
 
     public bool IsConfirmedLive(DateTime nowUtc) => nowUtc < LiveConfirmedUntilUtc;
 
-    public bool IsScheduledOpen(DateTime nowUtc)
+    public bool IsScheduledOpen(DateTime nowUtc) => StartUtc is { } start && IsOpen(start, EndUtc, nowUtc);
+
+    public bool IsEventOn(DateTime nowUtc) => EventStartUtc is { } start && IsOpen(start, EventEndUtc, nowUtc);
+
+    private static bool IsOpen(DateTime start, DateTime? end, DateTime nowUtc)
     {
-        if (StartUtc is not { } start || start > nowUtc)
+        if (start > nowUtc)
         {
             return false;
         }
 
-        return EndUtc is { } end ? end > nowUtc : nowUtc - start < OpenEndedWindow;
+        return end is { } endUtc ? endUtc > nowUtc : nowUtc - start < OpenEndedWindow;
     }
 
     public bool IsLive(DateTime nowUtc) => IsConfirmedLive(nowUtc) || IsScheduledOpen(nowUtc);

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Aetherphone.Core.Geography;
 using Aetherphone.Core.Rolladeck;
 
 namespace Aetherphone.Core.Venues;
@@ -69,6 +70,8 @@ internal static class VenueMapper
         var world = dto.LocationData?.Server?.Name ?? string.Empty;
         var freeText = dto.Location ?? string.Empty;
         var locationLine = freeText.Length > 0 ? freeText : world;
+        var startUtc = starts.UtcDateTime;
+        var endUtc = dto.EndsAt?.UtcDateTime;
         return new VenueEvent
         {
             Id = $"partake:{dto.Id}",
@@ -83,14 +86,15 @@ internal static class VenueMapper
             TeleportCode = null,
             BannerUrl = null,
             LogoUrl = NullIfEmpty(dto.Team?.IconUrl),
-            StartUtc = starts.UtcDateTime,
-            EndUtc = dto.EndsAt?.UtcDateTime,
+            StartUtc = startUtc,
+            EndUtc = endUtc,
             Tags = CollectPartakeTags(dto),
             WebsiteUrl = NullIfEmpty(dto.Team?.WebsiteUrl),
             DiscordUrl = NullIfEmpty(dto.Team?.DiscordUrl),
             ListingUrl = $"https://www.partake.gg/events/{dto.Id}",
             AttendeeCount = dto.AttendeeCount,
-            IsEvent = true,
+            EventStartUtc = startUtc,
+            EventEndUtc = endUtc,
         };
     }
 
@@ -111,7 +115,7 @@ internal static class VenueMapper
             Title = RolladeckText.Normalize(entry.Name),
             Host = string.Empty,
             Description = string.Empty,
-            DataCenter = entry.Datacenter ?? string.Empty,
+            DataCenter = DataCenterOf(entry.Datacenter, world),
             World = world,
             LocationLine = locationLine,
             PlaceLine = BuildPlaceLine(world, locationLine),
@@ -127,13 +131,24 @@ internal static class VenueMapper
             AttendeeCount = 0,
             Address = VenueAddress.Of(world, entry.District, entry.Ward, entry.Plot),
             RolladeckUrl = RolladeckVenueUrl(entry.Slug),
-            IsEvent = startUtc.HasValue,
+            EventStartUtc = startUtc,
+            EventEndUtc = endUtc,
             EventName = eventName,
         };
     }
 
     public static string? RolladeckVenueUrl(string? slug) =>
         string.IsNullOrEmpty(slug) ? null : $"https://xivrolladeck.com/venue/{slug}";
+
+    private static string DataCenterOf(string? dataCenter, string world)
+    {
+        if (!string.IsNullOrEmpty(dataCenter))
+        {
+            return dataCenter;
+        }
+
+        return WorldGeography.DataCenterOfWorld(world)?.Name ?? string.Empty;
+    }
 
     public static string BuildPlaceLine(string world, string locationLine)
     {

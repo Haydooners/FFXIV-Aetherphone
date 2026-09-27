@@ -62,7 +62,7 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
     private readonly VenueTextList liveText = new("venues.live.");
     private readonly VenueTextList laterText = new("venues.later.");
     private readonly VenueTextList nearText = new("venues.near.");
-    private readonly VenueTextList eventsText = new("venues.events.");
+    private readonly VenueTextList eventsText = new("venues.events.", true);
     private readonly VenueTextList savedText = new("venues.saved.");
     private readonly VenueTextList listText = new("venues.list.");
     private readonly VenueTextList searchText = new("venues.search.");

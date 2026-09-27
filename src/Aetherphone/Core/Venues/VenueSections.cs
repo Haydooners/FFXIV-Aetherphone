@@ -31,6 +31,7 @@ internal sealed class VenueSections
     private readonly Order liveOrder = new(OrderMode.Live);
     private readonly Order startOrder = new(OrderMode.Start);
     private readonly Order mixedOrder = new(OrderMode.LiveThenStart);
+    private readonly Order eventOrder = new(OrderMode.Event);
     private VenueSectionsKey key;
     private bool built;
 
@@ -90,7 +91,8 @@ internal sealed class VenueSections
                 nearYou.Add(venue);
             }
 
-            if (venue.IsEvent && (isLive || (upcoming && venue.StartUtc!.Value <= eventHorizon)))
+            if (venue.EventStartUtc is { } eventStart &&
+                (venue.IsEventOn(nowUtc) || (eventStart > nowUtc && eventStart <= eventHorizon)))
             {
                 events.Add(venue);
             }
@@ -104,10 +106,11 @@ internal sealed class VenueSections
         liveOrder.Now = nowUtc;
         startOrder.Now = nowUtc;
         mixedOrder.Now = nowUtc;
+        eventOrder.Now = nowUtc;
         live.Sort(liveOrder);
         laterToday.Sort(startOrder);
         nearYou.Sort(mixedOrder);
-        events.Sort(mixedOrder);
+        events.Sort(eventOrder);
         saved.Sort(mixedOrder);
         PickFeatured();
         FillRail(laterRail, laterToday, null);
@@ -223,6 +226,7 @@ internal sealed class VenueSections
         Live,
         Start,
         LiveThenStart,
+        Event,
     }
 
     private sealed class Order(OrderMode mode) : IComparer<VenueEvent>
@@ -231,6 +235,11 @@ internal sealed class VenueSections
 
         public int Compare(VenueEvent? left, VenueEvent? right)
         {
+            if (mode == OrderMode.Event)
+            {
+                return CompareEvents(left!, right!);
+            }
+
             if (mode != OrderMode.Start)
             {
                 var byState = VenueFilter.CompareLiveState(left!, right!, Now);
@@ -258,6 +267,18 @@ internal sealed class VenueSections
             }
 
             return string.Compare(left!.Title, right!.Title, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private int CompareEvents(VenueEvent left, VenueEvent right)
+        {
+            var byOn = right.IsEventOn(Now).CompareTo(left.IsEventOn(Now));
+            if (byOn != 0)
+            {
+                return byOn;
+            }
+
+            var byStart = (left.EventStartUtc ?? DateTime.MaxValue).CompareTo(right.EventStartUtc ?? DateTime.MaxValue);
+            return byStart != 0 ? byStart : string.Compare(left.Title, right.Title, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

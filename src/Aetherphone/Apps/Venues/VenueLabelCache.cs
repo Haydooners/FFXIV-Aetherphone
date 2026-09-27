@@ -6,7 +6,7 @@ namespace Aetherphone.Apps.Venues;
 internal readonly record struct VenueCardText(VenueStatus Status, string Meta, string Stat, string Initial,
     string PressId);
 
-internal sealed class VenueTextList(string pressPrefix)
+internal sealed class VenueTextList(string pressPrefix, bool eventTimes = false)
 {
     private readonly List<VenueCardText> items = new();
 
@@ -19,7 +19,7 @@ internal sealed class VenueTextList(string pressPrefix)
         items.Clear();
         for (var index = 0; index < venues.Count; index++)
         {
-            items.Add(VenueLabelCache.Build(venues[index], nowUtc, pressPrefix));
+            items.Add(VenueLabelCache.Build(venues[index], nowUtc, pressPrefix, eventTimes));
         }
     }
 }
@@ -47,9 +47,9 @@ internal sealed class VenueLabelCache
         return true;
     }
 
-    public static VenueCardText Build(VenueEvent venue, DateTime nowUtc, string pressPrefix) =>
-        new(VenueFormat.Status(venue, nowUtc), VenueFormat.Meta(venue), StatOf(venue, nowUtc), InitialOf(venue.Title),
-            pressPrefix + venue.Id);
+    public static VenueCardText Build(VenueEvent venue, DateTime nowUtc, string pressPrefix, bool eventTimes = false) =>
+        new(eventTimes ? VenueFormat.EventStatus(venue, nowUtc) : VenueFormat.Status(venue, nowUtc),
+            VenueFormat.Meta(venue), StatOf(venue, nowUtc), InitialOf(venue.Title), pressPrefix + venue.Id);
 
     public static string InitialOf(string title)
     {

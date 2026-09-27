@@ -5530,6 +5530,8 @@
   "changelog.r1035.22": "Eine Filterseite für Quellen und Tags hinzugefügt, dazu einen Schalter für Benachrichtigungen über neue Öffnungen in der Nähe",
   "changelog.r1035.26": "Die Seite einer Location neu geordnet: Beschreibung, Details und Links kommen zuerst, die Tags stehen jetzt in einer kompakten Reihe ganz unten",
   "changelog.r1035.27": "Ein Hinweis erklärt jetzt, dass Lifestream installiert und aktiviert sein muss, bevor „Dorthin reisen“ automatisch reisen kann",
+  "changelog.r1035.29": "Events-Tab behoben: angekündigte Events von Lokalen mit wöchentlichem Zeitplan wurden ausgelassen",
+  "changelog.r1035.30": "Regions- und Datenzentrumsfilter behoben: Verzeichnis-Lokale, die nur eine Welt angeben, wurden ausgeblendet",
   "changelog.r1035.23": "Teleport im Live-DJ-Bereich behoben, der Lifestream einen fehlerhaften Befehl geschickt hat",
   "changelog.r1035.24": "Pop-out-Option hinzugefügt, mit der neue Tells als ungelesener Reiter geöffnet werden, ohne den Reiter zu verlassen, in dem du gerade schreibst",
   "changelog.r1035.25": "Pop-out-Option hinzugefügt, mit der neue Tells auch bei geöffnetem Telefon eingeblendet werden",

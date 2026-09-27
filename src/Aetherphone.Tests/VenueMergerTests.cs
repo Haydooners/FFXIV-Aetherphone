@@ -58,6 +58,7 @@ public sealed class VenueMergerTests
             Name = name,
             Slug = "open-slug",
             Server = "Shiva",
+            Datacenter = "Light",
             District = "Lavender Beds",
             Ward = ward,
             Plot = plot,
@@ -233,7 +234,10 @@ public sealed class VenueMergerTests
         var live = Listing("ffxiv:a", "Alpha", ward: 1, plot: 1, start: Now.AddMinutes(-10), end: Now.AddHours(2));
         var later = Listing("ffxiv:b", "Bravo", ward: 2, plot: 2, start: laterToday, end: laterToday.AddHours(2),
             banner: "https://banner") with { Tags = ["Bath house"] };
-        var party = Listing("partake:1", "Beach Rave", ward: 3, plot: 3, start: Now.AddDays(3)) with { IsEvent = true };
+        var party = Listing("partake:1", "Beach Rave", ward: 3, plot: 3, start: Now.AddDays(3)) with
+        {
+            EventStartUtc = Now.AddDays(3),
+        };
         var sections = new VenueSections();
         var key = new VenueSectionsKey(1, VenueFilter.SourceAll, null, string.Empty, "Shiva", 0, 0, 0);
 
@@ -354,6 +358,34 @@ public sealed class VenueMergerTests
         Assert.True(venue.IsEvent);
         Assert.Equal("Deimos @ Club Glo", venue.EventName);
         Assert.Equal(new DateTime(2026, 10, 2, 1, 0, 0, DateTimeKind.Utc), venue.StartUtc);
+    }
+
+    [Fact]
+    public void Merge_KeepsRolladeckDiscordEventWhenListingHasItsOwnSchedule()
+    {
+        var opening = Now.AddHours(20);
+        var listing = Listing("ffxiv:a", "Club Glo", start: opening, end: opening.AddHours(4));
+        var entry = Directory("r9", "Club Glo");
+        entry.UpcomingDiscordEvents = [new DirectoryEventEntry
+        {
+            Name = "Deimos @ Club Glo",
+            StartTime = "2026-10-02T01:00:00+00:00",
+            EndTime = "2026-10-02T02:00:00+00:00",
+        }];
+
+        var venue = Assert.Single(MergeEvents([listing], [entry], [], [], Now, Now));
+
+        Assert.Equal(opening, venue.StartUtc);
+        Assert.True(venue.IsEvent);
+        Assert.Equal("Deimos @ Club Glo", venue.EventName);
+        Assert.Equal(new DateTime(2026, 10, 2, 1, 0, 0, DateTimeKind.Utc), venue.EventStartUtc);
+        Assert.Equal(new DateTime(2026, 10, 2, 2, 0, 0, DateTimeKind.Utc), venue.EventEndUtc);
+
+        var sections = new VenueSections();
+        sections.Update(new VenueSectionsKey(1, VenueFilter.SourceAll, null, string.Empty, string.Empty, 0, 0, 0),
+            [venue], [], [], [], Now);
+
+        Assert.Equal(["Club Glo"], Titles(sections.Events));
     }
 
     [Fact]
