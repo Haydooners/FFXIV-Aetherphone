@@ -4,28 +4,24 @@ internal readonly record struct VenueQueryKey(
     int DataVersion,
     VenueTimeFilter Time,
     int Source,
-    string DataCenter,
+    IReadOnlySet<string>? DataCenters,
     bool FavoritesOnly,
     int FavoritesStamp,
     int TagsStamp,
     string Search,
-    long Minute);
+    long Minute,
+    int Category = -1,
+    string World = "",
+    bool HideAdult = false);
 
 internal sealed class VenueQuery
 {
-    public const int MaxRail = 12;
-
     private readonly List<VenueEvent> feed = new();
-    private readonly List<VenueEvent> rail = new();
     private readonly FeedOrder feedOrder = new();
-    private readonly RailOrder railOrder = new();
     private VenueQueryKey key;
     private bool built;
-    private int liveCount;
 
     public IReadOnlyList<VenueEvent> Feed => feed;
-    public IReadOnlyList<VenueEvent> Rail => rail;
-    public int LiveCount => liveCount;
     public int Revision { get; private set; }
 
     public void Invalidate() => built = false;
@@ -42,25 +38,15 @@ internal sealed class VenueQuery
         built = true;
         Revision++;
         feed.Clear();
-        rail.Clear();
-        liveCount = 0;
         var query = wanted.Search.Trim();
         var today = DateTime.Now.Date;
         for (var index = 0; index < source.Count; index++)
         {
             var venue = source[index];
-            if (!VenueFilter.MatchesSource(venue, wanted.Source) ||
-                !VenueFilter.MatchesDataCenter(venue, wanted.DataCenter) ||
-                !VenueFilter.MatchesTags(venue, selectedTags))
+            if (!VenueFilter.MatchesScope(venue, wanted.Source, wanted.DataCenters, wanted.World, selectedTags,
+                    wanted.HideAdult) || !VenueCategories.Matches(venue, wanted.Category))
             {
                 continue;
-            }
-
-            var live = venue.IsLive(nowUtc);
-            if (live)
-            {
-                liveCount++;
-                rail.Add(venue);
             }
 
             if (wanted.FavoritesOnly && !VenueFilter.Contains(favorites, venue.Id))
@@ -68,7 +54,7 @@ internal sealed class VenueQuery
                 continue;
             }
 
-            if (!VenueFilter.MatchesTime(venue, wanted.Time, live, nowUtc, today))
+            if (!VenueFilter.MatchesTime(venue, wanted.Time, venue.IsLive(nowUtc), nowUtc, today))
             {
                 continue;
             }
@@ -81,34 +67,10 @@ internal sealed class VenueQuery
             feed.Add(venue);
         }
 
-        railOrder.Now = nowUtc;
-        rail.Sort(railOrder);
-        if (rail.Count > MaxRail)
-        {
-            rail.RemoveRange(MaxRail, rail.Count - MaxRail);
-        }
-
         feedOrder.Now = nowUtc;
         feedOrder.Time = wanted.Time;
         feed.Sort(feedOrder);
         return true;
-    }
-
-    private sealed class RailOrder : IComparer<VenueEvent>
-    {
-        public DateTime Now;
-
-        public int Compare(VenueEvent? left, VenueEvent? right)
-        {
-            var byState = VenueFilter.CompareLiveState(left!, right!, Now);
-            if (byState != 0)
-            {
-                return byState;
-            }
-
-            var byViewers = right!.LiveViewers.CompareTo(left!.LiveViewers);
-            return byViewers != 0 ? byViewers : string.Compare(left.Title, right.Title, StringComparison.OrdinalIgnoreCase);
-        }
     }
 
     private sealed class FeedOrder : IComparer<VenueEvent>
@@ -118,15 +80,15 @@ internal sealed class VenueQuery
 
         public int Compare(VenueEvent? left, VenueEvent? right)
         {
-            if (Time == VenueTimeFilter.All)
-            {
-                return string.Compare(left!.Title, right!.Title, StringComparison.OrdinalIgnoreCase);
-            }
-
             var byState = VenueFilter.CompareLiveState(left!, right!, Now);
             if (byState != 0)
             {
                 return byState;
+            }
+
+            if (Time == VenueTimeFilter.All)
+            {
+                return string.Compare(left!.Title, right!.Title, StringComparison.OrdinalIgnoreCase);
             }
 
             if (Time == VenueTimeFilter.LiveNow)
@@ -155,24 +117,19 @@ internal static class VenueFilter
     public const int SourceCount = 4;
     private const int UpcomingWindowDays = 7;
 
-    public static void CollectTags(IReadOnlyList<VenueEvent> source, int sourceFilter, string dataCenter,
-        SortedSet<string> into)
-    {
-        into.Clear();
-        for (var index = 0; index < source.Count; index++)
-        {
-            var venue = source[index];
-            if (!MatchesSource(venue, sourceFilter) || !MatchesDataCenter(venue, dataCenter))
-            {
-                continue;
-            }
+    public static bool MatchesScope(VenueEvent venue, int source, IReadOnlySet<string>? dataCenters, string world,
+        IReadOnlyList<string> selectedTags, bool hideAdult) =>
+        MatchesSource(venue, source) && MatchesDataCenter(venue.DataCenter, dataCenters) &&
+        MatchesWorld(venue, world) && (!hideAdult || !IsAdult(venue)) && MatchesTags(venue, selectedTags);
 
-            for (var tagIndex = 0; tagIndex < venue.Tags.Count; tagIndex++)
-            {
-                into.Add(venue.Tags[tagIndex]);
-            }
-        }
-    }
+    public static bool IsAdult(VenueEvent venue) => Contains(venue.Tags, VenueMapper.AdultTag);
+
+    public static bool IsRatingTag(string tag) =>
+        string.Equals(tag, VenueMapper.AdultTag, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(tag, VenueMapper.SafeTag, StringComparison.OrdinalIgnoreCase);
+
+    public static bool MatchesWorld(VenueEvent venue, string world) =>
+        world.Length == 0 || string.Equals(venue.World, world, StringComparison.OrdinalIgnoreCase);
 
     public static int CompareLiveState(VenueEvent left, VenueEvent right, DateTime nowUtc) =>
         ((int)right.LiveState(nowUtc)).CompareTo((int)left.LiveState(nowUtc));
@@ -188,8 +145,8 @@ internal static class VenueFilter
         };
     }
 
-    public static bool MatchesDataCenter(VenueEvent venue, string dataCenter) =>
-        dataCenter.Length == 0 || string.Equals(venue.DataCenter, dataCenter, StringComparison.OrdinalIgnoreCase);
+    public static bool MatchesDataCenter(string dataCenter, IReadOnlySet<string>? dataCenters) =>
+        dataCenters is null || dataCenters.Contains(dataCenter);
 
     public static bool MatchesTime(VenueEvent venue, VenueTimeFilter time, bool live, DateTime nowUtc,
         DateTime localToday)

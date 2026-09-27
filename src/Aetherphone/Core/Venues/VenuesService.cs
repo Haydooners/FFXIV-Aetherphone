@@ -26,6 +26,7 @@ internal sealed class VenuesService : IDisposable
     private int merging;
     private volatile VenueEvent[] listings = Array.Empty<VenueEvent>();
     private volatile VenueEvent[] events = Array.Empty<VenueEvent>();
+    private volatile VenueDj[] djs = Array.Empty<VenueDj>();
     private int listingsVersion;
     private int mergedListingsVersion = -1;
     private int mergedRolladeckVersion = -1;
@@ -46,6 +47,7 @@ internal sealed class VenuesService : IDisposable
     public VenueState State => state;
     public int Version => version;
     public IReadOnlyList<VenueEvent> Events => events;
+    public IReadOnlyList<VenueDj> Djs => djs;
     public DateTime LastRefreshUtc => lastRefreshUtc;
     public bool Busy => Volatile.Read(ref refreshing) == 1 || rolladeck.Loading;
 
@@ -113,8 +115,10 @@ internal sealed class VenuesService : IDisposable
         try
         {
             var nowUtc = DateTime.UtcNow;
-            events = VenueMerger.Merge(listings, rolladeck.Directory, rolladeck.OpenVenues, rolladeck.LiveDJs,
+            var snapshot = VenueMerger.Merge(listings, rolladeck.Directory, rolladeck.OpenVenues, rolladeck.LiveDJs,
                 rolladeck.LiveFetchedUtc, nowUtc);
+            djs = snapshot.Djs;
+            events = snapshot.Events;
             version++;
             if (state != VenueState.Ready && events.Length > 0)
             {

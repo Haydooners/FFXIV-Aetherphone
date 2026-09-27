@@ -246,6 +246,8 @@ internal sealed partial class YellowPagesApp
     private bool DrawRailCard(ImDrawListPtr drawList, AdDto ad, Vector2 min, Vector2 max, long nowUnix, float scale)
     {
         var rounding = RailCardRounding * scale;
+        var restMin = min;
+        var restMax = max;
         var hovered = UiInteract.Hover(min, max);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var press = PressFx.Scale("yellowpages.rail." + ad.Id, pressed, 0.97f);
@@ -298,7 +300,7 @@ internal sealed partial class YellowPagesApp
         Typography.Draw(drawList, new Vector2(min.X + pad, metaTop),
             Typography.FitText(AdText.PlaceLine(ad), textWidth, RailMetaStyle), Palette.WithAlpha(YellowPagesKit.White, 0.78f),
             RailMetaStyle);
-        return UiInteract.Click(min, max, hovered);
+        return UiInteract.Click(restMin, restMax, hovered);
     }
 
     private void DrawRailChevron(ImDrawListPtr drawList, Vector2 center, string glyph, int step, float scale)

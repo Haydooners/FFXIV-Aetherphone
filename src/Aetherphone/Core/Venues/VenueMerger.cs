@@ -6,7 +6,7 @@ internal static class VenueMerger
 {
     public static readonly TimeSpan ConfirmationLifetime = TimeSpan.FromMinutes(12);
 
-    public static VenueEvent[] Merge(IReadOnlyList<VenueEvent> listings, IReadOnlyList<DirectoryVenueEntry> directory,
+    public static VenueSnapshot Merge(IReadOnlyList<VenueEvent> listings, IReadOnlyList<DirectoryVenueEntry> directory,
         IReadOnlyList<OpenVenueEntry> openVenues, IReadOnlyList<LiveDjEntry> liveDjs, DateTime liveFetchedUtc,
         DateTime nowUtc)
     {
@@ -71,19 +71,26 @@ internal static class VenueMerger
             merged[slot] = Confirm(merged[slot], open, confirmedUntil, nowUtc);
         }
 
+        var djs = new VenueDj[liveDjs.Count];
         for (var index = 0; index < liveDjs.Count; index++)
         {
             var dj = liveDjs[index];
             var address = VenueAddress.Of(dj.Server, dj.District, dj.Ward, dj.Plot);
-            if (!address.IsKnown || !byAddress.TryGetValue(address, out var slot))
+            string? venueId = null;
+            var place = RolladeckText.Normalize(dj.VenueName ?? dj.Server);
+            if (address.IsKnown && byAddress.TryGetValue(address, out var slot))
             {
-                continue;
+                merged[slot] = AttachDj(merged[slot], dj, confirmedUntil);
+                venueId = merged[slot].Id;
+                place = merged[slot].Title;
             }
 
-            merged[slot] = AttachDj(merged[slot], dj, confirmedUntil);
+            djs[index] = new VenueDj(dj.NormalizedName, NullIfEmpty(dj.AvatarUrl), dj.ViewerCount,
+                NullIfEmpty(dj.TwitchUrl), dj.Datacenter ?? string.Empty, dj.Server ?? string.Empty, venueId, place);
         }
 
-        return merged.ToArray();
+        Array.Sort(djs, static (left, right) => right.Viewers.CompareTo(left.Viewers));
+        return new VenueSnapshot(merged.ToArray(), djs);
     }
 
     private static VenueEvent Enrich(VenueEvent listing, VenueEvent rolladeck)
@@ -100,6 +107,8 @@ internal static class VenueMerger
             RolladeckUrl = rolladeck.RolladeckUrl,
             StartUtc = adoptOpening ? rolladeck.StartUtc : listing.StartUtc,
             EndUtc = adoptOpening ? rolladeck.EndUtc : listing.EndUtc,
+            IsEvent = adoptOpening ? rolladeck.IsEvent : listing.IsEvent,
+            EventName = adoptOpening ? rolladeck.EventName : listing.EventName,
         };
     }
 

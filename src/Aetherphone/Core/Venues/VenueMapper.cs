@@ -90,6 +90,7 @@ internal static class VenueMapper
             DiscordUrl = NullIfEmpty(dto.Team?.DiscordUrl),
             ListingUrl = $"https://www.partake.gg/events/{dto.Id}",
             AttendeeCount = dto.AttendeeCount,
+            IsEvent = true,
         };
     }
 
@@ -102,7 +103,7 @@ internal static class VenueMapper
 
         var world = entry.Server ?? string.Empty;
         var locationLine = BuildHousingLine(entry.District, entry.Ward, entry.Plot);
-        TryNextDiscordEvent(entry.UpcomingDiscordEvents, nowUtc, out var startUtc, out var endUtc);
+        var eventName = TryNextDiscordEvent(entry.UpcomingDiscordEvents, nowUtc, out var startUtc, out var endUtc);
         return new VenueEvent
         {
             Id = $"rolladeck:{entry.Id}",
@@ -126,6 +127,8 @@ internal static class VenueMapper
             AttendeeCount = 0,
             Address = VenueAddress.Of(world, entry.District, entry.Ward, entry.Plot),
             RolladeckUrl = RolladeckVenueUrl(entry.Slug),
+            IsEvent = startUtc.HasValue,
+            EventName = eventName,
         };
     }
 
@@ -155,11 +158,12 @@ internal static class VenueMapper
         return false;
     }
 
-    private static void TryNextDiscordEvent(List<DirectoryEventEntry> events, DateTime nowUtc,
+    private static string TryNextDiscordEvent(List<DirectoryEventEntry> events, DateTime nowUtc,
         out DateTime? startUtc, out DateTime? endUtc)
     {
         startUtc = null;
         endUtc = null;
+        var name = string.Empty;
         for (var index = 0; index < events.Count; index++)
         {
             var entry = events[index];
@@ -176,7 +180,10 @@ internal static class VenueMapper
 
             startUtc = start;
             endUtc = end;
+            name = RolladeckText.Normalize(entry.Name);
         }
+
+        return name;
     }
 
     private static void TryResolveOpening(FfxivVenueDto dto, DateTime nowUtc, out DateTime? startUtc,
