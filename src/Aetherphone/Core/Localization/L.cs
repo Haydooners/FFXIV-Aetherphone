@@ -1992,6 +1992,12 @@ internal static class L
                 "Fixed Teleport in the live DJ section, which sent Lifestream a broken command"),
         };
 
+        public static readonly LocString[] Release1035Phone =
+        {
+            new("changelog.r1035.31",
+                "Fixed the scrollbar blending into app backgrounds while the phone position is unlocked"),
+        };
+
         public static readonly LocString[] Release1034AppStore =
         {
             new("changelog.r1034.1",

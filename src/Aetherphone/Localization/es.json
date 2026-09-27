@@ -5530,6 +5530,7 @@
   "changelog.r1035.22": "Añadida una página de filtros para fuentes y etiquetas, y un interruptor para notificaciones de nuevas aperturas cercanas",
   "changelog.r1035.26": "Reordenada la página de cada local: la descripción, los detalles y los enlaces van primero, y las etiquetas pasan a una fila compacta al final",
   "changelog.r1035.27": "Un aviso ahora explica que Lifestream debe estar instalado y activado para que «Ir allí» pueda viajar automáticamente",
+  "changelog.r1035.31": "Corregida la barra de desplazamiento, que se confundía con el fondo de las apps con la posición del teléfono desbloqueada",
   "changelog.r1035.29": "Corregida la pestaña Eventos, que omitía los eventos publicados de locales que también tienen un horario semanal",
   "changelog.r1035.30": "Corregidos los filtros de región y centro de datos, que ocultaban los locales del directorio que solo indican un mundo",
   "changelog.r1035.23": "Corregido Teletransportar en la sección de DJ en vivo, que enviaba a Lifestream un comando roto",

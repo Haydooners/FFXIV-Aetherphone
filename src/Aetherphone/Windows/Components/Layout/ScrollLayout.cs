@@ -1,9 +1,21 @@
+using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Windows.Components;
 
 internal static class ScrollLayout
 {
+    private const float GrabAlpha = 0.32f;
+    private const float GrabHoverAlpha = 0.48f;
+    private const float GrabActiveAlpha = 0.62f;
+
+    public static ImRaii.ColorDisposable PushScrollbarInk(Vector4 ink) =>
+        ImRaii.PushColor(ImGuiCol.ScrollbarBg, AppSkin.Transparent)
+            .Push(ImGuiCol.ScrollbarGrab, Palette.WithAlpha(ink, GrabAlpha))
+            .Push(ImGuiCol.ScrollbarGrabHovered, Palette.WithAlpha(ink, GrabHoverAlpha))
+            .Push(ImGuiCol.ScrollbarGrabActive, Palette.WithAlpha(ink, GrabActiveAlpha));
+
     public static float StableContentWidth()
     {
         var available = ImGui.GetContentRegionAvail().X;
