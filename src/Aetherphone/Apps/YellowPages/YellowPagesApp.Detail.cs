@@ -514,8 +514,11 @@ internal sealed partial class YellowPagesApp
             return;
         }
 
-        DrawSectionLabel(Loc.T(L.YellowPages.ScheduleYourTime,
-            SocialTimeZone.FormatOffset(SocialTimeZone.DeviceOffsetMinutes())), Metrics.Space.Xs);
+        var everyWeeks = AdText.EveryWeeks(ad);
+        var clockOffset = SocialTimeZone.FormatOffset(SocialTimeZone.DeviceOffsetMinutes());
+        DrawSectionLabel(everyWeeks > 1
+            ? Loc.T(L.YellowPages.ScheduleEveryWeeksYourTime, everyWeeks, clockOffset)
+            : Loc.T(L.YellowPages.ScheduleYourTime, clockOffset), Metrics.Space.Xs);
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
@@ -528,9 +531,10 @@ internal sealed partial class YellowPagesApp
             var slot = ad.Schedule[index];
             var rowTop = origin.Y + index * rowHeight;
             AdText.ToLocalSlot(slot, out var localDay, out _);
-            var startUnix = AdText.NextOccurrenceUnix(slot, nowUnix);
+            var startUnix = AdText.UpcomingStartUnix(slot, nowUnix);
             var range = $"{TimeText.Clock(startUnix)} - {TimeText.Clock(startUnix + slot.DurationMinutes * 60L)}";
-            var isToday = localDay == todayLocal;
+            var repeats = AdText.Repeats(slot);
+            var isToday = repeats ? TimeText.SameLocalDay(startUnix, nowUnix) : localDay == todayLocal;
             if (isToday)
             {
                 drawList.AddRectFilled(new Vector2(origin.X, rowTop), new Vector2(origin.X + width, rowTop + rowHeight),
@@ -553,6 +557,11 @@ internal sealed partial class YellowPagesApp
             var utcSize = Typography.Measure(utcRange, TextStyles.Caption1);
             Typography.Draw(drawList, new Vector2(origin.X + width - pad - utcSize.X, blockTop + lineHeight + 1f * scale),
                 utcRange, Ink.FaintInk, TextStyles.Caption1);
+            if (repeats)
+            {
+                Typography.Draw(drawList, new Vector2(origin.X + pad, blockTop + lineHeight + 1f * scale),
+                    Loc.T(L.YellowPages.NextOn, TimeText.MonthDay(startUnix)), Ink.FaintInk, TextStyles.Caption1);
+            }
         }
 
         ImGui.SetCursorScreenPos(origin);

@@ -7648,6 +7648,12 @@ internal static class L
         public static readonly LocString YourRoleLabel = new("yellowpages.yourRoleLabel", "What you bring");
         public static readonly LocString ScheduleInUtc = new("yellowpages.scheduleInUtc", "In UTC: {0} to {1}");
         public static readonly LocString ScheduleUtcRange = new("yellowpages.scheduleUtcRange", "UTC {0} - {1}");
+        public static readonly LocString RepeatLabel = new("yellowpages.repeatLabel", "Repeats");
+        public static readonly LocString EveryWeek = new("yellowpages.everyWeek", "Every week");
+        public static readonly LocString EveryWeeks = new("yellowpages.everyWeeks", "Every {0} weeks");
+        public static readonly LocString FirstOpeningLabel = new("yellowpages.firstOpeningLabel", "First opening");
+        public static readonly LocString ScheduleEveryWeeksYourTime = new("yellowpages.scheduleEveryWeeksYourTime", "Every {0} weeks · your time ({1})");
+        public static readonly LocString NextOn = new("yellowpages.nextOn", "Next {0}");
     }
 
     internal static class Conduct
