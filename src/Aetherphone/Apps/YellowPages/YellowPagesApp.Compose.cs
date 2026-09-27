@@ -49,6 +49,7 @@ internal sealed partial class YellowPagesApp
     private const float FieldRowHeight = 46f;
     private const float FieldLabelWidth = 104f;
     private const float FieldLabelGap = 14f;
+    private const float HelpInset = 14f;
     private const float BodyFieldHeight = 120f;
     private const float TagsFieldHeight = 40f;
     private const float TagChipHeight = 28f;
@@ -409,14 +410,14 @@ internal sealed partial class YellowPagesApp
             {
                 ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
                 ui.SectionHeading(Loc.T(L.YellowPages.DirectionSection));
-                ui.HelpText(Loc.T(composeArchetype == AdArchetypes.Service
+                DrawHelpParagraph(Loc.T(composeArchetype == AdArchetypes.Service
                     ? L.YellowPages.DirectionHintService
-                    : L.YellowPages.DirectionHintCall));
+                    : L.YellowPages.DirectionHintCall), Ink.MutedInk, FieldHintStyle, scale);
                 DrawDirectionTiles(scale);
             }
 
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-            ui.HelpText(Loc.T(L.YellowPages.PostRules));
+            DrawHelpParagraph(Loc.T(L.YellowPages.PostRules), Ink.MutedInk, FieldHintStyle, scale);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Xl * scale));
         }
     }
@@ -1055,7 +1056,8 @@ internal sealed partial class YellowPagesApp
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
         ui.SectionHeading(Loc.T(L.YellowPages.ScheduleSection));
         var offsetMinutes = SocialTimeZone.DeviceOffsetMinutes();
-        ui.HelpText(Loc.T(L.YellowPages.ScheduleHint, SocialTimeZone.FormatOffset(offsetMinutes)));
+        DrawHelpParagraph(Loc.T(L.YellowPages.ScheduleHint, SocialTimeZone.FormatOffset(offsetMinutes)), Ink.MutedInk,
+            FieldHintStyle, scale);
         DrawDayRow(scale);
         composeOpenMinute = DrawTimeField(Loc.T(L.YellowPages.OpensLabel), composeOpenMinute, scale);
         composeCloseMinute = DrawTimeField(Loc.T(L.YellowPages.ClosesLabel), composeCloseMinute, scale);
@@ -1187,7 +1189,7 @@ internal sealed partial class YellowPagesApp
         {
             ui.SectionHeading(Loc.T(L.YellowPages.ModLinkLabel));
             DrawFieldCard(Loc.T(L.YellowPages.LinkLabel), "##adModLink", ref composeLink, LinkMaxLength, "https://", scale);
-            ui.HelpText(Loc.T(L.YellowPages.ModLinkHint));
+            DrawHelpParagraph(Loc.T(L.YellowPages.ModLinkHint), Ink.MutedInk, FieldHintStyle, scale);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
             return;
         }
@@ -1238,9 +1240,16 @@ internal sealed partial class YellowPagesApp
             return;
         }
 
+        DrawHelpParagraph(hint, Ink.MutedInk, FieldHintStyle, scale);
+    }
+
+    private static void DrawHelpParagraph(string text, Vector4 ink, in TextStyle style, float scale)
+    {
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
-        var height = Typography.DrawWrappedLeft(origin, hint, Ink.MutedInk, FieldHintStyle, width);
+        var inset = HelpInset * scale;
+        var height = Typography.DrawWrappedLeft(new Vector2(origin.X + inset, origin.Y), text, ink, style,
+            MathF.Max(1f, width - inset * 2f));
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height + Metrics.Space.Sm * scale));
     }
@@ -1355,8 +1364,9 @@ internal sealed partial class YellowPagesApp
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, AccentRowHeight * scale));
         var hintOrigin = ImGui.GetCursorScreenPos();
-        var hintHeight = Typography.DrawWrappedLeft(new Vector2(hintOrigin.X + pad, hintOrigin.Y),
-            Loc.T(L.YellowPages.CoverAccentHint), Ink.MutedInk, FieldHintStyle, width - pad * 2f);
+        var hintInset = pad + HelpInset * scale;
+        var hintHeight = Typography.DrawWrappedLeft(new Vector2(hintOrigin.X + hintInset, hintOrigin.Y),
+            Loc.T(L.YellowPages.CoverAccentHint), Ink.MutedInk, FieldHintStyle, width - hintInset * 2f);
         ImGui.SetCursorScreenPos(hintOrigin);
         ImGui.Dummy(new Vector2(width, hintHeight + Metrics.Space.Md * scale));
     }
@@ -1381,8 +1391,9 @@ internal sealed partial class YellowPagesApp
         ImGui.Dummy(new Vector2(width, rowHeight * 2f + Metrics.Space.Xs * scale));
         var hintOrigin = ImGui.GetCursorScreenPos();
         var hint = composeAfterDark ? Loc.T(L.YellowPages.AfterDarkHint) : Loc.T(L.YellowPages.AllowInquiriesHint);
-        var hintHeight = Typography.DrawWrappedLeft(new Vector2(hintOrigin.X + pad, hintOrigin.Y), hint, Ink.MutedInk,
-            FieldHintStyle, width - pad * 2f);
+        var hintInset = pad + HelpInset * scale;
+        var hintHeight = Typography.DrawWrappedLeft(new Vector2(hintOrigin.X + hintInset, hintOrigin.Y), hint,
+            Ink.MutedInk, FieldHintStyle, width - hintInset * 2f);
         ImGui.SetCursorScreenPos(hintOrigin);
         ImGui.Dummy(new Vector2(width, hintHeight + Metrics.Space.Md * scale));
     }
@@ -1413,7 +1424,7 @@ internal sealed partial class YellowPagesApp
 
         var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
-        var pad = CellPadX * scale;
+        var pad = CellPadX * scale + HelpInset * scale;
         var height = Typography.DrawWrappedLeft(new Vector2(origin.X + pad, origin.Y), OutcomeText(outcome), Ink.Danger,
             TextStyles.FootnoteEmphasized, width - pad * 2f);
         ImGui.SetCursorScreenPos(origin);
