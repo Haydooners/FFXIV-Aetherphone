@@ -597,8 +597,7 @@ internal sealed partial class MusicApp
                 if (ui.GhostButton(teleportRect, teleportLabel))
                 {
                     Windows.TeleportActions.AskThenTravel(confirm, dj.VenueName ?? dj.NormalizedName,
-                        $"{dj.ServerLabel} · {dj.FormattedAddress}", dj.TeleportDestination!,
-                        liveDjLifestreamAvailable);
+                        $"{dj.ServerLabel} · {dj.FormattedAddress}", dj.TeleportDestination!);
                 }
 
                 if (!liveDjLifestreamAvailable)
@@ -1114,8 +1113,7 @@ internal sealed partial class MusicApp
                     if (ui.GhostButton(teleRect, Loc.T(L.Rolladeck.Teleport)))
                     {
                         Windows.TeleportActions.AskThenTravel(confirm, venue.DisplayName,
-                            $"{venue.ServerLabel} · {venue.FormattedAddress}", venue.TeleportDestination!,
-                            liveDjLifestreamAvailable);
+                            $"{venue.ServerLabel} · {venue.FormattedAddress}", venue.TeleportDestination!);
                     }
 
                     if (!liveDjLifestreamAvailable)

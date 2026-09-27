@@ -583,10 +583,5 @@ internal sealed partial class VenuesApp
         {
             Teleport(venue);
         }
-
-        if (!lifestreamAvailable)
-        {
-            HoverTooltip.Show("venues.detail.teleport", button, Loc.T(L.Venues.NeedsLifestream), HoverLabelSide.Above);
-        }
     }
 }
