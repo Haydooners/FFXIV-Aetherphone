@@ -406,6 +406,8 @@ internal sealed class PhoneShell : IDisposable
 
     private void DrawContent(in ChassisGeometry chassis, PhoneTheme theme)
     {
+        AppSurface.ScrollbarInk = null;
+        using var scrollbar = ScrollLayout.PushScrollbarInk(theme.TextStrong);
         if (appSwitcher.Overtakes)
         {
             appSwitcher.DrawStage(chassis.Screen, chassis.ScreenRadius, theme);

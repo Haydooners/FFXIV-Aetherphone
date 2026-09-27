@@ -5530,6 +5530,7 @@
   "changelog.r1035.22": "Added a Filters page for sources and tags, and a switch for notifications about new openings nearby",
   "changelog.r1035.26": "Reordered the venue page: the description, details and links come first, and tags moved to a compact row at the bottom",
   "changelog.r1035.27": "A popup now explains that Lifestream must be installed and enabled before Go there can travel automatically",
+  "changelog.r1035.31": "Fixed the scrollbar blending into app backgrounds while the phone position is unlocked",
   "changelog.r1035.29": "Fixed the Events tab leaving out posted events at venues that also have a weekly schedule",
   "changelog.r1035.30": "Fixed the region and data center filters hiding directory venues that only list a world",
   "changelog.r1035.23": "Fixed Teleport in the live DJ section, which sent Lifestream a broken command",

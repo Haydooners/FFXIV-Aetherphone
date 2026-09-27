@@ -53,6 +53,7 @@ internal sealed class AppSkin
     public void Backdrop(Rect screen)
     {
         var scale = UiScale.Current;
+        AppSurface.ScrollbarInk = Palette.TitleInk;
         PaintGradient(ImGui.GetWindowDrawList(), screen, screen, Theme.ScreenRounding * scale);
     }
 

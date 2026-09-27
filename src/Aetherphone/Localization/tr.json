@@ -5530,6 +5530,7 @@
   "changelog.r1035.22": "Kaynaklar ve etiketler için bir Filtreler sayfası ile yakındaki yeni açılış bildirimleri için bir anahtar eklendi",
   "changelog.r1035.26": "Mekan sayfası yeniden düzenlendi: açıklama, ayrıntılar ve bağlantılar önce geliyor, etiketler ise en alta kompakt bir satıra taşındı",
   "changelog.r1035.27": "Oraya git düğmesinin otomatik seyahat edebilmesi için Lifestream'in yüklü ve etkin olması gerektiğini artık bir pencere açıklıyor",
+  "changelog.r1035.31": "Telefon konumu kilitli değilken kaydırma çubuğunun uygulama arka planına karışması düzeltildi",
   "changelog.r1035.29": "Etkinlikler sekmesi düzeltildi, haftalık programı da olan mekanların duyurulan etkinliklerini atlıyordu",
   "changelog.r1035.30": "Bölge ve veri merkezi filtreleri düzeltildi, yalnızca dünya belirten rehber mekanlarını gizliyordu",
   "changelog.r1035.23": "Canlı DJ bölümündeki Işınlan düzeltildi, Lifestream'e bozuk bir komut gönderiyordu",

@@ -11,6 +11,8 @@ internal static class AppSurface
 
     public static bool ActiveFreshVisit { get; private set; }
 
+    public static Vector4? ScrollbarInk { get; set; }
+
     public static SurfaceScope Begin(Rect area, bool disableMouseWheelScroll = false) =>
         BeginCore(area, SidePadding, disableMouseWheelScroll);
 
@@ -33,10 +35,11 @@ internal static class AppSurface
             flags |= ImGuiWindowFlags.NoScrollWithMouse;
         }
 
+        var scrollbar = ScrollbarInk is { } ink ? ScrollLayout.PushScrollbarInk(ink) : null;
         var child = ImRaii.Child("##appSurface", area.Size, false, flags);
         var freshVisit = ResetScrollOnNewVisit();
         ActiveFreshVisit = freshVisit;
-        return new SurfaceScope(child, padding, DragScrollHost.Begin(key), freshVisit);
+        return new SurfaceScope(child, padding, scrollbar, DragScrollHost.Begin(key), freshVisit);
     }
 
     public static bool ResetScrollOnNewVisit()
@@ -63,14 +66,16 @@ internal static class AppSurface
     {
         private ImRaii.ChildDisposable child;
         private readonly IDisposable padding;
+        private readonly IDisposable? scrollbar;
         private readonly DragScrollHost.Surface surface;
         private readonly bool freshVisit;
 
-        internal SurfaceScope(ImRaii.ChildDisposable child, IDisposable padding, DragScrollHost.Surface surface,
-            bool freshVisit)
+        internal SurfaceScope(ImRaii.ChildDisposable child, IDisposable padding, IDisposable? scrollbar,
+            DragScrollHost.Surface surface, bool freshVisit)
         {
             this.child = child;
             this.padding = padding;
+            this.scrollbar = scrollbar;
             this.surface = surface;
             this.freshVisit = freshVisit;
         }
@@ -94,6 +99,7 @@ internal static class AppSurface
             ActiveFreshVisit = false;
             child.Dispose();
             padding?.Dispose();
+            scrollbar?.Dispose();
         }
     }
 }

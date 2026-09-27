@@ -294,7 +294,7 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
     {
         var drawList = ImGui.GetWindowDrawList();
         var header = new Rect(area.Min, new Vector2(area.Max.X, area.Min.Y + AppHeader.Height * scale));
-        SocialChrome.PaintBarBackdrop(ui, drawList, header, screenRect);
+        ui.PaintGradient(drawList, header, screenRect, 0f);
         var rowCenterY = header.Center.Y;
         var filtersCenter = SocialChrome.HeaderSlot(area, 1);
         var radius = SocialChrome.HeaderIconRadius * scale;
