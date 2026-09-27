@@ -1123,6 +1123,7 @@ internal static class L
         public static readonly LocString LiveNowLabel = new("venues.liveNowLabel", "Live now");
         public static readonly LocString SeeAll = new("venues.seeAll", "See all");
         public static readonly LocString OpenNow = new("venues.openNow", "Open now");
+        public static readonly LocString ActiveDj = new("venues.activeDj", "Active DJ");
         public static readonly LocString OpenUntil = new("venues.openUntil", "Open until {0}");
         public static readonly LocString OpensAt = new("venues.opensAt", "Opens {0}");
         public static readonly LocString StartsAt = new("venues.startsAt", "Starts {0}");

@@ -728,6 +728,7 @@
   "venues.liveNowLabel": "ただいま開催中",
   "venues.seeAll": "すべて表示",
   "venues.openNow": "営業中",
+  "venues.activeDj": "DJ出演中",
   "venues.openUntil": "{0}まで営業",
   "venues.opensAt": "{0}開店",
   "venues.startsAt": "{0}開始",
