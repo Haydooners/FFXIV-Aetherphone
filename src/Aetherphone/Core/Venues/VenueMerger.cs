@@ -150,6 +150,7 @@ internal static class VenueMerger
         {
             Sources = venue.Sources | VenueSources.Rolladeck,
             LiveConfirmedUntilUtc = confirmedUntil,
+            DjLiveUntilUtc = confirmedUntil,
             LiveViewers = Math.Max(venue.LiveViewers, dj.ViewerCount),
             LiveHeadline = venue.LiveHeadline.Length > 0 ? venue.LiveHeadline : dj.NormalizedName,
             TwitchUrl = venue.TwitchUrl ?? NullIfEmpty(dj.TwitchUrl),

@@ -292,6 +292,8 @@ public sealed class VenueMergerTests
         var venue = Assert.Single(snapshot.Events);
         Assert.Equal("70s 80s 90s night", venue.LiveTitle);
         Assert.Equal(["80s", "Disco"], venue.LiveGenres);
+        Assert.True(venue.HasLiveDj(Now));
+        Assert.False(venue.HasLiveDj(Now + VenueMerger.ConfirmationLifetime));
         Assert.Equal(["80s", "Disco"], snapshot.Djs[0].Genres);
     }
 

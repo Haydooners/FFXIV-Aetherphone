@@ -728,6 +728,7 @@
   "venues.liveNowLabel": "Сейчас в эфире",
   "venues.seeAll": "Все",
   "venues.openNow": "Открыто",
+  "venues.activeDj": "DJ в эфире",
   "venues.openUntil": "Открыто до {0}",
   "venues.opensAt": "Открытие: {0}",
   "venues.startsAt": "Начало: {0}",

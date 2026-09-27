@@ -156,7 +156,7 @@ internal sealed partial class VenuesApp
         MediaOverlay.BottomScrim(drawList, hero.Min, hero.Max, HeroScrimShare);
         var inset = HeroInset * scale;
         VenueCard.DrawStatusPill(drawList, new Vector2(hero.Min.X + inset, hero.Min.Y + inset),
-            detailText.Status.Kind, scale);
+            detailText.Status.Kind, venue, hero.Max.X - inset, scale);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height));
     }

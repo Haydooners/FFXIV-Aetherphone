@@ -728,6 +728,7 @@
   "venues.liveNowLabel": "正在直播",
   "venues.seeAll": "查看全部",
   "venues.openNow": "营业中",
+  "venues.activeDj": "DJ 演出中",
   "venues.openUntil": "营业至{0}",
   "venues.opensAt": "{0}开门",
   "venues.startsAt": "{0}开始",

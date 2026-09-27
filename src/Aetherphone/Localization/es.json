@@ -728,6 +728,7 @@
   "venues.liveNowLabel": "En vivo ahora",
   "venues.seeAll": "Ver todo",
   "venues.openNow": "Abierto ahora",
+  "venues.activeDj": "DJ activo",
   "venues.openUntil": "Abierto hasta las {0}",
   "venues.opensAt": "Abre {0}",
   "venues.startsAt": "Empieza {0}",
