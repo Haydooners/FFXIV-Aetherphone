@@ -443,6 +443,8 @@ internal sealed class YellowPagesStore : IDisposable
         }, ok => done(ok ? AdCreateOutcome.Created : OutcomeFor(status)));
     }
 
+    public static (int Width, int Height) BakedSize(PostAspect aspect) => PostAspects.Size(aspect, MaxImageDimension);
+
     private async Task<AdUploadResult?> UploadPhotosAsync(AdPhotoBatch photos, CancellationToken token)
     {
         if (photos.Count == 0)
@@ -456,7 +458,7 @@ internal sealed class YellowPagesStore : IDisposable
         for (var index = 0; index < photos.Count; index++)
         {
             var aspect = index < photos.Aspects.Length ? photos.Aspects[index] : PostAspect.Landscape;
-            var (bakedWidth, bakedHeight) = PostAspects.Size(aspect, MaxImageDimension);
+            var (bakedWidth, bakedHeight) = BakedSize(aspect);
             var baked = index < photos.Crops.Length
                 ? ImageProcessor.BakeCroppedJpeg(photos.Paths[index], photos.Crops[index], bakedWidth, bakedHeight,
                     PostAspects.RevealsWholeImage(aspect),

@@ -62,7 +62,6 @@ internal sealed partial class YellowPagesApp
     private const float ComposePaneFraction = 0.5f;
     private const float ComposeGridGap = 6f;
     private const float KeptStripHeight = 64f;
-    private const float ComposeAspectRatio = 1.3333f;
     private const int ComposeCounterWarning = 50;
 
     private static readonly int[] WeekDays = { 1, 2, 3, 4, 5, 6, 0 };
@@ -116,6 +115,10 @@ internal sealed partial class YellowPagesApp
 
     private PhotoEditPanelStyle ComposeEditStyle =>
         PhotoEditPanelStyle.ForComposer(ComposeStyle, Ink.TitleInk, theme.SurfaceMuted);
+
+    private float ComposeAspect => PostAspects.Ratio(composeSession.Aspect);
+
+    private bool ComposeAllowsReveal => PostAspects.RevealsWholeImage(composeSession.Aspect);
 
     private void StartCompose()
     {
@@ -563,7 +566,7 @@ internal sealed partial class YellowPagesApp
     {
         if (composeSession.Stage == PhotoComposeStage.Edit)
         {
-            composeSession.DrawEditCanvas(body, scale, ComposeAspectRatio, ComposeStyle, false, !composeBusy);
+            composeSession.DrawEditCanvas(body, scale, ComposeAspect, ComposeStyle, ComposeAllowsReveal, !composeBusy);
             composeSession.DrawComposerFooter(body, scale, ComposeEditStyle, !composeBusy);
             return;
         }
@@ -576,7 +579,7 @@ internal sealed partial class YellowPagesApp
 
         var paneHeight = MathF.Min(body.Width, (body.Max.Y - top) * ComposePaneFraction);
         var pane = new Rect(new Vector2(body.Min.X, top), new Vector2(body.Max.X, top + paneHeight));
-        composeSession.DrawPickPane(pane, scale, ComposeStyle, ComposeAspectRatio, false, !composeBusy);
+        composeSession.DrawPickPane(pane, scale, ComposeStyle, ComposeAspect, ComposeAllowsReveal, !composeBusy);
         var gridTop = pane.Max.Y + ComposeGridGap * scale;
         if (composeSession.ShowsAspectRail)
         {
@@ -1560,13 +1563,14 @@ internal sealed partial class YellowPagesApp
                 composePriceText, composeTags.Count),
             HashCode.Combine(composeSlotsLine, composeAfterDark, composeAllowInquiries, composeKeptUrls.Count,
                 composeSession.SelectedCount, firstPhoto, composeTurnaround, composeLink),
-            HashCode.Combine(composeAddressNote, composeLocation.HasValue, composeRequirements));
+            HashCode.Combine(composeAddressNote, composeLocation.HasValue, composeRequirements, composeSession.Aspect));
         if (composePreview is not null && composePreviewHash == hash)
         {
             return composePreview;
         }
 
         var request = BuildRequest(out _);
+        var (mediaWidth, mediaHeight) = PreviewMediaSize(request);
         var me = inquiries.MyUserId;
         var photoCount = composeKeptUrls.Count + composeSession.SelectedCount;
         var mediaUrls = new string[photoCount];
@@ -1590,8 +1594,18 @@ internal sealed partial class YellowPagesApp
             request.PriceMode, request.PriceGil, request.Turnaround ?? string.Empty, request.SlotsLine ?? string.Empty,
             request.Requirements ?? string.Empty, request.LinkUrl ?? string.Empty, request.AfterDark, firstPhoto,
             mediaUrls, 0, false, AdStatuses.Live, nowUnix, nowUnix, nowUnix + 7L * 86400L, request.AllowInquiries,
-            0, null, string.Empty, null, request.Wanted, request.Accent, request.MediaWidth, request.MediaHeight);
+            0, null, string.Empty, null, request.Wanted, request.Accent, mediaWidth, mediaHeight);
         return composePreview;
+    }
+
+    private (int Width, int Height) PreviewMediaSize(CreateAdRequest request)
+    {
+        if (composeKeptUrls.Count > 0 || !composeSession.HasSelection)
+        {
+            return (request.MediaWidth, request.MediaHeight);
+        }
+
+        return YellowPagesStore.BakedSize(composeSession.Aspect);
     }
 
     private void SubmitCompose()
