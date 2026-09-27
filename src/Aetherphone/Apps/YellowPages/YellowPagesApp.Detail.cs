@@ -299,7 +299,7 @@ internal sealed partial class YellowPagesApp
         var expandCenter = new Vector2(rect.Max.X - inset - YellowPagesKit.GlassButtonRadius * scale,
             rect.Min.Y + inset + YellowPagesKit.GlassButtonRadius * scale);
         var expandExtent = new Vector2(YellowPagesKit.GlassButtonRadius * scale, YellowPagesKit.GlassButtonRadius * scale);
-        var overExpand = UiInteract.Hover(expandCenter - expandExtent, expandCenter + expandExtent, false);
+        var overExpand = UiInteract.Hover(expandCenter - expandExtent, expandCenter + expandExtent);
         if (YellowPagesKit.GlassButton(drawList, expandCenter, PhoneIcons.Photo, Loc.T(L.YellowPages.ViewPhoto), scale))
         {
             OpenPhotoViewer(photos);
@@ -310,8 +310,8 @@ internal sealed partial class YellowPagesApp
         if (photos.Length > 1)
         {
             var midX = rect.Center.X;
-            var leftHovered = !overExpand && UiInteract.Hover(rect.Min, new Vector2(midX, touchMax.Y), false);
-            var rightHovered = !overExpand && UiInteract.Hover(new Vector2(midX, rect.Min.Y), touchMax, false);
+            var leftHovered = !overExpand && UiInteract.Hover(rect.Min, new Vector2(midX, touchMax.Y));
+            var rightHovered = !overExpand && UiInteract.Hover(new Vector2(midX, rect.Min.Y), touchMax);
             if (leftHovered || rightHovered)
             {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
