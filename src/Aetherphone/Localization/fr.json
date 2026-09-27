@@ -5529,6 +5529,7 @@
   "changelog.r1035.20": "Ajout de XIV Rolladeck comme source de lieux : un badge vert En direct signifie désormais qu'un DJ diffuse vraiment depuis le lieu, avec qui joue et combien regardent",
   "changelog.r1035.21": "Ajout de l'annuaire complet des lieux, y compris ceux sans planning publié",
   "changelog.r1035.22": "Ajout d'une page de filtres pour les sources et les tags, et d'un interrupteur pour les notifications de nouvelles ouvertures à proximité",
+  "changelog.r1035.26": "Page de lieu réorganisée : la description, les détails et les liens viennent en premier, et les tags passent dans une rangée compacte tout en bas",
   "changelog.r1035.23": "Correction de la téléportation dans la section DJ en direct, qui envoyait une commande erronée à Lifestream",
   "changelog.r1035.24": "Ajout d'une option du chat flottant pour ouvrir les nouveaux tells dans un onglet non lu, sans quitter celui où vous écrivez",
   "changelog.r1035.25": "Ajout d'une option du chat flottant pour afficher les nouveaux tells même quand le téléphone est ouvert",
