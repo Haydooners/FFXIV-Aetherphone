@@ -1081,7 +1081,6 @@ internal static class L
         public static readonly LocString RegionEurope = new("venues.regionEurope", "Europe");
         public static readonly LocString RegionOceania = new("venues.regionOceania", "Oceania");
         public static readonly LocString RegionJapan = new("venues.regionJapan", "Japan");
-        public static readonly LocString DjsOnAir = new("venues.djsOnAir", "DJs on air");
         public static readonly LocString AllSources = new("venues.allSources", "All sources");
         public static readonly LocString SourceAllHint = new("venues.sourceAllHint", "Every listing in one place");
         public static readonly LocString SourceFfxivHint = new("venues.sourceFfxivHint",
