@@ -34,10 +34,8 @@ internal enum VenueLiveState : byte
     Confirmed,
 }
 
-internal sealed record VenueDj(string Name, string? AvatarUrl, int Viewers, string? TwitchUrl, string DataCenter,
-    string World, string? VenueId, string Place)
+internal sealed record VenueDj(string Name, string? AvatarUrl, int Viewers, string? TwitchUrl, string VenueId)
 {
-    public string Title { get; init; } = string.Empty;
     public IReadOnlyList<string> Genres { get; init; } = Array.Empty<string>();
 }
 

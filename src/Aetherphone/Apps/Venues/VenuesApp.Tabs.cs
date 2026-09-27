@@ -55,7 +55,6 @@ internal sealed partial class VenuesApp
                 }
                 else
                 {
-                    DrawDjTray(scale);
                     DrawSectionHeading(liveHeading, scale);
                     DrawFeedList(sections.Live, liveText, true);
                 }

@@ -71,30 +71,26 @@ internal static class VenueMerger
             merged[slot] = Confirm(merged[slot], open, confirmedUntil, nowUtc);
         }
 
-        var djs = new VenueDj[liveDjs.Count];
+        var djs = new List<VenueDj>(liveDjs.Count);
         for (var index = 0; index < liveDjs.Count; index++)
         {
             var dj = liveDjs[index];
             var address = VenueAddress.Of(dj.Server, dj.District, dj.Ward, dj.Plot);
-            string? venueId = null;
-            var place = RolladeckText.Normalize(dj.VenueName ?? dj.Server);
-            if (address.IsKnown && byAddress.TryGetValue(address, out var slot))
+            if (!address.IsKnown || !byAddress.TryGetValue(address, out var slot))
             {
-                merged[slot] = AttachDj(merged[slot], dj, confirmedUntil);
-                venueId = merged[slot].Id;
-                place = merged[slot].Title;
+                continue;
             }
 
-            djs[index] = new VenueDj(dj.NormalizedName, NullIfEmpty(dj.AvatarUrl), dj.ViewerCount,
-                NullIfEmpty(dj.TwitchUrl), dj.Datacenter ?? string.Empty, dj.Server ?? string.Empty, venueId, place)
+            merged[slot] = AttachDj(merged[slot], dj, confirmedUntil);
+            djs.Add(new VenueDj(dj.NormalizedName, NullIfEmpty(dj.AvatarUrl), dj.ViewerCount,
+                NullIfEmpty(dj.TwitchUrl), merged[slot].Id)
             {
-                Title = dj.NormalizedTitle ?? string.Empty,
                 Genres = GenresOf(dj),
-            };
+            });
         }
 
-        Array.Sort(djs, static (left, right) => right.Viewers.CompareTo(left.Viewers));
-        return new VenueSnapshot(merged.ToArray(), djs);
+        djs.Sort(static (left, right) => right.Viewers.CompareTo(left.Viewers));
+        return new VenueSnapshot(merged.ToArray(), djs.ToArray());
     }
 
     private static VenueEvent Enrich(VenueEvent listing, VenueEvent rolladeck)

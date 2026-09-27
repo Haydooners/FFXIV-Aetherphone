@@ -111,7 +111,6 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
     {
         router.Reset();
         search = string.Empty;
-        djSheet.Close();
     }
 
     public void RequestVenue(string venueId) => pendingVenueId = venueId;
@@ -126,10 +125,8 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         var screen = SceneChrome.ScreenFrom(context.Content, theme, scale);
         screenRect = screen;
         ui.Backdrop(screen);
-        djSheet.Gate();
         router.Draw(SceneChrome.AppAreaFrom(context.Content, theme, scale), AppSkin.Transparent,
             ImGui.GetIO().DeltaTime, drawView);
-        DrawDjSheet(screen);
     }
 
     private void ConsumePendingVenue()
@@ -467,7 +464,7 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         var key = new VenueSectionsKey(venues.Version, configuration.VenueSourceFilter, scope.DataCenters, scope.World,
             scope.World.Length > 0 ? string.Empty : CurrentWorld(), favoritesStamp, tagsStamp, CurrentMinute(nowUtc),
             configuration.VenueHideAdult);
-        if (!sections.Update(key, venues.Events, venues.Djs, configuration.VenueFavorites, selectedTags, nowUtc))
+        if (!sections.Update(key, venues.Events, configuration.VenueFavorites, selectedTags, nowUtc))
         {
             return;
         }
@@ -476,7 +473,6 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         liveText.Fill(sections.Live, nowUtc);
         laterText.Fill(sections.LaterRail, nowUtc);
         nearText.Fill(sections.NearRail, nowUtc);
-        RebuildDjLabels();
         eventsText.Fill(sections.Events, nowUtc);
         savedText.Fill(sections.Saved, nowUtc);
         RebuildSectionLabels();

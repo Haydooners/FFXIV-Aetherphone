@@ -26,7 +26,6 @@ internal sealed class VenueSections
     private readonly List<VenueEvent> saved = new();
     private readonly List<VenueEvent> laterRail = new();
     private readonly List<VenueEvent> nearRail = new();
-    private readonly List<VenueDj> djs = new();
     private readonly int[] categoryCounts = new int[VenueCategories.Count];
     private readonly Order liveOrder = new(OrderMode.Live);
     private readonly Order startOrder = new(OrderMode.Start);
@@ -43,7 +42,6 @@ internal sealed class VenueSections
     public IReadOnlyList<VenueEvent> Saved => saved;
     public IReadOnlyList<VenueEvent> LaterRail => laterRail;
     public IReadOnlyList<VenueEvent> NearRail => nearRail;
-    public IReadOnlyList<VenueDj> Djs => djs;
     public bool FeaturedIsLive { get; private set; }
     public int Revision { get; private set; }
 
@@ -51,7 +49,7 @@ internal sealed class VenueSections
 
     public void Invalidate() => built = false;
 
-    public bool Update(in VenueSectionsKey wanted, IReadOnlyList<VenueEvent> source, IReadOnlyList<VenueDj> liveDjs,
+    public bool Update(in VenueSectionsKey wanted, IReadOnlyList<VenueEvent> source,
         IReadOnlyList<string> favorites, IReadOnlyList<string> selectedTags, DateTime nowUtc)
     {
         if (built && key == wanted)
@@ -115,27 +113,7 @@ internal sealed class VenueSections
         PickFeatured();
         FillRail(laterRail, laterToday, null);
         FillRail(nearRail, nearYou, laterRail);
-        CollectDjs(liveDjs, wanted);
         return true;
-    }
-
-    private void CollectDjs(IReadOnlyList<VenueDj> liveDjs, in VenueSectionsKey wanted)
-    {
-        if (wanted.Source != VenueFilter.SourceAll && wanted.Source != VenueFilter.SourceRolladeck)
-        {
-            return;
-        }
-
-        for (var index = 0; index < liveDjs.Count; index++)
-        {
-            var dj = liveDjs[index];
-            if (VenueFilter.MatchesDataCenter(dj.DataCenter, wanted.DataCenters) &&
-                (wanted.ScopeWorld.Length == 0 ||
-                 string.Equals(dj.World, wanted.ScopeWorld, StringComparison.OrdinalIgnoreCase)))
-            {
-                djs.Add(dj);
-            }
-        }
     }
 
     private void FillRail(List<VenueEvent> into, List<VenueEvent> from, List<VenueEvent>? alsoShown)
@@ -162,7 +140,6 @@ internal sealed class VenueSections
         saved.Clear();
         laterRail.Clear();
         nearRail.Clear();
-        djs.Clear();
         Array.Clear(categoryCounts);
     }
 

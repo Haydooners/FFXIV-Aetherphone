@@ -76,6 +76,7 @@ internal sealed partial class VenuesApp
         }
 
         detailVenue = resolved;
+        CollectDetailDjs(resolved.Id);
         detailVersion = venues.Version;
         detailMinute = minute;
         detailText = new DetailText(VenueFormat.Status(resolved, nowUtc), VenueFormat.Meta(resolved),
@@ -100,6 +101,7 @@ internal sealed partial class VenuesApp
             DrawDetailHero(venue, scale);
             DrawDetailTitle(venue, scale);
             DrawNowPlaying(venue, scale);
+            DrawDetailDjs(scale);
             DrawAbout(venue, scale);
             DrawInfoCard(venue, scale);
             DrawLinks(venue, scale);
