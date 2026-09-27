@@ -103,7 +103,7 @@ internal static class AppRegistry
         apps.Add(new CameraApp(new PhotoCaptureService(), photoLibrary, services.Configuration, services.GameUiVisibility));
         apps.Add(new PhotosApp(photoLibrary, services.Confirm, services.Share, services.Configuration));
         apps.Add(new SkywatcherApp(services.Weather, services.WeatherControl));
-        apps.Add(new VenuesApp(services.Venues, services.Media, services.Http, services.Artwork, services.GameData, services.Configuration, services.Confirm, services.Translation));
+        apps.Add(new VenuesApp(services.Venues, services.RemoteImages, services.Artwork, services.GameData, services.Configuration, services.Confirm, services.Translation));
         apps.Add(new StratsApp(services.StratsManifest, services.StratsGuides, services.RemoteImages, services.Configuration));
         apps.Add(new MusterApp(services.Musters, services.MusterLauncher, services.Aethernet, services.GameData, services.RemoteImages, services.Lodestone, services.Configuration, services.Confirm, services.Translation, services.Report, services.Conduct));
         apps.Add(new YellowPagesApp(services.YellowPages, services.AdInquiries, services.YellowPagesLauncher, services.SocialNotifications, services.Musters, new AethernetApi(services.Http, services.AethernetSession, "yellowpages"), services.GameData, services.RemoteImages, services.Lodestone, photoLibrary, services.WallpaperImages, services.Configuration, services.Confirm, services.Translation, services.Report, services.Conduct, services.EncryptionHelp, services.Http));
@@ -114,7 +114,7 @@ internal static class AppRegistry
         apps.Add(new WalletApp(services.GameData, services.Textures, Plugin.Framework));
         apps.Add(new InventoryApp(services.InventoryCapture, services.GameData, services.Textures));
         apps.Add(new JobsApp(services.GameData, services.Textures, services.Configuration, services.Confirm, services.CharacterWatch));
-        apps.Add(new MusicApp(services.Radio, services.SongSearch, services.SongResolver, services.Playback, services.SongHistory, services.Playlists, services.Media, services.Http, services.Artwork, services.Aethernet, services.AethernetSession, services.Report, photoLibrary, services.WallpaperImages, services.Confirm, services.Configuration, services.RemoteImages, services.Lodestone, services.GameData, services.RadioLauncher, services.SocialNotifications));
+        apps.Add(new MusicApp(services.Radio, services.SongSearch, services.SongResolver, services.Playback, services.SongHistory, services.Playlists, services.Media, services.Http, services.Artwork, services.Aethernet, services.AethernetSession, services.Report, photoLibrary, services.WallpaperImages, services.Confirm, services.Configuration, services.RemoteImages, services.Lodestone, services.GameData, services.RadioLauncher, services.SocialNotifications, services.Rolladeck));
         apps.Add(new ClockApp(services.Configuration, services.Confirm));
         apps.Add(new NotesApp(services.Configuration, services.Confirm));
         apps.Add(new CalculatorApp());

@@ -13,7 +13,7 @@ public sealed class TourRegistryTests
         { "skywatcher", (2, 3) },
         { "market", (2, 4) },
         { "strats", (1, 4) },
-        { "venues", (2, 4) },
+        { "venues", (3, 5) },
         { "music", (2, 4) },
         { "games", (2, 3) },
         { "camera", (3, 5) },

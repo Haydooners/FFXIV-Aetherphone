@@ -2,56 +2,67 @@ using Aetherphone.Core.Localization;
 
 namespace Aetherphone.Core.Venues;
 
+internal enum VenueStatusKind : byte
+{
+    None,
+    Upcoming,
+    Open,
+    Live,
+}
+
+internal readonly record struct VenueStatus(VenueStatusKind Kind, string Label);
+
 internal static class VenueFormat
 {
-    public static string Range(VenueEvent venue)
+    public static VenueStatus Status(VenueEvent venue, DateTime nowUtc)
     {
-        var start = venue.StartUtc.ToLocalTime();
-        var startText = TimeText.Clock(start);
-        if (!IsToday(start))
+        var ends = EndsAt(venue, nowUtc);
+        if (venue.IsConfirmedLive(nowUtc))
         {
-            startText = start.ToString("dd/MM " + TimeText.ClockPattern, Loc.Culture);
+            var headline = venue.LiveHeadline.Length > 0 ? venue.LiveHeadline : Loc.T(L.Venues.LiveNowLabel);
+            return new VenueStatus(VenueStatusKind.Live,
+                ends.Length > 0 ? $"{headline} · {Loc.T(L.Venues.UntilTime, ends)}" : headline);
         }
 
-        if (venue.EndUtc is not { } endUtc)
+        if (venue.IsScheduledOpen(nowUtc))
         {
-            return startText;
+            return new VenueStatus(VenueStatusKind.Open,
+                ends.Length > 0 ? Loc.T(L.Venues.OpenUntil, ends) : Loc.T(L.Venues.OpenNow));
         }
 
-        var end = endUtc.ToLocalTime();
-        return $"{startText} – {TimeText.Clock(end)}";
+        if (venue.StartUtc is not { } start || start <= nowUtc)
+        {
+            return new VenueStatus(VenueStatusKind.None, string.Empty);
+        }
+
+        var moment = TimeText.FutureMoment(new DateTimeOffset(start).ToUnixTimeSeconds());
+        var label = (venue.Sources & VenueSources.Partake) != 0
+            ? Loc.T(L.Venues.StartsAt, moment)
+            : Loc.T(L.Venues.OpensAt, moment);
+        return new VenueStatus(VenueStatusKind.Upcoming, label);
     }
 
-    public static string EndsAt(VenueEvent venue)
+    public static string Window(VenueEvent venue)
     {
-        if (venue.EndUtc is not { } endUtc)
+        if (venue.StartUtc is not { } start)
         {
             return string.Empty;
         }
 
-        return TimeText.Clock(endUtc.ToLocalTime());
+        var startText = TimeText.FutureMoment(new DateTimeOffset(start).ToUnixTimeSeconds());
+        return venue.EndUtc is { } end ? $"{startText} – {TimeText.Clock(end.ToLocalTime())}" : startText;
     }
 
-    public static string Starts(VenueEvent venue, DateTime nowUtc)
+    public static string Meta(VenueEvent venue)
     {
-        var delta = venue.StartUtc - nowUtc;
-        if (delta <= TimeSpan.Zero)
-        {
-            return Range(venue);
-        }
-
-        if (delta < TimeSpan.FromHours(1))
-        {
-            return $"in {Math.Max(1, (int)delta.TotalMinutes)}m";
-        }
-
-        if (delta < TimeSpan.FromDays(1))
-        {
-            return $"in {(int)delta.TotalHours}h";
-        }
-
-        return $"in {(int)delta.TotalDays}d";
+        var world = venue.World.Length > 0 && venue.DataCenter.Length > 0
+            ? $"{venue.World} ({venue.DataCenter})"
+            : venue.World.Length > 0 ? venue.World : venue.DataCenter;
+        return VenueMapper.BuildPlaceLine(world, venue.LocationLine);
     }
 
-    private static bool IsToday(DateTime local) => local.Date == DateTime.Now.Date;
+    public static string Viewers(int count) => Loc.T(L.Venues.Watching, count.ToString("N0", Loc.Culture));
+
+    private static string EndsAt(VenueEvent venue, DateTime nowUtc) =>
+        venue.EndUtc is { } end && end > nowUtc ? TimeText.Clock(end.ToLocalTime()) : string.Empty;
 }

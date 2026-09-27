@@ -25,6 +25,7 @@ using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Playback;
 using Aetherphone.Core.Radio;
 using Aetherphone.Core.Report;
+using Aetherphone.Core.Rolladeck;
 using Aetherphone.Core.Runtime;
 using Aetherphone.Core.Sharing;
 using Aetherphone.Core.Shell;
@@ -152,6 +153,7 @@ internal sealed class PhoneServices : IDisposable
     public required PlaybackHub Playback { get; init; }
     public required GameStatsStore GameStats { get; init; }
     public required VenuesService Venues { get; init; }
+    public required RolladeckService Rolladeck { get; init; }
     public required StratsManifestStore StratsManifest { get; init; }
     public required StratsGuideStore StratsGuides { get; init; }
     public required MusterStore Musters { get; init; }
@@ -299,7 +301,8 @@ internal sealed class PhoneServices : IDisposable
         var playlists = new PlaylistStore(configuration);
         var playback = new PlaybackHub(radioPlayer, songPlayer, configuration);
         var gameStats = new GameStatsStore(configuration);
-        var venues = new VenuesService(http, notifications, configuration, gameData);
+        var rolladeck = new RolladeckService(http);
+        var venues = new VenuesService(http, notifications, configuration, gameData, rolladeck);
         var stratsRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "strats"));
         var stratsDisk = new DiskCache(stratsRoot, 24L * 1024 * 1024);
         var stratsManifest = new StratsManifestStore(http, stratsDisk);
@@ -475,6 +478,7 @@ internal sealed class PhoneServices : IDisposable
             Playback = playback,
             GameStats = gameStats,
             Venues = venues,
+            Rolladeck = rolladeck,
             StratsManifest = stratsManifest,
             StratsGuides = stratsGuides,
             Musters = musters,

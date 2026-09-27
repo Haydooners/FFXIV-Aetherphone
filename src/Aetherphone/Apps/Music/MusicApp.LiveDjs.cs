@@ -1,4 +1,4 @@
-using Aetherphone.Apps.Music.Rolladeck;
+using Aetherphone.Core.Rolladeck;
 using Aetherphone.Core;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
@@ -598,11 +598,11 @@ internal sealed partial class MusicApp
                 {
                     if (liveDjLifestreamAvailable)
                     {
-                        LifestreamBridge.Travel(dj.LifestreamArg!);
+                        LifestreamBridge.Travel(dj.TeleportDestination!);
                     }
                     else
                     {
-                        ImGui.SetClipboardText(LifestreamBridge.TravelCommand(dj.LifestreamArg!));
+                        ImGui.SetClipboardText(LifestreamBridge.TravelCommand(dj.TeleportDestination!));
                         ShellToast.Show();
                     }
                 }
@@ -1121,11 +1121,11 @@ internal sealed partial class MusicApp
                     {
                         if (liveDjLifestreamAvailable)
                         {
-                            LifestreamBridge.Travel(venue.Lifestream!);
+                            LifestreamBridge.Travel(venue.TeleportDestination!);
                         }
                         else
                         {
-                            ImGui.SetClipboardText(LifestreamBridge.TravelCommand(venue.Lifestream!));
+                            ImGui.SetClipboardText(LifestreamBridge.TravelCommand(venue.TeleportDestination!));
                             ShellToast.Show();
                         }
                     }

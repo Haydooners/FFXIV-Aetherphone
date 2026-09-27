@@ -12,6 +12,8 @@ internal static class VenueChips
     private static readonly Vector4 AdultColor = new(0.90f, 0.26f, 0.44f, 1f);
     private static readonly Vector4 SfwColor = new(0.86f, 0.72f, 0.24f, 1f);
     private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
+    private static readonly Vector4 NeutralFill = new(1f, 1f, 1f, 0.10f);
+    private static readonly Vector4 NeutralInk = new(1f, 1f, 1f, 0.72f);
 
     private static readonly Vector4[] TagColors =
     {
@@ -58,6 +60,18 @@ internal static class VenueChips
         var textSize = Typography.Measure(tag, SmallTextScale, FontWeight.Medium);
         Typography.Draw(new Vector2(min.X + (width - textSize.X) * 0.5f, min.Y + (height - textSize.Y) * 0.5f), tag,
             ink, SmallTextScale, FontWeight.Medium);
+    }
+
+    public static void DrawNeutral(ImDrawListPtr drawList, Vector2 position, string label, float scale)
+    {
+        var height = Height(scale);
+        var width = Measure(label, scale);
+        var max = new Vector2(position.X + width, position.Y + height);
+        Squircle.Fill(drawList, position, max, height * 0.5f, ImGui.GetColorU32(NeutralFill));
+        var textSize = Typography.Measure(label, SmallTextScale, FontWeight.Medium);
+        Typography.Draw(drawList,
+            new Vector2(position.X + (width - textSize.X) * 0.5f, position.Y + (height - textSize.Y) * 0.5f), label,
+            NeutralInk, SmallTextScale, FontWeight.Medium);
     }
 
     public static float LargeHeight(float scale) => 32f * scale;
