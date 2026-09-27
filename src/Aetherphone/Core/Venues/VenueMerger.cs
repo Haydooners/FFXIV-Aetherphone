@@ -86,7 +86,11 @@ internal static class VenueMerger
             }
 
             djs[index] = new VenueDj(dj.NormalizedName, NullIfEmpty(dj.AvatarUrl), dj.ViewerCount,
-                NullIfEmpty(dj.TwitchUrl), dj.Datacenter ?? string.Empty, dj.Server ?? string.Empty, venueId, place);
+                NullIfEmpty(dj.TwitchUrl), dj.Datacenter ?? string.Empty, dj.Server ?? string.Empty, venueId, place)
+            {
+                Title = dj.NormalizedTitle ?? string.Empty,
+                Genres = GenresOf(dj),
+            };
         }
 
         Array.Sort(djs, static (left, right) => right.Viewers.CompareTo(left.Viewers));
@@ -141,15 +145,31 @@ internal static class VenueMerger
         };
     }
 
-    private static VenueEvent AttachDj(VenueEvent venue, LiveDjEntry dj, DateTime confirmedUntil) =>
-        venue with
+    private static VenueEvent AttachDj(VenueEvent venue, LiveDjEntry dj, DateTime confirmedUntil)
+    {
+        var busiest = dj.ViewerCount >= venue.LiveViewers || venue.LiveTitle.Length == 0;
+        return venue with
         {
             Sources = venue.Sources | VenueSources.Rolladeck,
             LiveConfirmedUntilUtc = confirmedUntil,
             LiveViewers = Math.Max(venue.LiveViewers, dj.ViewerCount),
             LiveHeadline = venue.LiveHeadline.Length > 0 ? venue.LiveHeadline : dj.NormalizedName,
             TwitchUrl = venue.TwitchUrl ?? NullIfEmpty(dj.TwitchUrl),
+            LiveTitle = busiest && !string.IsNullOrEmpty(dj.NormalizedTitle) ? dj.NormalizedTitle : venue.LiveTitle,
+            LiveGenres = busiest && dj.Genres.Count > 0 ? GenresOf(dj) : venue.LiveGenres,
         };
+    }
+
+    private static string[] GenresOf(LiveDjEntry dj)
+    {
+        var genres = new List<string>(dj.Genres.Count);
+        for (var index = 0; index < dj.Genres.Count; index++)
+        {
+            VenueMapper.AddTag(genres, RolladeckText.Normalize(dj.Genres[index]));
+        }
+
+        return genres.ToArray();
+    }
 
     private static VenueEvent? FromOpenVenue(OpenVenueEntry open, VenueAddress address, DateTime nowUtc)
     {

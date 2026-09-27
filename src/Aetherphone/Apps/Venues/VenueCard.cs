@@ -56,6 +56,8 @@ internal static class VenueCard
     private static readonly TextStyle LeadTopStyle = TextStyles.SubheadlineEmphasized;
     private static readonly TextStyle ActionStyle = TextStyles.SubheadlineEmphasized;
     private static readonly TextStyle GoStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle NowPlayingStyle = TextStyles.Footnote;
+    private const float NowPlayingGap = 4f;
 
     private static readonly TextStyle TitleStyle = TextStyles.Headline;
     private static readonly TextStyle MetaStyle = TextStyles.Footnote;
@@ -85,13 +87,24 @@ internal static class VenueCard
             height += RowGap * scale + Typography.LineHeight(StatusStyle);
         }
 
-        if (venue.Tags.Count > 0)
+        if (HasNowPlaying(venue, text))
+        {
+            height += NowPlayingGap * scale + Typography.LineHeight(NowPlayingStyle);
+        }
+
+        if (ChipsOf(venue, text).Count > 0)
         {
             height += RowGap * scale + VenueChips.Height(scale);
         }
 
         return height;
     }
+
+    private static bool HasNowPlaying(VenueEvent venue, in VenueCardText text) =>
+        text.Status.Kind == VenueStatusKind.Live && venue.LiveTitle.Length > 0;
+
+    private static IReadOnlyList<string> ChipsOf(VenueEvent venue, in VenueCardText text) =>
+        text.Status.Kind == VenueStatusKind.Live && venue.LiveGenres.Count > 0 ? venue.LiveGenres : venue.Tags;
 
     public static VenueCardAction DrawFeed(VenueEvent venue, in VenueCardText text, bool favorite, in VenueArt art,
         SocialInk ink, bool actions = false)
@@ -465,10 +478,24 @@ internal static class VenueCard
             cursorY += Typography.LineHeight(StatusStyle);
         }
 
-        if (venue.Tags.Count > 0)
+        if (HasNowPlaying(venue, text))
+        {
+            cursorY += NowPlayingGap * scale;
+            var lineHeight = Typography.LineHeight(NowPlayingStyle);
+            var glyphSize = 13f * scale;
+            PhoneIcon.Draw(drawList, new Vector2(left + glyphSize * 0.5f, cursorY + lineHeight * 0.5f), PhoneIcons.Music,
+                ink.MutedInk, glyphSize);
+            var titleLeft = left + glyphSize + 6f * scale;
+            Marquee.DrawLeftAuto(drawList, new MarqueeId("venues.card.playing.", venue.Id), venue.LiveTitle, titleLeft,
+                cursorY, MathF.Max(1f, right - titleLeft), NowPlayingStyle, ink.BodyInk);
+            cursorY += lineHeight;
+        }
+
+        var chips = ChipsOf(venue, text);
+        if (chips.Count > 0)
         {
             cursorY += RowGap * scale;
-            DrawTags(drawList, venue, left, right, cursorY, scale);
+            DrawChipRow(drawList, chips, left, right, cursorY, scale);
         }
     }
 
@@ -542,16 +569,16 @@ internal static class VenueCard
         return (StatGlyph + 4f) * scale + size.X;
     }
 
-    private static void DrawTags(ImDrawListPtr drawList, VenueEvent venue, float left, float right, float top,
-        float scale)
+    public static void DrawChipRow(ImDrawListPtr drawList, IReadOnlyList<string> items, float left, float right,
+        float top, float scale)
     {
         var gap = 5f * scale;
         var cursor = left;
-        for (var index = 0; index < venue.Tags.Count; index++)
+        for (var index = 0; index < items.Count; index++)
         {
-            var tag = venue.Tags[index];
+            var tag = items[index];
             var width = VenueChips.Measure(tag, scale);
-            var remaining = venue.Tags.Count - index;
+            var remaining = items.Count - index;
             var reserve = remaining > 1 ? VenueChips.Measure(VenueLabelCache.Plus(remaining - 1), scale) + gap : 0f;
             if (cursor + width + reserve > right)
             {

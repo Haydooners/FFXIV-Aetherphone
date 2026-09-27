@@ -274,6 +274,25 @@ public sealed class VenueMergerTests
     }
 
     [Fact]
+    public void Merge_CarriesStreamTitleAndGenresOntoVenueAndDj()
+    {
+        var dj = new LiveDjEntry
+        {
+            DjName = "DJ Nyx", Server = "Shiva", District = "Lavender Beds", Ward = 25, Plot = 28, ViewerCount = 56,
+            StreamTitle = "70s 80s 90s night", Genres = ["80s", "Disco", "80s"],
+        };
+        dj.InitNormalized();
+
+        var snapshot = VenueMerger.Merge([Listing("ffxiv:a", "Paradise")], [], [], [dj], Now, Now);
+
+        var venue = Assert.Single(snapshot.Events);
+        Assert.Equal("70s 80s 90s night", venue.LiveTitle);
+        Assert.Equal(["80s", "Disco"], venue.LiveGenres);
+        Assert.Equal("70s 80s 90s night", snapshot.Djs[0].Title);
+        Assert.Equal(["80s", "Disco"], snapshot.Djs[0].Genres);
+    }
+
+    [Fact]
     public void Merge_ListsLiveDjsLinkedToTheirVenueBusiestFirst()
     {
         var atVenue = new LiveDjEntry
