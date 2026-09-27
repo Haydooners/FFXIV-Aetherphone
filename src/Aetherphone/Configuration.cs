@@ -366,6 +366,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool LinkpearlPopoutFade { get; set; } = true;
     public float LinkpearlPopoutIdleOpacity { get; set; } = 0.62f;
     public bool LinkpearlPopoutOutgoingTells { get; set; } = true;
+    public bool LinkpearlPopoutTellsWhilePhoneOpen { get; set; }
+    public bool LinkpearlPopoutTellsInBackground { get; set; }
     public bool LinkpearlPopoutCloseOnLogout { get; set; }
     public bool LinkpearlPopoutFlash { get; set; } = true;
     public bool LinkpearlPopoutHideInCombat { get; set; } = true;
