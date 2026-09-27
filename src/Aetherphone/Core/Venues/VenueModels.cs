@@ -34,10 +34,8 @@ internal enum VenueLiveState : byte
     Confirmed,
 }
 
-internal sealed record VenueDj(string Name, string? AvatarUrl, int Viewers, string? TwitchUrl, string DataCenter,
-    string World, string? VenueId, string Place)
+internal sealed record VenueDj(string Name, string? AvatarUrl, int Viewers, string? TwitchUrl, string VenueId)
 {
-    public string Title { get; init; } = string.Empty;
     public IReadOnlyList<string> Genres { get; init; } = Array.Empty<string>();
 }
 
@@ -77,12 +75,15 @@ internal sealed record VenueEvent
     public IReadOnlyList<string> LiveGenres { get; init; } = Array.Empty<string>();
     public int LiveViewers { get; init; }
     public DateTime LiveConfirmedUntilUtc { get; init; }
+    public DateTime DjLiveUntilUtc { get; init; }
 
     public bool CanTeleport => !string.IsNullOrEmpty(TeleportCode);
     public bool HasOpening => StartUtc.HasValue;
     public bool IsEvent => EventStartUtc.HasValue;
 
     public bool IsConfirmedLive(DateTime nowUtc) => nowUtc < LiveConfirmedUntilUtc;
+
+    public bool HasLiveDj(DateTime nowUtc) => nowUtc < DjLiveUntilUtc;
 
     public bool IsScheduledOpen(DateTime nowUtc) => StartUtc is { } start && IsOpen(start, EndUtc, nowUtc);
 

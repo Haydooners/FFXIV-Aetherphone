@@ -58,13 +58,6 @@ internal sealed partial class VenuesApp
     };
 
     private readonly Pager featuredPager = new();
-    private readonly VenueRail djRail = new();
-    private readonly List<string> djViewers = new();
-    private readonly List<string> djInitials = new();
-    private readonly List<string> djIds = new();
-    private readonly List<string> djMeta = new();
-    private readonly VenueDjSheet djSheet = new();
-    private VenueDj? sheetDj;
     private readonly VenueRail laterRail = new();
     private readonly VenueRail nearRail = new();
     private readonly string[] categoryCounts = new string[VenueCategories.Count];
@@ -83,7 +76,6 @@ internal sealed partial class VenuesApp
     private Vector2 featuredPressPos;
     private float featuredIdle;
     private string liveHeading = string.Empty;
-    private string djHeading = string.Empty;
     private string laterHeading = string.Empty;
     private string nearHeading = string.Empty;
     private string directoryLabel = string.Empty;
@@ -117,7 +109,6 @@ internal sealed partial class VenuesApp
         featuredPager.SnapTo(0, 1);
         featuredPressed = false;
         featuredIdle = 0f;
-        djRail.Reset();
         laterRail.Reset();
         nearRail.Reset();
     }
@@ -129,7 +120,6 @@ internal sealed partial class VenuesApp
         var live = Loc.Upper(Loc.T(L.Venues.LiveNowLabel));
         liveHeading = $"{live} · {sections.Live.Count.ToString(culture)}";
         laterHeading = Loc.Upper(Loc.T(L.Venues.LaterToday));
-        djHeading = $"{Loc.Upper(Loc.T(L.Venues.DjsOnAir))} · {sections.Djs.Count.ToString(culture)}";
         nearHeading = culture.TextInfo.ToUpper(Loc.T(L.Venues.NearWorld, CurrentWorld()));
         directoryLabel = Loc.T(L.Venues.BrowseAll, venues.Events.Count.ToString("N0", culture));
         for (var category = 0; category < VenueCategories.Count; category++)
@@ -151,7 +141,6 @@ internal sealed partial class VenuesApp
             }
             else if (!DrawLoadingOrFailure(body))
             {
-                DrawDjTray(scale);
                 if (sections.Featured.Count > 0)
                 {
                     DrawSectionHeading(sections.FeaturedIsLive ? liveHeading : laterHeading, scale,

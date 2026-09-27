@@ -25,6 +25,7 @@ internal static class VenueCard
     private const float HeroMaxHeight = 210f;
     private const float PadX = SocialChrome.CellPadX;
     private const float PadTop = 12f;
+    private const float PillGap = 6f;
     private const float PadBottom = 14f;
     private const float LogoSide = 42f;
     private const float LogoGap = 11f;
@@ -126,9 +127,10 @@ internal static class VenueCard
         VenueImage.Cover(drawList, hero, 0f, venue, text.Initial, art);
         MediaOverlay.BottomScrim(drawList, hero.Min, hero.Max, HeroScrimShare);
         var inset = OverlayInset * scale;
-        DrawStatusPill(drawList, new Vector2(hero.Min.X + inset, hero.Min.Y + inset), text.Status.Kind, scale);
         var starCenter = new Vector2(hero.Max.X - inset - MediaOverlay.GlassButtonRadius * scale,
             hero.Min.Y + inset + MediaOverlay.GlassButtonRadius * scale);
+        DrawStatusPill(drawList, new Vector2(hero.Min.X + inset, hero.Min.Y + inset), text.Status.Kind, venue,
+            starCenter.X - MediaOverlay.GlassButtonRadius * scale - PillGap * scale, scale);
         var starTapped = MediaOverlay.GlassButton(drawList, starCenter,
             favorite ? PhoneIcons.StarFilled : PhoneIcons.Star, string.Empty, scale, null,
             favorite ? FavoriteInk : MediaOverlay.White);
@@ -205,9 +207,10 @@ internal static class VenueCard
         Squircle.FillVerticalGradient(drawList, new Vector2(card.Min.X, card.Max.Y - card.Height * FeaturedScrimShare),
             card.Max, rounding, ImGui.GetColorU32(MediaOverlay.ScrimClear), ImGui.GetColorU32(MediaOverlay.ScrimDeep));
         DrawRim(drawList, card, rounding, eased, scale);
-        DrawStatusPill(drawList, new Vector2(card.Min.X + pad, card.Min.Y + pad), text.Status.Kind, scale);
         var action = VenueCardAction.None;
         var radius = MediaOverlay.GlassButtonRadius * scale;
+        DrawStatusPill(drawList, new Vector2(card.Min.X + pad, card.Min.Y + pad), text.Status.Kind, venue,
+            card.Max.X - pad - radius * 2f - PillGap * scale, scale);
         var starCenter = new Vector2(card.Max.X - pad - radius, card.Min.Y + pad + radius);
         var starLive = live && InsideClip(clip, starCenter.X - radius, starCenter.X + radius);
         if (MediaOverlay.GlassButton(drawList, starCenter, favorite ? PhoneIcons.StarFilled : PhoneIcons.Star,
@@ -422,7 +425,8 @@ internal static class VenueCard
         }
 
         var pad = RailPad * scale;
-        DrawStatusPill(drawList, new Vector2(card.Min.X + pad, card.Min.Y + pad), text.Status.Kind, scale);
+        DrawStatusPill(drawList, new Vector2(card.Min.X + pad, card.Min.Y + pad), text.Status.Kind, venue,
+            card.Max.X - pad, scale);
         var textWidth = card.Width - pad * 2f;
         var statusHeight = Typography.LineHeight(RailStatusStyle);
         var titleHeight = Typography.LineHeight(RailTitleStyle);
@@ -539,20 +543,34 @@ internal static class VenueCard
             _ => ink.AccentLink,
         };
 
-    public static void DrawStatusPill(ImDrawListPtr drawList, Vector2 topLeft, VenueStatusKind kind, float scale)
+    public static void DrawStatusPill(ImDrawListPtr drawList, Vector2 topLeft, VenueStatusKind kind,
+        VenueEvent venue, float right, float scale)
     {
+        var left = topLeft.X;
         if (kind == VenueStatusKind.Live)
         {
-            MediaOverlay.LivePill(drawList, topLeft, Loc.T(L.Common.Live), scale);
+            left += MediaOverlay.LivePill(drawList, topLeft, Loc.T(L.Common.Live), scale) + PillGap * scale;
+        }
+        else if (kind == VenueStatusKind.Open)
+        {
+            left += MediaOverlay.Pill(drawList, topLeft, Loc.T(L.Venues.OpenNow), MediaOverlay.Fill,
+                MediaOverlay.LiveGreen, scale, string.Empty, true,
+                Palette.WithAlpha(MediaOverlay.LiveGreen, 0.55f)) + PillGap * scale;
+        }
+
+        if (!venue.HasLiveDj(DateTime.UtcNow))
+        {
             return;
         }
 
-        if (kind == VenueStatusKind.Open)
+        var label = Loc.T(L.Venues.ActiveDj);
+        if (left + MediaOverlay.PillWidth(label, scale, true, true) > right)
         {
-            MediaOverlay.Pill(drawList, topLeft, Loc.T(L.Venues.OpenNow), MediaOverlay.Fill,
-                MediaOverlay.LiveGreen, scale, string.Empty, true,
-                Palette.WithAlpha(MediaOverlay.LiveGreen, 0.55f));
+            return;
         }
+
+        MediaOverlay.Pill(drawList, new Vector2(left, topLeft.Y), label, MediaOverlay.Fill, MediaOverlay.White,
+            scale, PhoneIcons.Microphone, true);
     }
 
     private static float StatWidth(string stat, float scale) =>

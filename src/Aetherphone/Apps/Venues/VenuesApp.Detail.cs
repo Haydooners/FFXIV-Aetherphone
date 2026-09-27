@@ -76,6 +76,7 @@ internal sealed partial class VenuesApp
         }
 
         detailVenue = resolved;
+        CollectDetailDjs(resolved.Id);
         detailVersion = venues.Version;
         detailMinute = minute;
         detailText = new DetailText(VenueFormat.Status(resolved, nowUtc), VenueFormat.Meta(resolved),
@@ -154,7 +155,7 @@ internal sealed partial class VenuesApp
         MediaOverlay.BottomScrim(drawList, hero.Min, hero.Max, HeroScrimShare);
         var inset = HeroInset * scale;
         VenueCard.DrawStatusPill(drawList, new Vector2(hero.Min.X + inset, hero.Min.Y + inset),
-            detailText.Status.Kind, scale);
+            detailText.Status.Kind, venue, hero.Max.X - inset, scale);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height));
     }
@@ -254,6 +255,9 @@ internal sealed partial class VenuesApp
         var headlineHeight = Typography.LineHeight(InfoValueStyle);
         var captionHeight = Typography.LineHeight(CaptionStyle);
         var rowHeight = MathF.Max(radius * 2f, headlineHeight + 2f * scale + captionHeight);
+        var djCount = detailDjs.Count;
+        var djRowHeight = DjRowHeight * scale;
+        var topBlock = djCount > 0 ? inner * 0.5f + djCount * djRowHeight : inner + rowHeight;
         var hasTwitch = !string.IsNullOrEmpty(venue.TwitchUrl);
         var fullWidth = MathF.Max(1f, cardRight - cardLeft - inner * 2f);
         var titleHeight = venue.LiveTitle.Length > 0
@@ -261,26 +265,28 @@ internal sealed partial class VenuesApp
               Typography.LineHeight(StreamTitleStyle)
             : 0f;
         var genresHeight = venue.LiveGenres.Count > 0 ? VenueChips.Height(scale) : 0f;
-        var cardHeight = inner * 2f + rowHeight +
+        var cardHeight = topBlock + inner +
                          (titleHeight > 0f ? Metrics.Space.Sm * scale + titleHeight : 0f) +
                          (genresHeight > 0f ? Metrics.Space.Sm * scale + genresHeight : 0f) +
                          (hasTwitch ? Metrics.Space.Md * scale + TwitchButtonHeight * scale : 0f);
         ui.Card(drawList, new Vector2(cardLeft, origin.Y), new Vector2(cardRight, origin.Y + cardHeight),
             Metrics.Radius.Card * scale, elevated: true);
-        var iconCenter = new Vector2(cardLeft + inner + radius, origin.Y + inner + rowHeight * 0.5f);
-        drawList.AddCircleFilled(iconCenter, radius, ImGui.GetColorU32(Palette.WithAlpha(MediaOverlay.LiveGreen, 0.18f)),
-            32);
-        PhoneIcon.Draw(drawList, iconCenter, PhoneIcons.Microphone, MediaOverlay.LiveGreen, 20f * scale);
-        var textLeft = iconCenter.X + radius + 12f * scale;
-        var textWidth = MathF.Max(1f, cardRight - inner - textLeft);
-        var textTop = origin.Y + inner + (rowHeight - headlineHeight - 2f * scale - captionHeight) * 0.5f;
-        var headline = venue.LiveHeadline.Length > 0 ? venue.LiveHeadline : Loc.T(L.Venues.LiveNowLabel);
-        Marquee.DrawLeftAuto(drawList, new MarqueeId("venues.detail.playing.", venue.Id), headline, textLeft, textTop,
-            textWidth, InfoValueStyle, Ink.TitleInk);
-        var caption = detailText.Viewers.Length > 0 ? detailText.Viewers : Loc.T(L.Venues.SourceRolladeck);
-        Typography.Draw(drawList, new Vector2(textLeft, textTop + headlineHeight + 2f * scale),
-            Typography.FitText(caption, textWidth, CaptionStyle), Ink.MutedInk, CaptionStyle);
-        var cursorY = origin.Y + inner + rowHeight;
+        if (djCount > 0)
+        {
+            var linkable = djCount > 1;
+            for (var index = 0; index < djCount; index++)
+            {
+                var rowTop = origin.Y + inner * 0.5f + index * djRowHeight;
+                DrawDetailDjRow(drawList, new Vector2(cardLeft, rowTop), new Vector2(cardRight, rowTop + djRowHeight),
+                    index, linkable, inner, scale);
+            }
+        }
+        else
+        {
+            DrawNowPlayingHeadline(drawList, venue, cardLeft, cardRight, origin.Y, rowHeight, scale);
+        }
+
+        var cursorY = origin.Y + topBlock;
         if (titleHeight > 0f)
         {
             cursorY += Metrics.Space.Sm * scale;
@@ -312,6 +318,28 @@ internal sealed partial class VenuesApp
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, cardHeight + Metrics.Space.Xs * scale));
         DrawHint(Loc.T(L.Venues.ConfirmedLive), scale);
+    }
+
+    private void DrawNowPlayingHeadline(ImDrawListPtr drawList, VenueEvent venue, float cardLeft, float cardRight,
+        float top, float rowHeight, float scale)
+    {
+        var inner = CardInset * scale;
+        var radius = NowPlayingIconRadius * scale;
+        var headlineHeight = Typography.LineHeight(InfoValueStyle);
+        var captionHeight = Typography.LineHeight(CaptionStyle);
+        var iconCenter = new Vector2(cardLeft + inner + radius, top + inner + rowHeight * 0.5f);
+        drawList.AddCircleFilled(iconCenter, radius, ImGui.GetColorU32(Palette.WithAlpha(MediaOverlay.LiveGreen, 0.18f)),
+            32);
+        PhoneIcon.Draw(drawList, iconCenter, PhoneIcons.Microphone, MediaOverlay.LiveGreen, 20f * scale);
+        var textLeft = iconCenter.X + radius + 12f * scale;
+        var textWidth = MathF.Max(1f, cardRight - inner - textLeft);
+        var textTop = top + inner + (rowHeight - headlineHeight - 2f * scale - captionHeight) * 0.5f;
+        var headline = venue.LiveHeadline.Length > 0 ? venue.LiveHeadline : Loc.T(L.Venues.LiveNowLabel);
+        Marquee.DrawLeftAuto(drawList, new MarqueeId("venues.detail.playing.", venue.Id), headline, textLeft, textTop,
+            textWidth, InfoValueStyle, Ink.TitleInk);
+        var caption = detailText.Viewers.Length > 0 ? detailText.Viewers : Loc.T(L.Venues.SourceRolladeck);
+        Typography.Draw(drawList, new Vector2(textLeft, textTop + headlineHeight + 2f * scale),
+            Typography.FitText(caption, textWidth, CaptionStyle), Ink.MutedInk, CaptionStyle);
     }
 
     private void DrawHint(string text, float scale)

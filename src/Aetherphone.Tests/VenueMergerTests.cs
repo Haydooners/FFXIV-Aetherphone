@@ -241,7 +241,7 @@ public sealed class VenueMergerTests
         var sections = new VenueSections();
         var key = new VenueSectionsKey(1, VenueFilter.SourceAll, null, string.Empty, "Shiva", 0, 0, 0);
 
-        sections.Update(key, [live, later, party], [], ["ffxiv:b"], [], Now);
+        sections.Update(key, [live, later, party], ["ffxiv:b"], [], Now);
 
         Assert.Equal(["Alpha"], Titles(sections.Live));
         Assert.True(sections.FeaturedIsLive);
@@ -292,12 +292,13 @@ public sealed class VenueMergerTests
         var venue = Assert.Single(snapshot.Events);
         Assert.Equal("70s 80s 90s night", venue.LiveTitle);
         Assert.Equal(["80s", "Disco"], venue.LiveGenres);
-        Assert.Equal("70s 80s 90s night", snapshot.Djs[0].Title);
+        Assert.True(venue.HasLiveDj(Now));
+        Assert.False(venue.HasLiveDj(Now + VenueMerger.ConfirmationLifetime));
         Assert.Equal(["80s", "Disco"], snapshot.Djs[0].Genres);
     }
 
     [Fact]
-    public void Merge_ListsLiveDjsLinkedToTheirVenueBusiestFirst()
+    public void Merge_ListsOnlyLiveDjsLinkedToAVenue()
     {
         var atVenue = new LiveDjEntry
         {
@@ -308,32 +309,18 @@ public sealed class VenueMergerTests
 
         var djs = VenueMerger.Merge([Listing("ffxiv:a", "Paradise")], [], [], [atVenue, roaming], Now, Now).Djs;
 
-        Assert.Equal(["DJ Solo", "DJ Yams"], [djs[0].Name, djs[1].Name]);
-        Assert.Null(djs[0].VenueId);
-        Assert.Equal("ffxiv:a", djs[1].VenueId);
-        Assert.Equal("Paradise", djs[1].Place);
+        var linked = Assert.Single(djs);
+        Assert.Equal("DJ Yams", linked.Name);
+        Assert.Equal("ffxiv:a", linked.VenueId);
     }
 
     [Fact]
-    public void Scope_RegionSetAndWorldNarrowVenuesAndDjs()
+    public void Scope_RegionSetAndWorldNarrowVenues()
     {
         var light = Listing("ffxiv:a", "Alpha", ward: 1, plot: 1);
         var chaos = Listing("ffxiv:b", "Bravo", ward: 2, plot: 2) with { DataCenter = "Chaos", World = "Omega" };
         var aether = Listing("ffxiv:c", "Charlie", ward: 3, plot: 3) with { DataCenter = "Aether", World = "Gilgamesh" };
         var europe = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Light", "Chaos" };
-        var djs = new[]
-        {
-            new VenueDj("EU DJ", null, 5, null, "Chaos", "Omega", null, string.Empty),
-            new VenueDj("NA DJ", null, 9, null, "Aether", "Gilgamesh", null, string.Empty),
-        };
-        var sections = new VenueSections();
-
-        sections.Update(new VenueSectionsKey(1, VenueFilter.SourceAll, europe, string.Empty, string.Empty, 0, 0, 0),
-            [light, chaos, aether], djs, [], [], Now);
-
-        Assert.Equal(["EU DJ"], [sections.Djs[0].Name]);
-        Assert.Single(sections.Djs);
-
         var query = new VenueQuery();
         query.Update(new VenueQueryKey(1, VenueTimeFilter.All, VenueFilter.SourceAll, europe, false, 0, 0,
             string.Empty, 0, World: "Omega"), [light, chaos, aether], [], [], Now);
@@ -383,7 +370,7 @@ public sealed class VenueMergerTests
 
         var sections = new VenueSections();
         sections.Update(new VenueSectionsKey(1, VenueFilter.SourceAll, null, string.Empty, string.Empty, 0, 0, 0),
-            [venue], [], [], [], Now);
+            [venue], [], [], Now);
 
         Assert.Equal(["Club Glo"], Titles(sections.Events));
     }

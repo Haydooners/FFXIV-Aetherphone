@@ -1081,7 +1081,6 @@ internal static class L
         public static readonly LocString RegionEurope = new("venues.regionEurope", "Europe");
         public static readonly LocString RegionOceania = new("venues.regionOceania", "Oceania");
         public static readonly LocString RegionJapan = new("venues.regionJapan", "Japan");
-        public static readonly LocString DjsOnAir = new("venues.djsOnAir", "DJs on air");
         public static readonly LocString AllSources = new("venues.allSources", "All sources");
         public static readonly LocString SourceAllHint = new("venues.sourceAllHint", "Every listing in one place");
         public static readonly LocString SourceFfxivHint = new("venues.sourceFfxivHint",
@@ -1110,7 +1109,6 @@ internal static class L
         public static readonly LocString Discord = new("venues.discord", "Discord");
         public static readonly LocString Website = new("venues.website", "Website");
         public static readonly LocString WatchOnTwitch = new("venues.watchOnTwitch", "Watch on Twitch");
-        public static readonly LocString GoToVenue = new("venues.goToVenue", "Go to venue");
         public static readonly LocString Details = new("venues.details", "Details");
         public static readonly LocString NextOpening = new("venues.nextOpening", "Next opening");
         public static readonly LocString DataCenter = new("venues.dataCenter", "Data Center");
@@ -1124,6 +1122,7 @@ internal static class L
         public static readonly LocString LiveNowLabel = new("venues.liveNowLabel", "Live now");
         public static readonly LocString SeeAll = new("venues.seeAll", "See all");
         public static readonly LocString OpenNow = new("venues.openNow", "Open now");
+        public static readonly LocString ActiveDj = new("venues.activeDj", "Active DJ");
         public static readonly LocString OpenUntil = new("venues.openUntil", "Open until {0}");
         public static readonly LocString OpensAt = new("venues.opensAt", "Opens {0}");
         public static readonly LocString StartsAt = new("venues.startsAt", "Starts {0}");
@@ -1901,6 +1900,16 @@ internal static class L
         public static readonly LocString SectionSocial = new("changelog.sectionSocial", "Chirper and Aethergram");
         public static readonly LocString SectionAethergramVelvet = new("changelog.sectionAethergramVelvet", "Aethergram and Velvet");
         public static readonly LocString SectionChirperAethergramVelvet = new("changelog.sectionChirperAethergramVelvet", "Chirper, Aethergram and Velvet");
+
+        public static readonly LocString[] Release1037Venues =
+        {
+            new("changelog.r1037.0",
+                "Moved live DJs off the home screen and onto their venue's page: the Now playing card shows the DJ's picture, name and viewers, with a Twitch link for each DJ"),
+            new("changelog.r1037.1",
+                "Added an Active DJ tag to venue cards while a DJ is on air there"),
+            new("changelog.r1037.2",
+                "Fixed live DJs and XIV Rolladeck live confirmations not showing at all"),
+        };
 
         public static readonly LocString[] Release1036YellowPages =
         {
