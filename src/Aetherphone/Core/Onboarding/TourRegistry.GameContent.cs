@@ -36,7 +36,8 @@ internal static partial class TourRegistry
             {
                 GuideStep.Note(L.Onboarding.VenuesTitle, L.Onboarding.VenuesBody),
                 GuideStep.Point(L.Onboarding.VenuesLiveTitle, L.Onboarding.VenuesLiveBody, "venues.live"),
-                GuideStep.Point(L.Onboarding.VenuesTimeTitle, L.Onboarding.VenuesTimeBody, "venues.time"),
+                GuideStep.Point(L.Onboarding.VenuesCategoriesTitle, L.Onboarding.VenuesCategoriesBody,
+                    "venues.categories"),
                 GuideStep.Point(L.Onboarding.VenuesFilterTitle, L.Onboarding.VenuesFilterBody, "venues.chips"),
                 GuideStep.Point(L.Onboarding.VenuesSearchTitle, L.Onboarding.VenuesSearchBody, "venues.search"),
             });

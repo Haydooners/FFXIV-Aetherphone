@@ -56,16 +56,11 @@ internal sealed partial class VenuesApp
     {
         var nowUtc = DateTime.UtcNow;
         var minute = nowUtc.Ticks / TimeSpan.TicksPerMinute;
-        var languageChanged = labels.LanguageChanged();
+        CheckLanguage();
         if (detailVenue is not null && string.Equals(detailVenue.Id, routed.Id, StringComparison.Ordinal) &&
-            detailVersion == venues.Version && detailMinute == minute && !languageChanged)
+            detailVersion == venues.Version && detailMinute == minute)
         {
             return detailVenue;
-        }
-
-        if (languageChanged)
-        {
-            query.Invalidate();
         }
 
         var resolved = routed;
@@ -250,7 +245,7 @@ internal sealed partial class VenuesApp
         var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
         var pad = CellPadX * scale;
-        var inner = ToggleCardPad * scale;
+        var inner = CardInset * scale;
         var cardLeft = origin.X + pad;
         var cardRight = origin.X + width - pad;
         var radius = NowPlayingIconRadius * scale;

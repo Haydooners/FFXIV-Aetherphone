@@ -94,11 +94,11 @@ internal static class MediaOverlay
     }
 
     public static bool GlassButton(ImDrawListPtr drawList, Vector2 center, string glyph, string tooltip, float scale,
-        Vector4? ringInk = null, Vector4? glyphInk = null)
+        Vector4? ringInk = null, Vector4? glyphInk = null, bool interactive = true)
     {
         var radius = GlassButtonRadius * scale;
         var extent = new Vector2(radius, radius);
-        var hovered = UiInteract.Hover(center - extent, center + extent);
+        var hovered = interactive && UiInteract.Hover(center - extent, center + extent);
         drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(hovered ? HoverFill : Fill), 32);
         if (ringInk is { } ring)
         {
@@ -109,6 +109,11 @@ internal static class MediaOverlay
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        if (!interactive)
+        {
+            return false;
         }
 
         if (tooltip.Length > 0)

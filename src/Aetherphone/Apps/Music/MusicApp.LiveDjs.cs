@@ -596,15 +596,9 @@ internal sealed partial class MusicApp
                 var teleportRect = new Rect(teleportMin, teleportMin + new Vector2(teleportWidth, 36f * scale));
                 if (ui.GhostButton(teleportRect, teleportLabel))
                 {
-                    if (liveDjLifestreamAvailable)
-                    {
-                        LifestreamBridge.Travel(dj.TeleportDestination!);
-                    }
-                    else
-                    {
-                        ImGui.SetClipboardText(LifestreamBridge.TravelCommand(dj.TeleportDestination!));
-                        ShellToast.Show();
-                    }
+                    Windows.TeleportActions.AskThenTravel(confirm, dj.VenueName ?? dj.NormalizedName,
+                        $"{dj.ServerLabel} · {dj.FormattedAddress}", dj.TeleportDestination!,
+                        liveDjLifestreamAvailable);
                 }
 
                 if (!liveDjLifestreamAvailable)
@@ -1119,15 +1113,9 @@ internal sealed partial class MusicApp
                     var teleRect = new Rect(new Vector2(buttonX, pillOrigin.Y), new Vector2(buttonX + buttonWidth, pillOrigin.Y + buttonHeight));
                     if (ui.GhostButton(teleRect, Loc.T(L.Rolladeck.Teleport)))
                     {
-                        if (liveDjLifestreamAvailable)
-                        {
-                            LifestreamBridge.Travel(venue.TeleportDestination!);
-                        }
-                        else
-                        {
-                            ImGui.SetClipboardText(LifestreamBridge.TravelCommand(venue.TeleportDestination!));
-                            ShellToast.Show();
-                        }
+                        Windows.TeleportActions.AskThenTravel(confirm, venue.DisplayName,
+                            $"{venue.ServerLabel} · {venue.FormattedAddress}", venue.TeleportDestination!,
+                            liveDjLifestreamAvailable);
                     }
 
                     if (!liveDjLifestreamAvailable)

@@ -30,6 +30,13 @@ internal static class L
         public static readonly LocString OpenLinkTitle = new("common.openLinkTitle", "Open this link?");
         public static readonly LocString OpenLinkWarning = new("common.openLinkWarning", "This link will direct you outside of Aetherphone to a third party website. Never trust random links from strangers and use your best judgment before proceeding further.");
         public static readonly LocString OpenLinkDestination = new("common.openLinkDestination", "Destination");
+        public static readonly LocString TravelTitle = new("common.travelTitle", "Travel to {0}?");
+        public static readonly LocString TravelWarning = new("common.travelWarning",
+            "Lifestream will move your character there automatically, changing worlds and teleporting on the way.");
+        public static readonly LocString TravelCopyWarning = new("common.travelCopyWarning",
+            "Lifestream is not installed, so the travel command will be copied instead. Paste it in chat to go.");
+        public static readonly LocString TravelConfirm = new("common.travelConfirm", "Travel");
+        public static readonly LocString TravelCopyConfirm = new("common.travelCopyConfirm", "Copy command");
         public static readonly LocString OpenLinkConfirm = new("common.openLinkConfirm", "Open link");
         public static readonly LocString OpenInWindow = new("common.openInWindow", "Open in a window");
         public static readonly LocString Next = new("common.next", "Next");
@@ -1035,13 +1042,60 @@ internal static class L
     internal static class Venues
     {
         public static readonly LocString LiveNow = new("venues.liveNow", "Live");
-        public static readonly LocString Today = new("venues.today", "Today");
-        public static readonly LocString ThisWeek = new("venues.thisWeek", "This week");
+        public static readonly LocString Discover = new("venues.discover", "Discover");
+        public static readonly LocString Events = new("venues.events", "Events");
+        public static readonly LocString Categories = new("venues.categories", "Categories");
+        public static readonly LocString LaterToday = new("venues.laterToday", "Later today");
+        public static readonly LocString NearWorld = new("venues.nearWorld", "On {0}");
+        public static readonly LocString BrowseAll = new("venues.browseAll", "Browse all {0} venues");
+        public static readonly LocString CategoryNightclubs = new("venues.categoryNightclubs", "Nightclubs");
+        public static readonly LocString CategoryBars = new("venues.categoryBars", "Bars and lounges");
+        public static readonly LocString CategoryCafes = new("venues.categoryCafes", "Cafes and food");
+        public static readonly LocString CategoryTaverns = new("venues.categoryTaverns", "Taverns and inns");
+        public static readonly LocString CategoryBathHouses = new("venues.categoryBathHouses", "Bath houses");
+        public static readonly LocString CategoryCasinos = new("venues.categoryCasinos", "Casinos");
+        public static readonly LocString CategoryRoleplay = new("venues.categoryRoleplay", "Roleplay");
+        public static readonly LocString CategoryPhotography = new("venues.categoryPhotography", "Photo and art");
+        public static readonly LocString NoLive = new("venues.noLive", "Nothing is live right now");
+        public static readonly LocString NoLiveHint = new("venues.noLiveHint",
+            "Venues show up here while they are open. Check what opens later today.");
+        public static readonly LocString NoEvents = new("venues.noEvents", "No events coming up");
+        public static readonly LocString NoEventsHint = new("venues.noEventsHint",
+            "Special nights and parties posted for the next two weeks show up here");
+        public static readonly LocString NoSaved = new("venues.noSaved", "No favorites yet");
+        public static readonly LocString NoSavedHint = new("venues.noSavedHint",
+            "Tap the star on any venue to keep it here");
         public static readonly LocString Directory = new("venues.directory", "Directory");
         public static readonly LocString Search = new("venues.search", "Search venues");
-        public static readonly LocString AllDataCenters = new("venues.allDataCenters", "All DCs");
-        public static readonly LocString AllDataCentersLong = new("venues.allDataCentersLong", "All data centers");
-        public static readonly LocString AllSources = new("venues.allSources", "All");
+        public static readonly LocString ScopeTitle = new("venues.scopeTitle", "Show venues from");
+        public static readonly LocString NearYouSection = new("venues.nearYouSection", "Near you");
+        public static readonly LocString YourWorld = new("venues.yourWorld", "Your world");
+        public static readonly LocString YourDataCenter = new("venues.yourDataCenter", "Your data center");
+        public static readonly LocString YourRegion = new("venues.yourRegion", "Your region");
+        public static readonly LocString Everywhere = new("venues.everywhere", "Everywhere");
+        public static readonly LocString EverywhereHint = new("venues.everywhereHint", "Every region and data center");
+        public static readonly LocString AllOfRegion = new("venues.allOfRegion", "All of {0}");
+        public static readonly LocString WorldCount = new("venues.worldCount", "{0} worlds");
+        public static readonly LocString RegionNorthAmerica = new("venues.regionNorthAmerica", "North America");
+        public static readonly LocString RegionEurope = new("venues.regionEurope", "Europe");
+        public static readonly LocString RegionOceania = new("venues.regionOceania", "Oceania");
+        public static readonly LocString RegionJapan = new("venues.regionJapan", "Japan");
+        public static readonly LocString DjsOnAir = new("venues.djsOnAir", "DJs on air");
+        public static readonly LocString AllSources = new("venues.allSources", "All sources");
+        public static readonly LocString SourceAllHint = new("venues.sourceAllHint", "Every listing in one place");
+        public static readonly LocString SourceFfxivHint = new("venues.sourceFfxivHint",
+            "Venue directory with weekly hours");
+        public static readonly LocString SourcePartakeHint = new("venues.sourcePartakeHint",
+            "Community events and meetups");
+        public static readonly LocString SourceRolladeckHint = new("venues.sourceRolladeckHint",
+            "Live DJ streams and venue pages");
+        public static readonly LocString Content = new("venues.content", "Content");
+        public static readonly LocString HideAdult = new("venues.hideAdult", "Hide 18+ venues");
+        public static readonly LocString HideAdultHint = new("venues.hideAdultHint",
+            "Only show venues listed as safe for work");
+        public static readonly LocString SearchTags = new("venues.searchTags", "Search tags");
+        public static readonly LocString ShowAllTags = new("venues.showAllTags", "Show all {0} tags");
+        public static readonly LocString ShowVenues = new("venues.showVenues", "Show {0} venues");
         public static readonly LocString SourceFfxiv = new("venues.sourceFfxiv", "FFXIV Venues");
         public static readonly LocString SourcePartake = new("venues.sourcePartake", "Partake.gg");
         public static readonly LocString SourceRolladeck = new("venues.sourceRolladeck", "XIV Rolladeck");
@@ -1905,7 +1959,7 @@ internal static class L
         public static readonly LocString[] Release1035Venues =
         {
             new("changelog.r1035.19",
-                "Rebuilt Venues edge to edge: full-width photo cards, a Live now rail up top, and quick chips for live, today, this week, the full directory and favorites"),
+                "Rebuilt Venues around four tabs: Discover with featured venues, categories and quick rails, Live with Teleport on every card, Events by day, and Favorites"),
             new("changelog.r1035.20",
                 "Added XIV Rolladeck as a venue source: a green Live badge now means a DJ is really streaming from the venue, with who is playing and how many are watching"),
             new("changelog.r1035.21",
@@ -7071,8 +7125,8 @@ internal static class L
         public static readonly LocString MarketSearchBody = new("onboarding.marketSearchBody", "Type a couple of letters to search every marketable item, or look one up straight from the game.");
         public static readonly LocString MarketScopeTitle = new("onboarding.marketScopeTitle", "Pick your scope");
         public static readonly LocString MarketScopeBody = new("onboarding.marketScopeBody", "Compare prices on your world, your data center, or the whole region. Your pick is remembered.");
-        public static readonly LocString VenuesTimeTitle = new("onboarding.venuesTimeTitle", "Now or later");
-        public static readonly LocString VenuesTimeBody = new("onboarding.venuesTimeBody", "Switch between venues open right now, today, this week, the full directory, or your favorites.");
+        public static readonly LocString VenuesCategoriesTitle = new("onboarding.venuesCategoriesTitle", "Browse by vibe");
+        public static readonly LocString VenuesCategoriesBody = new("onboarding.venuesCategoriesBody", "Jump into clubs, bars, cafes, bath houses and more, or open Events for the special nights coming up.");
         public static readonly LocString VenuesFilterTitle = new("onboarding.venuesFilterTitle", "Narrow it down");
         public static readonly LocString VenuesFilterBody = new("onboarding.venuesFilterBody", "Pick your data center from the pill up top, and open filters to choose sources and tags.");
         public static readonly LocString VenuesLiveTitle = new("onboarding.venuesLiveTitle", "Live right now");

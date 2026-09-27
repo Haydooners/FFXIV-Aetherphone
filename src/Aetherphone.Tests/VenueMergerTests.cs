@@ -68,7 +68,7 @@ public sealed class VenueMergerTests
     [Fact]
     public void Merge_JoinsDirectoryEntryOntoListingByAddress()
     {
-        var merged = VenueMerger.Merge([Listing("ffxiv:a", "Paradise")], [Directory("r1", "Paradise Nightclub")], [],
+        var merged = MergeEvents([Listing("ffxiv:a", "Paradise")], [Directory("r1", "Paradise Nightclub")], [],
             [], Now, Now);
 
         var venue = Assert.Single(merged);
@@ -83,7 +83,7 @@ public sealed class VenueMergerTests
     [Fact]
     public void Merge_KeepsListingBannerOverDirectoryBanner()
     {
-        var merged = VenueMerger.Merge([Listing("ffxiv:a", "Paradise", banner: "https://own/banner.png")],
+        var merged = MergeEvents([Listing("ffxiv:a", "Paradise", banner: "https://own/banner.png")],
             [Directory("r1", "Paradise")], [], [], Now, Now);
 
         Assert.Equal("https://own/banner.png", Assert.Single(merged).BannerUrl);
@@ -92,7 +92,7 @@ public sealed class VenueMergerTests
     [Fact]
     public void Merge_AddsDirectoryOnlyVenuesWithAmenityTags()
     {
-        var merged = VenueMerger.Merge([Listing("ffxiv:a", "Paradise")], [Directory("r2", "Voidsent", ward: 3, plot: 7)],
+        var merged = MergeEvents([Listing("ffxiv:a", "Paradise")], [Directory("r2", "Voidsent", ward: 3, plot: 7)],
             [], [], Now, Now);
 
         Assert.Equal(2, merged.Length);
@@ -106,7 +106,7 @@ public sealed class VenueMergerTests
     [Fact]
     public void Merge_OpenVenueConfirmsLiveUntilConfirmationLapses()
     {
-        var merged = VenueMerger.Merge([Listing("ffxiv:a", "Paradise")], [], [Open("Paradise")], [], Now, Now);
+        var merged = MergeEvents([Listing("ffxiv:a", "Paradise")], [], [Open("Paradise")], [], Now, Now);
 
         var venue = Assert.Single(merged);
         Assert.True(venue.IsConfirmedLive(Now));
@@ -119,7 +119,7 @@ public sealed class VenueMergerTests
     [Fact]
     public void Merge_OpenVenueWithoutListingCreatesVenue()
     {
-        var merged = VenueMerger.Merge([], [], [Open("Club Nova", ward: 9, plot: 12)], [], Now, Now);
+        var merged = MergeEvents([], [], [Open("Club Nova", ward: 9, plot: 12)], [], Now, Now);
 
         var venue = Assert.Single(merged);
         Assert.Equal("Club Nova", venue.Title);
@@ -140,7 +140,7 @@ public sealed class VenueMergerTests
             TwitchUrl = "https://www.twitch.tv/yams",
         };
 
-        var venue = Assert.Single(VenueMerger.Merge([Listing("ffxiv:a", "Paradise")], [], [], [dj], Now, Now));
+        var venue = Assert.Single(MergeEvents([Listing("ffxiv:a", "Paradise")], [], [], [dj], Now, Now));
 
         Assert.Equal(56, venue.LiveViewers);
         Assert.Equal("DJ Yams", venue.LiveHeadline);
@@ -150,7 +150,7 @@ public sealed class VenueMergerTests
     [Fact]
     public void Merge_EntriesWithoutFullAddressNeverJoin()
     {
-        var merged = VenueMerger.Merge([Listing("ffxiv:a", "Paradise")], [Directory("r1", "Other", plot: 0)], [], [],
+        var merged = MergeEvents([Listing("ffxiv:a", "Paradise")], [Directory("r1", "Other", plot: 0)], [], [],
             Now, Now);
 
         Assert.Equal(2, merged.Length);
@@ -193,31 +193,157 @@ public sealed class VenueMergerTests
         Assert.Equal(expected, RolladeckText.TeleportDestination(input));
 
     [Fact]
-    public void Query_DirectorySortsByTitleAndRailPutsConfirmedFirst()
+    public void Query_DirectoryPutsLiveFirstThenSortsByTitle()
     {
         var scheduled = Listing("ffxiv:b", "Bravo", ward: 2, plot: 2, start: Now.AddMinutes(-30), end: Now.AddHours(2));
         var confirmedSource = Listing("ffxiv:c", "Charlie", ward: 3, plot: 3);
         var idle = Listing("ffxiv:a", "Alpha", ward: 1, plot: 1);
-        var merged = VenueMerger.Merge([scheduled, confirmedSource, idle], [], [Open("Charlie", ward: 3, plot: 3)], [],
-            Now, Now);
+        var idleToo = Listing("ffxiv:d", "Delta", ward: 4, plot: 4);
+        var merged = MergeEvents([scheduled, confirmedSource, idleToo, idle], [],
+            [Open("Charlie", ward: 3, plot: 3)], [], Now, Now);
         var query = new VenueQuery();
-        var key = new VenueQueryKey(1, VenueTimeFilter.All, VenueFilter.SourceAll, string.Empty, false, 0, 0,
+        var key = new VenueQueryKey(1, VenueTimeFilter.All, VenueFilter.SourceAll, null, false, 0, 0,
             string.Empty, 0);
 
         query.Update(key, merged, [], [], Now);
 
-        Assert.Equal(["Alpha", "Bravo", "Charlie"], Titles(query.Feed));
-        Assert.Equal(["Charlie", "Bravo"], Titles(query.Rail));
-        Assert.Equal(2, query.LiveCount);
+        Assert.Equal(["Charlie", "Bravo", "Alpha", "Delta"], Titles(query.Feed));
     }
 
     [Fact]
-    public void Query_LiveFilterKeepsOnlyLiveVenuesAndSkipsRebuildForSameKey()
+    public void Query_CategoryAndWorldNarrowTheFeed()
+    {
+        var bar = Listing("ffxiv:a", "Alpha", ward: 1, plot: 1) with { Tags = ["Bar"] };
+        var club = Listing("ffxiv:b", "Bravo", ward: 2, plot: 2) with { Tags = ["Nightclub"] };
+        var elsewhere = Listing("ffxiv:c", "Charlie", ward: 3, plot: 3) with { Tags = ["Bar"], World = "Odin" };
+        var query = new VenueQuery();
+        var key = new VenueQueryKey(1, VenueTimeFilter.All, VenueFilter.SourceAll, null, false, 0, 0,
+            string.Empty, 0, VenueCategories.Bars, "Shiva");
+
+        query.Update(key, [bar, club, elsewhere], [], [], Now);
+
+        Assert.Equal(["Alpha"], Titles(query.Feed));
+    }
+
+    [Fact]
+    public void Sections_SplitLiveLaterTodayEventsAndFavorites()
+    {
+        var localNow = Now.ToLocalTime();
+        var laterToday = localNow.Date.AddHours(23).AddMinutes(30).ToUniversalTime();
+        var live = Listing("ffxiv:a", "Alpha", ward: 1, plot: 1, start: Now.AddMinutes(-10), end: Now.AddHours(2));
+        var later = Listing("ffxiv:b", "Bravo", ward: 2, plot: 2, start: laterToday, end: laterToday.AddHours(2),
+            banner: "https://banner") with { Tags = ["Bath house"] };
+        var party = Listing("partake:1", "Beach Rave", ward: 3, plot: 3, start: Now.AddDays(3)) with { IsEvent = true };
+        var sections = new VenueSections();
+        var key = new VenueSectionsKey(1, VenueFilter.SourceAll, null, string.Empty, "Shiva", 0, 0, 0);
+
+        sections.Update(key, [live, later, party], [], ["ffxiv:b"], [], Now);
+
+        Assert.Equal(["Alpha"], Titles(sections.Live));
+        Assert.True(sections.FeaturedIsLive);
+        Assert.Equal(["Alpha"], Titles(sections.Featured));
+        if (laterToday > Now)
+        {
+            Assert.Equal(["Bravo"], Titles(sections.LaterToday));
+            Assert.Equal(["Bravo"], Titles(sections.LaterRail));
+        }
+
+        Assert.Equal(["Beach Rave"], Titles(sections.Events));
+        Assert.Equal(["Bravo"], Titles(sections.Saved));
+        Assert.Equal(3, sections.NearYou.Count);
+        Assert.Equal(1, sections.CategoryCount(VenueCategories.BathHouses));
+    }
+
+    [Fact]
+    public void TagIndex_CountsTagsSkipsRatingsAndHonorsHideAdult()
+    {
+        var adultBar = Listing("ffxiv:a", "Alpha", ward: 1, plot: 1) with { Tags = ["18+", "Bar", "DJ"] };
+        var safeBar = Listing("ffxiv:b", "Bravo", ward: 2, plot: 2) with { Tags = ["SFW", "Bar"] };
+        var index = new VenueTagIndex();
+
+        index.Update(new VenueTagIndexKey(1, VenueFilter.SourceAll, null, string.Empty, false, 0), [adultBar, safeBar],
+            ["DJ"]);
+
+        Assert.Equal([new VenueTagCount("Bar", 2), new VenueTagCount("DJ", 1)], index.Entries);
+        Assert.Equal(1, index.MatchCount);
+
+        index.Update(new VenueTagIndexKey(1, VenueFilter.SourceAll, null, string.Empty, true, 0), [adultBar, safeBar], []);
+
+        Assert.Equal([new VenueTagCount("Bar", 1)], index.Entries);
+        Assert.Equal(1, index.MatchCount);
+    }
+
+    [Fact]
+    public void Merge_ListsLiveDjsLinkedToTheirVenueBusiestFirst()
+    {
+        var atVenue = new LiveDjEntry
+        {
+            DjName = "DJ Yams", Server = "Shiva", Datacenter = "Light", District = "Lavender Beds", Ward = 25, Plot = 28,
+            ViewerCount = 12,
+        };
+        var roaming = new LiveDjEntry { DjName = "DJ Solo", Datacenter = "Aether", ViewerCount = 90 };
+
+        var djs = VenueMerger.Merge([Listing("ffxiv:a", "Paradise")], [], [], [atVenue, roaming], Now, Now).Djs;
+
+        Assert.Equal(["DJ Solo", "DJ Yams"], [djs[0].Name, djs[1].Name]);
+        Assert.Null(djs[0].VenueId);
+        Assert.Equal("ffxiv:a", djs[1].VenueId);
+        Assert.Equal("Paradise", djs[1].Place);
+    }
+
+    [Fact]
+    public void Scope_RegionSetAndWorldNarrowVenuesAndDjs()
+    {
+        var light = Listing("ffxiv:a", "Alpha", ward: 1, plot: 1);
+        var chaos = Listing("ffxiv:b", "Bravo", ward: 2, plot: 2) with { DataCenter = "Chaos", World = "Omega" };
+        var aether = Listing("ffxiv:c", "Charlie", ward: 3, plot: 3) with { DataCenter = "Aether", World = "Gilgamesh" };
+        var europe = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Light", "Chaos" };
+        var djs = new[]
+        {
+            new VenueDj("EU DJ", null, 5, null, "Chaos", "Omega", null, string.Empty),
+            new VenueDj("NA DJ", null, 9, null, "Aether", "Gilgamesh", null, string.Empty),
+        };
+        var sections = new VenueSections();
+
+        sections.Update(new VenueSectionsKey(1, VenueFilter.SourceAll, europe, string.Empty, string.Empty, 0, 0, 0),
+            [light, chaos, aether], djs, [], [], Now);
+
+        Assert.Equal(["EU DJ"], [sections.Djs[0].Name]);
+        Assert.Single(sections.Djs);
+
+        var query = new VenueQuery();
+        query.Update(new VenueQueryKey(1, VenueTimeFilter.All, VenueFilter.SourceAll, europe, false, 0, 0,
+            string.Empty, 0, World: "Omega"), [light, chaos, aether], [], [], Now);
+
+        Assert.Equal(["Bravo"], Titles(query.Feed));
+    }
+
+    [Fact]
+    public void Mapper_MarksRolladeckDiscordEventsAsEvents()
+    {
+        var entry = Directory("r9", "Club Glo");
+        entry.UpcomingDiscordEvents = [new DirectoryEventEntry
+        {
+            Name = "Deimos @ Club Glo",
+            StartTime = "2026-10-02T01:00:00+00:00",
+            EndTime = "2026-10-02T02:00:00+00:00",
+        }];
+
+        var venue = VenueMapper.FromRolladeck(entry, Now);
+
+        Assert.NotNull(venue);
+        Assert.True(venue.IsEvent);
+        Assert.Equal("Deimos @ Club Glo", venue.EventName);
+        Assert.Equal(new DateTime(2026, 10, 2, 1, 0, 0, DateTimeKind.Utc), venue.StartUtc);
+    }
+
+    [Fact]
+    public void Query_LiveFilterKeepsOnlyLiveAndSkipsRebuildForSameKey()
     {
         var live = Listing("ffxiv:b", "Bravo", start: Now.AddMinutes(-5), end: Now.AddHours(1));
         var later = Listing("ffxiv:a", "Alpha", ward: 1, plot: 1, start: Now.AddHours(5), end: Now.AddHours(8));
         var query = new VenueQuery();
-        var key = new VenueQueryKey(1, VenueTimeFilter.LiveNow, VenueFilter.SourceAll, string.Empty, false, 0, 0,
+        var key = new VenueQueryKey(1, VenueTimeFilter.LiveNow, VenueFilter.SourceAll, null, false, 0, 0,
             string.Empty, 0);
 
         Assert.True(query.Update(key, [live, later], [], [], Now));
@@ -228,14 +354,19 @@ public sealed class VenueMergerTests
     [Fact]
     public void Query_SearchMatchesLiveHeadline()
     {
-        var merged = VenueMerger.Merge([Listing("ffxiv:a", "Paradise")], [], [Open("Paradise")], [], Now, Now);
+        var merged = MergeEvents([Listing("ffxiv:a", "Paradise")], [], [Open("Paradise")], [], Now, Now);
         var query = new VenueQuery();
-        var key = new VenueQueryKey(1, VenueTimeFilter.All, VenueFilter.SourceAll, string.Empty, false, 0, 0, "nyx", 0);
+        var key = new VenueQueryKey(1, VenueTimeFilter.All, VenueFilter.SourceAll, null, false, 0, 0, "nyx", 0);
 
         query.Update(key, merged, [], [], Now);
 
         Assert.Equal(["Paradise"], Titles(query.Feed));
     }
+
+    private static VenueEvent[] MergeEvents(IReadOnlyList<VenueEvent> listings,
+        IReadOnlyList<DirectoryVenueEntry> directory, IReadOnlyList<OpenVenueEntry> openVenues,
+        IReadOnlyList<LiveDjEntry> liveDjs, DateTime liveFetchedUtc, DateTime nowUtc) =>
+        VenueMerger.Merge(listings, directory, openVenues, liveDjs, liveFetchedUtc, nowUtc).Events;
 
     private static string[] Titles(IReadOnlyList<VenueEvent> venues)
     {

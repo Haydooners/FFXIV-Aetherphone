@@ -259,9 +259,11 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public Guid ActiveLookId { get; set; }
     public ControlLayout? ControlPanel { get; set; }
     public bool ControlPanelRepacked { get; set; }
-    public VenueTimeFilter VenueTimeFilter { get; set; } = VenueTimeFilter.LiveNow;
     public int VenueSourceFilter { get; set; }
     public bool VenueAllDataCenters { get; set; }
+    public VenueScopeKind VenueScope { get; set; }
+    public string VenueScopeValue { get; set; } = string.Empty;
+    public bool VenueHideAdult { get; set; }
     public bool VenueNotifyNewEvents { get; set; } = true;
     public List<string> VenueFavorites { get; set; } = new();
     public int MusterCategoryFilter { get; set; }
