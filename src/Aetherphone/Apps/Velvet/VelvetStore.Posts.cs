@@ -810,6 +810,11 @@ internal sealed partial class VelvetStore
                 }
             }
 
+            for (var laneIndex = 0; laneIndex < feedLanes.Length; laneIndex++)
+            {
+                feedLanes[laneIndex].Restore(restored);
+            }
+
             AcceptPostEverywhere(restored);
             return true;
         }, onComplete);

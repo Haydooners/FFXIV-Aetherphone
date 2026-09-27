@@ -155,7 +155,6 @@ internal static class L
         public static readonly LocString PinnedToast = new("social.pinnedToast", "Pinned to your profile");
         public static readonly LocString UnpinnedToast = new("social.unpinnedToast", "Unpinned from your profile");
         public static readonly LocString ArchiveAction = new("social.archiveAction", "Archive");
-        public static readonly LocString ShowOnProfile = new("social.showOnProfile", "Show on profile");
         public static readonly LocString ArchiveTitle = new("social.archiveTitle", "Archive");
         public static readonly LocString ArchiveEmpty = new("social.archiveEmpty", "Nothing archived");
         public static readonly LocString ArchiveEmptyHint = new("social.archiveEmptyHint", "Posts you archive leave your profile and wait here until you show them again.");

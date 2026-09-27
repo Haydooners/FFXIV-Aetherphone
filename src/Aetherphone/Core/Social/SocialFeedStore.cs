@@ -1718,6 +1718,14 @@ internal abstract class SocialFeedStore : IDisposable
         AcceptProfilePost(created);
     }
 
+    protected void AcceptRestoredPost(PostDto restored)
+    {
+        latestLane.Restore(restored);
+        followingLane.Restore(restored);
+        AcceptProfilePost(restored);
+        ReplacePost(restored);
+    }
+
     protected void AcceptProfilePost(PostDto post)
     {
         if (profileUserId is null || profileUserId != post.AuthorId)

@@ -4753,7 +4753,6 @@
   "social.pinnedToast": "プロフィールにピン留めしました",
   "social.unpinnedToast": "プロフィールのピン留めを解除しました",
   "social.archiveAction": "アーカイブ",
-  "social.showOnProfile": "プロフィールに表示",
   "social.archiveTitle": "アーカイブ",
   "social.archiveEmpty": "アーカイブはありません",
   "social.archiveEmptyHint": "アーカイブした投稿はプロフィールから消え、再び表示するまでここに保管されます。",

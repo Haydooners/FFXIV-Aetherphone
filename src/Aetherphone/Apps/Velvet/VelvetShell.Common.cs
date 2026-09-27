@@ -127,7 +127,7 @@ internal sealed partial class VelvetShell
             AddPostSheetItem(PostSheetAction.Edit, Loc.T(L.Velvet.EditPost), false);
             if (post.ArchivedAtUnix is not null)
             {
-                AddPostSheetItem(PostSheetAction.Restore, Loc.T(L.Social.ShowOnProfile), false);
+                AddPostSheetItem(PostSheetAction.Restore, Loc.T(L.Social.UnarchiveAction), false);
             }
             else
             {

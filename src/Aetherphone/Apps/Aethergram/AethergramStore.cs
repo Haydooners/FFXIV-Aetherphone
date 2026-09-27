@@ -386,8 +386,7 @@ internal sealed class AethergramStore : SocialFeedStore
             }
 
             archivedLane.Items = CopyOnWrite.RemoveById(archivedLane.Items, postId);
-            AcceptProfilePost(restored);
-            ReplacePost(restored);
+            AcceptRestoredPost(restored);
             return true;
         }, onComplete);
     }
