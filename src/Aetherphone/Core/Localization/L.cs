@@ -1901,6 +1901,16 @@ internal static class L
         public static readonly LocString SectionAethergramVelvet = new("changelog.sectionAethergramVelvet", "Aethergram and Velvet");
         public static readonly LocString SectionChirperAethergramVelvet = new("changelog.sectionChirperAethergramVelvet", "Chirper, Aethergram and Velvet");
 
+        public static readonly LocString[] Release1037Venues =
+        {
+            new("changelog.r1037.0",
+                "Moved live DJs off the home screen and onto their venue's page: the Now playing card shows the DJ's picture, name and viewers, with a Twitch link for each DJ"),
+            new("changelog.r1037.1",
+                "Added an Active DJ tag to venue cards while a DJ is on air there"),
+            new("changelog.r1037.2",
+                "Fixed live DJs and XIV Rolladeck live confirmations not showing at all"),
+        };
+
         public static readonly LocString[] Release1036YellowPages =
         {
             new("changelog.r1036.0",
