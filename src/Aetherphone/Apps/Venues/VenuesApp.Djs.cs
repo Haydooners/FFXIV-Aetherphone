@@ -36,58 +36,33 @@ internal sealed partial class VenuesApp
                 continue;
             }
 
-            var viewers = dj.Viewers > 0 ? VenueFormat.Viewers(dj.Viewers) : Loc.T(L.Venues.LiveNowLabel);
+            var viewers = DjViewers(dj);
             detailDjs.Add(dj);
             detailDjMeta.Add(dj.Genres.Count > 0 ? $"{dj.Genres[0]} · {viewers}" : viewers);
             detailDjInitials.Add(VenueLabelCache.InitialOf(dj.Name));
         }
+
+        if (detailDjs.Count == 1)
+        {
+            detailDjMeta[0] = DjViewers(detailDjs[0]);
+        }
     }
 
-    private void DrawDetailDjs(float scale)
-    {
-        var count = detailDjs.Count;
-        if (count == 0)
-        {
-            return;
-        }
+    private static string DjViewers(VenueDj dj) =>
+        dj.Viewers > 0 ? VenueFormat.Viewers(dj.Viewers) : Loc.T(L.Venues.LiveNowLabel);
 
-        DrawSectionHeading(Loc.Upper(Loc.T(L.Venues.DjsOnAir)), scale);
-        var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ScrollLayout.StableContentWidth();
-        var pad = CellPadX * scale;
-        var rowHeight = DjRowHeight * scale;
-        var card = new Rect(new Vector2(origin.X + pad, origin.Y),
-            new Vector2(origin.X + width - pad, origin.Y + count * rowHeight));
-        var rounding = Metrics.Radius.Card * scale;
-        ui.Card(drawList, card.Min, card.Max, rounding, elevated: true);
-        for (var index = 0; index < count; index++)
-        {
-            var rowMin = new Vector2(card.Min.X, card.Min.Y + index * rowHeight);
-            var rowMax = new Vector2(card.Max.X, rowMin.Y + rowHeight);
-            DrawDetailDjRow(drawList, rowMin, rowMax, index, count, rounding, scale);
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, card.Height + Metrics.Space.Sm * scale));
-    }
-
-    private void DrawDetailDjRow(ImDrawListPtr drawList, Vector2 rowMin, Vector2 rowMax, int index, int count,
-        float rounding, float scale)
+    private void DrawDetailDjRow(ImDrawListPtr drawList, Vector2 rowMin, Vector2 rowMax, int index, bool linkable,
+        float inset, float scale)
     {
         var dj = detailDjs[index];
-        var hasTwitch = !string.IsNullOrEmpty(dj.TwitchUrl);
+        var hasTwitch = linkable && !string.IsNullOrEmpty(dj.TwitchUrl);
         var hovered = hasTwitch && UiInteract.Hover(rowMin, rowMax);
         if (hovered)
         {
-            drawList.AddRectFilled(rowMin, rowMax, ImGui.GetColorU32(Ink.HoverTint), rounding,
-                count == 1 ? ImDrawFlags.RoundCornersAll :
-                index == 0 ? ImDrawFlags.RoundCornersTop :
-                index == count - 1 ? ImDrawFlags.RoundCornersBottom : ImDrawFlags.RoundCornersNone);
+            drawList.AddRectFilled(rowMin, rowMax, ImGui.GetColorU32(Ink.HoverTint), 8f * scale);
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        var inset = 14f * scale;
         var centerY = rowMin.Y + (rowMax.Y - rowMin.Y) * 0.5f;
         var radius = DjAvatar * scale * 0.5f;
         var ringRadius = radius + DjRingGap * scale;
@@ -126,7 +101,7 @@ internal sealed partial class VenuesApp
                 Ink.AccentLink, 16f * scale);
         }
 
-        if (index < count - 1)
+        if (index < detailDjs.Count - 1)
         {
             FeedCell.Hairline(drawList, textLeft, rowMax.X - inset, rowMax.Y, Ink.Hairline);
         }
