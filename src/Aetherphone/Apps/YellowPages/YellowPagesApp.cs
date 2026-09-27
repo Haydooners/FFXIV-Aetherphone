@@ -5,6 +5,7 @@ using Aetherphone.Core.Conduct;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Crypto;
 using Aetherphone.Core.Game;
+using Aetherphone.Core.Geography;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Lodestone;
 using Aetherphone.Core.Media;
@@ -72,13 +73,12 @@ internal sealed partial class YellowPagesApp : IPhoneApp
     private readonly HttpService http;
     private readonly AppSkin ui = new(AppPalettes.YellowPages);
     private readonly ViewRouter<YellowPagesRoute> router;
+    private readonly GeoScopeScreen scopeScreen;
     private readonly RouterDraw<YellowPagesRoute> drawView;
     private readonly ThreadView threadView;
     private readonly PhotoComposeSession composeSession;
     private readonly PhotoViewerOverlay photoViewer = new();
-    private readonly DropdownMenu scopeMenu = new();
     private readonly DropdownMenu optionsMenu = new();
-    private readonly DropdownMenu.Item[] scopeItems = new DropdownMenu.Item[3];
     private readonly DropdownMenu.Item[] optionItems = new DropdownMenu.Item[6];
     private readonly ActionSheet adSheet = new();
     private readonly ActionSheet inboxSheet = new();
@@ -127,6 +127,8 @@ internal sealed partial class YellowPagesApp : IPhoneApp
             RefreshBrowse();
         };
         threadView = new ThreadView(this);
+        scopeScreen = new GeoScopeScreen(Ink, ui, ScreenTitleStyle);
+        MigrateScope();
     }
 
     public void OnOpened()
@@ -156,7 +158,6 @@ internal sealed partial class YellowPagesApp : IPhoneApp
         router.Reset();
         ResetDetailState();
         ResetComposeForm();
-        scopeMenu.Close();
         optionsMenu.Close();
         adSheet.Close();
         inboxSheet.Close();
@@ -194,13 +195,11 @@ internal sealed partial class YellowPagesApp : IPhoneApp
         }
 
         threadView.GateMenus();
-        scopeMenu.Gate();
         optionsMenu.Gate();
         adSheet.Gate();
         inboxSheet.Gate();
         var appArea = SceneChrome.AppAreaFrom(context.Content, theme, scale);
         router.Draw(appArea, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
-        DrawScopeMenu(screen);
         DrawOptionsMenu(screen);
         DrawAdSheet(screen);
         DrawInboxSheet(screen);
@@ -240,6 +239,9 @@ internal sealed partial class YellowPagesApp : IPhoneApp
                 break;
             case YellowPagesScreen.InboxArchived:
                 DrawInboxArchived(area);
+                break;
+            case YellowPagesScreen.Scope:
+                DrawScopeScreen(area);
                 break;
             default:
                 DrawRoot(area);
@@ -403,34 +405,43 @@ internal sealed partial class YellowPagesApp : IPhoneApp
         }
     }
 
-    private void DrawScopeMenu(Rect screen)
+    private void DrawScopeScreen(Rect area)
     {
-        var scope = configuration.YellowPagesScope;
-        scopeItems[0] = new DropdownMenu.Item(Loc.T(L.YellowPages.ScopeRegion), Selected: scope == AdScopes.Region);
-        scopeItems[1] = new DropdownMenu.Item(Loc.T(L.YellowPages.ScopeMyDc), Selected: scope == AdScopes.DataCenter);
-        scopeItems[2] = new DropdownMenu.Item(Loc.T(L.YellowPages.ScopeEverywhere),
-            Selected: scope == AdScopes.Everywhere);
-        var picked = scopeMenu.Draw(screen, theme, scopeItems);
-        if (picked < 0)
+        var choice = scopeScreen.Draw(area, Loc.T(L.YellowPages.ScopeTitle), back, HomeWorldName(),
+            configuration.YellowPagesScopeKind, configuration.YellowPagesScopeValue, false);
+        if (!choice.Picked)
         {
             return;
         }
 
-        var next = picked switch
-        {
-            1 => AdScopes.DataCenter,
-            2 => AdScopes.Everywhere,
-            _ => AdScopes.Region,
-        };
-        if (next == scope)
+        router.Pop();
+        if (choice.Kind == configuration.YellowPagesScopeKind &&
+            string.Equals(choice.Value, configuration.YellowPagesScopeValue, StringComparison.Ordinal))
         {
             return;
         }
 
-        configuration.YellowPagesScope = next;
+        configuration.YellowPagesScopeKind = choice.Kind;
+        configuration.YellowPagesScopeValue = choice.Value;
         configuration.Save();
         RefreshCurrentList();
     }
+
+    private void MigrateScope()
+    {
+        if (configuration.YellowPagesScope == AdScopes.Region)
+        {
+            return;
+        }
+
+        configuration.YellowPagesScopeKind = configuration.YellowPagesScope == AdScopes.DataCenter
+            ? GeoScopeKind.MyDataCenter
+            : GeoScopeKind.Everywhere;
+        configuration.YellowPagesScope = AdScopes.Region;
+        configuration.Save();
+    }
+
+    private string HomeWorldName() => gameData.WorldName(gameData.LocalCurrentWorldId);
 
     private void DrawOptionsMenu(Rect screen)
     {

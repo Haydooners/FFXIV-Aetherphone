@@ -2,6 +2,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Game;
+using Aetherphone.Core.Geography;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Media;
 using Aetherphone.Core.Onboarding;
@@ -92,6 +93,7 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         MigrateScope();
         drawView = DrawView;
         back = () => router.Pop();
+        scopeScreen = new GeoScopeScreen(Ink, ui, ScreenTitleStyle);
     }
 
     private VenueArt Art => new(images, artwork);
@@ -373,24 +375,24 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         var value = configuration.VenueScopeValue;
         switch (configuration.VenueScope)
         {
-            case VenueScopeKind.Everywhere:
+            case GeoScopeKind.Everywhere:
                 return everywhere;
-            case VenueScopeKind.Region:
-                return int.TryParse(value, out var regionId) && VenueGeography.RegionById(regionId) is { } picked
+            case GeoScopeKind.Region:
+                return int.TryParse(value, out var regionId) && WorldGeography.RegionById(regionId) is { } picked
                     ? new ResolvedScope(picked.Set, string.Empty, Loc.T(picked.Label))
                     : everywhere;
-            case VenueScopeKind.DataCenter:
-                return VenueGeography.DataCenter(value) is { } dataCenter
+            case GeoScopeKind.DataCenter:
+                return WorldGeography.DataCenter(value) is { } dataCenter
                     ? new ResolvedScope(dataCenter.Set, string.Empty, dataCenter.Name)
                     : everywhere;
-            case VenueScopeKind.World:
-                return VenueGeography.DataCenterOfWorld(value) is { } worldCenter
+            case GeoScopeKind.World:
+                return WorldGeography.DataCenterOfWorld(value) is { } worldCenter
                     ? new ResolvedScope(worldCenter.Set, WorldName(worldCenter, value), WorldName(worldCenter, value))
                     : everywhere;
         }
 
         var homeWorld = CurrentWorld();
-        var home = VenueGeography.DataCenterOfWorld(homeWorld);
+        var home = WorldGeography.DataCenterOfWorld(homeWorld);
         if (home is null)
         {
             return everywhere;
@@ -398,14 +400,14 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
 
         return configuration.VenueScope switch
         {
-            VenueScopeKind.MyWorld => new ResolvedScope(home.Set, homeWorld, homeWorld),
-            VenueScopeKind.MyRegion when VenueGeography.RegionById(home.RegionId) is { } region =>
+            GeoScopeKind.MyWorld => new ResolvedScope(home.Set, homeWorld, homeWorld),
+            GeoScopeKind.MyRegion when WorldGeography.RegionById(home.RegionId) is { } region =>
                 new ResolvedScope(region.Set, string.Empty, Loc.T(region.Label)),
             _ => new ResolvedScope(home.Set, string.Empty, home.Name),
         };
     }
 
-    private static string WorldName(VenueDataCenterInfo dataCenter, string world)
+    private static string WorldName(GeoDataCenterInfo dataCenter, string world)
     {
         for (var index = 0; index < dataCenter.Worlds.Length; index++)
         {
@@ -426,11 +428,11 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         }
 
         configuration.VenueAllDataCenters = false;
-        configuration.VenueScope = VenueScopeKind.Everywhere;
+        configuration.VenueScope = GeoScopeKind.Everywhere;
         configuration.Save();
     }
 
-    private void SetScope(VenueScopeKind kind, string value)
+    private void SetScope(GeoScopeKind kind, string value)
     {
         configuration.VenueScope = kind;
         configuration.VenueScopeValue = value;

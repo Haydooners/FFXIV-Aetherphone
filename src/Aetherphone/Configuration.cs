@@ -10,6 +10,7 @@ using Aetherphone.Core.ControlCenter;
 using Aetherphone.Core.Dailies;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Games;
+using Aetherphone.Core.Geography;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Housing;
 using Aetherphone.Core.Hunts;
@@ -261,7 +262,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool ControlPanelRepacked { get; set; }
     public int VenueSourceFilter { get; set; }
     public bool VenueAllDataCenters { get; set; }
-    public VenueScopeKind VenueScope { get; set; }
+    public GeoScopeKind VenueScope { get; set; }
     public string VenueScopeValue { get; set; } = string.Empty;
     public bool VenueHideAdult { get; set; }
     public bool VenueNotifyNewEvents { get; set; } = true;
@@ -271,6 +272,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public int MusterDataCenterId { get; set; }
     public int YellowPagesCategoryFilter { get; set; }
     public int YellowPagesScope { get; set; }
+    public GeoScopeKind YellowPagesScopeKind { get; set; } = GeoScopeKind.MyRegion;
+    public string YellowPagesScopeValue { get; set; } = string.Empty;
     public bool YellowPagesAfterDark { get; set; }
     public int YellowPagesDirection { get; set; }
     public int YellowPagesSort { get; set; }

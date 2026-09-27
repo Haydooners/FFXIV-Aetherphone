@@ -1,24 +1,27 @@
+using System.Globalization;
 using Aetherphone.Core.Localization;
 using Lumina.Excel.Sheets;
 
-namespace Aetherphone.Apps.Venues;
+namespace Aetherphone.Core.Geography;
 
-internal sealed class VenueDataCenterInfo(string name, int regionId, string[] worlds)
+internal sealed class GeoDataCenterInfo(string name, int id, int regionId, string[] worlds)
 {
     public string Name { get; } = name;
+    public int Id { get; } = id;
     public int RegionId { get; } = regionId;
     public string[] Worlds { get; } = worlds;
     public HashSet<string> Set { get; } = new(StringComparer.OrdinalIgnoreCase) { name };
 }
 
-internal sealed class VenueRegionInfo(int id, LocString label, VenueDataCenterInfo[] dataCenters)
+internal sealed class GeoRegionInfo(int id, LocString label, GeoDataCenterInfo[] dataCenters)
 {
     public int Id { get; } = id;
+    public string Key { get; } = id.ToString(CultureInfo.InvariantCulture);
     public LocString Label { get; } = label;
-    public VenueDataCenterInfo[] DataCenters { get; } = dataCenters;
+    public GeoDataCenterInfo[] DataCenters { get; } = dataCenters;
     public HashSet<string> Set { get; } = BuildSet(dataCenters);
 
-    private static HashSet<string> BuildSet(VenueDataCenterInfo[] dataCenters)
+    private static HashSet<string> BuildSet(GeoDataCenterInfo[] dataCenters)
     {
         var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         for (var index = 0; index < dataCenters.Length; index++)
@@ -30,7 +33,7 @@ internal sealed class VenueRegionInfo(int id, LocString label, VenueDataCenterIn
     }
 }
 
-internal static class VenueGeography
+internal static class WorldGeography
 {
     private const int JapanId = 1;
     private const int NorthAmericaId = 2;
@@ -39,13 +42,13 @@ internal static class VenueGeography
 
     private static readonly int[] RegionOrder = { NorthAmericaId, EuropeId, OceaniaId, JapanId };
 
-    private static VenueRegionInfo[]? regions;
-    private static Dictionary<string, VenueDataCenterInfo>? dataCenterByName;
-    private static Dictionary<string, VenueDataCenterInfo>? dataCenterByWorld;
+    private static GeoRegionInfo[]? regions;
+    private static Dictionary<string, GeoDataCenterInfo>? dataCenterByName;
+    private static Dictionary<string, GeoDataCenterInfo>? dataCenterByWorld;
 
-    public static VenueRegionInfo[] Regions => regions ??= Build();
+    public static GeoRegionInfo[] Regions => regions ??= Build();
 
-    public static VenueRegionInfo? RegionById(int id)
+    public static GeoRegionInfo? RegionById(int id)
     {
         var all = Regions;
         for (var index = 0; index < all.Length; index++)
@@ -59,19 +62,19 @@ internal static class VenueGeography
         return null;
     }
 
-    public static VenueDataCenterInfo? DataCenter(string name)
+    public static GeoDataCenterInfo? DataCenter(string name)
     {
         _ = Regions;
         return name.Length > 0 && dataCenterByName!.TryGetValue(name, out var info) ? info : null;
     }
 
-    public static VenueDataCenterInfo? DataCenterOfWorld(string world)
+    public static GeoDataCenterInfo? DataCenterOfWorld(string world)
     {
         _ = Regions;
         return world.Length > 0 && dataCenterByWorld!.TryGetValue(world, out var info) ? info : null;
     }
 
-    public static VenueRegionInfo? RegionOfDataCenter(string name) =>
+    public static GeoRegionInfo? RegionOfDataCenter(string name) =>
         DataCenter(name) is { } info ? RegionById(info.RegionId) : null;
 
     private static LocString LabelFor(int regionId) =>
@@ -83,7 +86,7 @@ internal static class VenueGeography
             _ => L.Venues.RegionNorthAmerica,
         };
 
-    private static VenueRegionInfo[] Build()
+    private static GeoRegionInfo[] Build()
     {
         var worldsByDataCenter = new Dictionary<uint, List<string>>();
         foreach (var world in Plugin.DataManager.GetExcelSheet<World>())
@@ -108,9 +111,9 @@ internal static class VenueGeography
             list.Add(name);
         }
 
-        var byRegion = new Dictionary<int, List<VenueDataCenterInfo>>();
-        dataCenterByName = new Dictionary<string, VenueDataCenterInfo>(StringComparer.OrdinalIgnoreCase);
-        dataCenterByWorld = new Dictionary<string, VenueDataCenterInfo>(StringComparer.OrdinalIgnoreCase);
+        var byRegion = new Dictionary<int, List<GeoDataCenterInfo>>();
+        dataCenterByName = new Dictionary<string, GeoDataCenterInfo>(StringComparer.OrdinalIgnoreCase);
+        dataCenterByWorld = new Dictionary<string, GeoDataCenterInfo>(StringComparer.OrdinalIgnoreCase);
         foreach (var group in Plugin.DataManager.GetExcelSheet<WorldDCGroupType>())
         {
             var regionId = (int)group.Region.RowId;
@@ -127,7 +130,7 @@ internal static class VenueGeography
             }
 
             worlds.Sort(StringComparer.OrdinalIgnoreCase);
-            var info = new VenueDataCenterInfo(name, regionId, worlds.ToArray());
+            var info = new GeoDataCenterInfo(name, (int)group.RowId, regionId, worlds.ToArray());
             dataCenterByName[name] = info;
             for (var index = 0; index < info.Worlds.Length; index++)
             {
@@ -136,20 +139,20 @@ internal static class VenueGeography
 
             if (!byRegion.TryGetValue(regionId, out var list))
             {
-                list = new List<VenueDataCenterInfo>();
+                list = new List<GeoDataCenterInfo>();
                 byRegion[regionId] = list;
             }
 
             list.Add(info);
         }
 
-        var result = new List<VenueRegionInfo>(RegionOrder.Length);
+        var result = new List<GeoRegionInfo>(RegionOrder.Length);
         for (var index = 0; index < RegionOrder.Length; index++)
         {
             var regionId = RegionOrder[index];
             if (byRegion.TryGetValue(regionId, out var list))
             {
-                result.Add(new VenueRegionInfo(regionId, LabelFor(regionId), list.ToArray()));
+                result.Add(new GeoRegionInfo(regionId, LabelFor(regionId), list.ToArray()));
             }
         }
 

@@ -1954,6 +1954,8 @@ internal static class L
                 "Added pinned and archived inquiries, and delete conversation, from the chat menu"),
             new("changelog.r1035.18",
                 "Inquiry notifications now show who wrote and what they said, decrypted on your phone"),
+            new("changelog.r1035.28",
+                "Added a reach picker: browse ads from any region or data center, not only your own"),
         };
 
         public static readonly LocString[] Release1035Venues =
@@ -7406,8 +7408,7 @@ internal static class L
     internal static class YellowPages
     {
         public static readonly LocString SetUpAccount = new("yellowpages.setUpAccount", "Sign in to browse the classifieds.");
-        public static readonly LocString ScopeRegion = new("yellowpages.scopeRegion", "Region");
-        public static readonly LocString ScopeMyDc = new("yellowpages.scopeMyDc", "My DC");
+        public static readonly LocString ScopeTitle = new("yellowpages.scopeTitle", "Show ads from");
         public static readonly LocString ScopeEverywhere = new("yellowpages.scopeEverywhere", "Everywhere");
         public static readonly LocString SearchLabel = new("yellowpages.searchLabel", "Search ads");
         public static readonly LocString OpenSection = new("yellowpages.openSection", "Open tonight");

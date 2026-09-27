@@ -13,6 +13,7 @@ internal enum YellowPagesScreen : byte
     Reactions,
     Encryption,
     InboxArchived,
+    Scope,
 }
 
 internal enum YellowPagesTab : byte
@@ -29,6 +30,7 @@ internal readonly record struct YellowPagesRoute(YellowPagesScreen Screen, strin
     public static readonly YellowPagesRoute Compose = new(YellowPagesScreen.Compose);
     public static readonly YellowPagesRoute Encryption = new(YellowPagesScreen.Encryption);
     public static readonly YellowPagesRoute InboxArchived = new(YellowPagesScreen.InboxArchived);
+    public static readonly YellowPagesRoute Scope = new(YellowPagesScreen.Scope);
 
     public static YellowPagesRoute Detail(string adId) => new(YellowPagesScreen.Detail, adId);
 

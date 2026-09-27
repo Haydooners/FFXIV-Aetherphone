@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Confirm;
+using Aetherphone.Core.Geography;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
@@ -177,11 +178,8 @@ internal sealed partial class YellowPagesApp
             new Vector2(rightCenter.X, rightCenter.Y + half));
         UiAnchors.Report("yellowpages.scope", rect);
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var open = scopeMenu.IsOpenFor("yellowpages.scope");
-        Squircle.Fill(drawList, rect.Min, rect.Max, half,
-            ImGui.GetColorU32(open ? Ink.AccentWash : hovered ? Ink.ChipHover : Ink.ChipFill));
-        Squircle.Stroke(drawList, rect.Min, rect.Max, half,
-            ImGui.GetColorU32(open ? Palette.WithAlpha(Ink.AccentLink, 0.6f) : Ink.ChipStroke), 1f);
+        Squircle.Fill(drawList, rect.Min, rect.Max, half, ImGui.GetColorU32(hovered ? Ink.ChipHover : Ink.ChipFill));
+        Squircle.Stroke(drawList, rect.Min, rect.Max, half, ImGui.GetColorU32(Ink.ChipStroke), 1f);
         Typography.Draw(drawList, new Vector2(rect.Min.X + 11f * scale, rect.Center.Y - labelSize.Y * 0.5f), fitted,
             Ink.AccentLink, ScopePillStyle);
         PhoneIcon.Draw(drawList, new Vector2(rect.Max.X - 11f * scale, rect.Center.Y), PhoneIcons.ChevronDown,
@@ -198,7 +196,7 @@ internal sealed partial class YellowPagesApp
 
         if (UiInteract.Click(rect.Min, rect.Max, hovered))
         {
-            scopeMenu.Toggle("yellowpages.scope", rect);
+            router.Push(YellowPagesRoute.Scope);
         }
 
         return width;
@@ -206,18 +204,39 @@ internal sealed partial class YellowPagesApp
 
     private string ScopePillLabel()
     {
-        var scope = Loc.T(ScopeLabel());
+        var scope = ScopeName();
         return configuration.YellowPagesAfterDark ? $"{scope} · {Loc.T(L.YellowPages.AfterDarkChip)}" : scope;
     }
 
-    private LocString ScopeLabel()
+    private string ScopeName()
     {
-        return configuration.YellowPagesScope switch
+        var value = configuration.YellowPagesScopeValue;
+        switch (configuration.YellowPagesScopeKind)
         {
-            AdScopes.DataCenter => L.YellowPages.ScopeMyDc,
-            AdScopes.Everywhere => L.YellowPages.ScopeEverywhere,
-            _ => L.YellowPages.ScopeRegion,
-        };
+            case GeoScopeKind.Everywhere:
+                return Loc.T(L.YellowPages.ScopeEverywhere);
+            case GeoScopeKind.Region:
+                return int.TryParse(value, out var regionId) && WorldGeography.RegionById(regionId) is { } picked
+                    ? Loc.T(picked.Label)
+                    : Loc.T(L.YellowPages.ScopeEverywhere);
+            case GeoScopeKind.DataCenter:
+                return WorldGeography.DataCenter(value) is { } dataCenter
+                    ? dataCenter.Name
+                    : Loc.T(L.YellowPages.ScopeEverywhere);
+        }
+
+        var home = WorldGeography.DataCenterOfWorld(HomeWorldName());
+        if (home is null)
+        {
+            return Loc.T(L.YellowPages.ScopeEverywhere);
+        }
+
+        if (configuration.YellowPagesScopeKind == GeoScopeKind.MyDataCenter)
+        {
+            return home.Name;
+        }
+
+        return WorldGeography.RegionById(home.RegionId) is { } region ? Loc.T(region.Label) : home.Name;
     }
 
     private void DrawSearchRow(float scale)

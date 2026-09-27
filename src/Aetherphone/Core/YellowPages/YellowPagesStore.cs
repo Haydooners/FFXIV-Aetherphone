@@ -1,6 +1,7 @@
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Aethernet.Clients;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Geography;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Media;
 using Aetherphone.Core.Muster;
@@ -162,21 +163,31 @@ internal sealed class YellowPagesStore : IDisposable
 
     private void CaptureScopeFilters()
     {
-        var worldId = MusterWorlds.CurrentWorldId();
-        switch (configuration.YellowPagesScope)
+        directoryDataCenterId = 0;
+        directoryRegions = 0;
+        var value = configuration.YellowPagesScopeValue;
+        switch (configuration.YellowPagesScopeKind)
         {
-            case AdScopes.Everywhere:
-                directoryDataCenterId = 0;
-                directoryRegions = 0;
-                break;
-            case AdScopes.DataCenter:
-                directoryDataCenterId = MusterWorlds.DataCenterIdForWorld(worldId);
-                directoryRegions = 0;
-                break;
+            case GeoScopeKind.Everywhere:
+                return;
+            case GeoScopeKind.Region:
+                directoryRegions = int.TryParse(value, out var regionId)
+                    ? MusterCategories.RegionBitForRegionId((uint)regionId)
+                    : 0;
+                return;
+            case GeoScopeKind.DataCenter:
+                directoryDataCenterId = WorldGeography.DataCenter(value)?.Id ?? 0;
+                return;
+            case GeoScopeKind.World:
+                directoryDataCenterId = WorldGeography.DataCenterOfWorld(value)?.Id ?? 0;
+                return;
+            case GeoScopeKind.MyDataCenter:
+            case GeoScopeKind.MyWorld:
+                directoryDataCenterId = MusterWorlds.DataCenterIdForWorld(MusterWorlds.CurrentWorldId());
+                return;
             default:
-                directoryDataCenterId = 0;
-                directoryRegions = MusterCategories.RegionBitForWorld(worldId);
-                break;
+                directoryRegions = MusterCategories.RegionBitForWorld(MusterWorlds.CurrentWorldId());
+                return;
         }
     }
 
