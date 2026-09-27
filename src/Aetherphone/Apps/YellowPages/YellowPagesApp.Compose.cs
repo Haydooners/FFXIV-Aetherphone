@@ -91,6 +91,12 @@ internal sealed partial class YellowPagesApp
     private readonly bool[] composeDays = new bool[7];
     private int composeOpenMinute = DefaultOpenMinute;
     private int composeCloseMinute = DefaultCloseMinute;
+    private int composeEveryWeeks = 1;
+    private int composeFirstWeekOffset;
+    private readonly Action stepEveryWeeksBack;
+    private readonly Action stepEveryWeeksForward;
+    private readonly Action stepFirstWeekBack;
+    private readonly Action stepFirstWeekForward;
     private int composePriceMode;
     private string composePriceText = string.Empty;
     private string composeTurnaround = string.Empty;
@@ -177,6 +183,9 @@ internal sealed partial class YellowPagesApp
                 AdText.ToLocalSlot(ad.Schedule[index], out var localDay, out _);
                 composeDays[localDay] = true;
             }
+
+            composeEveryWeeks = AdText.EveryWeeks(ad);
+            composeFirstWeekOffset = AdText.FirstWeekOffset(ad.Schedule[0], NowUnix());
         }
 
         if (router.Current.Screen != YellowPagesScreen.Compose)
@@ -1066,8 +1075,81 @@ internal sealed partial class YellowPagesApp
         composeCloseMinute = DrawTimeField(Loc.T(L.YellowPages.ClosesLabel), composeCloseMinute, scale);
         DrawOpenForRow(scale);
         DrawUtcRow(offsetMinutes, scale);
+        DrawRepeatRow(scale);
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
     }
+
+    private void DrawRepeatRow(float scale)
+    {
+        ui.SectionLabel(Loc.T(L.YellowPages.RepeatLabel));
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        var height = TimeFieldHeight * scale;
+        var cadence = composeEveryWeeks == 1
+            ? Loc.T(L.YellowPages.EveryWeek)
+            : Loc.T(L.YellowPages.EveryWeeks, composeEveryWeeks);
+        StepperField.Draw(ui, new Rect(origin, new Vector2(origin.X + width, origin.Y + height)), cadence, scale,
+            stepEveryWeeksBack, stepEveryWeeksForward);
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Sm * scale));
+        if (composeEveryWeeks == 1)
+        {
+            composeFirstWeekOffset = 0;
+            return;
+        }
+
+        composeFirstWeekOffset = Math.Min(composeFirstWeekOffset, composeEveryWeeks - 1);
+        if (!HasComposeDays())
+        {
+            return;
+        }
+
+        DrawFirstOpeningRow(scale);
+    }
+
+    private void DrawFirstOpeningRow(float scale)
+    {
+        ui.SectionLabel(Loc.T(L.YellowPages.FirstOpeningLabel));
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        var height = TimeFieldHeight * scale;
+        var firstOpening = ComposeFirstOpening().ToString("dddd, MMM d", Loc.Culture);
+        StepperField.Draw(ui, new Rect(origin, new Vector2(origin.X + width, origin.Y + height)), firstOpening, scale,
+            stepFirstWeekBack, stepFirstWeekForward);
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Sm * scale));
+    }
+
+    private DateTime ComposeFirstOpening()
+    {
+        var nowLocal = DateTime.Now;
+        var duration = ComposeOpenMinutes();
+        var earliest = DateTime.MaxValue;
+        for (var day = 0; day < composeDays.Length; day++)
+        {
+            if (!composeDays[day])
+            {
+                continue;
+            }
+
+            var start = AdText.FirstLocalStart(day, composeOpenMinute, duration, nowLocal);
+            if (start < earliest)
+            {
+                earliest = start;
+            }
+        }
+
+        return earliest.AddDays(7 * composeFirstWeekOffset);
+    }
+
+    private void StepEveryWeeksBack() => composeEveryWeeks = Math.Max(1, composeEveryWeeks - 1);
+
+    private void StepEveryWeeksForward() => composeEveryWeeks = Math.Min(AdText.MaxEveryWeeks, composeEveryWeeks + 1);
+
+    private void StepFirstWeekBack() =>
+        composeFirstWeekOffset = (composeFirstWeekOffset + composeEveryWeeks - 1) % composeEveryWeeks;
+
+    private void StepFirstWeekForward() => composeFirstWeekOffset = (composeFirstWeekOffset + 1) % composeEveryWeeks;
 
     private void DrawUtcRow(int offsetMinutes, float scale)
     {
@@ -1479,13 +1561,19 @@ internal sealed partial class YellowPagesApp
         }
 
         var duration = ComposeOpenMinutes();
+        var nowLocal = DateTime.Now;
         var slots = new List<AdScheduleSlot>(7);
         for (var day = 0; day < composeDays.Length; day++)
         {
-            if (composeDays[day])
+            if (!composeDays[day])
             {
-                slots.Add(AdText.ToUtcSlot(day, composeOpenMinute, duration));
+                continue;
             }
+
+            slots.Add(composeEveryWeeks > 1
+                ? AdText.ToRepeatingSlot(day, composeOpenMinute, duration, composeEveryWeeks, composeFirstWeekOffset,
+                    nowLocal)
+                : AdText.ToUtcSlot(day, composeOpenMinute, duration));
         }
 
         return slots.Count > 0 ? slots.ToArray() : null;
@@ -1665,6 +1753,8 @@ internal sealed partial class YellowPagesApp
         Array.Clear(composeDays);
         composeOpenMinute = DefaultOpenMinute;
         composeCloseMinute = DefaultCloseMinute;
+        composeEveryWeeks = 1;
+        composeFirstWeekOffset = 0;
         composePriceMode = 0;
         composePriceText = string.Empty;
         composeTurnaround = string.Empty;

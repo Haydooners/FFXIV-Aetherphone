@@ -298,6 +298,16 @@ internal static class TimeText
         return Clock(DateTimeOffset.FromUnixTimeSeconds(unixSeconds).ToLocalTime());
     }
 
+    public static string MonthDay(long unixSeconds)
+    {
+        if (unixSeconds <= 0)
+        {
+            return string.Empty;
+        }
+
+        return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).ToLocalTime().ToString("MMM d", Loc.Culture);
+    }
+
     public static string DayLabel(long unixSeconds)
     {
         if (unixSeconds <= 0)

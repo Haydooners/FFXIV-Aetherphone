@@ -47,7 +47,7 @@ internal static class YellowPagesKit
             {
                 return new AdStatus(
                     Loc.T(L.YellowPages.OpensAt,
-                        $"{TimeText.DayLabel(state.NextOpeningUnix)} {TimeText.Clock(state.NextOpeningUnix)}"),
+                        $"{TimeText.FutureDayLabel(state.NextOpeningUnix)} {TimeText.Clock(state.NextOpeningUnix)}"),
                     Palette.WithAlpha(OpenGreen, 0.85f), false);
             }
 

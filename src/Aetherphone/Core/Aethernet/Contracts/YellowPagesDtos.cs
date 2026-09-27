@@ -7,7 +7,8 @@ internal static class AdStatuses
     public const string Hidden = "hidden";
 }
 
-internal sealed record AdScheduleSlot(int Day, int StartMinute, int DurationMinutes);
+internal sealed record AdScheduleSlot(int Day, int StartMinute, int DurationMinutes, int EveryWeeks = 1,
+    long FirstUnix = 0);
 
 internal sealed record CreateAdRequest(
     int Category,

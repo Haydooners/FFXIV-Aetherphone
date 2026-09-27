@@ -126,6 +126,10 @@ internal sealed partial class YellowPagesApp : IPhoneApp
             router.Pop();
             RefreshBrowse();
         };
+        stepEveryWeeksBack = StepEveryWeeksBack;
+        stepEveryWeeksForward = StepEveryWeeksForward;
+        stepFirstWeekBack = StepFirstWeekBack;
+        stepFirstWeekForward = StepFirstWeekForward;
         threadView = new ThreadView(this);
         scopeScreen = new GeoScopeScreen(Ink, ui, ScreenTitleStyle);
         MigrateScope();
