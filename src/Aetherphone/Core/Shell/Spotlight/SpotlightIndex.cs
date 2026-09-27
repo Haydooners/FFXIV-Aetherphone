@@ -655,7 +655,7 @@ internal sealed class SpotlightIndex
                 continue;
             }
 
-            results.Add(new SpotlightResult(SpotlightKind.Venue, venue.Title, venue.LocationLine, venue.Id, 0,
+            results.Add(new SpotlightResult(SpotlightKind.Venue, venue.Title, venue.PlaceLine, venue.Id, 0,
                 Guid.Empty, 0, VenueBias + score));
             added++;
         }

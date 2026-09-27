@@ -1,5 +1,5 @@
 using System.Linq;
-using Aetherphone.Apps.Music.Rolladeck;
+using Aetherphone.Core.Rolladeck;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Animation;
@@ -172,8 +172,9 @@ internal sealed partial class MusicApp : IResumableApp
         AethernetApi aethernet, AethernetSession session, ReportService report, PhotoLibrary photoLibrary,
         WallpaperImageCache wallpaperImages, ConfirmService confirm, Configuration configuration,
         RemoteImageCache images, LodestoneService lodestone, GameData gameData, RadioLauncher launcher,
-        SocialNotificationService socialNotifications)
+        SocialNotificationService socialNotifications, RolladeckService rolladeck)
     {
+        this.rolladeck = rolladeck;
         this.aethernet = aethernet;
         this.launcher = launcher;
         this.socialNotifications = socialNotifications;
@@ -194,7 +195,6 @@ internal sealed partial class MusicApp : IResumableApp
         this.images = images;
         this.lodestone = lodestone;
         this.gameData = gameData;
-        rolladeck = new RolladeckService(http);
         this.artwork = artwork;
         routers =
         [

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Aetherphone.Apps.Music.Rolladeck;
+namespace Aetherphone.Core.Rolladeck;
 
 internal sealed class LiveResponse
 {
@@ -49,6 +49,7 @@ internal sealed class LiveDjEntry
     private string? normalizedTitle;
 
     public bool    CanTeleport  => !string.IsNullOrEmpty(LifestreamArg);
+    public string? TeleportDestination => RolladeckText.TeleportDestination(LifestreamArg);
     public string  ServerLabel  => Server ?? Datacenter ?? "";
     public string? RolladeckUrl => TwitchUsername != null ? $"https://xivrolladeck.com/{TwitchUsername}" : null;
     public bool    HasLocation  => VenueName != null || District != null;
@@ -84,6 +85,7 @@ internal sealed class LiveDjEntry
 
 internal sealed class OpenVenueEntry
 {
+    [JsonPropertyName("id")]        public string? Id         { get; set; }
     [JsonPropertyName("name")]      public string? Name       { get; set; }
     [JsonPropertyName("slug")]      public string? Slug       { get; set; }
     [JsonPropertyName("server")]    public string? Server     { get; set; }
@@ -99,9 +101,12 @@ internal sealed class OpenVenueEntry
     public int? Plot { get; set; }
 
     [JsonPropertyName("logoUrl")]    public string? LogoUrl    { get; set; }
+    [JsonPropertyName("bannerUrl")]  public string? BannerUrl  { get; set; }
     [JsonPropertyName("lifestream")] public string? Lifestream { get; set; }
     [JsonPropertyName("openReason")] public string? OpenReason { get; set; }
     [JsonPropertyName("eventName")]  public string? EventName  { get; set; }
+    [JsonPropertyName("eventStart")] public string? EventStart { get; set; }
+    [JsonPropertyName("eventEnd")]   public string? EventEnd   { get; set; }
     [JsonPropertyName("djName")]     public string? DjName     { get; set; }
     [JsonPropertyName("djTwitch")]   public string? DjTwitch   { get; set; }
     [JsonPropertyName("activeDiscordEventName")] public string? DiscordEventName { get; set; }
@@ -112,6 +117,7 @@ internal sealed class OpenVenueEntry
     [JsonPropertyName("amenities")] public List<string> Amenities { get; set; } = [];
 
     public bool    CanTeleport   => !string.IsNullOrEmpty(Lifestream);
+    public string? TeleportDestination => RolladeckText.TeleportDestination(Lifestream);
     public string  ServerLabel   => Server ?? Datacenter ?? "";
     public string  DisplayName   => Name ?? "Unknown Venue";
     public string? RolladeckUrl  => Slug != null ? $"https://xivrolladeck.com/venue/{Slug}" : null;
@@ -157,5 +163,47 @@ internal sealed class OpenVenueEntry
     }
 }
 
+internal sealed class DirectoryResponse
+{
+    [JsonPropertyName("venues")] public List<DirectoryVenueEntry> Venues { get; set; } = [];
+}
+
+internal sealed class DirectoryVenueEntry
+{
+    [JsonPropertyName("id")]         public string? Id         { get; set; }
+    [JsonPropertyName("name")]       public string? Name       { get; set; }
+    [JsonPropertyName("slug")]       public string? Slug       { get; set; }
+    [JsonPropertyName("server")]     public string? Server     { get; set; }
+    [JsonPropertyName("datacenter")] public string? Datacenter { get; set; }
+    [JsonPropertyName("district")]   public string? District   { get; set; }
+
+    [JsonPropertyName("ward")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public int? Ward { get; set; }
+
+    [JsonPropertyName("plot")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public int? Plot { get; set; }
+
+    [JsonPropertyName("logoUrl")]        public string? LogoUrl        { get; set; }
+    [JsonPropertyName("bannerUrl")]      public string? BannerUrl      { get; set; }
+    [JsonPropertyName("websiteOrCarrd")] public string? WebsiteOrCarrd { get; set; }
+    [JsonPropertyName("discordServer")]  public string? DiscordServer  { get; set; }
+    [JsonPropertyName("lifestream")]     public string? Lifestream     { get; set; }
+    [JsonPropertyName("sfw")]            public bool? Sfw              { get; set; }
+    [JsonPropertyName("amenities")]      public List<string> Amenities { get; set; } = [];
+
+    [JsonPropertyName("upcomingDiscordEvents")]
+    public List<DirectoryEventEntry> UpcomingDiscordEvents { get; set; } = [];
+}
+
+internal sealed class DirectoryEventEntry
+{
+    [JsonPropertyName("name")]      public string? Name              { get; set; }
+    [JsonPropertyName("startTime")] public string? StartTime { get; set; }
+    [JsonPropertyName("endTime")]   public string? EndTime   { get; set; }
+}
+
 [JsonSerializable(typeof(LiveResponse))]
+[JsonSerializable(typeof(DirectoryResponse))]
 internal partial class RolladeckJsonContext : JsonSerializerContext { }

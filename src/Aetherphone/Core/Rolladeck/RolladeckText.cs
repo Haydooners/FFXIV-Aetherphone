@@ -1,4 +1,4 @@
-namespace Aetherphone.Apps.Music.Rolladeck;
+namespace Aetherphone.Core.Rolladeck;
 
 // Maps Unicode mathematical alphanumeric symbols (U+1D400–U+1D7FF) back to plain ASCII
 // so ImGui can render DJ names and stream titles that use "bold" or "italic" Unicode fonts.
@@ -32,6 +32,17 @@ internal static class RolladeckText
         0x1D7EC, // Sans-Serif Bold
         0x1D7F6, // Monospace
     ];
+
+    public static string? TeleportDestination(string? lifestream)
+    {
+        if (string.IsNullOrWhiteSpace(lifestream))
+        {
+            return null;
+        }
+
+        var trimmed = lifestream.Trim();
+        return trimmed.StartsWith("/li ", StringComparison.OrdinalIgnoreCase) ? trimmed[4..].Trim() : trimmed;
+    }
 
     public static string Normalize(string? input)
     {

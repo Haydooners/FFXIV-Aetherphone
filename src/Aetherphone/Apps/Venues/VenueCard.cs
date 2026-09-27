@@ -1,13 +1,9 @@
 using Aetherphone.Core;
-using Aetherphone.Core.Animation;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Media;
-using Aetherphone.Core.Net;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Venues;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Venues;
 
@@ -20,160 +16,258 @@ internal enum VenueCardAction : byte
 
 internal static class VenueCard
 {
-    public const float Height = 100f;
-    public const float Gap = 10f;
+    public const float RailWidth = 148f;
+    public const float RailHeight = 192f;
 
-    public static readonly Vector4 LiveGreen = new(0.24f, 0.82f, 0.44f, 1f);
+    private const float HeroAspect = 0.48f;
+    private const float HeroMaxHeight = 210f;
+    private const float PadX = SocialChrome.CellPadX;
+    private const float PadTop = 12f;
+    private const float PadBottom = 14f;
+    private const float LogoSide = 42f;
+    private const float LogoGap = 11f;
+    private const float RowGap = 8f;
+    private const float OverlayInset = 12f;
+    private const float HeroScrimShare = 0.42f;
+    private const float StatGlyph = 13f;
+    private const float RailRounding = 18f;
+    private const float RailPad = 11f;
+    private const float RailScrimShare = 0.66f;
+    private const float RailPressScale = 0.97f;
 
-    public static VenueCardAction Draw(Rect card, VenueEvent venue, bool favorite, MediaCache media, HttpService http,
-        ArtworkCache art, AppSkin ui, DateTime nowUtc)
+    private static readonly TextStyle TitleStyle = TextStyles.Headline;
+    private static readonly TextStyle MetaStyle = TextStyles.Footnote;
+    private static readonly TextStyle StatusStyle = TextStyles.FootnoteEmphasized;
+    private static readonly TextStyle StatStyle = TextStyles.Caption1;
+    private static readonly TextStyle RailTitleStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle RailStatusStyle = TextStyles.Caption1;
+    private static readonly Vector4 RailMutedInk = new(1f, 1f, 1f, 0.80f);
+    private static readonly Vector4 FavoriteInk = new(1f, 0.80f, 0.26f, 1f);
+
+    public static float FeedHeight(VenueEvent venue, in VenueCardText text, float width, float scale)
+    {
+        var header = MathF.Max(Typography.LineHeight(TitleStyle) + 2f * scale + Typography.LineHeight(MetaStyle),
+            venue.LogoUrl is null ? 0f : LogoSide * scale);
+        var height = HeroHeight(width, scale) + PadTop * scale + header + PadBottom * scale;
+        if (HasStatusRow(text))
+        {
+            height += RowGap * scale + Typography.LineHeight(StatusStyle);
+        }
+
+        if (venue.Tags.Count > 0)
+        {
+            height += RowGap * scale + VenueChips.Height(scale);
+        }
+
+        return height;
+    }
+
+    public static VenueCardAction DrawFeed(VenueEvent venue, in VenueCardText text, bool favorite, in VenueArt art,
+        SocialInk ink)
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
-        var rounding = Metrics.Radius.Lg * scale;
-        var palette = ui.Palette;
-        ui.Card(drawList, card.Min, card.Max, rounding, elevated: true);
-        var pad = 12f * scale;
-        var thumbSide = card.Height - pad * 2f;
-        var thumb = new Rect(new Vector2(card.Min.X + pad, card.Min.Y + pad),
-            new Vector2(card.Min.X + pad + thumbSide, card.Min.Y + pad + thumbSide));
-        VenueImage.Draw(drawList, thumb, venue, media, http, art, 14f * scale);
-        var live = venue.IsLive(nowUtc);
-        if (live)
+        var width = ScrollLayout.StableContentWidth();
+        var height = FeedHeight(venue, text, width, scale);
+        var origin = ImGui.GetCursorScreenPos();
+        if (!ImGui.IsRectVisible(origin, origin + new Vector2(width, height)))
         {
-            DrawLiveDot(drawList, new Vector2(thumb.Min.X + 9f * scale, thumb.Min.Y + 9f * scale), scale);
+            ImGui.Dummy(new Vector2(width, height));
+            return VenueCardAction.None;
         }
 
-        var starCenter = new Vector2(card.Max.X - 19f * scale, card.Min.Y + 19f * scale);
-        var starHit = new Vector2(14f * scale, 14f * scale);
-        var starMin = starCenter - starHit;
-        var starMax = starCenter + starHit;
-        var starHovered = UiInteract.Hover(starMin, starMax);
-        AppSkin.Icon(starCenter, IconGlyph.Of(FontAwesomeIcon.Star),
-            favorite ? palette.Accent : starHovered ? palette.TitleInk : Palette.WithAlpha(palette.MutedInk, 0.75f),
-            0.85f);
-        var textLeft = thumb.Max.X + 12f * scale;
-        var textRight = card.Max.X - 36f * scale;
-        var textWidth = textRight - textLeft;
-        var hovered = UiInteract.Hover(card.Min, card.Max);
-        var titleY = card.Min.Y + 13f * scale;
-        var titleHeight = Typography.Measure(venue.Title, TextStyles.Headline).Y;
-        var titleHovered = UiInteract.Hover(new Vector2(textLeft, titleY), new Vector2(textRight, titleY + titleHeight));
-        Marquee.DrawLeft(new MarqueeId("venuecard.title.", venue.Id), venue.Title, textLeft, titleY,
-            textWidth, TextStyles.Headline, palette.TitleInk, titleHovered);
-        var subtitleY = card.Min.Y + 34f * scale;
-        var subtitle = BuildSubtitle(venue);
-        var subtitleHeight = Typography.Measure(subtitle, TextStyles.Footnote).Y;
-        var subtitleHovered = UiInteract.Hover(new Vector2(textLeft, subtitleY),
-            new Vector2(textRight, subtitleY + subtitleHeight));
-        Marquee.DrawLeft(new MarqueeId("venuecard.subtitle.", venue.Id), subtitle, textLeft,
-            subtitleY, textWidth, TextStyles.Footnote, palette.MutedInk, subtitleHovered);
-        DrawTimeRow(drawList, venue, live, textLeft, card.Min.Y + 53f * scale, card.Max.X - pad, palette, scale);
-        DrawTags(drawList, venue, textLeft, card.Max.Y - pad - VenueChips.Height(scale), textRight);
-        if (hovered)
-        {
-            UiInteract.HoverHighlight(drawList, card.Min, card.Max, rounding);
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(starMin, starMax, starHovered))
+        var cell = FeedCell.Begin(drawList, height, ink.HoverTint);
+        var bounds = cell.Bounds;
+        var hero = new Rect(bounds.Min, new Vector2(bounds.Max.X, bounds.Min.Y + HeroHeight(bounds.Width, scale)));
+        VenueImage.Cover(drawList, hero, 0f, venue, text.Initial, art);
+        MediaOverlay.BottomScrim(drawList, hero.Min, hero.Max, HeroScrimShare);
+        var inset = OverlayInset * scale;
+        DrawStatusPill(drawList, new Vector2(hero.Min.X + inset, hero.Min.Y + inset), text.Status.Kind, scale);
+        var starCenter = new Vector2(hero.Max.X - inset - MediaOverlay.GlassButtonRadius * scale,
+            hero.Min.Y + inset + MediaOverlay.GlassButtonRadius * scale);
+        var starTapped = MediaOverlay.GlassButton(drawList, starCenter,
+            favorite ? PhoneIcons.StarFilled : PhoneIcons.Star, string.Empty, scale, null,
+            favorite ? FavoriteInk : MediaOverlay.White);
+        PaintBody(drawList, venue, text, bounds, hero.Max.Y, art, ink, scale);
+        FeedCell.End(drawList, cell, ink.Hairline);
+        if (starTapped)
         {
             return VenueCardAction.ToggleFavorite;
         }
 
-        if (!starHovered && UiInteract.Click(card.Min, card.Max, hovered))
-        {
-            return VenueCardAction.Open;
-        }
-
-        return VenueCardAction.None;
+        return cell.Tapped ? VenueCardAction.Open : VenueCardAction.None;
     }
 
-    private static void DrawLiveDot(ImDrawListPtr drawList, Vector2 center, float scale)
+    public static bool DrawRail(ImDrawListPtr drawList, Rect rest, VenueEvent venue, in VenueCardText text,
+        in VenueArt art, SocialInk ink, bool interactive)
     {
-        var pulse = 0.55f + 0.45f * Pulse.Wave(Pulse.Calm);
-        drawList.AddCircleFilled(center, 6.5f * scale, ImGui.GetColorU32(new Vector4(0.03f, 0.05f, 0.04f, 0.85f)), 20);
-        drawList.AddCircle(center, 5.6f * scale, ImGui.GetColorU32(Palette.WithAlpha(LiveGreen, 0.45f * pulse)), 20,
-            1.4f * scale);
-        drawList.AddCircleFilled(center, 3.4f * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(LiveGreen, 0.65f + 0.35f * pulse)), 20);
-    }
-
-    private static void DrawTimeRow(ImDrawListPtr drawList, VenueEvent venue, bool live, float left, float top,
-        float right, in AppPalette palette, float scale)
-    {
-        var hasCount = venue.AttendeeCount > 0;
-        var count = hasCount ? venue.AttendeeCount.ToString(Loc.Culture) : string.Empty;
-        var countSize = hasCount ? Typography.Measure(count, TextStyles.Footnote) : Vector2.Zero;
-        var countReserve = hasCount ? countSize.X + 18f * scale : 0f;
-        var leftMaxWidth = MathF.Max(1f, right - countReserve - left);
-
-        if (live)
-        {
-            var liveLabel = Loc.T(L.Common.Live);
-            Typography.Draw(new Vector2(left, top), liveLabel, LiveGreen, TextStyles.FootnoteEmphasized);
-            var ends = VenueFormat.EndsAt(venue);
-            if (ends.Length > 0)
-            {
-                var offset = Typography.Measure(liveLabel, TextStyles.FootnoteEmphasized).X + 7f * scale;
-                var endsMaxWidth = MathF.Max(1f, leftMaxWidth - offset);
-                var untilText = Loc.T(L.Venues.UntilTime, ends);
-                Marquee.DrawLeftAuto(new MarqueeId("venuecard.until.", venue.Id), untilText, left + offset, top, endsMaxWidth,
-                    TextStyles.Footnote, palette.MutedInk);
-            }
-        }
-        else
-        {
-            var rangeStyle = new TextStyle(TextStyles.Footnote.Scale, FontWeight.Medium);
-            var rangeText = VenueFormat.Range(venue);
-            Marquee.DrawLeftAuto(new MarqueeId("venuecard.range.", venue.Id), rangeText, left, top, leftMaxWidth, rangeStyle,
-                palette.Accent);
-        }
-
-        if (!hasCount)
-        {
-            return;
-        }
-
-        var countLeft = right - countSize.X;
-        Typography.Draw(new Vector2(countLeft, top), count, palette.MutedInk, TextStyles.Footnote);
-        AppSkin.Icon(drawList, new Vector2(countLeft - 10f * scale, top + countSize.Y * 0.5f),
-            IconGlyph.Of(FontAwesomeIcon.Users), Palette.WithAlpha(palette.MutedInk, 0.8f), 0.58f);
-    }
-
-    private static string BuildSubtitle(VenueEvent venue)
-    {
-        var place = venue.World;
-        if (venue.DataCenter.Length > 0)
-        {
-            place = place.Length > 0 ? $"{place} · {venue.DataCenter}" : venue.DataCenter;
-        }
-
-        if (venue.LocationLine.Length > 0 && !string.Equals(venue.LocationLine, venue.World, StringComparison.Ordinal))
-        {
-            return place.Length > 0 ? $"{place} · {venue.LocationLine}" : venue.LocationLine;
-        }
-
-        return place;
-    }
-
-    private static void DrawTags(ImDrawListPtr drawList, VenueEvent venue, float left, float top, float right)
-    {
-        if (venue.Tags.Count == 0)
-        {
-            return;
-        }
-
         var scale = UiScale.Current;
+        var hovered = interactive && UiInteract.Hover(rest.Min, rest.Max);
+        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var press = PressFx.Scale(text.PressId, pressed, RailPressScale);
+        var half = rest.Size * 0.5f * press;
+        var card = new Rect(rest.Center - half, rest.Center + half);
+        var rounding = RailRounding * scale;
+        Elevation.Card(drawList, card.Min, card.Max, rounding, scale, hovered ? 0.55f : 0.35f);
+        VenueImage.Cover(drawList, card, rounding, venue, text.Initial, art);
+        Squircle.FillVerticalGradient(drawList, new Vector2(card.Min.X, card.Max.Y - card.Height * RailScrimShare),
+            card.Max, rounding, ImGui.GetColorU32(MediaOverlay.ScrimClear),
+            ImGui.GetColorU32(MediaOverlay.ScrimDeep));
+        if (hovered)
+        {
+            Squircle.Stroke(drawList, card.Min, card.Max, rounding,
+                ImGui.GetColorU32(Palette.WithAlpha(ink.AccentLink, 0.7f)), 1.2f * scale);
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        var pad = RailPad * scale;
+        DrawStatusPill(drawList, new Vector2(card.Min.X + pad, card.Min.Y + pad), text.Status.Kind, scale);
+        var textWidth = card.Width - pad * 2f;
+        var statusHeight = Typography.LineHeight(RailStatusStyle);
+        var titleHeight = Typography.LineHeight(RailTitleStyle);
+        var statusTop = card.Max.Y - pad - statusHeight;
+        var titleTop = statusTop - titleHeight - 1f * scale;
+        Marquee.DrawLeftAuto(drawList, new MarqueeId("venues.rail.title.", venue.Id), venue.Title, card.Min.X + pad,
+            titleTop, textWidth, RailTitleStyle, MediaOverlay.White);
+        var statusLeft = card.Min.X + pad;
+        if (text.Stat.Length > 0)
+        {
+            statusLeft += DrawStat(drawList, statusLeft, statusTop + statusHeight * 0.5f, text.Stat,
+                venue.LiveViewers > 0 ? PhoneIcons.Eye : PhoneIcons.Users, RailMutedInk, scale) + 8f * scale;
+        }
+
+        var railStatus = text.Status.Label.Length > 0 ? text.Status.Label : venue.World;
+        Typography.Draw(drawList, new Vector2(statusLeft, statusTop),
+            Typography.FitText(railStatus, MathF.Max(1f, card.Max.X - pad - statusLeft), RailStatusStyle),
+            RailMutedInk, RailStatusStyle);
+        return interactive && UiInteract.Click(card.Min, card.Max, hovered);
+    }
+
+    private static void PaintBody(ImDrawListPtr drawList, VenueEvent venue, in VenueCardText text, Rect bounds,
+        float top, in VenueArt art, SocialInk ink, float scale)
+    {
+        var pad = PadX * scale;
+        var left = bounds.Min.X + pad;
+        var right = bounds.Max.X - pad;
+        var cursorY = top + PadTop * scale;
+        var textLeft = left;
+        var titleHeight = Typography.LineHeight(TitleStyle);
+        var metaHeight = Typography.LineHeight(MetaStyle);
+        var headerHeight = titleHeight + 2f * scale + metaHeight;
+        if (venue.LogoUrl is not null)
+        {
+            var side = LogoSide * scale;
+            var logo = new Rect(new Vector2(left, cursorY), new Vector2(left + side, cursorY + side));
+            VenueImage.Logo(drawList, logo, side * 0.28f, venue, text.Initial, art);
+            textLeft = logo.Max.X + LogoGap * scale;
+            cursorY += MathF.Max(0f, (side - headerHeight) * 0.5f);
+            headerHeight = MathF.Max(headerHeight, side);
+        }
+
+        var textWidth = MathF.Max(1f, right - textLeft);
+        Marquee.DrawLeftAuto(drawList, new MarqueeId("venues.card.title.", venue.Id), venue.Title, textLeft, cursorY,
+            textWidth, TitleStyle, ink.TitleInk);
+        Typography.Draw(drawList, new Vector2(textLeft, cursorY + titleHeight + 2f * scale),
+            Typography.FitText(text.Meta, textWidth, MetaStyle), ink.MutedInk, MetaStyle);
+        cursorY = top + PadTop * scale + headerHeight;
+        if (HasStatusRow(text))
+        {
+            cursorY += RowGap * scale;
+            DrawStatusRow(drawList, venue, text, left, right, cursorY, ink, scale);
+            cursorY += Typography.LineHeight(StatusStyle);
+        }
+
+        if (venue.Tags.Count > 0)
+        {
+            cursorY += RowGap * scale;
+            DrawTags(drawList, venue, left, right, cursorY, scale);
+        }
+    }
+
+    private static void DrawStatusRow(ImDrawListPtr drawList, VenueEvent venue, in VenueCardText text, float left,
+        float right, float top, SocialInk ink, float scale)
+    {
+        var lineHeight = Typography.LineHeight(StatusStyle);
+        var centerY = top + lineHeight * 0.5f;
+        var statRight = right;
+        if (text.Stat.Length > 0)
+        {
+            var statWidth = StatWidth(text.Stat, scale);
+            DrawStat(drawList, right - statWidth, centerY, text.Stat,
+                venue.LiveViewers > 0 ? PhoneIcons.Eye : PhoneIcons.Users, ink.MutedInk, scale);
+            statRight = right - statWidth - 10f * scale;
+        }
+
+        if (text.Status.Label.Length == 0)
+        {
+            return;
+        }
+
+        var cursorX = left;
+        var tint = StatusTint(text.Status.Kind, ink);
+        if (text.Status.Kind == VenueStatusKind.Live)
+        {
+            MediaOverlay.LiveDot(drawList, new Vector2(cursorX + 5f * scale, centerY), tint, scale);
+            cursorX += 16f * scale;
+        }
+
+        Typography.Draw(drawList, new Vector2(cursorX, top),
+            Typography.FitText(text.Status.Label, MathF.Max(1f, statRight - cursorX), StatusStyle), tint,
+            StatusStyle);
+    }
+
+    public static Vector4 StatusTint(VenueStatusKind kind, SocialInk ink) =>
+        kind switch
+        {
+            VenueStatusKind.Live => MediaOverlay.LiveGreen,
+            VenueStatusKind.Open => Palette.WithAlpha(MediaOverlay.LiveGreen, 0.82f),
+            _ => ink.AccentLink,
+        };
+
+    public static void DrawStatusPill(ImDrawListPtr drawList, Vector2 topLeft, VenueStatusKind kind, float scale)
+    {
+        if (kind == VenueStatusKind.Live)
+        {
+            MediaOverlay.LivePill(drawList, topLeft, Loc.T(L.Common.Live), scale);
+            return;
+        }
+
+        if (kind == VenueStatusKind.Open)
+        {
+            MediaOverlay.Pill(drawList, topLeft, Loc.T(L.Venues.OpenNow), MediaOverlay.Fill,
+                MediaOverlay.LiveGreen, scale, string.Empty, true,
+                Palette.WithAlpha(MediaOverlay.LiveGreen, 0.55f));
+        }
+    }
+
+    private static float StatWidth(string stat, float scale) =>
+        Typography.Measure(stat, StatStyle).X + (StatGlyph + 4f) * scale;
+
+    private static float DrawStat(ImDrawListPtr drawList, float left, float centerY, string stat, string glyph,
+        Vector4 color, float scale)
+    {
+        PhoneIcon.Draw(drawList, new Vector2(left + StatGlyph * scale * 0.5f, centerY), glyph, color,
+            StatGlyph * scale);
+        var size = Typography.Measure(stat, StatStyle);
+        Typography.Draw(drawList, new Vector2(left + (StatGlyph + 4f) * scale, centerY - size.Y * 0.5f), stat, color,
+            StatStyle);
+        return (StatGlyph + 4f) * scale + size.X;
+    }
+
+    private static void DrawTags(ImDrawListPtr drawList, VenueEvent venue, float left, float right, float top,
+        float scale)
+    {
         var gap = 5f * scale;
         var cursor = left;
         for (var index = 0; index < venue.Tags.Count; index++)
         {
             var tag = venue.Tags[index];
             var width = VenueChips.Measure(tag, scale);
-            if (cursor + width > right)
+            var remaining = venue.Tags.Count - index;
+            var reserve = remaining > 1 ? VenueChips.Measure(VenueLabelCache.Plus(remaining - 1), scale) + gap : 0f;
+            if (cursor + width + reserve > right)
             {
-                DrawPlusChip(drawList, new Vector2(cursor, top), venue.Tags.Count - index, scale);
+                VenueChips.DrawNeutral(drawList, new Vector2(cursor, top), VenueLabelCache.Plus(remaining), scale);
                 return;
             }
 
@@ -182,16 +276,7 @@ internal static class VenueCard
         }
     }
 
-    private static void DrawPlusChip(ImDrawListPtr drawList, Vector2 position, int remaining, float scale)
-    {
-        var label = $"+{remaining}";
-        var textSize = Typography.Measure(label, TextStyles.Caption1);
-        var width = textSize.X + 12f * scale;
-        var height = VenueChips.Height(scale);
-        var min = position;
-        var max = new Vector2(position.X + width, position.Y + height);
-        Squircle.Fill(drawList, min, max, height * 0.5f, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.10f)));
-        Typography.Draw(new Vector2(min.X + (width - textSize.X) * 0.5f, min.Y + (height - textSize.Y) * 0.5f), label,
-            new Vector4(1f, 1f, 1f, 0.72f), TextStyles.Caption1);
-    }
+    private static bool HasStatusRow(in VenueCardText text) => text.Status.Label.Length > 0 || text.Stat.Length > 0;
+
+    private static float HeroHeight(float width, float scale) => MathF.Min(width * HeroAspect, HeroMaxHeight * scale);
 }
