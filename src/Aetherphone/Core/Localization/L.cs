@@ -33,10 +33,10 @@ internal static class L
         public static readonly LocString TravelTitle = new("common.travelTitle", "Travel to {0}?");
         public static readonly LocString TravelWarning = new("common.travelWarning",
             "Lifestream will move your character there automatically, changing worlds and teleporting on the way.");
-        public static readonly LocString TravelCopyWarning = new("common.travelCopyWarning",
-            "Lifestream is not installed, so the travel command will be copied instead. Paste it in chat to go.");
+        public static readonly LocString TravelNeedsLifestreamTitle = new("common.travelNeedsLifestreamTitle", "Lifestream needed");
+        public static readonly LocString TravelNeedsLifestream = new("common.travelNeedsLifestream",
+            "Install and enable the Lifestream plugin to go there automatically.");
         public static readonly LocString TravelConfirm = new("common.travelConfirm", "Travel");
-        public static readonly LocString TravelCopyConfirm = new("common.travelCopyConfirm", "Copy command");
         public static readonly LocString OpenLinkConfirm = new("common.openLinkConfirm", "Open link");
         public static readonly LocString OpenInWindow = new("common.openInWindow", "Open in a window");
         public static readonly LocString Next = new("common.next", "Next");
@@ -1106,7 +1106,6 @@ internal static class L
         public static readonly LocString Favorites = new("venues.favorites", "Favorites");
         public static readonly LocString NoVenues = new("venues.noVenues", "No venues found");
         public static readonly LocString Failed = new("venues.failed", "Couldn't reach venue listings");
-        public static readonly LocString Teleport = new("venues.teleport", "Teleport");
         public static readonly LocString Discord = new("venues.discord", "Discord");
         public static readonly LocString Website = new("venues.website", "Website");
         public static readonly LocString WatchOnTwitch = new("venues.watchOnTwitch", "Watch on Twitch");
@@ -1960,7 +1959,7 @@ internal static class L
         public static readonly LocString[] Release1035Venues =
         {
             new("changelog.r1035.19",
-                "Rebuilt Venues around four tabs: Discover with featured venues, categories and quick rails, Live with Teleport on every card, Events by day, and Favorites"),
+                "Rebuilt Venues around four tabs: Discover with featured venues, categories and quick rails, Live with Go there on every card, Events by day, and Favorites"),
             new("changelog.r1035.20",
                 "Added XIV Rolladeck as a venue source: a green Live badge now means a DJ is really streaming from the venue, with who is playing and how many are watching"),
             new("changelog.r1035.21",
@@ -1969,6 +1968,8 @@ internal static class L
                 "Added a Filters page for sources and tags, and a switch for notifications about new openings nearby"),
             new("changelog.r1035.26",
                 "Reordered the venue page: the description, details and links come first, and tags moved to a compact row at the bottom"),
+            new("changelog.r1035.27",
+                "A popup now explains that Lifestream must be installed and enabled before Go there can travel automatically"),
         };
 
         public static readonly LocString[] Release1035Linkpearl =
