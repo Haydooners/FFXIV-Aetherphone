@@ -35,7 +35,11 @@ internal enum VenueLiveState : byte
 }
 
 internal sealed record VenueDj(string Name, string? AvatarUrl, int Viewers, string? TwitchUrl, string DataCenter,
-    string World, string? VenueId, string Place);
+    string World, string? VenueId, string Place)
+{
+    public string Title { get; init; } = string.Empty;
+    public IReadOnlyList<string> Genres { get; init; } = Array.Empty<string>();
+}
 
 internal readonly record struct VenueSnapshot(VenueEvent[] Events, VenueDj[] Djs);
 
@@ -68,6 +72,8 @@ internal sealed record VenueEvent
     public string? RolladeckUrl { get; init; }
     public string? TwitchUrl { get; init; }
     public string LiveHeadline { get; init; } = string.Empty;
+    public string LiveTitle { get; init; } = string.Empty;
+    public IReadOnlyList<string> LiveGenres { get; init; } = Array.Empty<string>();
     public int LiveViewers { get; init; }
     public DateTime LiveConfirmedUntilUtc { get; init; }
 

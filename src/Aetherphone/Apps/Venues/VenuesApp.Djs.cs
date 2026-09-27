@@ -29,13 +29,16 @@ internal sealed partial class VenuesApp
     private void RebuildDjLabels()
     {
         djViewers.Clear();
+        djMeta.Clear();
         djInitials.Clear();
         djIds.Clear();
         var djs = sections.Djs;
         for (var index = 0; index < djs.Count; index++)
         {
             var dj = djs[index];
-            djViewers.Add(dj.Viewers > 0 ? VenueFormat.Viewers(dj.Viewers) : dj.Place);
+            var viewersLabel = dj.Viewers > 0 ? VenueFormat.Viewers(dj.Viewers) : Loc.T(L.Venues.LiveNowLabel);
+            djViewers.Add(viewersLabel);
+            djMeta.Add(dj.Genres.Count > 0 ? dj.Genres[0] : viewersLabel);
             djInitials.Add(VenueLabelCache.InitialOf(dj.Name));
             djIds.Add("venues.dj." + index.ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
@@ -73,7 +76,7 @@ internal sealed partial class VenuesApp
             var item = new Rect(new Vector2(left, origin.Y), new Vector2(left + itemWidth, origin.Y + height));
             if (DrawDjItem(drawList, item, djs[index], index, row, interactive, scale))
             {
-                OpenDj(djs[index]);
+                OpenDjSheet(index);
             }
         }
 
@@ -129,7 +132,7 @@ internal sealed partial class VenuesApp
             name, Ink.TitleInk, DjNameStyle);
         var metaTop = nameTop + Typography.LineHeight(DjNameStyle);
         Typography.DrawCentered(drawList, new Vector2(item.Center.X, metaTop + Typography.LineHeight(DjMetaStyle) * 0.5f),
-            Typography.FitText(djViewers[index], textWidth, DjMetaStyle), Ink.MutedInk, DjMetaStyle);
+            Typography.FitText(djMeta[index], textWidth, DjMetaStyle), Ink.MutedInk, DjMetaStyle);
         return interactive && UiInteract.Click(item.Min, item.Max, hovered);
     }
 
@@ -147,7 +150,35 @@ internal sealed partial class VenuesApp
         Typography.DrawCentered(drawList, center, label, MediaOverlay.LiveInk, DjBadgeStyle);
     }
 
-    private void OpenDj(VenueDj dj)
+    private void OpenDjSheet(int index)
+    {
+        var dj = sections.Djs[index];
+        var place = dj.World.Length > 0 && !string.Equals(dj.World, dj.Place, StringComparison.OrdinalIgnoreCase)
+            ? dj.Place.Length > 0 ? $"{dj.Place} · {dj.World}" : dj.World
+            : dj.Place;
+        sheetDj = dj;
+        djSheet.Open(dj, djViewers[index], place, djInitials[index]);
+    }
+
+    private void DrawDjSheet(Rect screen)
+    {
+        if (!djSheet.CapturesPointer || sheetDj is null)
+        {
+            return;
+        }
+
+        var action = djSheet.Draw(screen, Ink, images, artwork);
+        if (action == VenueDjSheetAction.Twitch && !string.IsNullOrEmpty(sheetDj.TwitchUrl))
+        {
+            UrlActions.AskThenOpen(sheetDj.TwitchUrl);
+        }
+        else if (action == VenueDjSheetAction.Venue)
+        {
+            OpenDjVenue(sheetDj);
+        }
+    }
+
+    private void OpenDjVenue(VenueDj dj)
     {
         if (dj.VenueId is { } venueId)
         {
@@ -160,11 +191,6 @@ internal sealed partial class VenuesApp
                     return;
                 }
             }
-        }
-
-        if (!string.IsNullOrEmpty(dj.TwitchUrl))
-        {
-            UrlActions.AskThenOpen(dj.TwitchUrl);
         }
     }
 }

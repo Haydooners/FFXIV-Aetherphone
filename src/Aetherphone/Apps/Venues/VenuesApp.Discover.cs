@@ -62,6 +62,9 @@ internal sealed partial class VenuesApp
     private readonly List<string> djViewers = new();
     private readonly List<string> djInitials = new();
     private readonly List<string> djIds = new();
+    private readonly List<string> djMeta = new();
+    private readonly VenueDjSheet djSheet = new();
+    private VenueDj? sheetDj;
     private readonly VenueRail laterRail = new();
     private readonly VenueRail nearRail = new();
     private readonly string[] categoryCounts = new string[VenueCategories.Count];

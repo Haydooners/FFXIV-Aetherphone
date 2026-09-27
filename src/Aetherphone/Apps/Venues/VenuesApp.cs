@@ -109,6 +109,7 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
     {
         router.Reset();
         search = string.Empty;
+        djSheet.Close();
     }
 
     public void RequestVenue(string venueId) => pendingVenueId = venueId;
@@ -123,8 +124,10 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         var screen = SceneChrome.ScreenFrom(context.Content, theme, scale);
         screenRect = screen;
         ui.Backdrop(screen);
+        djSheet.Gate();
         router.Draw(SceneChrome.AppAreaFrom(context.Content, theme, scale), AppSkin.Transparent,
             ImGui.GetIO().DeltaTime, drawView);
+        DrawDjSheet(screen);
     }
 
     private void ConsumePendingVenue()

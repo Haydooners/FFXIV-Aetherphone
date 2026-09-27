@@ -35,6 +35,7 @@ internal sealed partial class VenuesApp
     private static readonly TextStyle InfoValueStyle = TextStyles.BodyEmphasized;
     private static readonly TextStyle CaptionStyle = TextStyles.Caption1;
     private static readonly TextStyle HintStyle = TextStyles.Footnote;
+    private static readonly TextStyle StreamTitleStyle = TextStyles.Subheadline;
     private static readonly Vector4 WhenTint = new(0.95f, 0.58f, 0.20f, 1f);
     private static readonly Vector4 WorldTint = new(0.35f, 0.55f, 0.95f, 1f);
     private static readonly Vector4 LocationTint = new(0.30f, 0.75f, 0.45f, 1f);
@@ -253,7 +254,16 @@ internal sealed partial class VenuesApp
         var captionHeight = Typography.LineHeight(CaptionStyle);
         var rowHeight = MathF.Max(radius * 2f, headlineHeight + 2f * scale + captionHeight);
         var hasTwitch = !string.IsNullOrEmpty(venue.TwitchUrl);
-        var cardHeight = inner * 2f + rowHeight + (hasTwitch ? Metrics.Space.Md * scale + TwitchButtonHeight * scale : 0f);
+        var fullWidth = MathF.Max(1f, cardRight - cardLeft - inner * 2f);
+        var titleHeight = venue.LiveTitle.Length > 0
+            ? Typography.CountWrappedLines(venue.LiveTitle, StreamTitleStyle, fullWidth) *
+              Typography.LineHeight(StreamTitleStyle)
+            : 0f;
+        var genresHeight = venue.LiveGenres.Count > 0 ? VenueChips.Height(scale) : 0f;
+        var cardHeight = inner * 2f + rowHeight +
+                         (titleHeight > 0f ? Metrics.Space.Sm * scale + titleHeight : 0f) +
+                         (genresHeight > 0f ? Metrics.Space.Sm * scale + genresHeight : 0f) +
+                         (hasTwitch ? Metrics.Space.Md * scale + TwitchButtonHeight * scale : 0f);
         ui.Card(drawList, new Vector2(cardLeft, origin.Y), new Vector2(cardRight, origin.Y + cardHeight),
             Metrics.Radius.Card * scale, elevated: true);
         var iconCenter = new Vector2(cardLeft + inner + radius, origin.Y + inner + rowHeight * 0.5f);
@@ -269,13 +279,30 @@ internal sealed partial class VenuesApp
         var caption = detailText.Viewers.Length > 0 ? detailText.Viewers : Loc.T(L.Venues.SourceRolladeck);
         Typography.Draw(drawList, new Vector2(textLeft, textTop + headlineHeight + 2f * scale),
             Typography.FitText(caption, textWidth, CaptionStyle), Ink.MutedInk, CaptionStyle);
+        var cursorY = origin.Y + inner + rowHeight;
+        if (titleHeight > 0f)
+        {
+            cursorY += Metrics.Space.Sm * scale;
+            Typography.DrawWrappedLeft(new Vector2(cardLeft + inner, cursorY), venue.LiveTitle, Ink.BodyInk,
+                StreamTitleStyle, fullWidth);
+            ImGui.SetCursorScreenPos(origin);
+            cursorY += titleHeight;
+        }
+
+        if (genresHeight > 0f)
+        {
+            cursorY += Metrics.Space.Sm * scale;
+            VenueCard.DrawChipRow(drawList, venue.LiveGenres, cardLeft + inner, cardRight - inner, cursorY, scale);
+            cursorY += genresHeight;
+        }
+
         if (hasTwitch)
         {
-            var buttonTop = origin.Y + inner + rowHeight + Metrics.Space.Md * scale;
+            var buttonTop = cursorY + Metrics.Space.Md * scale;
             var button = new Rect(new Vector2(cardLeft + inner, buttonTop),
                 new Vector2(cardRight - inner, buttonTop + TwitchButtonHeight * scale));
-            if (SocialPill.Outline(drawList, button, Loc.T(L.Venues.WatchOnTwitch), Ink,
-                    TextStyles.SubheadlineEmphasized, button.Height * 0.5f, Ink.ChipFill))
+            if (SocialPill.Accent(drawList, button, Loc.T(L.Venues.WatchOnTwitch), Ink,
+                    TextStyles.SubheadlineEmphasized, button.Height * 0.5f))
             {
                 UrlActions.AskThenOpen(venue.TwitchUrl!);
             }
