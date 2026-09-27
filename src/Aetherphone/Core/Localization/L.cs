@@ -7365,7 +7365,7 @@ internal static class L
         public static readonly LocString UnavailableTitle = new("yellowpages.unavailableTitle", "Ad unavailable");
         public static readonly LocString UnavailableHint = new("yellowpages.unavailableHint", "This ad expired or was taken down.");
         public static readonly LocString ScheduleSection = new("yellowpages.scheduleSection", "Weekly schedule");
-        public static readonly LocString ScheduleYourTime = new("yellowpages.scheduleYourTime", "Weekly · shown in your time");
+        public static readonly LocString ScheduleYourTime = new("yellowpages.scheduleYourTime", "Weekly · your time ({0})");
         public static readonly LocString RenewedAgo = new("yellowpages.renewedAgo", "renewed {0}");
         public static readonly LocString WhereSection = new("yellowpages.whereSection", "Where");
         public static readonly LocString WardPlot = new("yellowpages.wardPlot", "Ward {0}, Plot {1}");
@@ -7391,11 +7391,11 @@ internal static class L
         public static readonly LocString TitleLabel = new("yellowpages.titleLabel", "Title");
         public static readonly LocString BodyLabel = new("yellowpages.bodyLabel", "Description");
         public static readonly LocString TagsLabel = new("yellowpages.tagsLabel", "Tags");
-        public static readonly LocString TagsHint = new("yellowpages.tagsHint", "Type a tag and press Enter. They power search.");
+        public static readonly LocString TagsHint = new("yellowpages.tagsHint", "Add a tag, press Enter");
         public static readonly LocString UseMyLocation = new("yellowpages.useMyLocation", "Use my location");
         public static readonly LocString ClearLocation = new("yellowpages.clearLocation", "Clear");
         public static readonly LocString AddressNoteLabel = new("yellowpages.addressNoteLabel", "Address note");
-        public static readonly LocString ScheduleHint = new("yellowpages.scheduleHint", "Times are entered in your clock and shown to every reader in theirs.");
+        public static readonly LocString ScheduleHint = new("yellowpages.scheduleHint", "Your clock is {0}. Every reader sees the schedule in their own clock, with the UTC time underneath.");
         public static readonly LocString OpensLabel = new("yellowpages.opensLabel", "Opens at");
         public static readonly LocString ClosesLabel = new("yellowpages.closesLabel", "Closes at");
         public static readonly LocString DurationLabel = new("yellowpages.durationLabel", "Open for");
@@ -7463,7 +7463,7 @@ internal static class L
         public static readonly LocString AdPreview = new("yellowpages.adPreview", "Yellow Pages ad");
         public static readonly LocString AdUnavailable = new("yellowpages.adUnavailable", "Ad unavailable");
         public static readonly LocString AdOpen = new("yellowpages.adOpen", "Open in Yellow Pages");
-        public static readonly LocString AddressNoteHint = new("yellowpages.addressNoteHint", "Plot name, floor, or how to find the door");
+        public static readonly LocString AddressNoteHint = new("yellowpages.addressNoteHint", "Plot, floor, or directions");
         public static readonly LocString BodyHint = new("yellowpages.bodyHint", "What you offer, what to expect, and how to reach you in game.");
         public static readonly LocString BudgetFixedLabel = new("yellowpages.budgetFixedLabel", "Budget");
         public static readonly LocString BudgetGil = new("yellowpages.budgetGil", "Budget {0} gil");
@@ -7511,7 +7511,7 @@ internal static class L
         public static readonly LocString RenewAvailable = new("yellowpages.renewAvailable", "Renew now");
         public static readonly LocString RequirementsHint = new("yellowpages.requirementsHint", "Item level, schedule, voice chat, experience");
         public static readonly LocString SkipPhotos = new("yellowpages.skipPhotos", "Skip");
-        public static readonly LocString SlotsHint = new("yellowpages.slotsHint", "For example: 2 healers and a tank");
+        public static readonly LocString SlotsHint = new("yellowpages.slotsHint", "2 healers and a tank");
         public static readonly LocString SortEndingSoon = new("yellowpages.sortEndingSoon", "Ending soon");
         public static readonly LocString SortNewest = new("yellowpages.sortNewest", "Newest first");
         public static readonly LocString SortOpenFirst = new("yellowpages.sortOpenFirst", "Open now first");
@@ -7519,16 +7519,18 @@ internal static class L
         public static readonly LocString ThreadAboutMine = new("yellowpages.threadAboutMine", "About your ad");
         public static readonly LocString ThreadAboutTheirs = new("yellowpages.threadAboutTheirs", "About their ad");
         public static readonly LocString ThreadEmpty = new("yellowpages.threadEmpty", "Say hello and ask away");
-        public static readonly LocString TitleHint = new("yellowpages.titleHint", "Give it a short, clear title");
-        public static readonly LocString TurnaroundHint = new("yellowpages.turnaroundHint", "For example: within two days");
+        public static readonly LocString TitleHint = new("yellowpages.titleHint", "Short and clear");
+        public static readonly LocString TurnaroundHint = new("yellowpages.turnaroundHint", "Two days, for example");
         public static readonly LocString ViewPhoto = new("yellowpages.viewPhoto", "View photo");
         public static readonly LocString WantedCallHint = new("yellowpages.wantedCallHint", "You want to join a group");
         public static readonly LocString WantedCallSection = new("yellowpages.wantedCallSection", "Looking to join");
         public static readonly LocString WantedChip = new("yellowpages.wantedChip", "Wanted");
         public static readonly LocString WantedServiceHint = new("yellowpages.wantedServiceHint", "You need someone's help");
         public static readonly LocString WantedTile = new("yellowpages.wantedTile", "I'm looking for");
-        public static readonly LocString YourRoleHint = new("yellowpages.yourRoleHint", "For example: Healer, ilvl 730, weeknights");
+        public static readonly LocString YourRoleHint = new("yellowpages.yourRoleHint", "Healer, ilvl 730, weeknights");
         public static readonly LocString YourRoleLabel = new("yellowpages.yourRoleLabel", "What you bring");
+        public static readonly LocString ScheduleInUtc = new("yellowpages.scheduleInUtc", "In UTC: {0} to {1}");
+        public static readonly LocString ScheduleUtcRange = new("yellowpages.scheduleUtcRange", "UTC {0} - {1}");
     }
 
     internal static class Conduct

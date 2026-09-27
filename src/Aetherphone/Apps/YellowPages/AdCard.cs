@@ -34,7 +34,6 @@ internal readonly record struct AdCardContext(RemoteImageCache Images, long NowU
 internal static class AdCard
 {
     private const float HeroAspect = 0.5625f;
-    private const float HeroMaxHeight = 220f;
     private const float PadX = SocialChrome.CellPadX;
     private const float PadY = 12f;
     private const float TileSide = 46f;
@@ -65,6 +64,7 @@ internal static class AdCard
         }
 
         var hasHero = HasHero(ad);
+        var heroHeight = HeroHeight(ad, width, context);
         var textWidth = width - PadX * 2f * scale;
         var bodyLines = BodyLines(ad, hasHero ? textWidth : textWidth - (TileSide + TileGap) * scale);
         var bodyHeight = bodyLines > 0 ? bodyLines * Typography.LineHeight(BodyStyle) + BodyGap * scale : 0f;
@@ -74,7 +74,7 @@ internal static class AdCard
             headerHeight = MathF.Max(headerHeight, TileSide * scale);
         }
 
-        return HeroHeight(ad, width, scale) + PadY * 2f * scale + headerHeight + bodyHeight
+        return heroHeight + PadY * 2f * scale + headerHeight + bodyHeight
             + FooterGap * scale + FooterHeight * scale;
     }
 
@@ -111,7 +111,7 @@ internal static class AdCard
         var pad = PadX * scale;
         var left = bounds.Min.X + pad;
         var right = bounds.Max.X - pad;
-        var heroHeight = HeroHeight(ad, bounds.Width, scale);
+        var heroHeight = HeroHeight(ad, bounds.Width, context);
         var status = YellowPagesKit.StatusOf(ad, context.NowUnix);
         var accent = YellowPagesKit.AccentOf(ad);
         var textLeft = left;
@@ -365,8 +365,23 @@ internal static class AdCard
         return world.Length > 0 ? $"{identity} · {world}" : identity;
     }
 
-    private static float HeroHeight(AdDto ad, float width, float scale) =>
-        HasHero(ad) ? MathF.Min(width * HeroAspect, HeroMaxHeight * scale) : 0f;
+    public static float HeroHeight(AdDto ad, float width, in AdCardContext context)
+    {
+        if (!HasHero(ad))
+        {
+            return 0f;
+        }
+
+        if (ad.MediaWidth > 0 && ad.MediaHeight > 0)
+        {
+            return PostAspects.DisplayHeight(width, ad.MediaWidth, ad.MediaHeight);
+        }
+
+        var texture = context.Texture(ad.MediaUrl);
+        return texture is null
+            ? width * HeroAspect
+            : PostAspects.DisplayHeight(width, (int)texture.Size.X, (int)texture.Size.Y);
+    }
 
     private static bool HasHero(AdDto ad) => !string.IsNullOrEmpty(ad.MediaUrl);
 

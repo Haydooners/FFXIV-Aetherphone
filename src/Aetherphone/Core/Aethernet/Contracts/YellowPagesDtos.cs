@@ -35,7 +35,9 @@ internal sealed record CreateAdRequest(
     string? LinkUrl = null,
     bool AllowInquiries = true,
     bool Wanted = false,
-    int Accent = 0);
+    int Accent = 0,
+    int MediaWidth = 0,
+    int MediaHeight = 0);
 
 internal sealed record AdDto(
     string Id,
@@ -81,7 +83,9 @@ internal sealed record AdDto(
     string OwnerFrameId = "",
     string? Lang = null,
     bool Wanted = false,
-    int Accent = 0) : IIdentified;
+    int Accent = 0,
+    int MediaWidth = 0,
+    int MediaHeight = 0) : IIdentified;
 
 internal sealed record AdPage(AdDto[] Items, string? NextCursor);
 

@@ -19,6 +19,8 @@ internal readonly record struct AdPhotoBatch(string[] Paths, WallpaperCrop[] Cro
     public int Count => Paths.Length;
 }
 
+internal readonly record struct AdUploadResult(string[] Keys, int FirstWidth, int FirstHeight);
+
 internal sealed class YellowPagesStore : IDisposable
 {
     public const string AppId = "yellowpages";
@@ -374,14 +376,18 @@ internal sealed class YellowPagesStore : IDisposable
         var status = 0;
         work.Run("ads create", async token =>
         {
-            var keys = await UploadPhotosAsync(photos, token).ConfigureAwait(false);
-            if (keys is null)
+            var upload = await UploadPhotosAsync(photos, token).ConfigureAwait(false);
+            if (upload is not { } uploaded)
             {
                 return false;
             }
 
-            var created = await client.CreateAsync(request with { MediaKeys = keys }, token, code => status = code)
-                .ConfigureAwait(false);
+            var created = await client.CreateAsync(request with
+            {
+                MediaKeys = uploaded.Keys,
+                MediaWidth = uploaded.FirstWidth,
+                MediaHeight = uploaded.FirstHeight,
+            }, token, code => status = code).ConfigureAwait(false);
             if (created is null)
             {
                 return false;
@@ -405,21 +411,26 @@ internal sealed class YellowPagesStore : IDisposable
         var status = 0;
         work.Run("ads update", async token =>
         {
-            var uploaded = await UploadPhotosAsync(photos, token).ConfigureAwait(false);
-            if (uploaded is null)
+            var upload = await UploadPhotosAsync(photos, token).ConfigureAwait(false);
+            if (upload is not { } uploaded)
             {
                 return false;
             }
 
-            var mediaKeys = new string[keptUrls.Count + uploaded.Length];
+            var mediaKeys = new string[keptUrls.Count + uploaded.Keys.Length];
             for (var index = 0; index < keptUrls.Count; index++)
             {
                 mediaKeys[index] = keptUrls[index];
             }
 
-            Array.Copy(uploaded, 0, mediaKeys, keptUrls.Count, uploaded.Length);
-            var updated = await client.UpdateAsync(adId, request with { MediaKeys = mediaKeys }, token,
-                code => status = code).ConfigureAwait(false);
+            Array.Copy(uploaded.Keys, 0, mediaKeys, keptUrls.Count, uploaded.Keys.Length);
+            var coverIsNew = keptUrls.Count == 0 && uploaded.Keys.Length > 0;
+            var updated = await client.UpdateAsync(adId, request with
+            {
+                MediaKeys = mediaKeys,
+                MediaWidth = coverIsNew ? uploaded.FirstWidth : request.MediaWidth,
+                MediaHeight = coverIsNew ? uploaded.FirstHeight : request.MediaHeight,
+            }, token, code => status = code).ConfigureAwait(false);
             if (updated is null)
             {
                 return false;
@@ -432,14 +443,16 @@ internal sealed class YellowPagesStore : IDisposable
         }, ok => done(ok ? AdCreateOutcome.Created : OutcomeFor(status)));
     }
 
-    private async Task<string[]?> UploadPhotosAsync(AdPhotoBatch photos, CancellationToken token)
+    private async Task<AdUploadResult?> UploadPhotosAsync(AdPhotoBatch photos, CancellationToken token)
     {
         if (photos.Count == 0)
         {
-            return Array.Empty<string>();
+            return new AdUploadResult(Array.Empty<string>(), 0, 0);
         }
 
         var keys = new string[photos.Count];
+        var firstWidth = 0;
+        var firstHeight = 0;
         for (var index = 0; index < photos.Count; index++)
         {
             var aspect = index < photos.Aspects.Length ? photos.Aspects[index] : PostAspect.Landscape;
@@ -449,6 +462,12 @@ internal sealed class YellowPagesStore : IDisposable
                     PostAspects.RevealsWholeImage(aspect),
                     index < photos.Edits.Length ? photos.Edits[index] : PhotoEdit.None)
                 : ImageProcessor.BakeJpeg(photos.Paths[index], MaxImageDimension);
+            if (index == 0)
+            {
+                firstWidth = baked.Width;
+                firstHeight = baked.Height;
+            }
+
             var upload = await media.UploadUrlAsync("image/jpeg", "ad", token).ConfigureAwait(false);
             if (upload is null)
             {
@@ -465,7 +484,7 @@ internal sealed class YellowPagesStore : IDisposable
             keys[index] = upload.Key;
         }
 
-        return keys;
+        return new AdUploadResult(keys, firstWidth, firstHeight);
     }
 
     public void Delete(string adId, Action<bool> done)

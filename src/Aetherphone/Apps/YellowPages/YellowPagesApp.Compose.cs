@@ -4,6 +4,7 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Maps;
 using Aetherphone.Core.Media;
 using Aetherphone.Core.Muster;
+using Aetherphone.Core.Social;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.YellowPages;
 using Aetherphone.Windows.Components;
@@ -46,7 +47,8 @@ internal sealed partial class YellowPagesApp
     private const float FieldCardRounding = 14f;
     private const float FieldCardPad = 14f;
     private const float FieldRowHeight = 46f;
-    private const float FieldLabelWidth = 96f;
+    private const float FieldLabelWidth = 104f;
+    private const float FieldLabelGap = 14f;
     private const float BodyFieldHeight = 120f;
     private const float TagsFieldHeight = 40f;
     private const float TagChipHeight = 28f;
@@ -98,6 +100,8 @@ internal sealed partial class YellowPagesApp
     private bool composeAllowInquiries = true;
     private bool composeAfterDark;
     private int composeAccent;
+    private int composeMediaWidth;
+    private int composeMediaHeight;
     private bool composeBusy;
     private bool composeSucceeded;
     private AdCreateOutcome? composeOutcome;
@@ -135,6 +139,8 @@ internal sealed partial class YellowPagesApp
         composeAllowInquiries = ad.AllowInquiries;
         composeAfterDark = ad.AfterDark;
         composeAccent = ad.Accent;
+        composeMediaWidth = ad.MediaWidth;
+        composeMediaHeight = ad.MediaHeight;
         composeKeptUrls.AddRange(ad.MediaUrls);
         if (ad.TerritoryId > 0 || ad.Ward > 0)
         {
@@ -718,7 +724,7 @@ internal sealed partial class YellowPagesApp
         var height = rowHeight + bodyBlock;
         var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
         ui.Card(drawList, card.Min, card.Max, FieldCardRounding * scale, true);
-        var labelWidth = FieldLabelWidth * scale;
+        var labelWidth = FieldLabelWidthFor(Loc.T(L.YellowPages.TitleLabel), scale);
         DrawFieldLabel(drawList, card.Min.X + pad, card.Min.Y, rowHeight, labelWidth, Loc.T(L.YellowPages.TitleLabel));
         if (composeTitleFocus)
         {
@@ -750,13 +756,26 @@ internal sealed partial class YellowPagesApp
 
         if (composeBody.Length == 0)
         {
-            Typography.Draw(drawList, new Vector2(card.Min.X + pad, fieldTop) + ImGui.GetStyle().FramePadding,
-                Typography.FitText(Loc.T(L.YellowPages.BodyHint), fieldWidth, TextStyles.Body), Ink.MutedInk,
-                TextStyles.Body);
+            DrawFieldHint(Loc.T(L.YellowPages.BodyHint), new Vector2(card.Min.X + pad, fieldTop), fieldWidth,
+                BodyFieldHeight * scale);
         }
 
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height));
+    }
+
+    private static float FieldLabelWidthFor(string label, float scale) =>
+        MathF.Min(FieldLabelWidth * scale, Typography.Measure(label, FieldLabelStyle).X + FieldLabelGap * scale);
+
+    private static void DrawFieldHint(string hint, Vector2 fieldTopLeft, float fieldWidth, float fieldHeight)
+    {
+        var padding = ImGui.GetStyle().FramePadding;
+        var drawList = ImGui.GetWindowDrawList();
+        var max = fieldTopLeft + new Vector2(fieldWidth, fieldHeight);
+        drawList.PushClipRect(fieldTopLeft, max, true);
+        Typography.DrawWrappedLeft(fieldTopLeft + padding, hint, Ink.FaintInk, TextStyles.Body,
+            fieldWidth - padding.X * 2f);
+        drawList.PopClipRect();
     }
 
     private void SyncComposeCounter(int length)
@@ -814,7 +833,7 @@ internal sealed partial class YellowPagesApp
         var rowHeight = FieldRowHeight * scale;
         var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + rowHeight));
         ui.Card(drawList, card.Min, card.Max, FieldCardRounding * scale, true);
-        var labelWidth = FieldLabelWidth * scale;
+        var labelWidth = FieldLabelWidthFor(label, scale);
         DrawFieldLabel(drawList, card.Min.X + pad, card.Min.Y, rowHeight, labelWidth, label);
         DrawFieldInput(id, card.Min.X + pad + labelWidth, card.Max.X - pad, card.Min.Y, rowHeight, ref value, maxLength,
             hint, flags);
@@ -846,8 +865,7 @@ internal sealed partial class YellowPagesApp
 
         if (value.Length == 0)
         {
-            Typography.Draw(drawList, new Vector2(card.Min.X + pad, fieldTop) + ImGui.GetStyle().FramePadding,
-                Typography.FitText(hint, fieldWidth, TextStyles.Body), Ink.FaintInk, TextStyles.Body);
+            DrawFieldHint(hint, new Vector2(card.Min.X + pad, fieldTop), fieldWidth, fieldHeight * scale);
         }
 
         ImGui.SetCursorScreenPos(origin);
@@ -869,7 +887,7 @@ internal sealed partial class YellowPagesApp
         var height = rowHeight + chipsHeight;
         var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
         ui.Card(drawList, card.Min, card.Max, FieldCardRounding * scale, true);
-        var labelWidth = FieldLabelWidth * scale;
+        var labelWidth = FieldLabelWidthFor(Loc.T(L.YellowPages.TagsLabel), scale);
         DrawFieldLabel(drawList, card.Min.X + pad, card.Min.Y, rowHeight, labelWidth, Loc.T(L.YellowPages.TagsLabel));
         var full = composeTags.Count >= MaxTags;
         if (!full)
@@ -1036,12 +1054,26 @@ internal sealed partial class YellowPagesApp
             Loc.T(L.YellowPages.AddressNoteHint), scale);
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
         ui.SectionHeading(Loc.T(L.YellowPages.ScheduleSection));
-        ui.HelpText(Loc.T(L.YellowPages.ScheduleHint));
+        var offsetMinutes = SocialTimeZone.DeviceOffsetMinutes();
+        ui.HelpText(Loc.T(L.YellowPages.ScheduleHint, SocialTimeZone.FormatOffset(offsetMinutes)));
         DrawDayRow(scale);
         composeOpenMinute = DrawTimeField(Loc.T(L.YellowPages.OpensLabel), composeOpenMinute, scale);
         composeCloseMinute = DrawTimeField(Loc.T(L.YellowPages.ClosesLabel), composeCloseMinute, scale);
         DrawOpenForRow(scale);
+        DrawUtcRow(offsetMinutes, scale);
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
+    }
+
+    private void DrawUtcRow(int offsetMinutes, float scale)
+    {
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        var line = Loc.T(L.YellowPages.ScheduleInUtc, UtcClock(composeOpenMinute - offsetMinutes),
+            UtcClock(composeCloseMinute - offsetMinutes));
+        var height = Typography.DrawWrappedLeft(new Vector2(origin.X, origin.Y + 2f * scale), line, Ink.MutedInk,
+            TextStyles.Footnote, width);
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Xs * scale));
     }
 
     private void DrawDayRow(float scale)
@@ -1502,7 +1534,9 @@ internal sealed partial class YellowPagesApp
             composeLink.Trim(),
             composeAllowInquiries,
             composeWanted && composeArchetype != AdArchetypes.Place && AdCategories.SupportsWanted(composeCategory),
-            composeAccent);
+            composeAccent,
+            composeKeptUrls.Count > 0 ? composeMediaWidth : 0,
+            composeKeptUrls.Count > 0 ? composeMediaHeight : 0);
     }
 
     private AdDto ComposePreview()
@@ -1545,7 +1579,7 @@ internal sealed partial class YellowPagesApp
             request.PriceMode, request.PriceGil, request.Turnaround ?? string.Empty, request.SlotsLine ?? string.Empty,
             request.Requirements ?? string.Empty, request.LinkUrl ?? string.Empty, request.AfterDark, firstPhoto,
             mediaUrls, 0, false, AdStatuses.Live, nowUnix, nowUnix, nowUnix + 7L * 86400L, request.AllowInquiries,
-            0, null, string.Empty, null, request.Wanted, request.Accent);
+            0, null, string.Empty, null, request.Wanted, request.Accent, request.MediaWidth, request.MediaHeight);
         return composePreview;
     }
 
@@ -1615,6 +1649,8 @@ internal sealed partial class YellowPagesApp
         composeAllowInquiries = true;
         composeAfterDark = false;
         composeAccent = 0;
+        composeMediaWidth = 0;
+        composeMediaHeight = 0;
         composeBusy = false;
         composeOutcome = null;
         composeCounterLength = -1;
