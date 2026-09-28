@@ -55,10 +55,11 @@ internal sealed class SupportCard
         var width = ImGui.GetContentRegionAvail().X;
         var padding = Padding * scale;
         var radius = MedallionRadius * scale;
-        var textX = origin.X + padding + radius * 2f + TextGap * scale;
-        var textWidth = MathF.Max(1f, origin.X + width - padding - textX);
+        var textGap = TextGap * scale;
+        var textWidth = MathF.Max(1f, width - padding * 2f - radius * 2f - textGap);
         var title = Typography.FitText(Loc.T(L.Settings.SupportAetherphone), textWidth, TextStyles.Headline);
         var titleSize = Typography.Measure(title, TextStyles.Headline);
+        var headerX = origin.X + (width - radius * 2f - textGap - titleSize.X) * 0.5f;
         var topHeight = MathF.Max(radius * 2f, titleSize.Y);
         var buttonHeight = ButtonHeight * scale;
         var buttonGap = ButtonGap * scale;
@@ -78,7 +79,7 @@ internal sealed class SupportCard
         DrawComet(drawList, origin, max, rounding, scale);
 
         var beat = Heartbeat(HeartbeatMs);
-        var medallionCenter = new Vector2(origin.X + padding + radius, origin.Y + padding + topHeight * 0.5f);
+        var medallionCenter = new Vector2(headerX + radius, origin.Y + padding + topHeight * 0.5f);
         ProgressRing.Glow(medallionCenter, radius, PatreonCoral, 0.45f + 0.7f * beat);
         drawList.AddCircleFilled(medallionCenter, radius,
             ImGui.GetColorU32(Palette.Mix(theme.GroupedCard, PatreonCoral, 0.30f) with { W = 1f }), 48);
@@ -87,13 +88,8 @@ internal sealed class SupportCard
             radius * (0.82f + 0.22f * beat));
 
         var titleY = origin.Y + padding + (topHeight - titleSize.Y) * 0.5f;
-        Typography.Draw(drawList, new Vector2(textX, titleY), title, theme.TextStrong, TextStyles.Headline);
-        var headerMin = new Vector2(origin.X + padding, origin.Y + padding);
-        var headerMax = new Vector2(textX + titleSize.X, headerMin.Y + topHeight);
-        if (UiInteract.Hover(headerMin, headerMax))
-        {
-            HoverTooltip.Show(new Rect(headerMin, headerMax), Loc.T(L.Settings.SupportHint));
-        }
+        Typography.Draw(drawList, new Vector2(headerX + radius * 2f + textGap, titleY), title, theme.TextStrong,
+            TextStyles.Headline);
 
         var buttonSize = new Vector2(width - padding * 2f, buttonHeight);
         var firstButton = new Vector2(origin.X + padding, max.Y - padding - buttonHeight * 2f - buttonGap);
@@ -117,7 +113,7 @@ internal sealed class SupportCard
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            HoverTooltip.Show(new Rect(slot, slotMax), Loc.T(L.Settings.SupportCopyHint));
+            HoverTooltip.Show(new Rect(slot, slotMax), Loc.T(L.Settings.SupportHint));
             if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
             {
                 ImGui.SetClipboardText(style.Url);
