@@ -1823,9 +1823,10 @@ internal static class L
         public static readonly LocString CopySupportInfo = new("settings.copySupportInfo", "Copy Support Info");
         public static readonly LocString SupportInfoCopied = new("settings.supportInfoCopied", "Copied to clipboard");
         public static readonly LocString SupportAetherphone = new("settings.supportAetherphone", "Support Aetherphone");
-        public static readonly LocString SupportHint = new("settings.supportHint", "Aetherphone is free and made in my spare time. If you enjoy it, a pledge on Patreon helps me keep building and improving it. Thank you for being here.");
+        public static readonly LocString SupportHint = new("settings.supportHint", "Aetherphone is free and made in my spare time. If you enjoy it, a pledge on Patreon or a coffee helps me keep building and improving it. Thank you for being here.");
+        public static readonly LocString SupportOnPatreon = new("settings.supportOnPatreon", "Support on Patreon");
         public static readonly LocString BuyMeACoffee = new("settings.buyMeACoffee", "Buy me a coffee");
-        public static readonly LocString BuyMeACoffeeHint = new("settings.buyMeACoffeeHint", "Prefer a one-time tip? A coffee on Buy Me a Coffee helps just as much. Thank you!");
+        public static readonly LocString SupportCopyHint = new("settings.supportCopyHint", "Right-click to copy the link");
         public static readonly LocString JoinDiscord = new("settings.joinDiscord", "Join our Discord");
         public static readonly LocString VisitWebsite = new("settings.visitWebsite", "Visit our website");
         public static readonly LocString Changelog = new("settings.changelog", "Changelog");
