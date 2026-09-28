@@ -36,6 +36,7 @@ internal sealed class RootSettingsPage : ISettingsPage
     private readonly RemoteImageCache images;
     private readonly LodestoneService lodestone;
     private readonly ISettingsPage accountPage;
+    private readonly SupportCard supportCard = new();
 
     public RootSettingsPage(ISettingsNavigator navigator, IReadOnlyList<ISettingsPage[]> groups,
         Configuration configuration, AethernetSession session, RemoteImageCache images, LodestoneService lodestone,
@@ -65,20 +66,9 @@ internal sealed class RootSettingsPage : ISettingsPage
                 navigator.Open(accountPage);
             }
 
-            ImGui.Dummy(new Vector2(0f, (BlockGap - SupportButton.GlowPadding) * scale));
-            if (SupportButton.Draw(Loc.T(L.Settings.SupportAetherphone), FontAwesomeIcon.Heart, Accent.Rose,
-                    Accent.Violet, Loc.T(L.Settings.SupportHint)))
-            {
-                UrlActions.OpenInBrowser(AepConstants.PatreonUrl);
-            }
-
-            if (SupportButton.Draw(Loc.T(L.Settings.BuyMeACoffee), FontAwesomeIcon.MugHot, Accent.Amber, Accent.Rose,
-                    Loc.T(L.Settings.BuyMeACoffeeHint)))
-            {
-                UrlActions.OpenInBrowser(AepConstants.BuyMeACoffeeUrl);
-            }
-
-            ImGui.Dummy(new Vector2(0f, (BlockGap - SupportButton.GlowPadding) * scale));
+            ImGui.Dummy(new Vector2(0f, BlockGap * scale));
+            supportCard.Draw(theme);
+            ImGui.Dummy(new Vector2(0f, BlockGap * scale));
             DrawQuickSwitches(theme);
             DrawGroups(theme, scale);
             ImGui.Dummy(new Vector2(0f, CardGap * scale));

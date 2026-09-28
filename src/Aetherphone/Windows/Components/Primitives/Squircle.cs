@@ -237,6 +237,22 @@ internal static class Squircle
         ShadeVertical(drawList, firstVertex, min.Y, max.Y, topColor, bottomColor);
     }
 
+    public static void FillHorizontalGradient(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius,
+        uint leftColor, uint rightColor)
+    {
+        var box = CornerBox(min, max, radius);
+        if (box <= DegenerateBox)
+        {
+            drawList.AddRectFilledMultiColor(min, max, leftColor, rightColor, rightColor, leftColor);
+            return;
+        }
+
+        var firstVertex = drawList.VtxBuffer.Size;
+        TracePath(drawList, min, max, box);
+        drawList.PathFillConvex(leftColor | AlphaMask);
+        Shade(drawList, firstVertex, min.X, max.X, leftColor, rightColor, true);
+    }
+
     public static void FillCircleVerticalGradient(ImDrawListPtr drawList, Vector2 center, float radius,
         uint topColor, uint bottomColor, int segments = 48)
     {
@@ -247,15 +263,20 @@ internal static class Squircle
     }
 
     private static void ShadeVertical(ImDrawListPtr drawList, int firstVertex, float top, float bottom,
-        uint topColor, uint bottomColor)
+        uint topColor, uint bottomColor) =>
+        Shade(drawList, firstVertex, top, bottom, topColor, bottomColor, false);
+
+    private static void Shade(ImDrawListPtr drawList, int firstVertex, float start, float end, uint startColor,
+        uint endColor, bool horizontal)
     {
-        var height = MathF.Max(bottom - top, 1f);
+        var span = MathF.Max(end - start, 1f);
         var vertices = drawList.VtxBuffer.AsSpan();
         for (var index = firstVertex; index < vertices.Length; index++)
         {
             ref var vertex = ref vertices[index];
-            var amount = Math.Clamp((vertex.Pos.Y - top) / height, 0f, 1f);
-            var mixed = MixColor(topColor, bottomColor, amount);
+            var position = horizontal ? vertex.Pos.X : vertex.Pos.Y;
+            var amount = Math.Clamp((position - start) / span, 0f, 1f);
+            var mixed = MixColor(startColor, endColor, amount);
             vertex.Col = (vertex.Col & AlphaMask) == 0 ? mixed & ~AlphaMask : mixed;
         }
     }
