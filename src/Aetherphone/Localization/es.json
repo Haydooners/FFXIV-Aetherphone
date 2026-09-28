@@ -5512,6 +5512,7 @@
   "changelog.r1033.7": "Mejorada la estabilidad: las cantidades de moneda ahora se leen al ritmo del juego en lugar de mientras se dibuja la pantalla, contribución de Deldee",
   "changelog.r1036.0": "Añadida una cadencia de repetición a los anuncios de lugares: un lugar puede abrir cada semana o cada 2 a 8 semanas, y tú eliges la semana en la que empieza",
   "changelog.r1036.1": "Corregido que la sección Dónde de un anuncio mostrara menos dirección que la pantalla Nuevo anuncio",
+  "changelog.r1038.0": "Apoya Aetherphone se rediseñó como una tarjeta con dos formas de apoyar el proyecto: Patreon y Buy Me a Coffee",
   "changelog.r1037.0": "Los DJ en directo pasan de la pantalla de inicio a la página de su local: la tarjeta Sonando ahora muestra la foto, el nombre y los espectadores del DJ, con un enlace de Twitch para cada DJ",
   "changelog.r1037.1": "Se añadió la etiqueta DJ activo a las tarjetas de locales mientras un DJ está en directo allí",
   "changelog.r1037.2": "Corregido que los DJ en directo y las confirmaciones en directo de XIV Rolladeck no aparecieran",

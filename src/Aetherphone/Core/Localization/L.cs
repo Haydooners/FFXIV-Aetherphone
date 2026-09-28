@@ -1902,6 +1902,12 @@ internal static class L
         public static readonly LocString SectionAethergramVelvet = new("changelog.sectionAethergramVelvet", "Aethergram and Velvet");
         public static readonly LocString SectionChirperAethergramVelvet = new("changelog.sectionChirperAethergramVelvet", "Chirper, Aethergram and Velvet");
 
+        public static readonly LocString[] Release1038Settings =
+        {
+            new("changelog.r1038.0",
+                "Redesigned Support Aetherphone into a card with two ways to support the project: Patreon and Buy Me a Coffee"),
+        };
+
         public static readonly LocString[] Release1037Venues =
         {
             new("changelog.r1037.0",
