@@ -12,9 +12,8 @@ namespace Aetherphone.Apps.Settings;
 internal sealed class SupportCard
 {
     private const float Padding = 18f;
-    private const float MedallionRadius = 26f;
-    private const float TextGap = 16f;
-    private const float TitleGap = 4f;
+    private const float MedallionRadius = 20f;
+    private const float TextGap = 14f;
     private const float ButtonsTopGap = 16f;
     private const float ButtonGap = 12f;
     private const float ButtonHeight = 48f;
@@ -58,12 +57,9 @@ internal sealed class SupportCard
         var radius = MedallionRadius * scale;
         var textX = origin.X + padding + radius * 2f + TextGap * scale;
         var textWidth = MathF.Max(1f, origin.X + width - padding - textX);
-        var title = Loc.T(L.Settings.SupportAetherphone);
-        var body = Loc.T(L.Settings.SupportHint);
-        var titleHeight = Typography.Measure(title, TextStyles.Headline).Y;
-        var bodyHeight = Typography.MeasureWrappedBlock(body, TextStyles.Footnote, textWidth).Y;
-        var textHeight = titleHeight + TitleGap * scale + bodyHeight;
-        var topHeight = MathF.Max(radius * 2f, textHeight);
+        var title = Typography.FitText(Loc.T(L.Settings.SupportAetherphone), textWidth, TextStyles.Headline);
+        var titleSize = Typography.Measure(title, TextStyles.Headline);
+        var topHeight = MathF.Max(radius * 2f, titleSize.Y);
         var buttonHeight = ButtonHeight * scale;
         var buttonGap = ButtonGap * scale;
         var height = padding + topHeight + ButtonsTopGap * scale + buttonHeight * 2f + buttonGap + padding;
@@ -90,10 +86,14 @@ internal sealed class SupportCard
         ProgressRing.CenterIcon(drawList, medallionCenter, FontAwesomeIcon.Heart, PatreonSoft,
             radius * (0.82f + 0.22f * beat));
 
-        var textY = origin.Y + padding + (topHeight - textHeight) * 0.5f;
-        Typography.Draw(drawList, new Vector2(textX, textY), title, theme.TextStrong, TextStyles.Headline);
-        Typography.DrawWrappedLeft(new Vector2(textX, textY + titleHeight + TitleGap * scale), body, theme.TextMuted,
-            TextStyles.Footnote, textWidth);
+        var titleY = origin.Y + padding + (topHeight - titleSize.Y) * 0.5f;
+        Typography.Draw(drawList, new Vector2(textX, titleY), title, theme.TextStrong, TextStyles.Headline);
+        var headerMin = new Vector2(origin.X + padding, origin.Y + padding);
+        var headerMax = new Vector2(textX + titleSize.X, headerMin.Y + topHeight);
+        if (UiInteract.Hover(headerMin, headerMax))
+        {
+            HoverTooltip.Show(new Rect(headerMin, headerMax), Loc.T(L.Settings.SupportHint));
+        }
 
         var buttonSize = new Vector2(width - padding * 2f, buttonHeight);
         var firstButton = new Vector2(origin.X + padding, max.Y - padding - buttonHeight * 2f - buttonGap);
