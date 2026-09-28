@@ -1823,7 +1823,7 @@ internal static class L
         public static readonly LocString CopySupportInfo = new("settings.copySupportInfo", "Copy Support Info");
         public static readonly LocString SupportInfoCopied = new("settings.supportInfoCopied", "Copied to clipboard");
         public static readonly LocString SupportAetherphone = new("settings.supportAetherphone", "Support Aetherphone");
-        public static readonly LocString SupportHint = new("settings.supportHint", "Aetherphone is free and made in my spare time. If you enjoy it, a pledge on Patreon or a coffee helps me keep building and improving it. Thank you for being here.");
+        public static readonly LocString SupportHint = new("settings.supportHint", "Aetherphone is made in my spare time. If you enjoy it, a pledge on Patreon or a coffee helps me keep building and improving it. Thank you for being here.");
         public static readonly LocString SupportOnPatreon = new("settings.supportOnPatreon", "Support on Patreon");
         public static readonly LocString BuyMeACoffee = new("settings.buyMeACoffee", "Buy me a coffee");
         public static readonly LocString SupportCopyHint = new("settings.supportCopyHint", "Right-click to copy the link");
