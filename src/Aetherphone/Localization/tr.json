@@ -5512,6 +5512,7 @@
   "changelog.r1033.7": "Kararlılık iyileştirildi: para birimi miktarları artık ekran çizilirken değil, oyunla aynı adımda okunuyor, Deldee katkısıyla",
   "changelog.r1036.0": "Mekân ilanlarına tekrar sıklığı eklendi: bir mekân her hafta ya da 2 ila 8 haftada bir açılabilir ve başlayacağı haftayı sen seçersin",
   "changelog.r1036.1": "Bir ilanın Nerede bölümünün adresi Yeni ilan ekranından daha eksik göstermesi düzeltildi",
+  "changelog.r1038.0": "Aetherphone'a destek ol, projeyi desteklemenin iki yolunu sunan bir karta dönüştürüldü: Patreon ve Buy Me a Coffee",
   "changelog.r1037.0": "Canlı DJ'ler ana ekrandan kendi mekanlarının sayfasına taşındı: Şimdi çalıyor kartı DJ'in resmini, adını ve izleyicilerini gösterir, her DJ için bir Twitch bağlantısıyla",
   "changelog.r1037.1": "Bir DJ yayındayken mekan kartlarına Aktif DJ etiketi eklendi",
   "changelog.r1037.2": "Canlı DJ'lerin ve XIV Rolladeck canlı onaylarının hiç görünmemesi düzeltildi",
