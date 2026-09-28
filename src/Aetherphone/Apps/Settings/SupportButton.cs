@@ -17,7 +17,7 @@ internal static class SupportButton
     private const double HeartbeatMs = 1500.0;
     private const double SheenMs = 3200.0;
 
-    public static bool Draw(string label, PhoneTheme theme, string? hint = null)
+    public static bool Draw(string label, FontAwesomeIcon icon, Vector4 accentFrom, Vector4 accentTo, string? hint = null)
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
@@ -31,7 +31,7 @@ internal static class SupportButton
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var rounding = size.Y * 0.5f;
 
-        var accent = Pulse.Blend(Accent.Rose, Accent.Violet, HueBlendMs);
+        var accent = Pulse.Blend(accentFrom, accentTo, HueBlendMs);
         var fill = (hovered ? Palette.Lighten(accent, 0.14f) : accent) with { W = 1f };
         if (pressed)
         {
@@ -53,7 +53,7 @@ internal static class SupportButton
         Sheen(drawList, origin, size);
         Squircle.Stroke(drawList, origin, end, rounding,
             ImGui.GetColorU32(new Vector4(1f, 1f, 1f, hovered ? 0.44f : 0.20f)), 1f * scale);
-        DrawContent(drawList, origin, size, label, scale);
+        DrawContent(drawList, origin, size, label, icon, scale);
 
         ImGui.SetCursorScreenPos(slotOrigin);
         ImGui.Dummy(new Vector2(available, size.Y + glowPad * 2f));
@@ -70,14 +70,15 @@ internal static class SupportButton
         return UiInteract.Click(origin, end, hovered);
     }
 
-    private static void DrawContent(ImDrawListPtr drawList, Vector2 origin, Vector2 size, string label, float scale)
+    private static void DrawContent(ImDrawListPtr drawList, Vector2 origin, Vector2 size, string label,
+        FontAwesomeIcon icon, float scale)
     {
         var ink = new Vector4(1f, 1f, 1f, 1f);
-        var heartGlyph = IconGlyph.Of(FontAwesomeIcon.Heart);
+        var glyph = IconGlyph.Of(icon);
         Vector2 iconSize;
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {
-            iconSize = ImGui.CalcTextSize(heartGlyph);
+            iconSize = ImGui.CalcTextSize(glyph);
         }
 
         var labelSize = Typography.Measure(label, TextStyles.Headline);
@@ -87,7 +88,7 @@ internal static class SupportButton
         var midY = origin.Y + size.Y * 0.5f;
         var beat = Heartbeat(HeartbeatMs);
         var iconHeight = iconSize.Y * (0.96f + 0.20f * beat);
-        ProgressRing.CenterIcon(drawList, new Vector2(startX + iconSize.X * 0.5f, midY), FontAwesomeIcon.Heart, ink,
+        ProgressRing.CenterIcon(drawList, new Vector2(startX + iconSize.X * 0.5f, midY), icon, ink,
             iconHeight);
         Typography.Draw(drawList, new Vector2(startX + iconSize.X + innerGap, midY - labelSize.Y * 0.5f), label, ink,
             TextStyles.Headline);

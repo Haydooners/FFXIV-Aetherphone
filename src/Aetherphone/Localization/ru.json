@@ -935,6 +935,8 @@
   "settings.supportInfoCopied": "Скопировано в буфер обмена",
   "settings.supportAetherphone": "Поддержать Aetherphone",
   "settings.supportHint": "Aetherphone бесплатен и создаётся в моё свободное время. Если он вам нравится, поддержка на Patreon помогает мне развивать и улучшать его. Спасибо, что вы здесь.",
+  "settings.buyMeACoffee": "Угостить кофе",
+  "settings.buyMeACoffeeHint": "Хотите поддержать разово? Кофе через Buy Me a Coffee помогает не меньше. Спасибо!",
   "settings.joinDiscord": "Присоединяйтесь к нашему Discord",
   "settings.visitWebsite": "Посетите наш сайт",
   "settings.changelog": "Список изменений",

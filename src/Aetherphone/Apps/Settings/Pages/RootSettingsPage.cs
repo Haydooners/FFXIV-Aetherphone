@@ -66,9 +66,16 @@ internal sealed class RootSettingsPage : ISettingsPage
             }
 
             ImGui.Dummy(new Vector2(0f, (BlockGap - SupportButton.GlowPadding) * scale));
-            if (SupportButton.Draw(Loc.T(L.Settings.SupportAetherphone), theme, Loc.T(L.Settings.SupportHint)))
+            if (SupportButton.Draw(Loc.T(L.Settings.SupportAetherphone), FontAwesomeIcon.Heart, Accent.Rose,
+                    Accent.Violet, Loc.T(L.Settings.SupportHint)))
             {
                 UrlActions.OpenInBrowser(AepConstants.PatreonUrl);
+            }
+
+            if (SupportButton.Draw(Loc.T(L.Settings.BuyMeACoffee), FontAwesomeIcon.MugHot, Accent.Amber, Accent.Rose,
+                    Loc.T(L.Settings.BuyMeACoffeeHint)))
+            {
+                UrlActions.OpenInBrowser(AepConstants.BuyMeACoffeeUrl);
             }
 
             ImGui.Dummy(new Vector2(0f, (BlockGap - SupportButton.GlowPadding) * scale));
