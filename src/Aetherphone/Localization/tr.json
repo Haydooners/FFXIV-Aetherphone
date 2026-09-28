@@ -935,6 +935,8 @@
   "settings.supportInfoCopied": "Panoya kopyalandı",
   "settings.supportAetherphone": "Aetherphone'a destek ol",
   "settings.supportHint": "Aetherphone ücretsizdir ve boş zamanlarımda geliştiriyorum. Beğendiysen, Patreon üzerinden vereceğin destek onu geliştirmeye ve iyileştirmeye devam etmeme yardımcı olur. Burada olduğun için teşekkürler.",
+  "settings.buyMeACoffee": "Bana bir kahve ısmarla",
+  "settings.buyMeACoffeeHint": "Tek seferlik bir bahşiş mi tercih edersin? Buy Me a Coffee üzerinden bir kahve de aynı derecede yardımcı olur. Teşekkürler!",
   "settings.joinDiscord": "Discord'umuza katıl",
   "settings.visitWebsite": "Web sitemizi ziyaret et",
   "settings.changelog": "Değişiklik günlüğü",

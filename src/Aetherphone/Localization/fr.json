@@ -935,6 +935,8 @@
   "settings.supportInfoCopied": "Copié dans le presse-papiers",
   "settings.supportAetherphone": "Soutenir Aetherphone",
   "settings.supportHint": "Aetherphone est gratuit et développé sur mon temps libre. Si tu l'apprécies, une contribution sur Patreon m'aide à continuer de l'améliorer. Merci d'être là.",
+  "settings.buyMeACoffee": "Offre-moi un café",
+  "settings.buyMeACoffeeHint": "Tu préfères un pourboire ponctuel ? Un café sur Buy Me a Coffee aide tout autant. Merci !",
   "settings.joinDiscord": "Rejoignez notre Discord",
   "settings.visitWebsite": "Visitez notre site web",
   "settings.changelog": "Journal des modifications",

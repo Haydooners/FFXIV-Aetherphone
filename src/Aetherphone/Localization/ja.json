@@ -935,6 +935,8 @@
   "settings.supportInfoCopied": "クリップボードにコピーしました",
   "settings.supportAetherphone": "Aetherphoneを応援",
   "settings.supportHint": "Aetherphoneは無料で、私の空き時間に作っています。気に入ってもらえたら、Patreonでの支援が開発と改善を続ける力になります。ここにいてくれてありがとう。",
+  "settings.buyMeACoffee": "コーヒーをおごる",
+  "settings.buyMeACoffeeHint": "一度きりの応援がいいですか？Buy Me a Coffeeでのコーヒー1杯も同じくらい力になります。ありがとう！",
   "settings.joinDiscord": "Discordに参加",
   "settings.visitWebsite": "ウェブサイトを見る",
   "settings.changelog": "変更履歴",
