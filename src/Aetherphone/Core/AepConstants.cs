@@ -29,7 +29,7 @@ internal static class AepConstants
     #endif
     public const string DiscordUrl = "https://discord.gg/3HbJCscMyS";
     public const string WebsiteUrl = "https://www.aetherphone.net";
-    public const string PatreonUrl = "https://www.patreon.com/XeldarAlz";
+    public const string PatreonUrl = "https://www.patreon.com/c/xeldaralz/membership";
     public const string BuyMeACoffeeUrl = "https://buymeacoffee.com/xeldaralz";
     public const string OfficialRepositoryUrl = "https://aetherphone.net/repo.json";
     public static readonly string Version = typeof(AepConstants).Assembly.GetName().Version?.ToString() ?? "0.0.0";
