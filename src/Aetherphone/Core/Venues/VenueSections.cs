@@ -61,7 +61,7 @@ internal sealed class VenueSections
         built = true;
         Revision++;
         Clear();
-        var today = DateTime.Now.Date;
+        var today = nowUtc.ToLocalTime().Date;
         var eventHorizon = nowUtc.AddDays(EventWindowDays);
         for (var index = 0; index < source.Count; index++)
         {

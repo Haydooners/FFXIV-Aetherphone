@@ -39,7 +39,7 @@ internal sealed class VenueQuery
         Revision++;
         feed.Clear();
         var query = wanted.Search.Trim();
-        var today = DateTime.Now.Date;
+        var today = nowUtc.ToLocalTime().Date;
         for (var index = 0; index < source.Count; index++)
         {
             var venue = source[index];
