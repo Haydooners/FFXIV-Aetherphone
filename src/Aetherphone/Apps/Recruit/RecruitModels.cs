@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Dalamud.Game.Gui.PartyFinder.Types;
 
 namespace Aetherphone.Apps.Recruit;
 
@@ -206,6 +207,106 @@ internal static class RecruitCatalog
             _ => role.ToString(),
         };
     }
+
+    public static bool IsTankJob(string abbr) =>
+        abbr is "PLD" or "WAR" or "DRK" or "GNB" or "GLA" or "MRD";
+    public static bool IsHealerJob(string abbr) =>
+        abbr is "WHM" or "SCH" or "AST" or "SGE" or "CNJ";
+    public static bool IsMeleeDpsJob(string abbr) =>
+        abbr is "MNK" or "DRG" or "NIN" or "SAM" or "RPR" or "VPR" or "PGL" or "LNC" or "ROG";
+    public static bool IsPhysRangedJob(string abbr) =>
+        abbr is "BRD" or "MCH" or "DNC" or "ARC";
+    public static bool IsCasterJob(string abbr) =>
+        abbr is "BLM" or "SMN" or "RDM" or "PCT" or "BLU" or "THM" or "ACN";
+    public static bool IsDpsJob(string abbr) =>
+        IsMeleeDpsJob(abbr) || IsPhysRangedJob(abbr) || IsCasterJob(abbr);
+
+    public static JobFlags? JobIdToJobFlag(uint jobId) => jobId switch
+    {
+        1 => JobFlags.Gladiator,
+        2 => JobFlags.Pugilist,
+        3 => JobFlags.Marauder,
+        4 => JobFlags.Lancer,
+        5 => JobFlags.Archer,
+        6 => JobFlags.Conjurer,
+        7 => JobFlags.Thaumaturge,
+        19 => JobFlags.Paladin,
+        20 => JobFlags.Monk,
+        21 => JobFlags.Warrior,
+        22 => JobFlags.Dragoon,
+        23 => JobFlags.Bard,
+        24 => JobFlags.WhiteMage,
+        25 => JobFlags.BlackMage,
+        26 => JobFlags.Arcanist,
+        27 => JobFlags.Summoner,
+        28 => JobFlags.Scholar,
+        29 => JobFlags.Rogue,
+        30 => JobFlags.Ninja,
+        31 => JobFlags.Machinist,
+        32 => JobFlags.DarkKnight,
+        33 => JobFlags.Astrologian,
+        34 => JobFlags.Samurai,
+        35 => JobFlags.RedMage,
+        36 => JobFlags.BlueMage,
+        37 => JobFlags.Gunbreaker,
+        38 => JobFlags.Dancer,
+        39 => JobFlags.Reaper,
+        40 => JobFlags.Sage,
+        41 => JobFlags.Viper,
+        42 => JobFlags.Pictomancer,
+        _ => null,
+    };
+}
+
+
+internal enum PfSlotRole : byte
+{
+    Tank,
+    Healer,
+    Dps,
+    Any,
+}
+internal readonly record struct PfSlotInfo(PfSlotRole Role, bool IsFilled, string Label);
+
+internal enum PfObjectiveFilter
+{
+    Any = 0,
+    Practice,
+    DutyCompletion,
+    Loot,
+}
+
+internal sealed class PfFilterCriteria
+{
+    public bool CanJoinAsCurrentJob { get; set; }
+    public bool TankOpen { get; set; }
+    public bool HealerOpen { get; set; }
+    public bool DpsOpen { get; set; }
+    public PfObjectiveFilter Objective { get; set; } = PfObjectiveFilter.Any;
+    public bool DutyCompleteOnly { get; set; }
+    public bool DutyIncompleteOnly { get; set; }
+    public bool UnrestrictedParty { get; set; }
+    public bool MinimalItemLevel { get; set; }
+    public bool SameWorldOnly { get; set; }
+    public bool IsActive => CanJoinAsCurrentJob
+        || TankOpen || HealerOpen || DpsOpen
+        || Objective != PfObjectiveFilter.Any
+        || DutyCompleteOnly || DutyIncompleteOnly
+        || UnrestrictedParty || MinimalItemLevel || SameWorldOnly;
+
+    public void Reset()
+    {
+        CanJoinAsCurrentJob = false;
+        TankOpen = false;
+        HealerOpen = false;
+        DpsOpen = false;
+        Objective = PfObjectiveFilter.Any;
+        DutyCompleteOnly = false;
+        DutyIncompleteOnly = false;
+        UnrestrictedParty = false;
+        MinimalItemLevel = false;
+        SameWorldOnly = false;
+    }
 }
 
 internal sealed record PartyFinderListing(
@@ -218,8 +319,42 @@ internal sealed record PartyFinderListing(
     byte SlotsFilled,
     byte TotalSlots,
     ushort ItemLevel,
-    DateTime ReadAt
-);
+    DateTime ReadAt,
+    IReadOnlyList<PfSlotInfo> Slots,
+    uint HomeWorldId = 0,
+    ObjectiveFlags Objective = ObjectiveFlags.None,
+    ConditionFlags Conditions = ConditionFlags.None,
+    DutyFinderSettingsFlags DutySettings = DutyFinderSettingsFlags.None,
+    IReadOnlyList<JobFlags>? OpenAcceptedJobs = null
+)
+{
+    public bool HasOpenRole(PfSlotRole role)
+    {
+        for (var i = 0; i < Slots.Count; i++)
+        {
+            if (!Slots[i].IsFilled && Slots[i].Role == role)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    public bool AcceptsJob(JobFlags job)
+    {
+        if (OpenAcceptedJobs == null)
+        {
+            return false;
+        }
+        for (var i = 0; i < OpenAcceptedJobs.Count; i++)
+        {
+            if (OpenAcceptedJobs[i] == job)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+}
 
 internal sealed record RecruitListing(
     string Id,

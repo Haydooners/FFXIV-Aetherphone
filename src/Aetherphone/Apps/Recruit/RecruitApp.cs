@@ -10,6 +10,7 @@ using Aetherphone.Core.Recruit;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Game.Gui.PartyFinder.Types;
 
 namespace Aetherphone.Apps.Recruit;
 
@@ -96,6 +97,9 @@ internal sealed partial class RecruitApp : IPhoneApp
     private readonly BottomTabBar bottomNav = new();
     private readonly NavTab[] navTabs = new NavTab[3];
 
+    private readonly PfFilterCriteria pfFilterCriteria = new();
+    private readonly SheetSurface pfFilterSheet = new("recruit.pfFilter");
+
     public RecruitApp(RecruitStore store)
     {
         this.store = store;
@@ -128,6 +132,11 @@ internal sealed partial class RecruitApp : IPhoneApp
 
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         router.Draw(content, AppSkin.Transparent, delta, drawView);
+
+        if (activeTab == RecruitTab.PartyFinder)
+        {
+            pfFilterSheet.Draw(screen, context.Theme, "Search Criteria", 0.76f, DrawPartyFinderFilterModal);
+        }
     }
 
     private void DrawView(RecruitScreen view, Rect area, int depth)
@@ -224,11 +233,16 @@ internal sealed partial class RecruitApp : IPhoneApp
 
         var pfListings = store.PartyFinderListings;
         var totalMatchingCount = 0;
-        for (var checkIndex = 0; checkIndex < pfListings.Count; checkIndex++){
-            if (!selectedPfCategory.HasValue || MatchesPfCategory(pfListings[checkIndex], selectedPfCategory.Value)){
+        for (var checkIndex = 0; checkIndex < pfListings.Count; checkIndex++)
+        {
+            var listing = pfListings[checkIndex];
+            if ((!selectedPfCategory.HasValue || MatchesPfCategory(listing, selectedPfCategory.Value))
+                && MatchesPfCriteria(listing, pfFilterCriteria))
+            {
                 totalMatchingCount++;
             }
         }
+
         var filterRowTop = area.Min.Y + headerHeight + 2f * scale;
         ImGui.SetCursorScreenPos(new Vector2(area.Min.X + 12f * scale, filterRowTop));
         DrawPartyFinderToolbar(area.Width, scale, theme, accent, totalMatchingCount);
@@ -266,12 +280,15 @@ internal sealed partial class RecruitApp : IPhoneApp
             var matchingIndex = 0;
             var renderedCount = 0;
 
-            for (var index = 0; index < pfListings.Count; index++){
+            for (var index = 0; index < pfListings.Count; index++)
+            {
                 var listing = pfListings[index];
                 if (selectedPfCategory.HasValue && !MatchesPfCategory(listing, selectedPfCategory.Value)){
                     continue;
                 }
-
+                if (!MatchesPfCriteria(listing, pfFilterCriteria)){
+                    continue;
+                }
                 if (matchingIndex >= startIndex && matchingIndex < endIndex){
                     DrawPartyFinderCard(width, scale, theme, accent, listing);
                     ImGui.Dummy(new Vector2(0f, 8f * scale));
@@ -389,12 +406,14 @@ internal sealed partial class RecruitApp : IPhoneApp
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         var height = 32f * scale;
-        var usableWidth = totalWidth - 24f * scale;
+        var filterBtnSize = 32f * scale;
+        var gap = 6f * scale;
+        var categoryWidth = totalWidth - 24f * scale - filterBtnSize - gap;
         var barMin = origin;
-        var barMax = new Vector2(barMin.X + usableWidth, barMin.Y + height);
+        var barMax = new Vector2(barMin.X + categoryWidth, barMin.Y + height);
         var hovered = UiInteract.Hover(barMin, barMax);
-
-        if (hovered){
+        if (hovered)
+        {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
         
@@ -407,17 +426,15 @@ internal sealed partial class RecruitApp : IPhoneApp
             : Palette.WithAlpha(theme.TextMuted, hovered ? 0.35f : 0.18f);
         Squircle.Fill(drawList, barMin, barMax, Metrics.Radius.Field * scale, ImGui.GetColorU32(bg));
         Squircle.Stroke(drawList, barMin, barMax, Metrics.Radius.Field * scale, ImGui.GetColorU32(border), 1f * scale);
-
         var centerY = (barMin.Y + barMax.Y) * 0.5f;
         var iconColor = isFiltered ? accent : (hovered ? theme.TextStrong : theme.TextMuted);
         var currentIcon = selectedPfCategory.HasValue ? PfCategoryIcon(selectedPfCategory.Value) : IconGlyph.Of(FontAwesomeIcon.Filter);
-
         var iconCenter = new Vector2(barMin.X + 16f * scale, centerY);
         AppSkin.Icon(drawList, iconCenter, currentIcon, iconColor, 0.75f);
-
         var textStartX = barMin.X + 32f * scale;
         var currentLabel = selectedPfCategory.HasValue ? PfCategoryLabels[(int)selectedPfCategory.Value] : "All Duties";
-        if (isFiltered){
+        if (isFiltered)
+        {
             var prefix = "Category: ";
             var prefixSize = Typography.Measure(prefix, TextStyles.Caption2);
             Typography.Draw(drawList, new Vector2(textStartX, centerY - prefixSize.Y * 0.5f), prefix, theme.TextMuted, TextStyles.Caption2);
@@ -425,21 +442,52 @@ internal sealed partial class RecruitApp : IPhoneApp
             var valueSize = Typography.Measure(currentLabel, TextStyles.Caption1);
             Typography.Draw(drawList, new Vector2(valueStartX, centerY - valueSize.Y * 0.5f), currentLabel, theme.TextStrong, TextStyles.Caption1);
         }
-        else{
+        else
+        {
             var labelSize = Typography.Measure(currentLabel, TextStyles.Caption1);
             Typography.Draw(drawList, new Vector2(textStartX, centerY - labelSize.Y * 0.5f), currentLabel, hovered ? theme.TextStrong : theme.TextMuted, TextStyles.Caption1);
         }
-
         var chevronRight = barMax.X - 14f * scale;
         AppSkin.Icon(drawList, new Vector2(chevronRight, centerY), IconGlyph.Of(FontAwesomeIcon.ChevronDown), iconColor, 0.60f);
-        if (count > 0){
+        if (count > 0)
+        {
             var countText = count == 1 ? "1 listing" : $"{count} listings";
             var countSize = Typography.Measure(countText, TextStyles.Caption2);
             var countPos = new Vector2(chevronRight - 14f * scale - countSize.X, centerY - countSize.Y * 0.5f);
             Typography.Draw(drawList, countPos, countText, theme.TextMuted, TextStyles.Caption2);
         }
-        if (UiInteract.Click(barMin, barMax, hovered)){
+        if (UiInteract.Click(barMin, barMax, hovered))
+        {
             OpenPfCategoryFilterMenu(new Rect(barMin, barMax));
+        }
+
+        var filterBtnMin = new Vector2(barMax.X + gap, barMin.Y);
+        var filterBtnMax = new Vector2(filterBtnMin.X + filterBtnSize, filterBtnMin.Y + height);
+        var filterHovered = UiInteract.Hover(filterBtnMin, filterBtnMax);
+        if (filterHovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+        var filterActive = pfFilterCriteria.IsActive;
+        var filterBtnBg = filterActive
+            ? Palette.WithAlpha(accent, filterHovered ? 0.28f : 0.18f)
+            : (filterHovered ? Palette.WithAlpha(theme.GroupedCard, 0.95f) : Palette.WithAlpha(theme.GroupedCard, 0.70f));
+        var filterBtnBorder = filterActive
+            ? Palette.WithAlpha(accent, filterHovered ? 0.85f : 0.65f)
+            : Palette.WithAlpha(theme.TextMuted, filterHovered ? 0.35f : 0.18f);
+        Squircle.Fill(drawList, filterBtnMin, filterBtnMax, Metrics.Radius.Field * scale, ImGui.GetColorU32(filterBtnBg));
+        Squircle.Stroke(drawList, filterBtnMin, filterBtnMax, Metrics.Radius.Field * scale, ImGui.GetColorU32(filterBtnBorder), 1f * scale);
+        var filterIconCenter = (filterBtnMin + filterBtnMax) * 0.5f;
+        var filterIconColor = filterActive ? accent : (filterHovered ? theme.TextStrong : theme.TextMuted);
+        AppSkin.Icon(drawList, filterIconCenter, IconGlyph.Of(FontAwesomeIcon.SlidersH), filterIconColor, 0.75f);
+        if (filterActive)
+        {
+            var pipPos = new Vector2(filterBtnMax.X - 5f * scale, filterBtnMin.Y + 5f * scale);
+            drawList.AddCircleFilled(pipPos, 3f * scale, ImGui.GetColorU32(accent));
+        }
+        if (UiInteract.Click(filterBtnMin, filterBtnMax, filterHovered))
+        {
+            pfFilterSheet.Toggle();
         }
     }
 
@@ -687,15 +735,17 @@ internal sealed partial class RecruitApp : IPhoneApp
         var commentHeight = hasComment
             ? Typography.MeasureWrappedBlock(listing.Comment, TextStyles.Footnote, contentWidth).Y
             : 0f;
-        
         var metaText = $"Posted by: {listing.AuthorName} · {listing.WorldName}";
         var metaSize = Typography.Measure(metaText, TextStyles.Caption1);
-
         var badgeHeight = 18f * scale;
         var badgeToTitleGap = 8f * scale;
         var titleToCommentGap = hasComment ? 6f * scale : 0f;
+        var slotsHeight = listing.Slots != null && listing.Slots.Count > 0 ? 20f * scale : 0f;
+        var slotsToMetaGap = slotsHeight > 0 ? 8f * scale : 0f;
+        var commentToSlotsGap = hasComment ? 8f * scale : 0f;
         var commentToMetaGap = 10f * scale;
-        var cardHeight = padY + badgeHeight + badgeToTitleGap + titleSize.Y + titleToCommentGap + commentHeight + commentToMetaGap + metaSize.Y + padY;
+        var cardHeight = padY + badgeHeight + badgeToTitleGap + titleSize.Y 
+            + titleToCommentGap + commentHeight + commentToSlotsGap + slotsHeight + slotsToMetaGap + metaSize.Y + padY;
 
         var max = min + new Vector2(width, cardHeight);
         var hovered = UiInteract.Hover(min, max);
@@ -750,13 +800,22 @@ internal sealed partial class RecruitApp : IPhoneApp
         Typography.Draw(drawList, new Vector2(min.X + padX, curY), listing.DutyName, theme.TextStrong, 1.05f, FontWeight.SemiBold);
         curY += titleSize.Y;
 
+
         if (hasComment){
             curY += titleToCommentGap;
             var drawnCommentHeight = Typography.DrawWrappedLeft(new Vector2(min.X + padX, curY), listing.Comment, theme.TextMuted, TextStyles.Footnote, contentWidth);
             curY += drawnCommentHeight;
         }
 
-        curY += commentToMetaGap;
+        if (listing.Slots != null && listing.Slots.Count > 0){
+            curY += commentToSlotsGap;
+            DrawPfSlotsRow(drawList, new Vector2(min.X + padX, curY), listing.Slots, scale, theme);
+            curY += slotsHeight + slotsToMetaGap;
+        }
+        else{
+            curY += commentToMetaGap;
+        }
+
         Typography.Draw(drawList, new Vector2(min.X + padX, curY), metaText, theme.TextMuted, TextStyles.Caption1);
         ImGui.Dummy(new Vector2(width, cardHeight));
     }
@@ -780,6 +839,329 @@ internal sealed partial class RecruitApp : IPhoneApp
     {
         var idx = Array.IndexOf(AllCategories, category);
         return idx >= 0 && idx < CategoryLabels.Length ? CategoryLabels[idx] : category.ToString();
+    }
+
+    private static void DrawPfSlotsRow(ImDrawListPtr drawList, Vector2 pos, IReadOnlyList<PfSlotInfo> slots, float scale, PhoneTheme theme)
+    {
+        var slotWidth = 24f * scale;
+        var slotHeight = 18f * scale;
+        var gap = 5f * scale;
+        var currentX = pos.X;
+        for (var i = 0; i < slots.Count; i++)
+        {
+            var slot = slots[i];
+            var min = new Vector2(currentX, pos.Y);
+            var max = new Vector2(min.X + slotWidth, min.Y + slotHeight);
+            var center = (min + max) * 0.5f;
+            var baseColor = slot.Role switch
+            {
+                PfSlotRole.Tank => new Vector4(0.28f, 0.58f, 0.95f, 1f),
+                PfSlotRole.Healer => new Vector4(0.28f, 0.82f, 0.48f, 1f),
+                PfSlotRole.Dps => new Vector4(0.92f, 0.38f, 0.38f, 1f),
+                _ => new Vector4(0.70f, 0.70f, 0.70f, 1f),
+            };
+            if (slot.IsFilled)
+            {
+                var dimmedBg = Palette.WithAlpha(baseColor, 0.40f);
+                Squircle.Fill(drawList, min, max, 4f * scale, ImGui.GetColorU32(dimmedBg));
+                Squircle.Stroke(drawList, min, max, 4f * scale, ImGui.GetColorU32(Palette.WithAlpha(baseColor, 0.55f)), 1f * scale);
+                AppSkin.Icon(drawList, center, IconGlyph.Of(FontAwesomeIcon.Check), new Vector4(1f, 1f, 1f, 0.85f), 0.65f);
+            }
+            else
+            {
+                Squircle.Fill(drawList, min, max, 4f * scale, ImGui.GetColorU32(baseColor));
+                Typography.DrawCentered(drawList, center, slot.Label, new Vector4(1f, 1f, 1f, 1f), 0.75f, FontWeight.Bold);
+            }
+            currentX += slotWidth + gap;
+        }
+    }
+
+    private bool MatchesPfCriteria(PartyFinderListing listing, PfFilterCriteria criteria)
+    {
+        if (!criteria.IsActive)
+        {
+            return true;
+        }
+
+        if (criteria.CanJoinAsCurrentJob)
+        {
+            var localPlayer = Plugin.ObjectTable.LocalPlayer;
+            if (localPlayer != null)
+            {
+                var currentJobFlag = RecruitCatalog.JobIdToJobFlag(localPlayer.ClassJob.RowId);
+                if (currentJobFlag == null || !listing.AcceptsJob(currentJobFlag.Value))
+                {
+                    return false;
+                }
+            }
+        }
+        if (criteria.TankOpen && !listing.HasOpenRole(PfSlotRole.Tank))
+        {
+            return false;
+        }
+        if (criteria.HealerOpen && !listing.HasOpenRole(PfSlotRole.Healer))
+        {
+            return false;
+        }
+        if (criteria.DpsOpen && !listing.HasOpenRole(PfSlotRole.Dps))
+        {
+            return false;
+        }
+
+        if (criteria.Objective != PfObjectiveFilter.Any)
+        {
+            var match = criteria.Objective switch
+            {
+                PfObjectiveFilter.Practice => listing.Objective.HasFlag(ObjectiveFlags.Practice),
+                PfObjectiveFilter.DutyCompletion => listing.Objective.HasFlag(ObjectiveFlags.DutyCompletion),
+                PfObjectiveFilter.Loot => listing.Objective.HasFlag(ObjectiveFlags.Loot),
+                _ => true,
+            };
+            if (!match)
+            {
+                return false;
+            }
+        }
+
+        if (criteria.DutyCompleteOnly && !listing.Conditions.HasFlag(ConditionFlags.DutyComplete))
+        {
+            return false;
+        }
+        if (criteria.DutyIncompleteOnly && !listing.Conditions.HasFlag(ConditionFlags.DutyIncomplete))
+        {
+            return false;
+        }
+
+        if (criteria.UnrestrictedParty && !listing.DutySettings.HasFlag(DutyFinderSettingsFlags.UnrestrictedParty))
+        {
+            return false;
+        }
+        if (criteria.MinimalItemLevel && !listing.DutySettings.HasFlag(DutyFinderSettingsFlags.MinimumIL))
+        {
+            return false;
+        }
+
+        if (criteria.SameWorldOnly)
+        {
+            var localHomeWorld = Plugin.ObjectTable.LocalPlayer?.HomeWorld.RowId ?? 0u;
+            if (localHomeWorld != 0 && listing.HomeWorldId != localHomeWorld)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void DrawPartyFinderFilterModal(Rect content)
+    {
+        var scale = UiScale.Current;
+        var theme = currentContext.Theme;
+        var accent = Core.Apps.AppAccents.For("recruit");
+        var drawList = ImGui.GetWindowDrawList();
+        // Reset button in header row
+        var resetText = "Reset";
+        var resetSize = Typography.Measure(resetText, 0.85f, FontWeight.Medium);
+        var resetMin = new Vector2(content.Max.X - resetSize.X - 12f * scale, content.Min.Y - 26f * scale);
+        var resetMax = new Vector2(content.Max.X, content.Min.Y - 4f * scale);
+        var resetHovered = UiInteract.Hover(resetMin, resetMax);
+        if (resetHovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+        var resetColor = pfFilterCriteria.IsActive
+            ? (resetHovered ? accent : Palette.WithAlpha(accent, 0.85f))
+            : theme.TextMuted;
+        Typography.Draw(drawList, new Vector2(resetMin.X, (resetMin.Y + resetMax.Y - resetSize.Y) * 0.5f), resetText, resetColor, 0.85f, FontWeight.Medium);
+        if (pfFilterCriteria.IsActive && UiInteract.Click(resetMin, resetMax, resetHovered))
+        {
+            pfFilterCriteria.Reset();
+        }
+        using (AppSurface.Begin(new Rect(content.Min, new Vector2(content.Max.X, content.Max.Y - 46f * scale))))
+        {
+            var gap = 6f * scale;
+
+            DrawFilterSectionHeader("ROLES SOUGHT", theme, scale);
+            var localPlayer = Plugin.ObjectTable.LocalPlayer;
+            var currentJobAbbr = localPlayer?.ClassJob.ValueNullable?.Abbreviation.ToString();
+            var myJobLabel = string.IsNullOrWhiteSpace(currentJobAbbr)
+                ? "Can Join as Current Job"
+                : $"Can Join as Current Job ({currentJobAbbr})";
+            var toggleWidth = ScrollLayout.StableContentWidth();
+            var toggleHeight = 30f * scale;
+            var toggleMin = ImGui.GetCursorScreenPos();
+            var toggleMax = new Vector2(toggleMin.X + toggleWidth, toggleMin.Y + toggleHeight);
+            var toggleHovered = UiInteract.Hover(toggleMin, toggleMax);
+            if (toggleHovered)
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+
+            var toggleActive = pfFilterCriteria.CanJoinAsCurrentJob;
+            var toggleBg = toggleActive
+                ? Palette.WithAlpha(accent, 0.22f)
+                : (toggleHovered ? Palette.WithAlpha(theme.GroupedCard, 0.90f) : Palette.WithAlpha(theme.GroupedCard, 0.60f));
+            var toggleBorder = toggleActive
+                ? Palette.WithAlpha(accent, 0.70f)
+                : Palette.WithAlpha(theme.TextMuted, toggleHovered ? 0.35f : 0.18f);
+            Squircle.Fill(drawList, toggleMin, toggleMax, 6f * scale, ImGui.GetColorU32(toggleBg));
+            Squircle.Stroke(drawList, toggleMin, toggleMax, 6f * scale, ImGui.GetColorU32(toggleBorder), 1f * scale);
+            var checkCenter = new Vector2(toggleMin.X + 16f * scale, (toggleMin.Y + toggleMax.Y) * 0.5f);
+            if (toggleActive)
+            {
+                AppSkin.Icon(drawList, checkCenter, IconGlyph.Of(FontAwesomeIcon.Check), accent, 0.75f);
+            }
+            else
+            {
+                drawList.AddCircle(checkCenter, 5f * scale, ImGui.GetColorU32(Palette.WithAlpha(theme.TextMuted, 0.4f)), 16, 1.2f * scale);
+            }
+
+            var myJobTextSize = Typography.Measure(myJobLabel, 0.85f, FontWeight.Medium);
+            var myJobTextPos = new Vector2(toggleMin.X + 30f * scale, (toggleMin.Y + toggleMax.Y - myJobTextSize.Y) * 0.5f);
+            Typography.Draw(drawList, myJobTextPos, myJobLabel, toggleActive ? theme.TextStrong : theme.TextMuted, 0.85f, FontWeight.Medium);
+            if (UiInteract.Click(toggleMin, toggleMax, toggleHovered))
+            {
+                pfFilterCriteria.CanJoinAsCurrentJob = !pfFilterCriteria.CanJoinAsCurrentJob;
+            }
+
+            ImGui.Dummy(new Vector2(toggleWidth, toggleHeight + 6f * scale));
+            var roleRowX = ImGui.GetCursorScreenPos().X;
+            var roleRowY = ImGui.GetCursorScreenPos().Y + 12f * scale;
+            if (DrawCustomFilterChip(ref roleRowX, roleRowY, gap, "Tank", pfFilterCriteria.TankOpen, new Vector4(0.28f, 0.58f, 0.95f, 1f), theme))
+            {
+                pfFilterCriteria.TankOpen = !pfFilterCriteria.TankOpen;
+            }
+            if (DrawCustomFilterChip(ref roleRowX, roleRowY, gap, "Healer", pfFilterCriteria.HealerOpen, new Vector4(0.28f, 0.82f, 0.48f, 1f), theme))
+            {
+                pfFilterCriteria.HealerOpen = !pfFilterCriteria.HealerOpen;
+            }
+            if (DrawCustomFilterChip(ref roleRowX, roleRowY, gap, "DPS", pfFilterCriteria.DpsOpen, new Vector4(0.92f, 0.38f, 0.38f, 1f), theme))
+            {
+                pfFilterCriteria.DpsOpen = !pfFilterCriteria.DpsOpen;
+            }
+
+            ImGui.Dummy(new Vector2(toggleWidth, 28f * scale));
+            ImGui.Dummy(new Vector2(0f, 6f * scale));
+
+            DrawFilterSectionHeader("OBJECTIVE", theme, scale);
+            var objRowX = ImGui.GetCursorScreenPos().X;
+            var objRowY = ImGui.GetCursorScreenPos().Y + 12f * scale;
+            if (AppSkin.FlowChip(ref objRowX, objRowY, gap, "Any", pfFilterCriteria.Objective == PfObjectiveFilter.Any, theme))
+            {
+                pfFilterCriteria.Objective = PfObjectiveFilter.Any;
+            }
+            if (AppSkin.FlowChip(ref objRowX, objRowY, gap, "Practice", pfFilterCriteria.Objective == PfObjectiveFilter.Practice, theme))
+            {
+                pfFilterCriteria.Objective = pfFilterCriteria.Objective == PfObjectiveFilter.Practice ? PfObjectiveFilter.Any : PfObjectiveFilter.Practice;
+            }
+            if (AppSkin.FlowChip(ref objRowX, objRowY, gap, "Completion", pfFilterCriteria.Objective == PfObjectiveFilter.DutyCompletion, theme))
+            {
+                pfFilterCriteria.Objective = pfFilterCriteria.Objective == PfObjectiveFilter.DutyCompletion ? PfObjectiveFilter.Any : PfObjectiveFilter.DutyCompletion;
+            }
+            if (AppSkin.FlowChip(ref objRowX, objRowY, gap, "Loot", pfFilterCriteria.Objective == PfObjectiveFilter.Loot, theme))
+            {
+                pfFilterCriteria.Objective = pfFilterCriteria.Objective == PfObjectiveFilter.Loot ? PfObjectiveFilter.Any : PfObjectiveFilter.Loot;
+            }
+
+            ImGui.Dummy(new Vector2(toggleWidth, 28f * scale));
+            ImGui.Dummy(new Vector2(0f, 6f * scale));
+
+            DrawFilterSectionHeader("CONDITIONS", theme, scale);
+            var condRowX = ImGui.GetCursorScreenPos().X;
+            var condRowY = ImGui.GetCursorScreenPos().Y + 12f * scale;
+            if (AppSkin.FlowChip(ref condRowX, condRowY, gap, "Duty Complete", pfFilterCriteria.DutyCompleteOnly, theme))
+            {
+                pfFilterCriteria.DutyCompleteOnly = !pfFilterCriteria.DutyCompleteOnly;
+                if (pfFilterCriteria.DutyCompleteOnly)
+                {
+                    pfFilterCriteria.DutyIncompleteOnly = false;
+                }
+            }
+            if (AppSkin.FlowChip(ref condRowX, condRowY, gap, "Duty Incomplete", pfFilterCriteria.DutyIncompleteOnly, theme))
+            {
+                pfFilterCriteria.DutyIncompleteOnly = !pfFilterCriteria.DutyIncompleteOnly;
+                if (pfFilterCriteria.DutyIncompleteOnly)
+                {
+                    pfFilterCriteria.DutyCompleteOnly = false;
+                }
+            }
+            ImGui.Dummy(new Vector2(toggleWidth, 28f * scale));
+            ImGui.Dummy(new Vector2(0f, 6f * scale));
+
+            DrawFilterSectionHeader("DUTY SETTINGS & AREA", theme, scale);
+            var setRowX = ImGui.GetCursorScreenPos().X;
+            var setRowY = ImGui.GetCursorScreenPos().Y + 12f * scale;
+            if (AppSkin.FlowChip(ref setRowX, setRowY, gap, "Unsynced", pfFilterCriteria.UnrestrictedParty, theme))
+            {
+                pfFilterCriteria.UnrestrictedParty = !pfFilterCriteria.UnrestrictedParty;
+            }
+            if (AppSkin.FlowChip(ref setRowX, setRowY, gap, "Min iLvl", pfFilterCriteria.MinimalItemLevel, theme))
+            {
+                pfFilterCriteria.MinimalItemLevel = !pfFilterCriteria.MinimalItemLevel;
+            }
+            if (AppSkin.FlowChip(ref setRowX, setRowY, gap, "Same World", pfFilterCriteria.SameWorldOnly, theme))
+            {
+                pfFilterCriteria.SameWorldOnly = !pfFilterCriteria.SameWorldOnly;
+            }
+
+            ImGui.Dummy(new Vector2(toggleWidth, 34f * scale));
+        }
+
+        var btnHeight = 36f * scale;
+        var btnMin = new Vector2(content.Min.X, content.Max.Y - btnHeight);
+        var btnMax = new Vector2(content.Max.X, content.Max.Y);
+        var btnHovered = UiInteract.Hover(btnMin, btnMax);
+        if (btnHovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        var btnBg = Palette.WithAlpha(accent, btnHovered ? 0.95f : 0.85f);
+        Squircle.Fill(drawList, btnMin, btnMax, 8f * scale, ImGui.GetColorU32(btnBg));
+        var applyLabel = "Apply Filters";
+        Typography.DrawCentered(drawList, (btnMin + btnMax) * 0.5f, applyLabel, new Vector4(1f, 1f, 1f, 1f), 0.95f, FontWeight.SemiBold);
+        if (UiInteract.Click(btnMin, btnMax, btnHovered))
+        {
+            pfFilterSheet.Close();
+        }
+    }
+
+    private static bool DrawCustomFilterChip(ref float cursorX, float centerY, float gap, string label, bool active, Vector4 roleColor, PhoneTheme theme)
+    {
+        var scale = UiScale.Current;
+        var drawList = ImGui.GetWindowDrawList();
+        var textSize = Typography.Measure(label, 0.8f, FontWeight.Medium);
+        var height = 28f * scale;
+        var width = textSize.X + 22f * scale;
+        var min = new Vector2(cursorX, centerY - height * 0.5f);
+        var max = new Vector2(cursorX + width, centerY + height * 0.5f);
+        var hovered = UiInteract.Hover(min, max);
+        var fill = active ? Palette.WithAlpha(roleColor, 0.88f) : theme.GroupedCard;
+        Squircle.Fill(drawList, min, max, height * 0.5f, ImGui.GetColorU32(fill));
+        if (active)
+        {
+            Squircle.Stroke(drawList, min, max, height * 0.5f, ImGui.GetColorU32(roleColor), 1f * scale);
+        }
+        else if (hovered)
+        {
+            Squircle.Stroke(drawList, min, max, height * 0.5f, ImGui.GetColorU32(Palette.WithAlpha(roleColor, 0.4f)), 1f * scale);
+        }
+
+        var ink = active ? new Vector4(1f, 1f, 1f, 1f) : (hovered ? theme.TextStrong : theme.TextMuted);
+        Typography.Draw(drawList, new Vector2(min.X + (width - textSize.X) * 0.5f, centerY - textSize.Y * 0.5f),
+            label, ink, 0.8f, FontWeight.Medium);
+        cursorX = max.X + gap;
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+        return UiInteract.Click(min, max, hovered);
+    }
+
+    private static void DrawFilterSectionHeader(string label, PhoneTheme theme, float scale)
+    {
+        var pos = ImGui.GetCursorScreenPos();
+        Typography.Draw(ImGui.GetWindowDrawList(), pos, label, theme.TextMuted, 0.72f, FontWeight.Bold);
+        ImGui.Dummy(new Vector2(0f, 16f * scale));
     }
 
     private static Vector4 KindBadgeColor(ListingKind kind)

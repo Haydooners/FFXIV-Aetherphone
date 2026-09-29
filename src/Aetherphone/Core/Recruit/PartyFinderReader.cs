@@ -70,6 +70,7 @@ internal static unsafe class PartyFinderReader
         var leaderName = listing.Name.TextValue;
         var comment = listing.Description.TextValue;
         var totalSlots = (byte)(listing.SlotsFilled + listing.SlotsAvailable);
+        var slots = BuildSlotsList(listing);
 
         var item = new PartyFinderListing(
             listing.Id,
@@ -81,7 +82,13 @@ internal static unsafe class PartyFinderReader
             listing.SlotsFilled,
             totalSlots,
             listing.MinimumItemLevel,
-            DateTime.UtcNow
+            DateTime.UtcNow,
+            slots,
+            listing.HomeWorld.RowId,
+            listing.Objective,
+            listing.Conditions,
+            listing.DutyFinderSettings,
+            BuildOpenAcceptedJobs(listing)
         );
 
         lock (cachedListings)
@@ -97,6 +104,146 @@ internal static unsafe class PartyFinderReader
             }
         }
     }
+
+    private static IReadOnlyList<JobFlags> BuildOpenAcceptedJobs(IPartyFinderListing listing)
+    {
+        var result = new List<JobFlags>();
+        var rawJobs = new List<byte>(listing.RawJobsPresent);
+        var slots = new List<PartyFinderSlot>(listing.Slots);
+        for (var i = 0; i < slots.Count; i++)
+        {
+            var isFilled = i < rawJobs.Count && rawJobs[i] != 0;
+            if (!isFilled)
+            {
+                foreach (var job in slots[i].Accepting)
+                {
+                    if (!result.Contains(job))
+                    {
+                        result.Add(job);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private static IReadOnlyList<PfSlotInfo> BuildSlotsList(IPartyFinderListing listing)
+    {
+        var list = new List<PfSlotInfo>();
+        var rawJobs = new List<byte>(listing.RawJobsPresent);
+        var slots = new List<PartyFinderSlot>(listing.Slots);
+        var totalSlots = Math.Max(rawJobs.Count, slots.Count);
+        for (var i = 0; i < totalSlots; i++)
+        {
+            var jobId = i < rawJobs.Count ? rawJobs[i] : (byte)0;
+            if (jobId != 0)
+            {
+                var role = GetRoleFromJobId(jobId);
+                var label = role switch
+                {
+                    PfSlotRole.Tank => "T",
+                    PfSlotRole.Healer => "H",
+                    PfSlotRole.Dps => "D",
+                    _ => "?",
+                };
+                list.Add(new PfSlotInfo(role, true, label));
+            }
+            else if (i < slots.Count)
+            {
+                var role = DetermineSlotRole(slots[i]);
+                var label = role switch
+                {
+                    PfSlotRole.Tank => "T",
+                    PfSlotRole.Healer => "H",
+                    PfSlotRole.Dps => "D",
+                    _ => "?",
+                };
+                list.Add(new PfSlotInfo(role, false, label));
+            }
+        }
+
+        list.Sort((a, b) =>
+        {
+            var roleA = GetRoleSortOrder(a.Role);
+            var roleB = GetRoleSortOrder(b.Role);
+            if (roleA != roleB)
+            {
+                return roleA.CompareTo(roleB);
+            }
+            // Filled slots (true) come before open slots (false)
+            return b.IsFilled.CompareTo(a.IsFilled);
+        });
+        return list;
+    }
+
+    private static PfSlotRole GetRoleFromJobId(byte jobId) => jobId switch
+    {
+        1 or 3 or 19 or 21 or 32 or 37 => PfSlotRole.Tank,
+        6 or 24 or 28 or 33 or 40 => PfSlotRole.Healer,
+        _ => PfSlotRole.Dps,
+    };
+
+    private static PfSlotRole DetermineSlotRole(PartyFinderSlot slot)
+    {
+        var hasTank = false;
+        var hasHealer = false;
+        var hasDps = false;
+        foreach (var job in slot.Accepting)
+        {
+            if (IsTankJobFlag(job))
+            {
+                hasTank = true;
+            }
+            else if (IsHealerJobFlag(job))
+            {
+                hasHealer = true;
+            }
+            else
+            {
+                hasDps = true;
+            }
+        }
+        if (hasTank && !hasHealer && !hasDps)
+        {
+            return PfSlotRole.Tank;
+        }
+        if (hasHealer && !hasTank && !hasDps)
+        {
+            return PfSlotRole.Healer;
+        }
+        if (hasDps && !hasTank && !hasHealer)
+        {
+            return PfSlotRole.Dps;
+        }
+        if (hasTank)
+        {
+            return PfSlotRole.Tank;
+        }
+        if (hasHealer)
+        {
+            return PfSlotRole.Healer;
+        }
+        if (hasDps)
+        {
+            return PfSlotRole.Dps;
+        }
+        return PfSlotRole.Any;
+    }
+
+    private static int GetRoleSortOrder(PfSlotRole role) => role switch
+    {
+        PfSlotRole.Tank => 0,
+        PfSlotRole.Healer => 1,
+        PfSlotRole.Dps => 2,
+        _ => 3,
+    };
+
+    private static bool IsTankJobFlag(JobFlags job) =>
+        job is JobFlags.Paladin or JobFlags.Warrior or JobFlags.DarkKnight or JobFlags.Gunbreaker 
+            or JobFlags.Gladiator or JobFlags.Marauder;
+    private static bool IsHealerJobFlag(JobFlags job) =>
+        job is JobFlags.WhiteMage or JobFlags.Scholar or JobFlags.Astrologian or JobFlags.Sage 
+            or JobFlags.Conjurer;
 
     private static void OnPostClose(AddonEvent type, AddonArgs addonArgs)
     {
