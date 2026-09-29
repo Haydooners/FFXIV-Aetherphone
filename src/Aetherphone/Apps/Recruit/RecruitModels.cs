@@ -278,6 +278,9 @@ internal enum PfObjectiveFilter
 
 internal sealed class PfFilterCriteria
 {
+    public PfCategory? DutyCategory { get; set; }
+    public string SpecificDuty { get; set; } = string.Empty;
+
     public bool CanJoinAsCurrentJob { get; set; }
     public bool TankOpen { get; set; }
     public bool HealerOpen { get; set; }
@@ -288,7 +291,9 @@ internal sealed class PfFilterCriteria
     public bool UnrestrictedParty { get; set; }
     public bool MinimalItemLevel { get; set; }
     public bool SameWorldOnly { get; set; }
-    public bool IsActive => CanJoinAsCurrentJob
+    public bool IsActive => DutyCategory.HasValue
+        || !string.IsNullOrWhiteSpace(SpecificDuty)
+        || CanJoinAsCurrentJob
         || TankOpen || HealerOpen || DpsOpen
         || Objective != PfObjectiveFilter.Any
         || DutyCompleteOnly || DutyIncompleteOnly
@@ -296,6 +301,8 @@ internal sealed class PfFilterCriteria
 
     public void Reset()
     {
+        DutyCategory = null;
+        SpecificDuty = string.Empty;
         CanJoinAsCurrentJob = false;
         TankOpen = false;
         HealerOpen = false;

@@ -99,6 +99,11 @@ internal sealed partial class RecruitApp : IPhoneApp
 
     private readonly PfFilterCriteria pfFilterCriteria = new();
     private readonly SheetSurface pfFilterSheet = new("recruit.pfFilter");
+    private readonly DropdownMenu pfFilterDutyTypeMenu = new();
+    private readonly List<DropdownMenu.Item> pfFilterDutyTypeItems = new();
+    private readonly DropdownMenu pfFilterDutyMenu = new();
+    private readonly List<DropdownMenu.Item> pfFilterDutyItems = new();
+    private readonly List<string> cachedSpecificDuties = new();
 
     public RecruitApp(RecruitStore store)
     {
@@ -129,13 +134,49 @@ internal sealed partial class RecruitApp : IPhoneApp
         var screen = SceneChrome.ScreenFrom(content, context.Theme, scale);
         ui.Backdrop(screen);
         categoryFilterMenu.Gate();
+        pfFilterDutyTypeMenu.Gate();
+        pfFilterDutyMenu.Gate();
 
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         router.Draw(content, AppSkin.Transparent, delta, drawView);
 
         if (activeTab == RecruitTab.PartyFinder)
         {
-            pfFilterSheet.Draw(screen, context.Theme, "Search Criteria", 0.76f, DrawPartyFinderFilterModal);
+            pfFilterSheet.Draw(screen, context.Theme, "Search Criteria", 0.78f, DrawPartyFinderFilterModal);
+            var pickedDutyType = pfFilterDutyTypeMenu.Draw(
+                screen,
+                context.Theme,
+                System.Runtime.InteropServices.CollectionsMarshal.AsSpan(pfFilterDutyTypeItems));
+            if (pickedDutyType >= 0)
+            {
+                if (pickedDutyType == 0)
+                {
+                    pfFilterCriteria.DutyCategory = null;
+                    selectedPfCategory = null;
+                }
+                else
+                {
+                    var cat = (PfCategory)pickedDutyType;
+                    pfFilterCriteria.DutyCategory = cat;
+                    selectedPfCategory = cat;
+                }
+                pfFilterCriteria.SpecificDuty = string.Empty;
+            }
+            var pickedDuty = pfFilterDutyMenu.Draw(
+                screen,
+                context.Theme,
+                System.Runtime.InteropServices.CollectionsMarshal.AsSpan(pfFilterDutyItems));
+            if (pickedDuty >= 0)
+            {
+                if (pickedDuty == 0)
+                {
+                    pfFilterCriteria.SpecificDuty = string.Empty;
+                }
+                else if (pickedDuty - 1 < cachedSpecificDuties.Count)
+                {
+                    pfFilterCriteria.SpecificDuty = cachedSpecificDuties[pickedDuty - 1];
+                }
+            }
         }
     }
 
@@ -883,6 +924,21 @@ internal sealed partial class RecruitApp : IPhoneApp
             return true;
         }
 
+        if (criteria.DutyCategory.HasValue && !MatchesPfCategory(listing, criteria.DutyCategory.Value))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(criteria.SpecificDuty))
+        {
+            var match = listing.DutyName.Contains(criteria.SpecificDuty, StringComparison.OrdinalIgnoreCase)
+                || criteria.SpecificDuty.Contains(listing.DutyName, StringComparison.OrdinalIgnoreCase);
+            if (!match)
+            {
+                return false;
+            }
+        }
+
         if (criteria.CanJoinAsCurrentJob)
         {
             var localPlayer = Plugin.ObjectTable.LocalPlayer;
@@ -936,7 +992,7 @@ internal sealed partial class RecruitApp : IPhoneApp
         {
             return false;
         }
-        if (criteria.MinimalItemLevel && !listing.DutySettings.HasFlag(DutyFinderSettingsFlags.MinimumIL))
+        if (criteria.MinimalItemLevel && listing.ItemLevel == 0)
         {
             return false;
         }
@@ -958,7 +1014,7 @@ internal sealed partial class RecruitApp : IPhoneApp
         var theme = currentContext.Theme;
         var accent = Core.Apps.AppAccents.For("recruit");
         var drawList = ImGui.GetWindowDrawList();
-        // Reset button in header row
+
         var resetText = "Reset";
         var resetSize = Typography.Measure(resetText, 0.85f, FontWeight.Medium);
         var resetMin = new Vector2(content.Max.X - resetSize.X - 12f * scale, content.Min.Y - 26f * scale);
@@ -978,7 +1034,48 @@ internal sealed partial class RecruitApp : IPhoneApp
         }
         using (AppSurface.Begin(new Rect(content.Min, new Vector2(content.Max.X, content.Max.Y - 46f * scale))))
         {
+            var toggleWidth = ScrollLayout.StableContentWidth();
             var gap = 6f * scale;
+
+            DrawFilterSectionHeader("DUTY TYPE", theme, scale);
+            var dutyTypeLabel = pfFilterCriteria.DutyCategory.HasValue
+                ? PfCategoryLabels[(int)pfFilterCriteria.DutyCategory.Value]
+                : "All Duties";
+            var dutyTypeIcon = pfFilterCriteria.DutyCategory.HasValue
+                ? PfCategoryIcon(pfFilterCriteria.DutyCategory.Value)
+                : IconGlyph.Of(FontAwesomeIcon.ListUl);
+            DrawFilterDropdownField(
+                dutyTypeLabel,
+                dutyTypeIcon,
+                pfFilterCriteria.DutyCategory.HasValue,
+                toggleWidth,
+                scale,
+                theme,
+                accent,
+                drawList,
+                OpenPfFilterDutyTypeMenu
+            );
+            ImGui.Dummy(new Vector2(0f, 10f * scale));
+
+            DrawFilterSectionHeader("SPECIFIC DUTY", theme, scale);
+            var specificDutyLabel = !string.IsNullOrWhiteSpace(pfFilterCriteria.SpecificDuty)
+                ? pfFilterCriteria.SpecificDuty
+                : (pfFilterCriteria.DutyCategory.HasValue ? $"All {dutyTypeLabel} Duties" : "All Duties");
+            var specificDutyIcon = !string.IsNullOrWhiteSpace(pfFilterCriteria.SpecificDuty)
+                ? IconGlyph.Of(FontAwesomeIcon.Crosshairs)
+                : IconGlyph.Of(FontAwesomeIcon.LayerGroup);
+            DrawFilterDropdownField(
+                specificDutyLabel,
+                specificDutyIcon,
+                !string.IsNullOrWhiteSpace(pfFilterCriteria.SpecificDuty),
+                toggleWidth,
+                scale,
+                theme,
+                accent,
+                drawList,
+                OpenPfFilterDutyMenu
+            );
+            ImGui.Dummy(new Vector2(0f, 12f * scale));
 
             DrawFilterSectionHeader("ROLES SOUGHT", theme, scale);
             var localPlayer = Plugin.ObjectTable.LocalPlayer;
@@ -986,7 +1083,7 @@ internal sealed partial class RecruitApp : IPhoneApp
             var myJobLabel = string.IsNullOrWhiteSpace(currentJobAbbr)
                 ? "Can Join as Current Job"
                 : $"Can Join as Current Job ({currentJobAbbr})";
-            var toggleWidth = ScrollLayout.StableContentWidth();
+            ImGui.SetNextItemWidth(toggleWidth);
             var toggleHeight = 30f * scale;
             var toggleMin = ImGui.GetCursorScreenPos();
             var toggleMax = new Vector2(toggleMin.X + toggleWidth, toggleMin.Y + toggleHeight);
@@ -1123,6 +1220,137 @@ internal sealed partial class RecruitApp : IPhoneApp
         {
             pfFilterSheet.Close();
         }
+    }
+
+    private void OpenPfFilterDutyTypeMenu(Rect anchor)
+    {
+        pfFilterDutyTypeItems.Clear();
+        pfFilterDutyTypeItems.Add(new DropdownMenu.Item("All Duties", Selected: !pfFilterCriteria.DutyCategory.HasValue));
+        for (var index = 1; index < PfCategoryLabels.Length; index++)
+        {
+            var category = (PfCategory)index;
+            pfFilterDutyTypeItems.Add(new DropdownMenu.Item(
+                PfCategoryLabels[index],
+                Selected: pfFilterCriteria.DutyCategory == category));
+        }
+        pfFilterDutyTypeMenu.Toggle("recruit_filter_duty_type", anchor);
+    }
+
+    private void OpenPfFilterDutyMenu(Rect anchor)
+    {
+        pfFilterDutyItems.Clear();
+        cachedSpecificDuties.Clear();
+        var catLabel = pfFilterCriteria.DutyCategory.HasValue
+            ? PfCategoryLabels[(int)pfFilterCriteria.DutyCategory.Value]
+            : "All";
+        var allLabel = pfFilterCriteria.DutyCategory.HasValue
+            ? $"All {catLabel} Duties"
+            : "All Duties";
+        pfFilterDutyItems.Add(new DropdownMenu.Item(allLabel, Selected: string.IsNullOrWhiteSpace(pfFilterCriteria.SpecificDuty)));
+        var duties = GetDutiesForCategory(pfFilterCriteria.DutyCategory);
+        for (var index = 0; index < duties.Count; index++)
+        {
+            var dName = duties[index];
+            cachedSpecificDuties.Add(dName);
+            pfFilterDutyItems.Add(new DropdownMenu.Item(
+                dName,
+                Selected: string.Equals(pfFilterCriteria.SpecificDuty, dName, StringComparison.OrdinalIgnoreCase)));
+        }
+        pfFilterDutyMenu.Toggle("recruit_filter_specific_duty", anchor);
+    }
+
+    private static void DrawFilterDropdownField(
+        string label,
+        string glyph,
+        bool isFiltered,
+        float width,
+        float scale,
+        PhoneTheme theme,
+        Vector4 accent,
+        ImDrawListPtr drawList,
+        Action<Rect> onClick)
+    {
+        var height = 34f * scale;
+        var min = ImGui.GetCursorScreenPos();
+        var max = new Vector2(min.X + width, min.Y + height);
+        var hovered = UiInteract.Hover(min, max);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+        var bg = isFiltered
+            ? Palette.WithAlpha(accent, hovered ? 0.22f : 0.14f)
+            : (hovered ? Palette.WithAlpha(theme.GroupedCard, 0.95f) : Palette.WithAlpha(theme.GroupedCard, 0.65f));
+        var border = isFiltered
+            ? Palette.WithAlpha(accent, hovered ? 0.75f : 0.55f)
+            : Palette.WithAlpha(theme.TextMuted, hovered ? 0.35f : 0.18f);
+        Squircle.Fill(drawList, min, max, 8f * scale, ImGui.GetColorU32(bg));
+        Squircle.Stroke(drawList, min, max, 8f * scale, ImGui.GetColorU32(border), 1f * scale);
+        var centerY = (min.Y + max.Y) * 0.5f;
+        var iconColor = isFiltered ? accent : (hovered ? theme.TextStrong : theme.TextMuted);
+        var iconCenter = new Vector2(min.X + 16f * scale, centerY);
+        AppSkin.Icon(drawList, iconCenter, glyph, iconColor, 0.75f);
+        var textStartX = min.X + 32f * scale;
+        var maxTextWidth = width - 56f * scale;
+        var fittedText = Typography.FitText(label, maxTextWidth, TextStyles.Caption1);
+        var fittedSize = Typography.Measure(fittedText, TextStyles.Caption1);
+        Typography.Draw(drawList, new Vector2(textStartX, centerY - fittedSize.Y * 0.5f), fittedText,
+            isFiltered ? theme.TextStrong : (hovered ? theme.TextStrong : theme.TextMuted), TextStyles.Caption1);
+        var chevronRight = max.X - 14f * scale;
+        AppSkin.Icon(drawList, new Vector2(chevronRight, centerY), IconGlyph.Of(FontAwesomeIcon.ChevronDown), iconColor, 0.60f);
+        if (UiInteract.Click(min, max, hovered))
+        {
+            onClick(new Rect(min, max));
+        }
+        ImGui.Dummy(new Vector2(width, height));
+    }
+
+    private List<string> GetDutiesForCategory(PfCategory? category)
+    {
+        var result = new List<string>();
+        var listings = store.PartyFinderListings;
+        for (var i = 0; i < listings.Count; i++)
+        {
+            var l = listings[i];
+            if (category.HasValue && !MatchesPfCategory(l, category.Value))
+            {
+                continue;
+            }
+            if (!string.IsNullOrWhiteSpace(l.DutyName) && !result.Contains(l.DutyName))
+            {
+                result.Add(l.DutyName);
+            }
+        }
+
+        if (result.Count == 0)
+        {
+            for (var i = 0; i < RecruitCatalog.Duties.Count; i++)
+            {
+                var duty = RecruitCatalog.Duties[i];
+                if (category.HasValue)
+                {
+                    var matchesCat = category.Value switch
+                    {
+                        PfCategory.HighEnd => duty.Category is ContentCategory.Ultimate or ContentCategory.Savage or ContentCategory.ExtremeFarm or ContentCategory.Criterion,
+                        PfCategory.Raids => duty.Category is ContentCategory.Savage,
+                        PfCategory.Trials => duty.Category is ContentCategory.ExtremeFarm,
+                        PfCategory.DeepDungeon => duty.Category is ContentCategory.DeepDungeon,
+                        PfCategory.Other => duty.Category is ContentCategory.Other,
+                        _ => false,
+                    };
+                    if (!matchesCat)
+                    {
+                        continue;
+                    }
+                }
+                if (!result.Contains(duty.Name))
+                {
+                    result.Add(duty.Name);
+                }
+            }
+        }
+        result.Sort(StringComparer.OrdinalIgnoreCase);
+        return result;
     }
 
     private static bool DrawCustomFilterChip(ref float cursorX, float centerY, float gap, string label, bool active, Vector4 roleColor, PhoneTheme theme)
