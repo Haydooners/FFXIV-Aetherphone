@@ -375,6 +375,8 @@ internal sealed partial class AethergramApp : IResumableApp
         }
 
         router.Reset();
+        ResetInboxState();
+        router.Push(AethergramRoute.Inbox, false);
         router.Push(target, false);
     }
 
