@@ -159,7 +159,7 @@ internal sealed partial class VelvetShell : IResumableApp
     public string Glyph => "Ve";
 
     public int BadgeCount => store.UnreadCount + store.RequestCount
-        + social.UnseenCountExcluding(Id, SocialActivity.TypeConnectRequest);
+        + social.UnseenCount(Id, SocialActivity.TypeConnectRequest);
     public bool HasBadge => true;
 
     public ShareKindSet AcceptedShares =>

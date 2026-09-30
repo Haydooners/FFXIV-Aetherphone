@@ -49,7 +49,7 @@ internal sealed partial class YellowPagesApp : IPhoneApp
     public string Id => "yellowpages";
     public string DisplayName => Loc.T(L.Apps.YellowPages);
     public string Glyph => "Yp";
-    public int BadgeCount => inquiries.UnreadCount + socialNotifications.UnseenCountExcluding(Id, SocialActivity.TypeAdInquiry);
+    public int BadgeCount => inquiries.UnreadCount + socialNotifications.UnseenCount(Id, SocialActivity.TypeAdInquiry);
     public bool HasBadge => true;
     public Vector4 Accent => AppAccents.For(Id);
 

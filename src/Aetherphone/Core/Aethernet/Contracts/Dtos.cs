@@ -601,7 +601,10 @@ internal sealed record NotificationPage(
     NotificationDto[] Items,
     string? NextCursor = null,
     int UnreadCount = 0,
-    Dictionary<string, int>? UnreadByApp = null);
+    Dictionary<string, int>? UnreadByApp = null,
+    NotificationUnreadCountDto[]? UnreadByType = null);
+
+internal sealed record NotificationUnreadCountDto(string App, int Type, int Count);
 
 internal sealed record NotificationReadRequest(long UpToUnix, string? App = null);
 
