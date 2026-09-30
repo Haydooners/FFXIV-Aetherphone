@@ -19,6 +19,7 @@ namespace Aetherphone.Apps.Velvet;
 internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto, VelvetThreadDto>
 {
     private const int PostSize = 1080;
+    private const int StatusForbidden = 403;
     private const int CardPhotoWidth = 1200;
     private const int CardPhotoHeight = 984;
     private readonly VelvetClient client;
@@ -254,7 +255,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     protected override string ReportTargetType => "velvet_message";
     protected override string TypingSignalType => Core.Telephony.Contracts.SignalType.VelvetTyping;
 
-    protected override bool TickActive => base.TickActive && configuration.IsVelvetOnboarded();
+    protected override bool TickActive => base.TickActive && configuration.IsVelvetOnboarded() && !accessBlocked;
 
     protected override string ScopeFor(string threadId) =>
         ConversationKeyStore.VelvetScope(ConversationKeyStore.Pair(MyUserId, threadId));
@@ -352,8 +353,20 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         Action<AepFailure>? onFailure = null)
     {
         await EnsureVelvetHydratedAsync(token).ConfigureAwait(false);
-        var page = await client.ThreadsAsync(cursor, token, onFailure).ConfigureAwait(false);
+        var page = await client.ThreadsAsync(cursor, token, failure =>
+        {
+            NoteRefusal(failure);
+            onFailure?.Invoke(failure);
+        }).ConfigureAwait(false);
         return page is null ? null : new ThreadListPage(page.Items, page.NextCursor);
+    }
+
+    private void NoteRefusal(AepFailure failure)
+    {
+        if (failure.StatusCode == StatusForbidden)
+        {
+            accessBlocked = true;
+        }
     }
 
     protected override async Task<MessagePage?> FetchMessagesPageAsync(string threadId, string? cursor,

@@ -55,7 +55,7 @@ internal sealed partial class VelvetStore
                 accessBlocked = false;
                 regionBlocked = false;
             }
-            else if (status == 403)
+            else if (status == StatusForbidden)
             {
                 accessBlocked = true;
                 regionBlocked = refusal.Code == FailureCodes.VelvetRegionBlocked;
