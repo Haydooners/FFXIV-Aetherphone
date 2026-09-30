@@ -517,9 +517,14 @@ internal sealed partial class AethergramApp
 
     private void OpenInbox()
     {
+        ResetInboxState();
+        router.Push(AethergramRoute.Inbox);
+    }
+
+    private void ResetInboxState()
+    {
         inboxDraft = string.Empty;
         inboxShowRequests = false;
-        router.Push(AethergramRoute.Inbox);
     }
 
     private void OpenThread(string userId)
