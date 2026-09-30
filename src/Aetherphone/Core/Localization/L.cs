@@ -1928,6 +1928,8 @@ internal static class L
                 "Fixed the Velvet and Yellow Pages icons sometimes leaving older unread notifications out of their count"),
             new("changelog.r1039.5",
                 "Fixed an issue where the phone could show 'Too many requests. Retrying in Ns' when switching between chats; background communication with the server is now much lighter"),
+            new("changelog.r1039.6",
+                "Changed the backend infrastructure to be more secure and work more efficiently"),
         };
 
         public static readonly LocString[] Release1038Settings =

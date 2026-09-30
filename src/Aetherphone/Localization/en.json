@@ -5519,6 +5519,7 @@
   "changelog.r1039.3": "Typing indicators now appear right away, in ChocoChat, Aethergram, Velvet and Yellow Pages",
   "changelog.r1039.4": "Fixed the Velvet and Yellow Pages icons sometimes leaving older unread notifications out of their count",
   "changelog.r1039.5": "Fixed an issue where the phone could show 'Too many requests. Retrying in Ns' when switching between chats; background communication with the server is now much lighter",
+  "changelog.r1039.6": "Changed the backend infrastructure to be more secure and work more efficiently",
   "changelog.r1037.0": "Moved live DJs off the home screen and onto their venue's page: the Now playing card shows the DJ's picture, name and viewers, with a Twitch link for each DJ",
   "changelog.r1037.1": "Added an Active DJ tag to venue cards while a DJ is on air there",
   "changelog.r1037.2": "Fixed live DJs and XIV Rolladeck live confirmations not showing at all",

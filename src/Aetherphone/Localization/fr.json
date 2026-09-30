@@ -5519,6 +5519,7 @@
   "changelog.r1039.3": "Les indicateurs de saisie apparaissent désormais immédiatement, dans ChocoChat, Aethergram, Velvet et Yellow Pages",
   "changelog.r1039.4": "Correction des icônes de Velvet et Yellow Pages qui oubliaient parfois des notifications non lues plus anciennes dans leur compteur",
   "changelog.r1039.5": "Correction d'un problème où le téléphone pouvait afficher 'Trop de requêtes. Nouvel essai dans Ns' en passant d'une discussion à l'autre ; la communication en arrière-plan avec le serveur est désormais beaucoup plus légère",
+  "changelog.r1039.6": "L'infrastructure du serveur a été modifiée pour être plus sûre et fonctionner plus efficacement",
   "changelog.r1037.0": "Les DJ en direct quittent l'écran d'accueil pour la page de leur lieu : la carte En cours affiche la photo, le nom et les spectateurs du DJ, avec un lien Twitch pour chaque DJ",
   "changelog.r1037.1": "Ajout de l'étiquette DJ actif sur les cartes des lieux lorsqu'un DJ y est en direct",
   "changelog.r1037.2": "Correction des DJ en direct et des confirmations en direct de XIV Rolladeck qui ne s'affichaient plus",

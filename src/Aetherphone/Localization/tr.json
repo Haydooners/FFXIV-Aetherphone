@@ -5519,6 +5519,7 @@
   "changelog.r1039.3": "ChocoChat, Aethergram, Velvet ve Yellow Pages'te yazıyor göstergeleri artık anında görünüyor",
   "changelog.r1039.4": "Velvet ve Yellow Pages simgelerinin bazen eski okunmamış bildirimleri sayıya katmaması düzeltildi",
   "changelog.r1039.5": "Sohbetler arasında geçiş yaparken telefonun 'Çok fazla istek. N sn sonra yeniden denenecek' gösterebilmesi düzeltildi; sunucuyla arka plan iletişimi artık çok daha hafif",
+  "changelog.r1039.6": "Arka uç altyapısı daha güvenli ve daha verimli çalışacak şekilde değiştirildi",
   "changelog.r1037.0": "Canlı DJ'ler ana ekrandan kendi mekanlarının sayfasına taşındı: Şimdi çalıyor kartı DJ'in resmini, adını ve izleyicilerini gösterir, her DJ için bir Twitch bağlantısıyla",
   "changelog.r1037.1": "Bir DJ yayındayken mekan kartlarına Aktif DJ etiketi eklendi",
   "changelog.r1037.2": "Canlı DJ'lerin ve XIV Rolladeck canlı onaylarının hiç görünmemesi düzeltildi",
