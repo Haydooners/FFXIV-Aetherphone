@@ -1902,6 +1902,34 @@ internal static class L
         public static readonly LocString SectionAethergramVelvet = new("changelog.sectionAethergramVelvet", "Aethergram and Velvet");
         public static readonly LocString SectionChirperAethergramVelvet = new("changelog.sectionChirperAethergramVelvet", "Chirper, Aethergram and Velvet");
 
+        public static readonly LocString[] Release1039Velvet =
+        {
+            new("changelog.r1039.0",
+                "The number on the Velvet icon now includes likes, comments and comment likes on your posts"),
+        };
+
+        public static readonly LocString[] Release1039Aethergram =
+        {
+            new("changelog.r1039.1",
+                "Fixed Back from a chat opened through a notification jumping to another tab instead of your inbox"),
+        };
+
+        public static readonly LocString[] Release1039Messaging =
+        {
+            new("changelog.r1039.2",
+                "Fixed new message banners showing up to 30 seconds late, in ChocoChat, Aethergram, Velvet and Yellow Pages"),
+            new("changelog.r1039.3",
+                "Typing indicators now appear right away, in ChocoChat, Aethergram, Velvet and Yellow Pages"),
+        };
+
+        public static readonly LocString[] Release1039Phone =
+        {
+            new("changelog.r1039.4",
+                "Fixed the Velvet and Yellow Pages icons sometimes leaving older unread notifications out of their count"),
+            new("changelog.r1039.5",
+                "Fixed an issue where the phone could show 'Too many requests. Retrying in Ns' when switching between chats; background communication with the server is now much lighter"),
+        };
+
         public static readonly LocString[] Release1038Settings =
         {
             new("changelog.r1038.0",

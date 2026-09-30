@@ -6,6 +6,13 @@ internal static class ChangelogData
 {
     public static readonly IReadOnlyList<ChangelogEntry> Entries = new[]
     {
+        new ChangelogEntry("1.0.3.9", "2026-09-30", new ChangelogSection[]
+        {
+            new(L.Apps.Velvet, L.Changelog.Release1039Velvet),
+            new(L.Apps.Aethergram, L.Changelog.Release1039Aethergram),
+            new(L.Changelog.SectionMessaging, L.Changelog.Release1039Messaging),
+            new(L.Changelog.SectionPhone, L.Changelog.Release1039Phone),
+        }),
         new ChangelogEntry("1.0.3.8", "2026-09-28", new ChangelogSection[]
         {
             new(L.Apps.Settings, L.Changelog.Release1038Settings),
