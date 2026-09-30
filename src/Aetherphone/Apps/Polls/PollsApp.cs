@@ -16,7 +16,7 @@ namespace Aetherphone.Apps.Polls;
 
 internal sealed class PollsApp : IPhoneApp
 {
-    private const float RefreshSeconds = 30f;
+    private const float RefreshSeconds = 60f;
     private const float FillSmoothTime = 0.26f;
     private const float CheckSmoothTime = 0.16f;
     private const float RevealSmoothTime = 0.28f;
