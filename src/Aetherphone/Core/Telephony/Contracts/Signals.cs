@@ -48,7 +48,6 @@ internal static class SignalType
     public const string CasinoEvent = "casino.event";
     public const string CasinoPrivate = "casino.private";
     public const string CasinoEnded = "casino.ended";
-    public const string CasinoPing = "casino.ping";
     public const string GamePrefix = "game.";
     public const string GameAttach = "game.attach";
     public const string GameDetach = "game.detach";

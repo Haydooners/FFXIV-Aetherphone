@@ -346,8 +346,7 @@ internal sealed class PhoneServices : IDisposable
         var safetyLauncher = new SafetyLauncher();
         var casinoRooms = new Casino.CasinoRoomsStore(aethernetSession, casinoApi.Casino, casino, visibility,
             realtimeSignals);
-        var casinoTables = new Casino.CasinoTablesStore(aethernetSession, casinoApi.Casino, casino, visibility,
-            realtimeSignals);
+        var casinoTables = new Casino.CasinoTablesStore(aethernetSession, casinoApi.Casino, casino, visibility);
         var casinoTurns = new Casino.CasinoTurnNotifier(aethernetSession, casinoRooms, notifications,
             Apps.AppAccents.For("casino"));
         var gameRooms = new Games.GameRoomsStore(aethernetSession, aethernet.Games, visibility,
