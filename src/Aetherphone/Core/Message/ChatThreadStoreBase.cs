@@ -582,9 +582,10 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
             var page = await FetchThreadListAsync(null, token).ConfigureAwait(false);
             if (page is not null)
             {
-                var decorated = DecorateThreadList(page.Value.Items);
+                var sealedItems = page.Value.Items;
+                var decorated = DecorateThreadList(sealedItems);
                 AcceptThreadListHead(decorated, page.Value.NextCursor);
-                RaiseInboxNotifications(decorated);
+                RaiseInboxNotifications(sealedItems, decorated);
             }
         }, () => inboxPolling = false);
     }
@@ -642,7 +643,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         return true;
     }
 
-    private void RaiseInboxNotifications(TThread[] items)
+    private void RaiseInboxNotifications(TThread[] sealedItems, TThread[] items)
     {
         var primed = inboxPrimed;
         for (var index = 0; index < items.Length; index++)
@@ -672,7 +673,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
                 continue;
             }
 
-            if (!IsInboxPreviewReady(item))
+            if (!IsInboxPreviewReady(sealedItems[index]))
             {
                 var now = DateTime.UtcNow;
                 if (!inboxNotifyDeferrals.TryGetValue(key, out var deferredSince))
