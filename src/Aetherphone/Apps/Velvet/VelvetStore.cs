@@ -24,7 +24,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private readonly VelvetClient client;
     private readonly AccountClient account;
     private readonly Configuration configuration;
-    private readonly RealtimeSignalBus signals;
     private readonly RetryGate meGate = new RetryGate(TimeSpan.FromSeconds(30));
     private readonly FeedLane<VelvetPostDto>[] feedLanes =
     {
@@ -113,18 +112,16 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         ConversationKeyStore keys, DecryptedHistoryStore chatHistory, PhoneVisibility visibility,
         RealtimeSignalBus signals, AppInstaller installer,
         VelvetNotInterestedArchive notInterestedArchive)
-        : base("Velvet", session, safety, media, notifications, vault, keys, chatHistory, visibility,
+        : base("Velvet", session, safety, media, notifications, vault, keys, chatHistory, visibility, signals,
             installer.Gate("velvet"))
     {
         this.client = client;
         this.account = account;
         this.configuration = configuration;
-        this.signals = signals;
         this.notInterestedArchive = notInterestedArchive;
         feedSignals = new FeedSignalQueue(client.ReportSeenAsync, client.ReportSignalAsync, work);
         signals.VelvetPinged += OnVelvetPinged;
         signals.SocialPinged += OnSocialPinged;
-        signals.ConnectedChanged += OnRealtimeConnected;
         signals.ContentRemoved += OnContentRemoved;
     }
 
@@ -142,9 +139,9 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         }
     }
 
-    private void OnSocialPinged()
+    private void OnSocialPinged(SocialSignal signal)
     {
-        if (!TickActive)
+        if (!TickActive || !signal.CoversApp(SocialActivity.VelvetApp))
         {
             return;
         }
@@ -152,16 +149,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         RefreshRequests();
         connectionsLoaded = false;
     }
-
-    private void OnRealtimeConnected(bool active)
-    {
-        if (active)
-        {
-            InboxCadence.RequestAfterReconnect();
-        }
-    }
-
-    public override bool RealtimePushActive => signals.RealtimeActive;
 
     private void OnVelvetPinged()
     {
@@ -265,6 +252,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     protected override string ImageUploadScope => "velvet-dm";
     protected override string VoiceUploadScope => "velvet-voice";
     protected override string ReportTargetType => "velvet_message";
+    protected override string TypingSignalType => Core.Telephony.Contracts.SignalType.VelvetTyping;
 
     protected override bool TickActive => base.TickActive && configuration.IsVelvetOnboarded();
 
@@ -744,7 +732,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     {
         signals.VelvetPinged -= OnVelvetPinged;
         signals.SocialPinged -= OnSocialPinged;
-        signals.ConnectedChanged -= OnRealtimeConnected;
         signals.ContentRemoved -= OnContentRemoved;
     }
 }

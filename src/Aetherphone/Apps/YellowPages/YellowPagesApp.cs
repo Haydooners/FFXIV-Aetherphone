@@ -172,6 +172,8 @@ internal sealed partial class YellowPagesApp : IPhoneApp
 
     public void Draw(in PhoneContext context)
     {
+        store.NoteWatched();
+        inquiries.NoteInboxWatched();
         theme = context.Theme;
         navigation = context.Navigation;
         ui.Theme = theme;
@@ -224,7 +226,7 @@ internal sealed partial class YellowPagesApp : IPhoneApp
                 DrawCompose(area);
                 break;
             case YellowPagesScreen.Thread:
-                threadView.Draw(ChatArea(area), route.Id!);
+                threadView.Draw(ChatArea(area), route.Id!, depth == router.Depth);
                 break;
             case YellowPagesScreen.NewInquiry:
                 DrawNewInquiry(area, route.Id!);

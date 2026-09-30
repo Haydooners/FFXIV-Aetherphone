@@ -99,6 +99,8 @@ internal sealed class YellowPagesStore : IDisposable
 
     public bool Primed => primed;
 
+    public void NoteWatched() => cadence.NoteWatched();
+
     public AdDto[] Mine => mine;
 
     public AdDto[] Directory => directory;
@@ -614,7 +616,7 @@ internal sealed class YellowPagesStore : IDisposable
             return;
         }
 
-        if (!cadence.Due(DateTime.UtcNow))
+        if (!cadence.IsWatched || !cadence.Due(DateTime.UtcNow))
         {
             return;
         }

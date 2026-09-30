@@ -25,7 +25,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
     private const string ReportEvidenceUploadScope = "report-evidence";
     private static readonly TimeSpan ForegroundInboxPollInterval = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan BackgroundInboxPollInterval = TimeSpan.FromSeconds(120);
-    private static readonly TimeSpan VaultRetryInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan PushedTypingWindow = TimeSpan.FromSeconds(6);
     private static readonly TimeSpan KeyStatusRetryInterval = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan ThreadReopenCooldown = TimeSpan.FromSeconds(3);
 
@@ -36,6 +36,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
     protected readonly ConversationKeyStore keys;
     protected readonly StoreWork work;
     protected readonly MessageCipher cipher;
+    protected readonly RealtimeSignalBus signals;
     private readonly string logTag;
     private readonly bool tracksInbox;
     private readonly NotificationService notifications;
@@ -73,6 +74,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
     private AepFailure lastSendFailure;
     private readonly Action<AepFailure> noteSendFailure;
     private volatile bool otherTyping;
+    private long otherTypingUntilTicks;
 
     private volatile bool inboxPolling;
     private volatile bool threadRefreshPending;
@@ -89,7 +91,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
 
     protected ChatThreadStoreBase(string logTag, AethernetSession session, SafetyClient safety, MediaClient media,
         NotificationService notifications, KeyVault vault, ConversationKeyStore keys, DecryptedHistoryStore chatHistory,
-        PhoneVisibility visibility,
+        PhoneVisibility visibility, RealtimeSignalBus signals,
         AppGate gate, bool tracksInbox = true)
     {
         this.tracksInbox = tracksInbox;
@@ -101,11 +103,14 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         this.keys = keys;
         this.logTag = logTag;
         this.gate = gate;
+        this.signals = signals;
         work = new StoreWork(logTag);
         cipher = new MessageCipher(vault, keys, chatHistory);
         messageOrder = CompareByCreatedAt;
         noteSendFailure = NoteSendFailure;
-        inboxCadence = new PollCadence(visibility, ForegroundInboxPollInterval, BackgroundInboxPollInterval);
+        inboxCadence = new PollCadence(visibility, ForegroundInboxPollInterval, BackgroundInboxPollInterval, signals);
+        signals.ConnectedChanged += OnRealtimeConnected;
+        signals.TypingPinged += OnTypingPinged;
         vault.Changed += OnVaultChanged;
         session.Changed += OnSessionAccountChanged;
         Plugin.Framework.Update += OnFrameworkTick;
@@ -141,7 +146,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         messages = Array.Empty<TMessage>();
         olderCursor = null;
         hasMoreOlder = false;
-        otherTyping = false;
+        ClearOtherTyping();
         inboxPrimed = false;
         threadRefreshPending = false;
         currentKeyStatus = ChatKeyStatus.None;
@@ -162,6 +167,8 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
     protected abstract string VoiceUploadScope { get; }
 
     protected abstract string ReportTargetType { get; }
+
+    protected abstract string TypingSignalType { get; }
 
     protected abstract string ScopeFor(string threadId);
 
@@ -237,7 +244,9 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
 
     protected virtual bool TickActive => session.IsSignedIn && gate.Open;
 
-    public virtual bool RealtimePushActive => false;
+    public bool RealtimePushActive => signals.RealtimeActive;
+
+    public void NoteInboxWatched() => inboxCadence.NoteWatched();
 
     protected virtual bool IsThreadMuted(TThread thread) => false;
 
@@ -467,6 +476,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         }
 
         var now = DateTime.UtcNow;
+        ExpirePushedTyping(now);
         EnsureCurrentThreadKeysFresh(now);
         ResumePendingThreadOpen(now);
         ConsumePendingThreadRefresh(now);
@@ -494,16 +504,17 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
 
         vaultRefreshRequested = true;
         vaultRefreshInFlight = true;
+        var wasUnlocked = vault.State == KeyVaultState.Unlocked;
         work.Run("vault refresh", async token =>
         {
             await vault.RefreshAsync(token).ConfigureAwait(false);
-            if (vault.State == KeyVaultState.Unlocked)
+            if (wasUnlocked && vault.State == KeyVaultState.Unlocked)
             {
                 await HydrateKeysAsync(token).ConfigureAwait(false);
             }
         }, () =>
         {
-            nextVaultRetryUtc = DateTime.UtcNow + VaultRetryInterval;
+            nextVaultRetryUtc = DateTime.UtcNow + vault.BackgroundRetryDelay;
             vaultRefreshInFlight = false;
         });
     }
@@ -756,7 +767,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         olderCursor = null;
         hasMoreOlder = false;
         loadingOlder = false;
-        otherTyping = false;
+        ClearOtherTyping();
         currentKeyStatus = ChatKeyStatus.None;
         lastKeyStatusUtc = DateTime.UtcNow;
         BeginThreadOpen(id);
@@ -974,7 +985,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
 
     public void RefreshTyping(string id)
     {
-        if (refreshingTyping || DateTime.UtcNow < pollBackoffUntilUtc)
+        if (RealtimePushActive || refreshingTyping || DateTime.UtcNow < pollBackoffUntilUtc)
         {
             return;
         }
@@ -986,9 +997,47 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
             NotePollResult(result is not null);
             if (currentThreadId == id && result is not null)
             {
+                Volatile.Write(ref otherTypingUntilTicks, 0L);
                 otherTyping = result.Value;
             }
         }, () => refreshingTyping = false);
+    }
+
+    private void OnRealtimeConnected(bool active)
+    {
+        if (active)
+        {
+            inboxCadence.RequestAfterReconnect();
+        }
+    }
+
+    private void OnTypingPinged(TypingSignal signal)
+    {
+        if (!string.Equals(signal.Type, TypingSignalType, StringComparison.Ordinal)
+            || !string.Equals(signal.ThreadId, currentThreadId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Volatile.Write(ref otherTypingUntilTicks, (DateTime.UtcNow + PushedTypingWindow).Ticks);
+        otherTyping = true;
+    }
+
+    private void ExpirePushedTyping(DateTime now)
+    {
+        var until = Volatile.Read(ref otherTypingUntilTicks);
+        if (until == 0L || now.Ticks < until)
+        {
+            return;
+        }
+
+        ClearOtherTyping();
+    }
+
+    private void ClearOtherTyping()
+    {
+        Volatile.Write(ref otherTypingUntilTicks, 0L);
+        otherTyping = false;
     }
 
     private void NoteSendFailure(AepFailure failure) => lastSendFailure = failure;
@@ -1559,6 +1608,8 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
     public void Dispose()
     {
         DisposeCore();
+        signals.ConnectedChanged -= OnRealtimeConnected;
+        signals.TypingPinged -= OnTypingPinged;
         vault.Changed -= OnVaultChanged;
         session.Changed -= OnSessionAccountChanged;
         Plugin.Framework.Update -= OnFrameworkTick;

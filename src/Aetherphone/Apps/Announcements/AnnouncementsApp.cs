@@ -6,6 +6,7 @@ using Aetherphone.Core.Announcements;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Notifications;
+using Aetherphone.Core.Runtime;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -42,9 +43,10 @@ internal sealed partial class AnnouncementsApp : IPhoneApp
     private bool resetScroll;
 
     public AnnouncementsApp(AethernetSession session, AnnouncementsClient client, NotificationService notifications,
-        Configuration configuration, AnnouncementsLauncher launcher, RealtimeSignalBus signals)
+        Configuration configuration, AnnouncementsLauncher launcher, PhoneVisibility visibility,
+        RealtimeSignalBus signals)
     {
-        store = new AnnouncementsStore(session, client, notifications, configuration, signals);
+        store = new AnnouncementsStore(session, client, notifications, configuration, visibility, signals);
         this.launcher = launcher;
         router = new ViewRouter<AnnouncementsRoute>(AnnouncementsRoute.List);
         drawView = DrawView;
@@ -110,6 +112,12 @@ internal sealed partial class AnnouncementsApp : IPhoneApp
 
     private void TickRefresh()
     {
+        if (store.PushCovered)
+        {
+            sinceRefresh = 0f;
+            return;
+        }
+
         sinceRefresh += ImGui.GetIO().DeltaTime;
         if (sinceRefresh < RefreshSeconds || store.Loading)
         {

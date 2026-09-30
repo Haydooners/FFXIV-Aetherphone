@@ -20,7 +20,6 @@ internal sealed class AdInquiryStore : ChatThreadStoreBase<AdInquiryMessageDto, 
     private const int MaxThreadLookupPages = 5;
 
     private readonly YellowPagesClient client;
-    private readonly RealtimeSignalBus signals;
     private readonly ConcurrentDictionary<string, string> otherByInquiry = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> scopeByUser = new(StringComparer.Ordinal);
     private volatile bool adKeysHydrated;
@@ -29,15 +28,11 @@ internal sealed class AdInquiryStore : ChatThreadStoreBase<AdInquiryMessageDto, 
         NotificationService notifications, KeyVault vault, ConversationKeyStore keys,
         DecryptedHistoryStore chatHistory, PhoneVisibility visibility, RealtimeSignalBus signals, AppGate gate)
         : base("YellowPagesInquiries", session, safety, media, notifications, vault, keys, chatHistory, visibility,
-            gate)
+            signals, gate)
     {
         this.client = client;
-        this.signals = signals;
         signals.AdsPinged += OnAdsPinged;
-        signals.ConnectedChanged += OnRealtimeConnected;
     }
-
-    public override bool RealtimePushActive => signals.RealtimeActive;
 
     public override bool SendWouldDowngrade => !EncryptingCurrent;
 
@@ -192,6 +187,7 @@ internal sealed class AdInquiryStore : ChatThreadStoreBase<AdInquiryMessageDto, 
     protected override string VoiceUploadScope => "ad-voice";
 
     protected override string ReportTargetType => "ad_message";
+    protected override string TypingSignalType => Telephony.Contracts.SignalType.AdTyping;
 
     protected override string ScopeFor(string threadId)
     {
@@ -506,17 +502,8 @@ internal sealed class AdInquiryStore : ChatThreadStoreBase<AdInquiryMessageDto, 
         RequestThreadRefresh();
     }
 
-    private void OnRealtimeConnected(bool connected)
-    {
-        if (connected)
-        {
-            InboxCadence.RequestAfterReconnect();
-        }
-    }
-
     protected override void DisposeCore()
     {
         signals.AdsPinged -= OnAdsPinged;
-        signals.ConnectedChanged -= OnRealtimeConnected;
     }
 }

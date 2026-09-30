@@ -57,8 +57,8 @@ internal sealed class SocialNotificationService : IDisposable
         this.framework = framework;
         this.signals = signals;
         acks = new NotificationAckQueue(configuration.PendingNotificationAcks, configuration.Save);
-        cadence = new PollCadence(visibility, ForegroundPollInterval, BackgroundPollInterval);
-        signals.SocialPinged += cadence.RequestImmediate;
+        cadence = new PollCadence(visibility, ForegroundPollInterval, BackgroundPollInterval, signals);
+        signals.SocialPinged += OnSocialPinged;
         signals.ConnectedChanged += OnRealtimeConnected;
         session.Changed += OnSessionChanged;
         framework.Update += OnFrameworkTick;
@@ -69,6 +69,14 @@ internal sealed class SocialNotificationService : IDisposable
         if (active)
         {
             cadence.RequestAfterReconnect();
+        }
+    }
+
+    private void OnSocialPinged(SocialSignal signal)
+    {
+        if (signal.CoversNotifications)
+        {
+            cadence.RequestImmediate();
         }
     }
 
@@ -525,7 +533,7 @@ internal sealed class SocialNotificationService : IDisposable
     public void Dispose()
     {
         session.Changed -= OnSessionChanged;
-        signals.SocialPinged -= cadence.RequestImmediate;
+        signals.SocialPinged -= OnSocialPinged;
         signals.ConnectedChanged -= OnRealtimeConnected;
         framework.Update -= OnFrameworkTick;
         cancellation.Cancel();

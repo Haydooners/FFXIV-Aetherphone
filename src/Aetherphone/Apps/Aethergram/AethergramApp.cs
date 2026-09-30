@@ -387,6 +387,7 @@ internal sealed partial class AethergramApp : IResumableApp
 
     public void Draw(in PhoneContext context)
     {
+        dmStore.NoteInboxWatched();
         theme = context.Theme;
         navigation = context.Navigation;
         ui.Theme = theme;
@@ -474,7 +475,7 @@ internal sealed partial class AethergramApp : IResumableApp
                 DrawNewMessage(area);
                 break;
             case AethergramScreen.Thread:
-                threadView.Draw(ChatArea(area), route.Id!);
+                threadView.Draw(ChatArea(area), route.Id!, depth == router.Depth);
                 break;
             case AethergramScreen.ChatImage:
                 threadView.DrawImagePicker(ChatArea(area), route.Id!);

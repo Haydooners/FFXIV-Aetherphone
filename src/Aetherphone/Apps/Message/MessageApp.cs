@@ -222,6 +222,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
 
     public void Draw(in PhoneContext context)
     {
+        store.NoteInboxWatched();
         theme = context.Theme;
         navigation = context.Navigation;
         ui.Theme = theme;
@@ -349,7 +350,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         switch (route.Screen)
         {
             case MessageScreen.Thread:
-                threadView.Draw(area, route.Id ?? string.Empty);
+                threadView.Draw(area, route.Id ?? string.Empty, depth == router.Depth);
                 break;
             case MessageScreen.NewChat:
                 DrawNewChat(area);

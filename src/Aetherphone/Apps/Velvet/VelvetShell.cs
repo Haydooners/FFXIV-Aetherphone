@@ -271,6 +271,7 @@ internal sealed partial class VelvetShell : IResumableApp
 
     public void Draw(in PhoneContext context)
     {
+        store.NoteInboxWatched();
         theme = context.Theme;
         navigation = context.Navigation;
         ui.Theme = theme;
@@ -425,7 +426,7 @@ internal sealed partial class VelvetShell : IResumableApp
                 DrawProfile(area, view.Arg ?? string.Empty);
                 break;
             case VelvetScreenId.Thread:
-                threadView.Draw(area, view.Arg ?? string.Empty);
+                threadView.Draw(area, view.Arg ?? string.Empty, depth == router.Depth);
                 break;
             case VelvetScreenId.PostDetail:
                 DrawPostDetail(area, view.Arg ?? string.Empty);

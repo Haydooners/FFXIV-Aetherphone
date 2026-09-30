@@ -78,7 +78,17 @@ internal sealed class CallSignalRouter : IDisposable
                 signals.PublishAds();
                 return;
             case SignalType.SocialPing:
-                signals.PublishSocial();
+                signals.PublishSocial(new SocialSignal(message.App, message.ContentKind));
+                return;
+            case SignalType.ChatTyping:
+            case SignalType.VelvetTyping:
+            case SignalType.GramTyping:
+            case SignalType.AdTyping:
+                if (message.ContentId is { Length: > 0 } typingThreadId)
+                {
+                    signals.PublishTyping(new TypingSignal(message.Type, typingThreadId));
+                }
+
                 return;
             case SignalType.MusterPing:
                 signals.PublishMuster();
