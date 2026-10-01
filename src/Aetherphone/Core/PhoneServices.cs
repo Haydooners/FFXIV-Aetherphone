@@ -90,6 +90,7 @@ internal sealed class PhoneServices : IDisposable
     public required HttpService Http { get; init; }
     public required MediaCache Media { get; init; }
     public required RemoteImageCache RemoteImages { get; init; }
+    public required CacheStorage CacheStorage { get; init; }
 
     public required Social.BadgeCatalogStore BadgeCatalog { get; init; }
 
@@ -310,6 +311,7 @@ internal sealed class PhoneServices : IDisposable
         var collectionsRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "collections"));
         var collectionsDisk = new DiskCache(collectionsRoot, 32L * 1024 * 1024);
         var collections = new CollectionsCatalogService(http, collectionsDisk, dataManager, unlockState, framework);
+        var cacheStorage = new CacheStorage(new[] { imageDisk, disk, audioCache, stratsDisk, collectionsDisk });
         var inventoryRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "inventory"));
         var inventoryStore = new InventoryStore(inventoryRoot);
         var inventoryCapture = new InventoryCaptureService(framework, inventoryStore, installer.Gate("inventory"));
@@ -427,6 +429,7 @@ internal sealed class PhoneServices : IDisposable
             Http = http,
             Media = media,
             RemoteImages = remoteImages,
+            CacheStorage = cacheStorage,
             BadgeCatalog = badgeCatalog,
             FrameCatalog = frameCatalog,
             Loadout = loadoutStore,
