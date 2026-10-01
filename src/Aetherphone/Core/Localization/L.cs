@@ -4038,7 +4038,7 @@ internal static class L
         public static readonly LocString StateUnavailable = new("encryption.stateUnavailable", "Sign in required");
         public static readonly LocString StateUnsupported = new("encryption.stateUnsupported", "Unavailable on this PC");
         public static readonly LocString StateLocked = new("encryption.stateLocked", "Locked on this device");
-        public static readonly LocString Intro = new("encryption.intro", "End-to-end encryption keeps your chats between you and the people you write to. Not even the Aethernet server can read them.");
+        public static readonly LocString Intro = new("encryption.intro", "Chats are end-to-end encrypted when everyone in them has an encryption key, and then not even the Aethernet server can read them. If someone doesn't have one yet, the chat shows Not encrypted, and its messages are stored readable on our server.");
         public static readonly LocString NotSignedIn = new("encryption.notSignedIn", "Sign in to your Aethernet account first.");
         public static readonly LocString UnsupportedBody = new("encryption.unsupportedBody", "This computer cannot create the security key that encrypted chats need, so ChocoChat and Velvet chats stay unavailable here. This usually happens when the game runs through Wine or Proton. The rest of Aetherphone works normally.");
         public static readonly LocString SettingUp = new("encryption.settingUp", "Setting up encryption…");
@@ -4133,6 +4133,7 @@ internal static class L
         public static readonly LocString EncryptedIndicator = new("encryption.encryptedIndicator", "End-to-end encrypted");
         public static readonly LocString PlaintextIndicator = new("encryption.plaintextIndicator", "Not encrypted");
         public static readonly LocString ComposerBlocked = new("encryption.composerBlocked", "This chat is encrypted and this device can't open its key. Tap to fix.");
+        public static readonly LocString ComposerChecking = new("encryption.composerChecking", "Checking encryption…");
         public static readonly LocString ReportDisclosure = new("encryption.reportDisclosure", "This message and up to 5 previous messages, including photos and voice notes, will be shared with the moderators, decrypted.");
         public static readonly LocString ReportMessageAction = new("encryption.reportMessageAction", "Report message");
         public static readonly LocString CopyTextAction = new("encryption.copyTextAction", "Copy text");
@@ -8444,6 +8445,7 @@ internal static class L
         public static readonly LocString MessageEmpty = new("failure.messageEmpty", "Write something before sending.");
         public static readonly LocString MessageUnavailable = new("failure.messageUnavailable", "That message is no longer available.");
         public static readonly LocString KeyVersionConflict = new("failure.keyVersionConflict", "Your keys changed on another device. Reopen the app.");
+        public static readonly LocString ThreadEncrypted = new("failure.threadEncrypted", "This chat is end-to-end encrypted, so it can't take an unencrypted message. Reopen the chat and try again.");
         public static readonly LocString MusterDescriptionRequired = new("failure.musterDescriptionRequired", "Add a description before posting.");
         public static readonly LocString MusterDescriptionTooLong = new("failure.musterDescriptionTooLong", "Keep the description to {0} characters.");
         public static readonly LocString MusterSpotRequired = new("failure.musterSpotRequired", "Pick a meeting spot first.");

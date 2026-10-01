@@ -306,19 +306,33 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
     public ChatKeyStatus CurrentKeyStatus => currentKeyStatus;
     public bool EncryptingCurrent => cipher.IsUnlocked && currentKeyStatus.CanEncrypt;
 
-    public virtual bool SendWouldDowngrade => !EncryptingCurrent && IsEncryptedThread(currentKeyStatus);
+    public virtual bool SendWouldDowngrade =>
+        !EncryptingCurrent && currentKeyStatus.Known && EncryptedSendPolicy.IsEncryptedThread(currentKeyStatus);
+
+    public virtual bool KeyStatusPending => currentThreadId is not null && !currentKeyStatus.Known;
 
     private bool RefuseDowngrade(string threadId, string what)
     {
-        var status = currentThreadId == threadId ? currentKeyStatus : ChatKeyStatus.None;
-        return DowngradeBlocked(threadId, what, EncryptingCurrent && currentThreadId == threadId, status);
+        if (currentThreadId != threadId)
+        {
+            return false;
+        }
+
+        return DowngradeBlocked(threadId, what, EncryptingCurrent, currentKeyStatus);
     }
 
     protected bool DowngradeBlocked(string threadId, string what, bool encrypted, ChatKeyStatus status)
     {
-        if (encrypted || !IsEncryptedThread(status))
+        if (!EncryptedSendPolicy.MustHoldPlaintext(encrypted, status))
         {
             return false;
+        }
+
+        if (!status.Known)
+        {
+            AepLog.Warning(
+                $"[{logTag}] {what} held back in {threadId}: the encryption status of the thread is not known yet, and sending in the clear could be a silent downgrade.");
+            return true;
         }
 
         AepLog.Warning(
@@ -326,9 +340,17 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         return true;
     }
 
-    private static bool IsEncryptedThread(ChatKeyStatus status)
+    private async Task<ChatKeyStatus> ResolveSendStatusAsync(string threadId, CancellationToken token)
     {
-        return status.CurrentGeneration > 0 && status.MembersWithoutKeys.Length == 0;
+        var current = currentKeyStatus;
+        if (currentThreadId == threadId && current.Known)
+        {
+            return current;
+        }
+
+        var status = await EnsureThreadKeysAsync(threadId, token).ConfigureAwait(false);
+        SetKeyStatusIfCurrent(threadId, status);
+        return status;
     }
 
     public DmDecryptedBody DecryptionState(string messageId) => cipher.DecryptionState(messageId);
@@ -522,8 +544,10 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
     private void EnsureCurrentThreadKeysFresh(DateTime now)
     {
         var id = currentThreadId;
-        if (id is null || keyStatusRefreshing || vault.State != KeyVaultState.Unlocked
-            || (currentKeyStatus.CanEncrypt && !keyStatusRefreshForced)
+        var status = currentKeyStatus;
+        if (id is null || keyStatusRefreshing
+            || (status.Known && vault.State != KeyVaultState.Unlocked)
+            || (status.CanEncrypt && !keyStatusRefreshForced)
             || now - lastKeyStatusUtc < KeyStatusRetryInterval)
         {
             return;
@@ -549,6 +573,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         if (vault.State != KeyVaultState.Unlocked)
         {
             currentKeyStatus = ChatKeyStatus.None;
+            RefreshServerKeyStatus();
             return;
         }
 
@@ -566,6 +591,21 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
             }
 
             threadListLoaded = false;
+        });
+    }
+
+    private void RefreshServerKeyStatus()
+    {
+        var current = currentThreadId;
+        if (current is null)
+        {
+            return;
+        }
+
+        work.Run("server key status", async token =>
+        {
+            var status = await EnsureThreadKeysAsync(current, token).ConfigureAwait(false);
+            SetKeyStatusIfCurrent(current, status);
         });
     }
 
@@ -1056,10 +1096,18 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         work.Run("send", async token =>
         {
             TMessage? sent;
+            var status = await ResolveSendStatusAsync(id, token).ConfigureAwait(false);
             var scope = ScopeFor(id);
             var generation = keys.CurrentGeneration(scope);
-            if (EncryptingCurrent && currentThreadId == id
-                && cipher.TryEncrypt(scope, generation, trimmed, MyUserId, out var encoded))
+            var encoded = default(EncryptedOutbound);
+            var encrypted = cipher.IsUnlocked && status.CanEncrypt
+                && cipher.TryEncrypt(scope, generation, trimmed, MyUserId, out encoded);
+            if (DowngradeBlocked(id, "send", encrypted, status))
+            {
+                return false;
+            }
+
+            if (encrypted)
             {
                 sent = await SendMessageRequestAsync(id, encoded.Envelope, 0, token,
                     encVersion: EnvelopeCodec.VersionEnvelope, commitmentTag: encoded.CommitmentTag,
@@ -1129,7 +1177,13 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
                 contentType = "image/jpeg";
             }
 
-            var outbound = PrepareMedia(id, plainBytes, caption.Trim(), ImageMediaKind);
+            var status = await ResolveSendStatusAsync(id, token).ConfigureAwait(false);
+            var outbound = PrepareMedia(id, status, plainBytes, caption.Trim(), ImageMediaKind);
+            if (DowngradeBlocked(id, "send image", outbound.EncVersion == EnvelopeCodec.VersionEnvelope, status))
+            {
+                return false;
+            }
+
             var upload = await media.UploadUrlAsync(contentType, ImageUploadScope, token).ConfigureAwait(false);
             if (upload is null)
             {
@@ -1175,7 +1229,13 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         sending = true;
         work.Run("send voice", async token =>
         {
-            var outbound = PrepareMedia(id, wavBytes, string.Empty, VoiceMediaKind);
+            var status = await ResolveSendStatusAsync(id, token).ConfigureAwait(false);
+            var outbound = PrepareMedia(id, status, wavBytes, string.Empty, VoiceMediaKind);
+            if (DowngradeBlocked(id, "send voice", outbound.EncVersion == EnvelopeCodec.VersionEnvelope, status))
+            {
+                return false;
+            }
+
             var upload = await media.UploadUrlAsync("audio/wav", VoiceUploadScope, token).ConfigureAwait(false);
             if (upload is null)
             {
@@ -1211,11 +1271,12 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         }, onComplete, () => sending = false);
     }
 
-    private OutboundMedia PrepareMedia(string id, byte[] plaintextBytes, string caption, int mediaKind)
+    private OutboundMedia PrepareMedia(string id, ChatKeyStatus status, byte[] plaintextBytes, string caption,
+        int mediaKind)
     {
         var scope = ScopeFor(id);
         return cipher.PrepareOutboundMedia(scope, keys.CurrentGeneration(scope), MyUserId, plaintextBytes, caption,
-            mediaKind, EncryptingCurrent && currentThreadId == id);
+            mediaKind, cipher.IsUnlocked && status.CanEncrypt);
     }
 
     private TMessage RecordMediaCaption(TMessage sent, OutboundMedia outbound, string caption)
@@ -1346,10 +1407,18 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
         work.Run("edit message", async token =>
         {
             TMessage? edited;
+            var status = await ResolveSendStatusAsync(id, token).ConfigureAwait(false);
             var scope = ScopeFor(id);
             var generation = keys.CurrentGeneration(scope);
-            if (EncryptingCurrent && currentThreadId == id
-                && cipher.TryEncrypt(scope, generation, trimmed, MyUserId, out var encoded))
+            var encoded = default(EncryptedOutbound);
+            var encrypted = cipher.IsUnlocked && status.CanEncrypt
+                && cipher.TryEncrypt(scope, generation, trimmed, MyUserId, out encoded);
+            if (DowngradeBlocked(id, "edit", encrypted, status))
+            {
+                return false;
+            }
+
+            if (encrypted)
             {
                 edited = await EditMessageRequestAsync(messageId, encoded.Envelope, token,
                     EnvelopeCodec.VersionEnvelope, encoded.CommitmentTag).ConfigureAwait(false);

@@ -36,6 +36,8 @@ internal sealed class AdInquiryStore : ChatThreadStoreBase<AdInquiryMessageDto, 
 
     public override bool SendWouldDowngrade => !EncryptingCurrent;
 
+    public override bool KeyStatusPending => false;
+
     public AdInquiryDto[] Threads => ThreadListItems;
 
     public bool LoadingThreads => LoadingThreadList;
