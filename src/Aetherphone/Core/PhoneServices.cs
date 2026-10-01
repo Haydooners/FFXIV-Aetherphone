@@ -247,10 +247,10 @@ internal sealed class PhoneServices : IDisposable
         var mediaRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "media"));
         var aethernetSession = new AethernetSession(configuration, framework);
         var http = new HttpService(new AethernetClientIdentity(aethernetSession.BaseUrl, aethernetSession.ReportSourceStatus));
-        var disk = new DiskCache(mediaRoot, 64L * 1024 * 1024);
+        var disk = new DiskCache(mediaRoot, 64L * 1024 * 1024, protect: true);
         var media = new MediaCache(textures, disk);
         var imageRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "images"));
-        var imageDisk = new DiskCache(imageRoot, 128L * 1024 * 1024);
+        var imageDisk = new DiskCache(imageRoot, 128L * 1024 * 1024, protect: true);
         var remoteImages = new RemoteImageCache(http, imageDisk);
         var pluginCatalog = new PluginCatalog(remoteImages, http, imageDisk);
         var wallpaperImages = new WallpaperImageCache();
