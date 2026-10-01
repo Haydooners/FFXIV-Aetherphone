@@ -1908,6 +1908,26 @@ internal static class L
         public static readonly LocString SectionAethergramVelvet = new("changelog.sectionAethergramVelvet", "Aethergram and Velvet");
         public static readonly LocString SectionChirperAethergramVelvet = new("changelog.sectionChirperAethergramVelvet", "Chirper, Aethergram and Velvet");
 
+        public static readonly LocString[] Release1040Velvet =
+        {
+            new("changelog.r1040.0",
+                "If the Lodestone can't confirm your character, Velvet now says why and lets you try again"),
+        };
+
+        public static readonly LocString[] Release1040Messaging =
+        {
+            new("changelog.r1040.1",
+                "Improved encrypted messaging"),
+        };
+
+        public static readonly LocString[] Release1040Phone =
+        {
+            new("changelog.r1040.2",
+                "Cached images are now stored encrypted on your PC, and you can clear them in Settings > Privacy; signing out clears them too"),
+            new("changelog.r1040.3",
+                "Image-heavy apps load more smoothly and use less bandwidth when you scroll quickly"),
+        };
+
         public static readonly LocString[] Release1039Velvet =
         {
             new("changelog.r1039.0",
