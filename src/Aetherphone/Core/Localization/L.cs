@@ -5059,6 +5059,11 @@ internal static class L
             "Velvet is an adults only space and is not available on Lalafell characters. If you recently changed your race, this clears once the Lodestone reflects it.");
         public static readonly LocString UnavailableRegionBody = new("velvet.unavailableRegionBody",
             "Velvet is not available on the Chinese game version. Everything else on your phone works as normal.");
+        public static readonly LocString UnverifiedTitle =
+            new("velvet.unverifiedTitle", "We couldn't confirm your character");
+        public static readonly LocString UnverifiedBody = new("velvet.unverifiedBody",
+            "Velvet checks your character's race on the Lodestone before letting you in. We couldn't read your Lodestone profile, which usually means it is set to private. Make your Lodestone profile public, then try again.");
+        public static readonly LocString UnverifiedRetry = new("velvet.unverifiedRetry", "Try again");
         public static readonly LocString DiscoveryHeader = new("velvet.discoveryHeader", "Discovery");
         public static readonly LocString DiscoverableHelp =
             new("velvet.discoverableHelp", "When on, your profile can be found by others in Discover.");

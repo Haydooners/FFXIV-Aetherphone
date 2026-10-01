@@ -20,6 +20,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
 {
     private const int PostSize = 1080;
     private const int StatusForbidden = 403;
+    private const string RaceUnverifiedReason = "race_unverified";
     private const int CardPhotoWidth = 1200;
     private const int CardPhotoHeight = 984;
     private readonly VelvetClient client;
@@ -37,6 +38,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private volatile bool loadingMe;
     private volatile bool accessBlocked;
     private volatile bool regionBlocked;
+    private volatile bool raceUnverified;
     private volatile bool avatarBusy;
     private volatile bool cardPhotoBusy;
     private volatile AvatarUploadOutcome cardPhotoFailure = AvatarUploadOutcome.Unreachable;
@@ -186,6 +188,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     public VelvetProfileDto? Me => me;
     public bool AccessBlocked => accessBlocked;
     public bool RegionBlocked => regionBlocked;
+    public bool RaceUnverified => raceUnverified;
     public bool HasProfile => me is not null;
     public bool AvatarBusy => avatarBusy;
 
@@ -287,6 +290,7 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         me = null;
         accessBlocked = false;
         regionBlocked = false;
+        raceUnverified = false;
         meGate.Reset();
         discoverResults = Array.Empty<VelvetProfileDto>();
         ResetUserPosts();
@@ -363,10 +367,18 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
 
     private void NoteRefusal(AepFailure failure)
     {
-        if (failure.StatusCode == StatusForbidden)
+        if (failure.StatusCode != StatusForbidden)
         {
-            accessBlocked = true;
+            return;
         }
+
+        accessBlocked = true;
+        raceUnverified = IsRaceUnverified(failure);
+    }
+
+    private static bool IsRaceUnverified(AepFailure failure)
+    {
+        return string.Equals(failure.ServerMessage, RaceUnverifiedReason, StringComparison.Ordinal);
     }
 
     protected override async Task<MessagePage?> FetchMessagesPageAsync(string threadId, string? cursor,
