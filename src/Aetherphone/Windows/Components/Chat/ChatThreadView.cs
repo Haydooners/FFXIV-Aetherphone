@@ -345,6 +345,7 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
         var composerBleed = composerStyle == ChatComposerStyle.Pill ? Theme.SidePadding * scale : 0f;
         var composerRect = new Rect(new Vector2(area.Min.X - composerBleed, area.Max.Y - composerHeight),
             new Vector2(area.Max.X + composerBleed, area.Max.Y));
+        var keyStatusPending = store.KeyStatusPending;
         composer.Draw(composerRect, new ChatComposerModel
         {
             Ui = ui,
@@ -358,9 +359,9 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
             CanVoice = true,
             CanLocation = true,
             CanHandleEscape = !searchController.Open,
-            Blocked = store.SendWouldDowngrade,
-            BlockedNotice = Loc.T(L.Encryption.ComposerBlocked),
-            OnBlockedTap = () => OpenEncryptionInfo(threadId),
+            Blocked = keyStatusPending || store.SendWouldDowngrade,
+            BlockedNotice = keyStatusPending ? Loc.T(L.Encryption.ComposerChecking) : Loc.T(L.Encryption.ComposerBlocked),
+            OnBlockedTap = keyStatusPending ? null : () => OpenEncryptionInfo(threadId),
             ResolveVoiceInput = resolveVoiceInput,
             OnPickImage = pickImage,
             OnShareLocation = shareLocation,

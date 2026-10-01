@@ -4133,6 +4133,7 @@ internal static class L
         public static readonly LocString EncryptedIndicator = new("encryption.encryptedIndicator", "End-to-end encrypted");
         public static readonly LocString PlaintextIndicator = new("encryption.plaintextIndicator", "Not encrypted");
         public static readonly LocString ComposerBlocked = new("encryption.composerBlocked", "This chat is encrypted and this device can't open its key. Tap to fix.");
+        public static readonly LocString ComposerChecking = new("encryption.composerChecking", "Checking encryption…");
         public static readonly LocString ReportDisclosure = new("encryption.reportDisclosure", "This message and up to 5 previous messages, including photos and voice notes, will be shared with the moderators, decrypted.");
         public static readonly LocString ReportMessageAction = new("encryption.reportMessageAction", "Report message");
         public static readonly LocString CopyTextAction = new("encryption.copyTextAction", "Copy text");
@@ -8439,6 +8440,7 @@ internal static class L
         public static readonly LocString MessageEmpty = new("failure.messageEmpty", "Write something before sending.");
         public static readonly LocString MessageUnavailable = new("failure.messageUnavailable", "That message is no longer available.");
         public static readonly LocString KeyVersionConflict = new("failure.keyVersionConflict", "Your keys changed on another device. Reopen the app.");
+        public static readonly LocString ThreadEncrypted = new("failure.threadEncrypted", "This chat is end-to-end encrypted, so it can't take an unencrypted message. Reopen the chat and try again.");
         public static readonly LocString MusterDescriptionRequired = new("failure.musterDescriptionRequired", "Add a description before posting.");
         public static readonly LocString MusterDescriptionTooLong = new("failure.musterDescriptionTooLong", "Keep the description to {0} characters.");
         public static readonly LocString MusterSpotRequired = new("failure.musterSpotRequired", "Pick a meeting spot first.");

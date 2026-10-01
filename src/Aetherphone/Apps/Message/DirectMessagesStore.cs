@@ -362,6 +362,12 @@ internal sealed class DirectMessagesStore : ChatThreadStoreBase<ChatMessageDto, 
                     return false;
                 }
 
+                var targetStatus = await keys.EnsureChatKeysAsync(targetId, token).ConfigureAwait(false);
+                if (DowngradeBlocked(targetId, "forward attachment", false, targetStatus))
+                {
+                    return false;
+                }
+
                 sent = await client.SendMessageAsync(targetId, source.Body ?? string.Empty, source.Kind, token,
                     forwardOfId: source.Id).ConfigureAwait(false);
             }

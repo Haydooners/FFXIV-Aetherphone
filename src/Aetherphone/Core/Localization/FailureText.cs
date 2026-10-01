@@ -59,6 +59,7 @@ internal static class FailureCodes
     public const string MessageEmpty = "message_empty";
     public const string MessageUnavailable = "message_unavailable";
     public const string KeyVersionConflict = "key_version_conflict";
+    public const string ThreadEncrypted = "thread_encrypted";
     public const string MusterDescriptionRequired = "muster_description_required";
     public const string MusterDescriptionTooLong = "muster_description_too_long";
     public const string MusterSpotRequired = "muster_spot_required";
@@ -270,6 +271,8 @@ internal static class FailureText
                 return Loc.T(L.Failure.MessageUnavailable);
             case FailureCodes.KeyVersionConflict:
                 return Loc.T(L.Failure.KeyVersionConflict);
+            case FailureCodes.ThreadEncrypted:
+                return Loc.T(L.Failure.ThreadEncrypted);
             case FailureCodes.MusterDescriptionRequired:
                 return Loc.T(L.Failure.MusterDescriptionRequired);
             case FailureCodes.MusterDescriptionTooLong:
