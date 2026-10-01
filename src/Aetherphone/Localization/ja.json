@@ -1732,7 +1732,7 @@
   "encryption.stateUnavailable": "サインインが必要",
   "encryption.stateUnsupported": "このPCでは利用できません",
   "encryption.stateLocked": "この端末ではロックされています",
-  "encryption.intro": "エンドツーエンド暗号化により、チャットはあなたと相手だけのものになります。Aethernetサーバーでさえ読むことはできません。",
+  "encryption.intro": "チャットの参加者全員が暗号鍵を持っていれば、チャットはエンドツーエンドで暗号化され、Aethernetサーバーでさえ読むことはできません。まだ鍵を持っていない人がいる場合、チャットには「暗号化されていません」と表示され、そのメッセージは読める状態でサーバーに保存されます。",
   "encryption.notSignedIn": "先にAethernetアカウントにサインインしてください。",
   "encryption.unsupportedBody": "このコンピューターは暗号化チャットに必要なセキュリティキーを作成できないため、ChocoChatとVelvetのチャットはここでは利用できません。これはゲームをWineまたはProtonで実行している場合に起こります。Aetherphoneのその他の機能は通常どおり動作します。",
   "encryption.settingUp": "暗号化を設定しています…",

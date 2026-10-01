@@ -4038,7 +4038,7 @@ internal static class L
         public static readonly LocString StateUnavailable = new("encryption.stateUnavailable", "Sign in required");
         public static readonly LocString StateUnsupported = new("encryption.stateUnsupported", "Unavailable on this PC");
         public static readonly LocString StateLocked = new("encryption.stateLocked", "Locked on this device");
-        public static readonly LocString Intro = new("encryption.intro", "End-to-end encryption keeps your chats between you and the people you write to. Not even the Aethernet server can read them.");
+        public static readonly LocString Intro = new("encryption.intro", "Chats are end-to-end encrypted when everyone in them has an encryption key, and then not even the Aethernet server can read them. If someone doesn't have one yet, the chat shows Not encrypted, and its messages are stored readable on our server.");
         public static readonly LocString NotSignedIn = new("encryption.notSignedIn", "Sign in to your Aethernet account first.");
         public static readonly LocString UnsupportedBody = new("encryption.unsupportedBody", "This computer cannot create the security key that encrypted chats need, so ChocoChat and Velvet chats stay unavailable here. This usually happens when the game runs through Wine or Proton. The rest of Aetherphone works normally.");
         public static readonly LocString SettingUp = new("encryption.settingUp", "Setting up encryption…");

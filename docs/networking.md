@@ -177,7 +177,7 @@ Separately, `RequestThrottle` enforces polite pacing toward third parties: `Lode
 
 ## End-to-end encryption
 
-Direct messages are encrypted client-side so the server stores only ciphertext. The contract has two wire prefixes, both defined in Core/Crypto:
+Direct messages are encrypted client-side whenever every member of the conversation has a published key, and then the server stores only ciphertext. A conversation where a member has no key yet stays plaintext (EncVersion 0) and is labeled Not encrypted. Once a conversation has a key generation and every member holds a key, the server refuses plaintext sends and edits with 409 `thread_encrypted`, and the client holds a send until it knows the conversation's key status (`EncryptedSendPolicy`), so a conversation never silently downgrades. The contract has two wire prefixes, both defined in Core/Crypto:
 
 - `EC1.` marks a wrapped conversation key. `CryptoBox.WrapCek` generates an ephemeral P-256 ECDH key pair, derives a wrap key with HKDF-SHA256, and seals the 32-byte conversation encryption key (CEK) with AES-GCM for one recipient's public key. Each conversation member gets their own `EC1.` wrap.
 - `AE1.` marks an encrypted message body. `EnvelopeCodec.Encode` produces `AE1.<generation>.<base64>`, where generation is the key version for that conversation. The AES-GCM additional authenticated data binds scope id, generation, and sender id, so a ciphertext cannot be replayed into another conversation or attributed to another sender. The envelope also carries a random franking key whose HMAC commitment tag lets a report prove what a message said without giving the server decryption ability.

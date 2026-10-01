@@ -1732,7 +1732,7 @@
   "encryption.stateUnavailable": "需要登录",
   "encryption.stateUnsupported": "此电脑上不可用",
   "encryption.stateLocked": "已在此设备上锁定",
-  "encryption.intro": "端到端加密让聊天只属于你和对方。即使是 Aethernet 服务器也无法读取。",
+  "encryption.intro": "当聊天中的每个人都有加密密钥时，聊天会进行端到端加密，此时即使是 Aethernet 服务器也无法读取。如果有人还没有密钥，聊天会显示“未加密”，其消息会以可读的形式保存在我们的服务器上。",
   "encryption.notSignedIn": "请先登录你的 Aethernet 账户。",
   "encryption.unsupportedBody": "这台电脑无法创建加密聊天所需的安全密钥，因此 ChocoChat 和 Velvet 聊天在此不可用。这通常发生在游戏通过 Wine 或 Proton 运行时。Aetherphone 的其余功能一切正常。",
   "encryption.settingUp": "正在设置加密…",

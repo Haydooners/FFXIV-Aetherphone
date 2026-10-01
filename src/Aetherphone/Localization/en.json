@@ -1732,7 +1732,7 @@
   "encryption.stateUnavailable": "Sign in required",
   "encryption.stateUnsupported": "Unavailable on this PC",
   "encryption.stateLocked": "Locked on this device",
-  "encryption.intro": "End-to-end encryption keeps your chats between you and the people you write to. Not even the Aethernet server can read them.",
+  "encryption.intro": "Chats are end-to-end encrypted when everyone in them has an encryption key, and then not even the Aethernet server can read them. If someone doesn't have one yet, the chat shows Not encrypted, and its messages are stored readable on our server.",
   "encryption.notSignedIn": "Sign in to your Aethernet account first.",
   "encryption.unsupportedBody": "This computer cannot create the security key that encrypted chats need, so ChocoChat and Velvet chats stay unavailable here. This usually happens when the game runs through Wine or Proton. The rest of Aetherphone works normally.",
   "encryption.settingUp": "Setting up encryption…",

@@ -1732,7 +1732,7 @@
   "encryption.stateUnavailable": "Oturum açmanız gerekiyor",
   "encryption.stateUnsupported": "Bu bilgisayarda kullanılamıyor",
   "encryption.stateLocked": "Bu cihazda kilitli",
-  "encryption.intro": "Uçtan uca şifreleme, sohbetlerinizi yalnızca siz ve konuştuğunuz kişiler arasında tutar. Aethernet sunucusu bile okuyamaz.",
+  "encryption.intro": "Sohbetteki herkesin bir şifreleme anahtarı olduğunda sohbetler uçtan uca şifrelenir ve o zaman Aethernet sunucusu bile onları okuyamaz. Henüz anahtarı olmayan biri varsa sohbet \"Şifrelenmemiş\" olarak görünür ve mesajları sunucumuzda okunabilir şekilde saklanır.",
   "encryption.notSignedIn": "Önce Aethernet hesabınıza giriş yapın.",
   "encryption.unsupportedBody": "Bu bilgisayar şifreli sohbetler için gereken güvenlik anahtarını oluşturamıyor, bu yüzden ChocoChat ve Velvet sohbetleri burada kullanılamıyor. Bu genellikle oyun Wine veya Proton üzerinden çalıştığında olur. Aetherphone’un geri kalanı normal şekilde çalışır.",
   "encryption.settingUp": "Şifreleme kuruluyor…",

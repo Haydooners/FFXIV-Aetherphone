@@ -1,6 +1,6 @@
 # Aetherphone Privacy Policy
 
-**Last updated:** 10 September 2026
+**Last updated:** 2 October 2026
 
 This policy explains what Aethernet, the online service behind Aetherphone's social features, does with your personal data.
 
@@ -28,13 +28,19 @@ Your personal data is handled the same way wherever you use the service from.
 
 **Content you post.** Posts, comments, images, videos, voice notes, stories, reactions, listings, and event details. Also who you follow, who follows you, and who you have blocked or muted.
 
-**Messages.** Direct messages, their attachments, and voice notes are end to end encrypted on your device. **We store only ciphertext and cannot read them.** We do necessarily see the surrounding metadata: which accounts are in a conversation, when messages were sent, and their approximate size.
+**Messages.** Direct messages, their attachments, and voice notes are end to end encrypted on your device whenever everyone in the conversation has an encryption key. For those we store only ciphertext and cannot read them. When someone in a conversation does not have a key yet, the app labels the conversation **Not encrypted**, and those messages and attachments are stored on our server in a form we can read. If you get push notifications on a mobile device, the preview of an unencrypted message includes its text. Either way we necessarily see the surrounding metadata: which accounts are in a conversation, when messages were sent, and their approximate size.
 
-**Calls.** Voice calls are encrypted in transit and relayed through our server. We do not record call audio. We do keep call records: who called whom, when, and for how long.
+**Velvet connection requests.** The short intro you send with a Velvet connection request is stored unencrypted, and moderators can read it. This is deliberate, so that harassment sent in a request can be reported and acted on.
+
+**Velvet eligibility.** If you use Velvet, we record your character's race, including whether it is a Lalafell, and check it against your public Lodestone profile. On the Chinese client, where there is no Lodestone, the phone reports it instead. Velvet uses this to decide whether a character can use it.
+
+**Calls.** Voice calls are encrypted in transit and relayed through our server. They are not end to end encrypted. We do not record call audio. We do keep call records: who called whom, when, and for how long.
 
 **Technical data.** Your IP address, the plugin version, and timestamps, recorded when your client connects. Your operating system, game language, and similar diagnostics are included only when you choose to submit a support report.
 
-**Moderation data.** Reports you make or that are made about you, moderator review outcomes on content you post, and any enforcement action on your account.
+**Activity.** Which feed posts you were shown and how you interacted with them, which stories you viewed, and when your mini-game sessions started and ended. We use this to rank feeds, to show a story's author who viewed it, and to keep your Aether Coin history.
+
+**Moderation data.** Reports you make or that are made about you, moderator review outcomes on content you post, and any enforcement action on your account. When a message is reported, the reporter's phone reveals it to moderators, decrypted, together with up to five earlier messages from the same conversation, so the report can be judged in context.
 
 **Coin and cosmetics.** Your Aether Coin balance, the history of how it was earned and spent, and the cosmetic items (badges and avatar frames) you own and wear, including when one was granted to you or removed.
 
@@ -109,7 +115,7 @@ Where that involves transferring personal data out of the UK or the EEA, we rely
 | --- | --- |
 | Account, profile, coin, and cosmetics | Until you delete your account |
 | Posts and media | Until you delete them, or you delete your account |
-| Message ciphertext | Until you or the other participant deletes the conversation |
+| Messages and attachments, encrypted or not | Until you or the other participant deletes the conversation |
 | Call records | 90 days |
 | Connection logs including IP | 30 days |
 | Reports and moderation records | 12 months after the matter is closed, so that repeat behaviour can be recognised |
@@ -131,7 +137,7 @@ Aethernet is not for children under 13, and we do not knowingly collect their da
 
 ## Security
 
-Direct messages, their attachments, and voice notes are end to end encrypted, so we hold only ciphertext. Calls are encrypted in transit. Traffic to the service uses TLS. Access to production systems is limited to the maintainers who need it.
+Direct messages, their attachments, and voice notes are end to end encrypted whenever everyone in the conversation has an encryption key, and for those we hold only ciphertext. Conversations the app labels Not encrypted are protected in transit, but we can read them on our server. Calls are encrypted in transit, not end to end. Traffic to the service uses TLS. Access to production systems is limited to the maintainers who need it.
 
 No service is perfectly secure. If we discover a breach affecting your rights we will notify you and the relevant regulator as the law requires.
 

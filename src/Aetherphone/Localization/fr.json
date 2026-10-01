@@ -1732,7 +1732,7 @@
   "encryption.stateUnavailable": "Connexion requise",
   "encryption.stateUnsupported": "Indisponible sur ce PC",
   "encryption.stateLocked": "Verrouillé sur cet appareil",
-  "encryption.intro": "Le chiffrement de bout en bout garde vos discussions entre vous et vos interlocuteurs. Même le serveur Aethernet ne peut pas les lire.",
+  "encryption.intro": "Les discussions sont chiffrées de bout en bout dès que tous leurs participants ont une clé de chiffrement, et alors même le serveur Aethernet ne peut pas les lire. Si quelqu'un n'en a pas encore, la discussion affiche « Non chiffré » et ses messages sont stockés lisibles sur notre serveur.",
   "encryption.notSignedIn": "Connectez-vous d'abord à votre compte Aethernet.",
   "encryption.unsupportedBody": "Cet ordinateur ne peut pas créer la clé de sécurité nécessaire aux discussions chiffrées ; les discussions ChocoChat et Velvet restent donc indisponibles ici. Cela arrive généralement lorsque le jeu s’exécute via Wine ou Proton. Le reste d’Aetherphone fonctionne normalement.",
   "encryption.settingUp": "Configuration du chiffrement…",
