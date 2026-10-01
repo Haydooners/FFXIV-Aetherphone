@@ -23,6 +23,7 @@ internal sealed partial class AethergramApp
     private const float IconTabIconSize = 22f;
     private const float TabSmoothTime = 0.09f;
     private const float GridGap = 1.5f;
+    private const float GridThumbnailOversample = 2f;
     private const float GridBadgeInset = 12f;
     private const float GridBadgeSize = 16f;
     private const float GridBadgeGap = 18f;
@@ -116,10 +117,13 @@ internal sealed partial class AethergramApp
                 ImGui.Dummy(new Vector2(cellWidth, cellHeight));
                 var min = ImGui.GetItemRectMin();
                 var max = ImGui.GetItemRectMax();
-                DrawGridTile(posts[index], min, max, style, source == PostSource.Profile);
-                if (UiInteract.Click(min, max, UiInteract.Hover(min, max)))
+                if (ImGui.IsRectVisible(min, max))
                 {
-                    OpenPosts(posts[index].Id, source);
+                    DrawGridTile(posts[index], min, max, style, source == PostSource.Profile);
+                    if (UiInteract.Click(min, max, UiInteract.Hover(min, max)))
+                    {
+                        OpenPosts(posts[index].Id, source);
+                    }
                 }
 
                 if (index % GridColumns != GridColumns - 1)
@@ -155,7 +159,8 @@ internal sealed partial class AethergramApp
         }
         else
         {
-            var texture = images.Get(photos.Length > 0 ? photos[0] : null);
+            var texture = images.Sized(photos.Length > 0 ? photos[0] : null,
+                MathF.Max(max.X - min.X, max.Y - min.Y) * GridThumbnailOversample);
             if (texture is null)
             {
                 drawList.AddRectFilled(min, max, ImGui.GetColorU32(Ink.ThumbFill));

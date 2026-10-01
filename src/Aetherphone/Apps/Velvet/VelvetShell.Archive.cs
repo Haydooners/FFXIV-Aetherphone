@@ -100,6 +100,11 @@ internal sealed partial class VelvetShell
             var column = index % ProfileColumns;
             var min = new Vector2(origin.X + column * (cell + cellGap), origin.Y + row * (cell + cellGap));
             var max = new Vector2(min.X + cell, min.Y + cell);
+            if (!ImGui.IsRectVisible(min, max))
+            {
+                continue;
+            }
+
             var veiled = SensitiveReveals.ShouldVeil(post.Sensitive, post.Id, configuration.ShowSensitiveContent);
             DrawMedia(drawList, min, max, post.MediaUrl, 0f, veiled: veiled);
             if (UiInteract.Click(min, max))
