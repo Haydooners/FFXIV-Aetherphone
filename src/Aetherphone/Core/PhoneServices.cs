@@ -90,6 +90,7 @@ internal sealed class PhoneServices : IDisposable
     public required HttpService Http { get; init; }
     public required MediaCache Media { get; init; }
     public required RemoteImageCache RemoteImages { get; init; }
+    public required CacheStorage CacheStorage { get; init; }
 
     public required Social.BadgeCatalogStore BadgeCatalog { get; init; }
 
@@ -247,10 +248,10 @@ internal sealed class PhoneServices : IDisposable
         var mediaRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "media"));
         var aethernetSession = new AethernetSession(configuration, framework);
         var http = new HttpService(new AethernetClientIdentity(aethernetSession.BaseUrl, aethernetSession.ReportSourceStatus));
-        var disk = new DiskCache(mediaRoot, 64L * 1024 * 1024);
+        var disk = new DiskCache(mediaRoot, 64L * 1024 * 1024, protect: true);
         var media = new MediaCache(textures, disk);
         var imageRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "images"));
-        var imageDisk = new DiskCache(imageRoot, 128L * 1024 * 1024);
+        var imageDisk = new DiskCache(imageRoot, 128L * 1024 * 1024, protect: true);
         var remoteImages = new RemoteImageCache(http, imageDisk);
         var pluginCatalog = new PluginCatalog(remoteImages, http, imageDisk);
         var wallpaperImages = new WallpaperImageCache();
@@ -310,6 +311,7 @@ internal sealed class PhoneServices : IDisposable
         var collectionsRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "collections"));
         var collectionsDisk = new DiskCache(collectionsRoot, 32L * 1024 * 1024);
         var collections = new CollectionsCatalogService(http, collectionsDisk, dataManager, unlockState, framework);
+        var cacheStorage = new CacheStorage(new[] { imageDisk, disk, audioCache, stratsDisk, collectionsDisk });
         var inventoryRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "inventory"));
         var inventoryStore = new InventoryStore(inventoryRoot);
         var inventoryCapture = new InventoryCaptureService(framework, inventoryStore, installer.Gate("inventory"));
@@ -427,6 +429,7 @@ internal sealed class PhoneServices : IDisposable
             Http = http,
             Media = media,
             RemoteImages = remoteImages,
+            CacheStorage = cacheStorage,
             BadgeCatalog = badgeCatalog,
             FrameCatalog = frameCatalog,
             Loadout = loadoutStore,

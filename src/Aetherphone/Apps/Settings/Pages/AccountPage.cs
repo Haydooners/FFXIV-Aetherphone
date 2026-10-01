@@ -4,10 +4,12 @@ using Aetherphone.Core.Aethernet.Clients;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
+using Aetherphone.Core.Crypto;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Lodestone;
 using Aetherphone.Core.Media;
+using Aetherphone.Core.Net;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Social;
 using Aetherphone.Core.Theme;
@@ -58,6 +60,8 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
     private readonly PhotoLibrary photoLibrary;
     private readonly ConfirmService confirm;
     private readonly WallpaperImageCache wallpaperImages;
+    private readonly CacheStorage cacheStorage;
+    private readonly DecryptedHistoryStore chatHistory;
     private readonly SignInFlow flow;
     private readonly PatreonLinkFlow patreonFlow;
     private readonly CancellationTokenSource cancellation = new();
@@ -72,7 +76,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         AccountStateService accountState, MediaClient media, GameData gameData, RemoteImageCache images,
         LodestoneService lodestone, ISettingsNavigator navigator, NamePage namePage, ISettingsPage profilePage,
         ISettingsPage encryptionPage, ISettingsPage coinPage, PhotoLibrary photoLibrary, ConfirmService confirm,
-        WallpaperImageCache wallpaperImages)
+        WallpaperImageCache wallpaperImages, CacheStorage cacheStorage, DecryptedHistoryStore chatHistory)
     {
         this.configuration = configuration;
         this.session = session;
@@ -91,6 +95,8 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         this.photoLibrary = photoLibrary;
         this.confirm = confirm;
         this.wallpaperImages = wallpaperImages;
+        this.cacheStorage = cacheStorage;
+        this.chatHistory = chatHistory;
         flow = new SignInFlow(session, auth);
         patreonFlow = new PatreonLinkFlow(account, accountState.RefreshNow);
     }
@@ -677,6 +683,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
                 RevokeCurrentToken();
                 session.SignOut();
                 ResetFlow();
+                _ = Task.Run(cacheStorage.Clear);
             },
         });
     }
@@ -736,6 +743,8 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
 
                     if (erased)
                     {
+                        cacheStorage.Clear();
+                        chatHistory.Clear();
                         session.SignOut();
                         ResetFlow();
                     }

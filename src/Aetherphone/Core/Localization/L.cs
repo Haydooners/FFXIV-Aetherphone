@@ -1859,6 +1859,12 @@ internal static class L
         public static readonly LocString TellArchiveTitle = new("settings.tellArchiveTitle", "Chat History");
         public static readonly LocString TellArchive = new("settings.tellArchive", "Save tell history on this PC");
         public static readonly LocString TellArchiveHint = new("settings.tellArchiveHint", "Tells are saved as plain text files on this PC so conversations survive a restart. They are never uploaded anywhere. Turn this off to keep new tells in memory only. Deleting a conversation also deletes its file.");
+        public static readonly LocString Storage = new("settings.storage", "Storage");
+        public static readonly LocString StorageHint = new("settings.storageHint", "Images and media you have viewed are kept on this PC, encrypted, so they open faster.");
+        public static readonly LocString ClearCache = new("settings.clearCache", "Clear cached images and media");
+        public static readonly LocString ClearCacheSize = new("settings.clearCacheSize", "Clear cached images and media ({0} MB)");
+        public static readonly LocString ClearCacheBody = new("settings.clearCacheBody", "Cached images and media are removed from this PC. They download again the next time you see them.");
+        public static readonly LocString ClearCacheAction = new("settings.clearCacheAction", "Clear cache");
         public static readonly LocString ReadReceipts = new("settings.readReceipts", "Read receipts");
         public static readonly LocString LastSeenOnline = new("settings.lastSeenOnline", "Last seen online");
         public static readonly LocString ChatPrivacyHint = new("settings.chatPrivacyHint", "These apply to the ChocoChat app. If you turn read receipts or last seen off, you will not send them and you will not see them from others either.");

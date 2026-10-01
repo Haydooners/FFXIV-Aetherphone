@@ -76,7 +76,7 @@ internal sealed class MediaCache : IDisposable
             return new MediaResult(standIn, true);
         }
 
-        _ = LoadAsync(key, source);
+        _ = Task.Run(() => LoadAsync(key, source));
         return new MediaResult(standIn, true);
     }
 
