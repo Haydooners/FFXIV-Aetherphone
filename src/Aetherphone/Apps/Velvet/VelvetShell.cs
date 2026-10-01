@@ -291,6 +291,12 @@ internal sealed partial class VelvetShell : IResumableApp
             TourHolds.Hold(Id);
             store.EnsureMe();
             TickHeartbeat();
+            if (LocalRaceIsLalafell is not true && store.RaceUnverified)
+            {
+                DrawUnverified(context.Content);
+                return;
+            }
+
             var reason = store.RegionBlocked ? L.Velvet.UnavailableRegionBody : L.Velvet.UnavailableBody;
             EmptyState.Draw(context.Content, ui, PhoneIcons.Ban, Loc.T(L.Velvet.UnavailableTitle),
                 Loc.T(reason));

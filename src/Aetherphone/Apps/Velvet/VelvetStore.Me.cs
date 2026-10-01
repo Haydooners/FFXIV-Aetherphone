@@ -34,6 +34,17 @@ internal sealed partial class VelvetStore
         LoadMe();
     }
 
+    public void RetryAccess()
+    {
+        if (loadingMe)
+        {
+            return;
+        }
+
+        meGate.Reset();
+        EnsureMe();
+    }
+
     private void LoadMe()
     {
         loadingMe = true;
@@ -54,11 +65,13 @@ internal sealed partial class VelvetStore
                 me = profile;
                 accessBlocked = false;
                 regionBlocked = false;
+                raceUnverified = false;
             }
             else if (status == StatusForbidden)
             {
                 accessBlocked = true;
                 regionBlocked = refusal.Code == FailureCodes.VelvetRegionBlocked;
+                raceUnverified = IsRaceUnverified(refusal);
             }
         }, () => loadingMe = false);
     }
