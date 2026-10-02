@@ -5667,7 +5667,7 @@
   "changelog.r1041.12": "Partys bleiben jetzt fünf Minuten mit dunklem Bildschirm offen, wenn die Warteschlange endet, statt sich zu schließen",
   "changelog.r1041.13": "Der Bildschirm merkt sich jetzt an jedem Ort, wo du ihn platziert hast",
   "changelog.r1041.14": "Behoben, dass lokale Dateien nicht abgespielt wurden, wenn ihr Pfad mit Anführungszeichen eingefügt wurde",
-  "changelog.r1042.0": "Der Eintrag in der Serverinfoleiste zeigt jetzt ein Telefonsymbol neben dem Namen Aetherphone, mit der Anzahl deiner ungelesenen Benachrichtigungen als eingerahmte Zahl",
+  "changelog.r1042.0": "Der Eintrag in der Serverinfoleiste ist jetzt ein Telefonsymbol mit der Anzahl deiner ungelesenen Benachrichtigungen als eingerahmte Zahl, anstelle des Namens Aetherphone",
   "changelog.r1042.1": "Wenn du den Eintrag in der Serverinfoleiste mit der Maus überfährst, siehst du jetzt, wie viele Benachrichtigungen warten und was ein Klick bewirkt",
   "changelog.r1037.0": "Live-DJs von der Startseite auf die Seite ihrer Location verschoben: Die Karte Läuft gerade zeigt Bild, Namen und Zuschauer des DJs, mit einem Twitch-Link für jeden DJ",
   "changelog.r1037.1": "Location-Karten tragen jetzt den Hinweis DJ aktiv, solange dort ein DJ auflegt",
