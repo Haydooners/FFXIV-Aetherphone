@@ -98,6 +98,35 @@ internal static class Material
         GlassRim(drawList, min, max, radius, scale, tone, opacity);
     }
 
+    public static void PointerHalo(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float strength,
+        float scale)
+    {
+        if (strength <= 0.001f)
+        {
+            return;
+        }
+
+        var pad = (max.X - min.X) * 0.09f;
+        var haloMin = new Vector2(min.X - pad, min.Y - pad);
+        var haloMax = new Vector2(max.X + pad, max.Y + pad);
+        Squircle.Fill(drawList, haloMin, haloMax, radius + pad,
+            ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.14f * strength)));
+        Squircle.Stroke(drawList, haloMin, haloMax, radius + pad,
+            ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.16f * strength)), 1f * scale);
+    }
+
+    public static void PointerSpecular(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius,
+        Vector2 direction, float strength, float scale)
+    {
+        if (strength <= 0.001f)
+        {
+            return;
+        }
+
+        Squircle.StrokeDirectional(drawList, min, max, radius,
+            ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.85f * strength)), 1.6f * scale, direction, 2.5f);
+    }
+
     public static void GlassRim(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
         GlassTone tone, float opacity = 1f)
     {

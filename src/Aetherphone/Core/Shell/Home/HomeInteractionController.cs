@@ -19,13 +19,20 @@ internal sealed class HomeInteractionController
     private const float EdgeFlipSeconds = 0.45f;
     private const float IconLift = 1.16f;
     private const float WidgetLift = 1.045f;
-    private const float TapPressDepth = 0.10f;
-    private const float WidgetTapDepth = 0.03f;
-    private const float TapPressInSeconds = 0.11f;
-    private const float TapPopSeconds = 0.34f;
-    private const float MagnifyBoost = 0.26f;
-    private const float MagnifyRadiusCells = 1.35f;
-    private const float MagnifyFadeTime = 0.13f;
+    private const float TapPressDepth = 0.07f;
+    private const float WidgetTapDepth = 0.02f;
+    private const float PressSmoothTime = 0.07f;
+    private const float ReleaseSmoothTime = 0.16f;
+    private const float PressDim = 0.14f;
+    private const float HoverSmoothTime = 0.12f;
+    private const float HoverLift = 0.05f;
+    private const float WidgetHoverLift = 0.012f;
+
+    private sealed class PointerEntry
+    {
+        public HomeTile Tile = null!;
+        public Spring Spring;
+    }
 
     private readonly HomeLayoutService layout;
     private readonly WidgetRegistry widgets;
@@ -44,13 +51,13 @@ internal sealed class HomeInteractionController
     private bool pressFromDock;
 
     private HomeTile? tapTile;
-    private float tapClock;
     private bool tapHolding;
-    private float tapReleaseFrom;
-    private float tapScale = 1f;
+    private Spring tapSpring;
 
-    private Spring magnifyGate;
-    private Vector2 hoverPos;
+    private readonly List<PointerEntry> pointerEntries = new();
+    private readonly Stack<PointerEntry> pointerPool = new();
+    private HomeTile? hoverTile;
+    private Vector2 hoverPointer;
 
     private bool editing;
     private float editClock;
@@ -301,7 +308,7 @@ internal sealed class HomeInteractionController
 
     private Rect DrawnRect(Rect rect, HomeTile tile, in HomeMetrics metrics)
     {
-        var factor = TapScale(tile) * Magnify(rect.Center, metrics.CellWidth);
+        var factor = Pointer(tile, rect.Center, rect.Width).Scale;
         var half = rect.Size * 0.5f * factor;
         return new Rect(rect.Center - half, rect.Center + half);
     }
@@ -596,42 +603,86 @@ internal sealed class HomeInteractionController
         return new Vector2(x, y) * 1.1f * scale;
     }
 
-    public void UpdateMagnify(Rect content, in HomeMotion motion, float delta)
+    public void UpdatePointer(Rect content, in HomeMetrics metrics, in HomeMotion motion, float delta)
     {
-        hoverPos = ImGui.GetMousePos();
+        hoverPointer = ImGui.GetMousePos();
         var active = motion.Interactive && !editing && dragTile is null && settleTile is null &&
-                     !folder.Active && !gallery.Active && !sizeMenu.Active && !pager.Dragging &&
-                     UiInteract.Hover(content.Min, content.Max);
-        magnifyGate.Step(active ? 1f : 0f, MagnifyFadeTime, delta);
+                     !folder.Active && !gallery.Active && !sizeMenu.Active && !spotlight.Active &&
+                     !pager.Dragging && UiInteract.Hover(content.Min, content.Max);
+        hoverTile = active ? TileAt(metrics, hoverPointer, out _) : null;
+        if (hoverTile is not null && FindPointer(hoverTile) is null)
+        {
+            var entry = pointerPool.Count > 0 ? pointerPool.Pop() : new PointerEntry();
+            entry.Tile = hoverTile;
+            entry.Spring.SnapTo(0f);
+            pointerEntries.Add(entry);
+        }
+
+        for (var index = pointerEntries.Count - 1; index >= 0; index--)
+        {
+            var entry = pointerEntries[index];
+            var target = ReferenceEquals(entry.Tile, hoverTile) ? 1f : 0f;
+            entry.Spring.Step(target, HoverSmoothTime, delta);
+            if (target > 0f || entry.Spring.Value > 0.005f)
+            {
+                continue;
+            }
+
+            pointerEntries.RemoveAt(index);
+            entry.Tile = null!;
+            pointerPool.Push(entry);
+        }
     }
 
-    public float Magnify(Vector2 center, float cellWidth)
+    private PointerEntry? FindPointer(HomeTile tile)
     {
-        var strength = magnifyGate.Value;
-        if (strength <= 0.001f)
+        for (var index = 0; index < pointerEntries.Count; index++)
         {
-            return 1f;
+            if (ReferenceEquals(pointerEntries[index].Tile, tile))
+            {
+                return pointerEntries[index];
+            }
         }
 
-        var radius = cellWidth * MagnifyRadiusCells;
-        var normalized = Math.Clamp(Vector2.Distance(center, hoverPos) / radius, 0f, 1f);
-        if (normalized >= 1f)
-        {
-            return 1f;
-        }
-
-        var falloff = 0.5f * (1f + MathF.Cos(MathF.PI * normalized));
-        return 1f + MagnifyBoost * falloff * strength;
+        return null;
     }
 
-    public float TapScale(HomeTile tile) => ReferenceEquals(tile, tapTile) ? tapScale : 1f;
+    public PointerState Pointer(HomeTile tile, Vector2 center, float size)
+    {
+        var tap = TapScale(tile);
+        var dim = TapDim(tile);
+        var lift = FindPointer(tile)?.Spring.Value ?? 0f;
+        if (lift <= 0.001f)
+        {
+            return new PointerState(tap, 0f, Vector2.Zero, dim);
+        }
+
+        var half = MathF.Max(size * 0.5f, 1f);
+        var tilt = (hoverPointer - center) / half;
+        tilt = new Vector2(Math.Clamp(tilt.X, -1f, 1f), Math.Clamp(tilt.Y, -1f, 1f)) * lift;
+        var gain = tile.IsWidget ? WidgetHoverLift : HoverLift;
+        return new PointerState(tap * (1f + gain * lift), lift, tilt, dim);
+    }
+
+    public float TapScale(HomeTile tile)
+    {
+        if (!ReferenceEquals(tile, tapTile))
+        {
+            return 1f;
+        }
+
+        var depth = tile.IsWidget ? WidgetTapDepth : TapPressDepth;
+        return 1f - depth * tapSpring.Value;
+    }
+
+    private float TapDim(HomeTile tile) =>
+        ReferenceEquals(tile, tapTile) && !tile.IsWidget ? PressDim * tapSpring.Value : 0f;
 
     private void BeginTap(HomeTile tile)
     {
         tapTile = tile;
-        tapClock = 0f;
         tapHolding = true;
-        tapScale = 1f;
+        tapSpring.SnapTo(0f);
     }
 
     private void ReleaseTap()
@@ -642,14 +693,13 @@ internal sealed class HomeInteractionController
         }
 
         tapHolding = false;
-        tapReleaseFrom = tapScale;
-        tapClock = 0f;
     }
 
     public void CancelTap()
     {
         tapTile = null;
-        tapScale = 1f;
+        tapHolding = false;
+        tapSpring.SnapTo(0f);
     }
 
     public void CancelPress()
@@ -668,28 +718,16 @@ internal sealed class HomeInteractionController
     {
         if (tapTile is null)
         {
-            tapScale = 1f;
+            tapSpring.SnapTo(0f);
             return;
         }
 
-        var depth = tapTile.IsWidget ? WidgetTapDepth : TapPressDepth;
-        tapClock += delta;
-        if (tapHolding)
+        tapSpring.Step(tapHolding ? 1f : 0f, tapHolding ? PressSmoothTime : ReleaseSmoothTime, delta);
+        if (!tapHolding && tapSpring.Value < 0.01f)
         {
-            var progress = Math.Clamp(tapClock / TapPressInSeconds, 0f, 1f);
-            tapScale = 1f - depth * Easing.EaseOutCubic(progress);
-            return;
-        }
-
-        var popProgress = tapClock / TapPopSeconds;
-        if (popProgress >= 1f)
-        {
-            tapScale = 1f;
             tapTile = null;
-            return;
+            tapSpring.SnapTo(0f);
         }
-
-        tapScale = tapReleaseFrom + (1f - tapReleaseFrom) * Easing.EaseOutQuint(popProgress);
     }
 
     private static Rect Expand(Rect rect, float amount) =>

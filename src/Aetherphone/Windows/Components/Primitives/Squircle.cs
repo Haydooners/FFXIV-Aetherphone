@@ -96,6 +96,32 @@ internal static class Squircle
         drawList.PathStroke(color, ImDrawFlags.Closed, thickness);
     }
 
+    public static void StrokeDirectional(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, uint color,
+        float thickness, Vector2 direction, float sharpness)
+    {
+        var length = direction.Length();
+        if (length < 0.0001f)
+        {
+            return;
+        }
+
+        var unit = direction / length;
+        var center = (min + max) * 0.5f;
+        var firstVertex = drawList.VtxBuffer.Size;
+        Stroke(drawList, min, max, radius, color, thickness);
+        var vertices = drawList.VtxBuffer.AsSpan();
+        for (var index = firstVertex; index < vertices.Length; index++)
+        {
+            ref var vertex = ref vertices[index];
+            var offset = vertex.Pos - center;
+            var distance = offset.Length();
+            var facing = distance < 0.0001f ? 0f : (offset.X * unit.X + offset.Y * unit.Y) / distance;
+            var weight = facing <= 0f ? 0f : MathF.Pow(facing, sharpness);
+            var alpha = (uint)MathF.Round((vertex.Col >> 24) * weight);
+            vertex.Col = (vertex.Col & ~AlphaMask) | (alpha << 24);
+        }
+    }
+
     public static void StrokeCorner(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, int quadrant,
         Vector4 startColor, Vector4 endColor, float thickness)
     {

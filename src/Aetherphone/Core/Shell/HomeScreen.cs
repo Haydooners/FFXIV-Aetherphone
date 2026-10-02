@@ -65,7 +65,7 @@ internal sealed class HomeScreen
         }
 
         interaction.AdvanceTap(delta);
-        interaction.UpdateMagnify(content, motion, delta);
+        interaction.UpdatePointer(content, metrics, motion, delta);
         if (chromeAlpha > 0.01f)
         {
             var labelAlpha = folder.Active ? 0.35f : 1f;
