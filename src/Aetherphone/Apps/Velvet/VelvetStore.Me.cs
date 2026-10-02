@@ -64,13 +64,11 @@ internal sealed partial class VelvetStore
             {
                 me = profile;
                 accessBlocked = false;
-                regionBlocked = false;
                 raceUnverified = false;
             }
             else if (status == StatusForbidden)
             {
                 accessBlocked = true;
-                regionBlocked = refusal.Code == FailureCodes.VelvetRegionBlocked;
                 raceUnverified = IsRaceUnverified(refusal);
             }
         }, () => loadingMe = false);

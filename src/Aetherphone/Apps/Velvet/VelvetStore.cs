@@ -37,7 +37,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     private volatile VelvetProfileDto? me;
     private volatile bool loadingMe;
     private volatile bool accessBlocked;
-    private volatile bool regionBlocked;
     private volatile bool raceUnverified;
     private volatile bool avatarBusy;
     private volatile bool cardPhotoBusy;
@@ -187,7 +186,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
 
     public VelvetProfileDto? Me => me;
     public bool AccessBlocked => accessBlocked;
-    public bool RegionBlocked => regionBlocked;
     public bool RaceUnverified => raceUnverified;
     public bool HasProfile => me is not null;
     public bool AvatarBusy => avatarBusy;
@@ -289,7 +287,6 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
         discoverEpoch++;
         me = null;
         accessBlocked = false;
-        regionBlocked = false;
         raceUnverified = false;
         meGate.Reset();
         discoverResults = Array.Empty<VelvetProfileDto>();

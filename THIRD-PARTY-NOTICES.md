@@ -8,26 +8,20 @@ release archive alongside the components it covers.
 
 ## AI-generated content
 
-**Nothing inside the phone is AI-generated.** Every icon, wallpaper, phone
-case, sound, ringtone, and font in the device UI comes from a licensed source
-or from a named human artist, credited in the sections below. This is a
-deliberate rule, not a coincidence.
-
-There is one exception, and it sits outside the device UI:
-
-- `src/Aetherphone/Images/Icon.png`, the plugin's icon in the Dalamud
-  installer listing, is AI-generated. It is kept that way for visual
-  consistency with the author's profile art and the other plugins published
-  under the same name.
+**No asset inside the phone is AI-generated.** The icons, sounds, and fonts in
+the device UI come from licensed sources credited in the sections below, and
+each phone case is the work of a named human artist. The built-in wallpapers
+and the ringtone and notification sounds are not AI-generated either; they are
+of third-party origin and are not yet credited in this file.
 
 Phone case art is drawn by community artists and each case credits its artist
 by name in Settings. App icons are derived from Tabler Icons, emoji from
 Twemoji, audio from SND and CC0 sound packs. See the sections below for the
 licenses covering each.
 
-The plugin's nine language catalogs are AI-assisted with human review, and
-in-game terminology is verified against the game's own data rather than
-translated freely. Corrections from native speakers are always welcome:
+The plugin's eight translated language catalogs are AI-assisted with human
+review, and in-game terminology is verified against the game's own data rather
+than translated freely. Corrections from native speakers are always welcome:
 https://github.com/XeldarAlz/FFXIV-Aetherphone/blob/master/docs/translating.md
 
 ## Inter font family
