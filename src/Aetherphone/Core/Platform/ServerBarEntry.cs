@@ -15,9 +15,9 @@ namespace Aetherphone.Core.Platform;
 internal sealed unsafe class ServerBarEntry : IDisposable
 {
     private const string AddonName = "_DTR";
-    private const FontAwesomeIcon Icon = FontAwesomeIcon.Mobile;
+    private const FontAwesomeIcon IdleIcon = FontAwesomeIcon.Mobile;
+    private const FontAwesomeIcon UnreadIcon = FontAwesomeIcon.MobileVibrate;
     private const float IconPixels = 15f;
-    private const float IconInset = 2f;
     private const string IconSlot = "     ";
     private const ushort IconSlotWidth = 17;
     private const uint IconInk = 0xFFFFFFFF;
@@ -82,11 +82,11 @@ internal sealed unsafe class ServerBarEntry : IDisposable
         var drawList = ImGui.GetBackgroundDrawList();
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {
-            var glyph = IconGlyph.Of(Icon);
+            var glyph = IconGlyph.Of(unread > 0 ? UnreadIcon : IdleIcon);
             var fontSize = IconPixels * scale;
             var size = ImGui.CalcTextSize(glyph) * (fontSize / ImGui.GetFontSize());
             var position = new Vector2(
-                MathF.Round(bounds.Min.X + IconInset * scale),
+                MathF.Round(bounds.Min.X + MathF.Max(0f, (IconSlotWidth * scale - size.X) * 0.5f)),
                 MathF.Round(bounds.Min.Y + (slotHeight - size.Y) * 0.5f));
             var shadowOffset = MathF.Max(1f, MathF.Round(scale));
             drawList.AddText(UiBuilder.IconFont, fontSize,
