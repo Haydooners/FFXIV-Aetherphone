@@ -23,6 +23,7 @@ internal sealed class HomeScreen
     private readonly HomeChrome chrome;
     private readonly SpotlightOverlay spotlight;
     private readonly Configuration configuration;
+    private float sidePaddingUnits = PhoneTheme.Default.SidePadding;
 
     public HomeScreen(IReadOnlyList<IPhoneApp> apps, WidgetRegistry widgets, ShortcutStore shortcuts,
         ShortcutRunner runner, Configuration configuration, ConfirmService confirm, SpotlightIndex spotlightIndex)
@@ -49,8 +50,9 @@ internal sealed class HomeScreen
         var delta = FrameClock.Delta;
         interaction.Advance(delta);
         var editReserve = interaction.Editing && motion.Interactive ? HomeMetrics.EditToolbarBandUnits : 0f;
+        sidePaddingUnits = theme.SidePadding;
         var metrics = HomeMetrics.Compute(content, HomeLayoutService.Columns, layout.Rows, UiScale.Current,
-            motion, editReserve);
+            motion, sidePaddingUnits, editReserve);
         pager.Step(delta, interaction.DisplayPageCount());
         var chromeAlpha = 1f - motion.Recession;
         if (motion.Interactive)
@@ -112,7 +114,7 @@ internal sealed class HomeScreen
     {
         kind = LaunchOrigin.Icon;
         var metrics = HomeMetrics.Compute(content, HomeLayoutService.Columns, layout.Rows, UiScale.Current,
-            HomeMotion.Rest);
+            HomeMotion.Rest, sidePaddingUnits);
         var dock = layout.Dock;
         for (var index = 0; index < dock.Count; index++)
         {
