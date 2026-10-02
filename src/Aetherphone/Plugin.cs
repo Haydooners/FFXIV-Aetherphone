@@ -24,7 +24,6 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
 using Dalamud.Game.Config;
 using Dalamud.Game.Gui.ContextMenu;
-using Dalamud.Game.Gui.Dtr;
 using Dalamud.IoC;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
@@ -85,7 +84,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly ClockAlarmService clockAlarms;
     private readonly ReminderService reminders;
     private readonly ScreenshotImportService screenshotImport;
-    private readonly IDtrBarEntry dtrEntry;
+    private readonly ServerBarEntry serverBar;
     private static CommandInfo? primaryCommand;
     private static CommandInfo? aliasCommand;
     private bool autoOpenPending;
@@ -190,11 +189,7 @@ public sealed class Plugin : IDalamudPlugin
             services.CharacterWatch.Start();
             services.Calls.IncomingCallPresented += OnIncomingCall;
             services.Calls.Start();
-            dtrEntry = DtrBar.Get(AepConstants.Name);
-            dtrEntry.OnClick = _ => phoneWindow.ToggleShell();
-            services.Notifications.Changed += UpdateDtrBadge;
-            Cfg.BadgeSettingsChanged += UpdateDtrBadge;
-            UpdateDtrBadge();
+            serverBar = new ServerBarEntry(DtrBar, Cfg, services.Notifications, phoneWindow.ToggleShell);
             services.MarketIndex.EnsureBuilt();
             ContextMenu.OnMenuOpened += OnMenuOpened;
             primaryCommand = new CommandInfo(OnCommand) { HelpMessage = Loc.T(L.Plugin.CommandHelp) };
@@ -260,12 +255,10 @@ public sealed class Plugin : IDalamudPlugin
         CommandManager.RemoveHandler(AepConstants.AliasCommand);
         if (services is not null)
         {
-            services.Notifications.Changed -= UpdateDtrBadge;
-            Cfg.BadgeSettingsChanged -= UpdateDtrBadge;
             services.Calls.IncomingCallPresented -= OnIncomingCall;
         }
 
-        dtrEntry?.Remove();
+        serverBar?.Dispose();
         linkpearlPresence?.Dispose();
         windowSystem.RemoveAllWindows();
         videoDebugWindow?.Dispose();
@@ -397,11 +390,9 @@ public sealed class Plugin : IDalamudPlugin
         Framework.Update -= OnAutoOpenTick;
         Framework.Update -= OnVideoFrameworkUpdate;
         Framework.Update -= OnLinkpearlPresenceTick;
-        services.Notifications.Changed -= UpdateDtrBadge;
-        Cfg.BadgeSettingsChanged -= UpdateDtrBadge;
         services.Calls.IncomingCallPresented -= OnIncomingCall;
         ContextMenu.OnMenuOpened -= OnMenuOpened;
-        dtrEntry.Remove();
+        serverBar.Dispose();
         phoneWindow.PersistPositions();
         linkpearlPresence.Dispose();
         linkpearlPopouts.Dispose();
@@ -438,6 +429,8 @@ public sealed class Plugin : IDalamudPlugin
         {
             aliasCommand.HelpMessage = Loc.T(L.Plugin.CommandHelpAlias);
         }
+
+        Instance?.serverBar?.Refresh();
     }
 
     private static void InitializeLocalization()
@@ -480,14 +473,6 @@ public sealed class Plugin : IDalamudPlugin
         }
 
         return "en";
-    }
-
-    private void UpdateDtrBadge()
-    {
-        var unread = Cfg.IsAppBadgeEnabled(NotificationChannels.NotificationsAppId)
-            ? services.Notifications.UnreadCount
-            : 0;
-        dtrEntry.Text = unread > 0 ? $"{AepConstants.Name} ({unread})" : AepConstants.Name;
     }
 
     private void OnCommand(string command, string arguments)

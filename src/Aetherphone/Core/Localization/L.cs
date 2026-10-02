@@ -1908,6 +1908,14 @@ internal static class L
         public static readonly LocString SectionAethergramVelvet = new("changelog.sectionAethergramVelvet", "Aethergram and Velvet");
         public static readonly LocString SectionChirperAethergramVelvet = new("changelog.sectionChirperAethergramVelvet", "Chirper, Aethergram and Velvet");
 
+        public static readonly LocString[] Release1042Phone =
+        {
+            new("changelog.r1042.0",
+                "The server info bar entry now shows an Aethernet icon next to the Aetherphone name, with your unread count as a boxed number"),
+            new("changelog.r1042.1",
+                "Hovering the server info bar entry now shows how many notifications are waiting and what a click does"),
+        };
+
         public static readonly LocString[] Release1041MogCast =
         {
             new("changelog.r1041.0",
@@ -6473,6 +6481,12 @@ internal static class L
 
         public static readonly LocString UpdateChipHint = new("plugin.updateChipHint",
             "A newer Aetherphone is ready. Click to open Dalamud's plugin installer.");
+
+        public static readonly LocPlural ServerBarUnread = new("plugin.serverBarUnread",
+            "{0} unread notification", "{0} unread notifications");
+
+        public static readonly LocString ServerBarNoUnread = new("plugin.serverBarNoUnread", "No unread notifications");
+        public static readonly LocString ServerBarClickHint = new("plugin.serverBarClickHint", "Click to open or close the phone");
     }
 
     internal static class Feedback
