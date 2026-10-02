@@ -2,7 +2,6 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Notifications;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Gui.Dtr;
-using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Plugin.Services;
@@ -19,7 +18,6 @@ internal sealed unsafe class ServerBarEntry : IDisposable
     private const string ArtworkSlot = "     ";
     private const ushort ArtworkSlotWidth = 17;
     private const BitmapFontIcon FallbackIcon = BitmapFontIcon.Aethernet;
-    private const int LargestBoxedNumber = 31;
 
     private readonly IDtrBarEntry entry;
     private readonly Configuration configuration;
@@ -112,7 +110,7 @@ internal sealed unsafe class ServerBarEntry : IDisposable
 
         if (unread > 0)
         {
-            builder.AddText(string.Concat(" ", BadgeText(unread)));
+            builder.AddText(string.Concat(" ", unread.ToString(Loc.Culture)));
         }
 
         return builder.Build();
@@ -130,17 +128,6 @@ internal sealed unsafe class ServerBarEntry : IDisposable
             .Add(NewLinePayload.Payload)
             .AddText(Loc.T(L.Plugin.ServerBarClickHint))
             .Build();
-    }
-
-    private static string BadgeText(int unread)
-    {
-        if (unread > LargestBoxedNumber)
-        {
-            return unread.ToString(Loc.Culture);
-        }
-
-        var glyph = (SeIconChar)((int)SeIconChar.BoxedNumber0 + unread);
-        return glyph.ToIconString();
     }
 
     private static string? ResolveArtwork(string directory, string name)
