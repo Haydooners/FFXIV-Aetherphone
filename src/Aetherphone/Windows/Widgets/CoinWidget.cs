@@ -43,13 +43,13 @@ internal sealed class CoinWidget : IHomeWidget
         balance.Update((int)Math.Clamp(target, 0, int.MaxValue), context.Delta);
 
         var text = NumberText.Group(balance.Display);
-        var valueScale = (context.Size == WidgetSize.Small ? 1.45f : 1.85f) * balance.PopScale;
-        var valueSize = Typography.Measure(text, valueScale, FontWeight.Bold);
-        var fitted = Typography.FitScale(text, bounds.Width - pad * 2f, valueScale, 0.9f, FontWeight.Bold);
-        valueSize = Typography.Measure(text, fitted, FontWeight.Bold);
+        var valueStyle = context.Size == WidgetSize.Small ? TextStyles.WidgetDisplayCompact : TextStyles.WidgetDisplay;
+        var valueScale = valueStyle.Scale * balance.PopScale;
+        var fitted = Typography.FitScale(text, bounds.Width - pad * 2f, valueScale, 0.9f, valueStyle.Weight);
+        var valueSize = Typography.Measure(text, fitted, valueStyle.Weight);
         var center = new Vector2(bounds.Center.X, bounds.Center.Y + 4f * scale);
         Typography.Draw(context.DrawList, new Vector2(center.X - valueSize.X * 0.5f, center.Y - valueSize.Y * 0.5f),
-            text, Palette.WithAlpha(context.Theme.TextStrong, context.Opacity), fitted, FontWeight.Bold);
+            text, Palette.WithAlpha(context.Theme.TextStrong, context.Opacity), fitted, valueStyle.Weight);
 
         if (context.Size != WidgetSize.Medium || wallet is null)
         {

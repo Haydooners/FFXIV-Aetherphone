@@ -145,12 +145,12 @@ internal sealed class SkywatcherWidget : IHomeWidget
         var availableForRow = contentBottom - bounds.Min.Y - minTopOffset;
 
         float RowHeightAt(float candidateScale) => MathF.Max(
-            Typography.Measure("0:00", candidateScale, FontWeight.Medium).Y,
+            Typography.Measure("0:00", candidateScale, TextStyles.WidgetDisplay.Weight).Y,
             Typography.Measure("Ag", candidateScale, FontWeight.SemiBold).Y);
 
-        var roomy = RowHeightAt(2.0f) <= availableForRow;
-        var heroScale = roomy ? 2.0f : 1.62f;
-        var timeStyle = new TextStyle(heroScale, FontWeight.Medium);
+        var roomy = RowHeightAt(TextStyles.WidgetDisplay.Scale) <= availableForRow;
+        var heroScale = roomy ? TextStyles.WidgetDisplay.Scale : TextStyles.WidgetDisplayCompact.Scale;
+        var timeStyle = new TextStyle(heroScale, TextStyles.WidgetDisplay.Weight);
         var timeSize = Typography.Measure(time, timeStyle);
         var stableTimeWidth = Typography.Measure("88:88", timeStyle).X;
         var eorzeaLabel = Loc.Culture.TextInfo.ToUpper(Loc.T(L.Home.Eorzea));
@@ -163,7 +163,7 @@ internal sealed class SkywatcherWidget : IHomeWidget
         var roomConstrainedOffset = contentBottom - bounds.Min.Y - rowHeight;
         var conditionYOffset = MathF.Max(4f * scale, MathF.Min(minTopOffset, roomConstrainedOffset));
         var conditionY = bounds.Min.Y + conditionYOffset;
-        var conditionStyle = new TextStyle(heroScale, FontWeight.SemiBold);
+        var conditionStyle = new TextStyle(heroScale * 0.82f, FontWeight.SemiBold);
         var conditionMaxHeight = MathF.Max(0f, contentBottom - conditionY);
         var conditionHeight = DrawConditionText(drawList, forecast[0].Weather.Name, new Vector2(left, conditionY),
             conditionStyle, Palette.WithAlpha(palette.Ink, opacity), bounds.Width - rightColumn - pad * 2f,
