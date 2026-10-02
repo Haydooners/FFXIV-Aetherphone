@@ -15,7 +15,7 @@ internal static class WidgetChrome
 
     public static void Card(ImDrawListPtr drawList, Rect bounds, float scale, float opacity)
     {
-        Material.Frosted(drawList, bounds.Min, bounds.Max, Radius(scale), scale, opacity);
+        Material.FrostedGlass(drawList, bounds.Min, bounds.Max, Radius(scale), scale, opacity);
     }
 
     public static void Tinted(ImDrawListPtr drawList, Rect bounds, Vector4 top, Vector4 bottom, float scale,
