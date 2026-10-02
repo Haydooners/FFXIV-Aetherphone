@@ -30,13 +30,12 @@ internal static class WallpaperRenderer
     private static void DrawBlurred(ImDrawListPtr drawList, Rect shape, Rect quad, WallpaperEntry entry, float aspect,
         float alpha)
     {
-        var library = Plugin.Wallpapers;
-        if (library.BlurredHandlePath(entry.FilePath) is not { } handle)
+        if (!Plugin.Wallpapers.TryGetBlurred(entry.FilePath, out var handle, out var size))
         {
             return;
         }
 
-        DrawTexture(drawList, shape, quad, handle, library.BlurredSizeOfPath(entry.FilePath), entry, aspect, alpha);
+        DrawTexture(drawList, shape, quad, handle, size, entry, aspect, alpha);
     }
 
     public static void DrawSingle(ImDrawListPtr drawList, Rect rect, float radius, WallpaperEntry entry, float aspect,
@@ -46,8 +45,8 @@ internal static class WallpaperRenderer
     public static void DrawSingle(ImDrawListPtr drawList, Rect shape, Rect quad, float radius, WallpaperEntry entry,
         float aspect, float alpha, Vector4? fallback)
     {
-        var library = Plugin.Wallpapers;
-        if (library.HandlePath(entry.FilePath) is not { } handle)
+        var extent = MathF.Max(quad.Width, quad.Height);
+        if (!Plugin.Wallpapers.TryGetTexture(entry.FilePath, extent, out var handle, out var size))
         {
             if (fallback is { } color)
             {
@@ -57,7 +56,7 @@ internal static class WallpaperRenderer
             return;
         }
 
-        DrawTexture(drawList, shape, quad, handle, library.SizeOfPath(entry.FilePath), entry, aspect, alpha);
+        DrawTexture(drawList, shape, quad, handle, size, entry, aspect, alpha);
     }
 
     private static void DrawTexture(ImDrawListPtr drawList, Rect shape, Rect quad, ImTextureID handle,

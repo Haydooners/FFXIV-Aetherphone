@@ -315,16 +315,16 @@ internal static class DeviceChrome
         library.CurrentTargetAspect = screen.Height > 0f ? screen.Width / screen.Height : 0.5f;
         var light = library.Resolve(theme.LightWallpaperId);
         var dark = library.Resolve(theme.DarkWallpaperId);
-        library.BlurredHandlePath(light.FilePath);
-        library.BlurredHandlePath(dark.FilePath);
+        library.TryGetBlurred(light.FilePath, out _, out _);
+        library.TryGetBlurred(dark.FilePath, out _, out _);
         WallpaperRenderer.Draw(ImGui.GetWindowDrawList(), shape, quad, radius, light, dark,
             library.CurrentTargetAspect, library.ThemeDarkness, theme.ScreenBase, motion.Recession);
     }
 
     public static void DrawHomeScrim(Rect screen, float radius, PhoneTheme theme)
     {
-        const float calmDim = 0.08f;
-        const float harshDim = 0.30f;
+        const float calmDim = 0.05f;
+        const float harshDim = 0.24f;
         var dim = calmDim + (harshDim - calmDim) * WallpaperLegibility.Strength(theme);
         Squircle.Fill(ImGui.GetWindowDrawList(), screen.Min, screen.Max, radius,
             ImGui.GetColorU32(new Vector4(0f, 0f, 0f, dim)));
