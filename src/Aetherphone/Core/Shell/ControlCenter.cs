@@ -104,8 +104,8 @@ internal sealed class ControlCenter
         var rounding = theme.ScreenRounding * scale;
         var panelTop = screen.Min.Y - (1f - eased) * height;
         dl.PushClipRect(screen.Min, screen.Max, true);
-        Material.Veil(dl, screen.Min, screen.Max, 0.68f * eased, rounding);
-        Material.Frosted(dl, new Vector2(screen.Min.X, panelTop), new Vector2(screen.Max.X, panelTop + height),
+        Material.Veil(dl, screen.Min, screen.Max, 0.55f * eased, rounding);
+        Material.FrostedGlass(dl, new Vector2(screen.Min.X, panelTop), new Vector2(screen.Max.X, panelTop + height),
             rounding, scale, 1f);
         var opacity = Math.Clamp(eased * 1.7f, 0f, 1f);
         var interactive = open && !drag.Active && offset.Value > 0.96f && inputEnabled;

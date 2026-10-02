@@ -15,6 +15,7 @@ internal static class WallpaperRenderer
             DrawSingle(drawList, shape, quad, radius, dark, aspect, darkness, null);
         }
 
+        RecordBackdrop(quad, light, dark, aspect, darkness);
         if (blur <= 0.001f)
         {
             return;
@@ -25,6 +26,26 @@ internal static class WallpaperRenderer
         {
             DrawBlurred(drawList, shape, quad, dark, aspect, blur * darkness);
         }
+    }
+
+    private static void RecordBackdrop(Rect quad, WallpaperEntry light, WallpaperEntry dark, float aspect,
+        float darkness)
+    {
+        var library = Plugin.Wallpapers;
+        if (!library.TryGetBlurred(light.FilePath, out var lightHandle, out var lightSize))
+        {
+            return;
+        }
+
+        var (lightUv0, lightUv1) = light.Crop.ComputeUv(lightSize, aspect);
+        WallpaperBackdrop.Record(quad, lightHandle, lightUv0, lightUv1);
+        if (darkness <= 0.001f || !library.TryGetBlurred(dark.FilePath, out var darkHandle, out var darkSize))
+        {
+            return;
+        }
+
+        var (darkUv0, darkUv1) = dark.Crop.ComputeUv(darkSize, aspect);
+        WallpaperBackdrop.RecordDark(darkHandle, darkUv0, darkUv1, darkness);
     }
 
     private static void DrawBlurred(ImDrawListPtr drawList, Rect shape, Rect quad, WallpaperEntry entry, float aspect,

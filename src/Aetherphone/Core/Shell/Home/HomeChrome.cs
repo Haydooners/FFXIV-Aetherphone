@@ -99,8 +99,14 @@ internal sealed class HomeChrome
         var press = PressFx.Scale("home.searchpill", pressed);
         var drawHalf = half * press;
         var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, center - drawHalf, center + drawHalf, drawHalf.Y,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, (hovered ? 0.16f : 0.10f) * alpha)));
+        Material.LiquidGlass(drawList, center - drawHalf, center + drawHalf, drawHalf.Y, scale, GlassTone.Light,
+            WallpaperLegibility.Strength(theme), alpha);
+        if (hovered)
+        {
+            Squircle.Fill(drawList, center - drawHalf, center + drawHalf, drawHalf.Y,
+                ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.08f * alpha)));
+        }
+
         var label = Loc.T(L.Spotlight.Search);
         var labelSize = Typography.Measure(label, TextStyles.FootnoteEmphasized);
         var iconHeight = 10f * scale * press;

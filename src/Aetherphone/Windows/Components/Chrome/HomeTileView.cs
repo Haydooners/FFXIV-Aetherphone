@@ -59,8 +59,13 @@ internal static class HomeTileView
         var max = new Vector2(center.X + drawHalf, center.Y + drawHalf);
         var radius = size * 0.26f * drawScale;
         Elevation.IconRest(dl, min, max, radius, scale);
-        Squircle.Fill(dl, min, max, radius, ImGui.GetColorU32(FolderFill(folder.FolderTint)));
-        Material.EdgeSquircle(dl, min, max, radius, scale);
+        Material.LiquidGlass(dl, min, max, radius, scale, GlassTone.Light, WallpaperLegibility.Strength(theme));
+        if (!string.IsNullOrEmpty(folder.FolderTint))
+        {
+            Squircle.Fill(dl, min, max, radius,
+                ImGui.GetColorU32(Palette.WithAlpha(ThemeCatalog.ResolveAccent(folder.FolderTint), 0.34f)));
+        }
+
         var pad = drawHalf * 0.28f;
         var inner = drawHalf * 2f - pad * 2f;
         var cell = inner / 3f;
@@ -118,10 +123,6 @@ internal static class HomeTileView
             DrawBadge(center, size, 1, true, theme, scale);
         }
     }
-
-    private static Vector4 FolderFill(string tint) => string.IsNullOrEmpty(tint)
-        ? new Vector4(1f, 1f, 1f, 0.16f)
-        : Palette.WithAlpha(ThemeCatalog.ResolveAccent(tint), 0.34f);
 
     private static void DrawBadge(Vector2 center, float size, int count, bool asDot, PhoneTheme theme, float scale)
     {

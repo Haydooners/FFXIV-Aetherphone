@@ -62,7 +62,7 @@ internal sealed class WidgetGallery
         var top = screen.Max.Y - sheetHeight * eased;
         var sheet = new Rect(new Vector2(screen.Min.X, top), new Vector2(screen.Max.X, top + sheetHeight));
         var rounding = 34f * scale;
-        Material.Frosted(drawList, sheet.Min, sheet.Max, rounding, scale, 1f);
+        Material.FrostedGlass(drawList, sheet.Min, sheet.Max, rounding, scale, 1f);
         var interactive = open && eased > 0.95f;
         DrawHeader(drawList, sheet, theme, scale, interactive);
         DrawItems(drawList, sheet, theme, scale, delta, interactive);

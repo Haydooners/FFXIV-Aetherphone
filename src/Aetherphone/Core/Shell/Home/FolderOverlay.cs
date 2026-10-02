@@ -82,7 +82,7 @@ internal sealed class FolderOverlay
         var eased = Easing.EaseOutCubic(Math.Clamp(anim.Value, 0f, 1f));
         var drawList = ImGui.GetWindowDrawList();
         drawList.PushClipRect(content.Min, content.Max, true);
-        Material.Veil(drawList, content.Min, content.Max, 0.5f * eased);
+        Material.Veil(drawList, content.Min, content.Max, 0.35f * eased);
         var columns = current.Members.Count <= 9 ? 3 : 4;
         var rows = (current.Members.Count + columns - 1) / columns;
         var panelWidth = content.Width * 0.84f;
@@ -96,7 +96,7 @@ internal sealed class FolderOverlay
         var targetMin = new Vector2(content.Center.X - panelWidth * 0.5f, content.Center.Y - panelHeight * 0.5f);
         var target = new Rect(targetMin, targetMin + new Vector2(panelWidth, panelHeight));
         var panel = new Rect(Vector2.Lerp(origin.Min, target.Min, eased), Vector2.Lerp(origin.Max, target.Max, eased));
-        Material.Frosted(drawList, panel.Min, panel.Max, 28f * scale, scale, eased);
+        Material.FrostedGlass(drawList, panel.Min, panel.Max, 28f * scale, scale, eased);
         var interactive = !closing && eased > 0.85f;
         if (interactive)
         {
