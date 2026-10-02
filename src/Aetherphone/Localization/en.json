@@ -5667,7 +5667,7 @@
   "changelog.r1041.12": "Parties now stay open for five minutes on a dark screen when the queue runs out, instead of closing",
   "changelog.r1041.13": "The screen now remembers where you placed it in each location",
   "changelog.r1041.14": "Fixed local files not playing when their path was pasted with quotes around it",
-  "changelog.r1042.0": "The server info bar entry now shows a phone icon next to the Aetherphone name, with your unread count as a boxed number",
+  "changelog.r1042.0": "The server info bar entry is now a phone icon with your unread count as a boxed number, in place of the Aetherphone name",
   "changelog.r1042.1": "Hovering the server info bar entry now shows how many notifications are waiting and what a click does",
   "changelog.r1037.0": "Moved live DJs off the home screen and onto their venue's page: the Now playing card shows the DJ's picture, name and viewers, with a Twitch link for each DJ",
   "changelog.r1037.1": "Added an Active DJ tag to venue cards while a DJ is on air there",

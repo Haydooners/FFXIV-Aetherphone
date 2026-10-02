@@ -17,6 +17,7 @@ internal sealed unsafe class ServerBarEntry : IDisposable
     private const string UnreadArtwork = "server-bar-unread";
     private const float ArtworkPixels = 15f;
     private const string ArtworkSlot = "     ";
+    private const ushort ArtworkSlotWidth = 17;
     private const BitmapFontIcon FallbackIcon = BitmapFontIcon.Aethernet;
     private const int LargestBoxedNumber = 31;
 
@@ -36,6 +37,11 @@ internal sealed unsafe class ServerBarEntry : IDisposable
         unreadArtworkPath = ResolveArtwork(iconDirectory, UnreadArtwork);
         entry = bar.Get(AepConstants.Name);
         entry.OnClick = _ => onClick();
+        if (idleArtworkPath is not null)
+        {
+            entry.MinimumWidth = ArtworkSlotWidth;
+        }
+
         notifications.Changed += Refresh;
         configuration.BadgeSettingsChanged += Refresh;
         Plugin.PluginInterface.UiBuilder.Draw += Draw;
@@ -97,11 +103,11 @@ internal sealed unsafe class ServerBarEntry : IDisposable
         var builder = new SeStringBuilder();
         if (idleArtworkPath is null)
         {
-            builder.AddIcon(FallbackIcon).AddText(AepConstants.Name);
+            builder.AddIcon(FallbackIcon).AddText(AepConstants.ServerBarTag);
         }
         else
         {
-            builder.AddText(string.Concat(ArtworkSlot, AepConstants.Name));
+            builder.AddText(string.Concat(ArtworkSlot, AepConstants.ServerBarTag));
         }
 
         if (unread > 0)

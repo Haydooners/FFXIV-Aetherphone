@@ -5667,7 +5667,7 @@
   "changelog.r1041.12": "Sıra bittiğinde partiler artık kapanmak yerine karanlık bir ekranla beş dakika açık kalıyor",
   "changelog.r1041.13": "Ekran artık her yerde onu nereye koyduğunu hatırlıyor",
   "changelog.r1041.14": "Yolu tırnak içinde yapıştırılan yerel dosyaların oynatılmaması düzeltildi",
-  "changelog.r1042.0": "Sunucu bilgi çubuğundaki öğe artık Aetherphone adının yanında bir telefon simgesi ve okunmamış bildirim sayını kutulu bir sayı olarak gösteriyor",
+  "changelog.r1042.0": "Sunucu bilgi çubuğundaki öğe artık Aetherphone adı yerine bir telefon simgesi ve kutulu bir sayı olarak okunmamış bildirim sayını gösteriyor",
   "changelog.r1042.1": "Sunucu bilgi çubuğundaki öğenin üzerine geldiğinde artık kaç bildirimin beklediğini ve tıklamanın ne yaptığını görüyorsun",
   "changelog.r1037.0": "Canlı DJ'ler ana ekrandan kendi mekanlarının sayfasına taşındı: Şimdi çalıyor kartı DJ'in resmini, adını ve izleyicilerini gösterir, her DJ için bir Twitch bağlantısıyla",
   "changelog.r1037.1": "Bir DJ yayındayken mekan kartlarına Aktif DJ etiketi eklendi",
