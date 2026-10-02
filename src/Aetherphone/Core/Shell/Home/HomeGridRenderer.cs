@@ -120,9 +120,10 @@ internal sealed class HomeGridRenderer
                 ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.8f)), 32, 2f * scale);
         }
 
+        var pointer = interaction.Pointer(tile, center, rect.Width);
         if (tile.IsWidget)
         {
-            var pressScale = interaction.TapScale(tile);
+            var pressScale = pointer.Scale;
             var drawRect = pressScale == 1f ? rect : ScaleRect(rect, pressScale);
             tile.Widget!.Draw(new WidgetContext(ImGui.GetWindowDrawList(), drawRect, theme, tile.Size, scale, delta,
                 Math.Clamp(labelAlpha + 0.35f, 0f, 1f)));
@@ -140,8 +141,7 @@ internal sealed class HomeGridRenderer
         if (tile.IsShortcut)
         {
             HomeTileView.DrawShortcut(center, rect.Width, tile.Shortcut!, shortcuts.Icon(tile.Shortcut!), theme,
-                interaction.TapScale(tile) * interaction.Magnify(center, metrics.CellWidth),
-                labelAlpha, showLabels, metrics.CellWidth, zoom);
+                pointer.Scale, labelAlpha, showLabels, metrics.CellWidth, zoom, pointer);
             if (interaction.RemoveBadgesLive(motion) &&
                 HomeTileView.RemoveBadge(new Vector2(rect.Min.X + 2f * scale, rect.Min.Y + 2f * scale), scale, theme))
             {
@@ -154,10 +154,9 @@ internal sealed class HomeGridRenderer
 
         if (tile.IsFolder)
         {
-            HomeTileView.DrawFolder(center, rect.Width, tile, theme,
-                interaction.TapScale(tile) * interaction.Magnify(center, metrics.CellWidth),
+            HomeTileView.DrawFolder(center, rect.Width, tile, theme, pointer.Scale,
                 labelAlpha, showLabels, Loc.T(L.Home.NewFolder), metrics.CellWidth, shortcutIcon, configuration,
-                zoom);
+                zoom, pointer);
             if (interaction.RemoveBadgesLive(motion) &&
                 HomeTileView.RemoveBadge(new Vector2(rect.Min.X + 2f * scale, rect.Min.Y + 2f * scale), scale, theme))
             {
@@ -169,9 +168,8 @@ internal sealed class HomeGridRenderer
             return;
         }
 
-        HomeTileView.DrawApp(center, rect.Width, tile.App!, theme,
-            interaction.TapScale(tile) * interaction.Magnify(center, metrics.CellWidth),
-            labelAlpha, showLabels, metrics.CellWidth, configuration, zoom);
+        HomeTileView.DrawApp(center, rect.Width, tile.App!, theme, pointer.Scale,
+            labelAlpha, showLabels, metrics.CellWidth, configuration, zoom, pointer);
         if (interaction.RemoveBadgesLive(motion) && HomeLayoutService.CanUninstall(tile.App!.Id) &&
             HomeTileView.RemoveBadge(new Vector2(rect.Min.X + 2f * scale, rect.Min.Y + 2f * scale), scale, theme))
         {
@@ -249,9 +247,9 @@ internal sealed class HomeGridRenderer
             }
 
             var jiggle = interaction.Jiggle(tile, metrics.Scale);
-            HomeTileView.DrawApp(rect.Center + jiggle, rect.Width, tile.App!, theme,
-                interaction.TapScale(tile) * interaction.Magnify(rect.Center, metrics.CellWidth), 0f, true, 0f,
-                configuration, motion.Zoom);
+            var pointer = interaction.Pointer(tile, rect.Center, rect.Width);
+            HomeTileView.DrawApp(rect.Center + jiggle, rect.Width, tile.App!, theme, pointer.Scale, 0f, true, 0f,
+                configuration, motion.Zoom, pointer);
             if (!interaction.Editing && dragTile is null)
             {
                 HoverTooltip.Show(string.Concat("dock:", tile.Key), rect, tile.App!.DisplayName,

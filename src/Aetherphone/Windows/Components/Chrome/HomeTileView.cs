@@ -9,8 +9,11 @@ namespace Aetherphone.Windows.Components;
 
 internal static class HomeTileView
 {
+    private const float TiltDepth = 0.07f;
+
     public static void DrawApp(Vector2 center, float size, IPhoneApp app, PhoneTheme theme, float drawScale,
-        float labelAlpha, bool showLabels, float labelWidth, Configuration configuration, float zoom = 1f)
+        float labelAlpha, bool showLabels, float labelWidth, Configuration configuration, float zoom = 1f,
+        PointerState pointer = default)
     {
         var scale = UiScale.Current * zoom;
         var dl = ImGui.GetWindowDrawList();
@@ -20,6 +23,8 @@ internal static class HomeTileView
         var radius = size * 0.26f * drawScale;
         var surface = IconTile.Surface(app.Accent);
         var ink = AppAccents.InkFor(app.Id);
+        var firstVertex = dl.VtxBuffer.Size;
+        Material.PointerHalo(dl, drawMin, drawMax, radius, pointer.Lift, scale);
         Elevation.IconRest(dl, drawMin, drawMax, radius, scale);
         IconTile.FillShaded(dl, drawMin, drawMax, radius, surface);
         Material.EdgeSquircle(dl, drawMin, drawMax, radius, scale);
@@ -30,6 +35,7 @@ internal static class HomeTileView
             Typography.DrawCentered(center, app.Glyph, ink, glyphScale);
         }
 
+        FinishPointer(dl, firstVertex, center, drawMin, drawMax, radius, drawHalf, pointer, scale);
         DrawLabel(center, size, app.DisplayName, theme, scale, labelAlpha, showLabels, labelWidth, zoom);
         if (app.BadgeCount > 0 && IsBadgeVisible(app, configuration))
         {
@@ -40,17 +46,28 @@ internal static class HomeTileView
     private static bool IsBadgeVisible(IPhoneApp app, Configuration configuration) =>
         !app.HasBadge || configuration.IsAppBadgeEnabled(app.Id);
 
-    public static void DrawShortcut(Vector2 center, float size, ShortcutEntry shortcut, IDalamudTextureWrap? icon,
-        PhoneTheme theme, float drawScale, float labelAlpha, bool showLabels, float labelWidth, float zoom = 1f)
+    private static void FinishPointer(ImDrawListPtr dl, int firstVertex, Vector2 center, Vector2 min, Vector2 max,
+        float radius, float half, in PointerState pointer, float scale)
     {
-        var scale = UiScale.Current * zoom;
-        ShortcutArt.DrawSurface(ImGui.GetWindowDrawList(), center, size * drawScale, shortcut, icon, scale);
-        DrawLabel(center, size, shortcut.Name, theme, scale, labelAlpha, showLabels, labelWidth, zoom);
+        if (pointer.Hovered)
+        {
+            Material.PointerSpecular(dl, min, max, radius, pointer.Tilt, pointer.Lift, scale);
+        }
+
+        if (pointer.Dim > 0.001f)
+        {
+            Squircle.Fill(dl, min, max, radius, ImGui.GetColorU32(new Vector4(0f, 0f, 0f, pointer.Dim)));
+        }
+
+        if (pointer.Hovered)
+        {
+            VertexWarp.Tilt(dl, firstVertex, center, half, -pointer.Tilt, TiltDepth);
+        }
     }
 
-    public static void DrawFolder(Vector2 center, float size, HomeTile folder, PhoneTheme theme, float drawScale,
-        float labelAlpha, bool showLabels, string fallbackName, float labelWidth,
-        Func<ShortcutEntry, IDalamudTextureWrap?> shortcutIcon, Configuration configuration, float zoom = 1f)
+    public static void DrawShortcut(Vector2 center, float size, ShortcutEntry shortcut, IDalamudTextureWrap? icon,
+        PhoneTheme theme, float drawScale, float labelAlpha, bool showLabels, float labelWidth, float zoom = 1f,
+        PointerState pointer = default)
     {
         var scale = UiScale.Current * zoom;
         var dl = ImGui.GetWindowDrawList();
@@ -58,6 +75,26 @@ internal static class HomeTileView
         var min = new Vector2(center.X - drawHalf, center.Y - drawHalf);
         var max = new Vector2(center.X + drawHalf, center.Y + drawHalf);
         var radius = size * 0.26f * drawScale;
+        var firstVertex = dl.VtxBuffer.Size;
+        Material.PointerHalo(dl, min, max, radius, pointer.Lift, scale);
+        ShortcutArt.DrawSurface(dl, center, size * drawScale, shortcut, icon, scale);
+        FinishPointer(dl, firstVertex, center, min, max, radius, drawHalf, pointer, scale);
+        DrawLabel(center, size, shortcut.Name, theme, scale, labelAlpha, showLabels, labelWidth, zoom);
+    }
+
+    public static void DrawFolder(Vector2 center, float size, HomeTile folder, PhoneTheme theme, float drawScale,
+        float labelAlpha, bool showLabels, string fallbackName, float labelWidth,
+        Func<ShortcutEntry, IDalamudTextureWrap?> shortcutIcon, Configuration configuration, float zoom = 1f,
+        PointerState pointer = default)
+    {
+        var scale = UiScale.Current * zoom;
+        var dl = ImGui.GetWindowDrawList();
+        var drawHalf = size * 0.5f * drawScale;
+        var min = new Vector2(center.X - drawHalf, center.Y - drawHalf);
+        var max = new Vector2(center.X + drawHalf, center.Y + drawHalf);
+        var radius = size * 0.26f * drawScale;
+        var firstVertex = dl.VtxBuffer.Size;
+        Material.PointerHalo(dl, min, max, radius, pointer.Lift, scale);
         Elevation.IconRest(dl, min, max, radius, scale);
         Material.LiquidGlass(dl, min, max, radius, scale, GlassTone.Light, WallpaperLegibility.Strength(theme));
         if (!string.IsNullOrEmpty(folder.FolderTint))
@@ -92,6 +129,7 @@ internal static class HomeTileView
             AppIconArt.TryDraw(appItem.Id, cellCenter, mini, memberInk, Palette.Mix(surface, memberInk, 0.28f));
         }
 
+        FinishPointer(dl, firstVertex, center, min, max, radius, drawHalf, pointer, scale);
         var name = string.IsNullOrEmpty(folder.FolderName) ? fallbackName : folder.FolderName;
         DrawLabel(center, size, name, theme, scale, labelAlpha, showLabels, labelWidth, zoom);
         var badgeTotal = 0;
