@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <em>A smartphone, built for you. Built on Dalamud.</em>
+  <em>An in-game smartphone for FINAL FANTASY XIV, built on Dalamud.</em>
 </p>
 
 <p align="center">
@@ -41,22 +41,22 @@
 
 ## What it is
 
-Aetherphone is the first and only fully working phone plugin for FINAL FANTASY XIV: a docked, always-on device with a home screen, an app switcher, and notifications. Behind the apps runs its own social network, so what you post, send, and save carries across characters, worlds, and sessions instead of living only on your machine.
+Aetherphone is a phone plugin for FINAL FANTASY XIV: a docked device with a home screen, an app switcher, and notifications. Its online apps run on Aethernet, the plugin's own online service, so what you post, send, and save is stored on your Aethernet account instead of only on your machine. Each character signs in with its own account by default, and a setting keeps one chosen account active on every character.
 
 ## Highlights
 
-- **A phone that lives in your HUD.** Drag it anywhere, size it how you like, and minimize it into a mini phone that shows only the widgets you pick and resizes from its corner just like the full phone. It can also fold into a live zone minimap and take the game minimap's place.
-- **Message anyone, on any world.** ChocoChat reaches every Aetherphone user no matter their world or data center, with voice notes, group chats, and voice calls you place straight from a contact. No party, no friend list, no travel.
-- **Social apps of your own.** Chirper for short posts, Aethergram for photos, and Velvet, an optional 18+ companion. One identity carries across all of them and follows you between characters.
+- **A phone that lives in your HUD.** Drag it anywhere, size it how you like, and minimize it into a mini phone that shows only the widgets you pick and resizes from its corner like the full phone. It can also collapse into a live zone minimap that you can place where the game's minimap sits.
+- **Message players on any world.** ChocoChat works across worlds and data centers once you and the other player have saved each other's numbers, with voice notes, group chats, and voice calls you place from a contact. No party, friend list, or travel needed.
+- **Social apps of your own.** Chirper for short posts, Aethergram for photos, and Velvet, an optional 18+ space that is not available on Lalafell characters. One Aethernet account signs you in to all three, and each app can keep its own display name and username.
 - **Every game chat channel, reorganized.** Linkpearl puts all of game chat in tabs you build yourself, with tells as their own conversations, per-channel colors, and a composer that splits and paces messages the game would cut off. Read each tab as a log or as chat bubbles, pick a chat theme and wallpaper, import the game's channel colors, and mask names for screenshots.
 - **Chat with the phone closed.** Pop any conversation into a floating window that lands beside the phone, let new chats join it as tabs, and let it hide during combat and duties, then come back on its own.
 - **Apps that play the game with you.** Strats for raid cheatsheets with your spot marked on each mechanic, Hunts for marks and trains, Fishing for ocean voyages, plus Market, Housing, Maps, Venues, Dailies, Collections, and Inventory.
 - **The everyday utilities too.** Notes, Calendar with your own event groups and reminders, Timers for resets and retainers, Calculator, Wallet, Camera and Photos with your own albums and a built-in photo editor, Clock, Skywatcher for weather, and Shortcuts you can fire from a hotbar macro.
-- **Watch and listen together.** MogCast casts video onto an in-world screen with playback synced for everyone present, and Music brings live community radio and Rolladeck DJ sets in game.
-- **Speaks your language.** One-tap translation on posts, profiles, and private messages, with feeds and chats able to translate everything as it arrives.
-- **Downtime built in.** Gamba is a play-money casino with blackjack, slots, scratch cards, bingo, and a communal wheel, and nothing there has cash value. Games is an arcade of thirty-plus titles with Doom among them, plus Uno, Chess, and Pool against friends online.
+- **Watch and listen together.** MogCast plays video on your phone or on a screen you place in the world, and keeps playback in sync for nearby Aetherphone users who join your watch party. Music plays community and internet radio stations and songs you search for, and lists the Rolladeck DJs who are live.
+- **Speaks your language.** One-tap translation on posts, profiles, and private messages, with feeds and chats able to translate new posts and messages as they arrive. Aethernet does the translating, and translations of private messages are never stored.
+- **Downtime built in.** Gamba is a play-money casino with blackjack, slots, scratch cards, bingo, and a communal wheel, and nothing there has cash value. Games is an arcade of thirty titles, Doom among them, plus Uno, Chess, and 8-Ball Pool to play online with friends.
 - **Make it yours.** Custom wallpapers, your own ringtone and notification sounds, any accent color, Lodestone character portraits, subtle interface sounds, and a text-size zoom. Save the whole setup as a Look and each character keeps its own: the home screen switches with the character you log in as.
-- **Private by design.** Messages, attachments, and voice notes are end-to-end encrypted whenever everyone in the chat has an encryption key (otherwise the chat is labeled Not encrypted), calls are encrypted in transit, and a human moderation team reviews public posts and images.
+- **Encryption and moderation.** Messages, photos, and voice notes are end-to-end encrypted, with keys the phone creates automatically. Reporting or translating a message sends its text to Aethernet in readable form. Calls are encrypted in transit and relayed through the Aethernet server, without end-to-end encryption. A human moderation team reviews reported posts, images, and messages.
 
 Forty-two apps in all. Full feature tour, screenshots, and details live on the website:
 
@@ -87,7 +87,7 @@ Playing the Chinese game version? The phone detects it, signs you in through you
 
 ## Community
 
-Questions, ideas, or just want to hang out with other players? Come say hi on Discord.
+Support, bug reports, and suggestions are handled on the Aetherphone Discord server.
 
 → [Join our Discord](https://discord.gg/3HbJCscMyS)
 
@@ -97,15 +97,9 @@ Aetherphone is open source and contributions are welcome. Start with the develop
 
 → [Developer documentation](docs/README.md) · [Contributing guide](CONTRIBUTING.md) · [Translator guide](docs/translating.md)
 
-## More from me
-
-If you liked this plugin, take a look at my other Dalamud work. You might find something else there for you.
-
-→ [XeldarAlz Dalamud Plugins](https://github.com/XeldarAlz/DalamudPlugins)
-
 ## Legal
 
-Using the online features means accepting the terms of service. The privacy policy covers what the Aethernet service does with your data; offline features stay on your machine, though some apps fetch public game data directly from third-party services, which the policy also covers.
+Using the online features means accepting the terms of service. The privacy policy covers what the Aethernet service does with your data. Offline features stay on your machine, and some apps contact third-party services directly from your machine, which the policy also covers.
 
 → [Terms of Service](TERMS.md) · [Privacy Policy](PRIVACY.md) · [Trademark and naming policy](TRADEMARK.md)
 
