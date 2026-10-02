@@ -110,7 +110,7 @@ internal sealed unsafe class ServerBarEntry : IDisposable
 
         if (unread > 0)
         {
-            builder.AddText(string.Concat(" [", unread.ToString(Loc.Culture), "]"));
+            builder.AddText(string.Concat(" ", unread.ToString(Loc.Culture)));
         }
 
         return builder.Build();
