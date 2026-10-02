@@ -46,4 +46,6 @@ internal static class TextStyles
     public static readonly TextStyle Caption1 = new(0.72f, FontWeight.Regular);
     public static readonly TextStyle Caption2 = new(0.60f, FontWeight.Medium);
     public static readonly TextStyle IconLabel = new(0.85f, FontWeight.Medium);
+    public static readonly TextStyle WidgetDisplay = new(2.3f, FontWeight.Regular);
+    public static readonly TextStyle WidgetDisplayCompact = new(1.8f, FontWeight.Regular);
 }

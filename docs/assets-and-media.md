@@ -171,6 +171,8 @@ Built-in wallpapers are the image files in src/Aetherphone/Wallpapers/, shipped 
 
 Users can also import their own: `WallpaperLibrary.AddCustom` copies the picked image into `<Dalamud config dir>/Wallpapers/` under a generated `custom-` id and stores a `WallpaperCrop` (zoom plus center) in `Configuration.CustomWallpapers`.
 
+Textures are sized to the draw, not the file. `WallpaperLibrary.TryGetTexture(path, drawnExtent, ...)` picks a level from a 640, 1280, 2560 and native ladder by the larger drawn dimension and decodes that level on demand (`ImageProcessor.DecodeToTextureAsync` with a `maxDimension`), serving the nearest resident level while a better one loads, so Dalamud's mip-less sampler never minifies past about 2:1. Each wallpaper also bakes one 320 px wide blurred and saturated copy (`TryGetBlurred`); `WallpaperRenderer.Draw` records that copy's screen mapping in `WallpaperBackdrop` every frame the home screen paints, and `Material.LiquidGlass` samples it through any squircle to draw the dock, widgets, folders and home sheets as glass.
+
 ### Theme darkness and the light/dark crossfade
 
 `WallpaperLibrary.ThemeDarkness` is a 0-to-1 value the whole device themes against:
@@ -184,7 +186,7 @@ Wallpaper luminance is a separate coupling, for legibility rather than theme cho
 
 ### To add a built-in wallpaper
 
-1. Add a Light/Dark pair to src/Aetherphone/Wallpapers/, named `<Name>Light.<ext>` and `<Name>Dark.<ext>` to match the existing convention. Ids are the file name stems, so choose them as final.
+1. Add a Light/Dark pair to src/Aetherphone/Wallpapers/, named `<Name>Light.<ext>` and `<Name>Dark.<ext>` to match the existing convention. Ids are the file name stems, so choose them as final. The abstract set (Bloom, Current, Ember, Prism) is rendered by tools/wallpaper-generator/generate-wallpapers.py; add a palette entry there rather than hand-painting a sibling.
 2. Rebuild. The csproj glob ships them and discovery lists them in the Settings wallpaper picker automatically; there are no per-wallpaper localization keys.
 3. Check both appearance cards in Settings > Wallpaper, and check the home screen scrim on the brighter of the pair.
 
