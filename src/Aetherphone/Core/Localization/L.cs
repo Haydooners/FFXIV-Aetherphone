@@ -1911,7 +1911,7 @@ internal static class L
         public static readonly LocString[] Release1042Phone =
         {
             new("changelog.r1042.0",
-                "The server info bar entry now shows an Aethernet icon next to the Aetherphone name, with your unread count as a boxed number"),
+                "The server info bar entry now shows a phone icon next to the Aetherphone name, with your unread count as a boxed number"),
             new("changelog.r1042.1",
                 "Hovering the server info bar entry now shows how many notifications are waiting and what a click does"),
         };

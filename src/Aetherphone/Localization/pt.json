@@ -5667,7 +5667,7 @@
   "changelog.r1041.12": "As festas agora ficam abertas por cinco minutos com a tela escura quando a fila acaba, em vez de fechar",
   "changelog.r1041.13": "A tela agora lembra onde você a colocou em cada lugar",
   "changelog.r1041.14": "Corrigidos arquivos locais que não reproduziam quando o caminho era colado entre aspas",
-  "changelog.r1042.0": "A entrada na barra de informações do servidor agora mostra um ícone da Aethernet ao lado do nome Aetherphone, com o número de notificações não lidas como um número emoldurado",
+  "changelog.r1042.0": "A entrada na barra de informações do servidor agora mostra um ícone de telefone ao lado do nome Aetherphone, com o número de notificações não lidas como um número emoldurado",
   "changelog.r1042.1": "Passar o mouse sobre a entrada na barra de informações do servidor agora mostra quantas notificações estão esperando e o que um clique faz",
   "changelog.r1037.0": "Os DJs ao vivo saíram da tela inicial e foram para a página do local: o cartão Tocando agora mostra a foto, o nome e os espectadores do DJ, com um link da Twitch para cada DJ",
   "changelog.r1037.1": "Adicionada a etiqueta DJ ativo aos cartões de locais enquanto um DJ está ao vivo lá",
