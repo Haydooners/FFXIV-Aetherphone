@@ -123,7 +123,7 @@ If you are in the UK or the European Economic Area, you have the right to access
 
 To use any of these rights, write to **privacy@aetherphone.net**. We respond within one month.
 
-The fastest way to delete your account is in the plugin: open **Settings**, then **Account**, then **Delete account**. Deletion takes effect immediately. It is not available while the account is suspended. The companion app does not offer account deletion, but you can ask us by email.
+The fastest way to delete your account is in the plugin: open **Settings**, then **Account**, then **Delete account**. Deletion takes effect immediately. It is not available while the account is suspended. In the companion app, open **Settings**, then **Delete account**. You can also ask us by email, and the [account deletion page](https://aetherphone.net/delete-account/) explains every option.
 
 In your settings you can make your account private and choose who can mention or tag you.
 
