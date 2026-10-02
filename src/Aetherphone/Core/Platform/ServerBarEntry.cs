@@ -1,9 +1,12 @@
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Notifications;
+using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
@@ -12,34 +15,26 @@ namespace Aetherphone.Core.Platform;
 internal sealed unsafe class ServerBarEntry : IDisposable
 {
     private const string AddonName = "_DTR";
-    private const string IdleArtwork = "server-bar";
-    private const string UnreadArtwork = "server-bar-unread";
-    private const float ArtworkPixels = 15f;
-    private const string ArtworkSlot = "     ";
-    private const ushort ArtworkSlotWidth = 17;
-    private const BitmapFontIcon FallbackIcon = BitmapFontIcon.Aethernet;
+    private const FontAwesomeIcon Icon = FontAwesomeIcon.Mobile;
+    private const float IconPixels = 15f;
+    private const float IconInset = 2f;
+    private const string IconSlot = "     ";
+    private const ushort IconSlotWidth = 17;
+    private const uint IconInk = 0xFFFFFFFF;
+    private const uint IconShadow = 0xA0000000;
 
     private readonly IDtrBarEntry entry;
     private readonly Configuration configuration;
     private readonly NotificationService notifications;
-    private readonly string? idleArtworkPath;
-    private readonly string? unreadArtworkPath;
     private int unread;
 
     public ServerBarEntry(IDtrBar bar, Configuration configuration, NotificationService notifications, Action onClick)
     {
         this.configuration = configuration;
         this.notifications = notifications;
-        var iconDirectory = Path.Combine(Plugin.PluginInterface.AssemblyLocation.DirectoryName ?? string.Empty, "Icons");
-        idleArtworkPath = ResolveArtwork(iconDirectory, IdleArtwork);
-        unreadArtworkPath = ResolveArtwork(iconDirectory, UnreadArtwork);
         entry = bar.Get(AepConstants.Name);
         entry.OnClick = _ => onClick();
-        if (idleArtworkPath is not null)
-        {
-            entry.MinimumWidth = ArtworkSlotWidth;
-        }
-
+        entry.MinimumWidth = IconSlotWidth;
         notifications.Changed += Refresh;
         configuration.BadgeSettingsChanged += Refresh;
         Plugin.PluginInterface.UiBuilder.Draw += Draw;
@@ -65,8 +60,7 @@ internal sealed unsafe class ServerBarEntry : IDisposable
 
     private void Draw()
     {
-        var artworkPath = unread > 0 ? unreadArtworkPath ?? idleArtworkPath : idleArtworkPath;
-        if (artworkPath is null || Plugin.GameGui.GameUiHidden)
+        if (Plugin.GameGui.GameUiHidden)
         {
             return;
         }
@@ -83,31 +77,27 @@ internal sealed unsafe class ServerBarEntry : IDisposable
             return;
         }
 
-        var texture = Plugin.TextureProvider.GetFromFile(artworkPath).GetWrapOrDefault();
-        if (texture is null || texture.Handle == nint.Zero)
-        {
-            return;
-        }
-
         var scale = addon->RootNode->ScaleX;
-        var size = MathF.Round(ArtworkPixels * scale);
         var slotHeight = (bounds.Max.Y - bounds.Min.Y) * scale;
-        var min = new Vector2(MathF.Round(bounds.Min.X), MathF.Round(bounds.Min.Y + (slotHeight - size) * 0.5f));
-        ImGui.GetBackgroundDrawList().AddImage(texture.Handle, min, new Vector2(min.X + size, min.Y + size));
+        var drawList = ImGui.GetBackgroundDrawList();
+        using (ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            var glyph = IconGlyph.Of(Icon);
+            var fontSize = IconPixels * scale;
+            var size = ImGui.CalcTextSize(glyph) * (fontSize / ImGui.GetFontSize());
+            var position = new Vector2(
+                MathF.Round(bounds.Min.X + IconInset * scale),
+                MathF.Round(bounds.Min.Y + (slotHeight - size.Y) * 0.5f));
+            var shadowOffset = MathF.Max(1f, MathF.Round(scale));
+            drawList.AddText(UiBuilder.IconFont, fontSize,
+                new Vector2(position.X + shadowOffset, position.Y + shadowOffset), IconShadow, glyph);
+            drawList.AddText(UiBuilder.IconFont, fontSize, position, IconInk, glyph);
+        }
     }
 
     private SeString BuildText()
     {
-        var builder = new SeStringBuilder();
-        if (idleArtworkPath is null)
-        {
-            builder.AddIcon(FallbackIcon).AddText(AepConstants.ServerBarTag);
-        }
-        else
-        {
-            builder.AddText(string.Concat(ArtworkSlot, AepConstants.ServerBarTag));
-        }
-
+        var builder = new SeStringBuilder().AddText(string.Concat(IconSlot, AepConstants.ServerBarTag));
         if (unread > 0)
         {
             builder.AddText(string.Concat(" ", unread.ToString(Loc.Culture)));
@@ -128,17 +118,5 @@ internal sealed unsafe class ServerBarEntry : IDisposable
             .Add(NewLinePayload.Payload)
             .AddText(Loc.T(L.Plugin.ServerBarClickHint))
             .Build();
-    }
-
-    private static string? ResolveArtwork(string directory, string name)
-    {
-        var path = Path.Combine(directory, name + ".png");
-        if (!File.Exists(path))
-        {
-            return null;
-        }
-
-        Plugin.TextureSubstitution.InvalidatePaths(new[] { path });
-        return path;
     }
 }
