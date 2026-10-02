@@ -23,7 +23,10 @@ internal static unsafe class PartyFinderReader
     private static readonly List<PartyFinderListing> cachedListings = new();
     private static bool openedForSync;
     private static bool closeScheduled;
+    private static bool syncInProgress;
+    private static int lastListingCount;
     private static int syncedPagesCount = 1;
+    private static DateTime lastListingReceivedTime = DateTime.MinValue;
     private static DateTime lastRefreshRequest = DateTime.MinValue;
     private static readonly TimeSpan RefreshCooldown = TimeSpan.FromSeconds(5);
     private static bool initialized;
@@ -60,6 +63,8 @@ internal static unsafe class PartyFinderReader
 
     private static void OnReceiveListing(IPartyFinderListing listing, IPartyFinderListingEventArgs args)
     {
+        lastListingReceivedTime = DateTime.UtcNow;
+
         var dutyName = listing.Duty.ValueNullable?.Name.ExtractText();
         if (string.IsNullOrWhiteSpace(dutyName))
         {
@@ -101,6 +106,10 @@ internal static unsafe class PartyFinderReader
             else
             {
                 cachedListings.Add(item);
+            }
+            if (cachedListings.Count > TotalListingsCount)
+            {
+                TotalListingsCount = cachedListings.Count;
             }
         }
     }
@@ -170,7 +179,6 @@ internal static unsafe class PartyFinderReader
             {
                 return roleA.CompareTo(roleB);
             }
-            // Filled slots (true) come before open slots (false)
             return b.IsFilled.CompareTo(a.IsFilled);
         });
         return list;
@@ -249,15 +257,9 @@ internal static unsafe class PartyFinderReader
     {
         openedForSync = false;
         closeScheduled = false;
+        syncInProgress = false;
+        lastListingCount = 0;
         syncedPagesCount = 1;
-    }
-
-    private static void OnReceiveEvent(AddonEvent type, AddonArgs addonArgs)
-    {
-        if (addonArgs is AddonReceiveEventArgs receiveArgs)
-        {
-            Plugin.Log.Information($"[PF Event] Type={receiveArgs.AtkEventType} Param={receiveArgs.EventParam}");
-        }
     }
 
     private static void OnPostUpdate(AddonEvent type, AddonArgs addonArgs)
@@ -274,61 +276,97 @@ internal static unsafe class PartyFinderReader
             var textNode = lfgAddon->CategoryCountTextNodes[0].Value;
             if (textNode != null)
             {
-                var text = textNode->NodeText.ToString();
-                if (int.TryParse(text, out var parsedTotal) && parsedTotal > 0)
+                var rawText = textNode->NodeText.ToString();
+                var digits = new StringBuilder();
+                for (var i = 0; i < rawText.Length; i++)
                 {
-                    TotalListingsCount = parsedTotal;
+                    if (char.IsDigit(rawText[i]))
+                    {
+                        digits.Append(rawText[i]);
+                    }
+                }
+                if (digits.Length > 0 && int.TryParse(digits.ToString(), out var parsedTotal) && parsedTotal > 0)
+                {
+                    TotalListingsCount = Math.Max(TotalListingsCount, parsedTotal);
                 }
             }
         }
-        catch
+        catch 
         {
-            TotalListingsCount = Math.Max(50, (int)agent->NumberOfListingsDisplayed);
+            TotalListingsCount = Math.Max(TotalListingsCount, (int)agent->NumberOfListingsDisplayed);
         }
-        
+        lock (cachedListings)
+        {
+            TotalListingsCount = Math.Max(TotalListingsCount, cachedListings.Count);
+        }
         OnListingsUpdate?.Invoke();
-        var totalPages = Math.Max(1, (int)Math.Ceiling((float)TotalListingsCount / 50));
-        var maxSyncPages = Math.Min(totalPages, 5);
-        if (openedForSync && !closeScheduled && agent->NumberOfListingsDisplayed > 0)
+        if (!openedForSync || closeScheduled || syncInProgress)
         {
-            if (syncedPagesCount < maxSyncPages)
-            {
-                closeScheduled = true;
-                _ = Task.Delay(600).ContinueWith(_ =>
-                {
-                    Plugin.Framework.RunOnFrameworkThread(() =>
-                    {
-                        if (!openedForSync)
-                        {
-                            return;
-                        }
-                        var currentAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
-                        if (currentAddon != null && currentAddon->IsVisible)
-                        {
-                            syncedPagesCount++;
-                            closeScheduled = false;
-                            ChangePage(currentAddon, 1);
-                            return;
-                        }
-                        CloseSyncAddon();
-                    });
-                });
-            }
-            else
-            {
-                closeScheduled = true;
-                _ = Task.Delay(600).ContinueWith(_ =>
-                {
-                    Plugin.Framework.RunOnFrameworkThread(() =>
-                    {
-                        if (openedForSync)
-                        {
-                            CloseSyncAddon();
-                        }
-                    });
-                });
-            }
+            return;
         }
+        int currentCount;
+        lock (cachedListings)
+        {
+            currentCount = cachedListings.Count;
+        }
+        if (currentCount == 0 && agent->NumberOfListingsDisplayed == 0)
+        {
+            return;
+        }
+        var timeSinceLastListing = DateTime.UtcNow - lastListingReceivedTime;
+        if (timeSinceLastListing < TimeSpan.FromMilliseconds(200))
+        {
+            return;
+        }
+
+        if (syncedPagesCount == 1)
+        {
+            if (currentCount < 50 && agent->NumberOfListingsDisplayed < 50)
+            {
+                ScheduleClose();
+                return;
+            }
+            AdvanceToNextPage(addon, currentCount);
+            return;
+        }
+        var newlyAdded = currentCount - lastListingCount;
+        AepLog.Info($"[PF Sync] Page {syncedPagesCount} evaluated: newlyAdded={newlyAdded}, totalCached={currentCount}");
+        if (newlyAdded < 50 || syncedPagesCount >= 5)
+        {
+            ScheduleClose();
+            return;
+        }
+        AdvanceToNextPage(addon, currentCount);
+    }
+
+    private static void AdvanceToNextPage(AtkUnitBase* addon, int currentCount)
+    {
+        syncInProgress = true;
+        lastListingCount = currentCount;
+        syncedPagesCount++;
+        ChangePage(addon, 1);
+        _ = Task.Delay(550).ContinueWith(_ =>
+        {
+            Plugin.Framework.RunOnFrameworkThread(() =>
+            {
+                syncInProgress = false;
+            });
+        });
+    }
+
+    private static void ScheduleClose()
+    {
+        closeScheduled = true;
+        _ = Task.Delay(250).ContinueWith(_ =>
+        {
+            Plugin.Framework.RunOnFrameworkThread(() =>
+            {
+                if (openedForSync)
+                {
+                    CloseSyncAddon();
+                }
+            });
+        });
     }
 
     private static void ChangePage(AtkUnitBase* addon, int direction)
@@ -337,9 +375,8 @@ internal static unsafe class PartyFinderReader
         {
             return;
         }
-
         var buttonParam = direction > 0 ? 9 : 8;
-        Plugin.Log.Information($"[PF PageTurn] Turning page using native ButtonClick Param={buttonParam}...");
+        AepLog.Info($"[PF PageTurn] Turning page using native ButtonClick Param={buttonParam}...");
         var atkEvent = stackalloc AtkEvent[1];
         var atkEventData = stackalloc AtkEventData[1];
         addon->ReceiveEvent(AtkEventType.ButtonClick, buttonParam, atkEvent, atkEventData);
@@ -349,85 +386,14 @@ internal static unsafe class PartyFinderReader
     {
         openedForSync = false;
         closeScheduled = false;
+        syncInProgress = false;
+        lastListingCount = 0;
         syncedPagesCount = 1;
         OnListingsUpdate?.Invoke();
         var currentAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
-
         if (currentAddon != null && currentAddon->IsVisible)
         {
             ChatSender.TrySend("/partyfinder");
-        }
-    }
-
-    private static AtkComponentButton* FindNextPageButton(AtkUnitBase* addon)
-    {
-        if (addon == null)  { 
-            return null;
-        }
-        AtkTextNode* pageTextNode = null;
-        for (var i = 0; i < addon->UldManager.NodeListCount; i++)
-        {
-            var node = addon->UldManager.NodeList[i];
-            if (node == null || (int)node->Type != 3){
-                continue;
-            }
-            var textNode = (AtkTextNode*)node;
-            var text = textNode->NodeText.ToString().Trim();
-            if (text.Length >= 3 && text.Contains('/'))
-            {
-                var slashIdx = text.IndexOf('/');
-                var left = text[..slashIdx].Trim();
-                var right = text[(slashIdx + 1)..].Trim();
-                if (int.TryParse(left, out _) && int.TryParse(right, out _))
-                {
-                    pageTextNode = textNode;
-                    break;
-                }
-            }
-        }
-
-        if (pageTextNode == null){
-            return null;
-        }
-        AtkComponentButton* bestNextBtn = null;
-        var bestDist = float.MaxValue;
-        for (var i = 0; i < addon->UldManager.NodeListCount; i++)
-        {
-            var node = addon->UldManager.NodeList[i];
-            if (node == null || (int)node->Type != 1006){
-                continue;
-            }
-            var compNode = (AtkComponentNode*)node;
-            if (compNode->Component == null || (int)compNode->Component->GetComponentType() != 1){
-                continue;
-            }
-            if (Math.Abs(node->Y - pageTextNode->Y) > 20){
-                continue;
-            }
-            if (node->X > pageTextNode->X)
-            {
-                var dist = node->X - pageTextNode->X;
-                if (dist < bestDist)
-                {
-                    bestDist = dist;
-                    bestNextBtn = (AtkComponentButton*)compNode->Component;
-                }
-            }
-        }
-        return bestNextBtn;
-    }
-
-    private static void ClickButton(AtkComponentButton* button, AtkUnitBase* addon)
-    {
-        if (button == null){ 
-            return; 
-        }
-        var atkEvent = stackalloc AtkEvent[1];
-        var atkEventData = stackalloc AtkEventData[1];
-        button->ReceiveEvent(AtkEventType.ButtonClick, 0, atkEvent, atkEventData);
-        if (button->OwnerNode != null && addon != null)
-        {
-            addon->ReceiveEvent(AtkEventType.ButtonClick, (int)button->OwnerNode->NodeId, atkEvent, atkEventData);
         }
     }
 
@@ -457,8 +423,11 @@ internal static unsafe class PartyFinderReader
             var agent = AgentLookingForGroup.Instance();
             return agent != null && agent->RequestListingsUpdate();
         }
+
         openedForSync = true;
         closeScheduled = false;
+        syncInProgress = false;
+        lastListingCount = 0;
         syncedPagesCount = 1;
         lock (cachedListings)
         {
@@ -478,6 +447,8 @@ internal static unsafe class PartyFinderReader
                     {
                         openedForSync = false;
                         closeScheduled = false;
+                        syncInProgress = false;
+                        lastListingCount = 0;
                         OnListingsUpdate?.Invoke();
                         var currentAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
                         if (currentAddon != null && currentAddon->IsVisible)
@@ -501,19 +472,6 @@ internal static unsafe class PartyFinderReader
             destination.Clear();
             destination.AddRange(cachedListings);
         }
-    }
-
-    private static string ReadUtf8(byte* pointer, int maximumLength)
-    {
-        if (pointer == null){
-            return string.Empty;
-        }
-
-        var length = 0;
-        while (length < maximumLength && pointer[length] != 0){
-            length++;
-        }
-        return length > 0 ? Encoding.UTF8.GetString(pointer, length) : string.Empty;
     }
 
     public static bool OpenListing(ulong listingId)
