@@ -49,7 +49,7 @@ public sealed class TourRegistryTests
         { "shortcuts", (1, 6) },
         { "housing", (1, 7) },
         { "casino", (1, 8) },
-        { "aetherstream", (1, 7) },
+        { "aetherstream", (2, 6) },
         { "hunts", (5, 5) },
     };
 

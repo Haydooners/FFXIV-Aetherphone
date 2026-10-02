@@ -50,8 +50,7 @@ namespace Aetherphone.Core.Apps;
 
 internal static class AppRegistry
 {
-    public static AppBundle BuildDefault(PhoneServices services, VideoPlayer video, ScreenController screen,
-        AetherStreamQueue videoQueue, WatchAlongSession watchAlong, StreamSuggestionNotifier streamSuggestions,
+    public static AppBundle BuildDefault(PhoneServices services, VideoSuite videoSuite,
         AetherStreamScreenWindow screenWindow, LinkpearlPopouts linkpearlPopouts)
     {
         var contactBook = services.Contacts;
@@ -118,9 +117,9 @@ internal static class AppRegistry
         apps.Add(new ClockApp(services.Configuration, services.Confirm));
         apps.Add(new NotesApp(services.Configuration, services.Confirm));
         apps.Add(new CalculatorApp());
-        apps.Add(new AetherStreamApp(video, screen, videoQueue, services.Configuration, services.Confirm,
-            services.RemoteImages, services.Http, services.AethernetSession, services.Lodestone, watchAlong,
-            streamSuggestions, services.AetherStreamLauncher, screenWindow));
+        apps.Add(new AetherStreamApp(videoSuite, services.Configuration, services.Confirm, services.RemoteImages,
+            services.Http, services.AethernetSession, services.Lodestone, services.AetherStreamLauncher,
+            screenWindow));
         apps.Add(new ShortcutsApp(services.Shortcuts, services.ShortcutRunner, services.Confirm, photoLibrary,
             services.WallpaperImages));
         apps.Add(new TimersApp(services.Configuration));

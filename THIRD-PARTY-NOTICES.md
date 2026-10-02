@@ -136,7 +136,7 @@ renderer) is ported from
 [AlphaChannel](https://github.com/Voudi/AlphaChannel) by Voudi, used with the
 author's permission. Two smaller pieces ported from the same source live
 outside that directory: the screen placement controls and presets in
-`src/Aetherphone/Apps/AetherStream/AetherStreamApp.Casting.cs` (from
+`src/Aetherphone/Apps/AetherStream/AetherStreamApp.Screen.cs` (from
 AlphaChannel's `ControlWindow.DrawScreenPositionSettings`) and the saved
 screen preset shape in `src/Aetherphone/Configuration.cs` (from its
 `Configuration`, with yaw added). Both are modified from the originals.

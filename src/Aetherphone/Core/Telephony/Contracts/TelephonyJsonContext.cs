@@ -8,6 +8,7 @@ namespace Aetherphone.Core.Telephony.Contracts;
 [JsonSerializable(typeof(ParticipantInfo))]
 [JsonSerializable(typeof(NearbyStreamInfo))]
 [JsonSerializable(typeof(StreamQueueEntry))]
+[JsonSerializable(typeof(StreamMember))]
 [JsonSerializable(typeof(Aethernet.Contracts.ChatMessageDto))]
 [JsonSerializable(typeof(CasinoPayload))]
 [JsonSerializable(typeof(Aethernet.Contracts.CasinoRoomSnapshotDto))]

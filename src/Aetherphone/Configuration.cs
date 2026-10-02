@@ -44,6 +44,23 @@ internal sealed class ScreenPositionPreset
     public float Roll { get; set; }
     public float Scale { get; set; } = 1.0f;
     public bool Flat { get; set; }
+    public float? Curve { get; set; }
+
+    [JsonIgnore]
+    public float CurveAmount => Curve ?? (Flat ? 0f : 1f);
+}
+
+[Serializable]
+internal sealed class ScreenPlacementRecord
+{
+    public string Place { get; set; } = "";
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
+    public float Yaw { get; set; }
+    public float Pitch { get; set; }
+    public float Roll { get; set; }
+    public float Scale { get; set; } = 1.0f;
 }
 
 [Serializable]
@@ -54,6 +71,36 @@ internal sealed class VideoQueueRecord
     public string Source { get; set; } = "";
     public double? DurationSeconds { get; set; }
     public string? ThumbnailUrl { get; set; }
+}
+
+[Serializable]
+internal sealed class VideoHistoryRecord
+{
+    public string Url { get; set; } = "";
+    public string Title { get; set; } = "";
+    public string Source { get; set; } = "";
+    public double? DurationSeconds { get; set; }
+    public string? ThumbnailUrl { get; set; }
+    public double PositionSeconds { get; set; }
+    public long WatchedAtUnix { get; set; }
+
+    [JsonIgnore]
+    public string? SubtitleCache { get; set; }
+}
+
+[Serializable]
+internal sealed class VideoPlaylistRecord
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string SourceUrl { get; set; } = "";
+    public List<VideoQueueRecord> Entries { get; set; } = new();
+
+    [JsonIgnore]
+    public string? CountLabel { get; set; }
+
+    [JsonIgnore]
+    public string? CountFormat { get; set; }
 }
 
 [Serializable]
@@ -188,8 +235,34 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool VideoStreamDiscoverable { get; set; } = true;
     public bool VideoScreenVisible { get; set; } = true;
     public bool VideoScreenCurved { get; set; } = true;
+    public float? VideoScreenCurveAmount { get; set; }
+
+    [JsonIgnore]
+    public float VideoScreenCurve
+    {
+        get => VideoScreenCurveAmount ?? (VideoScreenCurved ? 1f : 0f);
+        set
+        {
+            VideoScreenCurveAmount = value;
+            VideoScreenCurved = value > 0f;
+        }
+    }
+
+    public bool VideoRememberPlacement { get; set; } = true;
+    public bool VideoFollowHostScreen { get; set; } = true;
+    public bool VideoChatBubbles { get; set; } = true;
+    public int VideoChatBubbleChannels { get; set; } = Core.Video.ScreenChatChannels.Default;
+    public bool VideoSpatialAudio { get; set; }
+    public float VideoSpatialRange { get; set; } = Core.Video.SpatialVolume.DefaultRange;
+    public bool VideoMuteInBackground { get; set; }
+    public bool VideoPartyGuestsCanAdd { get; set; }
+    public bool VideoPartyGuestsCanControl { get; set; }
+    public bool VideoPartyCodeEnabled { get; set; }
     public List<ScreenPositionPreset> ScreenPresets { get; set; } = new();
+    public List<ScreenPlacementRecord> VideoScreenPlacements { get; set; } = new();
     public List<VideoQueueRecord> VideoQueue { get; set; } = new();
+    public List<VideoHistoryRecord> VideoHistory { get; set; } = new();
+    public List<VideoPlaylistRecord> VideoPlaylists { get; set; } = new();
     public List<VideoLocalFileMapRecord> VideoLocalFileMap { get; set; } = new();
     public bool GameSoundsCleared { get; set; }
     public const string TestAethernetBaseUrl = "https://aethernet-dev-production.up.railway.app";

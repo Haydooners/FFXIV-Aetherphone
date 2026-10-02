@@ -29,7 +29,7 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.CameraShowUiTitle, L.Onboarding.CameraShowUiBody, "camera.showUi"),
                 GuideStep.Point(L.Onboarding.CameraShutterTitle, L.Onboarding.CameraShutterBody, "camera.shutter"),
             });
-        Add(tours, "aetherstream", 1,
+        Add(tours, "aetherstream", 2,
             new[]
             {
                 GuideStep.Note(L.Apps.AetherStream, L.Onboarding.AetherStreamBody),
@@ -37,8 +37,6 @@ internal static partial class TourRegistry
                     "aetherstream.hero"),
                 GuideStep.Point(L.Onboarding.AetherStreamAddTitle, L.Onboarding.AetherStreamAddBody,
                     "aetherstream.composer"),
-                GuideStep.Point(L.Onboarding.AetherStreamTransportTitle, L.Onboarding.AetherStreamTransportBody,
-                    "aetherstream.transport"),
                 GuideStep.Point(L.Onboarding.AetherStreamActionsTitle, L.Onboarding.AetherStreamActionsBody,
                     "aetherstream.actions"),
                 GuideStep.Note(L.Onboarding.AetherStreamPartyTitle, L.Onboarding.AetherStreamPartyBody),

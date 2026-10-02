@@ -68,11 +68,8 @@ public sealed class Plugin : IDalamudPlugin
     private readonly PhoneServices services;
     private readonly PhoneShell shell;
     private readonly PhoneWindow phoneWindow;
-    private readonly VideoPlayer video;
-    private readonly ScreenController screenController;
-    private readonly AetherStreamQueue videoQueue;
-    private readonly WatchAlongSession watchAlong;
-    private readonly StreamSuggestionNotifier streamSuggestions;
+    private readonly VideoSuite videoSuite;
+    private readonly VideoWorldOverlay videoWorldOverlay;
     private readonly VideoDebugWindow videoDebugWindow;
     private readonly AetherStreamScreenWindow screenWindow;
     private readonly UpdateChipWindow updateChipWindow;
@@ -129,17 +126,13 @@ public sealed class Plugin : IDalamudPlugin
                 PhoneSizeCatalog.ZoomFor(Cfg.PhoneWidth));
             EmojiCatalog.Load();
             Wallpapers = services.Wallpapers;
-            screenController = new ScreenController(() => Cfg.VideoHideNameplates);
-            services.SongResolver.Attach(screenController.Engine.Dependencies);
-            video = new VideoPlayer(screenController.Engine);
-            videoQueue = new AetherStreamQueue(video, services.VideoMetadata);
-            watchAlong = new WatchAlongSession(services.AethernetSession, Cfg, services.Confirm, video,
-                videoQueue, services.StreamSignals, screenController);
-            streamSuggestions = new StreamSuggestionNotifier(watchAlong, services.Notifications);
+            videoSuite = new VideoSuite(services, Cfg, ChatGui);
+            services.SongResolver.Attach(videoSuite.Screen.Engine.Dependencies);
             Framework.Update += OnVideoFrameworkUpdate;
             Framework.Update += OnDeviceLinkTick;
-            videoDebugWindow = new VideoDebugWindow(video, screenController);
-            screenWindow = new AetherStreamScreenWindow(screenController, video);
+            videoDebugWindow = new VideoDebugWindow(videoSuite.Player, videoSuite.Screen);
+            screenWindow = new AetherStreamScreenWindow(videoSuite);
+            videoWorldOverlay = new VideoWorldOverlay(videoSuite, Cfg);
             linkpearlGate = services.Installer.Gate("messages");
             linkpearlPopouts = new LinkpearlPopouts(Cfg, services.ChatInbox, services.ChatLog, services.ChatSend,
                 services.ChatTabs, services.TellPreferences, services.LinkpearlNotificationGate, services.Visibility,
@@ -147,8 +140,7 @@ public sealed class Plugin : IDalamudPlugin
                 services.Notifications, services.Confirm, services.WallpaperImages);
             linkpearlPresence = new PopoutPresence(Cfg, linkpearlPopouts, services.ChatLog, services.ChatInbox);
             linkpearlHotkey = new LinkpearlHotkey(Cfg, services.ChatInbox, linkpearlPopouts);
-            var bundle = AppRegistry.BuildDefault(services, video, screenController, videoQueue, watchAlong,
-                streamSuggestions, screenWindow, linkpearlPopouts);
+            var bundle = AppRegistry.BuildDefault(services, videoSuite, screenWindow, linkpearlPopouts);
             shell = new PhoneShell(services, bundle);
             screenshotImport = new ScreenshotImportService(bundle.Photos, Cfg);
             phoneWindow = new PhoneWindow(shell, Cfg);
@@ -212,6 +204,7 @@ public sealed class Plugin : IDalamudPlugin
             PluginInterface.UiBuilder.Draw += windowSystem.Draw;
             PluginInterface.UiBuilder.Draw += FilePicker.Draw;
             PluginInterface.UiBuilder.Draw += linkpearlHotkey.Tick;
+            PluginInterface.UiBuilder.Draw += videoWorldOverlay.Draw;
             PluginInterface.UiBuilder.OpenMainUi += phoneWindow.ToggleShell;
             PluginInterface.UiBuilder.OpenConfigUi += phoneWindow.OpenSettings;
             PluginInterface.UiBuilder.DisableGposeUiHide = Cfg.ShowInGpose;
@@ -246,6 +239,11 @@ public sealed class Plugin : IDalamudPlugin
             PluginInterface.UiBuilder.Draw -= linkpearlHotkey.Tick;
         }
 
+        if (videoWorldOverlay is not null)
+        {
+            PluginInterface.UiBuilder.Draw -= videoWorldOverlay.Draw;
+        }
+
         if (phoneWindow is not null)
         {
             PluginInterface.UiBuilder.OpenMainUi -= phoneWindow.ToggleShell;
@@ -271,11 +269,7 @@ public sealed class Plugin : IDalamudPlugin
         linkpearlPresence?.Dispose();
         windowSystem.RemoveAllWindows();
         videoDebugWindow?.Dispose();
-        streamSuggestions?.Dispose();
-        watchAlong?.Dispose();
-        videoQueue?.Dispose();
-        video?.Dispose();
-        screenController?.Dispose();
+        videoSuite?.Dispose();
         DxHandler.Dispose();
         phoneEmote?.Dispose();
         timerNotifier?.Dispose();
@@ -345,8 +339,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnVideoFrameworkUpdate(IFramework framework)
     {
-        video.OnFrameworkUpdate();
-        watchAlong.OnFrameworkUpdate((float)framework.UpdateDelta.TotalSeconds);
+        videoSuite.OnFrameworkUpdate((float)framework.UpdateDelta.TotalSeconds);
     }
 
     private void OnLinkpearlPresenceTick(IFramework framework) =>
@@ -397,6 +390,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
         PluginInterface.UiBuilder.Draw -= FilePicker.Draw;
         PluginInterface.UiBuilder.Draw -= linkpearlHotkey.Tick;
+        PluginInterface.UiBuilder.Draw -= videoWorldOverlay.Draw;
         PluginInterface.UiBuilder.OpenMainUi -= phoneWindow.ToggleShell;
         PluginInterface.UiBuilder.OpenConfigUi -= phoneWindow.OpenSettings;
         ClientState.Login -= OnLogin;
@@ -414,11 +408,7 @@ public sealed class Plugin : IDalamudPlugin
         messagePopouts.Dispose();
         windowSystem.RemoveAllWindows();
         videoDebugWindow.Dispose();
-        streamSuggestions.Dispose();
-        watchAlong.Dispose();
-        videoQueue.Dispose();
-        video.Dispose();
-        screenController.Dispose();
+        videoSuite.Dispose();
         DxHandler.Dispose();
         phoneEmote.Dispose();
         timerNotifier.Dispose();

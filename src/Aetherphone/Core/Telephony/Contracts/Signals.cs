@@ -91,6 +91,41 @@ internal static class SignalType
 
     public const string StreamNearby = "stream.nearby";
     public const string StreamNearbyRoster = "stream.nearby.roster";
+
+    public const string StreamTransfer = "stream.transfer";
+    public const string StreamHostChanged = "stream.hostChanged";
+    public const string StreamControl = "stream.control";
+    public const string StreamControlRequest = "stream.controlRequest";
+    public const string StreamReact = "stream.react";
+    public const string StreamReaction = "stream.reaction";
+}
+
+internal static class StreamPermission
+{
+    public const int AddToQueue = 1;
+    public const int ControlPlayback = 2;
+    public const int CanHost = 4;
+    public const int GrantMask = AddToQueue | ControlPlayback;
+}
+
+internal static class StreamFeature
+{
+    public const int Party = 1;
+}
+
+internal static class StreamControlAction
+{
+    public const string Play = "play";
+    public const string Pause = "pause";
+    public const string Seek = "seek";
+    public const string Next = "next";
+}
+
+internal static class StreamDeclineReason
+{
+    public const string Denied = "denied";
+    public const string Full = "full";
+    public const string BadCode = "code";
 }
 
 internal static class ParticipantState
@@ -115,6 +150,8 @@ internal sealed record NearbyStreamInfo(string HostId, string Name, string World
     string Handle = "", string? AvatarUrl = null);
 
 internal sealed record StreamQueueEntry(string? Url, string? Title);
+
+internal sealed record StreamMember(string UserId, int Flags);
 
 internal sealed record CallControl
 {
@@ -143,6 +180,17 @@ internal sealed record CallControl
     public float? ScreenZ { get; init; }
     public float? ScreenYaw { get; init; }
     public float? ScreenScale { get; init; }
+    public float? ScreenPitch { get; init; }
+    public float? ScreenRoll { get; init; }
+    public float? ScreenCurve { get; init; }
+
+    public string? Code { get; init; }
+    public bool? CodeEnabled { get; init; }
+    public int? Features { get; init; }
+    public int? GuestPermissions { get; init; }
+    public StreamMember[]? Members { get; init; }
+    public string? Action { get; init; }
+    public int? Reaction { get; init; }
 
     public uint? TerritoryId { get; init; }
     public uint? WorldId { get; init; }
