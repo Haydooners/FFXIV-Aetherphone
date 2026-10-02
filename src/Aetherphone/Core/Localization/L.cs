@@ -1908,6 +1908,40 @@ internal static class L
         public static readonly LocString SectionAethergramVelvet = new("changelog.sectionAethergramVelvet", "Aethergram and Velvet");
         public static readonly LocString SectionChirperAethergramVelvet = new("changelog.sectionChirperAethergramVelvet", "Chirper, Aethergram and Velvet");
 
+        public static readonly LocString[] Release1041MogCast =
+        {
+            new("changelog.r1041.0",
+                "Overhauled MogCast from top to bottom: three tabs for Watch, Party and Library, a single button to add videos, and a simpler player"),
+            new("changelog.r1041.1",
+                "Rebuilt the Screen page around a top-down stage: drag the screen across the floor, turn it by its handle, and see how far its sound carries"),
+            new("changelog.r1041.2",
+                "Added invite codes to watch parties, so friends on any world or data center can join"),
+            new("changelog.r1041.3",
+                "Added guest permissions: let everyone add videos or control playback, or allow it for one member at a time"),
+            new("changelog.r1041.4",
+                "Added host handover: make another member the host, and the party passes to someone else by itself if the host disconnects"),
+            new("changelog.r1041.5",
+                "Added YouTube playlists: paste a playlist link to queue the whole list, and it is saved to your Library"),
+            new("changelog.r1041.6",
+                "Added watch history with resume, a Continue watching row, and saving your queue as a playlist"),
+            new("changelog.r1041.7",
+                "Added audio track and subtitle selection for videos that carry more than one"),
+            new("changelog.r1041.8",
+                "Added handles on the in-world screen to move, turn and resize it, along with fine nudges and a curve slider that goes from flat to deeply curved"),
+            new("changelog.r1041.9",
+                "Added chat bubbles on the screen for Say, Party, Free Company and Shout"),
+            new("changelog.r1041.10",
+                "Added reactions to watch parties"),
+            new("changelog.r1041.11",
+                "Added sound that fades with distance from the screen, and an option to mute MogCast while the game is in the background"),
+            new("changelog.r1041.12",
+                "Parties now stay open for five minutes on a dark screen when the queue runs out, instead of closing"),
+            new("changelog.r1041.13",
+                "The screen now remembers where you placed it in each location"),
+            new("changelog.r1041.14",
+                "Fixed local files not playing when their path was pasted with quotes around it"),
+        };
+
         public static readonly LocString[] Release1040Velvet =
         {
             new("changelog.r1040.0",
