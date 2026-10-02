@@ -84,6 +84,8 @@ This is the approach Dalamud's policy asks for, and the gap is coverage rather t
 
 ## AI and your content
 
+The Translate feature uses AI to translate the text you choose, in the plugin and the companion app. Only that text is sent, never your account details, and translations of private messages are not stored.
+
 No AI moderates content on Aethernet. Moderation is done by people, who act on reports and can also review content directly. Aethernet does not use your posts or messages to train AI models and does not provide them to anyone for that purpose. The KupoAI assistant was removed in version 0.9.8.7.
 
 ## Gotchas

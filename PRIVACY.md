@@ -59,7 +59,7 @@ Sign-in codes expire after 30 minutes. Each sign-in creates a session, stored as
 
 **MogCast.** When you play a video in MogCast while signed in, the plugin shares with Aethernet the link (for a local file, its name, size and a fingerprint of its contents), the playback position, your current zone and world, where the in-world screen is placed, whether viewers need your approval, whether your stream is discoverable (on by default), and the links and titles in your queue. Aethernet passes this to other Aetherphone users in the same zone and world so that they can find and join your stream, and does not store it.
 
-**Technical data.** Every request from your app passes through Cloudflare and our hosting provider, which see your IP address. Aethernet uses your IP address in memory to limit abusive traffic and does not keep a log of it. Our request log records requests without your IP address, user agent or account. Some other log entries, such as failed sign-ins, include a character name and world. The only place our database stores a player's IP address is the audit record written when you link or unlink Patreon (see Patreon below). The plugin's Copy Support Info button puts diagnostic details such as versions, operating system and game language on your clipboard and sends nothing; we receive them only if you paste them into a message to us. The Feedback app sends us the text and images you enter.
+**Technical data.** Every request from your app passes through our network provider and our hosting provider, which see your IP address. Aethernet uses your IP address in memory to limit abusive traffic and does not keep a log of it. Our request log records requests without your IP address, user agent or account. Some other log entries, such as failed sign-ins, include a character name and world. The only place our database stores a player's IP address is the audit record written when you link or unlink Patreon (see Patreon below). The plugin's Copy Support Info button puts diagnostic details such as versions, operating system and game language on your clipboard and sends nothing; we receive them only if you paste them into a message to us. The Feedback app sends us the text and images you enter.
 
 **Companion app devices.** If you use the companion app, we store your device's push notification token, platform and language, the device name shown when you link it, and any notification mutes you set.
 
@@ -129,13 +129,13 @@ Some Velvet profile details, such as your gender, sexuality, relationship status
 
 We use these providers to run the service:
 
-- **Railway**, which runs the application, its database and its logs
-- **Cloudflare**, which carries all traffic to the service, filters abusive traffic and applies rate limits, stores uploaded images, video and audio and our database backups (Cloudflare R2), and routes email sent to our addresses. Your connection's encryption ends at Cloudflare, so it handles the content of requests; for end-to-end encrypted messages that content is ciphertext.
-- **Hetzner**, which hosts the community radio streaming server. When you listen to or broadcast on a community station your device connects to that server directly, so it sees your IP address.
+- **A cloud hosting provider**, which runs the application, its database and its logs
+- **A network and storage provider**, which carries all traffic to the service, filters abusive traffic and applies rate limits, stores uploaded images, video and audio and our database backups, and routes email sent to our addresses. Your connection's encryption ends at this provider, so it handles the content of requests; for end-to-end encrypted messages that content is ciphertext.
+- **A server hosting provider**, which hosts the community radio streaming server. When you listen to or broadcast on a community station your device connects to that server directly, so it sees your IP address.
 - **A translation service provider**, which performs translations for Aethernet and receives only the text you choose to translate, as described under Translation
 - **Google Firebase Cloud Messaging and Apple Push Notification service**, which deliver companion app notifications. They receive your device's push token and the notification. Its title is the sender's display name, or their character name if they have none. Its text is the full text of an unencrypted ChocoChat message, "New message" for an encrypted one, or up to 140 characters of a comment, quote or Velvet comment.
-- **GitHub**, whose GitHub Actions service runs our nightly job that copies uploaded media into backup storage, so the media passes through it
-- **Discord**, which receives our operational alerts; these can include internal account identifiers
+- **A build and automation service**, which runs our nightly job that copies uploaded media into backup storage, so the media passes through it
+- **A team messaging service**, which receives our operational alerts; these can include internal account identifiers
 
 Others who receive your data:
 
@@ -218,7 +218,7 @@ Some transfers follow from what you ask for. Signing in through Rising Stones se
 | Audit records of actions on your account, including the Patreon IP record | Kept while your account exists; deleted within 365 days after your account is deleted |
 | Suspension records | Kept while an account uses the character; after deletion, until 365 days after the suspension date |
 | Community radio stations | No automatic deletion, and not deleted with your account |
-| IP addresses in network and radio server logs | Logged by Cloudflare, Railway and our radio server as part of carrying traffic; Aethernet's database does not store them |
+| IP addresses in network and radio server logs | Logged by our network, hosting and radio server providers as part of carrying traffic; Aethernet's database does not store them |
 | Database backups | Made daily; each is deleted after 30 days |
 | Backup copy of uploaded media | Updated nightly; a file deleted from the service is kept there for 30 days |
 | Other copies | A few copies made during maintenance and recovery work are kept outside these schedules, including copies of some database tables and a recovery copy of media files due for deletion on 12 October 2026 |
