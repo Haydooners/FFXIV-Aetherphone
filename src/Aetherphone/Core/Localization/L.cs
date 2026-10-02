@@ -242,26 +242,26 @@ internal static class L
         public static readonly LocString NoticeSensitiveTitle = new("moderation.notice.sensitiveTitle", "Your post was marked sensitive");
         public static readonly LocString NoticeSensitiveBody = new("moderation.notice.sensitiveBody", "A moderator covered the picture on one of your posts. The post is still up and keeps its reactions and comments, and anyone can tap to see it. You cannot clear this mark yourself.");
         public static readonly LocString RemovedTitle = new("moderation.removedTitle", "Post removed");
-        public static readonly LocString RemovedAdult = new("moderation.removedAdult", "Your post was removed because it appears to contain adult content, which is not allowed here.");
-        public static readonly LocString RemovedViolence = new("moderation.removedViolence", "Your post was removed because it appears to contain violent or graphic content.");
-        public static readonly LocString RemovedHarassment = new("moderation.removedHarassment", "Your post was removed because it appears to contain abusive or harassing language.");
-        public static readonly LocString RemovedHate = new("moderation.removedHate", "Your post was removed because it appears to contain hateful content.");
-        public static readonly LocString RemovedSelfHarm = new("moderation.removedSelfHarm", "Your post was removed because it appears to reference self-harm.");
+        public static readonly LocString RemovedAdult = new("moderation.removedAdult", "A moderator removed your post because it contains adult content, which is not allowed here.");
+        public static readonly LocString RemovedViolence = new("moderation.removedViolence", "A moderator removed your post because it contains violent or graphic content.");
+        public static readonly LocString RemovedHarassment = new("moderation.removedHarassment", "A moderator removed your post because it contains abusive or harassing language.");
+        public static readonly LocString RemovedHate = new("moderation.removedHate", "A moderator removed your post because it contains hateful content.");
+        public static readonly LocString RemovedSelfHarm = new("moderation.removedSelfHarm", "A moderator removed your post because it references self-harm.");
         public static readonly LocString RemovedPolicy = new("moderation.removedPolicy", "Your post was removed for violating the community guidelines.");
         public static readonly LocString RemovedFooter = new("moderation.removedFooter", "If you believe this was a mistake, you can appeal by contacting us through our Discord server.");
         public static readonly LocString RemovedDismiss = new("moderation.removedDismiss", "OK");
         public static readonly LocString RemovedCommentTitle = new("moderation.removedCommentTitle", "Comment removed");
-        public static readonly LocString RemovedCommentAdult = new("moderation.removedCommentAdult", "Your comment was removed because it appears to contain adult content, which is not allowed here.");
-        public static readonly LocString RemovedCommentViolence = new("moderation.removedCommentViolence", "Your comment was removed because it appears to contain violent or graphic content.");
-        public static readonly LocString RemovedCommentHarassment = new("moderation.removedCommentHarassment", "Your comment was removed because it appears to contain abusive or harassing language.");
-        public static readonly LocString RemovedCommentHate = new("moderation.removedCommentHate", "Your comment was removed because it appears to contain hateful content.");
-        public static readonly LocString RemovedCommentSelfHarm = new("moderation.removedCommentSelfHarm", "Your comment was removed because it appears to reference self-harm.");
+        public static readonly LocString RemovedCommentAdult = new("moderation.removedCommentAdult", "A moderator removed your comment because it contains adult content, which is not allowed here.");
+        public static readonly LocString RemovedCommentViolence = new("moderation.removedCommentViolence", "A moderator removed your comment because it contains violent or graphic content.");
+        public static readonly LocString RemovedCommentHarassment = new("moderation.removedCommentHarassment", "A moderator removed your comment because it contains abusive or harassing language.");
+        public static readonly LocString RemovedCommentHate = new("moderation.removedCommentHate", "A moderator removed your comment because it contains hateful content.");
+        public static readonly LocString RemovedCommentSelfHarm = new("moderation.removedCommentSelfHarm", "A moderator removed your comment because it references self-harm.");
         public static readonly LocString RemovedCommentPolicy = new("moderation.removedCommentPolicy", "Your comment was removed for violating the community guidelines.");
         public static readonly LocString WarningTitle = new("moderation.warningTitle", "Warning from moderators");
         public static readonly LocString WarningBody = new("moderation.warningBody", "A moderator reviewed your activity. Please follow the community guidelines. Repeated violations can lead to a ban.");
         public static readonly LocString ReportUpdateTitle = new("moderation.reportUpdateTitle", "Report update");
         public static readonly LocString ReportResolvedBody = new("moderation.reportResolvedBody", "Thanks for your report. We reviewed it and took action.");
-        public static readonly LocString ReportDismissedBody = new("moderation.reportDismissedBody", "Thanks for your report. Our moderators reviewed it and took the appropriate action.");
+        public static readonly LocString ReportDismissedBody = new("moderation.reportDismissedBody", "Thanks for your report. A moderator reviewed it.");
 
         public static readonly LocString NoticeRemovedChirp = new("moderation.notice.removedChirp", "Your chirp was removed");
         public static readonly LocString NoticeRemovedGram = new("moderation.notice.removedGram", "Your gram was removed");
@@ -291,19 +291,19 @@ internal static class L
         public static readonly LocString NoticeWarningConsequence = new("moderation.notice.warningConsequence", "Please follow the community guidelines. Repeated breaks of the same rule can lead to a temporary suspension.");
         public static readonly LocString NoticeCoinTitle = new("moderation.notice.coinTitle", "Your Aether Coin balance changed");
         public static readonly LocString NoticeCoinBody = new("moderation.notice.coinBody", "A staff member adjusted your Aether Coin balance.");
-        public static readonly LocString NoticeThanksTitle = new("moderation.notice.thanksTitle", "Thanks for looking out for everyone");
-        public static readonly LocString NoticeThanksBody = new("moderation.notice.thanksBody", "Your report was reviewed by our moderation team and appropriate action has been taken. Reports like yours help keep Aethernet safe, and we appreciate you taking the time to send one.");
+        public static readonly LocString NoticeThanksTitle = new("moderation.notice.thanksTitle", "Your report was reviewed");
+        public static readonly LocString NoticeThanksBody = new("moderation.notice.thanksBody", "A moderator reviewed your report. Thank you for sending it.");
         public static readonly LocString NoticeBadgeTitle = new("moderation.notice.badgeTitle", "New badge");
-        public static readonly LocString NoticeBadgeBodyOne = new("moderation.notice.badgeBodyOne", "The Aetherphone team granted you the {0} badge. It now shows next to your name, and you can manage it in Settings under Account.");
-        public static readonly LocString NoticeBadgeBodyMany = new("moderation.notice.badgeBodyMany", "The Aetherphone team granted you new badges: {0}. They now show next to your name, and you can manage them in Settings under Account.");
-        public static readonly LocString NoticeBadgeBodyFallback = new("moderation.notice.badgeBodyFallback", "The Aetherphone team granted you a new badge. You can see it in Settings under Account.");
+        public static readonly LocString NoticeBadgeBodyOne = new("moderation.notice.badgeBodyOne", "You received the {0} badge. It now shows next to your name, and you can manage it in Settings under Account.");
+        public static readonly LocString NoticeBadgeBodyMany = new("moderation.notice.badgeBodyMany", "You received new badges: {0}. They now show next to your name, and you can manage them in Settings under Account.");
+        public static readonly LocString NoticeBadgeBodyFallback = new("moderation.notice.badgeBodyFallback", "You received a new badge. You can see it in Settings under Account.");
         public static readonly LocString NoticeBadgeRevokedTitle = new("moderation.notice.badgeRevokedTitle", "Badge removed");
         public static readonly LocString NoticeBadgeRevokedBodyOne = new("moderation.notice.badgeRevokedBodyOne", "The {0} badge was removed from your account and no longer shows next to your name. If you think this was a mistake, reach out to us on our Discord server.");
         public static readonly LocString NoticeBadgeRevokedBodyMany = new("moderation.notice.badgeRevokedBodyMany", "These badges were removed from your account: {0}. They no longer show next to your name. If you think this was a mistake, reach out to us on our Discord server.");
         public static readonly LocString NoticeBadgeRevokedBodyFallback = new("moderation.notice.badgeRevokedBodyFallback", "A badge was removed from your account. If you think this was a mistake, reach out to us on our Discord server.");
         public static readonly LocString NoticeFrameTitle = new("moderation.notice.frameTitle", "New avatar frame");
-        public static readonly LocString NoticeFrameBodyOne = new("moderation.notice.frameBodyOne", "The Aetherphone team gave you the {0} frame. Wear it from Aether Coin, under Items.");
-        public static readonly LocString NoticeFrameBodyFallback = new("moderation.notice.frameBodyFallback", "The Aetherphone team gave you a new avatar frame. Wear it from Aether Coin, under Items.");
+        public static readonly LocString NoticeFrameBodyOne = new("moderation.notice.frameBodyOne", "You received the {0} frame. Wear it from Aether Coin, under Items.");
+        public static readonly LocString NoticeFrameBodyFallback = new("moderation.notice.frameBodyFallback", "You received a new avatar frame. Wear it from Aether Coin, under Items.");
         public static readonly LocString NoticeFrameRevokedTitle = new("moderation.notice.frameRevokedTitle", "Avatar frame removed");
         public static readonly LocString NoticeFrameRevokedBodyOne = new("moderation.notice.frameRevokedBodyOne", "The {0} frame was removed from your account and no longer sits around your picture. If you think this was a mistake, reach out to us on our Discord server.");
         public static readonly LocString NoticeFrameRevokedBodyMany = new("moderation.notice.frameRevokedBodyMany", "These frames were removed from your account: {0}. They no longer sit around your picture. If you think this was a mistake, reach out to us on our Discord server.");
@@ -520,7 +520,7 @@ internal static class L
             "Find player-run venues, opening hours and directions without leaving the game.");
         public static readonly LocString MusterSub = new("storeCopy.musterSub", "Call a meetup, see who's coming");
         public static readonly LocString MusterBody = new("storeCopy.musterBody",
-            "Announce a spontaneous meetup with a real map location and watch the RSVPs land with one tap. Your friends always see your musters, everyone else can find the public ones, and it all disappears when the muster ends.");
+            "Announce a spontaneous meetup with a real map location and watch the RSVPs land with one tap. Your friends always see your musters, everyone else can find the public ones, and a muster leaves the list when it ends.");
         public static readonly LocString YellowPagesSub = new("storeCopy.yellowPagesSub", "Eorzea's classifieds board");
         public static readonly LocString YellowPagesBody = new("storeCopy.yellowPagesBody",
             "Post an ad once and reach your whole region: venue nights with schedules and an Open Now switch, gil services with prices up front, and recruitment calls for free companies, statics, and venue staff. Ads expire on their own, so the board never goes stale.");
@@ -544,13 +544,13 @@ internal static class L
             "A small arcade for queue times, with high scores worth chasing.");
         public static readonly LocString AetherStreamSub = new("storeCopy.aetherstreamSub", "Watch videos together");
         public static readonly LocString AetherStreamBody = new("storeCopy.aetherstreamBody",
-            "Watch content and show a screen in the world, viewable by your friends and the people around you.");
+            "Play videos on your phone or on a screen you place in the world, and watch in sync with nearby Aetherphone users who join your party.");
         public static readonly LocString NewsSub = new("storeCopy.newsSub", "Patch notes and posts");
         public static readonly LocString NewsBody = new("storeCopy.newsBody",
             "The Lodestone straight to your phone: maintenance, patch notes and announcements.");
         public static readonly LocString FishingSub = new("storeCopy.fishingSub", "Routes and windows");
         public static readonly LocString FishingBody = new("storeCopy.fishingBody",
-            "Track ocean fishing rotations, baits and the windows worth waiting for.");
+            "Ocean fishing departures, routes, time of day and the blue fish on each route.");
         public static readonly LocString SkywatcherSub = new("storeCopy.skywatcherSub", "Weather ahead");
         public static readonly LocString SkywatcherBody = new("storeCopy.skywatcherBody",
             "See the forecast for any zone and plan around the weather you actually need.");
@@ -562,7 +562,7 @@ internal static class L
             "Mounts, minions, orchestrion rolls and more, with whatever is still missing.");
         public static readonly LocString InventorySub = new("storeCopy.inventorySub", "Bags at a glance");
         public static readonly LocString InventoryBody = new("storeCopy.inventoryBody",
-            "Search every bag, retainer and saddlebag without opening a single window.");
+            "Search your bags, armoury chest, saddlebag, retainers and FC chest in one place. Retainers and the FC chest load once you open them in game.");
         public static readonly LocString JobsSub = new("storeCopy.jobsSub", "Levels and gear");
         public static readonly LocString JobsBody = new("storeCopy.jobsBody",
             "Every class and job with levels, gear and progress in one place.");
@@ -580,7 +580,7 @@ internal static class L
             "Every currency you carry, with caps and totals you can actually read.");
         public static readonly LocString CoinSub = new("storeCopy.coinSub", "Earn by living here");
         public static readonly LocString CoinBody = new("storeCopy.coinBody",
-            "Check in, play, and talk to earn Aether Coin, then spend it on frames and badges. Never pay to win.");
+            "Check in, play, and talk to earn Aether Coin, then spend it on frames, badges and Gamba chips. Aether Coin cannot be bought with real money.");
         public static readonly LocString CasinoSub = new("storeCopy.casinoSub", "Gambling from your pocket");
         public static readonly LocString CasinoBody = new("storeCopy.casinoBody",
             "Gamble your Aether Coin with Blackjack, Slots, Scratch and more.");
@@ -598,10 +598,10 @@ internal static class L
             "Jot down macros, rotations and reminders, and find them again later.");
         public static readonly LocString CalendarSub = new("storeCopy.calendarSub", "Plan the week");
         public static readonly LocString CalendarBody = new("storeCopy.calendarBody",
-            "Events, reminders and reset days on one calendar.");
+            "Your own events with alerts and groups, plus in-game events, on one calendar.");
         public static readonly LocString TimersSub = new("storeCopy.timersSub", "Count it down");
         public static readonly LocString TimersBody = new("storeCopy.timersBody",
-            "Timers for crafting, cooldowns and anything you cannot afford to miss.");
+            "Countdowns to the daily, weekly and Grand Company resets, Fashion Report, Jumbo Cactpot, ocean fishing and retainer ventures, with optional reminders.");
         public static readonly LocString ClockSub = new("storeCopy.clockSub", "Eorzea and local");
         public static readonly LocString ClockBody = new("storeCopy.clockBody",
             "World clock, alarms and Eorzea time side by side.");
@@ -1823,7 +1823,7 @@ internal static class L
         public static readonly LocString CopySupportInfo = new("settings.copySupportInfo", "Copy Support Info");
         public static readonly LocString SupportInfoCopied = new("settings.supportInfoCopied", "Copied to clipboard");
         public static readonly LocString SupportAetherphone = new("settings.supportAetherphone", "Support Aetherphone");
-        public static readonly LocString SupportHint = new("settings.supportHint", "Aetherphone is made in my spare time. If you enjoy it, a pledge on Patreon or a coffee helps me keep building and improving it. Thank you for being here.");
+        public static readonly LocString SupportHint = new("settings.supportHint", "Aetherphone is developed in spare time. Pledges on Patreon and contributions through Buy Me a Coffee support its development.");
         public static readonly LocString SupportOnPatreon = new("settings.supportOnPatreon", "Support on Patreon");
         public static readonly LocString BuyMeACoffee = new("settings.buyMeACoffee", "Buy me a coffee");        public static readonly LocString JoinDiscord = new("settings.joinDiscord", "Join our Discord");
         public static readonly LocString VisitWebsite = new("settings.visitWebsite", "Visit our website");
@@ -1896,7 +1896,7 @@ internal static class L
         public static readonly LocString ChatToggle = new("translate.chatToggle", "Translate this chat");
         public static readonly LocString ChatOn = new("translate.chatOn", "New messages in this chat are translated for you");
         public static readonly LocString DisclosureTitle = new("translate.disclosureTitle", "Translate with Aethernet");
-        public static readonly LocString DisclosureBody = new("translate.disclosureBody", "Translations are made by Aethernet. Only the text you translate is sent. Private messages are never stored.");
+        public static readonly LocString DisclosureBody = new("translate.disclosureBody", "Aethernet translates the text you choose, never your account details. Messages from encrypted chats are decrypted on this PC first and sent to Aethernet as readable text for translation. Translations of public content are cached without recording who asked. Translations of private messages are never stored.");
         public static readonly LocString DisclosureContinue = new("translate.disclosureContinue", "Continue");
     }
 
@@ -3941,9 +3941,9 @@ internal static class L
         public static readonly LocString SignOutConfirmTitle = new("account.signOutConfirmTitle", "Sign out?");
         public static readonly LocString SignOutConfirmBody = new("account.signOutConfirmBody", "You can sign back in anytime. Your account and data stay safe.");
         public static readonly LocString DeleteAccount = new("account.deleteAccount", "Delete account");
-        public static readonly LocString DeleteAccountHint = new("account.deleteAccountHint", "Permanently deletes your Aethernet account from the server: profile, posts, comments, messages, photos, and connections. The phone itself keeps working. This cannot be undone.");
+        public static readonly LocString DeleteAccountHint = new("account.deleteAccountHint", "Permanently deletes your Aethernet account from the server: profile, posts, comments, photos, connections, and your ChocoChat and Velvet messages. Text you sent in Aethergram direct messages stays until the other person clears that conversation. The phone itself keeps working. This cannot be undone.");
         public static readonly LocString DeleteConfirmTitle = new("account.deleteConfirmTitle", "Delete your account?");
-        public static readonly LocString DeleteConfirmBody = new("account.deleteConfirmBody", "This permanently erases your profile, posts, comments, messages, and photos from the Aetherphone servers. There is no way to get them back.");
+        public static readonly LocString DeleteConfirmBody = new("account.deleteConfirmBody", "This permanently erases your profile, posts, comments, photos, and ChocoChat and Velvet messages from Aethernet. Text you sent in Aethergram direct messages stays until the other person clears that conversation, and daily database backups are deleted after 30 days. There is no way to get your data back.");
         public static readonly LocString DeleteConfirmAction = new("account.deleteConfirmAction", "Delete forever");
         public static readonly LocString DeleteFailed = new("account.deleteFailed", "Deletion didn't go through. Check your connection and try again.");
         public static readonly LocString ChangePhoto = new("account.changePhoto", "Change Photo");
@@ -3953,7 +3953,7 @@ internal static class L
         public static readonly LocString Saving = new("account.saving", "Saving…");
         public static readonly LocString GestureHint = new("account.gestureHint", "Drag to move · scroll to zoom");
         public static readonly LocString NameTitle = new("account.nameTitle", "Name and Username");
-        public static readonly LocString NameHint = new("account.nameHint", "This is how you appear across every Aethernet app. Your character name and home world stay private.");
+        public static readonly LocString NameHint = new("account.nameHint", "This is how you appear in Aethernet apps where you have not set a separate profile name. Profiles do not show your character name or home world. A muster host sees them when you RSVP, and players who say they are going see the host's. Until you set a display name, ChocoChat shows your character name to your contacts.");
         public static readonly LocString DisplayNameLabel = new("account.displayNameLabel", "Display name");
         public static readonly LocString HandleLabel = new("account.handleLabel", "Username");
         public static readonly LocString HandleRules = new("account.handleRules", "3-15 characters: letters, numbers, or _");
@@ -4003,7 +4003,7 @@ internal static class L
         public static readonly LocPlural Followers = new("account.followers", "{0} follower", "{0} followers");
         public static readonly LocString AccountsSection = new("account.accountsSection", "Accounts");
         public static readonly LocString BadgesSection = new("account.badgesSection", "Badges");
-        public static readonly LocString BadgesHint = new("account.badgesHint", "Badges are granted by the Aetherphone team. Turning one off hides it from everyone, along with its name color and effects. Turn it back on whenever you like.");
+        public static readonly LocString BadgesHint = new("account.badgesHint", "Badges are granted by the Aetherphone team or automatically, for example by a linked Patreon membership. Turning one off hides it from everyone, along with its name color and effects. Turn it back on whenever you like.");
         public static readonly LocString AddAccount = new("account.addAccount", "Add account");
         public static readonly LocString AddAccountTakenTitle = new("account.addAccountTakenTitle", "Already signed in here");
         public static readonly LocString AddAccountTakenBody = new("account.addAccountTakenBody", "{0} already has an account on this phone. To add another one, log in to that character in the game and sign in from there. It then stays in this list for every character.");
@@ -4020,7 +4020,7 @@ internal static class L
         public static readonly LocString SignedOutBody = new("account.signedOutBody", "Your Aethernet session ended, so social apps, messaging, and calls stay empty. Open Settings and sign in again to reconnect.");
         public static readonly LocString FailDismiss = new("account.fail.dismiss", "Got it");
         public static readonly LocString FailCharacterNotFoundTitle = new("account.fail.characterNotFound.title", "Character not found");
-        public static readonly LocString FailCharacterNotFoundBody = new("account.fail.characterNotFound.body", "We couldn't find {0} on {1} in the Lodestone search. Brand-new characters can take up to a day to appear. In your Character settings, set Character Search to Public, then Verify again. Characters on Chinese or Korean servers aren't on the international Lodestone yet, so they can't be verified.");
+        public static readonly LocString FailCharacterNotFoundBody = new("account.fail.characterNotFound.body", "We couldn't find {0} on {1} in the Lodestone search. Brand-new characters can take up to a day to appear. In your Character settings, set Character Search to Public, then Verify again. Characters on Korean servers are not on the Lodestone, so they can't be verified. Characters on Chinese servers sign in through Rising Stones on the Chinese game client.");
         public static readonly LocString FailCodeNotFoundTitle = new("account.fail.codeNotFound.title", "Code not saved yet");
         public static readonly LocString FailCodeNotFoundBody = new("account.fail.codeNotFound.body", "We found your character, but the code isn't in your profile yet. Lodestone can take a minute to update after you save. Wait a moment, then Verify again. If it keeps happening, press Cancel below and try again with a new code.");
         public static readonly LocString FailLodestoneUnavailableTitle = new("account.fail.lodestoneUnavailable.title", "Lodestone unavailable");
@@ -4064,13 +4064,13 @@ internal static class L
         public static readonly LocString StateUnavailable = new("encryption.stateUnavailable", "Sign in required");
         public static readonly LocString StateUnsupported = new("encryption.stateUnsupported", "Unavailable on this PC");
         public static readonly LocString StateLocked = new("encryption.stateLocked", "Locked on this device");
-        public static readonly LocString Intro = new("encryption.intro", "Chats are end-to-end encrypted when everyone in them has an encryption key, and then not even the Aethernet server can read them. If someone doesn't have one yet, the chat shows Not encrypted, and its messages are stored readable on our server.");
+        public static readonly LocString Intro = new("encryption.intro", "Chats are end-to-end encrypted, and your phone creates your key automatically. In an encrypted chat, the phone and the server refuse unencrypted messages, and the Aethernet server cannot read the messages. Reporting or translating a message sends that message's text to Aethernet in readable form. In the rare case that someone in a chat has no key, the chat shows Not encrypted, and its messages are stored readable on our server.");
         public static readonly LocString NotSignedIn = new("encryption.notSignedIn", "Sign in to your Aethernet account first.");
-        public static readonly LocString UnsupportedBody = new("encryption.unsupportedBody", "This computer cannot create the security key that encrypted chats need, so ChocoChat and Velvet chats stay unavailable here. This usually happens when the game runs through Wine or Proton. The rest of Aetherphone works normally.");
+        public static readonly LocString UnsupportedBody = new("encryption.unsupportedBody", "This computer cannot create the security key that encrypted chats need. This usually happens when the game runs through Wine or Proton. If your account has no key yet, your chats still work here but are not encrypted. Chats encrypted with a key from another computer cannot be read or sent from here. The rest of Aetherphone works normally.");
         public static readonly LocString SettingUp = new("encryption.settingUp", "Setting up encryption…");
         public static readonly LocString UnsupportedSummary = new("encryption.unsupportedSummary", "This PC cannot set up encryption, so messages here are not encrypted.");
         public static readonly LocString ActiveHint = new("encryption.activeHint", "Encryption is active on this device. It works automatically. There is nothing to set up.");
-        public static readonly LocString NewDeviceHint = new("encryption.newDeviceHint", "On another computer this account starts locked, and your recovery code is what opens it there. Keep your code safe and your full history follows you.");
+        public static readonly LocString NewDeviceHint = new("encryption.newDeviceHint", "On another computer this account starts locked. Your recovery code, or approval from a computer that already has your key, unlocks it there with your full history.");
         public static readonly LocString LocalStoreUnavailable = new("encryption.localStoreUnavailable", "This PC can't use the system's secure key store, so your encryption key is saved with basic protection instead. Your chats keep working normally on this device.");
         public static readonly LocString LockedBody = new("encryption.lockedBody", "This device doesn't have the encryption key for this account, so messages here can't be read yet. This usually happens after switching to a different computer. Your messages are safe: open Aetherphone on the computer that already has your key, or create a new key here. If you create a new key, older messages become readable again once your chat partners come online.");
         public static readonly LocString NewKeyButton = new("encryption.newKeyButton", "Create a new key on this device…");
@@ -4080,12 +4080,12 @@ internal static class L
         public static readonly LocString LockedBanner = new("encryption.lockedBanner", "Chats are locked on this device. Tap to unlock.");
         public static readonly LocString RecoveryNudgeBanner = new("encryption.recoveryNudgeBanner", "Protect your chat history: set up a recovery code");
         public static readonly LocString RecoverySectionTitle = new("encryption.recoverySectionTitle", "Recovery code");
-        public static readonly LocString RecoveryNotSetBody = new("encryption.recoveryNotSetBody", "Set up a recovery code so you can restore your chats if you reinstall or move to another PC. Without it, chats on a new PC start fresh.");
+        public static readonly LocString RecoveryNotSetBody = new("encryption.recoveryNotSetBody", "Set up a recovery code so you can restore your chats if you reinstall or move to another PC. Without one, a new PC depends on your other PC or the people you chat with to unlock older chats.");
         public static readonly LocString RecoverySetupButton = new("encryption.recoverySetupButton", "Set up recovery code…");
         public static readonly LocString RecoveryConfiguredBody = new("encryption.recoveryConfiguredBody", "A recovery code is set up for this account. Keep it somewhere safe: it's what unlocks your chats on another PC.");
         public static readonly LocString RecoveryRegenerateButton = new("encryption.recoveryRegenerateButton", "Create a new recovery code…");
         public static readonly LocString RecoverySaveTitle = new("encryption.recoverySaveTitle", "Save your recovery code");
-        public static readonly LocString RecoverySaveBody = new("encryption.recoverySaveBody", "This is the only way to restore your chats on another PC, and it can't be shown again. Keep it somewhere safe and private: anyone with this code can read your chats.");
+        public static readonly LocString RecoverySaveBody = new("encryption.recoverySaveBody", "This code restores your chats on another PC without help from another device or the people you chat with, and it can't be shown again. Keep it somewhere safe and private: anyone with this code can read your chats.");
         public static readonly LocString RecoveryCopy = new("encryption.recoveryCopy", "Copy code");
         public static readonly LocString RecoverySavedButton = new("encryption.recoverySavedButton", "I've saved it");
         public static readonly LocString RecoveryCodeLabel = new("encryption.recoveryCodeLabel", "Recovery code");
@@ -4105,7 +4105,7 @@ internal static class L
         public static readonly LocString LockedNoRecoveryBanner = new("encryption.lockedNoRecoveryBanner", "Your old chats can't be opened on this PC yet. Tap to fix it.");
         public static readonly LocString UnreadableKeyBody = new("encryption.unreadableKeyBody", "Windows could not open the encryption key saved on this PC. This usually means the game is running as a different Windows user, or Windows was reinstalled. Your key is still here and untouched: start the game the way you normally do and it should unlock. Try that before creating a new key, since nothing has actually been lost.");
         public static readonly LocString SaveCodeBanner = new("encryption.saveCodeBanner", "Save your recovery code so you never lose these chats");
-        public static readonly LocString SaveCodeIntro = new("encryption.saveCodeIntro", "Encryption is set up on this device and your chats are protected. Save this code now: it is the only way to open your chats on another PC, or if this one is reset.");
+        public static readonly LocString SaveCodeIntro = new("encryption.saveCodeIntro", "Encryption is set up on this device. Save this code now: it opens your chats on another PC, or on this one after a reset, without help from another device or the people you chat with.");
         public static readonly LocString ForgotConfirm = new("encryption.forgotConfirm", "Reset key");
         public static readonly LocString ResetButton = new("encryption.resetButton", "Reset encryption key…");
         public static readonly LocString KeyVersion = new("encryption.keyVersion", "Key version {0}");
@@ -4130,7 +4130,7 @@ internal static class L
         public static readonly LocString GuideLockedBody = new("encryption.guideLockedBody", "This PC does not hold your encryption key yet. Open Encrypted Chats to unlock it.");
         public static readonly LocString GuideWroteItDown = new("encryption.guideWroteItDown", "I've written it down");
         public static readonly LocString GuideVerifyTitle = new("encryption.guideVerifyTitle", "Check you saved it");
-        public static readonly LocString GuideVerifyBody = new("encryption.guideVerifyBody", "Type the last group of your code to confirm you have it. This is the only step that keeps your chats recoverable.");
+        public static readonly LocString GuideVerifyBody = new("encryption.guideVerifyBody", "Type the last group of your code to confirm you saved it correctly.");
         public static readonly LocString GuideVerifyConfirm = new("encryption.guideVerifyConfirm", "Confirm");
         public static readonly LocString GuideVerifyWrong = new("encryption.guideVerifyWrong", "That does not match the last group. Check your code and try again.");
         public static readonly LocString GuideShowAgain = new("encryption.guideShowAgain", "Show me the code again");
@@ -4138,7 +4138,7 @@ internal static class L
         public static readonly LocString SummaryNoRecovery = new("encryption.summaryNoRecovery", "No recovery code, chats cannot move to another PC");
         public static readonly LocString HelpTitle = new("encryption.helpTitle", "If your chats look locked");
         public static readonly LocString HelpOpen = new("encryption.helpOpen", "What to do if chats stop opening");
-        public static readonly LocString HelpIntro = new("encryption.helpIntro", "Your messages are stored on the server and never deleted. What can go missing is the key on this PC that opens them, so almost every case below is fixable.");
+        public static readonly LocString HelpIntro = new("encryption.helpIntro", "Losing the key on this PC does not delete your messages from the server, so almost every case below is fixable.");
         public static readonly LocString HelpDecryptingTitle = new("encryption.helpDecryptingTitle", "It says Decrypting");
         public static readonly LocString HelpDecryptingBody = new("encryption.helpDecryptingBody", "Nothing is wrong. The keys for that chat are still loading and the messages appear within a few seconds. If it stays like this, reopen the phone.");
         public static readonly LocString HelpLockedTitle = new("encryption.helpLockedTitle", "It says Locked on this device");
@@ -4152,7 +4152,7 @@ internal static class L
         public static readonly LocString HelpEyebrow = new("encryption.helpEyebrow", "Encrypted chats");
         public static readonly LocString HelpNeverTitle = new("encryption.helpNeverTitle", "What to try, in order");
         public static readonly LocString HelpNeverBody = new("encryption.helpNeverBody", "Unlocking from another PC is the best route: it is instant and brings everything back. A recovery code is next. A new key comes last, but it is no longer a dead end: this PC keeps the key it replaces, and everyone you chat with hands back the key to each conversation you share once they open Aetherphone again. The one thing a new key cannot bring back is a chat where every other person lost their key too.");
-        public static readonly LocString HelpPreventTitle = new("encryption.helpPreventTitle", "So this never happens again");
+        public static readonly LocString HelpPreventTitle = new("encryption.helpPreventTitle", "Keep your chats recoverable");
         public static readonly LocString HelpPreventBody = new("encryption.helpPreventBody", "Keep a recovery code saved, and keep every code you have ever generated: each one opens only the key it was made for. This PC also holds on to the keys it replaces, the people you chat with hand their copy of a shared conversation key back to whatever key you have now, and messages you have already read stay readable even if the key is lost. A code is still worth keeping: it is what works when nobody else is around to hand a key back.");
         public static readonly LocString DamagedPlaceholder = new("encryption.damagedPlaceholder", "This message is damaged");
         public static readonly LocString SafetyChanged = new("encryption.safetyChanged", "{0}'s security key changed.");
@@ -5077,15 +5077,13 @@ internal static class L
         public static readonly LocString MakeConnections = new("velvet.makeConnections", "Limit to connections");
         public static readonly LocString ImageUnavailable = new("velvet.imageUnavailable", "Image unavailable");
         public static readonly LocString GateTagline =
-            new("velvet.gateTagline", "A private, adults only corner of the suite. Moonlit, unhurried, yours.");
+            new("velvet.gateTagline", "An adults-only space for connections and private messages.");
         public static readonly LocString GateConsent =
             new("velvet.gateConsent", "By entering you confirm you are 18 or older. Be kind, be discreet.");
         public static readonly LocString GateEnterAction = new("velvet.gateEnterAction", "Enter");
         public static readonly LocString UnavailableTitle = new("velvet.unavailableTitle", "Velvet is unavailable");
         public static readonly LocString UnavailableBody = new("velvet.unavailableBody",
             "Velvet is an adults only space and is not available on Lalafell characters. If you recently changed your race, this clears once the Lodestone reflects it.");
-        public static readonly LocString UnavailableRegionBody = new("velvet.unavailableRegionBody",
-            "Velvet is not available on the Chinese game version. Everything else on your phone works as normal.");
         public static readonly LocString UnverifiedTitle =
             new("velvet.unverifiedTitle", "We couldn't confirm your character");
         public static readonly LocString UnverifiedBody = new("velvet.unverifiedBody",
@@ -6463,7 +6461,7 @@ internal static class L
         public static readonly LocString GameDailySpin = new("casino.game.dailySpin", "Daily spin");
         public static readonly LocString Soon = new("casino.soon", "Soon");
         public static readonly LocString LimitsRow = new("casino.limitsRow", "Daily loss limit");
-        public static readonly LocString LimitsRowHint = new("casino.limitsRowHint", "A cap on every night, so the fun stays fun");
+        public static readonly LocString LimitsRowHint = new("casino.limitsRowHint", "Set an optional daily loss limit");
         public static readonly LocString CabinetSoonTitle = new("casino.cabinetSoonTitle", "The cabinet is on its way");
         public static readonly LocString CabinetSoonHint = new("casino.cabinetSoonHint", "This game is still being wired up. It arrives in a coming update.");
         public static readonly LocString Cashier = new("casino.cashier", "Cashier");
@@ -6524,8 +6522,8 @@ internal static class L
         public static readonly LocString SelfLimitCurrent = new("casino.selfLimitCurrent", "Tonight's limit: {0}");
         public static readonly LocString PendingRaise = new("casino.pendingRaise", "Raising to {0} with the next day");
         public static readonly LocString LimitReachedTitle = new("casino.limitReachedTitle", "That is the felt for tonight");
-        public static readonly LocString LimitReachedBody = new("casino.limitReachedBody", "Your limit kicked in so the fun stays fun. Tables reopen for you at {0}.");
-        public static readonly LocString LimitReachedBodySoon = new("casino.limitReachedBodySoon", "Your limit kicked in so the fun stays fun. Tables reopen for you with the next day.");
+        public static readonly LocString LimitReachedBody = new("casino.limitReachedBody", "You reached your daily loss limit. Tables reopen for you at {0}.");
+        public static readonly LocString LimitReachedBodySoon = new("casino.limitReachedBodySoon", "You reached your daily loss limit. Tables reopen for you when the next day starts.");
         public static readonly LocString RoomLeft = new("casino.roomLeft", "Room left tonight: {0}");
         public static readonly LocString NetHeading = new("casino.netHeading", "Tonight");
         public static readonly LocString SlotsChips = new("casino.slots.chips", "Chips");
@@ -6605,7 +6603,7 @@ internal static class L
         public static readonly LocString HistoryRow = new("casino.historyRow", "Round history");
         public static readonly LocString HistoryRowHint = new("casino.historyRowHint", "Every stake and payout, on the record");
         public static readonly LocString FairnessRow = new("casino.fairnessRow", "Fair play");
-        public static readonly LocString FairnessRowHint = new("casino.fairnessRowHint", "Check any settled round yourself");
+        public static readonly LocString FairnessRowHint = new("casino.fairnessRowHint", "Check settled rounds yourself");
         public static readonly LocString ResumeAction = new("casino.resume", "Resume");
         public static readonly LocString SessionPill = new("casino.sessionPill", "At the tables for {0}");
         public static readonly LocString HistoryEmptyTitle = new("casino.history.emptyTitle", "No rounds yet");
@@ -6631,7 +6629,7 @@ internal static class L
         public static readonly LocString VerdictMismatchHint = new("casino.verdict.mismatchHint", "The revealed seed does not reproduce this round. Copy the details and send them to us through Feedback.");
         public static readonly LocString VerdictUnrevealedTitle = new("casino.verdict.unrevealedTitle", "Still sealed");
         public static readonly LocString VerdictUnrevealedHint = new("casino.verdict.unrevealedHint", "This round has not settled yet, so its seed stays sealed. Check back once it wraps.");
-        public static readonly LocString FairnessIntro = new("casino.fairness.intro", "Every game here is dealt from a sealed seed, and you can check any settled round yourself, right on this phone. Here is how it works.");
+        public static readonly LocString FairnessIntro = new("casino.fairness.intro", "Every game here is dealt from a sealed seed, and for 7 days you can check settled rounds yourself, right on this phone. Here is how it works.");
         public static readonly LocString FairnessLockTitle = new("casino.fairness.lockTitle", "Locked before you play");
         public static readonly LocString FairnessLockBody = new("casino.fairness.lockBody", "Before a stake is accepted, Gamba publishes a fingerprint of the round's secret seed. The outcome is fixed in that seed; nothing after your tap can bend it.");
         public static readonly LocString FairnessRevealTitle = new("casino.fairness.revealTitle", "Revealed when it settles");
@@ -6878,7 +6876,7 @@ internal static class L
         public static readonly LocString RulesHowToPlay = new("casino.rules.howToPlay", "HOW IT PLAYS");
         public static readonly LocString RulesNumbers = new("casino.rules.numbers", "THE NUMBERS");
         public static readonly LocString RulesPlay = new("casino.rules.play", "Play");
-        public static readonly LocString RulesFairness = new("casino.rules.fairness", "Every round is sealed before it is drawn, and you can check any of them from Provably fair.");
+        public static readonly LocString RulesFairness = new("casino.rules.fairness", "Every round is sealed before it is drawn, and you can check settled rounds for 7 days under Fair play.");
         public static readonly LocString PitchGeneric = new("casino.pitch.generic", "A game on the floor");
         public static readonly LocString PitchSlots = new("casino.pitch.slots", "Five reels, ten lines, free spins and the house jackpot");
         public static readonly LocString PitchScratch = new("casino.pitch.scratch", "Buy a card, rub the foil, match three symbols");
@@ -7115,7 +7113,7 @@ internal static class L
         public static readonly LocString ControlCenterInsideTitle = new("onboarding.controlCenterInsideTitle", "Everything at hand");
         public static readonly LocString ControlCenterInsideBody = new("onboarding.controlCenterInsideBody", "Volume, brightness, accent color and your notifications all live here. Tap the bottom edge to close it anytime; for now, Continue will do it for you.");
         public static readonly LocString SignalTourTitle = new("onboarding.signalTourTitle", "Live signal");
-        public static readonly LocString SignalTourBody = new("onboarding.signalTourBody", "These bars are your real ping to Aethernet, updating as you play. More bars means a faster connection.");
+        public static readonly LocString SignalTourBody = new("onboarding.signalTourBody", "These bars show your ping to the data center you are playing on, updated as you play. More bars means lower latency and less packet loss.");
         public static readonly LocString BatteryTourTitle = new("onboarding.batteryTourTitle", "Real battery");
         public static readonly LocString BatteryTourBody = new("onboarding.batteryTourBody", "And this is your device's actual battery, read straight from your computer.");
         public static readonly LocString MinimizeTitle = new("onboarding.minimizeTitle", "Tuck it away");
@@ -7147,7 +7145,7 @@ internal static class L
         public static readonly LocString MusicNowPlayingTitle = new("onboarding.musicNowPlayingTitle", "Always with you");
         public static readonly LocString MusicNowPlayingBody = new("onboarding.musicNowPlayingBody", "Playback keeps going while you play, with a Now Playing banner right on your home screen.");
         public static readonly LocString GamesTitle = new("onboarding.gamesTitle", "Games");
-        public static readonly LocString GamesBody = new("onboarding.gamesBody", "A whole pocket arcade, 15 mini-games from puzzles to reflex tests, and every one remembers your best score.");
+        public static readonly LocString GamesBody = new("onboarding.gamesBody", "A pocket arcade of 30 games, from puzzles to reflex tests, plus Uno, Chess and 8-Ball Pool to play online with friends. Most games keep your best score, time or win streak.");
         public static readonly LocString CameraTitle = new("onboarding.cameraTitle", "Camera");
         public static readonly LocString CameraBody = new("onboarding.cameraBody", "Snap in-game photos straight from your phone. Pick square or photo, frame up with the grid, and tap the shutter.");
         public static readonly LocString PhotosTitle = new("onboarding.photosTitle", "Photos");
@@ -7164,8 +7162,8 @@ internal static class L
         public static readonly LocString AethergramBody = new("onboarding.aethergramBody", "Welcome to Aethergram! A photo-sharing app made for the Aetherphone community, a lot like the real thing.");
         public static readonly LocString AethergramShareTitle = new("onboarding.aethergramShareTitle", "Share your world");
         public static readonly LocString AethergramShareBody = new("onboarding.aethergramShareBody", "Set up your profile, post your best shots, follow other players, and like or comment on theirs.");
-        public static readonly LocString AethergramSafeTitle = new("onboarding.aethergramSafeTitle", "Safe and private");
-        public static readonly LocString AethergramSafeBody = new("onboarding.aethergramSafeBody", "It's completely separate from the Lodestone. Nothing here is linked to your character or account.");
+        public static readonly LocString AethergramSafeTitle = new("onboarding.aethergramSafeTitle", "What others see");
+        public static readonly LocString AethergramSafeBody = new("onboarding.aethergramSafeBody", "Aethergram runs on Aethernet, apart from the Lodestone. Your profile shows the name and region you choose, not your character name or home world.");
         public static readonly LocString AethergramKindTitle = new("onboarding.aethergramKindTitle", "Consent and Respect");
         public static readonly LocString AethergramKindBody = new("onboarding.aethergramKindBody", "This space is for everyone. Discriminatory, hateful or harmful content isn't welcome and can get you banned.");
         public static readonly LocString MapsBody = new("onboarding.mapsBody", "Every zone map with its aetherytes and points of interest. Star the places you visit most for one-tap access.");
@@ -7454,7 +7452,7 @@ internal static class L
         public static readonly LocString AetherStreamActionsTitle = new("onboarding.aetherStreamActionsTitle", "Three ways to go");
         public static readonly LocString AetherStreamActionsBody = new("onboarding.aetherStreamActionsBody", "Up Next holds your queue, Party is for watching with other people, and Screen puts the picture onto a surface in the world.");
         public static readonly LocString AetherStreamPartyTitle = new("onboarding.aetherStreamPartyTitle", "Watch together");
-        public static readonly LocString AetherStreamPartyBody = new("onboarding.aetherStreamPartyBody", "Start a party and players nearby can ask to join. You decide who comes in, and everyone stays on the same second of the same video.");
+        public static readonly LocString AetherStreamPartyBody = new("onboarding.aetherStreamPartyBody", "Start a party and nearby Aetherphone users can join. To decide who comes in, turn on Require approval to join in MogCast settings. Everyone stays on the same second of the same video.");
         public static readonly LocString AetherStreamSettingsTitle = new("onboarding.aetherStreamSettingsTitle", "Tune it to your machine");
         public static readonly LocString AetherStreamSettingsBody = new("onboarding.aetherStreamSettingsBody", "Maximum quality, hardware decoding, whether others can find your stream, and the components the player needs, all behind this cog.");
         public static readonly LocString HuntsBody = new("onboarding.huntsBody", "A Faloop account is required for live spawn data. Browsing marks and mob info works without one. Faloop is not affiliated with Aetherphone.");
@@ -7483,7 +7481,7 @@ internal static class L
         public static readonly LocString SignedInTitle = new("setup.signedInTitle", "You're signed in");
         public static readonly LocString SignedInBody = new("setup.signedInBody", "Signed in as {0}. Next, make your profile yours.");
         public static readonly LocString IdTitle = new("setup.idTitle", "Create Your Aethernet ID");
-        public static readonly LocString IdBody = new("setup.idBody", "Your Aethernet ID is how other players find you across Chirper, Aethergram and Message. Tap the circle to add a photo.");
+        public static readonly LocString IdBody = new("setup.idBody", "Your Aethernet ID is how other players see you across Chirper, Aethergram and ChocoChat. Tap the circle to add a photo.");
         public static readonly LocString DisplayNameLabel = new("setup.displayNameLabel", "Display name");
         public static readonly LocString HandleLabel = new("setup.handleLabel", "Handle");
         public static readonly LocString HandleRules = new("setup.handleRules", "3 to 15 characters: lowercase letters, numbers and underscores.");
@@ -7787,6 +7785,8 @@ internal static class L
         public static readonly LocString ChirperAiTitle = new("conduct.chirper.ai.title", "AI Usage");
         public static readonly LocString ChirperAiBody = new("conduct.chirper.ai.body", "We do not allow any content made by generative AI.");
         public static readonly LocString ChirperRemovalAppeal = new("conduct.chirper.removalAppeal", "If you believe your content was wrongfully removed, please contact support through a ticket on the Discord.");
+        public static readonly LocString ChirperPoliticsTitle = new("conduct.chirper.politics.title", "No Real-World Politics");
+        public static readonly LocString ChirperPoliticsBody = new("conduct.chirper.politics.body", "Do not post real-world political content, such as elections, parties, politicians, governments, political campaigns, or debate on real-world political issues. Eorzean politics and lore are welcome.");
         public static readonly LocString ChirperRespectTitle = new("conduct.chirper.respect.title", "Be Respectful");
         public static readonly LocString ChirperRespectLead = new("conduct.chirper.respect.lead", "Treat others with respect. Do not engage in:");
         public static readonly LocString[] ChirperRespectItems =
@@ -7861,6 +7861,8 @@ internal static class L
         public static readonly LocString AethergramRemovalAppeal = new("conduct.aethergram.removalAppeal", "If you believe your content was wrongfully removed, please contact support through a ticket on the Discord.");
         public static readonly LocString AethergramIrlTitle = new("conduct.aethergram.irl.title", "In-Game Content Only");
         public static readonly LocString AethergramIrlBody = new("conduct.aethergram.irl.body", "Aethergram is a place for in-game moments. Do not post real-life photographs or other real-world content. Memes are the exception.");
+        public static readonly LocString AethergramPoliticsTitle = new("conduct.aethergram.politics.title", "No Real-World Politics");
+        public static readonly LocString AethergramPoliticsBody = new("conduct.aethergram.politics.body", "Do not post real-world political content, such as elections, parties, politicians, governments, political campaigns, or debate on real-world political issues. Eorzean politics and lore are welcome.");
         public static readonly LocString AethergramRespectTitle = new("conduct.aethergram.respect.title", "Be Respectful");
         public static readonly LocString AethergramRespectLead = new("conduct.aethergram.respect.lead", "Treat others with respect. Do not engage in:");
         public static readonly LocString[] AethergramRespectItems =
@@ -7899,7 +7901,7 @@ internal static class L
         public static readonly LocString VelvetTitle = new("conduct.velvet.title", "Velvet Community Rules");
         public static readonly LocString VelvetIntro = new("conduct.velvet.intro", "Velvet is an 18+ space. Before you continue, please read the rules of the community.");
         public static readonly LocString VelvetAdultsTitle = new("conduct.velvet.adults.title", "Adults Only (18+)");
-        public static readonly LocString VelvetAdultsBody = new("conduct.velvet.adults.body", "Velvet is for adults aged 18 and above. Any content involving minors, child-like characters (including Lalafell and Kitten Mods), or underage roleplay is strictly prohibited and results in a permanent ban.");
+        public static readonly LocString VelvetAdultsBody = new("conduct.velvet.adults.body", "Velvet is for adults aged 18 and above. Any content involving minors, child-like characters (including Lalafell and Kitten Mods), or underage roleplay is strictly prohibited. It is removed, and the account is suspended, up to and including a permanent ban.");
         public static readonly LocString VelvetAllowedTitle = new("conduct.velvet.allowed.title", "What Is Allowed");
         public static readonly LocString VelvetAllowedLead = new("conduct.velvet.allowed.lead", "Examples of acceptable content include:");
         public static readonly LocString[] VelvetAllowedItems =
@@ -7933,7 +7935,7 @@ internal static class L
             new("conduct.velvet.boundaries.3", "Ask others to contact someone on your behalf"),
         };
         public static readonly LocString VelvetIllegalTitle = new("conduct.velvet.illegal.title", "Illegal and Prohibited Content");
-        public static readonly LocString VelvetIllegalLead = new("conduct.velvet.illegal.lead", "Zero tolerance, and fantasy or roleplay is no exemption. The following result in an immediate permanent ban:");
+        public static readonly LocString VelvetIllegalLead = new("conduct.velvet.illegal.lead", "Zero tolerance, and fantasy or roleplay is no exemption. Any of the following is removed, and the account is suspended, up to and including a permanent ban:");
         public static readonly LocString[] VelvetIllegalItems =
         {
             new("conduct.velvet.illegal.1", "Child sexual abuse material (CSAM)"),
@@ -7945,7 +7947,7 @@ internal static class L
             new("conduct.velvet.illegal.7", "Sexualized violence, snuff, or extreme gore"),
         };
         public static readonly LocString VelvetPrivacyTitle = new("conduct.velvet.privacy.title", "Protect Privacy");
-        public static readonly LocString VelvetPrivacyLead = new("conduct.velvet.privacy.lead", "Doxxing results in a permanent ban. Never share another person's personal information without permission, including:");
+        public static readonly LocString VelvetPrivacyLead = new("conduct.velvet.privacy.lead", "Doxxing is removed, and the account is suspended, up to and including a permanent ban. Never share another person's personal information without permission, including:");
         public static readonly LocString[] VelvetPrivacyItems =
         {
             new("conduct.velvet.privacy.1", "Real names"),
@@ -8127,7 +8129,7 @@ internal static class L
         public static readonly LocString CasinoPlayMoneyTitle = new("conduct.casino.playMoney.title", "Play Money Only");
         public static readonly LocString CasinoPlayMoneyBody = new("conduct.casino.playMoney.body", "Aether Coin is a cosmetic currency with no real-world value. Gamba is entertainment, the odds favor the house, and nothing here can be turned into anything real.");
         public static readonly LocString CasinoRmtTitle = new("conduct.casino.rmt.title", "No Real-Money Trading");
-        public static readonly LocString CasinoRmtLead = new("conduct.casino.rmt.lead", "Trading play money for anything real is enforced with clawbacks and bans. Do not:");
+        public static readonly LocString CasinoRmtLead = new("conduct.casino.rmt.lead", "Trading play money for anything real is enforced with clawbacks and account suspensions, up to and including a permanent ban. Do not:");
         public static readonly LocString[] CasinoRmtItems =
         {
             new("conduct.casino.rmt.1", "Buy or sell coins, chips, or seats for anything of value, gil included"),
@@ -8158,7 +8160,7 @@ internal static class L
         public static readonly LocString CoinPlayMoneyTitle = new("conduct.coin.playMoney.title", "Play Money Only");
         public static readonly LocString CoinPlayMoneyBody = new("conduct.coin.playMoney.body", "Aether Coins are a cosmetic currency with no real-world value. You earn them by playing, you spend them on looks, and nothing in this wallet can ever be cashed out.");
         public static readonly LocString CoinRmtTitle = new("conduct.coin.rmt.title", "No Real-Money Trading");
-        public static readonly LocString CoinRmtLead = new("conduct.coin.rmt.lead", "Trading coins for anything real is enforced with clawbacks and bans. Do not:");
+        public static readonly LocString CoinRmtLead = new("conduct.coin.rmt.lead", "Trading coins for anything real is enforced with clawbacks and account suspensions, up to and including a permanent ban. Do not:");
         public static readonly LocString[] CoinRmtItems =
         {
             new("conduct.coin.rmt.1", "Buy or sell coins, cosmetics, or accounts for anything of value, gil included"),
