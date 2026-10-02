@@ -9,8 +9,8 @@ namespace Aetherphone.Core.Shell.Home;
 
 internal sealed class HomeChrome
 {
-    private const float PillWidthUnits = 92f;
-    private const float PillHeightUnits = 23f;
+    private const float PillWidthUnits = 96f;
+    private const float PillHeightUnits = 26f;
     private const float DotsPresenceSmoothTime = 0.16f;
 
     private readonly Pager pager;

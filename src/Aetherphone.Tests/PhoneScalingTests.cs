@@ -128,6 +128,6 @@ public sealed class PhoneScalingTests
     {
         var chassis = ChassisFor(width, globalScale);
         return HomeMetrics.Compute(chassis.Screen, Columns, Rows, globalScale * PhoneSizeCatalog.ZoomFor(width),
-            HomeMotion.Rest);
+            HomeMotion.Rest, 0f);
     }
 }
