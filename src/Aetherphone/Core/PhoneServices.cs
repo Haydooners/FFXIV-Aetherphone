@@ -154,8 +154,6 @@ internal sealed class PhoneServices : IDisposable
     public required VideoUrlResolver VideoMetadata { get; init; }
     public required SongPlayer SongPlayer { get; init; }
     public required SongLinkResolver SongResolver { get; init; }
-    public required SongHistory SongHistory { get; init; }
-    public required PlaylistStore Playlists { get; init; }
     public required PlaybackHub Playback { get; init; }
     public required LibraryStore MusicLibrary { get; init; }
     public required WindowsMediaSessions WindowsMedia { get; init; }
@@ -316,8 +314,6 @@ internal sealed class PhoneServices : IDisposable
         var songPlayer = new SongPlayer(youtube, audioCache, songResolver);
         var musicLibrary = new LibraryStore(new DirectoryInfo(Path.Combine(configDirectory.FullName, "Music")),
             configuration);
-        var songHistory = new SongHistory(musicLibrary);
-        var playlists = new PlaylistStore(musicLibrary);
         var playback = new PlaybackHub(radioPlayer, songPlayer, musicLibrary, songResolver, configuration, framework);
         var lyricsDisk = new DiskCache(new DirectoryInfo(Path.Combine(cacheRoot.FullName, "lyrics")),
             16L * 1024 * 1024);
@@ -500,8 +496,6 @@ internal sealed class PhoneServices : IDisposable
             VideoMetadata = videoMetadata,
             SongPlayer = songPlayer,
             SongResolver = songResolver,
-            SongHistory = songHistory,
-            Playlists = playlists,
             Playback = playback,
             MusicLibrary = musicLibrary,
             WindowsMedia = new WindowsMediaSessions(configuration),
