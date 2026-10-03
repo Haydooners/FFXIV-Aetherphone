@@ -51,6 +51,7 @@ internal sealed partial class MusterApp
     private bool createIsPublic = true;
     private bool createBusy;
     private bool createSucceeded;
+    private CachedText descriptionTooLongText;
     private MusterCreateOutcome? createOutcome;
     private int createWorldId = -1;
     private int createDataCenterId;
@@ -638,15 +639,21 @@ internal sealed partial class MusterApp
         return rect.Max.Y;
     }
 
-    private static string IssueText(MusterDraftIssue issue) =>
+    private string IssueText(MusterDraftIssue issue) =>
         issue switch
         {
             MusterDraftIssue.NeedDescription => Loc.T(L.Muster.NeedDescription),
-            MusterDraftIssue.DescriptionTooLong => Loc.T(L.Muster.DescriptionTooLong, MusterDraft.DescriptionMaxLength),
+            MusterDraftIssue.DescriptionTooLong => DescriptionTooLongText(),
             MusterDraftIssue.NeedWhere => Loc.T(L.Muster.NeedWhere),
             MusterDraftIssue.NeedDataCenter => Loc.T(L.Muster.NeedDataCenter),
             _ => string.Empty,
         };
+
+    private string DescriptionTooLongText() =>
+        descriptionTooLongText.IsCurrent(MusterDraft.DescriptionMaxLength)
+            ? descriptionTooLongText.Value
+            : descriptionTooLongText.Store(MusterDraft.DescriptionMaxLength,
+                Loc.T(L.Muster.DescriptionTooLong, MusterDraft.DescriptionMaxLength));
 
     private static string OutcomeText(MusterCreateOutcome outcome) =>
         outcome switch
