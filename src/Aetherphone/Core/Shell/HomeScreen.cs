@@ -25,18 +25,21 @@ internal sealed class HomeScreen
     private readonly Configuration configuration;
     private float sidePaddingUnits = PhoneTheme.Default.SidePadding;
 
-    public HomeScreen(IReadOnlyList<IPhoneApp> apps, WidgetRegistry widgets, ShortcutStore shortcuts,
-        ShortcutRunner runner, Configuration configuration, ConfirmService confirm, SpotlightIndex spotlightIndex)
+    public HomeScreen(IReadOnlyList<IPhoneApp> apps, WidgetRegistry widgets, WidgetActions widgetActions,
+        ShortcutStore shortcuts, ShortcutRunner runner, Configuration configuration, ConfirmService confirm,
+        SpotlightIndex spotlightIndex)
     {
         this.configuration = configuration;
+        var widgetHost = new WidgetHost(widgetActions, configuration);
         layout = new HomeLayoutService(apps, widgets, shortcuts, configuration);
         folder = new FolderOverlay(layout, shortcuts, runner, configuration);
         sizeMenu = new WidgetSizeMenu(layout);
-        gallery = new WidgetGallery(layout, widgets);
+        gallery = new WidgetGallery(layout, widgets, widgetHost);
         spotlight = new SpotlightOverlay(spotlightIndex, configuration);
-        interaction = new HomeInteractionController(layout, widgets, pager, folder, sizeMenu, gallery, spotlight,
-            poses, runner);
-        renderer = new HomeGridRenderer(layout, pager, poses, interaction, shortcuts, confirm, configuration);
+        interaction = new HomeInteractionController(layout, pager, folder, sizeMenu, gallery, spotlight, poses,
+            runner, widgetHost);
+        renderer = new HomeGridRenderer(layout, pager, poses, interaction, shortcuts, confirm, configuration,
+            widgetHost);
         chrome = new HomeChrome(pager, interaction, spotlight);
     }
 
@@ -57,7 +60,7 @@ internal sealed class HomeScreen
         var chromeAlpha = 1f - motion.Recession;
         if (motion.Interactive)
         {
-            interaction.HandleInput(content, metrics, navigation, delta);
+            interaction.HandleInput(content, metrics, navigation, theme, delta);
         }
         else
         {

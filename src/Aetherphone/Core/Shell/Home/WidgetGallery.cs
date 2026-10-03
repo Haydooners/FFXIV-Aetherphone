@@ -13,6 +13,7 @@ internal sealed class WidgetGallery
 
     private readonly HomeLayoutService layout;
     private readonly WidgetRegistry widgets;
+    private readonly WidgetHost widgetHost;
     private readonly Dictionary<string, WidgetSize> selections = new();
     private Spring slide;
     private bool open;
@@ -20,10 +21,11 @@ internal sealed class WidgetGallery
     private int targetPage;
     private int openedFrame;
 
-    public WidgetGallery(HomeLayoutService layout, WidgetRegistry widgets)
+    public WidgetGallery(HomeLayoutService layout, WidgetRegistry widgets, WidgetHost widgetHost)
     {
         this.layout = layout;
         this.widgets = widgets;
+        this.widgetHost = widgetHost;
     }
 
     public bool Active => open || slide.Value > 0.01f;
@@ -146,7 +148,7 @@ internal sealed class WidgetGallery
             : previewWidth * 0.46f;
         var preview = new Rect(new Vector2(view.Center.X - previewWidth * 0.5f, cursorY),
             new Vector2(view.Center.X + previewWidth * 0.5f, cursorY + previewHeight));
-        widget.Draw(new WidgetContext(drawList, preview, theme, size, scale, uiDelta, 1f));
+        widget.Draw(widgetHost.Preview(drawList, preview, theme, size, scale, uiDelta));
         cursorY = preview.Max.Y + 12f * scale;
         cursorY = DrawSizeChips(drawList, view, widget, size, theme, scale, interactive, cursorY);
         cursorY = DrawAddButton(drawList, view, widget, size, theme, scale, interactive, cursorY);

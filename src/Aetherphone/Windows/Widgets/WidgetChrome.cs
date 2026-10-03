@@ -1,4 +1,5 @@
 using Aetherphone.Core;
+using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -7,92 +8,129 @@ namespace Aetherphone.Windows.Widgets;
 
 internal static class WidgetChrome
 {
-    public const float RadiusUnits = 22f;
-    private const float EyebrowTracking = 1.6f;
-    private const float EyebrowFontScale = 0.66f;
+    private const float OwnBackgroundDim = 0.35f;
+    private const float OwnBackgroundVeil = 0.08f;
+    private const float TintWash = 0.12f;
+    private const float ClearVeil = 0.08f;
+    private const float ShimmerSeconds = 1.4f;
+    private const float ShimmerSpread = 0.004f;
+    private const float ShimmerFloor = 0.65f;
+    private static readonly Vector4 LightCard = new(1f, 1f, 1f, 1f);
+    private static readonly Vector4 DarkCard = new(28f / 255f, 28f / 255f, 30f / 255f, 1f);
+    private static readonly Vector4 NearBlackCard = new(20f / 255f, 20f / 255f, 22f / 255f, 1f);
 
-    public static float Radius(float scale) => RadiusUnits * scale;
+    public static float Radius(float scale) => WidgetMetrics.ContainerRadius(scale);
 
-    public static void Card(ImDrawListPtr drawList, Rect bounds, float scale, float opacity)
+    public static void Container(in WidgetContext context)
     {
-        Material.FrostedGlass(drawList, bounds.Min, bounds.Max, Radius(scale), scale, opacity);
+        var drawList = context.DrawList;
+        var bounds = context.Bounds;
+        var scale = context.Scale;
+        var opacity = context.Opacity;
+        var radius = Radius(scale);
+        switch (context.Mode)
+        {
+            case WidgetMode.Tinted:
+                Material.LiquidGlass(drawList, bounds.Min, bounds.Max, radius, scale, GlassTone.Dark, 0f, opacity);
+                Squircle.Fill(drawList, bounds.Min, bounds.Max, radius,
+                    ImGui.GetColorU32(context.Tint with { W = TintWash * opacity }));
+                return;
+            case WidgetMode.Clear:
+                Material.LiquidGlass(drawList, bounds.Min, bounds.Max, radius, scale, GlassTone.Light,
+                    AppIconCache.GlassBrightness, opacity);
+                Material.Veil(drawList, bounds.Min, bounds.Max, ClearVeil * opacity, radius);
+                return;
+            case WidgetMode.Dark:
+                Opaque(drawList, bounds, radius, scale, NearBlackCard, opacity);
+                return;
+            default:
+                Opaque(drawList, bounds, radius, scale, WidgetInk.IsLightTheme(context.Theme) ? LightCard : DarkCard,
+                    opacity);
+                return;
+        }
     }
 
-    public static void Tinted(ImDrawListPtr drawList, Rect bounds, Vector4 top, Vector4 bottom, float scale,
-        float opacity)
+    public static void Container(in WidgetContext context, Vector4 top, Vector4 bottom)
     {
+        if (context.Mode is WidgetMode.Tinted or WidgetMode.Clear)
+        {
+            Container(context);
+            return;
+        }
+
+        var drawList = context.DrawList;
+        var bounds = context.Bounds;
+        var scale = context.Scale;
+        var opacity = context.Opacity;
         var radius = Radius(scale);
+        if (context.Mode == WidgetMode.Dark)
+        {
+            top = Dimmed(top);
+            bottom = Dimmed(bottom);
+        }
+
         Squircle.FillVerticalGradient(drawList, bounds.Min, bounds.Max, radius,
             ImGui.GetColorU32(top with { W = top.W * opacity }),
             ImGui.GetColorU32(bottom with { W = bottom.W * opacity }));
-        Material.Veil(drawList, bounds.Min, bounds.Max, 0.08f * opacity, radius);
+        Material.Veil(drawList, bounds.Min, bounds.Max, OwnBackgroundVeil * opacity, radius);
         Material.EdgeSquircle(drawList, bounds.Min, bounds.Max, radius, scale, opacity);
     }
 
-    public static void Eyebrow(ImDrawListPtr drawList, Vector2 position, string text, Vector4 color, float scale,
+    public static void Edge(in WidgetContext context) =>
+        Material.EdgeSquircle(context.DrawList, context.Bounds.Min, context.Bounds.Max, Radius(context.Scale),
+            context.Scale, context.Opacity);
+
+    public static float Header(in WidgetContext context, in WidgetInk ink, string appId, LocString label,
+        Vector4 accent) =>
+        Header(context, ink, appId, Loc.T(label), accent);
+
+    public static float Header(in WidgetContext context, in WidgetInk ink, string appId, string label,
+        Vector4 accent)
+    {
+        var content = WidgetMetrics.Content(context);
+        var scale = context.Scale;
+        var glyphSize = WidgetMetrics.GlyphSmall * scale;
+        var tint = ink.Accent(accent);
+        var eyebrowHeight = WidgetText.EyebrowHeight();
+        var rowHeight = MathF.Max(glyphSize, eyebrowHeight);
+        var centerY = content.Min.Y + rowHeight * 0.5f;
+        var left = content.Min.X;
+        if (appId.Length > 0)
+        {
+            AppIconTile.TryDrawGlyph(context.DrawList, appId, new Vector2(left + glyphSize * 0.5f, centerY), glyphSize,
+                tint);
+            left += glyphSize + WidgetMetrics.Gutter * 0.5f * scale;
+        }
+
+        if (label.Length > 0)
+        {
+            WidgetText.EyebrowFit(context.DrawList, new Vector2(left, centerY - eyebrowHeight * 0.5f), label,
+                MathF.Max(1f, content.Max.X - left), tint, scale);
+        }
+
+        return content.Min.Y + rowHeight;
+    }
+
+    public static void Redacted(ImDrawListPtr drawList, Rect rect, in WidgetInk ink)
+    {
+        if (ink.Opacity <= 0f || rect.Width <= 0f || rect.Height <= 0f)
+        {
+            return;
+        }
+
+        var phase = (float)(ImGui.GetTime() / ShimmerSeconds) - rect.Min.X * ShimmerSpread;
+        var wave = 0.5f + 0.5f * MathF.Cos(phase * MathF.Tau);
+        var alpha = ink.Fill.W * (ShimmerFloor + (1f - ShimmerFloor) * wave);
+        Squircle.Fill(drawList, rect.Min, rect.Max, rect.Height * 0.5f, ImGui.GetColorU32(ink.Fill with { W = alpha }));
+    }
+
+    private static void Opaque(ImDrawListPtr drawList, Rect bounds, float radius, float scale, Vector4 fill,
         float opacity)
     {
-        Tracked(drawList, position, Loc.Culture.TextInfo.ToUpper(text), color with { W = color.W * opacity },
-            EyebrowFontScale, FontWeight.SemiBold, EyebrowTracking * scale);
+        Squircle.Fill(drawList, bounds.Min, bounds.Max, radius, ImGui.GetColorU32(fill with { W = opacity }));
+        Material.EdgeSquircle(drawList, bounds.Min, bounds.Max, radius, scale, opacity);
     }
 
-    public static float EyebrowWidth(string text, float scale)
-    {
-        var upper = Loc.Culture.TextInfo.ToUpper(text);
-        var width = Typography.Measure(upper, EyebrowFontScale, FontWeight.SemiBold).X;
-        return width + EyebrowTracking * scale * Math.Max(0, upper.Length - 1);
-    }
-
-    public static float EyebrowHeight() => Typography.Measure("A", EyebrowFontScale, FontWeight.SemiBold).Y;
-
-    public static void EyebrowMarquee(ImDrawListPtr drawList, string id, string text, Vector2 position,
-        float maxWidth, Vector4 color, float scale, float opacity)
-    {
-        var upper = Loc.Culture.TextInfo.ToUpper(text);
-        var tinted = color with { W = color.W * opacity };
-        var tracking = EyebrowTracking * scale;
-        var fullWidth = EyebrowWidth(text, scale);
-        var height = EyebrowHeight();
-        var hovering = UiInteract.Hover(position, position + new Vector2(MathF.Min(fullWidth, maxWidth), height));
-        if (fullWidth <= maxWidth)
-        {
-            Tracked(drawList, position, upper, tinted, EyebrowFontScale, FontWeight.SemiBold, tracking);
-            return;
-        }
-
-        if (!hovering)
-        {
-            var trackingBudget = MathF.Max(1f, maxWidth - tracking * MathF.Max(0, upper.Length - 1));
-            var clipped = Typography.FitText(upper, trackingBudget, EyebrowFontScale, FontWeight.SemiBold);
-            Tracked(drawList, position, clipped, tinted, EyebrowFontScale, FontWeight.SemiBold, tracking);
-            return;
-        }
-
-        var offset = Marquee.Offset(id, fullWidth - maxWidth);
-        var slack = 4f * scale;
-        drawList.PushClipRect(new Vector2(position.X, position.Y - slack), new Vector2(position.X + maxWidth, position.Y + height + slack),
-            true);
-        Tracked(drawList, position with { X = position.X - offset }, upper, tinted, EyebrowFontScale, FontWeight.SemiBold, tracking);
-        drawList.PopClipRect();
-    }
-
-    public static void Tracked(ImDrawListPtr drawList, Vector2 position, string text, Vector4 color, float fontScale,
-        FontWeight weight, float tracking)
-    {
-        using (Plugin.Fonts.Push(fontScale, weight))
-        {
-            var font = ImGui.GetFont();
-            var fontSize = ImGui.GetFontSize();
-            var packed = ImGui.GetColorU32(color);
-            var cursor = position;
-            Span<char> buffer = stackalloc char[1];
-            for (var index = 0; index < text.Length; index++)
-            {
-                buffer[0] = text[index];
-                var glyph = new string(buffer);
-                drawList.AddText(font, fontSize, cursor, packed, glyph);
-                cursor.X += ImGui.CalcTextSize(glyph).X + tracking;
-            }
-        }
-    }
+    private static Vector4 Dimmed(Vector4 color) =>
+        new(color.X * OwnBackgroundDim, color.Y * OwnBackgroundDim, color.Z * OwnBackgroundDim, color.W);
 }

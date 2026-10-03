@@ -6957,5 +6957,14 @@
   "island.hosting": "主持中",
   "island.viewers.one": "{0} 人在观看",
   "island.viewers.other": "{0} 人在观看",
-  "island.startsIn": "{0}后开始"
+  "island.startsIn": "{0}后开始",
+  "widgets.weatherDescription": "你所在位置的艾欧泽亚天气，以及接下来的预报。",
+  "widgets.clockDescription": "本地时间和艾欧泽亚时间一目了然。",
+  "widgets.calendarDescription": "今天的日期和接下来的日程。",
+  "widgets.photosDescription": "轮播展示你的照片。",
+  "widgets.resetsDescription": "每日、每周和大国防联军重置的倒计时。",
+  "widgets.activityDescription": "今天的进度、冒险和财富圆环。",
+  "widgets.coinDescription": "你的以太积分余额和今天的收入。",
+  "widgets.sampleEvent": "团本之夜",
+  "widgets.sampleEventLater": "宝藏图"
 }

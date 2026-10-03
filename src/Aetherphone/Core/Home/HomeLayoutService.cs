@@ -49,9 +49,9 @@ internal sealed class HomeLayoutService
     private readonly HashSet<string> installed = new();
     private readonly HashSet<string> known = new();
     private readonly List<string> revealed = new();
+    private readonly HashSet<string> widgetKeys = new(StringComparer.Ordinal);
     private int rows;
     private int folderCounter;
-    private int widgetCounter;
     private bool placementsDirty = true;
 
     public HomeLayoutService(IReadOnlyList<IPhoneApp> apps, WidgetRegistry widgets, IShortcutSource shortcuts,
@@ -480,9 +480,21 @@ internal sealed class HomeLayoutService
         }
 
         pageIndex = Math.Clamp(pageIndex, 0, Math.Max(0, pages.Count - 1));
-        pages[pageIndex].Add(HomeTile.ForWidget(NextWidgetKey(widget.Id), widget, size));
+        pages[pageIndex].Add(HomeTile.ForWidget(NewWidgetKey(), widget, size, string.Empty));
         Commit();
         return true;
+    }
+
+    public void SetWidgetConfig(HomeTile tile, string config)
+    {
+        config ??= string.Empty;
+        if (!tile.IsWidget || string.Equals(tile.Config, config, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        tile.Config = config;
+        Save();
     }
 
     public void ResizeWidget(HomeTile tile, WidgetSize size)
@@ -575,6 +587,7 @@ internal sealed class HomeLayoutService
     {
         pages.Clear();
         dock.Clear();
+        widgetKeys.Clear();
         var placed = new HashSet<string>();
         var saved = configuration.Home;
         var dockIds = ResolveDockIds(saved);
@@ -795,7 +808,8 @@ internal sealed class HomeLayoutService
                 size = WidgetSizes.Smallest(widget.Sizes);
             }
 
-            return HomeTile.ForWidget(NextWidgetKey(widget.Id), widget, size);
+            var key = ClaimWidgetKey(item.WidgetKey, widget.Id, item.Column, item.Row);
+            return HomeTile.ForWidget(key, widget, size, item.WidgetConfig);
         }
 
         return byId.TryGetValue(item.AppId, out var app) && app.IsAvailable && placed.Add(app.Id)
@@ -808,7 +822,7 @@ internal sealed class HomeLayoutService
         var firstPage = new List<HomeTile>();
         if (widgets.TryGet(DefaultWidgetId, out var widget) && widgets.IsAvailable(widget))
         {
-            firstPage.Add(HomeTile.ForWidget(NextWidgetKey(widget.Id), widget, WidgetSize.Medium));
+            firstPage.Add(HomeTile.ForWidget(NewWidgetKey(), widget, WidgetSize.Medium, string.Empty));
         }
 
         AppendSeedApps(firstPage, DefaultFirstPageApps, placed);
@@ -1104,6 +1118,8 @@ internal sealed class HomeLayoutService
                 Kind = "widget",
                 WidgetId = tile.Widget!.Id,
                 WidgetSize = WidgetSizes.Serialize(tile.Size),
+                WidgetKey = tile.InstanceKey,
+                WidgetConfig = tile.Config,
             };
         }
 
@@ -1142,6 +1158,27 @@ internal sealed class HomeLayoutService
 
     private string NextFolderKey() => string.Concat("folder#", (++folderCounter).ToString());
 
-    private string NextWidgetKey(string widgetId) =>
-        string.Concat("widget#", widgetId, "#", (++widgetCounter).ToString());
+    private string NewWidgetKey()
+    {
+        var key = Guid.NewGuid().ToString("N");
+        widgetKeys.Add(key);
+        return key;
+    }
+
+    private string ClaimWidgetKey(string stored, string widgetId, int column, int row)
+    {
+        if (!string.IsNullOrEmpty(stored) && widgetKeys.Add(stored))
+        {
+            return stored;
+        }
+
+        var derived = string.Concat(widgetId, "@", column.ToString(), ".", row.ToString());
+        var candidate = derived;
+        for (var suffix = 2; !widgetKeys.Add(candidate); suffix++)
+        {
+            candidate = string.Concat(derived, "#", suffix.ToString());
+        }
+
+        return candidate;
+    }
 }

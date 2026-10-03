@@ -104,6 +104,8 @@ internal static class HomeLookMirror
             Members = new List<HomeItem>(item.Members.Count),
             WidgetId = item.WidgetId,
             WidgetSize = item.WidgetSize,
+            WidgetKey = item.WidgetKey,
+            WidgetConfig = item.WidgetConfig,
             ShortcutId = item.ShortcutId,
         };
         for (var index = 0; index < item.Members.Count; index++)

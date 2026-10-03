@@ -26,7 +26,9 @@ internal sealed class SkywatcherWidget : IHomeWidget
 
     private readonly WeatherService weather;
     private readonly List<WeatherWindow> forecast = new();
+    private readonly string[] whenLabels = new string[ForecastWindows];
     private string zone = string.Empty;
+    private string secondLine = string.Empty;
     private float sinceRefresh = RefreshIntervalSeconds;
 
     public SkywatcherWidget(WeatherService weather)
@@ -36,6 +38,7 @@ internal sealed class SkywatcherWidget : IHomeWidget
 
     public string Id => "skywatcher.forecast";
     public string DisplayName => Loc.T(L.Apps.Skywatcher);
+    public string Description => Loc.T(L.Widgets.WeatherDescription);
     public string AppId => "skywatcher";
     public WidgetSizeSet Sizes => WidgetSizeSet.Small | WidgetSizeSet.Medium | WidgetSizeSet.Large;
 
@@ -46,17 +49,21 @@ internal sealed class SkywatcherWidget : IHomeWidget
         var daylight = WeatherSky.Daylight(bell.Hour + bell.Minute / 60f);
         var isDay = daylight >= 0.5f;
         var kind = forecast.Count > 0 ? WeatherSky.Classify(forecast[0].Weather.EnglishKey) : WeatherKind.Clouds;
-        var palette = WeatherSky.Blend(kind, forecast.Count > 0 ? daylight : 0f);
-        WidgetChrome.Tinted(context.DrawList, context.Bounds, palette.Top, palette.Bottom, context.Scale,
-            context.Opacity);
+        var sky = WeatherSky.Blend(kind, forecast.Count > 0 ? daylight : 0f);
+        WidgetChrome.Container(context, sky.Top, sky.Bottom);
+        var ink = WidgetInk.From(context);
+        var palette = ink.KeepsOwnColors ? sky : sky with { Ink = ink.Primary with { W = 1f } };
         if (forecast.Count == 0)
         {
             DrawEmpty(context, palette);
             return;
         }
 
-        WeatherAmbience.Draw(context.DrawList, context.Bounds, WidgetChrome.Radius(context.Scale), kind, isDay,
-            palette, context.Scale, context.Opacity, context.Size != WidgetSize.Small);
+        if (context.Mode is WidgetMode.FullColor or WidgetMode.Dark)
+        {
+            WeatherAmbience.Draw(context.DrawList, context.Bounds, WidgetChrome.Radius(context.Scale), kind, isDay,
+                palette, context.Scale, context.Opacity, context.Size != WidgetSize.Small);
+        }
         switch (context.Size)
         {
             case WidgetSize.Small:
@@ -81,6 +88,12 @@ internal sealed class SkywatcherWidget : IHomeWidget
 
         zone = weather.CurrentZone();
         weather.Forecast(forecast, ForecastWindows);
+        for (var index = 0; index < forecast.Count && index < whenLabels.Length; index++)
+        {
+            whenLabels[index] = When(forecast[index]);
+        }
+
+        secondLine = SecondLine();
         sinceRefresh = 0f;
     }
 
@@ -94,9 +107,9 @@ internal sealed class SkywatcherWidget : IHomeWidget
         var pad = 13f * scale;
 
         var eyebrowY = bounds.Min.Y + pad;
-        WidgetChrome.Eyebrow(drawList, new Vector2(bounds.Min.X + pad, eyebrowY), DisplayName,
-            palette.InkSoft, scale, opacity);
-        var eyebrowHeight = WidgetChrome.EyebrowHeight();
+        WidgetText.Eyebrow(drawList, new Vector2(bounds.Min.X + pad, eyebrowY), DisplayName,
+            Fade(palette.InkSoft, opacity), scale);
+        var eyebrowHeight = WidgetText.EyebrowHeight();
 
         var glyphRadius = 16f * scale;
         var rowTop = eyebrowY + eyebrowHeight + 6f * scale;
@@ -136,10 +149,10 @@ internal sealed class SkywatcherWidget : IHomeWidget
         var pad = 16f * scale;
         var topInset = 12f * scale;
         var left = bounds.Min.X + pad;
-        WidgetChrome.Eyebrow(drawList, new Vector2(left, bounds.Min.Y + topInset), DisplayName, palette.InkSoft, scale,
-            opacity);
+        WidgetText.Eyebrow(drawList, new Vector2(left, bounds.Min.Y + topInset), DisplayName,
+            Fade(palette.InkSoft, opacity), scale);
         var time = bell.Formatted;
-        var eyebrowHeight = WidgetChrome.EyebrowHeight();
+        var eyebrowHeight = WidgetText.EyebrowHeight();
         var minTopOffset = topInset + eyebrowHeight + 10f * scale;
         var contentBottom = bounds.Max.Y - 4f * scale - StripHeight(bounds, scale) - 1f * scale;
         var availableForRow = contentBottom - bounds.Min.Y - minTopOffset;
@@ -153,7 +166,7 @@ internal sealed class SkywatcherWidget : IHomeWidget
         var timeStyle = new TextStyle(heroScale, TextStyles.WidgetDisplay.Weight);
         var timeSize = Typography.Measure(time, timeStyle);
         var stableTimeWidth = Typography.Measure("88:88", timeStyle).X;
-        var eorzeaLabel = Loc.Culture.TextInfo.ToUpper(Loc.T(L.Home.Eorzea));
+        var eorzeaLabel = WidgetText.Upper(L.Home.Eorzea);
         var eorzeaScale = roomy ? 0.92f : 0.72f;
         var eorzeaTracking = 1.5f * scale;
         var eorzeaWidth = Typography.Measure(eorzeaLabel, eorzeaScale, FontWeight.SemiBold).X +
@@ -174,8 +187,9 @@ internal sealed class SkywatcherWidget : IHomeWidget
         var eorzeaHeight = Typography.Measure(eorzeaLabel, eorzeaScale, FontWeight.SemiBold).Y;
         if (eorzeaY + eorzeaHeight <= contentBottom)
         {
-            WidgetChrome.Tracked(drawList, new Vector2(bounds.Max.X - pad - eorzeaWidth, eorzeaY), eorzeaLabel,
-                Palette.WithAlpha(palette.InkSoft, opacity), eorzeaScale, FontWeight.SemiBold, eorzeaTracking);
+            WidgetText.Tracked(drawList, new Vector2(bounds.Max.X - pad - eorzeaWidth, eorzeaY), eorzeaLabel,
+                Palette.WithAlpha(palette.InkSoft, opacity), new TextStyle(eorzeaScale, FontWeight.SemiBold),
+                eorzeaTracking);
         }
         if (zone.Length > 0)
         {
@@ -230,7 +244,8 @@ internal sealed class SkywatcherWidget : IHomeWidget
         {
             var window = forecast[columnIndex];
             var centerX = bounds.Min.X + pad + cellWidth * (columnIndex + 0.5f);
-            var label = Typography.FitText(When(window), labelMaxWidth, labelStyle.Scale, labelStyle.Weight);
+            var label = Typography.FitText(whenLabels[columnIndex] ?? string.Empty, labelMaxWidth, labelStyle.Scale,
+                labelStyle.Weight);
             Typography.DrawCentered(drawList, new Vector2(centerX, labelTop), label,
                 Palette.WithAlpha(palette.InkSoft, opacity), labelStyle.Scale, labelStyle.Weight);
             var columnKind = WeatherSky.Classify(window.Weather.EnglishKey);
@@ -252,11 +267,11 @@ internal sealed class SkywatcherWidget : IHomeWidget
         var timeSize = Typography.Measure(time, timeStyle);
         var stableTimeWidth = Typography.Measure("88:88", timeStyle).X;
         var eorzeaLabel = Loc.T(L.Home.Eorzea);
-        var eyebrowWidth = WidgetChrome.EyebrowWidth(eorzeaLabel, scale);
+        var eyebrowWidth = WidgetText.EyebrowWidth(eorzeaLabel, scale);
         var rightColumn = MathF.Max(stableTimeWidth, eyebrowWidth) + pad;
-        WidgetChrome.Eyebrow(drawList, new Vector2(left, bounds.Min.Y + pad), DisplayName, palette.InkSoft, scale,
-            opacity);
-        var eyebrowHeight = WidgetChrome.EyebrowHeight();
+        WidgetText.Eyebrow(drawList, new Vector2(left, bounds.Min.Y + pad), DisplayName,
+            Fade(palette.InkSoft, opacity), scale);
+        var eyebrowHeight = WidgetText.EyebrowHeight();
         var minConditionY = bounds.Min.Y + pad + eyebrowHeight + 8f * scale;
         var conditionY = MathF.Max(minConditionY, bounds.Min.Y + bounds.Height * 0.40f);
         var conditionStyle = new TextStyle(1.62f, FontWeight.SemiBold);
@@ -265,15 +280,15 @@ internal sealed class SkywatcherWidget : IHomeWidget
         DrawConditionText(drawList, forecast[0].Weather.Name, new Vector2(left, conditionY), conditionStyle,
             Palette.WithAlpha(palette.Ink, opacity), bounds.Width - rightColumn - pad * 2f,
             MathF.Max(0f, secondLineY - conditionY - 4f * scale));
-        var secondLineText = FitScaled(SecondLine(), bounds.Width - rightColumn - pad * 2f,
+        var secondLineText = FitScaled(secondLine, bounds.Width - rightColumn - pad * 2f,
             TextStyles.Subheadline.Scale, TextStyles.Subheadline.Weight, out var secondLineScale);
         Typography.Draw(drawList, new Vector2(left, secondLineY), secondLineText,
             Palette.WithAlpha(palette.InkSoft, opacity), secondLineScale, TextStyles.Subheadline.Weight);
         Typography.Draw(drawList, new Vector2(bounds.Max.X - pad - timeSize.X, conditionY + 2f * scale), time,
             Palette.WithAlpha(palette.Ink, opacity), timeStyle);
-        WidgetChrome.Eyebrow(drawList,
+        WidgetText.Eyebrow(drawList,
             new Vector2(bounds.Max.X - pad - eyebrowWidth, conditionY + timeSize.Y + 7f * scale), eorzeaLabel,
-            palette.InkSoft, scale, opacity);
+            Fade(palette.InkSoft, opacity), scale);
     }
 
     private void DrawLarge(in WidgetContext context, in SkyPalette palette, EorzeaTime bell)
@@ -299,7 +314,7 @@ internal sealed class SkywatcherWidget : IHomeWidget
         {
             var window = forecast[index + 1];
             var rowCenterY = divider + rowHeight * (index + 0.5f);
-            var when = When(window);
+            var when = whenLabels[index + 1] ?? string.Empty;
             Typography.Draw(drawList,
                 new Vector2(bounds.Min.X + pad, rowCenterY - Typography.Measure(when, TextStyles.Footnote).Y * 0.5f),
                 when, Palette.WithAlpha(palette.InkSoft, opacity), TextStyles.Footnote);
@@ -356,6 +371,8 @@ internal sealed class SkywatcherWidget : IHomeWidget
 
         return Loc.T(L.Time.HoursShort, window.MinutesFromNow / 60);
     }
+
+    private static Vector4 Fade(Vector4 color, float opacity) => color with { W = color.W * opacity };
 
     private static bool IsDayWindow(WeatherWindow window)
     {

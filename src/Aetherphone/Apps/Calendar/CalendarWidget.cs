@@ -1,8 +1,8 @@
+using System.Globalization;
 using Aetherphone.Core;
 using Aetherphone.Core.Calendar;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
@@ -14,26 +14,35 @@ internal sealed class CalendarWidget : IHomeWidget
     private const float RefreshIntervalSeconds = 20f;
     private const int LookaheadDays = 14;
     private const int MaxRows = 3;
+    private const int SampleHour = 20;
 
     private readonly struct UpcomingEvent
     {
         public readonly string Name;
         public readonly DateTime Begin;
         public readonly Vector4 Color;
+        public readonly string When;
 
-        public UpcomingEvent(string name, DateTime begin, Vector4 color)
+        public UpcomingEvent(string name, DateTime begin, Vector4 color, string when)
         {
             Name = name;
             Begin = begin;
             Color = color;
+            When = when;
         }
     }
 
     private readonly Configuration configuration;
     private readonly CalendarEvents events;
     private readonly List<UpcomingEvent> upcoming = new();
+    private readonly List<UpcomingEvent> samples = new();
     private float sinceRefresh = RefreshIntervalSeconds;
     private int seenRevision = -1;
+    private long samplesDay = -1;
+    private CultureInfo? samplesCulture;
+    private CachedText weekday;
+    private CachedText dayNumber;
+    private CachedText month;
 
     public CalendarWidget(Configuration configuration, CalendarEvents events)
     {
@@ -43,6 +52,7 @@ internal sealed class CalendarWidget : IHomeWidget
 
     public string Id => "calendar.upcoming";
     public string DisplayName => Loc.T(L.Calendar.Title);
+    public string Description => Loc.T(L.Widgets.CalendarDescription);
     public string AppId => "calendar";
     public WidgetSizeSet Sizes => WidgetSizeSet.Small | WidgetSizeSet.Medium;
 
@@ -50,14 +60,16 @@ internal sealed class CalendarWidget : IHomeWidget
     {
         events.Initialize();
         Advance(context.Delta, context.Theme.Accent);
-        WidgetChrome.Card(context.DrawList, context.Bounds, context.Scale, context.Opacity);
+        WidgetChrome.Container(context);
+        var ink = WidgetInk.From(context);
+        var rows = upcoming.Count == 0 && context.Preview ? Samples(context.Theme.Accent) : upcoming;
         if (context.Size == WidgetSize.Small)
         {
-            DrawSmall(context);
+            DrawSmall(context, ink, rows);
             return;
         }
 
-        DrawMedium(context);
+        DrawMedium(context, ink, rows);
     }
 
     private void Advance(float delta, Vector4 accent)
@@ -87,7 +99,7 @@ internal sealed class CalendarWidget : IHomeWidget
                 var entry = dayEvents[index];
                 if (entry.End >= now || entry.Begin >= now)
                 {
-                    upcoming.Add(new UpcomingEvent(entry.Name, entry.Begin, entry.Color));
+                    upcoming.Add(new UpcomingEvent(entry.Name, entry.Begin, entry.Color, WhenLabel(entry.Begin)));
                 }
             }
         }
@@ -99,22 +111,40 @@ internal sealed class CalendarWidget : IHomeWidget
         }
     }
 
-    private void DrawSmall(in WidgetContext context)
+    private List<UpcomingEvent> Samples(Vector4 accent)
+    {
+        var today = DateTime.Today;
+        if (samplesDay == today.Ticks && ReferenceEquals(samplesCulture, Loc.Culture))
+        {
+            return samples;
+        }
+
+        samplesDay = today.Ticks;
+        samplesCulture = Loc.Culture;
+        samples.Clear();
+        for (var index = 0; index < WidgetSamples.Events.Length; index++)
+        {
+            var begin = today.AddDays(index).AddHours(SampleHour);
+            samples.Add(new UpcomingEvent(Loc.T(WidgetSamples.Events[index]), begin, accent, WhenLabel(begin)));
+        }
+
+        return samples;
+    }
+
+    private void DrawSmall(in WidgetContext context, in WidgetInk ink, List<UpcomingEvent> rows)
     {
         var bounds = context.Bounds;
         var scale = context.Scale;
-        var opacity = context.Opacity;
         var drawList = context.DrawList;
-        var theme = context.Theme;
         var pad = 13f * scale;
         var now = DateTime.Now;
         var dayNumberTop = bounds.Min.Y + pad + 13f * scale;
-        WidgetChrome.Eyebrow(drawList, new Vector2(bounds.Min.X + pad, bounds.Min.Y + pad), now.ToString("dddd"),
-            theme.Accent, scale, opacity);
-        var dayText = now.Day.ToString();
+        WidgetText.Eyebrow(drawList, new Vector2(bounds.Min.X + pad, bounds.Min.Y + pad), Weekday(now),
+            ink.Accent(context.Theme.Accent), scale);
+        var dayText = DayNumber(now);
         var dayNumberSize = Typography.Measure(dayText, TextStyles.LargeTitle);
-        Typography.Draw(drawList, new Vector2(bounds.Min.X + pad, dayNumberTop),
-            dayText, Palette.WithAlpha(theme.TextStrong, opacity), TextStyles.LargeTitle);
+        Typography.Draw(drawList, new Vector2(bounds.Min.X + pad, dayNumberTop), dayText, ink.Primary,
+            TextStyles.LargeTitle);
         var dayNumberBottom = dayNumberTop + dayNumberSize.Y * 0.72f;
 
         var whenSize = Typography.Measure("0", TextStyles.Caption1);
@@ -126,75 +156,91 @@ internal sealed class CalendarWidget : IHomeWidget
             return;
         }
 
-        if (upcoming.Count == 0)
+        if (rows.Count == 0)
         {
             Typography.Draw(drawList, new Vector2(bounds.Min.X + pad, whenTop),
                 Typography.FitText(Loc.T(L.Home.NoEvents), bounds.Width - pad * 2f, TextStyles.Caption1),
-                Palette.WithAlpha(theme.TextMuted, opacity), TextStyles.Caption1);
+                ink.Secondary, TextStyles.Caption1);
             return;
         }
 
-        var first = upcoming[0];
+        var first = rows[0];
         var firstNameMaxWidth = bounds.Width - pad * 2f;
-        Marquee.DrawLeftAuto("calendarwidget.small.name", first.Name, bounds.Min.X + pad, eventTop, firstNameMaxWidth,
-            TextStyles.FootnoteEmphasized, Palette.WithAlpha(theme.TextStrong, opacity));
-        Typography.Draw(drawList, new Vector2(bounds.Min.X + pad, whenTop),
-            WhenLabel(first.Begin), Palette.WithAlpha(theme.TextMuted, opacity), TextStyles.Caption1);
+        Marquee.DrawLeftAuto(drawList, "calendarwidget.small.name", first.Name, bounds.Min.X + pad, eventTop,
+            firstNameMaxWidth, TextStyles.FootnoteEmphasized, ink.Primary);
+        Typography.Draw(drawList, new Vector2(bounds.Min.X + pad, whenTop), first.When, ink.Secondary,
+            TextStyles.Caption1);
     }
 
-    private void DrawMedium(in WidgetContext context)
+    private void DrawMedium(in WidgetContext context, in WidgetInk ink, List<UpcomingEvent> rows)
     {
         var bounds = context.Bounds;
         var scale = context.Scale;
-        var opacity = context.Opacity;
         var drawList = context.DrawList;
-        var theme = context.Theme;
         var pad = 16f * scale;
         var now = DateTime.Now;
         var left = bounds.Min.X + pad;
-        WidgetChrome.Eyebrow(drawList, new Vector2(left, bounds.Min.Y + pad), now.ToString("dddd"), theme.Accent,
-            scale, opacity);
-        Typography.Draw(drawList, new Vector2(left, bounds.Min.Y + pad + 14f * scale), now.Day.ToString(),
-            Palette.WithAlpha(theme.TextStrong, opacity), TextStyles.LargeTitle);
-        Typography.Draw(drawList, new Vector2(left, bounds.Max.Y - pad - 16f * scale), now.ToString("MMMM"),
-            Palette.WithAlpha(theme.TextMuted, opacity), TextStyles.Caption1);
+        WidgetText.Eyebrow(drawList, new Vector2(left, bounds.Min.Y + pad), Weekday(now),
+            ink.Accent(context.Theme.Accent), scale);
+        Typography.Draw(drawList, new Vector2(left, bounds.Min.Y + pad + 14f * scale), DayNumber(now), ink.Primary,
+            TextStyles.LargeTitle);
+        Typography.Draw(drawList, new Vector2(left, bounds.Max.Y - pad - 16f * scale), Month(now), ink.Secondary,
+            TextStyles.Caption1);
         var columnX = bounds.Min.X + bounds.Width * 0.36f;
         drawList.AddLine(new Vector2(columnX, bounds.Min.Y + pad), new Vector2(columnX, bounds.Max.Y - pad),
-            ImGui.GetColorU32(Palette.WithAlpha(theme.Separator, opacity)), 1f * scale);
+            ImGui.GetColorU32(ink.Separator), 1f * scale);
         var listLeft = columnX + pad;
-        if (upcoming.Count == 0)
+        if (rows.Count == 0)
         {
+            var empty = Loc.T(L.Home.NoEvents);
             Typography.Draw(drawList,
-                new Vector2(listLeft, bounds.Center.Y - Typography.Measure(Loc.T(L.Home.NoEvents)).Y * 0.5f),
-                Typography.FitText(Loc.T(L.Home.NoEvents), bounds.Max.X - pad - listLeft, TextStyles.Footnote),
-                Palette.WithAlpha(theme.TextMuted, opacity), TextStyles.Footnote);
+                new Vector2(listLeft, bounds.Center.Y - Typography.Measure(empty, TextStyles.Footnote).Y * 0.5f),
+                Typography.FitText(empty, bounds.Max.X - pad - listLeft, TextStyles.Footnote), ink.Secondary,
+                TextStyles.Footnote);
             return;
         }
 
-        var rows = Math.Min(MaxRows, upcoming.Count);
+        var count = Math.Min(MaxRows, rows.Count);
         var listPad = 6f * scale;
         var rowHeight = (bounds.Height - listPad * 2f) / MaxRows;
-        for (var index = 0; index < rows; index++)
+        var whenGlyphHeight = Typography.Measure("0", TextStyles.Caption1).Y * 0.72f;
+        for (var index = 0; index < count; index++)
         {
-            var entry = upcoming[index];
+            var entry = rows[index];
             var rowTop = bounds.Min.Y + listPad + index * rowHeight;
             var barRect = new Rect(new Vector2(listLeft, rowTop + 3f * scale),
                 new Vector2(listLeft + 3f * scale, rowTop + rowHeight - 5f * scale));
-            drawList.AddRectFilled(barRect.Min, barRect.Max,
-                ImGui.GetColorU32(Palette.WithAlpha(entry.Color, opacity)), 1.5f * scale);
+            drawList.AddRectFilled(barRect.Min, barRect.Max, ImGui.GetColorU32(ink.Accent(entry.Color)),
+                1.5f * scale);
             var textLeft = listLeft + 10f * scale;
             var maxWidth = bounds.Max.X - pad - textLeft;
             var nameGlyphHeight = Typography.Measure(entry.Name, TextStyles.FootnoteEmphasized).Y * 0.72f;
-            var whenGlyphHeight = Typography.Measure("0", TextStyles.Caption1).Y * 0.72f;
             var rowGap = MathF.Max(0f,
                 MathF.Min(3f * scale, rowHeight - nameGlyphHeight - whenGlyphHeight));
-            var blockTop = rowTop + rowHeight * 0.5f - (nameGlyphHeight + rowGap + whenGlyphHeight) * 0.5f;
-            var nameTop = blockTop;
-            Marquee.DrawLeftAuto(new MarqueeId("calendarwidget.medium.name.", index), entry.Name, textLeft, nameTop, maxWidth,
-                TextStyles.FootnoteEmphasized, Palette.WithAlpha(context.Theme.TextStrong, opacity));
-            Typography.Draw(drawList, new Vector2(textLeft, nameTop + nameGlyphHeight + rowGap),
-                WhenLabel(entry.Begin), Palette.WithAlpha(theme.TextMuted, opacity), TextStyles.Caption1);
+            var nameTop = rowTop + rowHeight * 0.5f - (nameGlyphHeight + rowGap + whenGlyphHeight) * 0.5f;
+            Marquee.DrawLeftAuto(drawList, new MarqueeId("calendarwidget.medium.name.", index), entry.Name, textLeft,
+                nameTop, maxWidth, TextStyles.FootnoteEmphasized, ink.Primary);
+            Typography.Draw(drawList, new Vector2(textLeft, nameTop + nameGlyphHeight + rowGap), entry.When,
+                ink.Secondary, TextStyles.Caption1);
         }
+    }
+
+    private string Weekday(DateTime now)
+    {
+        var key = now.Date.Ticks;
+        return weekday.IsCurrent(key) ? weekday.Value : weekday.Store(key, now.ToString("dddd", Loc.Culture));
+    }
+
+    private string DayNumber(DateTime now)
+    {
+        var key = now.Date.Ticks;
+        return dayNumber.IsCurrent(key) ? dayNumber.Value : dayNumber.Store(key, now.Day.ToString(Loc.Culture));
+    }
+
+    private string Month(DateTime now)
+    {
+        var key = now.Date.Ticks;
+        return month.IsCurrent(key) ? month.Value : month.Store(key, now.ToString("MMMM", Loc.Culture));
     }
 
     private static string WhenLabel(DateTime begin)
@@ -204,7 +250,7 @@ internal sealed class CalendarWidget : IHomeWidget
             return TimeText.Clock(begin);
         }
 
-        return string.Concat(begin.ToString("ddd"), " ", TimeText.Clock(begin));
+        return string.Concat(begin.ToString("ddd", Loc.Culture), " ", TimeText.Clock(begin));
     }
 
     public void Dispose()
