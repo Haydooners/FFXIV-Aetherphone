@@ -193,6 +193,7 @@ internal sealed class PhoneServices : IDisposable
     public required Hunts.HuntMobRewardCatalog HuntMobRewardCatalog { get; init; }
     public required Hunts.HuntCandidateCache HuntCandidateCache { get; init; }
     public required Hunts.HuntsLauncher HuntsLauncher { get; init; }
+    public required Feedback.FeedbackLauncher FeedbackLauncher { get; init; }
     public required Maps.HuntsMapMarkers HuntsMapMarkers { get; init; }
     public required Shell.MinimizedLayoutService MinimizedLayout { get; init; }
 
@@ -523,6 +524,7 @@ internal sealed class PhoneServices : IDisposable
             HuntMobRewardCatalog = huntMobRewardCatalog,
             HuntCandidateCache = huntCandidateCache,
             HuntsLauncher = new Hunts.HuntsLauncher(),
+            FeedbackLauncher = new Feedback.FeedbackLauncher(),
             HuntsMapMarkers = huntsMapMarkers,
         };
     }

@@ -2,6 +2,7 @@ using Aetherphone.Core.Announcements;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Casino;
 using Aetherphone.Core.Crypto;
+using Aetherphone.Core.Feedback;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Hunts;
 using Aetherphone.Core.Moderation;
@@ -28,6 +29,7 @@ internal sealed class NotificationRouter
     private const string CasinoGroupPrefix = "casino:";
     private const string AetherStreamAppId = "aetherstream";
     private const string HuntsAppId = "hunts";
+    private const string FeedbackAppId = "feedback";
     private const int TypeLike = 0;
     private const int TypeComment = 1;
     private const int TypeFollow = 2;
@@ -62,6 +64,7 @@ internal sealed class NotificationRouter
     private readonly CasinoLauncher casinoLauncher;
     private readonly AetherStreamLauncher aetherStreamLauncher;
     private readonly HuntsLauncher huntsLauncher;
+    private readonly FeedbackLauncher feedbackLauncher;
 
     public NotificationRouter(INavigator navigation, NotificationService notifications,
         SocialNotificationService socialNotifications, LinkpearlLauncher linkpearlLauncher,
@@ -69,8 +72,10 @@ internal sealed class NotificationRouter
         MusterLauncher musterLauncher, YellowPagesLauncher yellowPagesLauncher,
         AnnouncementsLauncher announcementsLauncher, SafetyLauncher safetyLauncher,
         EncryptionSetupLauncher encryptionSetupLauncher, RadioLauncher radioLauncher,
-        CasinoLauncher casinoLauncher, AetherStreamLauncher aetherStreamLauncher, HuntsLauncher huntsLauncher)
+        CasinoLauncher casinoLauncher, AetherStreamLauncher aetherStreamLauncher, HuntsLauncher huntsLauncher,
+        FeedbackLauncher feedbackLauncher)
     {
+        this.feedbackLauncher = feedbackLauncher;
         this.radioLauncher = radioLauncher;
         this.casinoLauncher = casinoLauncher;
         this.aetherStreamLauncher = aetherStreamLauncher;
@@ -176,6 +181,11 @@ internal sealed class NotificationRouter
                  && HuntsService.TryParseGroupKey(huntsKey, out var mobId, out var worldId, out var zoneInstance))
         {
             huntsLauncher.RequestDetail(mobId, worldId, zoneInstance);
+        }
+        else if (notification.AppId == FeedbackAppId
+                 && FeedbackLauncher.TryParseGroupKey(notification.GroupKey, out var feedbackId))
+        {
+            feedbackLauncher.RequestDetail(feedbackId);
         }
         else if (notification.AppId == SettingsAppId
                  && string.Equals(notification.GroupKey, EncryptionGuide.GroupKey, StringComparison.Ordinal))

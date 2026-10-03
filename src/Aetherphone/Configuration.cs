@@ -8,6 +8,7 @@ using Aetherphone.Core.Notes;
 using Aetherphone.Core.Changelog;
 using Aetherphone.Core.ControlCenter;
 using Aetherphone.Core.Dailies;
+using Aetherphone.Core.Feedback;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Games;
 using Aetherphone.Core.Geography;
@@ -482,6 +483,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool TimeZoneManual { get; set; }
     public int ManualUtcOffsetMinutes { get; set; }
     public long LastFeedbackSentUnix { get; set; }
+    public Dictionary<string, FeedbackUpdateMarks> FeedbackMarks { get; set; } = new();
     public List<CalendarCustomEvent> CalendarCustomEvents { get; set; } = new();
     public List<CalendarEventGroup> CalendarGroups { get; set; } = new();
     public bool CalendarGameEventsInApp { get; set; } = true;

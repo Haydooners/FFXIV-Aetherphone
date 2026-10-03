@@ -13,6 +13,8 @@ internal sealed partial class FeedbackApp
     private const float PhotoGlyphScale = 0.62f;
     private const float PhotoGlyphGap = 5f;
     private const float KindInkLighten = 0.3f;
+    private const float UnseenDotRadius = 4f;
+    private const float AccessoryMinWidth = 24f;
 
     private readonly FeedbackHistoryRows hubRows = new();
     private readonly FeedbackHistoryRows listRows = new();
@@ -134,11 +136,21 @@ internal sealed partial class FeedbackApp
         var textLeft = row.Min.X + FeedbackHistoryRows.TextInset(scale);
         var textRight = row.Max.X - pad;
         var cursorY = row.Min.Y + padY;
+        var unseen = store.IsUnseen(model.Id);
         var dateSize = Typography.Measure(model.Date, TextStyles.Footnote);
-        Typography.Draw(drawList, new Vector2(textRight - dateSize.X, cursorY), model.Date, ui.MutedInk,
+        var dateLeft = textRight - dateSize.X;
+        Typography.Draw(drawList, new Vector2(dateLeft, cursorY), model.Date, unseen ? ui.Accent : ui.MutedInk,
             TextStyles.Footnote);
+        if (unseen)
+        {
+            var dotRadius = UnseenDotRadius * scale;
+            dateLeft -= dotRadius * 2f + Metrics.Space.Xs * scale;
+            drawList.AddCircleFilled(new Vector2(dateLeft + dotRadius, cursorY + layout.MetaHeight * 0.5f), dotRadius,
+                ImGui.GetColorU32(ui.Accent), 16);
+        }
+
         var kindLabel = Typography.FitText(Loc.T(kind.Title),
-            MathF.Max(1f, textRight - dateSize.X - Metrics.Space.Sm * scale - textLeft), TextStyles.FootnoteEmphasized);
+            MathF.Max(1f, dateLeft - Metrics.Space.Sm * scale - textLeft), TextStyles.FootnoteEmphasized);
         Typography.Draw(drawList, new Vector2(textLeft, cursorY), kindLabel, Palette.Lighten(kind.Tint, KindInkLighten),
             TextStyles.FootnoteEmphasized);
         cursorY += layout.MetaHeight + FeedbackHistoryRows.MetaGap * scale;
@@ -155,18 +167,37 @@ internal sealed partial class FeedbackApp
         var statusLabel = Loc.T(FeedbackStatuses.Label(model.Status));
         FeedbackArt.StatusPill(drawList, new Vector2(textLeft, cursorY), statusLabel,
             FeedbackStatuses.Tint(model.Status), scale);
-        if (model.Photos.Length == 0)
+        var accessoryLeft = textLeft + FeedbackArt.PillWidth(statusLabel, scale) + Metrics.Space.Md * scale;
+        if (model.HasReply)
         {
-            return;
+            accessoryLeft = DrawRowAccessory(drawList, accessoryLeft, textRight, cursorY, FontAwesomeIcon.Reply,
+                Loc.T(L.Feedback.RowReplied), ui.Accent, scale) + Metrics.Space.Md * scale;
+        }
+
+        if (model.Photos.Length > 0)
+        {
+            DrawRowAccessory(drawList, accessoryLeft, textRight, cursorY, FontAwesomeIcon.Image, model.Photos,
+                ui.MutedInk, scale);
+        }
+    }
+
+    private static float DrawRowAccessory(ImDrawListPtr drawList, float left, float right, float top,
+        FontAwesomeIcon icon, string label, Vector4 ink, float scale)
+    {
+        var labelLeft = left + Metrics.Space.Xs * scale * 2f + PhotoGlyphGap * scale;
+        var available = right - labelLeft;
+        if (available < AccessoryMinWidth * scale)
+        {
+            return left;
         }
 
         var pillHeight = FeedbackArt.PillHeight * scale;
-        var photoLeft = textLeft + FeedbackArt.PillWidth(statusLabel, scale) + Metrics.Space.Md * scale;
-        var glyphCenter = new Vector2(photoLeft + Metrics.Space.Xs * scale, cursorY + pillHeight * 0.5f);
-        AppSkin.Icon(drawList, glyphCenter, IconGlyph.Of(FontAwesomeIcon.Image), ui.MutedInk, PhotoGlyphScale);
-        var labelSize = Typography.Measure(model.Photos, TextStyles.Footnote);
-        Typography.Draw(drawList,
-            new Vector2(glyphCenter.X + Metrics.Space.Xs * scale + PhotoGlyphGap * scale,
-                cursorY + (pillHeight - labelSize.Y) * 0.5f), model.Photos, ui.MutedInk, TextStyles.Footnote);
+        var glyphCenter = new Vector2(left + Metrics.Space.Xs * scale, top + pillHeight * 0.5f);
+        AppSkin.Icon(drawList, glyphCenter, IconGlyph.Of(icon), ink, PhotoGlyphScale);
+        var fitted = Typography.FitText(label, available, TextStyles.Footnote);
+        var labelSize = Typography.Measure(fitted, TextStyles.Footnote);
+        Typography.Draw(drawList, new Vector2(labelLeft, top + (pillHeight - labelSize.Y) * 0.5f), fitted, ink,
+            TextStyles.Footnote);
+        return labelLeft + labelSize.X;
     }
 }
