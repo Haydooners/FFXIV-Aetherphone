@@ -1,3 +1,4 @@
+using Aetherphone.Apps.Health.Widgets;
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
@@ -97,6 +98,11 @@ internal sealed partial class HealthApp : IPhoneApp
         if (GuideIntents.Consume("health.tab.goals"))
         {
             screenIndex = 3;
+        }
+
+        if (GuideIntents.Consume(HydrationWidget.HydrationIntent))
+        {
+            screenIndex = 2;
         }
 
         DrawTabs(body, scale);

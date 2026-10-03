@@ -5,6 +5,32 @@ using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Apps.Skywatcher;
 
+internal readonly struct AmbienceInk
+{
+    public readonly Vector4 Light;
+    public readonly Vector4 Rain;
+    public readonly Vector4 Ember;
+    public readonly Vector4 NightCloud;
+    public readonly Vector4 NightFog;
+    public readonly Vector4 Glow;
+
+    public AmbienceInk(Vector4 light, Vector4 rain, Vector4 ember, Vector4 nightCloud, Vector4 nightFog, Vector4 glow)
+    {
+        Light = light;
+        Rain = rain;
+        Ember = ember;
+        NightCloud = nightCloud;
+        NightFog = nightFog;
+        Glow = glow;
+    }
+
+    public static AmbienceInk Mono(Vector4 ink)
+    {
+        var solid = ink with { W = 1f };
+        return new AmbienceInk(solid, solid, solid, solid, solid, solid);
+    }
+}
+
 internal static class WeatherAmbience
 {
     private const float GoldenStep = 0.618034f;
@@ -18,6 +44,7 @@ internal static class WeatherAmbience
     private const int EmberCount = 4;
     private const int GloomMoteCount = 7;
     private const double LightningPeriodMs = 6800.0;
+    private const float MonoStrength = 0.75f;
     private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 RainTint = new(0.66f, 0.80f, 1.00f, 1f);
     private static readonly Vector4 EmberTint = new(1.00f, 0.66f, 0.36f, 1f);
@@ -36,7 +63,8 @@ internal static class WeatherAmbience
         DrawSkyDepth(drawList, bounds, rounding, palette, opacity);
         var inset = rounding * 0.30f;
         drawList.PushClipRect(bounds.Min + new Vector2(inset, inset), bounds.Max - new Vector2(inset, inset), true);
-        DrawAtmosphere(drawList, bounds, kind, isDay, palette, scale, opacity);
+        DrawAtmosphere(drawList, bounds, kind, isDay,
+            new AmbienceInk(White, RainTint, EmberTint, NightCloudFill, NightFogFill, palette.Glow), scale, opacity);
         if (withGlyph)
         {
             DrawGlyph(drawList, bounds, kind, isDay, palette, scale, opacity);
@@ -48,6 +76,20 @@ internal static class WeatherAmbience
         {
             DrawLightningVeil(drawList, bounds, rounding, opacity);
         }
+    }
+
+    public static void DrawMono(ImDrawListPtr drawList, in Rect bounds, float rounding, WeatherKind kind, bool isDay,
+        Vector4 ink, float scale, float opacity)
+    {
+        if (opacity <= 0.02f)
+        {
+            return;
+        }
+
+        var inset = rounding * 0.30f;
+        drawList.PushClipRect(bounds.Min + new Vector2(inset, inset), bounds.Max - new Vector2(inset, inset), true);
+        DrawAtmosphere(drawList, bounds, kind, isDay, AmbienceInk.Mono(ink), scale, opacity * MonoStrength);
+        drawList.PopClipRect();
     }
 
     public static void Halo(ImDrawListPtr drawList, Vector2 center, float radius, Vector4 color, float intensity)
@@ -83,49 +125,49 @@ internal static class WeatherAmbience
     }
 
     private static void DrawAtmosphere(ImDrawListPtr drawList, in Rect bounds, WeatherKind kind, bool isDay,
-        in SkyPalette palette, float scale, float opacity)
+        in AmbienceInk colors, float scale, float opacity)
     {
         switch (kind)
         {
             case WeatherKind.Clear:
                 if (isDay)
                 {
-                    DrawDriftingClouds(drawList, bounds, true, 2, 0.6f, opacity);
+                    DrawDriftingClouds(drawList, bounds, colors.Light, 2, 0.6f, opacity);
                 }
                 else
                 {
-                    DrawStars(drawList, bounds, palette.Glow, scale, opacity);
-                    DrawShootingStar(drawList, bounds, palette.Glow, scale, opacity);
+                    DrawStars(drawList, bounds, colors.Light, colors.Glow, scale, opacity);
+                    DrawShootingStar(drawList, bounds, colors.Light, colors.Glow, scale, opacity);
                 }
 
                 break;
             case WeatherKind.Clouds:
-                DrawDriftingClouds(drawList, bounds, isDay, 4, 1f, opacity);
+                DrawDriftingClouds(drawList, bounds, isDay ? colors.Light : colors.NightCloud, 4, 1f, opacity);
                 break;
             case WeatherKind.Fog:
-                DrawHazeBands(drawList, bounds, isDay ? White : NightFogFill, 4, 0.10f, opacity);
+                DrawHazeBands(drawList, bounds, isDay ? colors.Light : colors.NightFog, 4, 0.10f, opacity);
                 break;
             case WeatherKind.Rain:
-                DrawRainfall(drawList, bounds, scale, 16, opacity);
+                DrawRainfall(drawList, bounds, colors.Rain, scale, 16, opacity);
                 break;
             case WeatherKind.Thunder:
-                DrawRainfall(drawList, bounds, scale, 12, 0.85f * opacity);
-                DrawLightningGlow(drawList, bounds, palette.Glow, opacity);
+                DrawRainfall(drawList, bounds, colors.Rain, scale, 12, 0.85f * opacity);
+                DrawLightningGlow(drawList, bounds, colors.Glow, opacity);
                 break;
             case WeatherKind.Wind:
-                DrawWindStreams(drawList, bounds, palette.Glow, scale, opacity);
+                DrawWindStreams(drawList, bounds, colors.Glow, scale, opacity);
                 break;
             case WeatherKind.Sand:
-                DrawSandstream(drawList, bounds, palette.Glow, scale, opacity);
+                DrawSandstream(drawList, bounds, colors.Glow, scale, opacity);
                 break;
             case WeatherKind.Heat:
-                DrawHeatShimmer(drawList, bounds, palette.Glow, scale, opacity);
+                DrawHeatShimmer(drawList, bounds, colors.Glow, colors.Ember, scale, opacity);
                 break;
             case WeatherKind.Snow:
-                DrawSnowfall(drawList, bounds, scale, opacity);
+                DrawSnowfall(drawList, bounds, colors.Light, scale, opacity);
                 break;
             default:
-                DrawGloomMotes(drawList, bounds, palette.Glow, scale, opacity);
+                DrawGloomMotes(drawList, bounds, colors.Glow, scale, opacity);
                 break;
         }
     }
@@ -143,10 +185,9 @@ internal static class WeatherAmbience
         Halo(drawList, center, radius * 1.4f, palette.Glow, (0.55f + 0.35f * Pulse.Wave(Pulse.Breath)) * opacity);
     }
 
-    private static void DrawDriftingClouds(ImDrawListPtr drawList, in Rect bounds, bool isDay, int puffCount,
+    private static void DrawDriftingClouds(ImDrawListPtr drawList, in Rect bounds, Vector4 fill, int puffCount,
         float strength, float opacity)
     {
-        var fill = isDay ? White : NightCloudFill;
         for (var puffIndex = 0; puffIndex < puffCount; puffIndex++)
         {
             var laneY = bounds.Min.Y + (0.14f + Frac(puffIndex * GoldenStep + 0.21f) * 0.55f) * bounds.Height;
@@ -167,7 +208,8 @@ internal static class WeatherAmbience
         drawList.AddCircleFilled(center + new Vector2(-radius * 0.10f, radius * 0.30f), radius * 0.40f, color, 20);
     }
 
-    private static void DrawStars(ImDrawListPtr drawList, in Rect bounds, Vector4 glow, float scale, float opacity)
+    private static void DrawStars(ImDrawListPtr drawList, in Rect bounds, Vector4 light, Vector4 glow, float scale,
+        float opacity)
     {
         for (var starIndex = 0; starIndex < StarCount; starIndex++)
         {
@@ -177,12 +219,12 @@ internal static class WeatherAmbience
             var bright = starIndex % 6 == 0;
             var radius = (bright ? 1.35f : 0.65f + Hash(starIndex, 9.1f) * 0.5f) * scale;
             var alpha = (bright ? 0.85f : 0.20f + 0.35f * Hash(starIndex, 51.3f)) * twinkle * opacity;
-            drawList.AddCircleFilled(position, radius, Tone(White, alpha), 10);
+            drawList.AddCircleFilled(position, radius, Tone(light, alpha), 10);
             if (bright)
             {
                 drawList.AddCircleFilled(position, radius * 3.2f, Tone(glow, alpha * 0.12f), 16);
                 var reach = radius * 3.4f;
-                var beam = Tone(White, alpha * 0.38f);
+                var beam = Tone(light, alpha * 0.38f);
                 drawList.AddLine(position - new Vector2(reach, 0f), position + new Vector2(reach, 0f), beam,
                     0.8f * scale);
                 drawList.AddLine(position - new Vector2(0f, reach), position + new Vector2(0f, reach), beam,
@@ -193,8 +235,8 @@ internal static class WeatherAmbience
 
     private static float Hash(int index, float salt) => Frac(MathF.Sin(index * 127.1f + salt) * 43758.547f);
 
-    private static void DrawShootingStar(ImDrawListPtr drawList, in Rect bounds, Vector4 glow, float scale,
-        float opacity)
+    private static void DrawShootingStar(ImDrawListPtr drawList, in Rect bounds, Vector4 light, Vector4 glow,
+        float scale, float opacity)
     {
         var cycle = Pulse.Phase(12600.0);
         if (cycle > 0.055f)
@@ -208,11 +250,12 @@ internal static class WeatherAmbience
         var head = start + sweep * travel;
         var tail = head - Vector2.Normalize(sweep) * 16f * scale * (1f - travel * 0.5f);
         var alpha = MathF.Sin(travel * MathF.PI) * 0.85f * opacity;
-        drawList.AddLine(tail, head, Tone(White, alpha), 1.4f * scale);
+        drawList.AddLine(tail, head, Tone(light, alpha), 1.4f * scale);
         drawList.AddCircleFilled(head, 1.6f * scale, Tone(glow, alpha), 8);
     }
 
-    private static void DrawRainfall(ImDrawListPtr drawList, in Rect bounds, float scale, int dropCount, float opacity)
+    private static void DrawRainfall(ImDrawListPtr drawList, in Rect bounds, Vector4 rain, float scale, int dropCount,
+        float opacity)
     {
         for (var dropIndex = 0; dropIndex < dropCount; dropIndex++)
         {
@@ -223,12 +266,13 @@ internal static class WeatherAmbience
                 bounds.Min.Y + (fall * 1.3f - 0.15f) * bounds.Height);
             var length = (near ? 10f : 6.5f) * scale;
             var alpha = (near ? 0.38f : 0.22f) * opacity;
-            drawList.AddLine(top, top + new Vector2(-0.12f, 1f) * length, Tone(RainTint, alpha),
+            drawList.AddLine(top, top + new Vector2(-0.12f, 1f) * length, Tone(rain, alpha),
                 (near ? 1.5f : 1f) * scale);
         }
     }
 
-    private static void DrawSnowfall(ImDrawListPtr drawList, in Rect bounds, float scale, float opacity)
+    private static void DrawSnowfall(ImDrawListPtr drawList, in Rect bounds, Vector4 light, float scale,
+        float opacity)
     {
         for (var flakeIndex = 0; flakeIndex < SnowflakeCount; flakeIndex++)
         {
@@ -238,7 +282,7 @@ internal static class WeatherAmbience
             var sway = MathF.Sin((fall + flakeIndex * 0.7f) * MathF.PI * 2f) * bounds.Width * 0.03f;
             var position = new Vector2(laneX + sway, bounds.Min.Y + (fall * 1.25f - 0.12f) * bounds.Height);
             var alpha = (near ? 0.55f : 0.30f) * opacity;
-            drawList.AddCircleFilled(position, (near ? 1.8f : 1.15f) * scale, Tone(White, alpha), 10);
+            drawList.AddCircleFilled(position, (near ? 1.8f : 1.15f) * scale, Tone(light, alpha), 10);
         }
     }
 
@@ -311,8 +355,8 @@ internal static class WeatherAmbience
         }
     }
 
-    private static void DrawHeatShimmer(ImDrawListPtr drawList, in Rect bounds, Vector4 tint, float scale,
-        float opacity)
+    private static void DrawHeatShimmer(ImDrawListPtr drawList, in Rect bounds, Vector4 tint, Vector4 ember,
+        float scale, float opacity)
     {
         const int pointCount = 12;
         for (var rowIndex = 0; rowIndex < ShimmerRowCount; rowIndex++)
@@ -338,7 +382,7 @@ internal static class WeatherAmbience
                 MathF.Sin(rise * MathF.PI * 3f + emberIndex) * bounds.Width * 0.03f,
                 bounds.Min.Y + (1.08f - 1.25f * rise) * bounds.Height);
             drawList.AddCircleFilled(position, 1.2f * scale,
-                Tone(EmberTint, MathF.Sin(rise * MathF.PI) * 0.4f * opacity), 8);
+                Tone(ember, MathF.Sin(rise * MathF.PI) * 0.4f * opacity), 8);
         }
     }
 
