@@ -27,6 +27,10 @@ internal sealed class TrackVoice : ISampleProvider
     private float gain;
     private float targetGain = 1f;
     private float gainStep;
+    private float level = 1f;
+    private float levelTarget = 1f;
+    private float levelStep;
+    private bool audible;
     private float rate = 1f;
     private bool rateDirty = true;
     private volatile bool finished;
@@ -64,6 +68,17 @@ internal sealed class TrackVoice : ISampleProvider
     public bool Faulted => faulted;
     public bool FadingOut => targetGain <= 0f;
     public double DurationSeconds => reader.TotalTime.TotalSeconds;
+
+    public float Level
+    {
+        get
+        {
+            lock (gate)
+            {
+                return levelTarget;
+            }
+        }
+    }
 
     public double PositionSeconds
     {
@@ -178,6 +193,23 @@ internal sealed class TrackVoice : ISampleProvider
         }
     }
 
+    public void SetLevel(float linear, float rampSeconds)
+    {
+        var target = Math.Max(0f, linear);
+        lock (gate)
+        {
+            levelTarget = target;
+            if (!audible || rampSeconds <= 0f)
+            {
+                level = target;
+                levelStep = 0f;
+                return;
+            }
+
+            levelStep = MathF.Abs(target - level) / (rampSeconds * OutputSampleRate);
+        }
+    }
+
     public void FadeOut(float seconds)
     {
         lock (gate)
@@ -212,6 +244,7 @@ internal sealed class TrackVoice : ISampleProvider
 
                 var outputFrames = count / OutputChannels;
                 var producedFrames = sourceEnded ? 0 : SafeResample(outputFrames);
+                audible |= producedFrames > 0;
                 WriteFrames(buffer, offset, producedFrames, outputFrames);
                 if ((producedFrames == 0 && sourceEnded) || (targetGain <= 0f && gain <= 0f))
                 {
@@ -296,6 +329,7 @@ internal sealed class TrackVoice : ISampleProvider
         for (var frame = 0; frame < outputFrames; frame++)
         {
             StepGain();
+            StepLevel();
             var outputIndex = offset + frame * OutputChannels;
             if (frame >= producedFrames)
             {
@@ -307,8 +341,21 @@ internal sealed class TrackVoice : ISampleProvider
             var sourceIndex = frame * sourceChannels;
             var left = resampled[sourceIndex];
             var right = sourceChannels > 1 ? resampled[sourceIndex + 1] : left;
-            buffer[outputIndex] = left * gain;
-            buffer[outputIndex + 1] = right * gain;
+            var amplitude = gain * level;
+            buffer[outputIndex] = left * amplitude;
+            buffer[outputIndex + 1] = right * amplitude;
+        }
+    }
+
+    private void StepLevel()
+    {
+        if (level < levelTarget)
+        {
+            level = Math.Min(levelTarget, level + levelStep);
+        }
+        else if (level > levelTarget)
+        {
+            level = Math.Max(levelTarget, level - levelStep);
         }
     }
 

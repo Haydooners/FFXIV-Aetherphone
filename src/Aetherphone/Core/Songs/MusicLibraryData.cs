@@ -15,6 +15,7 @@ internal sealed class MusicLibraryData
     public List<string> RecentSearches { get; set; } = new();
     public List<ListeningDay> Days { get; set; } = new();
     public long ListenedSeconds { get; set; }
+    public Dictionary<string, float> LoudnessGains { get; set; } = new();
 }
 
 [Serializable]

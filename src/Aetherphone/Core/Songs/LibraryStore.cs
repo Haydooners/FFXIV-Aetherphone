@@ -9,6 +9,8 @@ internal sealed class LibraryStore : IDisposable
     public const int PlayHistoryCapacity = 500;
     public const int RecentSearchCapacity = 20;
     public const int ListeningHistoryDays = 400;
+    public const int LoudnessCapacity = 4000;
+    private const int LoudnessEvictBatch = 200;
     private const string FileName = "library.json";
     private const int SaveDelayMilliseconds = 750;
 
@@ -464,6 +466,36 @@ internal sealed class LibraryStore : IDisposable
         Touch();
     }
 
+    public bool TryGetLoudnessGain(string videoId, out float decibels)
+    {
+        lock (gate)
+        {
+            return data.LoudnessGains.TryGetValue(videoId, out decibels);
+        }
+    }
+
+    public void RecordLoudnessGain(string videoId, float decibels)
+    {
+        if (string.IsNullOrEmpty(videoId) || !float.IsFinite(decibels))
+        {
+            return;
+        }
+
+        lock (gate)
+        {
+            var gains = data.LoudnessGains;
+            if (!gains.ContainsKey(videoId) && gains.Count >= LoudnessCapacity)
+            {
+                EvictLoudness(gains);
+            }
+
+            gains[videoId] = decibels;
+            dirty = true;
+        }
+
+        saveTimer.Change(SaveDelayMilliseconds, Timeout.Infinite);
+    }
+
     public ListeningSummary BuildListening(ReplayPeriod period, DateOnly today, int topCount)
     {
         lock (gate)
@@ -716,6 +748,7 @@ internal sealed class LibraryStore : IDisposable
         data.Artists ??= new List<ArtistRecord>();
         data.RecentSearches ??= new List<string>();
         data.Days ??= new List<ListeningDay>();
+        data.LoudnessGains ??= new Dictionary<string, float>();
         data.Playlists.RemoveAll(static record => record is null || string.IsNullOrEmpty(record.Id));
         data.Songs.RemoveAll(static record => record is null || string.IsNullOrEmpty(record.VideoId));
         data.Plays.RemoveAll(static record => record?.Song is null || string.IsNullOrEmpty(record.Song.VideoId));
@@ -768,6 +801,26 @@ internal sealed class LibraryStore : IDisposable
         data.ListenedSeconds += estimatedSeconds;
         data.Version = MusicLibraryData.CurrentVersion;
         dirty = true;
+    }
+
+    private static void EvictLoudness(Dictionary<string, float> gains)
+    {
+        var stale = new string[Math.Min(LoudnessEvictBatch, gains.Count)];
+        var count = 0;
+        foreach (var key in gains.Keys)
+        {
+            if (count == stale.Length)
+            {
+                break;
+            }
+
+            stale[count++] = key;
+        }
+
+        for (var index = 0; index < count; index++)
+        {
+            gains.Remove(stale[index]);
+        }
     }
 
     private static void AddListening(List<ListeningDay> days, int today, int plays, int seconds)

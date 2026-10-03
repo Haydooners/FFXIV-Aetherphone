@@ -36,6 +36,7 @@ internal sealed class SongPlayer : IDisposable
     private const float DeclickSeconds = 0.04f;
     private const int DrainTimeoutMilliseconds = 1500;
     private const long OutputRecoveryIntervalMilliseconds = 2000;
+    private const float LevelRampSeconds = 1.5f;
     private static readonly TimeSpan CacheMaxAge = TimeSpan.FromDays(14);
 
     private readonly YoutubeClient youtube;
@@ -45,6 +46,7 @@ internal sealed class SongPlayer : IDisposable
     private readonly MixingSampleProvider mixer;
     private readonly VolumeSampleProvider master;
     private readonly HashSet<string> prefetching = new(StringComparer.Ordinal);
+    private readonly HashSet<string> measuring = new(StringComparer.Ordinal);
     private IWavePlayer? output;
     private CancellationTokenSource? cancellation;
     private TrackVoice? currentVoice;
@@ -58,6 +60,7 @@ internal sealed class SongPlayer : IDisposable
     private float durationSeconds;
     private float crossfadeSeconds;
     private float rate = 1f;
+    private volatile bool soundCheckEnabled;
 
     public SongPlayer(YoutubeClient youtube, DiskCache cache, SongLinkResolver linkResolver)
     {
@@ -74,6 +77,24 @@ internal sealed class SongPlayer : IDisposable
     }
 
     public Func<string, SongResolvedAudio?>? OfflineSource { get; set; }
+
+    public LibraryStore? Library { get; set; }
+
+    public bool SoundCheckEnabled
+    {
+        get => soundCheckEnabled;
+        set
+        {
+            if (soundCheckEnabled == value)
+            {
+                return;
+            }
+
+            soundCheckEnabled = value;
+            var voice = currentVoice;
+            voice?.SetLevel(LevelFor(CurrentVideoId), LevelRampSeconds);
+        }
+    }
 
     public event Action? TrackCompleted;
     public event Action? TrackNearEnd;
@@ -363,7 +384,7 @@ internal sealed class SongPlayer : IDisposable
     private VoiceOutcome PlayOnce(in Song song, double startSeconds, float fadeInSeconds, bool allowStreaming,
         CancellationToken token, int workerSession)
     {
-        var reader = OpenReader(song, allowStreaming, token, workerSession);
+        var reader = OpenReader(song, allowStreaming, token, workerSession, out var fullAudio);
         if (reader is null)
         {
             if (!token.IsCancellationRequested)
@@ -375,6 +396,7 @@ internal sealed class SongPlayer : IDisposable
         }
 
         var voice = new TrackVoice(reader, startSeconds, fadeInSeconds) { Rate = rate };
+        voice.SetLevel(LevelFor(song.VideoId), 0f);
         lock (gate)
         {
             if (workerSession != session || token.IsCancellationRequested)
@@ -398,6 +420,11 @@ internal sealed class SongPlayer : IDisposable
             Interlocked.Increment(ref liveVoices);
             mixer.AddMixerInput(voice);
             state = SongPlaybackState.Playing;
+        }
+
+        if (fullAudio is { } audio)
+        {
+            BeginMeasure(song.VideoId, audio);
         }
 
         try
@@ -583,9 +610,63 @@ internal sealed class SongPlayer : IDisposable
         }
     }
 
-    private ISongAudioReader? OpenReader(in Song song, bool allowStreaming, CancellationToken token,
-        int workerSession)
+    private float LevelFor(string videoId)
     {
+        return soundCheckEnabled && Library is { } library && library.TryGetLoudnessGain(videoId, out var decibels)
+            ? SoundCheckGain.ToLinear(decibels)
+            : 1f;
+    }
+
+    private void BeginMeasure(string videoId, SongResolvedAudio audio)
+    {
+        if (Library is not { } library || string.IsNullOrEmpty(videoId) || library.TryGetLoudnessGain(videoId, out _))
+        {
+            return;
+        }
+
+        lock (measuring)
+        {
+            if (!measuring.Add(videoId))
+            {
+                return;
+            }
+        }
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                var bytes = audio.Bytes;
+                using ISongAudioReader reader = audio.IsOpus
+                    ? new OpusWebmSampleProvider(() => new MemoryStream(bytes, false))
+                    : new MediaFoundationSongReader(new StreamMediaFoundationReader(new MemoryStream(bytes, false)));
+                var result = LoudnessMeter.Measure(reader.ToSampleProvider(), CancellationToken.None);
+                var decibels = SoundCheckGain.Decibels(result.IntegratedLufs, result.SamplePeak);
+                library.RecordLoudnessGain(videoId, decibels);
+                var voice = currentVoice;
+                if (voice is not null && string.Equals(CurrentVideoId, videoId, StringComparison.Ordinal))
+                {
+                    voice.SetLevel(LevelFor(videoId), LevelRampSeconds);
+                }
+            }
+            catch (Exception exception)
+            {
+                AepLog.Debug(exception, "Song loudness measurement failed");
+            }
+            finally
+            {
+                lock (measuring)
+                {
+                    measuring.Remove(videoId);
+                }
+            }
+        });
+    }
+
+    private ISongAudioReader? OpenReader(in Song song, bool allowStreaming, CancellationToken token,
+        int workerSession, out SongResolvedAudio? fullAudio)
+    {
+        fullAudio = null;
         var videoId = song.VideoId;
         var offline = OfflineSource?.Invoke(videoId);
         var bytes = offline?.Bytes ?? cache.Get(OpusCacheKey(videoId), CacheMaxAge);
@@ -637,6 +718,7 @@ internal sealed class SongPlayer : IDisposable
         {
             TrySetState(workerSession, SongPlaybackState.Buffering);
             var captured = bytes;
+            fullAudio = new SongResolvedAudio(captured, bytesAreOpus);
             return bytesAreOpus
                 ? new OpusWebmSampleProvider(() => new MemoryStream(captured, false))
                 : new MediaFoundationSongReader(new StreamMediaFoundationReader(new MemoryStream(captured, false)));

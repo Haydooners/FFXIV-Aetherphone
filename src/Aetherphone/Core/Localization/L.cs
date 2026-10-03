@@ -5158,6 +5158,14 @@ internal static class L
             public static readonly LocString HomeTeaser = new("music.replay.homeTeaser",
                 "Your top songs and artists, all in one place");
         }
+
+        internal static class SoundCheck
+        {
+            public static readonly LocString Title = new("music.soundCheck.title", "Sound Check");
+            public static readonly LocString SettingsHeader = new("music.soundCheck.settingsHeader", "Playback");
+            public static readonly LocString Hint = new("music.soundCheck.hint",
+                "Plays every song at about the same volume, so you don't have to reach for the slider between tracks.");
+        }
     }
 
     internal static class Messages

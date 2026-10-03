@@ -11,6 +11,7 @@ internal static class MusicMediaSettings
 
     public static void Draw(Configuration configuration, PhoneTheme theme)
     {
+        DrawPlayback(configuration, theme);
         SettingsSection.Header(Loc.T(L.Music.PcMedia.SettingsHeader), theme);
         var card = GroupCard.Begin(theme, RowCount);
         var show = SettingsRow.Bool(card.NextRow(), Loc.T(L.Music.PcMedia.ShowWindowsMedia),
@@ -26,6 +27,22 @@ internal static class MusicMediaSettings
 
         configuration.ShowWindowsMedia = show;
         configuration.PublishToWindowsMedia = publish;
+        configuration.Save();
+    }
+
+    private static void DrawPlayback(Configuration configuration, PhoneTheme theme)
+    {
+        SettingsSection.Header(Loc.T(L.Music.SoundCheck.SettingsHeader), theme);
+        var card = GroupCard.Begin(theme, 1);
+        var soundCheck = SettingsRow.Bool(card.NextRow(), Loc.T(L.Music.SoundCheck.Title),
+            configuration.MusicSoundCheck, theme, "settings.music.soundCheck", Loc.T(L.Music.SoundCheck.Hint));
+        card.End();
+        if (soundCheck == configuration.MusicSoundCheck)
+        {
+            return;
+        }
+
+        configuration.MusicSoundCheck = soundCheck;
         configuration.Save();
     }
 }

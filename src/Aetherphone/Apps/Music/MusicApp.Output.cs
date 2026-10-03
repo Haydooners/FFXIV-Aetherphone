@@ -55,7 +55,7 @@ internal sealed partial class MusicApp
         var scale = UiScale.Current;
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, MaxFrameSeconds);
         var session = windowsMedia.IsSupported && windowsMedia.Current.HasSession;
-        var height = (SheetMetrics.GrabberZone + OutputTitleHeight + OutputRowHeight * 3f + OutputCrossfadeHeight +
+        var height = (SheetMetrics.GrabberZone + OutputTitleHeight + OutputRowHeight * 4f + OutputCrossfadeHeight +
                       Metrics.Size.HomeIndicatorInset + (session ? OutputSessionHeight : 0f)) * scale;
         using var layer = ScreenLayer.Begin("music.output", screen, false);
         var frame = outputSheet.Begin(ImGui.GetWindowDrawList(), screen, theme, SheetDetents.Fitted(height),
@@ -103,6 +103,9 @@ internal sealed partial class MusicApp
             OpenSleepMenu();
         }
 
+        y += OutputRowHeight * scale;
+        Hairline(drawList, left, right, y, ink);
+        DrawSoundCheckRow(drawList, left, right, y, ink, interactive, frame.Opacity, scale);
         y += OutputRowHeight * scale;
         Hairline(drawList, left, right, y, ink);
         DrawCrossfadeRow(drawList, left, right, y, ink, muted, interactive, scale, delta);
@@ -235,6 +238,30 @@ internal sealed partial class MusicApp
             Typography.FitText(label, labelWidth, TextStyles.Body), ink,
             TextStyles.Body);
         return interactive && UiInteract.Click(rowMin, rowMax, hovered);
+    }
+
+    private void DrawSoundCheckRow(ImDrawListPtr drawList, float left, float right, float top, Vector4 ink,
+        bool interactive, float opacity, float scale)
+    {
+        var centerY = top + OutputRowHeight * scale * 0.5f;
+        AppSkin.Icon(drawList, new Vector2(left + OutputIconColumn * 0.5f * scale, centerY),
+            IconGlyph.Of(FontAwesomeIcon.VolumeUp), ink, OutputIconScale);
+        var toggleWidth = Metrics.Size.ToggleWidth * scale;
+        var toggleHeight = Metrics.Size.ToggleHeight * scale;
+        var toggle = new Rect(new Vector2(right - toggleWidth, centerY - toggleHeight * 0.5f),
+            new Vector2(right, centerY + toggleHeight * 0.5f));
+        var enabled = playback.SoundCheckEnabled;
+        var next = Toggle.Draw("music.output.soundCheck", toggle, enabled, theme, opacity, interactive);
+        if (next != enabled)
+        {
+            playback.SetSoundCheck(next);
+        }
+
+        var labelLeft = left + (OutputIconColumn + Metrics.Space.Sm) * scale;
+        var labelWidth = MathF.Max(1f, toggle.Min.X - Metrics.Space.Md * scale - labelLeft);
+        var labelHeight = Typography.LineHeight(TextStyles.Body);
+        Typography.Draw(drawList, new Vector2(labelLeft, centerY - labelHeight * 0.5f),
+            Typography.FitText(Loc.T(L.Music.SoundCheck.Title), labelWidth, TextStyles.Body), ink, TextStyles.Body);
     }
 
     private void DrawCrossfadeRow(ImDrawListPtr drawList, float left, float right, float top, Vector4 ink,
