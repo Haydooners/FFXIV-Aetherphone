@@ -1,34 +1,41 @@
 using Aetherphone.Core;
+using Aetherphone.Core.Animation;
+using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Onboarding;
+using Aetherphone.Core.Photos;
 using Aetherphone.Windows;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
-using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Photos;
 
 internal sealed partial class PhotosApp
 {
-    private const int LibraryTab = 0;
-    private const int AlbumsTab = 1;
-    private const float LogoSize = 30f;
-    private const float LogoGap = 10f;
-    private const float HeaderIconSize = 26f;
-    private const float WordmarkPadX = 6f;
-    private const float WordmarkPadY = 4f;
     private const float GridGap = 1.5f;
-    private const float GridTopPad = 2f;
-    private const float GridBottomPad = 24f;
-    private const float SectionHeaderHeight = 44f;
-    private const float SectionHeaderDrop = 3f;
-    private const float SectionBlockGap = 8f;
-    private const float CellPadX = SocialChrome.CellPadX;
+    private const float GridBottomPad = 8f;
+    private const float DayHeaderHeight = 52f;
+    private const float DayHeaderTitleDrop = 14f;
+    private const float DayHeaderSubtitleGap = 2f;
+    private const float FooterHeight = 48f;
+    private const float CardGap = 14f;
+    private const float YearCardAspect = 0.72f;
+    private const float MonthCardAspect = 0.6f;
+    private const float CardTitleInset = 16f;
+    private const float CardScrimFraction = 0.55f;
+    private const float CardScrimAlpha = 0.5f;
+    private const float JumpMargin = 8f;
+    private const float LevelBarHeight = 36f;
+    private const float LevelBarWidth = 280f;
+    private const float LevelBarGap = 10f;
+    private const float LevelHighlightInset = 3f;
+    private const float LevelHighlightAlpha = 0.22f;
     private const string SortMenuId = "photos.sort";
-    private const int SortMenuItemCount = 6;
+    private const int SortMenuItemCount = 7;
     private const int MenuRowFilter = 4;
     private const int MenuRowView = 5;
+    private const int MenuRowFolder = 6;
     private const int PageRowBack = 0;
     private const int FilterRowAll = 1;
     private const int FilterRowFavorites = 2;
@@ -38,7 +45,9 @@ internal sealed partial class PhotosApp
     private const int ViewRowZoomOut = 2;
     private const int ViewRowAspect = 3;
     private const int ViewRowCount = 4;
-    private const float FolderFabRadius = 27f;
+    private const int LevelCount = 4;
+    private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
+    private static readonly Vector4 WhiteMuted = new(1f, 1f, 1f, 0.78f);
 
     private enum SortMenuPage : byte
     {
@@ -47,108 +56,583 @@ internal sealed partial class PhotosApp
         View,
     }
 
-    private SortMenuPage sortMenuPage;
-    private string sortRowLabel = string.Empty;
-    private string sortRowLocale = string.Empty;
-    private int sortRowKey = -1;
-    private bool sortRowAscending;
-
-    private static readonly TextStyle WordmarkStyle = new(1.4f, FontWeight.Bold);
-    private static readonly TextStyle ScreenTitleStyle = new(1.12f, FontWeight.Bold);
-
-    private void DrawRoot(Rect area)
+    private readonly struct JumpTarget
     {
-        var scale = UiScale.Current;
-        var navRect = new Rect(new Vector2(area.Min.X, area.Max.Y - BottomTabBar.Height * scale), area.Max);
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale),
-            new Vector2(area.Max.X, navRect.Min.Y));
-        if (selecting)
+        public static readonly JumpTarget None = new(LibraryLevel.All, 0);
+
+        public readonly LibraryLevel Level;
+        public readonly int Key;
+
+        public JumpTarget(LibraryLevel level, int key)
         {
-            DrawSelectHeader(area);
-            DrawLibrary(body);
-            DrawSelectToolbar(navRect);
-            return;
+            Level = level;
+            Key = key;
         }
 
-        DrawTopBar(area, segment == AlbumsTab);
-        if (segment == AlbumsTab)
+        public bool Active => Key != 0;
+    }
+
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabItems = new TabItem[2];
+    private readonly NavBarButton[] libraryButtons = new NavBarButton[2];
+    private readonly NavBarButton[] selectingButtons = new NavBarButton[1];
+    private readonly DropdownMenu sortMenu = new();
+    private readonly DropdownMenu.Item[] sortMenuItems = new DropdownMenu.Item[SortMenuItemCount];
+    private readonly List<GridBand> dayBands = new();
+    private readonly string[] levelLabels = new string[LevelCount];
+    private SortMenuPage sortMenuPage;
+    private string sortRowLabel = string.Empty;
+    private int sortRowKey = -1;
+    private bool sortRowAscending;
+    private JumpTarget pendingJump = JumpTarget.None;
+    private int layoutVersion;
+    private int dayBandsVersion = -1;
+    private float dayBandsCell = -1f;
+    private int dayBandsColumns;
+    private float dayBandsHeight;
+    private Spring levelHighlight;
+    private bool levelHighlightSettled;
+
+    private LibraryLevel Level =>
+        SortedByDate ? (LibraryLevel)Math.Clamp(configuration.PhotosLibraryLevel, 0, LevelCount - 1) : LibraryLevel.All;
+
+    private void InvalidateLayouts() => layoutVersion++;
+
+    private void DrawRoot(in PhoneContext context, Rect area)
+    {
+        if (activeTab == PhotosTab.Collections && !selecting)
         {
-            DrawAlbumsTab(body);
+            DrawCollections(context, area);
         }
         else
         {
-            DrawLibrary(body);
+            DrawLibrary(context, area);
         }
 
-        DrawTabBar(navRect);
+        if (selecting)
+        {
+            DrawSelectToolbar(context.Content);
+            return;
+        }
+
+        DrawTabBar(context.Content);
     }
 
-    private void DrawTopBar(Rect area, bool withNewAlbum)
+    private void DrawTabBar(Rect content)
+    {
+        tabItems[0] = new TabItem(Loc.T(L.Photos.Library), PhoneIcons.Photo, PhoneIcons.PhotoFilled,
+            AnchorKey: "photos.tab.library");
+        tabItems[1] = new TabItem(Loc.T(L.Photos.Collections), PhoneIcons.LibraryPhoto,
+            AnchorKey: "photos.tab.albums");
+        var result = tabBar.Draw(content, ui, tabItems, (int)activeTab);
+        if (result.Tapped < 0)
+        {
+            return;
+        }
+
+        var picked = (PhotosTab)result.Tapped;
+        if (picked == activeTab)
+        {
+            return;
+        }
+
+        activeTab = picked;
+        configuration.PhotosSegment = (int)picked;
+        configuration.Save();
+    }
+
+    private void DrawLibrary(in PhoneContext context, Rect area)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
-        var logoSize = LogoSize * scale;
-        var logoCenter = new Vector2(area.Min.X + CellPadX * scale + logoSize * 0.5f, rowCenterY);
-        if (!AppIconTile.TryDrawGlyph(drawList, Id, logoCenter, logoSize, Ink.AccentLink))
+        var navBar = AppHeader.BeginLargeTitle(context, false);
+        var level = Level;
+        var hasPhotos = filteredEntries.Length > 0;
+        var showLevels = hasPhotos && SortedByDate && !selecting;
+        var bottomInset = TabBar.ContentInset(scale) + (showLevels ? (LevelBarHeight + LevelBarGap) * scale : 0f);
+        var surfaceRect = new Rect(new Vector2(area.Min.X, navBar.Body.Min.Y),
+            new Vector2(area.Max.X, context.Content.Max.Y));
+        UiAnchors.Report("photos.grid", new Rect(navBar.Body.Min, context.Content.Max));
+        if (entries.Length == 0)
         {
-            PhoneIcon.Draw(drawList, logoCenter, PhoneIcons.Photo, Ink.AccentLink, logoSize);
-        }
-
-        var radius = SocialChrome.HeaderIconRadius * scale;
-        var libraryTools = !withNewAlbum && entries.Length > 0;
-        var canSelect = libraryTools && filteredEntries.Length > 0;
-        var lastSlot = SocialChrome.HeaderSlot(area, canSelect ? 1 : 0);
-        var titleLeft = logoCenter.X + logoSize * 0.5f + LogoGap * scale;
-        var titleRight = lastSlot.X - radius - Metrics.Space.Sm * scale;
-        var titleHeight = Typography.LineHeight(WordmarkStyle);
-        var title = Typography.FitText(DisplayName, MathF.Max(1f, titleRight - titleLeft), WordmarkStyle);
-        var titleSize = Typography.Measure(title, WordmarkStyle);
-        var titleMin = new Vector2(titleLeft - WordmarkPadX * scale, rowCenterY - titleHeight * 0.5f - WordmarkPadY * scale);
-        var titleMax = new Vector2(titleLeft + titleSize.X + WordmarkPadX * scale,
-            rowCenterY + titleHeight * 0.5f + WordmarkPadY * scale);
-        UiInteract.HoverHighlight(drawList, titleMin, titleMax, Metrics.Radius.Sm * scale);
-        Typography.Draw(drawList, new Vector2(titleLeft, rowCenterY - titleHeight * 0.5f), title, Ink.TitleInk,
-            WordmarkStyle);
-        if (UiInteract.HoverClick(titleMin, titleMax))
-        {
-            Refresh();
-            resetScroll = true;
-        }
-
-        if (withNewAlbum)
-        {
-            var newAlbumSlot = SocialChrome.HeaderSlot(area, 0);
-            var newAlbumExtent = new Vector2(radius, radius);
-            UiAnchors.Report("photos.albums.new",
-                new Rect(newAlbumSlot - newAlbumExtent, newAlbumSlot + newAlbumExtent));
-            if (SocialChrome.DrawHeaderIcon(drawList, newAlbumSlot, radius, PhoneIcons.Plus,
-                    HeaderIconSize, Loc.T(L.Photos.CreateAlbum), Ink, Ink.TitleInk))
+            using (AppSurface.Begin(navBar.Body))
             {
-                OpenCreateAlbumSheet(null);
+                DrawLibraryEmpty(VisibleBody(navBar.Body, scale));
+            }
+        }
+        else if (!hasPhotos)
+        {
+            using (AppSurface.Begin(navBar.Body))
+            {
+                DrawFilterEmpty(VisibleBody(navBar.Body, scale));
+            }
+        }
+        else
+        {
+            ImGui.PushID($"photos.level{(int)level}");
+            using (AppSurface.ReserveBottom(bottomInset))
+            using (var surface = AppSurface.BeginEdgeToEdge(surfaceRect))
+            {
+                var origin = ImGui.GetCursorScreenPos();
+                var originY = ImGui.GetCursorPosY();
+                var width = area.Width;
+                var drawList = ImGui.GetWindowDrawList();
+                var height = level switch
+                {
+                    LibraryLevel.Years => DrawYearCards(drawList, origin, width, context.Content, scale),
+                    LibraryLevel.Months => DrawMonthCards(drawList, origin, width, context.Content, scale),
+                    LibraryLevel.Days => DrawDayGrid(drawList, origin, width, context.Content, scale),
+                    _ => DrawFlatGrid(drawList, origin, width, filteredPaths, GridMode.Library, 0, scale),
+                };
+                height += DrawFooter(drawList, new Vector2(origin.X, origin.Y + height), width,
+                    CountLabel(filteredEntries.Length));
+                ApplyJump(surface, level, originY, scale);
+                ImGui.SetCursorScreenPos(origin);
+                ImGui.Dummy(new Vector2(width, height));
             }
 
-            return;
+            ImGui.PopID();
         }
 
-        if (!libraryTools)
+        var buttons = LibraryButtons(hasPhotos);
+        var title = selecting ? SelectionTitle() : Loc.T(L.Photos.Library);
+        var pressed = AppHeader.EndLargeTitle(in navBar, context, "photos.nav.library", title, NavBarStyle.From(ui),
+            buttons);
+        HandleLibraryButton(navBar, pressed, buttons.Length);
+        if (showLevels)
         {
-            return;
-        }
-
-        var sortSlot = SocialChrome.HeaderSlot(area, 0);
-        if (SocialChrome.DrawHeaderIcon(drawList, sortSlot, radius, PhoneIcons.ArrowsSort, HeaderIconSize,
-                Loc.T(L.Photos.SortBy), Ink, Ink.TitleInk, sortMenu.Open || Filter != PhotoFilter.All))
-        {
-            var extent = new Vector2(radius, radius);
-            sortMenu.Toggle(SortMenuId, new Rect(sortSlot - extent, sortSlot + extent));
-        }
-
-        if (canSelect && DrawSelectHeaderIcon(area, 1))
-        {
-            BeginSelect(SelectionScope.Library);
+            DrawLevelBar(context.Content, scale);
         }
     }
+
+    private ReadOnlySpan<NavBarButton> LibraryButtons(bool hasPhotos)
+    {
+        if (selecting)
+        {
+            selectingButtons[0] = new NavBarButton(PhoneIcons.X, Loc.T(L.Common.Cancel));
+            return selectingButtons;
+        }
+
+        if (entries.Length == 0)
+        {
+            return ReadOnlySpan<NavBarButton>.Empty;
+        }
+
+        libraryButtons[0] = new NavBarButton(PhoneIcons.CircleCheck, Loc.T(L.Photos.Select));
+        libraryButtons[1] = new NavBarButton(PhoneIcons.Dots, Loc.T(L.Photos.ViewOptions));
+        return hasPhotos ? libraryButtons : libraryButtons.AsSpan(1, 1);
+    }
+
+    private void HandleLibraryButton(in NavBarFrame navBar, int pressed, int count)
+    {
+        if (count == 0)
+        {
+            return;
+        }
+
+        var menuIndex = count - 1;
+        var menuRect = AppHeader.LargeTitleButtonRect(navBar, menuIndex, count);
+        if (!selecting)
+        {
+            UiAnchors.Report("photos.library.menu", menuRect);
+        }
+
+        if (pressed < 0)
+        {
+            return;
+        }
+
+        if (selecting)
+        {
+            EndSelect();
+            return;
+        }
+
+        if (pressed == menuIndex)
+        {
+            sortMenu.Toggle(SortMenuId, menuRect);
+            return;
+        }
+
+        BeginSelect(SelectionScope.Library);
+    }
+
+    private static Rect VisibleBody(Rect body, float scale) =>
+        new(body.Min, new Vector2(body.Max.X, MathF.Max(body.Min.Y + 1f, body.Max.Y - TabBar.ContentInset(scale))));
+
+    private void DrawLibraryEmpty(Rect body)
+    {
+        var hint = Loc.T(configuration.ImportScreenshots ? L.Photos.EmptyHintScreenshots : L.Photos.UseCameraHint);
+        if (EmptyState.Draw(body, ui, PhoneIcons.Photo, Loc.T(L.Photos.NoPhotos), hint, Loc.T(L.Apps.Camera)))
+        {
+            frameNavigation.Open("camera");
+        }
+    }
+
+    private void DrawFilterEmpty(Rect body)
+    {
+        var favoritesOnly = Filter == PhotoFilter.Favorites;
+        if (EmptyState.Draw(body, ui, favoritesOnly ? PhoneIcons.Heart : PhoneIcons.Photo,
+                Loc.T(favoritesOnly ? L.Photos.NoFavorites : L.Photos.FilterEmpty),
+                Loc.T(favoritesOnly ? L.Photos.NoFavoritesHint : L.Photos.FilterEmptyHint),
+                Loc.T(L.Photos.ShowAllItems)))
+        {
+            SetFilter(PhotoFilter.All);
+        }
+    }
+
+    private float DrawFooter(ImDrawListPtr drawList, Vector2 origin, float width, string label)
+    {
+        var height = FooterHeight * UiScale.Current;
+        var fitted = Typography.FitText(label, width, TextStyles.Footnote);
+        Typography.DrawCentered(drawList, new Vector2(origin.X + width * 0.5f, origin.Y + height * 0.5f), fitted,
+            ui.MutedInk, TextStyles.Footnote);
+        return height;
+    }
+
+    private void ApplyJump(in AppSurface.SurfaceScope surface, LibraryLevel level, float originY, float scale)
+    {
+        if (!pendingJump.Active || pendingJump.Level != level)
+        {
+            return;
+        }
+
+        var target = JumpOffset(level, pendingJump.Key, scale);
+        pendingJump = JumpTarget.None;
+        if (target < 0f)
+        {
+            return;
+        }
+
+        var inline = NavBarMetrics.InlineHeight * scale;
+        surface.JumpTo(MathF.Max(0f, originY + target - inline - JumpMargin * scale));
+    }
+
+    private float JumpOffset(LibraryLevel level, int key, float scale)
+    {
+        if (level == LibraryLevel.Days)
+        {
+            for (var index = 0; index < dayBands.Count; index++)
+            {
+                var band = dayBands[index];
+                if (band.Header && PhotoGrouping.MonthKey(band.Day) == key)
+                {
+                    return band.Top;
+                }
+            }
+
+            return -1f;
+        }
+
+        if (level != LibraryLevel.Months)
+        {
+            return -1f;
+        }
+
+        var width = frameScreen.Width - frameTheme.SidePadding * 2f * scale;
+        var stride = width * MonthCardAspect + CardGap * scale;
+        for (var index = 0; index < monthRuns.Count; index++)
+        {
+            if (PhotoGrouping.YearOfMonthKey(monthRuns[index].Key) == key)
+            {
+                return CardGap * scale + index * stride;
+            }
+        }
+
+        return -1f;
+    }
+
+    private void OpenLevel(LibraryLevel level, int jumpKey)
+    {
+        configuration.PhotosLibraryLevel = (int)level;
+        configuration.Save();
+        pendingJump = jumpKey == 0 ? JumpTarget.None : new JumpTarget(level, jumpKey);
+    }
+
+    private float DrawYearCards(ImDrawListPtr drawList, Vector2 origin, float width, Rect content, float scale)
+    {
+        var left = content.Min.X;
+        var cardWidth = content.Width;
+        var cardHeight = cardWidth * YearCardAspect;
+        var gap = CardGap * scale;
+        var y = origin.Y + gap;
+        var visible = VisibleWindow(cardHeight);
+        for (var index = 0; index < yearRuns.Count; index++)
+        {
+            var run = yearRuns[index];
+            var rect = new Rect(new Vector2(left, y), new Vector2(left + cardWidth, y + cardHeight));
+            y += cardHeight + gap;
+            if (rect.Max.Y < visible.X || rect.Min.Y > visible.Y)
+            {
+                continue;
+            }
+
+            var cover = filteredEntries[run.Start + run.Count / 2].Path;
+            if (DrawLibraryCard(drawList, rect, cover, YearTitle(run.Key), CountLabel(run.Count), TextStyles.Title1,
+                    scale))
+            {
+                OpenLevel(LibraryLevel.Months, run.Key);
+            }
+        }
+
+        return y - origin.Y;
+    }
+
+    private float DrawMonthCards(ImDrawListPtr drawList, Vector2 origin, float width, Rect content, float scale)
+    {
+        var left = content.Min.X;
+        var cardWidth = content.Width;
+        var cardHeight = cardWidth * MonthCardAspect;
+        var gap = CardGap * scale;
+        var y = origin.Y + gap;
+        var visible = VisibleWindow(cardHeight);
+        for (var index = 0; index < monthRuns.Count; index++)
+        {
+            var run = monthRuns[index];
+            var rect = new Rect(new Vector2(left, y), new Vector2(left + cardWidth, y + cardHeight));
+            y += cardHeight + gap;
+            if (rect.Max.Y < visible.X || rect.Min.Y > visible.Y)
+            {
+                continue;
+            }
+
+            var cover = filteredEntries[run.Start].Path;
+            if (DrawLibraryCard(drawList, rect, cover, MonthTitle(run.Key), CountLabel(run.Count), TextStyles.Title2,
+                    scale))
+            {
+                OpenLevel(LibraryLevel.Days, run.Key);
+            }
+        }
+
+        return y - origin.Y;
+    }
+
+    private bool DrawLibraryCard(ImDrawListPtr drawList, Rect rect, string coverPath, string title, string subtitle,
+        in TextStyle titleStyle, float scale)
+    {
+        var hovered = UiInteract.Hover(rect.Min, rect.Max);
+        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var press = PressFx.Scale(ImGui.GetID(title), down, PressFx.CardPressedScale);
+        var half = rect.Size * 0.5f * press;
+        var min = rect.Center - half;
+        var max = rect.Center + half;
+        var rounding = Metrics.Radius.Widget * scale;
+        PhotosChrome.Cover(drawList, GetCover(coverPath) ?? GetThumbnail(coverPath), min, max, rounding, ui, scale,
+            hovered);
+        var scrimTop = max.Y - (max.Y - min.Y) * CardScrimFraction;
+        Squircle.FillVerticalGradient(drawList, new Vector2(min.X, scrimTop), max, rounding,
+            ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0f)), ImGui.GetColorU32(new Vector4(0f, 0f, 0f, CardScrimAlpha)));
+        var inset = CardTitleInset * scale;
+        var textWidth = MathF.Max(1f, max.X - min.X - inset * 2f);
+        var subtitleHeight = Typography.LineHeight(TextStyles.SubheadlineEmphasized);
+        var subtitleTop = max.Y - inset - subtitleHeight;
+        Typography.Draw(drawList, new Vector2(min.X + inset, subtitleTop),
+            Typography.FitText(subtitle, textWidth, TextStyles.SubheadlineEmphasized), WhiteMuted,
+            TextStyles.SubheadlineEmphasized);
+        var titleHeight = Typography.LineHeight(titleStyle);
+        Typography.Draw(drawList, new Vector2(min.X + inset, subtitleTop - titleHeight),
+            Typography.FitText(title, textWidth, titleStyle), White, titleStyle);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        return UiInteract.Click(rect.Min, rect.Max, hovered);
+    }
+
+    private Vector2 VisibleWindow(float margin)
+    {
+        var top = ImGui.GetWindowPos().Y;
+        return new Vector2(top - margin, top + ImGui.GetWindowSize().Y + margin);
+    }
+
+    private float DrawDayGrid(ImDrawListPtr drawList, Vector2 origin, float width, Rect content, float scale)
+    {
+        var columns = Columns;
+        var gap = GridGap * scale;
+        var cell = (width - gap * (columns - 1)) / columns;
+        LayoutDayBands(cell, gap, columns, scale);
+        var visible = VisibleWindow(cell + DayHeaderHeight * scale);
+        for (var index = 0; index < dayBands.Count; index++)
+        {
+            var band = dayBands[index];
+            var top = origin.Y + band.Top;
+            if (top + band.Height < visible.X || top > visible.Y)
+            {
+                continue;
+            }
+
+            if (band.Header)
+            {
+                DrawDayHeader(drawList, content.Min.X, content.Max.X, top, band, scale);
+                continue;
+            }
+
+            for (var column = 0; column < band.PhotoCount; column++)
+            {
+                var absolute = band.PhotoStart + column;
+                var min = new Vector2(origin.X + column * (cell + gap), top);
+                var max = new Vector2(min.X + cell, top + cell);
+                var path = filteredPaths[absolute];
+                if (DrawTile(drawList, min, max, path, false, scale) == TileHit.Open)
+                {
+                    ShowViewer(filteredPaths, absolute, false, true);
+                }
+            }
+        }
+
+        return dayBandsHeight;
+    }
+
+    private void LayoutDayBands(float cell, float gap, int columns, float scale)
+    {
+        if (dayBandsVersion == layoutVersion && MathF.Abs(dayBandsCell - cell) < 0.01f && dayBandsColumns == columns)
+        {
+            return;
+        }
+
+        dayBandsVersion = layoutVersion;
+        dayBandsCell = cell;
+        dayBandsColumns = columns;
+        dayBands.Clear();
+        var headerHeight = DayHeaderHeight * scale;
+        var rowStride = cell + gap;
+        var y = 0f;
+        var index = 0;
+        var end = filteredEntries.Length;
+        while (index < end)
+        {
+            var day = filteredEntries[index].Taken.Date;
+            var dayStart = index;
+            var place = 0u;
+            while (index < end && filteredEntries[index].Taken.Date == day)
+            {
+                if (place == 0)
+                {
+                    place = PlaceOf(filteredEntries[index].Path);
+                }
+
+                index++;
+            }
+
+            var dayCount = index - dayStart;
+            dayBands.Add(new GridBand
+            {
+                Header = true,
+                Day = filteredEntries[dayStart].Taken,
+                DayCount = dayCount,
+                Place = place,
+                Top = y,
+                Height = headerHeight,
+            });
+            y += headerHeight;
+            var rows = (dayCount + columns - 1) / columns;
+            for (var row = 0; row < rows; row++)
+            {
+                var rowStart = dayStart + row * columns;
+                dayBands.Add(new GridBand
+                {
+                    PhotoStart = rowStart,
+                    PhotoCount = Math.Min(columns, dayStart + dayCount - rowStart),
+                    Top = y,
+                    Height = cell,
+                });
+                y += rowStride;
+            }
+        }
+
+        dayBandsHeight = y + GridBottomPad * scale;
+    }
+
+    private void DrawDayHeader(ImDrawListPtr drawList, float left, float right, float top, GridBand band, float scale)
+    {
+        var count = CountLabel(band.DayCount);
+        var countSize = Typography.Measure(count, TextStyles.Footnote);
+        var titleTop = top + DayHeaderTitleDrop * scale;
+        var titleMax = MathF.Max(1f, right - left - countSize.X - Metrics.Space.Md * scale);
+        var title = Typography.FitText(DayTitle(band.Day), titleMax, TextStyles.Headline);
+        var titleHeight = Typography.LineHeight(TextStyles.Headline);
+        var placeName = PhotoPlaces.Name(band.Place);
+        if (placeName.Length > 0)
+        {
+            titleTop -= Typography.LineHeight(TextStyles.Footnote) * 0.5f;
+        }
+
+        Typography.Draw(drawList, new Vector2(left, titleTop), title, ui.TitleInk, TextStyles.Headline);
+        Typography.Draw(drawList, new Vector2(right - countSize.X, titleTop + (titleHeight - countSize.Y) * 0.5f), count,
+            ui.MutedInk, TextStyles.Footnote);
+        if (placeName.Length == 0)
+        {
+            return;
+        }
+
+        Typography.Draw(drawList, new Vector2(left, titleTop + titleHeight + DayHeaderSubtitleGap * scale),
+            Typography.FitText(placeName, right - left, TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
+    }
+
+    private void DrawLevelBar(Rect content, float scale)
+    {
+        if (levelLabels[0] is null)
+        {
+            levelLabels[(int)LibraryLevel.Years] = Loc.T(L.Photos.Years);
+            levelLabels[(int)LibraryLevel.Months] = Loc.T(L.Photos.Months);
+            levelLabels[(int)LibraryLevel.Days] = Loc.T(L.Photos.Days);
+            levelLabels[(int)LibraryLevel.All] = Loc.T(L.Photos.AllPhotos);
+        }
+
+        var zone = TabBar.Zone(content, scale);
+        var width = MathF.Min(LevelBarWidth * scale, content.Width);
+        var bottom = zone.Min.Y - LevelBarGap * scale;
+        var bar = new Rect(new Vector2(content.Center.X - width * 0.5f, bottom - LevelBarHeight * scale),
+            new Vector2(content.Center.X + width * 0.5f, bottom));
+        using var layer = ScreenLayer.Begin("photos.levels", bar, false);
+        UiInteract.HoverOverlay(bar);
+        var drawList = ImGui.GetWindowDrawList();
+        var radius = bar.Height * 0.5f;
+        Material.ThemedGlass(drawList, bar.Min, bar.Max, radius, scale, ui.BackdropColor, TabBar.GlassOpacity);
+        var level = (int)Level;
+        var segment = bar.Width / LevelCount;
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        if (!levelHighlightSettled)
+        {
+            levelHighlight.SnapTo(level);
+            levelHighlightSettled = true;
+        }
+
+        var position = levelHighlight.Step(level, Motion.TabBar, delta);
+        var inset = LevelHighlightInset * scale;
+        var highlightMin = new Vector2(bar.Min.X + segment * position + inset, bar.Min.Y + inset);
+        var highlightMax = new Vector2(highlightMin.X + segment - inset * 2f, bar.Max.Y - inset);
+        Squircle.Fill(drawList, highlightMin, highlightMax, (highlightMax.Y - highlightMin.Y) * 0.5f,
+            ImGui.GetColorU32(Core.Theme.Palette.WithAlpha(ui.Accent, LevelHighlightAlpha)));
+        for (var index = 0; index < LevelCount; index++)
+        {
+            var cellMin = new Vector2(bar.Min.X + segment * index, bar.Min.Y);
+            var cellMax = new Vector2(cellMin.X + segment, bar.Max.Y);
+            UiAnchors.Report(LevelAnchor(index), new Rect(cellMin, cellMax));
+            var active = index == level;
+            var label = Typography.FitText(levelLabels[index], segment - inset * 2f, TextStyles.FootnoteEmphasized);
+            Typography.DrawCentered(drawList, (cellMin + cellMax) * 0.5f, label, active ? ui.Accent : ui.TitleInk,
+                TextStyles.FootnoteEmphasized);
+            var hovered = !UiInteract.InputBlocked && UiInteract.HoverWindowOnly(cellMin, cellMax);
+            if (hovered)
+            {
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            }
+
+            if (UiInteract.Click(cellMin, cellMax, hovered) && !active)
+            {
+                OpenLevel((LibraryLevel)index, 0);
+            }
+        }
+    }
+
+    private static string LevelAnchor(int index) => index switch
+    {
+        0 => "photos.level.years",
+        1 => "photos.level.months",
+        2 => "photos.level.days",
+        _ => "photos.level.all",
+    };
 
     private void DrawSortMenu(Rect screen)
     {
@@ -184,8 +668,11 @@ internal sealed partial class PhotosApp
                 Selected: rowKey == key);
         }
 
-        sortMenuItems[MenuRowFilter] = new DropdownMenu.Item(Loc.T(L.Photos.Filter));
-        sortMenuItems[MenuRowView] = new DropdownMenu.Item(Loc.T(L.Photos.ViewOptions));
+        sortMenuItems[MenuRowFilter] = new DropdownMenu.Item(Loc.T(L.Photos.Filter), PhoneIcons.AdjustmentsHorizontal,
+            Selected: Filter != PhotoFilter.All);
+        sortMenuItems[MenuRowView] = new DropdownMenu.Item(Loc.T(L.Photos.ViewOptions), PhoneIcons.LayoutList);
+        sortMenuItems[MenuRowFolder] = new DropdownMenu.Item(Loc.T(L.Photos.OpenFolder),
+            IconGlyph.Of(FontAwesomeIcon.FolderOpen));
         var picked = sortMenu.Draw(screen, frameTheme, sortMenuItems);
         if (picked < 0)
         {
@@ -201,6 +688,13 @@ internal sealed partial class PhotosApp
         if (picked == MenuRowView)
         {
             sortMenuPage = SortMenuPage.View;
+            return;
+        }
+
+        if (picked == MenuRowFolder)
+        {
+            sortMenu.Close();
+            UrlActions.OpenFolder(library.DirectoryPath);
             return;
         }
 
@@ -275,15 +769,13 @@ internal sealed partial class PhotosApp
     private string ActiveSortLabel(PhotoSortKey key)
     {
         var ascending = configuration.PhotosSortAscending;
-        if (sortRowKey == (int)key && sortRowAscending == ascending &&
-            string.Equals(sortRowLocale, Loc.Current.Code, StringComparison.Ordinal))
+        if (sortRowKey == (int)key && sortRowAscending == ascending)
         {
             return sortRowLabel;
         }
 
         sortRowKey = (int)key;
         sortRowAscending = ascending;
-        sortRowLocale = Loc.Current.Code;
         sortRowLabel = string.Concat(Loc.T(SortLabel(key)), " · ",
             Loc.T(ascending ? AscendingLabel(key) : DescendingLabel(key)));
         return sortRowLabel;
@@ -300,7 +792,6 @@ internal sealed partial class PhotosApp
         configuration.PhotosFilter = (int)filter;
         configuration.Save();
         ApplyFilter();
-        resetScroll = true;
     }
 
     private void SetColumns(int columns)
@@ -313,6 +804,7 @@ internal sealed partial class PhotosApp
 
         configuration.PhotosGridColumns = clamped;
         configuration.Save();
+        InvalidateLayouts();
     }
 
     private static LocString DescendingLabel(PhotoSortKey key) => key switch
@@ -342,239 +834,17 @@ internal sealed partial class PhotosApp
         configuration.PhotosSortAscending = ascending;
         configuration.Save();
         Refresh();
-        resetScroll = true;
     }
 
-    private void DrawOpenFolderFab(Rect body)
+    private struct GridBand
     {
-        if (ComposeFab.Draw(body, "##photosFolderFab", Ink.Accent, IconGlyph.Of(FontAwesomeIcon.FolderOpen),
-                Loc.T(L.Photos.OpenFolder), "photos.openFolder", Ink.AccentDeep, FolderFabRadius))
-        {
-            UrlActions.OpenFolder(library.DirectoryPath);
-        }
-    }
-
-    private void SetMonthlyAlbums(bool enabled)
-    {
-        configuration.PhotosMonthlyAlbums = enabled;
-        configuration.Save();
-    }
-
-    private void DrawTabBar(Rect bar)
-    {
-        SocialChrome.PaintBarBackdrop(ui, ImGui.GetWindowDrawList(), bar, frameScreen);
-        navTabs[LibraryTab] = new NavTab(FontAwesomeIcon.Image, Loc.T(L.Photos.Library),
-            AnchorKey: "photos.tab.library", Glyph: PhoneIcons.Photo, ActiveGlyph: PhoneIcons.PhotoFilled);
-        navTabs[AlbumsTab] = new NavTab(FontAwesomeIcon.Images, Loc.T(L.Photos.Albums),
-            AnchorKey: "photos.tab.albums", Glyph: PhoneIcons.LibraryPhoto);
-        var picked = tabs.Draw(bar, ui, frameTheme, navTabs, segment);
-        if (picked < 0 || picked == segment)
-        {
-            return;
-        }
-
-        segment = picked;
-        configuration.PhotosSegment = picked;
-        configuration.Save();
-        resetScroll = true;
-    }
-
-    private void DrawLibrary(Rect body)
-    {
-        UiAnchors.Report("photos.grid", body);
-        if (entries.Length == 0)
-        {
-            DrawEmpty(body);
-            return;
-        }
-
-        if (filteredEntries.Length == 0)
-        {
-            DrawFilterEmpty(body);
-            return;
-        }
-
-        DrawPhotoGrid(body, filteredEntries, 0, filteredEntries.Length);
-        if (!selecting)
-        {
-            DrawOpenFolderFab(body);
-        }
-    }
-
-    private void DrawEmpty(Rect body)
-    {
-        if (EmptyState.Draw(body, ui, PhoneIcons.Photo, Loc.T(L.Photos.NoPhotos), Loc.T(L.Photos.UseCameraHint),
-                Loc.T(L.Apps.Camera)))
-        {
-            frameNavigation.Open("camera");
-        }
-    }
-
-    private void DrawFilterEmpty(Rect body)
-    {
-        var favoritesOnly = Filter == PhotoFilter.Favorites;
-        if (EmptyState.Draw(body, ui, favoritesOnly ? PhoneIcons.Heart : PhoneIcons.Photo,
-                Loc.T(favoritesOnly ? L.Photos.NoFavorites : L.Photos.FilterEmpty),
-                Loc.T(favoritesOnly ? L.Photos.NoFavoritesHint : L.Photos.FilterEmptyHint),
-                Loc.T(L.Photos.ShowAllItems)))
-        {
-            SetFilter(PhotoFilter.All);
-        }
-    }
-
-    private void DrawPhotoGrid(Rect body, PhotoEntry[] source, int start, int count)
-    {
-        var scale = UiScale.Current;
-        var gridKey = ImGui.GetID("##photoGrid");
-        ImGui.SetCursorScreenPos(body.Min);
-        using (ImRaii.PushStyle(ImGuiStyleVar.WindowPadding, Vector2.Zero))
-        using (var child = ImRaii.Child("##photoGrid", body.Size, false,
-                   DragScrollHost.ScrollFlags(ImGuiWindowFlags.NoBackground)))
-        {
-            if (!child)
-            {
-                return;
-            }
-
-            AppSurface.ResetScrollOnNewVisit();
-            var surface = DragScrollHost.Begin(gridKey);
-            if (resetScroll)
-            {
-                surface.JumpToTop();
-                resetScroll = false;
-            }
-
-            var origin = ImGui.GetCursorScreenPos();
-            var gap = GridGap * scale;
-            var avail = ScrollLayout.StableContentWidth();
-            var cell = (avail - gap * (Columns - 1)) / Columns;
-            var total = LayoutBands(source, start, count, cell, gap, scale);
-            var drawList = ImGui.GetWindowDrawList();
-            var scrollY = ImGui.GetScrollY();
-            var viewHeight = ImGui.GetWindowSize().Y;
-            var margin = cell + SectionHeaderHeight * scale;
-            for (var index = 0; index < bands.Count; index++)
-            {
-                var band = bands[index];
-                if (band.Top + band.Height < scrollY - margin || band.Top > scrollY + viewHeight + margin)
-                {
-                    continue;
-                }
-
-                var screenTop = origin.Y + band.Top;
-                if (band.Header)
-                {
-                    DrawSectionHeader(drawList, origin.X + CellPadX * scale, origin.X + avail - CellPadX * scale,
-                        screenTop, band, scale);
-                    continue;
-                }
-
-                DrawPhotoRow(drawList, band, origin.X, screenTop, cell, gap, source, start, count, scale);
-            }
-
-            ImGui.SetCursorScreenPos(origin);
-            ImGui.Dummy(new Vector2(avail, total));
-        }
-    }
-
-    private float LayoutBands(PhotoEntry[] source, int start, int count, float cell, float gap, float scale)
-    {
-        bands.Clear();
-        var headerHeight = SectionHeaderHeight * scale;
-        var rowStride = cell + gap;
-        var blockGap = SectionBlockGap * scale;
-        var y = GridTopPad * scale;
-        var index = start;
-        var end = start + count;
-        if (SortKey != PhotoSortKey.Date)
-        {
-            var flatRows = (count + Columns - 1) / Columns;
-            for (var row = 0; row < flatRows; row++)
-            {
-                var rowStart = start + row * Columns;
-                bands.Add(new GridBand
-                {
-                    Header = false,
-                    PhotoStart = rowStart,
-                    PhotoCount = Math.Min(Columns, end - rowStart),
-                    Top = y,
-                    Height = cell,
-                });
-                y += rowStride;
-            }
-
-            return y + GridBottomPad * scale;
-        }
-
-        while (index < end)
-        {
-            var day = source[index].Taken.Date;
-            var dayStart = index;
-            while (index < end && source[index].Taken.Date == day)
-            {
-                index++;
-            }
-
-            var dayCount = index - dayStart;
-            bands.Add(new GridBand
-            {
-                Header = true,
-                Day = source[dayStart].Taken,
-                DayCount = dayCount,
-                Top = y,
-                Height = headerHeight,
-            });
-            y += headerHeight;
-            var rows = (dayCount + Columns - 1) / Columns;
-            for (var row = 0; row < rows; row++)
-            {
-                var rowStart = dayStart + row * Columns;
-                var rowCount = Math.Min(Columns, dayStart + dayCount - rowStart);
-                bands.Add(new GridBand
-                {
-                    Header = false,
-                    PhotoStart = rowStart,
-                    PhotoCount = rowCount,
-                    Top = y,
-                    Height = cell,
-                });
-                y += rowStride;
-            }
-
-            y += blockGap;
-        }
-
-        return y + GridBottomPad * scale;
-    }
-
-    private void DrawSectionHeader(ImDrawListPtr drawList, float left, float right, float top, GridBand band,
-        float scale)
-    {
-        var label = DayLabel(band.Day);
-        var count = Loc.Plural(L.Photos.Count, band.DayCount);
-        var centerY = top + SectionHeaderHeight * scale * 0.5f + SectionHeaderDrop * scale;
-        var countSize = Typography.Measure(count, TextStyles.Footnote);
-        var nameMax = MathF.Max(Metrics.Space.Xl * scale, right - left - countSize.X - Metrics.Space.Md * scale);
-        var name = Typography.FitText(label, nameMax, TextStyles.Headline);
-        var nameSize = Typography.Measure(name, TextStyles.Headline);
-        Typography.Draw(drawList, new Vector2(left, centerY - nameSize.Y * 0.5f), name, Ink.TitleInk,
-            TextStyles.Headline);
-        Typography.Draw(drawList, new Vector2(right - countSize.X, centerY - countSize.Y * 0.5f), count, Ink.MutedInk,
-            TextStyles.Footnote);
-    }
-
-    private void DrawPhotoRow(ImDrawListPtr drawList, GridBand band, float leftX, float top, float cell, float gap,
-        PhotoEntry[] source, int sliceStart, int sliceCount, float scale)
-    {
-        for (var column = 0; column < band.PhotoCount; column++)
-        {
-            var absolute = band.PhotoStart + column;
-            var min = new Vector2(leftX + column * (cell + gap), top);
-            var max = new Vector2(min.X + cell, min.Y + cell);
-            if (DrawTile(drawList, min, max, source[absolute].Path, false, scale) == TileHit.Open)
-            {
-                OpenViewer(source, sliceStart, sliceCount, absolute);
-            }
-        }
+        public bool Header;
+        public DateTime Day;
+        public int DayCount;
+        public uint Place;
+        public int PhotoStart;
+        public int PhotoCount;
+        public float Top;
+        public float Height;
     }
 }

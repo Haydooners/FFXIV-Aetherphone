@@ -82,6 +82,21 @@ internal sealed class FeaturedPhotoWidget : IHomeWidget
     public string AppId => "photos";
     public WidgetSizeSet Sizes => WidgetSizeSet.Small | WidgetSizeSet.Medium | WidgetSizeSet.Large;
 
+    public WidgetRoute Target(in WidgetContext context)
+    {
+        if (paths.Length > 0 && !context.Preview)
+        {
+            var show = shows.For(context.InstanceKey);
+            if (show.StartedAt >= 0)
+            {
+                var slide = (Environment.TickCount64 - show.StartedAt) / SlideMilliseconds;
+                library.RequestOpen(paths[IndexFor(show, slide)]);
+            }
+        }
+
+        return WidgetRoute.App(AppId);
+    }
+
     public void Draw(in WidgetContext context)
     {
         RefreshList();

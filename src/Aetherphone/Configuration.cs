@@ -195,7 +195,9 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool CameraGrid { get; set; }
     public bool CameraFlash { get; set; } = true;
     public bool CameraShowUi { get; set; }
+    public int CameraTimerSeconds { get; set; }
     public int PhotosSegment { get; set; }
+    public int PhotosLibraryLevel { get; set; } = 2;
     public int PhotosSortKey { get; set; }
     public bool PhotosSortAscending { get; set; }
     public int PhotosFilter { get; set; }
@@ -404,6 +406,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public List<string> CustomAlbumOrder { get; set; } = new();
     public Dictionary<string, List<string>> CustomAlbumPhotos { get; set; } = new();
     public List<string> PhotoFavorites { get; set; } = new();
+    public Dictionary<string, uint> PhotoPlaces { get; set; } = new();
     public const int VelvetGateVersion = 1;
     public const int VelvetOnboardVersion = 3;
     public bool VelvetAcknowledgedGate { get; set; }

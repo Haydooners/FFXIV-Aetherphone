@@ -5794,6 +5794,13 @@ internal static class L
         public static readonly LocString ModePhoto = new("camera.modePhoto", "PHOTO");
         public static readonly LocString ShowGameUi = new("camera.showGameUi", "Show game UI");
         public static readonly LocString HideGameUi = new("camera.hideGameUi", "Hide game UI");
+        public static readonly LocString FlashOn = new("camera.flashOn", "Flash On");
+        public static readonly LocString FlashOff = new("camera.flashOff", "Flash Off");
+        public static readonly LocString SelfTimer = new("camera.selfTimer", "Self-Timer");
+        public static readonly LocString TimerSeconds = new("camera.timerSeconds", "{0}s");
+        public static readonly LocString Landscape = new("camera.landscape", "Landscape");
+        public static readonly LocString Grid = new("camera.grid", "Grid");
+        public static readonly LocString CaptureFailed = new("camera.captureFailed", "The photo could not be taken. Try again.");
     }
 
     internal static class Contacts
@@ -7240,7 +7247,6 @@ internal static class L
         public static readonly LocString UseCameraHint = new("photos.useCameraHint", "Use the Camera to take a shot");
         public static readonly LocPlural Count = new("photos.count", "{0} Photo", "{0} Photos");
         public static readonly LocString Delete = new("photos.delete", "Delete");
-        public static readonly LocString DeleteConfirm = new("photos.deleteConfirm", "Delete");
         public static readonly LocString DeleteCancel = new("photos.deleteCancel", "Cancel");
         public static readonly LocString Library = new("photos.library", "Library");
         public static readonly LocString Albums = new("photos.albums", "Albums");
@@ -7277,7 +7283,6 @@ internal static class L
         public static readonly LocString Straighten = new("photos.adjust.straighten", "Straighten");
         public static readonly LocString Rotate = new("photos.rotate", "Rotate");
         public static readonly LocString Flip = new("photos.flip", "Flip");
-        public static readonly LocString Strength = new("photos.strength", "Strength");
         public static readonly LocString LookOriginal = new("photos.look.original", "Original");
         public static readonly LocString LookWarm = new("photos.look.warm", "Warm");
         public static readonly LocString LookCool = new("photos.look.cool", "Cool");
@@ -7294,7 +7299,6 @@ internal static class L
         public static readonly LocString AspectNineBySixteen = new("photos.aspect.nineBySixteen", "9:16");
         public static readonly LocString EditFailed = new("photos.editFailed", "The edited photo could not be saved");
         public static readonly LocString EditOpenFailed = new("photos.editOpenFailed", "This photo could not be opened for editing");
-        public static readonly LocString MyAlbums = new("photos.myAlbums", "My Albums");
         public static readonly LocString Months = new("photos.months", "Months");
         public static readonly LocPlural Selected = new("photos.selected", "{0} selected", "{0} selected");
         public static readonly LocString AlbumOptions = new("photos.albumOptions", "Album options");
@@ -7303,7 +7307,6 @@ internal static class L
             new("photos.removeFromAlbumConfirm", "Remove this photo from {0}? It stays in your library.");
         public static readonly LocString SortNewestFirst = new("photos.sortNewestFirst", "Newest First");
         public static readonly LocString SortOldestFirst = new("photos.sortOldestFirst", "Oldest First");
-        public static readonly LocString SortBy = new("photos.sortBy", "Sort by");
         public static readonly LocString SortDate = new("photos.sortDate", "Sort by Date");
         public static readonly LocString SortName = new("photos.sortName", "Sort by Name");
         public static readonly LocString SortSize = new("photos.sortSize", "Sort by Size");
@@ -7353,12 +7356,21 @@ internal static class L
         public static readonly LocString SelectPhotos = new("photos.selectPhotos", "Select Photos");
         public static readonly LocString Collections = new("photos.collections", "Collections");
         public static readonly LocString Info = new("photos.info", "Info");
-        public static readonly LocString InfoTaken = new("photos.infoTaken", "Taken");
         public static readonly LocString InfoDimensions = new("photos.infoDimensions", "Dimensions");
         public static readonly LocString InfoSize = new("photos.infoSize", "Size");
         public static readonly LocString InfoName = new("photos.infoName", "File name");
         public static readonly LocString SizeKilobytes = new("photos.sizeKilobytes", "{0} KB");
         public static readonly LocString SizeMegabytes = new("photos.sizeMegabytes", "{0} MB");
+        public static readonly LocString EmptyHintScreenshots = new("photos.emptyHintScreenshots", "Take a shot with the Camera or press your screenshot key in game. New captures land here.");
+        public static readonly LocString Years = new("photos.years", "Years");
+        public static readonly LocString Days = new("photos.days", "Days");
+        public static readonly LocString AllPhotos = new("photos.allPhotos", "All");
+        public static readonly LocString Pinned = new("photos.pinned", "Pinned");
+        public static readonly LocString Utilities = new("photos.utilities", "Utilities");
+        public static readonly LocString Places = new("photos.places", "Places");
+        public static readonly LocString More = new("photos.more", "More");
+        public static readonly LocString ShowInFolder = new("photos.showInFolder", "Show in Folder");
+        public static readonly LocString InfoPlace = new("photos.infoPlace", "Place");
     }
 
     internal static class Skywatcher
@@ -9203,12 +9215,14 @@ internal static class L
         public static readonly LocString PhotosLibraryBody = new("onboarding.photosLibraryBody", "Shots you take with Camera and new game screenshots land in Library. Tap to open it.");
         public static readonly LocString PhotosOpenTitle = new("onboarding.photosOpenTitle", "Open a photo");
         public static readonly LocString PhotosOpenBody = new("onboarding.photosOpenBody", "Tap any photo to see it full screen, where you can edit it, favorite it or add it to an album.");
-        public static readonly LocString PhotosAlbumsTitle = new("onboarding.photosAlbumsTitle", "Sort into albums");
-        public static readonly LocString PhotosAlbumsBody = new("onboarding.photosAlbumsBody", "Tap Albums to see your own albums next to Favorites and Recently Deleted.");
         public static readonly LocString PhotosNewAlbumTitle = new("onboarding.photosNewAlbumTitle", "Make an album");
         public static readonly LocString PhotosNewAlbumBody = new("onboarding.photosNewAlbumBody", "Tap plus to create an album and give it a name.");
         public static readonly LocString PhotosTrashTitle = new("onboarding.photosTrashTitle", "Undo a delete");
         public static readonly LocString PhotosTrashBody = new("onboarding.photosTrashBody", "Deleted photos wait in Recently Deleted for 30 days, so you can still recover them.");
+        public static readonly LocString PhotosLevelsTitle = new("onboarding.photosLevelsTitle", "Years, months and days");
+        public static readonly LocString PhotosLevelsBody = new("onboarding.photosLevelsBody", "This bar changes how your library is grouped. Tap Months to see each month as a card.");
+        public static readonly LocString PhotosCollectionsTitle = new("onboarding.photosCollectionsTitle", "Browse collections");
+        public static readonly LocString PhotosCollectionsBody = new("onboarding.photosCollectionsBody", "Tap Collections to see your albums, the places you took photos, Favorites and Recently Deleted.");
         public static readonly LocString CameraFrameTitle = new("onboarding.cameraFrameTitle", "Frame your shot");
         public static readonly LocString CameraFrameBody = new("onboarding.cameraFrameBody", "The viewfinder shows the game behind the phone. Move your camera in game to frame the shot.");
         public static readonly LocString CameraSquareTitle = new("onboarding.cameraSquareTitle", "Square or full frame");
@@ -9220,6 +9234,8 @@ internal static class L
         public static readonly LocString CameraRotateBody = new("onboarding.cameraRotateBody", "Tap to turn the phone sideways for wide shots. Tap again to turn it back.");
         public static readonly LocString CameraLastShotTitle = new("onboarding.cameraLastShotTitle", "See your shots");
         public static readonly LocString CameraLastShotBody = new("onboarding.cameraLastShotBody", "Your latest shot appears here. Tap it to open Photos.");
+        public static readonly LocString CameraTimerTitle = new("onboarding.cameraTimerTitle", "Self-timer");
+        public static readonly LocString CameraTimerBody = new("onboarding.cameraTimerBody", "Tap to count down 3 or 10 seconds before the shot, so you have time to pose.");
         public static readonly LocString AetherStreamIntroBody = new("onboarding.aetherStreamIntroBody", "Watch videos inside the game, on your phone or on a big screen in the world, alone or with friends.");
         public static readonly LocString AetherStreamPasteTitle = new("onboarding.aetherStreamPasteTitle", "Play a video");
         public static readonly LocString AetherStreamPasteBody = new("onboarding.aetherStreamPasteBody", "Paste a link from YouTube or another video page to start watching.");
