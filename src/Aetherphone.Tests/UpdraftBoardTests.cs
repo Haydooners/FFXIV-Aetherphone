@@ -459,4 +459,18 @@ public sealed class UpdraftBoardTests
         Assert.Equal(1, Count(events, UpdraftEventKind.PassedBest));
         Assert.True(board.PassedBest);
     }
+
+    [Fact]
+    public void LaunchReportsItsBounceOnTheFirstTick()
+    {
+        var board = new UpdraftBoard();
+        board.StartGame(11, 0f);
+        board.Launch();
+        board.Tick(Frame, UpdraftInput.Keys(0f));
+        var events = board.Events;
+        Assert.True(events.Length > 0);
+        Assert.Equal(UpdraftEventKind.Bounce, events[0].Kind);
+        board.Tick(Frame, UpdraftInput.Keys(0f));
+        Assert.Equal(0, board.Events.Length);
+    }
 }

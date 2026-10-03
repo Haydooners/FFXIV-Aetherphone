@@ -62,6 +62,7 @@ internal sealed class UpdraftBoard
     private int eventCount;
     private int historyCount;
     private bool generating;
+    private bool launchEventPending;
     private float lastPathX;
     private float lastPathY;
     private float lastCrystalTime;
@@ -162,7 +163,7 @@ internal sealed class UpdraftBoard
         Launched = true;
         VelocityY = PlainBounce;
         LastBounceKind = UpdraftCloudKind.Plain;
-        AddEvent(UpdraftEventKind.Bounce, BirdX, BirdY - BirdRadius, 0, 0, UpdraftCloudKind.Plain);
+        launchEventPending = true;
     }
 
     public void PlaceBird(float x, float y, float velocityX, float velocityY)
@@ -194,6 +195,12 @@ internal sealed class UpdraftBoard
         if (!Launched || GameOver)
         {
             return;
+        }
+
+        if (launchEventPending)
+        {
+            launchEventPending = false;
+            AddEvent(UpdraftEventKind.Bounce, BirdX, BirdY - BirdRadius, 0, 0, UpdraftCloudKind.Plain);
         }
 
         var steps = clock.Advance(deltaSeconds);
@@ -231,6 +238,7 @@ internal sealed class UpdraftBoard
         elapsed = 0f;
         HasShield = false;
         Launched = false;
+        launchEventPending = false;
         GameOver = false;
         PassedBest = false;
         Crystals = 0;

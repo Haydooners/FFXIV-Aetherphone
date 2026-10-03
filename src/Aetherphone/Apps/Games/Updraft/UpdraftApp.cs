@@ -110,12 +110,14 @@ internal sealed class UpdraftApp : IMiniGame
         var rowY = body.Min.Y + 30f * scale;
         var restartRadius = 16f * scale;
         var restartCenter = new Vector2(body.Max.X - 22f * scale, rowY);
+        var input = UpdraftInput.Keys(0f);
         if (!finished)
         {
             var layout = UpdraftView.Fit(body, board.CameraBottom, Vector2.Zero);
-            var input = ReadInput(body, layout, restartCenter, restartRadius);
-            board.Tick(fx.ScaleDelta(deltaSeconds), input);
+            input = ReadInput(body, layout, restartCenter, restartRadius);
         }
+
+        board.Tick(fx.ScaleDelta(deltaSeconds), input);
 
         var steadyView = UpdraftView.Fit(body, UpdraftRenderer.InterpolatedCamera(board), Vector2.Zero);
         ReactToEvents(steadyView, scale);
