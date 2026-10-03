@@ -212,17 +212,19 @@ internal sealed class SpotlightOverlay
     private bool DrawRecents(ImDrawListPtr drawList, Rect list, in SpotlightLayout layout, PhoneTheme theme,
         INavigator navigation, float scale, float reveal, bool interactive)
     {
-        var panelHeight = MathF.Min(layout.RecentsPanelHeight, list.Height);
+        var innerWidth = list.Width - layout.PanelPad * 2f;
+        var panelHeight = MathF.Min(layout.RecentsPanelHeight(innerWidth), list.Height);
         var panel = new Rect(list.Min, new Vector2(list.Max.X, list.Min.Y + panelHeight));
         DrawPanel(drawList, panel, in layout, reveal);
         var vertexStart = drawList.VtxBuffer.Size;
         var inner = panel.Inset(layout.PanelPad);
         Typography.Draw(drawList, new Vector2(inner.Min.X + layout.RowInset, inner.Min.Y + layout.HeaderTextOffset),
             Loc.T(L.Spotlight.Recents), MutedInk, TextStyles.FootnoteEmphasized);
-        var cellWidth = layout.RecentCellWidth(inner.Width);
+        var cellWidth = layout.RecentCellWidth(innerWidth);
+        var tileSize = layout.RecentTileSize(innerWidth);
         var tileTop = inner.Min.Y + layout.HeaderHeight;
-        var cellBottom = tileTop + layout.RecentTile + layout.RecentLabelBand;
-        var tileCenterY = tileTop + layout.RecentTile * 0.5f;
+        var cellBottom = tileTop + tileSize + layout.RecentLabelBand;
+        var tileCenterY = tileTop + tileSize * 0.5f;
         var zoom = scale / UiScale.Current;
         var count = Math.Min(recents.Count, RecentPressIds.Length);
         for (var slot = 0; slot < count; slot++)
@@ -239,7 +241,7 @@ internal sealed class SpotlightOverlay
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
             }
 
-            HomeTileView.DrawApp(new Vector2(centerX, tileCenterY), layout.RecentTile, app, theme, press, 1f, true,
+            HomeTileView.DrawApp(new Vector2(centerX, tileCenterY), tileSize, app, theme, press, 1f, true,
                 cellWidth, configuration, zoom);
             if (hovered && UiInteract.Click(cell.Min, cell.Max, true))
             {
