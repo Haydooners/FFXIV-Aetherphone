@@ -25,6 +25,24 @@ public sealed class NewsMaintenanceTests
     }
 
     [Fact]
+    public void ServicesSharingAStartKeepTheirOwnWindows()
+    {
+        var items = new[]
+        {
+            Titled("store", "Mog Station Maintenance (Sep. 17)", Start.AddHours(-2), Start, Start.AddHours(6)),
+            Titled("follow", "All Worlds Maintenance (Sep. 17): Follow-up", Start.AddHours(-3), Start,
+                Start.AddHours(3)),
+            Titled("worlds", "All Worlds Maintenance (Sep. 17)", Start.AddDays(-1), Start, Start.AddHours(4)),
+        };
+        var board = new MaintenanceBoard();
+        board.Sync(items);
+
+        Assert.Equal(Start.AddHours(6).ToUnixTimeSeconds(), board.WindowOf(0).EndUnix);
+        Assert.Equal(Start.AddHours(3).ToUnixTimeSeconds(), board.WindowOf(1).EndUnix);
+        Assert.Equal(Start.AddHours(3).ToUnixTimeSeconds(), board.WindowOf(2).EndUnix);
+    }
+
+    [Fact]
     public void ActiveWindowWinsOverUpcoming()
     {
         var items = new[]
@@ -119,6 +137,10 @@ public sealed class NewsMaintenanceTests
         Assert.False(NewsCategories.AvailableFor(NewsCategory.Status, "cn"));
         Assert.True(NewsCategories.AvailableFor(NewsCategory.Status, "na"));
     }
+
+    private static LodestoneNewsItem Titled(string id, string title, DateTimeOffset published,
+        DateTimeOffset start, DateTimeOffset end) =>
+        new() { Id = id, Title = title, Time = published, Start = start, End = end };
 
     private static LodestoneNewsItem Item(string id, DateTimeOffset published, DateTimeOffset start,
         DateTimeOffset end) =>

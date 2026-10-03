@@ -114,8 +114,9 @@ internal sealed class MaintenanceBoard
         return finished >= 0 ? new MaintenancePick(finished, MaintenanceStatus.Done) : MaintenancePick.None;
     }
 
-    // Follow-up posts repeat the start of the window they amend and carry the real end time, so the most
-    // recently published post among those sharing a start speaks for the whole window.
+    // Follow-up posts repeat the start and the title of the window they amend and carry the real end time, so
+    // the most recently published of those posts speaks for the whole window. Separate services often share a
+    // start time with different ends, which is why the titles must match too.
     private static int LeaderOf(LodestoneNewsItem[] items, int index)
     {
         var own = OwnWindow(items[index]);
@@ -133,7 +134,8 @@ internal sealed class MaintenanceBoard
             }
 
             var window = OwnWindow(items[candidate]);
-            if (window.IsEmpty || window.StartUnix != own.StartUnix)
+            if (window.IsEmpty || window.StartUnix != own.StartUnix ||
+                !SameAnnouncement(items[index].Title, items[candidate].Title))
             {
                 continue;
             }
@@ -148,6 +150,9 @@ internal sealed class MaintenanceBoard
 
         return leader;
     }
+
+    private static bool SameAnnouncement(string title, string otherTitle) =>
+        title.Contains(otherTitle, StringComparison.Ordinal) || otherTitle.Contains(title, StringComparison.Ordinal);
 
     private static MaintenanceWindow OwnWindow(LodestoneNewsItem item)
     {
