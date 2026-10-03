@@ -50,6 +50,8 @@ internal static partial class TourRegistry
         AddPlayTours(tours);
         AddMediaTours(tours);
         AddSystemTours(tours);
+        AddCommunityTours(tours);
+        AddCharacterTours(tours);
         return tours;
     }
 

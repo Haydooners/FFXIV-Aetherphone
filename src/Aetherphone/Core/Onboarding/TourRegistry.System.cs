@@ -28,36 +28,6 @@ internal static partial class TourRegistry
                     "appstore.tab.search"),
                 GuideStep.Note(L.Onboarding.AppStoreRemoveTitle, L.Onboarding.AppStoreRemoveBody),
             });
-        Add(tours, "clock", 2,
-            new[]
-            {
-                GuideStep.Note(L.Apps.Clock, L.Onboarding.ClockIntroBody),
-                GuideStep.Tap(L.Onboarding.ClockTabsTitle, L.Onboarding.ClockTabsBody, "clock.tabs",
-                    "clock.tab.alarms"),
-                GuideStep.Point(L.Onboarding.ClockAddTitle, L.Onboarding.ClockAddBody, "clock.add"),
-            });
-        Add(tours, "calendar", 2,
-            new[]
-            {
-                GuideStep.Point(L.Calendar.Title, L.Onboarding.CalendarBody, "calendar.grid"),
-                GuideStep.Point(L.Onboarding.CalendarAgendaTitle, L.Onboarding.CalendarAgendaBody, "calendar.agenda"),
-                GuideStep.Point(L.Calendar.NewEvent, L.Onboarding.CalendarAddBody, "calendar.new"),
-            });
-        Add(tours, "calculator", 2,
-            new[]
-            {
-                GuideStep.Note(L.Apps.Calculator, L.Onboarding.CalculatorBody),
-                GuideStep.Point(L.Onboarding.CalculatorTapeTitle, L.Onboarding.CalculatorTapeBody,
-                    "calculator.display"),
-            });
-        Add(tours, "timers", 2,
-            new[]
-            {
-                GuideStep.Note(L.Apps.Timers, L.Onboarding.TimersBody),
-                GuideStep.Point(L.Onboarding.TimersResetsTitle, L.Onboarding.TimersResetsBody, "timers.resets"),
-                GuideStep.Point(L.Onboarding.TimersRemindersTitle, L.Onboarding.TimersRemindersBody,
-                    "timers.reminders"),
-            });
         Add(tours, "shortcuts", 1,
             new[]
             {
@@ -70,14 +40,6 @@ internal static partial class TourRegistry
                 GuideStep.Tap(L.Onboarding.ShortcutsPluginsTitle, L.Onboarding.ShortcutsPluginsBody, "shortcuts.tabs",
                     "shortcuts.tab.plugins"),
                 GuideStep.Note(L.Onboarding.ShortcutsHomeTitle, L.Onboarding.ShortcutsHomeBody),
-            });
-        Add(tours, "wallet", 2,
-            new[]
-            {
-                GuideStep.Note(L.Apps.Wallet, L.Onboarding.WalletBody),
-                GuideStep.Point(L.Onboarding.WalletGilTitle, L.Onboarding.WalletGilBody, "wallet.gil"),
-                GuideStep.Point(L.Onboarding.WalletCurrenciesTitle, L.Onboarding.WalletCurrenciesBody,
-                    "wallet.currencies"),
             });
         Add(tours, "news", 2,
             new[]
@@ -95,20 +57,15 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.FeedbackSendTitle, L.Onboarding.FeedbackSendBody, "feedback.send"),
                 GuideStep.Note(L.Onboarding.FeedbackPrivacyTitle, L.Onboarding.FeedbackPrivacyBody),
             });
-        Add(tours, "polls", 2,
+        Add(tours, "health", 1,
             new[]
             {
-                GuideStep.Note(L.Apps.Polls, L.Onboarding.PollsBody),
-                GuideStep.Point(L.Onboarding.PollsVoteTitle, L.Onboarding.PollsVoteBody, "polls.card"),
-                GuideStep.Point(L.Onboarding.PollsResultsTitle, L.Onboarding.PollsResultsBody, "polls.card"),
-            });
-        Add(tours, "announcements", 1,
-            new[]
-            {
-                GuideStep.Note(L.Apps.Announcements, L.Onboarding.AnnouncementsBody),
-                GuideStep.Point(L.Onboarding.AnnouncementsCardTitle, L.Onboarding.AnnouncementsCardBody,
-                    "announcements.card"),
-                GuideStep.Note(L.Onboarding.AnnouncementsQuietTitle, L.Onboarding.AnnouncementsQuietBody),
+                GuideStep.Note(L.Health.Title, L.Onboarding.HealthBody),
+                GuideStep.Point(L.Onboarding.HealthTodayTitle, L.Onboarding.HealthTodayBody, "health.today"),
+                GuideStep.Tap(L.Onboarding.HealthTabsTitle, L.Onboarding.HealthTabsBody, "health.tabs",
+                    "health.tab.goals"),
+                GuideStep.Note(L.Onboarding.HealthGoalsTitle, L.Onboarding.HealthGoalsBody),
+                GuideStep.Note(L.Onboarding.HealthPrivacyTitle, L.Onboarding.HealthPrivacyBody),
             });
     }
 }
