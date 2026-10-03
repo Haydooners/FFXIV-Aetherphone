@@ -128,10 +128,7 @@ internal static class Material
             }
         }
 
-        brightness = Math.Clamp(brightness, 0f, 1f);
-        var tint = tone == GlassTone.Light
-            ? Vector4.Lerp(LightGlassCalm, LightGlassHarsh, brightness)
-            : DarkGlass with { W = DarkGlass.W + (DarkGlassHarshBoost * brightness) };
+        var tint = BodyTint(tone, brightness);
         if (!backdrop)
         {
             tint = tone == GlassTone.Light ? tint with { W = tint.W + FallbackBody } : FrostedFill;
@@ -140,6 +137,33 @@ internal static class Material
         Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(tint with { W = tint.W * opacity }));
         GlassRim(drawList, min, max, radius, scale, tone, opacity);
         PointerLight(drawList, min, max, radius, scale, tone, opacity);
+    }
+
+    public static bool LiquidGlassBand(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float band,
+        GlassTone tone, float opacity = 1f)
+    {
+        if (opacity <= 0f || band <= 0f)
+        {
+            return false;
+        }
+
+        if (!WallpaperBackdrop.FillEdge(drawList, min, max, radius, band, opacity))
+        {
+            return false;
+        }
+
+        var local = WallpaperBackdrop.Brightness(min, max);
+        var tint = BodyTint(tone, local >= 0f ? WallpaperLegibility.Normalize(local) : 0f);
+        Squircle.FillEdge(drawList, min, max, radius, band, ImGui.GetColorU32(tint with { W = tint.W * opacity }));
+        return true;
+    }
+
+    private static Vector4 BodyTint(GlassTone tone, float brightness)
+    {
+        brightness = Math.Clamp(brightness, 0f, 1f);
+        return tone == GlassTone.Light
+            ? Vector4.Lerp(LightGlassCalm, LightGlassHarsh, brightness)
+            : DarkGlass with { W = DarkGlass.W + (DarkGlassHarshBoost * brightness) };
     }
 
     private static void PointerLight(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,

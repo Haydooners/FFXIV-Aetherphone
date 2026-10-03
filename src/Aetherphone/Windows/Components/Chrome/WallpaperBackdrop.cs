@@ -4,6 +4,44 @@ using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Windows.Components;
 
+internal readonly struct BackdropSnapshot
+{
+    public readonly int RecordedFrame;
+    public readonly Rect Quad;
+    public readonly ImTextureID LightHandle;
+    public readonly Vector2 LightUv0;
+    public readonly Vector2 LightUv1;
+    public readonly float[]? LightGrid;
+    public readonly bool HasDark;
+    public readonly ImTextureID DarkHandle;
+    public readonly Vector2 DarkUv0;
+    public readonly Vector2 DarkUv1;
+    public readonly float[]? DarkGrid;
+    public readonly float Darkness;
+    public readonly int FlatFrame;
+    public readonly Vector4 FlatColor;
+
+    public BackdropSnapshot(int recordedFrame, Rect quad, ImTextureID lightHandle, Vector2 lightUv0,
+        Vector2 lightUv1, float[]? lightGrid, bool hasDark, ImTextureID darkHandle, Vector2 darkUv0, Vector2 darkUv1,
+        float[]? darkGrid, float darkness, int flatFrame, Vector4 flatColor)
+    {
+        RecordedFrame = recordedFrame;
+        Quad = quad;
+        LightHandle = lightHandle;
+        LightUv0 = lightUv0;
+        LightUv1 = lightUv1;
+        LightGrid = lightGrid;
+        HasDark = hasDark;
+        DarkHandle = darkHandle;
+        DarkUv0 = darkUv0;
+        DarkUv1 = darkUv1;
+        DarkGrid = darkGrid;
+        Darkness = darkness;
+        FlatFrame = flatFrame;
+        FlatColor = flatColor;
+    }
+}
+
 internal static class WallpaperBackdrop
 {
     private const int FrameTolerance = 1;
@@ -60,6 +98,55 @@ internal static class WallpaperBackdrop
         darkUv1 = darkMaxUv;
         darkGrid = grid;
         darkness = amount;
+    }
+
+    public static BackdropSnapshot Snapshot() =>
+        new(recordedFrame, quad, lightHandle, lightUv0, lightUv1, lightGrid, hasDark, darkHandle, darkUv0, darkUv1,
+            darkGrid, darkness, flatFrame, flatColor);
+
+    public static void Restore(in BackdropSnapshot snapshot)
+    {
+        recordedFrame = snapshot.RecordedFrame;
+        quad = snapshot.Quad;
+        lightHandle = snapshot.LightHandle;
+        lightUv0 = snapshot.LightUv0;
+        lightUv1 = snapshot.LightUv1;
+        lightGrid = snapshot.LightGrid;
+        hasDark = snapshot.HasDark;
+        darkHandle = snapshot.DarkHandle;
+        darkUv0 = snapshot.DarkUv0;
+        darkUv1 = snapshot.DarkUv1;
+        darkGrid = snapshot.DarkGrid;
+        darkness = snapshot.Darkness;
+        flatFrame = snapshot.FlatFrame;
+        flatColor = snapshot.FlatColor;
+    }
+
+    public static bool FillEdge(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float band,
+        float opacity)
+    {
+        if (opacity <= 0f)
+        {
+            return false;
+        }
+
+        requestedFrame = ImGui.GetFrameCount();
+        if (!Available)
+        {
+            return false;
+        }
+
+        var (lightMin, lightMax) = Map(min, max, lightUv0, lightUv1);
+        Squircle.FillImageEdge(drawList, min, max, radius, band, lightHandle, Tint(opacity), lightMin, lightMax, 0f);
+        if (!hasDark || darkness <= 0.001f)
+        {
+            return true;
+        }
+
+        var (darkMin, darkMax) = Map(min, max, darkUv0, darkUv1);
+        Squircle.FillImageEdge(drawList, min, max, radius, band, darkHandle, Tint(opacity * darkness), darkMin,
+            darkMax, 0f);
+        return true;
     }
 
     public static bool Fill(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float opacity, float lens,

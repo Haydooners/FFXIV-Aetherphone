@@ -104,4 +104,65 @@ public sealed class LiveBackdropPlanTests
         Assert.Equal(0.7f, LiveBackdropPlan.FeedbackBlend(LiveGlassSource.Composite));
         Assert.Equal(1f, LiveBackdropPlan.FeedbackBlend(LiveGlassSource.World));
     }
+
+    [Fact]
+    public void PadGrowsEverySideByTheSameAmount()
+    {
+        var rect = new Rect(new Vector2(100f, 200f), new Vector2(300f, 500f));
+        var padded = LiveBackdropPlan.Pad(rect, 24f);
+        Assert.Equal(new Vector2(76f, 176f), padded.Min);
+        Assert.Equal(new Vector2(324f, 524f), padded.Max);
+        Assert.Equal(rect.Center, padded.Center);
+    }
+
+    [Fact]
+    public void UnionSpansBothRects()
+    {
+        var screen = new Rect(new Vector2(120f, 80f), new Vector2(480f, 860f));
+        var glass = new Rect(new Vector2(111f, 71f), new Vector2(489f, 869f));
+        var union = LiveBackdropPlan.Union(screen, glass);
+        Assert.Equal(glass, union);
+        var elsewhere = new Rect(new Vector2(900f, 20f), new Vector2(980f, 180f));
+        var wide = LiveBackdropPlan.Union(screen, elsewhere);
+        Assert.Equal(new Vector2(120f, 20f), wide.Min);
+        Assert.Equal(new Vector2(980f, 860f), wide.Max);
+    }
+
+    [Fact]
+    public void CoversRequiresTheWholeRectInsideTheRegion()
+    {
+        var region = new Rect(new Vector2(0f, 0f), new Vector2(100f, 200f));
+        Assert.True(LiveBackdropPlan.Covers(region, new Rect(new Vector2(10f, 10f), new Vector2(90f, 190f))));
+        Assert.True(LiveBackdropPlan.Covers(region, region));
+        Assert.False(LiveBackdropPlan.Covers(region, new Rect(new Vector2(-1f, 10f), new Vector2(90f, 190f))));
+        Assert.False(LiveBackdropPlan.Covers(region, new Rect(new Vector2(10f, 10f), new Vector2(90f, 201f))));
+    }
+
+    [Fact]
+    public void PaddedRequestStillCoversTheSurfaceAndItsReachAfterASmallMove()
+    {
+        const float scale = 1.25f;
+        var body = new Rect(new Vector2(400f, 300f), new Vector2(502f, 495f));
+        var region = LiveBackdropPlan.Pad(body, LiveBackdropPlan.RegionPadding * scale);
+        var drift = (LiveBackdropPlan.RegionPadding - LiveBackdropPlan.SampleReach) * scale;
+        var moved = body.Translate(new Vector2(drift, -drift));
+        var sampled = LiveBackdropPlan.Pad(moved, LiveBackdropPlan.SampleReach * scale);
+        Assert.True(LiveBackdropPlan.Covers(region, sampled));
+    }
+
+    [Fact]
+    public void SurfaceMovedPastThePaddingIsNotCovered()
+    {
+        const float scale = 1f;
+        var body = new Rect(new Vector2(400f, 300f), new Vector2(502f, 495f));
+        var region = LiveBackdropPlan.Pad(body, LiveBackdropPlan.RegionPadding * scale);
+        var moved = body.Translate(new Vector2(0f, LiveBackdropPlan.RegionPadding * scale + 1f));
+        Assert.False(LiveBackdropPlan.Covers(region, moved));
+    }
+
+    [Fact]
+    public void RegionPaddingLeavesRoomBeyondTheSampleReach()
+    {
+        Assert.True(LiveBackdropPlan.RegionPadding > LiveBackdropPlan.SampleReach);
+    }
 }

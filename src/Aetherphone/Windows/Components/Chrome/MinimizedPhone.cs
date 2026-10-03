@@ -9,6 +9,7 @@ using Aetherphone.Core.Playback;
 using Aetherphone.Core.Shell;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
+using Aetherphone.Core.Wallpapers;
 using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Windows.Components;
@@ -72,6 +73,7 @@ internal sealed class MinimizedPhone : IDisposable
     private readonly ThemeProvider themes;
     private readonly MinimizedFeed feed;
     private readonly MinimapReader minimap;
+    private readonly LiveBackdrop liveBackdrop;
     private readonly ResizeGrip resizeGrip = new();
     private readonly Queue<PhoneNotification> queuedCards = new();
     private Spring hover;
@@ -144,6 +146,7 @@ internal sealed class MinimizedPhone : IDisposable
         feed = new MinimizedFeed(services.Weather, services.Coins, services.AethernetSession, services.Activity,
             services.GameData);
         minimap = new MinimapReader(services.ZoneMapTextures);
+        liveBackdrop = services.LiveBackdrop;
         mapSpan = new Spring(MinimizedShapes.MapSpan(configuration.MinimizedMapZoom));
         notifications.Changed += RefreshBadge;
         notifications.Presented += OnPresented;
@@ -198,12 +201,21 @@ internal sealed class MinimizedPhone : IDisposable
         var scale = Scale;
         var geometry = ChassisGeometry.Puck(body, theme.CaseKind);
         var dl = ImGui.GetForegroundDrawList();
-        DeviceChrome.DrawShell(dl, geometry, scale, theme, 1f);
-        return DrawFace(dl, geometry, theme, delta, true, 1f);
+        var glassBody = !ShowsMinimap && liveBackdrop.TryRecordFor(body);
+        if (glassBody)
+        {
+            Material.LiquidGlass(dl, body.Min, body.Max, geometry.BodyRadius, scale, Material.ToneFor(theme), 0f);
+        }
+        else
+        {
+            DeviceChrome.DrawShell(dl, geometry, scale, theme, 1f);
+        }
+
+        return DrawFace(dl, geometry, theme, delta, true, 1f, glassBody);
     }
 
     public bool DrawFace(ImDrawListPtr dl, in ChassisGeometry geometry, PhoneTheme theme, float delta,
-        bool interactive, float alpha)
+        bool interactive, float alpha, bool glassBody = false)
     {
         clock += delta;
         feed.Update(delta);
@@ -256,14 +268,14 @@ internal sealed class MinimizedPhone : IDisposable
         {
             if (fullBleed)
             {
-                DrawWallpaperBackdrop(dl, geometry, theme, alpha);
+                DrawWallpaperBackdrop(dl, geometry, theme, alpha, glassBody);
             }
 
             DrawParts(dl, screen, scale);
         }
 
         dl.PopClipRect();
-        if (fullBleed)
+        if (fullBleed && !glassBody)
         {
             DeviceChrome.MaskScreenCorners(dl, geometry, theme, scale);
         }
@@ -545,24 +557,36 @@ internal sealed class MinimizedPhone : IDisposable
     }
 
     private static void DrawWallpaperBackdrop(ImDrawListPtr dl, in ChassisGeometry geometry, PhoneTheme theme,
-        float alpha)
+        float alpha, bool rounded)
     {
         var screen = geometry.Screen;
         var library = Plugin.Wallpapers;
         var aspect = screen.Height > 0f ? screen.Width / screen.Height : 0.5f;
-        WallpaperRenderer.DrawSingle(dl, screen, geometry.ScreenRadius, library.Resolve(theme.LightWallpaperId),
-            aspect, alpha, theme.ScreenBase);
+        DrawWallpaperLayer(dl, screen, geometry.ScreenRadius, library.Resolve(theme.LightWallpaperId), aspect, alpha,
+            theme.ScreenBase, rounded);
         var darkness = library.ThemeDarkness;
         if (darkness > 0.001f)
         {
-            WallpaperRenderer.DrawSingle(dl, screen, geometry.ScreenRadius, library.Resolve(theme.DarkWallpaperId),
-                aspect, alpha * darkness, null);
+            DrawWallpaperLayer(dl, screen, geometry.ScreenRadius, library.Resolve(theme.DarkWallpaperId), aspect,
+                alpha * darkness, null, rounded);
         }
 
         var scrim = CalmWallpaperScrim +
                     (HarshWallpaperScrim - CalmWallpaperScrim) * WallpaperLegibility.Strength(theme);
         Squircle.Fill(dl, screen.Min, screen.Max, geometry.ScreenRadius,
             ImGui.GetColorU32(new Vector4(0f, 0f, 0f, scrim * alpha)));
+    }
+
+    private static void DrawWallpaperLayer(ImDrawListPtr drawList, Rect screen, float radius, WallpaperEntry entry,
+        float aspect, float alpha, Vector4? fallback, bool rounded)
+    {
+        if (rounded)
+        {
+            WallpaperRenderer.DrawSingleRounded(drawList, screen, radius, entry, aspect, alpha, fallback);
+            return;
+        }
+
+        WallpaperRenderer.DrawSingle(drawList, screen, radius, entry, aspect, alpha, fallback);
     }
 
     private Rect SectionRect(Rect screen, float top, float height) =>

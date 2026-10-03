@@ -148,8 +148,7 @@ internal static class DeviceChrome
         Squircle.Fill(dl, chassis.Glass.Min, chassis.Glass.Max, chassis.GlassRadius, ImGui.GetColorU32(theme.Glass));
         Squircle.Fill(dl, chassis.Screen.Min, chassis.Screen.Max, chassis.ScreenRadius,
             ImGui.GetColorU32(theme.ScreenBase));
-        var step = ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.55f));
-        Squircle.Stroke(dl, chassis.Glass.Min, chassis.Glass.Max, chassis.GlassRadius, step, 1f * scale);
+        GlassStep(dl, chassis, scale);
         ScreenRecess(dl, chassis, scale);
     }
 
@@ -167,8 +166,7 @@ internal static class DeviceChrome
         Squircle.Fill(dl, chassis.Glass.Min, chassis.Glass.Max, chassis.GlassRadius, ImGui.GetColorU32(glass));
         Squircle.Fill(dl, chassis.Screen.Min, chassis.Screen.Max, chassis.ScreenRadius,
             ImGui.GetColorU32(theme.ScreenBase));
-        var step = ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.55f));
-        Squircle.Stroke(dl, chassis.Glass.Min, chassis.Glass.Max, chassis.GlassRadius, step, 1f * scale);
+        GlassStep(dl, chassis, scale);
         ScreenRecess(dl, chassis, scale);
     }
 
@@ -241,9 +239,34 @@ internal static class DeviceChrome
     internal static void RailFinish(ImDrawListPtr dl, in ChassisGeometry chassis, float scale, in CaseFinish finish)
     {
         Chamfer(dl, chassis, scale, finish);
-        var step = ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.55f));
-        Squircle.Stroke(dl, chassis.Glass.Min, chassis.Glass.Max, chassis.GlassRadius, step, 1f * scale);
+        GlassStep(dl, chassis, scale);
         ScreenRecess(dl, chassis, scale);
+    }
+
+    public static void DrawLiveBand(ImDrawListPtr drawList, in ChassisGeometry chassis, float scale)
+    {
+        var band = chassis.Screen.Min.X - chassis.Glass.Min.X;
+        if (band <= 0f)
+        {
+            return;
+        }
+
+        var snapshot = WallpaperBackdrop.Snapshot();
+        if (Plugin.LiveBackdrop.TryRecordFor(chassis.Glass) &&
+            Material.LiquidGlassBand(drawList, chassis.Glass.Min, chassis.Glass.Max, chassis.GlassRadius, band,
+                GlassTone.Dark))
+        {
+            GlassStep(drawList, chassis, scale);
+            ScreenRecess(drawList, chassis, scale);
+        }
+
+        WallpaperBackdrop.Restore(snapshot);
+    }
+
+    private static void GlassStep(ImDrawListPtr drawList, in ChassisGeometry chassis, float scale)
+    {
+        var step = ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.55f));
+        Squircle.Stroke(drawList, chassis.Glass.Min, chassis.Glass.Max, chassis.GlassRadius, step, 1f * scale);
     }
 
     private static void ScreenRecess(ImDrawListPtr dl, in ChassisGeometry chassis, float scale)
