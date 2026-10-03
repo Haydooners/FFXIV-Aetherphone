@@ -13,487 +13,80 @@ namespace Aetherphone.Apps.Music;
 
 internal sealed partial class MusicApp
 {
-    private const float CommunityRowHeight = 68f;
     private const float StationHeaderHeight = 190f;
-    private const float StationHeaderPillOffset = 88f;
-    private const float StationHeaderNameOffset = 62f;
+    private const float StationHeaderPillOffset = 62f;
     private const float StationHeaderHostOffset = 30f;
     private const float StationPlayRadius = 26f;
-    private const int CommunityHomeRows = 3;
-    private const float CommunityShelfStatusHeight = 34f;
-
-    private static readonly string[] LinkLabels =
-    {
-        "Twitch", "YouTube", "Discord", "Bluesky", "X", "Ko-fi", "Patreon",
-    };
-
-    private const int MaxStationTags = 5;
+    private const int TwitchLinkKind = 0;
     private const int RecentTrackRows = 12;
     private const int RecentTrackPreviewRows = 5;
     private const float TrackRowHeight = 44f;
     private const float TrackSquareSize = 26f;
     private const float OnAirCardHeight = 52f;
 
-    private readonly ChipRail tagRail = new();
+    private static readonly string[] LinkLabels =
+    {
+        "Twitch", "YouTube", "Discord", "Bluesky", "X", "Ko-fi", "Patreon",
+    };
+
     private readonly ChipRail stationTagRail = new();
     private readonly ChipRail linkRail = new();
     private readonly string[] linkLabels = new string[7];
     private readonly bool[] linkActive = new bool[7];
     private readonly string[] linkTargets = new string[7];
-    private readonly string[] tagFilterLabels = new string[MaxStationTags * 8 + 1];
-    private readonly bool[] tagFilterActive = new bool[MaxStationTags * 8 + 1];
-    private readonly List<string> knownTags = new();
-    private readonly List<CommunityStationDto> filteredStations = new();
-    private string tagFilter = string.Empty;
     private RadioTrackDto[] splitTrackSource = Array.Empty<RadioTrackDto>();
     private string[] trackTitles = Array.Empty<string>();
     private string[] trackArtists = Array.Empty<string>();
+    private string openedStationId = string.Empty;
     private bool showAllTracks;
 
-    private void OpenCommunity()
+    private CommunityStationDto? ViewedStation(string stationId)
     {
-        community.Refresh();
-        SelectTab(MusicTab.Live);
-    }
-
-    private void OpenCommunityWithTag(string tag)
-    {
-        tagFilter = tag;
-        tagRail.Reset();
-        routers[(int)MusicTab.Live].Reset();
-        tab = MusicTab.Live;
-    }
-
-    private void OpenStationPage(CommunityStationDto station)
-    {
-        viewedStationId = station.Id;
-        showAllTracks = false;
-        community.OpenStation(station.Id, station);
-        Router.Push(View.Station);
-    }
-
-    private void PopStationPage()
-    {
-        Router.Pop();
-    }
-
-    private CommunityStationDto? ViewedStation()
-    {
-        return community.TryResolve(viewedStationId, out var station) ? station : null;
-    }
-
-    private bool IsCurrentCommunityStation(CommunityStationDto station)
-    {
-        return playback.RadioActive && playback.Radio.CurrentStationInfo.CommunityId == station.Id;
-    }
-
-    private void PlayCommunityStation(CommunityStationDto station)
-    {
-        playSource = Loc.T(L.Music.CommunityRadio);
-        var snapshot = community.Stations;
-        for (var index = 0; index < snapshot.Length; index++)
+        if (community.TryResolve(stationId, out var station))
         {
-            if (string.Equals(snapshot[index].Id, station.Id, StringComparison.Ordinal))
-            {
-                playback.PlayStations(CommunityRadioService.ToQueue(snapshot), index);
-                return;
-            }
+            return station;
         }
 
-        playback.PlayStations(new[] { CommunityRadioService.ToStation(station) }, 0);
+        if (!string.Equals(openedStationId, stationId, StringComparison.Ordinal))
+        {
+            openedStationId = stationId;
+            community.OpenStation(stationId, null);
+        }
+
+        return null;
     }
 
-    private void DrawCommunitySection(float scale)
+    private string CommunityStationTitle(string stationId)
     {
-        var stations = community.Stations;
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ScrollLayout.StableContentWidth();
-        var iconBox = 30f * scale;
-        var title = Typography.FitText(Loc.T(L.Music.CommunityRadio), width - iconBox - 8f * scale, TextStyles.Title3);
-        var titleSize = Typography.Measure(title, TextStyles.Title3);
-        var headingMin = origin;
-        var headingMax = new Vector2(origin.X + width, origin.Y + titleSize.Y);
-        var hovered = UiInteract.Hover(headingMin, headingMax);
-        Typography.Draw(origin, title, ui.Palette.HeadingInk, TextStyles.Title3);
-        var iconCenter = new Vector2(origin.X + width - iconBox * 0.5f, origin.Y + titleSize.Y * 0.5f);
-        AppSkin.Icon(iconCenter, IconGlyph.Of(FontAwesomeIcon.ChevronRight), ui.MutedInk, 0.8f);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(headingMin, headingMax, hovered))
-        {
-            OpenCommunity();
-        }
-
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        if (stations.Length == 0)
-        {
-            DrawCommunityShelfStatus(scale);
-            return;
-        }
-
-        var shown = Math.Min(stations.Length, CommunityHomeRows);
-        for (var index = 0; index < shown; index++)
-        {
-            DrawCommunityRow(scale, stations[index], 6f);
-        }
+        return community.TryResolve(stationId, out var station) ? station.Name : Loc.T(L.Music.CommunityRadio);
     }
 
-    private void DrawCommunityShelfStatus(float scale)
-    {
-        var retryable = !community.Loading && !community.Loaded && community.IsSignedIn;
-        var label = community.Loading
-            ? Loc.T(L.Common.Loading)
-            : community.Loaded
-                ? Loc.T(L.Music.CommunityEmpty)
-                : retryable
-                    ? Loc.T(L.Music.CommunityOffline)
-                    : Loc.T(L.Music.StationSignedOut);
-
-        var width = ScrollLayout.StableContentWidth();
-        var height = CommunityShelfStatusHeight * scale;
-        var origin = ImGui.GetCursorScreenPos();
-        var min = origin;
-        var max = new Vector2(origin.X + width, origin.Y + height);
-        var hovered = retryable && UiInteract.Hover(min, max);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        var drawList = ImGui.GetWindowDrawList();
-        var retry = retryable ? Loc.T(L.Common.Retry) : string.Empty;
-        var retryWidth = retry.Length == 0 ? 0f : Typography.Measure(retry, TextStyles.Subheadline).X + 12f * scale;
-        var fitted = Typography.FitText(label, width - retryWidth, TextStyles.Subheadline);
-        var size = Typography.Measure(fitted, TextStyles.Subheadline);
-        var textY = origin.Y + (height - size.Y) * 0.5f;
-        Typography.Draw(drawList, new Vector2(origin.X, textY), fitted, ui.MutedInk, TextStyles.Subheadline);
-        if (retry.Length > 0)
-        {
-            Typography.Draw(drawList, new Vector2(max.X - retryWidth + 12f * scale, textY), retry, ui.Accent,
-                TextStyles.Subheadline);
-        }
-
-        ImGui.Dummy(new Vector2(width, height));
-        if (retryable && UiInteract.Click(min, max, hovered))
-        {
-            community.RetryDirectory();
-        }
-    }
-
-    private void DrawLive(in PhoneContext context)
+    private void DrawCommunityStation(in PhoneContext context, in MusicRoute route)
     {
         var scale = UiScale.Current;
-        var content = context.Content;
         community.EnsureFresh(true);
-        community.EnsureMine();
-        DrawTopBar(context, Loc.T(L.Music.TabLive), null);
-        DrawMyStationEntry(content, scale);
-        var body = ScrollBody(content, scale);
-        var stations = community.Stations;
-        ApplyTagFilter(stations);
-        using (AppSurface.Begin(body))
-        {
-            ImGui.Dummy(new Vector2(0f, 6f * scale));
-            DrawLiveGroup(scale, LiveGroup.OnAir, Loc.T(L.Music.OnAirSection));
-            DrawLiveDjsSection(scale);
-            DrawShelfHeading(Loc.T(L.Music.CommunityRadio), scale);
-            if (stations.Length == 0)
-            {
-                DrawCommunityShelfStatus(scale);
-            }
-            else
-            {
-                DrawTagFilterRail(scale, stations);
-                DrawLiveGroup(scale, LiveGroup.Upcoming, Loc.T(L.Music.UpNextSection));
-                DrawLiveGroup(scale, LiveGroup.Followed, Loc.T(L.Music.FollowingSection));
-                DrawLiveGroup(scale, LiveGroup.Resting, Loc.T(L.Music.AllStationsSection));
-            }
-            ImGui.Dummy(new Vector2(0f, 10f * scale));
-        }
-    }
-
-    private enum LiveGroup : byte
-    {
-        OnAir,
-        Upcoming,
-        Followed,
-        Resting,
-    }
-
-    private static LiveGroup GroupOf(CommunityStationDto station)
-    {
-        if (station.IsLive)
-        {
-            return LiveGroup.OnAir;
-        }
-
-        if (station.NextBroadcastAtUnix > 0)
-        {
-            return LiveGroup.Upcoming;
-        }
-
-        return station.IsFollowing ? LiveGroup.Followed : LiveGroup.Resting;
-    }
-
-    private void DrawLiveGroup(float scale, LiveGroup group, string heading)
-    {
-        var any = false;
-        for (var index = 0; index < filteredStations.Count; index++)
-        {
-            if (GroupOf(filteredStations[index]) != group)
-            {
-                continue;
-            }
-
-            if (!any)
-            {
-                any = true;
-                DrawShelfHeading(heading, scale);
-            }
-
-            DrawCommunityRow(scale, filteredStations[index], 6f);
-        }
-    }
-
-    private void ApplyTagFilter(CommunityStationDto[] stations)
-    {
-        filteredStations.Clear();
-        for (var index = 0; index < stations.Length; index++)
-        {
-            if (GroupOf(stations[index]) == LiveGroup.OnAir || tagFilter.Length == 0 || HasTag(stations[index], tagFilter))
-            {
-                filteredStations.Add(stations[index]);
-            }
-        }
-    }
-
-    private static bool HasTag(CommunityStationDto station, string tag)
-    {
-        for (var index = 0; index < station.Tags.Length; index++)
-        {
-            if (string.Equals(station.Tags[index], tag, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private void DrawTagFilterRail(float scale, CommunityStationDto[] stations)
-    {
-        knownTags.Clear();
-        for (var index = 0; index < stations.Length && knownTags.Count < tagFilterLabels.Length - 1; index++)
-        {
-            var tags = stations[index].Tags;
-            for (var tagIndex = 0; tagIndex < tags.Length; tagIndex++)
-            {
-                if (tags[tagIndex].Length > 0 && !knownTags.Contains(tags[tagIndex]))
-                {
-                    knownTags.Add(tags[tagIndex]);
-                }
-            }
-        }
-
-        if (knownTags.Count == 0)
-        {
-            return;
-        }
-
-        tagFilterLabels[0] = Loc.T(L.Music.AllTags);
-        tagFilterActive[0] = tagFilter.Length == 0;
-        for (var index = 0; index < knownTags.Count; index++)
-        {
-            tagFilterLabels[index + 1] = knownTags[index];
-            tagFilterActive[index + 1] = string.Equals(knownTags[index], tagFilter, StringComparison.OrdinalIgnoreCase);
-        }
-
-        var count = knownTags.Count + 1;
-        var tapped = tagRail.Draw(ui, tagFilterLabels.AsSpan(0, count), tagFilterActive.AsSpan(0, count));
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
-        if (tapped < 0)
-        {
-            return;
-        }
-
-        tagFilter = tapped == 0 || tagFilterActive[tapped] ? string.Empty : knownTags[tapped - 1];
-    }
-
-    private void DrawMyStationEntry(Rect content, float scale)
-    {
-        if (!community.OwnsStation)
-        {
-            return;
-        }
-
-        var center = new Vector2(content.Max.X - 26f * scale, content.Min.Y + TopBarHeight * scale * 0.5f);
-        if (ui.IconButton(center, 16f * scale, IconGlyph.Of(FontAwesomeIcon.BroadcastTower), ui.TitleInk,
-                AppSkin.Transparent, 0.8f, Loc.T(L.Music.MyStation)))
-        {
-            OpenMyStation();
-        }
-    }
-
-    private void DrawCommunityEmpty(Rect body, float scale)
-    {
-        if (community.Loading)
-        {
-            LoadingPulse.Draw(body.Center, 16f * scale, ui.Accent, ui.MutedInk, LoadingPulse.SafeLabel());
-            return;
-        }
-
-        if (!community.Loaded)
-        {
-            DrawCommunityFailure(body);
-            return;
-        }
-
-        EmptyState.Draw(body, ui, FontAwesomeIcon.BroadcastTower, Loc.T(L.Music.CommunityEmpty),
-            Loc.T(L.Music.CommunityEmptySub));
-    }
-
-    private void DrawCommunityFailure(Rect body)
-    {
-        if (!community.IsSignedIn)
-        {
-            EmptyState.Draw(body, ui, FontAwesomeIcon.UserSlash, Loc.T(L.Music.StationSignedOut),
-                Loc.T(L.Music.StationSignedOutSub));
-            return;
-        }
-
-        if (EmptyState.Draw(body, ui, FontAwesomeIcon.ExclamationTriangle, Loc.T(L.Music.CommunityOffline),
-                Loc.T(L.Music.StationOfflineSub), Loc.T(L.Common.Retry)))
-        {
-            community.RetryDirectory();
-        }
-    }
-
-    private void DrawCommunityRow(float scale, CommunityStationDto station, float sideInset)
-    {
-        var rowHeight = CommunityRowHeight * scale;
-        var drawList = ImGui.GetWindowDrawList();
-        var cell = FeedCell.Begin(drawList, rowHeight, ui.HoverWash);
-        var min = cell.Bounds.Min;
-        var max = cell.Bounds.Max;
-        var inset = sideInset * scale;
-        var artSize = 50f * scale;
-        var artMin = new Vector2(min.X + inset, min.Y + (rowHeight - artSize) * 0.5f);
-        var artMax = artMin + new Vector2(artSize, artSize);
-        DrawStationArt(drawList, artMin, artMax, station, 10f * scale);
-
-        var current = IsCurrentCommunityStation(station);
-        var textLeft = artMax.X + 12f * scale;
-        var textWidth = max.X - inset - (current ? 34f : 8f) * scale - textLeft;
-        var nameY = min.Y + 12f * scale;
-        var fittedName = Typography.FitText(station.Name, textWidth, TextStyles.BodyEmphasized);
-        Typography.Draw(drawList, new Vector2(textLeft, nameY), fittedName, current ? ui.Accent : ui.TitleInk,
-            TextStyles.BodyEmphasized);
-
-        var statusY = min.Y + 33f * scale;
-        DrawLiveMark(drawList, new Vector2(textLeft, statusY), scale, station, textWidth);
-
-        var nowPlaying = NowPlayingFor(station);
-        var subtitle = nowPlaying.Length > 0 ? nowPlaying : ScheduleLine(station);
-        if (subtitle.Length == 0)
-        {
-            subtitle = station.Description;
-        }
-
-        if (subtitle.Length > 0)
-        {
-            var fittedSubtitle = Typography.FitText(subtitle, textWidth, TextStyles.Caption1);
-            Typography.Draw(drawList, new Vector2(textLeft, min.Y + 47f * scale), fittedSubtitle, ui.MutedInk,
-                TextStyles.Caption1);
-        }
-
-        if (current)
-        {
-            Equalizer.Draw(drawList, new Vector2(max.X - inset - 14f * scale, min.Y + rowHeight * 0.5f), scale,
-                17f * scale, clock, ui.Accent, 1f, playback.IsPlaying);
-        }
-
-        if (cell.Tapped)
-        {
-            OpenStationPage(station);
-        }
-
-        FeedCell.End(drawList, cell, ui.Hairline);
-    }
-
-    private void DrawStationArt(ImDrawListPtr drawList, Vector2 min, Vector2 max, CommunityStationDto station,
-        float rounding, ImDrawFlags corners = ImDrawFlags.RoundCornersAll)
-    {
-        if (station.ArtworkUrl.Length > 0 && Thumb(station.ArtworkUrl).Texture is { } texture)
-        {
-            var (uv0, uv1) = ImageFit.Cover(texture.Size.X, texture.Size.Y, max.X - min.X, max.Y - min.Y);
-            drawList.AddImageRounded(texture.Handle, min, max, uv0, uv1, 0xFFFFFFFFu, rounding, corners);
-            return;
-        }
-
-        drawList.AddImageRounded(artwork.HandleForName(station.Name), min, max, Vector2.Zero, Vector2.One,
-            0xFFFFFFFFu, rounding, corners);
-    }
-
-    private void DrawLiveMark(ImDrawListPtr drawList, Vector2 origin, float scale, CommunityStationDto station,
-        float available)
-    {
-        if (!station.IsLive)
-        {
-            var offAir = Typography.FitText(OffAirMark(station), available, TextStyles.Caption1);
-            Typography.Draw(drawList, origin, offAir, ui.MutedInk, TextStyles.Caption1);
-            return;
-        }
-
-        var label = string.Format(Loc.T(L.Music.ListeningCount), station.Listeners);
-        LivePill.Draw(drawList, origin, LiveLabel(label), ui.Theme.Danger, clock, scale);
-    }
-
-    private static string LiveLabel(string detail) => Loc.T(L.Music.LiveBadge) + " · " + detail;
-
-    private static string OffAirMark(CommunityStationDto station)
-    {
-        var offAir = Loc.T(L.Music.OffAir);
-        if (station.NextBroadcastAtUnix > 0)
-        {
-            return offAir + " · " + TimeText.FutureMoment(station.NextBroadcastAtUnix);
-        }
-
-        if (station.LastLiveAtUnix > 0)
-        {
-            return string.Format(Loc.T(L.Music.LastLive), TimeText.Ago(station.LastLiveAtUnix));
-        }
-
-        return offAir;
-    }
-
-    private void DrawStationPage(in PhoneContext context)
-    {
-        var scale = UiScale.Current;
-        var content = context.Content;
-        community.EnsureFresh(true);
-        var station = ViewedStation();
+        var station = ViewedStation(route.Key);
+        var frame = BeginPage(context);
         if (station is null)
         {
-            DrawTopBar(context, Loc.T(L.Music.CommunityRadio), PopStationPage);
-            DrawStationPlaceholder(ScrollBody(content, scale), scale);
+            DrawStationPlaceholder(Unobstructed(frame.Body), scale);
+            EndPage(in frame, context, Loc.T(L.Music.CommunityRadio));
             return;
         }
 
         community.EnsureTracks(station.Id);
-        DrawTopBar(context, string.Empty, PopStationPage);
-        var body = ScrollBody(content, scale);
-        using (AppSurface.Begin(body))
+        using (AppSurface.Begin(frame.Body))
         {
             DrawStationHeader(scale, station);
             DrawStationActions(scale, station);
             DrawStationBody(scale, station);
             ImGui.Dummy(new Vector2(0f, 12f * scale));
         }
+
+        EndPage(in frame, context, station.Name);
     }
+
+    private void SearchForTrack(string title) => OpenSearchFor(title);
 
     private void DrawStationHeader(float scale, CommunityStationDto station)
     {
@@ -524,10 +117,6 @@ internal sealed partial class MusicApp
             Typography.Draw(drawList, new Vector2(inset, pillY), resting, ui.MutedInk, TextStyles.Caption1);
         }
 
-        var nameStyle = TextStyles.Title1;
-        var name = Typography.FitText(station.Name, available, nameStyle);
-        Typography.Draw(drawList, new Vector2(inset, max.Y - StationHeaderNameOffset * scale), name, ui.TitleInk,
-            nameStyle);
         DrawHost(drawList, station, inset, max.Y - StationHeaderHostOffset * scale, available, scale);
 
         ImGui.SetCursorScreenPos(origin);
@@ -581,7 +170,7 @@ internal sealed partial class MusicApp
         var rowLeft = left;
         var center = new Vector2(rowLeft + radius, top + radius);
 
-        if (station.OwnerAvatarUrl.Length > 0 && Thumb(station.OwnerAvatarUrl, radius * 2f).Texture is { } avatar)
+        if (station.OwnerAvatarUrl.Length > 0 && images.Sized(station.OwnerAvatarUrl, radius * 2f) is { } avatar)
         {
             drawList.AddImageRounded(avatar.Handle, center - new Vector2(radius, radius),
                 center + new Vector2(radius, radius), Vector2.Zero, Vector2.One, 0xFFFFFFFFu, radius,
@@ -610,16 +199,6 @@ internal sealed partial class MusicApp
         }
 
         return resting + " · " + Loc.Plural(L.Music.StationFollowers, station.Followers);
-    }
-
-    private static string ScheduleLine(CommunityStationDto station)
-    {
-        if (station.NextBroadcastAtUnix <= 0)
-        {
-            return string.Empty;
-        }
-
-        return string.Format(Loc.T(L.Music.NextBroadcast), TimeText.FutureMoment(station.NextBroadcastAtUnix));
     }
 
     private void DrawStationActions(float scale, CommunityStationDto station)
@@ -677,8 +256,6 @@ internal sealed partial class MusicApp
         ImGui.Dummy(new Vector2(width, rowHeight + Metrics.Space.Md * scale));
     }
 
-    private const int TwitchLinkKind = 0;
-
     private static string LinkUrl(CommunityStationDto station, int kind)
     {
         for (var index = 0; index < station.Links.Length; index++)
@@ -692,8 +269,6 @@ internal sealed partial class MusicApp
         return string.Empty;
     }
 
-    /// A broadcaster who streams on Twitch wants their audience there, not here, so their channel
-    /// gets a real button rather than one pill among seven. It opens Twitch and plays nothing.
     private void DrawWatchOnTwitch(float scale, CommunityStationDto station)
     {
         var url = LinkUrl(station, TwitchLinkKind);
@@ -828,7 +403,7 @@ internal sealed partial class MusicApp
     {
         if (community.TracksLoading)
         {
-            DrawShelfHeading(Loc.T(L.Music.LastPlayed), scale);
+            SectionHeader.Draw(ui, Loc.T(L.Music.LastPlayed), false, 0f);
             InfiniteScroll.DrawLoadingRow(ImGui.GetCursorScreenPos().X + width * 0.5f, ui.MutedInk);
             return;
         }
@@ -840,7 +415,7 @@ internal sealed partial class MusicApp
         }
 
         EnsureTrackSplits();
-        DrawShelfHeading(Loc.T(L.Music.LastPlayed), scale);
+        SectionHeader.Draw(ui, Loc.T(L.Music.LastPlayed), false, 0f);
         var shown = Math.Min(recent.Length, showAllTracks ? RecentTrackRows : RecentTrackPreviewRows);
         for (var index = 0; index < shown; index++)
         {
@@ -921,14 +496,6 @@ internal sealed partial class MusicApp
         FeedCell.End(drawList, cell, ui.Hairline);
     }
 
-    private void SearchForTrack(string title)
-    {
-        searchDraft = title;
-        BeginSearch(title);
-        Router.Reset();
-        Router.Push(View.Search, false);
-    }
-
     private void DrawStationParagraph(float scale, string text, Vector4 color, TextStyle style, float width)
     {
         var origin = ImGui.GetCursorScreenPos();
@@ -937,18 +504,6 @@ internal sealed partial class MusicApp
             wrapWidth);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height + 12f * scale));
-    }
-
-    /// While we are the one playing, the stream's own metadata beats the directory snapshot, which
-    /// is up to ten seconds behind and blank for stations the server sees no title for.
-    private string NowPlayingFor(CommunityStationDto station)
-    {
-        if (IsCurrentCommunityStation(station) && playback.RadioNowPlaying.Length > 0)
-        {
-            return playback.RadioNowPlaying;
-        }
-
-        return station.IsLive ? station.NowPlaying : string.Empty;
     }
 
     private void DrawStationLinks(float scale, CommunityStationDto station)
@@ -1000,10 +555,10 @@ internal sealed partial class MusicApp
     {
         _ = Task.Run(async () =>
         {
-            var ok = false;
+            var succeeded = false;
             try
             {
-                ok = await aethernet.Safety.ReportAsync("radio_station", stationId, reason, CancellationToken.None)
+                succeeded = await aethernet.Safety.ReportAsync("radio_station", stationId, reason, CancellationToken.None)
                     .ConfigureAwait(false);
             }
             catch (Exception exception)
@@ -1011,7 +566,7 @@ internal sealed partial class MusicApp
                 AepLog.Warning(exception, "[Radio] station report failed");
             }
 
-            done(ok);
+            done(succeeded);
         });
     }
 }
