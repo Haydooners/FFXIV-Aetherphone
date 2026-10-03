@@ -6759,27 +6759,75 @@ internal static class L
     {
         public static readonly LocString TabNotes = new("notes.tabNotes", "Notes");
         public static readonly LocString TabReminders = new("notes.tabReminders", "Reminders");
-        public static readonly LocString NotesEmpty = new("notes.notesEmpty", "No notes yet. Tap + to write one.");
-        public static readonly LocString RemindersEmpty = new("notes.remindersEmpty", "No reminders yet. Tap + to add one.");
-        public static readonly LocString NoteTitle = new("notes.noteTitle", "Note");
         public static readonly LocString NewNote = new("notes.newNote", "New Note");
         public static readonly LocString Untitled = new("notes.untitled", "New Note");
         public static readonly LocString NoAdditionalText = new("notes.noAdditionalText", "No additional text");
         public static readonly LocString CopyNote = new("notes.copyNote", "Copy Note");
         public static readonly LocString DeleteNote = new("notes.deleteNote", "Delete Note");
-        public static readonly LocString DeleteNoteConfirm = new("notes.deleteNoteConfirm", "Delete this note?");
         public static readonly LocString NewReminder = new("notes.newReminder", "New Reminder");
-        public static readonly LocString EditReminder = new("notes.editReminder", "Edit Reminder");
         public static readonly LocString ReminderHint = new("notes.reminderHint", "Reminder");
         public static readonly LocString AddReminderHint = new("notes.addReminderHint", "Add a reminder");
-        public static readonly LocString RemindMe = new("notes.remindMe", "Remind me on a day");
         public static readonly LocString ReminderDate = new("notes.reminderDate", "Date");
         public static readonly LocString ReminderTime = new("notes.reminderTime", "Time");
-        public static readonly LocString Save = new("notes.save", "Save");
         public static readonly LocString Delete = new("notes.delete", "Delete");
         public static readonly LocString KeepIt = new("notes.keepIt", "Keep");
         public static readonly LocString DeleteReminder = new("notes.deleteReminder", "Delete Reminder");
         public static readonly LocString DeleteReminderConfirm = new("notes.deleteReminderConfirm", "Delete this reminder?");
+        public static readonly LocString SearchHint = new("notes.searchHint", "Search notes");
+        public static readonly LocString EmptyTitle = new("notes.emptyTitle", "No Notes");
+        public static readonly LocString EmptyHint = new("notes.emptyHint",
+            "Keep raid callouts, crafting lists and anything else you want to remember.");
+        public static readonly LocString NoResultsTitle = new("notes.noResultsTitle", "No Results");
+        public static readonly LocString NoResultsHint = new("notes.noResultsHint", "No note contains \"{0}\".");
+        public static readonly LocString SectionPinned = new("notes.sectionPinned", "Pinned");
+        public static readonly LocString Today = new("notes.today", "Today");
+        public static readonly LocString Yesterday = new("notes.yesterday", "Yesterday");
+        public static readonly LocString Tomorrow = new("notes.tomorrow", "Tomorrow");
+        public static readonly LocString SectionPreviousWeek = new("notes.sectionPreviousWeek", "Previous 7 Days");
+        public static readonly LocString SectionPreviousMonth = new("notes.sectionPreviousMonth", "Previous 30 Days");
+        public static readonly LocPlural NoteCount = new("notes.noteCount", "{0} Note", "{0} Notes");
+        public static readonly LocString RecentlyDeleted = new("notes.recentlyDeleted", "Recently Deleted");
+        public static readonly LocString TrashHint = new("notes.trashHint",
+            "Notes stay here for {0} days, then they are deleted for good.");
+        public static readonly LocPlural DaysLeft = new("notes.daysLeft", "{0} day left", "{0} days left");
+        public static readonly LocString Recover = new("notes.recover", "Recover");
+        public static readonly LocString DeleteNow = new("notes.deleteNow", "Delete Now");
+        public static readonly LocString DeleteNowConfirm = new("notes.deleteNowConfirm",
+            "Delete this note for good? This cannot be undone.");
+        public static readonly LocString DeleteAll = new("notes.deleteAll", "Delete All");
+        public static readonly LocString DeleteAllConfirm = new("notes.deleteAllConfirm",
+            "Delete every note in Recently Deleted? This cannot be undone.");
+        public static readonly LocString TrashEmptyTitle = new("notes.trashEmptyTitle", "Nothing Deleted");
+        public static readonly LocString TrashEmptyHint = new("notes.trashEmptyHint",
+            "Notes you delete wait here, so you can change your mind.");
+        public static readonly LocString MovedToTrash = new("notes.movedToTrash", "Moved to Recently Deleted");
+        public static readonly LocString EditedStamp = new("notes.editedStamp", "{0} at {1}");
+        public static readonly LocString EditorPlaceholder = new("notes.editorPlaceholder",
+            "Start writing. The first line becomes the title.");
+        public static readonly LocString More = new("notes.more", "More");
+        public static readonly LocString RemindersEmptyTitle = new("notes.remindersEmptyTitle", "No Reminders");
+        public static readonly LocString RemindersEmptyHint = new("notes.remindersEmptyHint",
+            "Add the things you need to do, with a notification when they are due.");
+        public static readonly LocString FilterAll = new("notes.filterAll", "All");
+        public static readonly LocString FilterScheduled = new("notes.filterScheduled", "Scheduled");
+        public static readonly LocString FilterCompleted = new("notes.filterCompleted", "Completed");
+        public static readonly LocString GroupOverdue = new("notes.groupOverdue", "Overdue");
+        public static readonly LocString GroupAnytime = new("notes.groupAnytime", "Anytime");
+        public static readonly LocString TodayEmpty = new("notes.todayEmpty", "Nothing Due Today");
+        public static readonly LocString ScheduledEmpty = new("notes.scheduledEmpty", "Nothing Scheduled");
+        public static readonly LocString CompletedEmpty = new("notes.completedEmpty", "Nothing Completed Yet");
+        public static readonly LocString AllDone = new("notes.allDone", "All Done");
+        public static readonly LocString AllDoneHint = new("notes.allDoneHint",
+            "Every reminder is checked off. Completed ones are below.");
+        public static readonly LocString ShowCompleted = new("notes.showCompleted", "Show");
+        public static readonly LocString HideCompleted = new("notes.hideCompleted", "Hide");
+        public static readonly LocString ClearCompleted = new("notes.clearCompleted", "Clear");
+        public static readonly LocPlural ClearCompletedConfirm = new("notes.clearCompletedConfirm",
+            "Clear {0} completed reminder?", "Clear {0} completed reminders?");
+        public static readonly LocString Details = new("notes.details", "Details");
+        public static readonly LocString Done = new("notes.done", "Done");
+        public static readonly LocString ThisWeekend = new("notes.thisWeekend", "This Weekend");
+        public static readonly LocString NextWeek = new("notes.nextWeek", "Next Week");
     }
 
     internal static class Notifications

@@ -1,35 +1,39 @@
 using Aetherphone.Core;
-using Aetherphone.Core.Notes;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Onboarding;
+using Aetherphone.Core.Notes;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
-using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Notes;
 
-internal sealed class NotesApp : IResumableApp, ISpotlightNotes, ITabRouteTarget
+internal enum NotesScreen : byte
 {
-    private PendingTab pendingTab;
+    List,
+    EditNote,
+    EditReminder,
+    RecentlyDeleted,
+}
 
-    public void OpenTab(string tab) => pendingTab.Request(tab);
+internal enum NotesTab : byte
+{
+    Notes,
+    Reminders,
+}
 
-    private enum NotesScreen : byte
-    {
-        List,
-        EditNote,
-        EditReminder,
-    }
+internal enum NoteAction : byte
+{
+    TogglePin,
+    Copy,
+    Delete,
+}
 
-    private const float NoteRowHeight = 66f;
-    private const float ReminderRowHeight = 56f;
-    private const int NoteMaxLength = 8000;
-    private const int ReminderMaxLength = 120;
-    private const float SegmentHeight = 30f;
+internal sealed partial class NotesApp : IResumableApp, ISpotlightNotes, ITabRouteTarget
+{
+    private const string RemindersTabKey = "notes.tab.reminders";
 
     public string Id => "notes";
     public string DisplayName => Loc.T(L.Apps.Notes);
@@ -43,25 +47,18 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes, ITabRouteTarget
     private readonly AppSkin ui = new(AppPalettes.Notes(PhoneTheme.Default));
     private readonly ViewRouter<NotesScreen> router;
     private readonly RouterDraw<NotesScreen> drawView;
-    private readonly Action back;
-    private readonly string[] tabOptions = new string[2];
-    private readonly NavBarButton[] headerButtons = new NavBarButton[1];
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabItems = new TabItem[2];
+    private readonly ActionSheet noteSheet = new();
+    private readonly ActionSheet.Item[] noteSheetItems = new ActionSheet.Item[3];
+    private readonly NoteAction[] noteSheetActions = new NoteAction[3];
+    private int noteSheetCount;
+    private PendingTab pendingTab;
     private PhoneTheme theme = PhoneTheme.Default;
     private INavigator navigation = null!;
-    private int activeTab;
-
-    private readonly SoftWrapEditor noteEditor = new(SoftWrapLines.BreakOnReturn);
-    private PhoneNote? editingNote;
-    private Guid? pendingNoteId;
-    private bool pendingNewNote;
-    private bool noteDirty;
-
-    private Guid editingReminderId;
-    private string reminderTitle = string.Empty;
-    private bool reminderHasDue;
-    private DateTime reminderDate;
-    private int reminderHour;
-    private int reminderMinute;
+    private NotesTab activeTab;
+    private PhoneNote? sheetNote;
+    private bool sheetFromEditor;
 
     public NotesApp(Configuration configuration, ConfirmService confirm)
     {
@@ -69,13 +66,30 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes, ITabRouteTarget
         this.confirm = confirm;
         router = new ViewRouter<NotesScreen>(NotesScreen.List);
         drawView = DrawView;
-        back = CloseEditor;
+        closeNoteEditor = CloseNoteEditor;
+        closeReminderEditor = CloseReminderEditor;
+        closeTrash = CloseTrash;
     }
+
+    public void OpenTab(string tab) => pendingTab.Request(tab);
+
+    public void RequestNote(Guid noteId) => pendingNoteId = noteId;
+
+    public void RequestNewNote() => pendingNewNote = true;
 
     public void OnOpened()
     {
         router.Reset();
         editingNote = null;
+        activeTab = NotesTab.Notes;
+        searchQuery = string.Empty;
+        showCompleted = false;
+        reminderFilter = ReminderFilter.All;
+        if (NoteTrash.Purge(configuration.RecentlyDeletedNotes, DateTime.Now))
+        {
+            configuration.Save();
+        }
+
         ConsumePendingNote();
     }
 
@@ -84,15 +98,28 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes, ITabRouteTarget
         ConsumePendingNote();
     }
 
-    public void RequestNote(Guid noteId) => pendingNoteId = noteId;
+    public void OnClosed()
+    {
+        CommitOpenEditors();
+        noteSheet.Close();
+        trashSheet.Close();
+    }
 
-    public void RequestNewNote() => pendingNewNote = true;
+    private void CommitOpenEditors()
+    {
+        CommitNoteBuffer();
+        if (router.Current == NotesScreen.EditReminder)
+        {
+            CommitReminder();
+        }
+    }
 
     private void ConsumePendingNote()
     {
         if (pendingNewNote)
         {
             pendingNewNote = false;
+            ReturnToList();
             StartNewNote();
             return;
         }
@@ -103,19 +130,25 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes, ITabRouteTarget
         }
 
         pendingNoteId = null;
-        for (var index = 0; index < configuration.Notes.Count; index++)
+        var notes = configuration.Notes;
+        for (var index = 0; index < notes.Count; index++)
         {
-            if (configuration.Notes[index].Id == id)
+            if (notes[index].Id != id)
             {
-                StartEditNote(configuration.Notes[index]);
-                return;
+                continue;
             }
+
+            ReturnToList();
+            StartEditNote(notes[index]);
+            return;
         }
     }
 
-    public void OnClosed()
+    private void ReturnToList()
     {
-        CommitNoteBuffer();
+        CommitOpenEditors();
+        router.Reset();
+        activeTab = NotesTab.Notes;
     }
 
     public void Draw(in PhoneContext context)
@@ -124,550 +157,188 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes, ITabRouteTarget
         navigation = context.Navigation;
         ui.Theme = context.Theme;
         ui.Palette = AppPalettes.Notes(context.Theme);
+        if (pendingTab.Take(RemindersTabKey))
+        {
+            ReturnToList();
+            activeTab = NotesTab.Reminders;
+        }
 
         var scale = UiScale.Current;
         var screen = SceneChrome.ScreenFrom(context.Content, context.Theme, scale);
         ui.Backdrop(screen);
+        noteSheet.Gate();
+        trashSheet.Gate();
         router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+        DrawNoteSheet(screen);
+        DrawTrashSheet(screen);
+        AutosaveNote();
     }
 
     private void DrawView(NotesScreen screen, Rect area, int depth)
     {
-        var scale = UiScale.Current;
         ui.Body(area);
+        var live = depth == router.Depth;
         switch (screen)
         {
             case NotesScreen.EditNote:
-                DrawNoteEditor(area, scale);
+                DrawNoteEditor(area, live);
                 return;
             case NotesScreen.EditReminder:
-                DrawReminderEditor(area, scale);
+                DrawReminderEditor(area);
+                return;
+            case NotesScreen.RecentlyDeleted:
+                DrawTrash(area);
                 return;
             default:
-                DrawList(area, scale);
+                DrawRoot(area);
                 return;
         }
     }
 
-    private void DrawList(Rect content, float scale)
+    private void DrawRoot(Rect area)
     {
-        if (pendingTab.Take("notes.tab.reminders"))
+        var scale = UiScale.Current;
+        var context = new PhoneContext(area, theme, navigation);
+        using (TabBar.ReserveContent(scale))
         {
-            activeTab = 1;
-        }
-
-        var context = new PhoneContext(content, theme, navigation);
-        var navBar = AppHeader.BeginLargeTitle(context, false);
-        var body = navBar.Body;
-        using (AppSurface.Begin(body))
-        {
-            DrawTabs(scale);
-            if (activeTab == 0)
+            if (activeTab == NotesTab.Reminders)
             {
-                DrawNotesList(body, scale);
+                DrawReminders(context);
             }
             else
             {
-                DrawRemindersList(body, scale);
+                DrawNotes(context);
             }
-
-            ImGui.Dummy(new Vector2(0f, 10f * scale));
         }
 
-        headerButtons[0] = new NavBarButton(IconGlyph.Of(FontAwesomeIcon.Plus),
-            activeTab == 0 ? Loc.T(L.Notes.NewNote) : Loc.T(L.Notes.NewReminder));
-        UiAnchors.Report("notes.new", AppHeader.LargeTitleButtonRect(in navBar, 0, headerButtons.Length));
-        var pressed = AppHeader.EndLargeTitle(in navBar, context, "notes.nav", DisplayName, NavBarStyle.From(ui),
-            headerButtons);
-        if (pressed != 0)
+        DrawTabBar(area);
+    }
+
+    private void DrawTabBar(Rect area)
+    {
+        tabItems[0] = new TabItem(Loc.T(L.Notes.TabNotes), PhoneIcons.FileText);
+        tabItems[1] = new TabItem(Loc.T(L.Notes.TabReminders), PhoneIcons.CircleCheck, PhoneIcons.CircleCheckFilled,
+            AnchorKey: RemindersTabKey);
+        var actionLabel = activeTab == NotesTab.Notes ? Loc.T(L.Notes.NewNote) : Loc.T(L.Notes.NewReminder);
+        var action = new TabBarAction(PhoneIcons.Plus, actionLabel, AnchorKey: "notes.new");
+        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab, action);
+        if (result.ActionTapped)
+        {
+            if (activeTab == NotesTab.Notes)
+            {
+                StartNewNote();
+            }
+            else
+            {
+                StartNewReminder();
+            }
+
+            return;
+        }
+
+        if (result.Tapped < 0 || result.Tapped == (int)activeTab)
         {
             return;
         }
 
-        if (activeTab == 0)
-        {
-            StartNewNote();
-        }
-        else
-        {
-            StartNewReminder();
-        }
+        activeTab = (NotesTab)result.Tapped;
     }
 
-    private void DrawTabs(float scale)
+    private void OpenNoteSheet(PhoneNote note, bool fromEditor)
     {
-        var top = ImGui.GetCursorScreenPos();
-        var segRow = new Rect(top,
-            new Vector2(top.X + ImGui.GetContentRegionAvail().X, top.Y + SegmentHeight * scale));
-        UiAnchors.Report("notes.tab.reminders",
-            new Rect(new Vector2(segRow.Center.X, segRow.Min.Y), segRow.Max));
-        tabOptions[0] = Loc.T(L.Notes.TabNotes);
-        tabOptions[1] = Loc.T(L.Notes.TabReminders);
-        activeTab = SegmentStrip.Draw("notes.tabs", segRow, tabOptions, activeTab, theme);
-        ImGui.Dummy(new Vector2(0f, (SegmentHeight + Metrics.Space.Xs) * scale));
+        sheetNote = note;
+        sheetFromEditor = fromEditor;
+        noteSheetCount = 0;
+        AddSheetItem(NoteAction.TogglePin, new ActionSheet.Item(Loc.T(note.Pinned ? L.Common.Unpin : L.Common.Pin),
+            note.Pinned ? PhoneIcons.PinFilled : PhoneIcons.Pin));
+        if (!fromEditor)
+        {
+            AddSheetItem(NoteAction.Copy, new ActionSheet.Item(Loc.T(L.Notes.CopyNote), PhoneIcons.Copy));
+        }
+
+        AddSheetItem(NoteAction.Delete, new ActionSheet.Item(Loc.T(L.Notes.DeleteNote), PhoneIcons.Trash, true));
+        noteSheet.Open();
     }
 
-    private void DrawNotesList(Rect body, float scale)
+    private void AddSheetItem(NoteAction action, in ActionSheet.Item item)
     {
-        var notes = configuration.Notes;
-        if (notes.Count == 0)
-        {
-            Typography.DrawCentered(new Vector2(body.Center.X, body.Min.Y + 70f * scale), Loc.T(L.Notes.NotesEmpty),
-                ui.MutedInk, TextStyles.Subheadline);
-            return;
-        }
-
-        var card = GroupCard.Begin(theme, notes.Count, NoteRowHeight);
-        for (var index = 0; index < notes.Count; index++)
-        {
-            DrawNoteRow(card.NextRow(), notes[index], scale);
-        }
-
-        card.End();
+        noteSheetActions[noteSheetCount] = action;
+        noteSheetItems[noteSheetCount] = item;
+        noteSheetCount++;
     }
 
-    private void DrawNoteRow(Rect row, PhoneNote note, float scale)
+    private void DrawNoteSheet(Rect screen)
     {
-        var title = note.Title();
-        var hasTitle = title.Length > 0;
-        var titleText = hasTitle ? title : Loc.T(L.Notes.Untitled);
-        var titleY = row.Min.Y + 12f * scale;
-        var titleSize = Typography.Measure(titleText, TextStyles.Headline);
-        var titleHovering = UiInteract.Hover(new Vector2(row.Min.X, titleY),
-            new Vector2(row.Min.X + row.Width, titleY + titleSize.Y));
-        Marquee.DrawLeft(new MarqueeId("notes.noteRow.title.", note.Id.ToString()), titleText, row.Min.X, titleY, row.Width,
-            TextStyles.Headline, hasTitle ? ui.TitleInk : ui.MutedInk, titleHovering);
-
-        var preview = note.Preview();
-        var meta = note.UpdatedAt.ToString("d", Loc.Culture);
-        var secondLine = preview.Length > 0 ? $"{meta}  {preview}" : (hasTitle ? meta : Loc.T(L.Notes.NoAdditionalText));
-        var subY = row.Min.Y + 36f * scale;
-        var subSize = Typography.Measure(secondLine, TextStyles.Footnote);
-        var subHovering = UiInteract.Hover(new Vector2(row.Min.X, subY),
-            new Vector2(row.Min.X + row.Width, subY + subSize.Y));
-        Marquee.DrawLeft(new MarqueeId("notes.noteRow.sub.", note.Id.ToString()), secondLine, row.Min.X, subY, row.Width,
-            TextStyles.Footnote, ui.MutedInk, subHovering);
-
-        if (UiInteract.HoverClick(row.Min, row.Max))
-        {
-            StartEditNote(note);
-        }
-    }
-
-    private void DrawRemindersList(Rect body, float scale)
-    {
-        var reminders = configuration.Reminders;
-        if (reminders.Count == 0)
-        {
-            Typography.DrawCentered(new Vector2(body.Center.X, body.Min.Y + 70f * scale),
-                Loc.T(L.Notes.RemindersEmpty), ui.MutedInk, TextStyles.Subheadline);
-            return;
-        }
-
-        var card = GroupCard.Begin(theme, reminders.Count, ReminderRowHeight);
-        for (var index = 0; index < reminders.Count; index++)
-        {
-            if (!reminders[index].Done)
-            {
-                DrawReminderRow(card.NextRow(), reminders[index], scale);
-            }
-        }
-
-        for (var index = 0; index < reminders.Count; index++)
-        {
-            if (reminders[index].Done)
-            {
-                DrawReminderRow(card.NextRow(), reminders[index], scale);
-            }
-        }
-
-        card.End();
-    }
-
-    private void DrawReminderRow(Rect row, ReminderItem reminder, float scale)
-    {
-        var circleCenter = new Vector2(row.Min.X + 11f * scale, row.Center.Y);
-        if (DrawCheckCircle(circleCenter, 11f * scale, reminder.Done, scale))
-        {
-            reminder.Done = !reminder.Done;
-            if (reminder.Done)
-            {
-                reminder.Notified = true;
-            }
-
-            configuration.Save();
-        }
-
-        var textLeft = circleCenter.X + 22f * scale;
-        var textRect = new Rect(new Vector2(textLeft, row.Min.Y), row.Max);
-        var titleInk = reminder.Done ? ui.MutedInk : ui.TitleInk;
-        var hasDue = reminder.DueAt.HasValue;
-        var titleY = hasDue ? row.Center.Y - 16f * scale : row.Center.Y - 9f * scale;
-        var title = reminder.Title.Length > 0 ? reminder.Title : Loc.T(L.Notes.ReminderHint);
-        Marquee.DrawLeftAuto(new MarqueeId("notes.reminderRow.title.", reminder.Id.ToString()), title, textLeft, titleY, textRect.Width,
-            TextStyles.Body, titleInk);
-        if (hasDue)
-        {
-            var due = reminder.DueAt!.Value;
-            var overdue = !reminder.Done && due < DateTime.Now;
-            var dueColor = overdue ? theme.Danger : ui.MutedInk;
-            Marquee.DrawLeftAuto(new MarqueeId("notes.reminderRow.due.", reminder.Id.ToString()), DueLabel(due), textLeft,
-                row.Center.Y + 4f * scale, textRect.Width, TextStyles.Footnote, dueColor);
-        }
-
-        if (UiInteract.HoverClick(textRect.Min, textRect.Max))
-        {
-            StartEditReminder(reminder);
-        }
-    }
-
-    private bool DrawCheckCircle(Vector2 center, float radius, bool done, float scale)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        if (done)
-        {
-            drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(ui.Accent), 24);
-            var check = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 1f));
-            var thickness = 2f * scale;
-            drawList.AddLine(center + new Vector2(-radius * 0.42f, 0f), center + new Vector2(-radius * 0.08f, radius * 0.38f),
-                check, thickness);
-            drawList.AddLine(center + new Vector2(-radius * 0.08f, radius * 0.38f),
-                center + new Vector2(radius * 0.46f, -radius * 0.36f), check, thickness);
-        }
-        else
-        {
-            drawList.AddCircle(center, radius, ImGui.GetColorU32(ui.MutedInk), 24, 1.6f * scale);
-        }
-
-        var hitMin = center - new Vector2(radius + 6f * scale, radius + 6f * scale);
-        var hitMax = center + new Vector2(radius + 6f * scale, radius + 6f * scale);
-        return UiInteract.HoverClick(hitMin, hitMax);
-    }
-
-    private void StartNewNote()
-    {
-        var note = new PhoneNote();
-        configuration.Notes.Insert(0, note);
-        StartEditNote(note);
-    }
-
-    private void StartEditNote(PhoneNote note)
-    {
-        editingNote = note;
-        noteEditor.Adopt(note.Body);
-        noteDirty = false;
-        router.Push(NotesScreen.EditNote);
-    }
-
-    private void DrawNoteEditor(Rect content, float scale)
-    {
-        var context = new PhoneContext(content, theme, navigation);
-        AppHeader.Draw(context, Loc.T(L.Notes.NoteTitle), back);
-        if (editingNote is null)
+        if (!noteSheet.CapturesPointer)
         {
             return;
         }
 
-        UiAnchors.Report("notes.editor.back", AppHeader.BackRect(content, scale));
-
-        var radius = 15f * scale;
-        var trashCenter = new Vector2(content.Max.X - Metrics.Space.Lg * scale - radius,
-            content.Min.Y + AppHeader.Height * scale * 0.5f);
-        if (ui.IconButton(trashCenter, radius, IconGlyph.Of(FontAwesomeIcon.TrashAlt), theme.Danger,
-                Palette.WithAlpha(theme.Danger, 0.14f), 0.55f, Loc.T(L.Notes.DeleteNote)))
+        var expected = sheetFromEditor ? NotesScreen.EditNote : NotesScreen.List;
+        if (noteSheet.IsOpen && router.Current != expected)
         {
-            AskDeleteNote(editingNote);
+            noteSheet.Close();
         }
 
-        var copyCenter = new Vector2(trashCenter.X - radius * 2f - Metrics.Space.Sm * scale, trashCenter.Y);
-        if (ui.IconButton(copyCenter, radius, IconGlyph.Of(FontAwesomeIcon.Copy), ui.TitleInk,
-                Palette.WithAlpha(ui.TitleInk, 0.12f), 0.55f, Loc.T(L.Notes.CopyNote)))
-        {
-            ImGui.SetClipboardText(noteEditor.Text);
-            ShellToast.Show();
-        }
-
-        var margin = Metrics.Space.Lg * scale;
-        var top = content.Min.Y + AppHeader.Height * scale + Metrics.Space.Sm * scale;
-        var area = new Rect(new Vector2(content.Min.X + margin, top),
-            new Vector2(content.Max.X - margin, content.Max.Y - margin));
-        UiAnchors.Report("notes.editor", area);
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, area.Min, area.Max, Metrics.Radius.Md * scale, ImGui.GetColorU32(ui.FieldSurface));
-        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + Metrics.Space.Md * scale, area.Min.Y + Metrics.Space.Sm * scale));
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
-        using (ImRaii.PushColor(ImGuiCol.Text, ui.TitleInk))
-        {
-            var fieldSize = new Vector2(area.Width - Metrics.Space.Md * 2f * scale,
-                area.Height - Metrics.Space.Sm * 2f * scale);
-            noteEditor.Rewrap(fieldSize.X - ImGui.GetStyle().FramePadding.X * 2f - 4f * scale);
-            noteEditor.Draw("##noteBody", fieldSize, NoteMaxLength, 0);
-            if (noteEditor.Edited)
-            {
-                editingNote.Body = noteEditor.Text;
-                editingNote.UpdatedAt = DateTime.Now;
-                noteDirty = true;
-            }
-        }
-    }
-
-    private void StartNewReminder()
-    {
-        editingReminderId = Guid.Empty;
-        reminderTitle = string.Empty;
-        reminderHasDue = false;
-        var now = DateTime.Now;
-        reminderDate = now.Date;
-        reminderHour = now.Hour;
-        reminderMinute = now.Minute / 5 * 5;
-        router.Push(NotesScreen.EditReminder);
-    }
-
-    private void StartEditReminder(ReminderItem reminder)
-    {
-        editingReminderId = reminder.Id;
-        reminderTitle = reminder.Title;
-        reminderHasDue = reminder.DueAt.HasValue;
-        var due = reminder.DueAt ?? DateTime.Now;
-        reminderDate = due.Date;
-        reminderHour = due.Hour;
-        reminderMinute = due.Minute;
-        router.Push(NotesScreen.EditReminder);
-    }
-
-    private void DrawReminderEditor(Rect content, float scale)
-    {
-        var context = new PhoneContext(content, theme, navigation);
-        var isExisting = editingReminderId != Guid.Empty;
-        var headerTitle = isExisting ? Loc.T(L.Notes.EditReminder) : Loc.T(L.Notes.NewReminder);
-        AppHeader.Draw(context, headerTitle, back);
-        if (isExisting)
-        {
-            var radius = 15f * scale;
-            var trashCenter = new Vector2(content.Max.X - Metrics.Space.Lg * scale - radius,
-                content.Min.Y + AppHeader.Height * scale * 0.5f);
-            if (ui.IconButton(trashCenter, radius, IconGlyph.Of(FontAwesomeIcon.TrashAlt), theme.Danger,
-                    Palette.WithAlpha(theme.Danger, 0.14f), 0.55f, Loc.T(L.Notes.DeleteReminder)))
-            {
-                AskDeleteReminder(editingReminderId);
-            }
-        }
-
-        var margin = Metrics.Space.Lg * scale;
-        var top = content.Min.Y + AppHeader.Height * scale + Metrics.Space.Lg * scale;
-        var fieldHeight = Metrics.Size.Row * scale;
-        var gap = Metrics.Space.Md * scale;
-        var labelHeight = Typography.Measure("A", TextStyles.Footnote).Y;
-
-        var titleRect = new Rect(new Vector2(content.Min.X + margin, top),
-            new Vector2(content.Max.X - margin, top + fieldHeight));
-        DrawTitleField(titleRect, scale);
-
-        var toggleTop = titleRect.Max.Y + gap;
-        var toggleRect = new Rect(new Vector2(content.Min.X + margin, toggleTop),
-            new Vector2(content.Max.X - margin, toggleTop + fieldHeight));
-        DrawRemindToggle(toggleRect, scale);
-
-        var saveTop = content.Max.Y - margin - fieldHeight;
-        if (reminderHasDue)
-        {
-            var dateLabelY = toggleRect.Max.Y + gap;
-            Typography.Draw(new Vector2(content.Min.X + margin, dateLabelY), Loc.T(L.Notes.ReminderDate), ui.MutedInk,
-                TextStyles.Footnote);
-            var dateTop = dateLabelY + labelHeight + Metrics.Space.Xxs * scale;
-            var dateRect = new Rect(new Vector2(content.Min.X + margin, dateTop),
-                new Vector2(content.Max.X - margin, dateTop + fieldHeight));
-            StepperField.Draw(ui, dateRect, reminderDate.ToString("dddd, MMM d", Loc.Culture), scale,
-                () => reminderDate = reminderDate.AddDays(-1), () => reminderDate = reminderDate.AddDays(1));
-
-            var timeLabelY = dateRect.Max.Y + gap;
-            Typography.Draw(new Vector2(content.Min.X + margin, timeLabelY), Loc.T(L.Notes.ReminderTime), ui.MutedInk,
-                TextStyles.Footnote);
-            var timeTop = timeLabelY + labelHeight + Metrics.Space.Xxs * scale;
-            var timeRow = new Rect(new Vector2(content.Min.X + margin, timeTop),
-                new Vector2(content.Max.X - margin, timeTop + fieldHeight));
-            var half = timeRow.Width * 0.5f - gap * 0.5f;
-            var hourRect = new Rect(timeRow.Min, new Vector2(timeRow.Min.X + half, timeRow.Max.Y));
-            var minuteRect = new Rect(new Vector2(timeRow.Max.X - half, timeRow.Min.Y), timeRow.Max);
-            StepperField.Draw(ui, hourRect, reminderHour.ToString("D2"), scale,
-                () => reminderHour = (reminderHour + 23) % 24, () => reminderHour = (reminderHour + 1) % 24);
-            StepperField.Draw(ui, minuteRect, reminderMinute.ToString("D2"), scale,
-                () => reminderMinute = (reminderMinute + 55) % 60, () => reminderMinute = (reminderMinute + 5) % 60);
-        }
-
-        var saveRect = new Rect(new Vector2(content.Min.X + margin, saveTop),
-            new Vector2(content.Max.X - margin, saveTop + fieldHeight));
-        var enabled = reminderTitle.Trim().Length > 0;
-        if (ui.AccentPill(saveRect, Loc.T(L.Notes.Save), enabled, TextStyles.Headline) && enabled)
-        {
-            CommitReminder();
-        }
-    }
-
-    private void DrawTitleField(Rect rect, float scale)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, rect.Min, rect.Max, Metrics.Radius.Md * scale);
-        ImGui.SetCursorScreenPos(new Vector2(rect.Min.X + Metrics.Space.Md * scale,
-            rect.Min.Y + rect.Height * 0.5f - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(rect.Width - Metrics.Space.Md * 2f * scale);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
-        using (ImRaii.PushColor(ImGuiCol.Text, ui.TitleInk))
-        {
-            ImGui.InputTextWithHint("##reminderTitle", Loc.T(L.Notes.AddReminderHint), ref reminderTitle,
-                ReminderMaxLength, ImGuiInputTextFlags.None);
-        }
-    }
-
-    private void DrawRemindToggle(Rect rect, float scale)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, rect.Min, rect.Max, Metrics.Radius.Md * scale);
-        var width = Metrics.Size.ToggleWidth * scale;
-        var height = Metrics.Size.ToggleHeight * scale;
-        var min = new Vector2(rect.Max.X - Metrics.Space.Md * scale - width, rect.Center.Y - height * 0.5f);
-        var toggleRect = new Rect(min, min + new Vector2(width, height));
-        UiAnchors.Report("notes.reminder.remind", toggleRect);
-        var label = Loc.T(L.Notes.RemindMe);
-        var labelLeft = rect.Min.X + Metrics.Space.Md * scale;
-        var labelMaxWidth = MathF.Max(1f, min.X - 8f * scale - labelLeft);
-        var labelSize = Typography.Measure(label, TextStyles.Body);
-        var labelHovering = UiInteract.Hover(new Vector2(labelLeft, rect.Center.Y - labelSize.Y * 0.5f),
-            new Vector2(labelLeft + labelMaxWidth, rect.Center.Y + labelSize.Y * 0.5f));
-        Marquee.DrawLeft("notes.remind.label", label, labelLeft, rect.Center.Y - 9f * scale, labelMaxWidth,
-            TextStyles.Body, ui.TitleInk, labelHovering);
-        reminderHasDue = Toggle.Draw("notes.remind", toggleRect, reminderHasDue, theme);
-    }
-
-
-    private void CommitReminder()
-    {
-        var title = reminderTitle.Trim();
-        if (title.Length == 0)
+        var title = sheetNote is null ? string.Empty : NoteTitle(sheetNote);
+        var picked = noteSheet.Draw(screen, ActionSheetStyle.From(ui), noteSheetItems.AsSpan(0, noteSheetCount),
+            Loc.T(L.Common.Cancel), false, title);
+        if (picked < 0 || picked >= noteSheetCount || sheetNote is not { } note)
         {
             return;
         }
 
-        DateTime? due = reminderHasDue
-            ? new DateTime(reminderDate.Year, reminderDate.Month, reminderDate.Day, reminderHour, reminderMinute, 0)
-            : null;
-
-        if (editingReminderId == Guid.Empty)
+        sheetNote = null;
+        switch (noteSheetActions[picked])
         {
-            configuration.Reminders.Insert(0, new ReminderItem { Title = title, DueAt = due });
+            case NoteAction.TogglePin:
+                TogglePinned(note);
+                break;
+            case NoteAction.Copy:
+                CopyNote(note);
+                break;
+            default:
+                TrashNote(note, sheetFromEditor);
+                break;
         }
-        else
-        {
-            var reminder = configuration.Reminders.Find(entry => entry.Id == editingReminderId);
-            if (reminder is not null)
-            {
-                var dueChanged = reminder.DueAt != due;
-                reminder.Title = title;
-                reminder.DueAt = due;
-                if (dueChanged)
-                {
-                    reminder.Notified = due.HasValue && due.Value <= DateTime.Now && reminder.Done;
-                }
-            }
-        }
+    }
 
+    private string NoteTitle(PhoneNote note)
+    {
+        var text = RowTextFor(note);
+        return text.Title.Length > 0 ? text.Title : Loc.T(L.Notes.Untitled);
+    }
+
+    private void TogglePinned(PhoneNote note)
+    {
+        note.Pinned = !note.Pinned;
+        UiFeedback.Play(note.Pinned ? UiSound.ToggleOn : UiSound.ToggleOff);
         configuration.Save();
-        router.Pop();
     }
 
-    private void CloseEditor()
+    private void CopyNote(PhoneNote note)
     {
-        CommitNoteBuffer();
-        router.Pop();
+        var body = ReferenceEquals(note, editingNote) ? noteEditor.Text : note.Body;
+        ImGui.SetClipboardText(body);
+        ShellToast.Show();
     }
 
-    private void CommitNoteBuffer()
+    private void TrashNote(PhoneNote note, bool leaveEditor)
     {
-        if (editingNote is null)
+        if (ReferenceEquals(note, editingNote))
         {
-            return;
+            note.Body = noteEditor.Text;
+            editingNote = null;
+            noteDirty = false;
         }
 
-        if (!noteEditor.HasContent)
-        {
-            configuration.Notes.Remove(editingNote);
-            configuration.Save();
-        }
-        else if (noteDirty)
-        {
-            editingNote.Body = noteEditor.Text;
-            configuration.Save();
-        }
-
-        editingNote = null;
-        noteDirty = false;
-    }
-
-    private void AskDeleteNote(PhoneNote note)
-    {
-        confirm.Ask(new ConfirmRequest
-        {
-            Message = Loc.T(L.Notes.DeleteNoteConfirm),
-            ConfirmLabel = Loc.T(L.Notes.Delete),
-            CancelLabel = Loc.T(L.Notes.KeepIt),
-            Sheet = true,
-            Confirm = () => DeleteNote(note),
-        });
-    }
-
-    private void DeleteNote(PhoneNote note)
-    {
-        configuration.Notes.Remove(note);
+        NoteTrash.Discard(configuration.Notes, configuration.RecentlyDeletedNotes, note, DateTime.Now);
         configuration.Save();
-        editingNote = null;
-        noteDirty = false;
-        router.Pop();
-    }
-
-    private void AskDeleteReminder(Guid id)
-    {
-        confirm.Ask(new ConfirmRequest
+        ShellToast.Show(Loc.T(L.Notes.MovedToTrash));
+        if (leaveEditor && router.Current == NotesScreen.EditNote)
         {
-            Message = Loc.T(L.Notes.DeleteReminderConfirm),
-            ConfirmLabel = Loc.T(L.Notes.Delete),
-            CancelLabel = Loc.T(L.Notes.KeepIt),
-            Sheet = true,
-            Confirm = () => DeleteReminder(id),
-        });
-    }
-
-    private void DeleteReminder(Guid id)
-    {
-        configuration.Reminders.RemoveAll(entry => entry.Id == id);
-        configuration.Save();
-        router.Pop();
-    }
-
-    private string DueLabel(DateTime due)
-    {
-        var dayLabel = RelativeDay(due.Date);
-        return $"{dayLabel}  {TimeText.Clock(due)}";
-    }
-
-    private static string RelativeDay(DateTime day)
-    {
-        var today = DateTime.Today;
-        if (day == today)
-        {
-            return Loc.T(L.Clock.DayToday);
+            router.Pop();
         }
-
-        if (day == today.AddDays(1))
-        {
-            return Loc.T(L.Clock.DayTomorrow);
-        }
-
-        if (day == today.AddDays(-1))
-        {
-            return Loc.T(L.Clock.DayYesterday);
-        }
-
-        return day.ToString("ddd, MMM d", Loc.Culture);
     }
 
     public void Dispose()
