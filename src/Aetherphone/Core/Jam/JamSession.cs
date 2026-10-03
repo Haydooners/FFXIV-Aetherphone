@@ -28,6 +28,8 @@ internal sealed partial class JamSession : IDisposable
     private readonly ConcurrentQueue<CallControl> inbound = new();
     private readonly List<CallControl> pendingOperations = new();
     private readonly JamOperationPacer pacer = new();
+    private readonly JamInviteQueue invites = new();
+    private readonly JamInviteGate inviteGate = new();
     private readonly JamHostAuthority hostAuthority;
     private readonly JamGuestAuthority guestAuthority;
 
@@ -36,6 +38,7 @@ internal sealed partial class JamSession : IDisposable
     private JamJoinRequest[] joinRequests = Array.Empty<JamJoinRequest>();
     private string jamId = string.Empty;
     private string hostId = string.Empty;
+    private string boundUserId = string.Empty;
     private int serverQueueVersion;
     private int dropCount;
     private int seenDropCount;
@@ -135,6 +138,7 @@ internal sealed partial class JamSession : IDisposable
 
         Title = JamWire.NormalizeTitle(title);
         seedPending = hub.SongActive && hub.Queue.QueuedCount > 0;
+        boundUserId = MyUserId;
         Mode = JamMode.Starting;
         awaitingSinceTicks = Environment.TickCount64;
         signals.Start(Title.Length > 0 ? Title : null);
@@ -166,6 +170,7 @@ internal sealed partial class JamSession : IDisposable
         }
 
         SetCode(code);
+        boundUserId = MyUserId;
         Mode = JamMode.Joining;
         awaitingSinceTicks = Environment.TickCount64;
         signals.Join(code);
@@ -249,7 +254,7 @@ internal sealed partial class JamSession : IDisposable
     {
         if (InJam && userId.Length > 0)
         {
-            signals.Invite(userId);
+            invites.Enqueue(userId);
         }
     }
 
@@ -294,6 +299,11 @@ internal sealed partial class JamSession : IDisposable
         var now = Environment.TickCount64;
         var deltaSeconds = lastTickTicks == 0 ? 0f : Math.Clamp((now - lastTickTicks) / 1000f, 0f, 0.5f);
         lastTickTicks = now;
+
+        if (Mode != JamMode.Idle && !string.Equals(MyUserId, boundUserId, StringComparison.Ordinal))
+        {
+            ExitLocal(JamDeclineReason.None);
+        }
 
         while (inbound.TryDequeue(out var message))
         {
@@ -468,6 +478,17 @@ internal sealed partial class JamSession : IDisposable
         awaitingSinceTicks = 0;
         disconnectedSinceTicks = 0;
         jamId = message.JamId ?? jamId;
+        if (InJam)
+        {
+            ReleaseAuthority();
+            ResetHostState();
+            ResetGuestState();
+            SetMembers(null);
+            SetJoinRequests(Array.Empty<JamJoinRequest>());
+            Mode = JamMode.Pending;
+            return;
+        }
+
         if (Mode is JamMode.Joining or JamMode.Pending)
         {
             Mode = JamMode.Pending;
@@ -622,7 +643,8 @@ internal sealed partial class JamSession : IDisposable
     {
         var code = PartyCode.Normalize(message.Code);
         if (code.Length == 0 || notifications is null
-            || (Mode != JamMode.Idle && string.Equals(code, Code, StringComparison.Ordinal)))
+            || (Mode != JamMode.Idle && string.Equals(code, Code, StringComparison.Ordinal))
+            || !inviteGate.Admit(code, Environment.TickCount64))
         {
             return;
         }
@@ -657,7 +679,7 @@ internal sealed partial class JamSession : IDisposable
         disconnectedSinceTicks = 0;
         awaitingSinceTicks = now;
         pacer.Reset();
-        if (Mode is JamMode.Hosting or JamMode.Starting)
+        if (Mode == JamMode.Starting || Code.Length == 0)
         {
             signals.Start(Title.Length > 0 ? Title : null);
             return;
@@ -765,6 +787,11 @@ internal sealed partial class JamSession : IDisposable
             signals.Send(pendingOperations[0]);
             pendingOperations.RemoveAt(0);
         }
+
+        if (invites.TryDequeue(now, out var invitee))
+        {
+            signals.Invite(invitee);
+        }
     }
 
     private bool TrySendControl(string action, double? positionSeconds)
@@ -798,10 +825,12 @@ internal sealed partial class JamSession : IDisposable
         ResetHostState();
         ResetGuestState();
         pendingOperations.Clear();
+        invites.Clear();
         pacer.Reset();
         Mode = JamMode.Idle;
         jamId = string.Empty;
         hostId = string.Empty;
+        boundUserId = string.Empty;
         awaitingSinceTicks = 0;
         disconnectedSinceTicks = 0;
         Stale = false;

@@ -429,7 +429,10 @@ internal sealed class PlaybackHub : IDisposable
         if (sleepDeadline > 0 && Environment.TickCount64 >= sleepDeadline)
         {
             sleepDeadline = 0;
-            PauseEverything();
+            if (!Delegate(new PlaybackIntent(PlaybackIntentKind.Stop)))
+            {
+                PauseEverything();
+            }
         }
     }
 
@@ -452,7 +455,11 @@ internal sealed class PlaybackHub : IDisposable
         if (sleepAtTrackEnd)
         {
             sleepAtTrackEnd = false;
-            StopSongs();
+            if (!Delegate(new PlaybackIntent(PlaybackIntentKind.Stop)))
+            {
+                StopSongs();
+            }
+
             return;
         }
 
