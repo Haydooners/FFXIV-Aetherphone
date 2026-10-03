@@ -880,7 +880,7 @@
   "settings.linkpearlContextMenu": "Chat de Linkpearl desde el menú",
   "settings.linkpearlContextMenuHint": "Muestra la opción \"Abrir un chat de Linkpearl\" en el menú contextual del juego al hacer clic derecho en un jugador.",
   "settings.scrollWhileIdle": "Desplazar estando inactivo",
-  "settings.scrollWhileIdleHint": "Tu personaje revisa su teléfono (emote Tomescroll) mientras está quieto y fuera de combate. No hace nada si no has desbloqueado el emote.",
+  "settings.scrollWhileIdleHint": "Al abrir el teléfono y quedarte quieto, tu personaje lo revisa (emote Tomescroll). Si te mueves o cancelas el emote, no se repite hasta que vuelvas a abrir el teléfono. No hace nada si no has desbloqueado el emote.",
   "settings.showInGpose": "Mostrar en Pose de grupo",
   "settings.showInGposeHint": "Mantén el teléfono disponible mientras estás en Pose de grupo, para poder abrirlo durante las sesiones de fotos. Desactívalo para dejar la pantalla despejada para las capturas.",
   "settings.nativeFileDialog": "Explorador de archivos de Windows",

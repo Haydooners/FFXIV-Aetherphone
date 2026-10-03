@@ -1776,7 +1776,7 @@ internal static class L
         public static readonly LocString LinkpearlContextMenu = new("settings.linkpearlContextMenu", "Linkpearl chat in menus");
         public static readonly LocString LinkpearlContextMenuHint = new("settings.linkpearlContextMenuHint", "Shows \"Open a Linkpearl chat\" option in the in-game context menu when right-clicking on a player.");
         public static readonly LocString ScrollWhileIdle = new("settings.scrollWhileIdle", "Scroll While Idle");
-        public static readonly LocString ScrollWhileIdleHint = new("settings.scrollWhileIdleHint", "Your character scrolls through their phone (Tomescroll emote) while standing still and out of combat. Does nothing if you haven't unlocked the emote.");
+        public static readonly LocString ScrollWhileIdleHint = new("settings.scrollWhileIdleHint", "When you open your phone and stand still, your character scrolls through it (Tomescroll emote). Move or cancel the emote and it stays off until you open the phone again. Does nothing if you haven't unlocked the emote.");
         public static readonly LocString ShowInGpose = new("settings.showInGpose", "Show in Group Pose");
         public static readonly LocString ShowInGposeHint = new("settings.showInGposeHint", "Keep the phone available while you're in Group Pose, so you can open it during photo shoots. Turn it off to keep your screen clear for screenshots.");
         public static readonly LocString ImportScreenshots = new("settings.importScreenshots", "Import screenshots");

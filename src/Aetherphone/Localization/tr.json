@@ -880,7 +880,7 @@
   "settings.linkpearlContextMenu": "Sağ tık menüsünde Linkpearl sohbeti",
   "settings.linkpearlContextMenuHint": "Oyun içinde bir oyuncuya sağ tıkladığında \"Linkpearl sohbeti aç\" seçeneğini gösterir.",
   "settings.scrollWhileIdle": "Boştayken kaydır",
-  "settings.scrollWhileIdleHint": "Karakterin hareketsiz ve savaş dışındayken telefonunda gezinir (Tomescroll emotu). Bu emotu açmadıysan hiçbir şey yapmaz.",
+  "settings.scrollWhileIdleHint": "Telefonu açıp hareketsiz durduğunda karakterin telefonunda gezinir (Tomescroll emotu). Hareket edersen ya da emotu iptal edersen, telefonu yeniden açana kadar tekrarlanmaz. Bu emotu açmadıysan hiçbir şey yapmaz.",
   "settings.showInGpose": "Grup pozunda göster",
   "settings.showInGposeHint": "Grup pozundayken telefonu açık tutar, böylece fotoğraf çekimleri sırasında açabilirsin. Ekranı ekran görüntüleri için temiz tutmak istersen kapat.",
   "settings.nativeFileDialog": "Windows dosya tarayıcısı",
