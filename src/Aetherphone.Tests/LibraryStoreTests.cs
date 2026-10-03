@@ -109,4 +109,44 @@ public sealed class LibraryStoreTests : IDisposable
         store.SetFollowArtist("UC123", "Soken", string.Empty, false);
         Assert.Empty(store.Artists);
     }
+
+    [Fact]
+    public void ListeningTimeAndDailyHistorySurviveAReload()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        using (var store = new LibraryStore(root))
+        {
+            store.RecordPlay(Track(1));
+            store.RecordListening(Track(1), 150);
+            store.RecordPlay(Track(2));
+            store.RecordListening(Track(2), 30);
+        }
+
+        using var reloaded = new LibraryStore(root);
+        var summary = reloaded.BuildListening(ReplayPeriod.Week, today, 10);
+
+        Assert.Equal(180, summary.TotalSeconds);
+        Assert.Equal(2, summary.TotalPlays);
+        Assert.Equal(Track(1).VideoId, summary.TopSongs[0].Song.VideoId);
+        Assert.Equal(150, summary.TopSongs[0].Seconds);
+        Assert.Single(summary.TopArtists);
+    }
+
+    [Fact]
+    public void AVersionOneLibraryEstimatesItsLifetimeListening()
+    {
+        root.Create();
+        File.WriteAllText(Path.Combine(root.FullName, "library.json"),
+            "{\"Version\":1,\"Plays\":[{\"Song\":{\"VideoId\":\"abc\",\"Title\":\"Song\",\"Author\":\"Band\"," +
+            "\"DurationSeconds\":200},\"Count\":3,\"FirstPlayedUnix\":1,\"LastPlayedUnix\":2}]}");
+
+        using var store = new LibraryStore(root);
+        var allTime = store.BuildListening(ReplayPeriod.AllTime, DateOnly.FromDateTime(DateTime.Now), 10);
+        var week = store.BuildListening(ReplayPeriod.Week, DateOnly.FromDateTime(DateTime.Now), 10);
+
+        Assert.Equal(600, allTime.TotalSeconds);
+        Assert.Equal(3, allTime.TopSongs[0].Plays);
+        Assert.Equal(0, week.TotalSeconds);
+        Assert.Empty(week.TopSongs);
+    }
 }
