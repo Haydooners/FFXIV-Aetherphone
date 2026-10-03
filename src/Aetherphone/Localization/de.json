@@ -962,6 +962,7 @@
   "settings.supportMemberInactive": "Noch kein Mitglied",
   "settings.supportTiersTitle": "Mitgliedsstufen",
   "settings.supportTierMembership": "{0}-Mitgliedschaft",
+  "settings.supportJoinTier": "{0}-Mitglied werden",
   "settings.supportMostPopular": "Am beliebtesten",
   "settings.supportPerkDiscordRole": "Patreon-Unterstützerrolle auf dem Discord-Server",
   "settings.supportPerkColoredName": "Ein farbiger Benutzername mit einem Abzeichen daneben",

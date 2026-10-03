@@ -962,6 +962,7 @@
   "settings.supportMemberInactive": "Not a member yet",
   "settings.supportTiersTitle": "Membership tiers",
   "settings.supportTierMembership": "{0} membership",
+  "settings.supportJoinTier": "Become a {0} member",
   "settings.supportMostPopular": "Most popular",
   "settings.supportPerkDiscordRole": "Patreon supporter role in the Discord server",
   "settings.supportPerkColoredName": "A custom coloured username with a badge beside it",

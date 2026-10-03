@@ -962,6 +962,7 @@
   "settings.supportMemberInactive": "还不是会员",
   "settings.supportTiersTitle": "会员等级",
   "settings.supportTierMembership": "{0}会员",
+  "settings.supportJoinTier": "成为{0}会员",
   "settings.supportMostPopular": "最受欢迎",
   "settings.supportPerkDiscordRole": "Discord服务器中的Patreon支持者身份组",
   "settings.supportPerkColoredName": "带徽章的自定义彩色用户名",

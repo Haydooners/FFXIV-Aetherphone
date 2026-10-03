@@ -962,6 +962,7 @@
   "settings.supportMemberInactive": "まだメンバーではありません",
   "settings.supportTiersTitle": "メンバーシップのティア",
   "settings.supportTierMembership": "{0}メンバーシップ",
+  "settings.supportJoinTier": "{0}メンバーになる",
   "settings.supportMostPopular": "いちばん人気",
   "settings.supportPerkDiscordRole": "DiscordサーバーでのPatreonサポーターロール",
   "settings.supportPerkColoredName": "バッジ付きのカスタムカラーのユーザー名",

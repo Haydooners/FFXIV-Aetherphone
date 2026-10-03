@@ -962,6 +962,7 @@
   "settings.supportMemberInactive": "Todavía no eres miembro",
   "settings.supportTiersTitle": "Niveles de membresía",
   "settings.supportTierMembership": "Membresía {0}",
+  "settings.supportJoinTier": "Hazte miembro {0}",
   "settings.supportMostPopular": "El más popular",
   "settings.supportPerkDiscordRole": "Rol de patrocinador de Patreon en el servidor de Discord",
   "settings.supportPerkColoredName": "Un nombre de usuario de color con una insignia al lado",
