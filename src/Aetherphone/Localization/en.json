@@ -6736,7 +6736,6 @@
   "housing.providerStatus": "Provider",
   "housing.lastRefresh": "Last successful refresh",
   "housing.openPlotsReported": "Reported openings",
-  "housing.apiEndpointLabel": "Endpoint",
   "housing.proxyCacheAge": "Service cache age",
   "housing.dataSourceNotice": "Housing reads Aetherphone's housing service, which polls and caches the public PaissaDB API once for all users rather than each client polling it. The PaissaHouse plugin is not required.",
   "housing.refreshIntervalHint": "Housing polls no faster than every {0} minutes, and only while this app is open. Ward data only changes when a player walks the ward, so checking more often shows you nothing new. Refresh manually any time.",

@@ -6736,7 +6736,6 @@
   "housing.providerStatus": "Источник",
   "housing.lastRefresh": "Последнее успешное обновление",
   "housing.openPlotsReported": "Свободных участков",
-  "housing.apiEndpointLabel": "Адрес API",
   "housing.proxyCacheAge": "Возраст кэша сервиса",
   "housing.dataSourceNotice": "Housing работает через сервис Aetherphone: он один раз опрашивает и кэширует открытый API PaissaDB сразу для всех, вместо того чтобы каждый клиент обращался туда сам. Плагин PaissaHouse не нужен.",
   "housing.refreshIntervalHint": "Housing обращается к сервису не чаще чем раз в {0} мин и только пока приложение открыто. Данные варда меняются, только когда по нему проходит игрок, так что проверять чаще смысла нет. Обновить вручную можно в любой момент.",

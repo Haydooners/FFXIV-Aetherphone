@@ -6736,7 +6736,6 @@
   "housing.providerStatus": "提供方",
   "housing.lastRefresh": "最近一次成功刷新",
   "housing.openPlotsReported": "上报空地数",
-  "housing.apiEndpointLabel": "接口地址",
   "housing.proxyCacheAge": "服务缓存时长",
   "housing.dataSourceNotice": "房屋数据来自 Aetherphone 的房屋服务：由它统一轮询并缓存公开的 PaissaDB 接口，而不是每个客户端各自请求。无需安装 PaissaHouse 插件。",
   "housing.refreshIntervalHint": "本应用的请求间隔不会短于{0}分钟，且仅在打开时进行。只有当有玩家走过某个区，该区的数据才会变化，因此查得更勤也不会有新内容。你可以随时手动刷新。",

@@ -6736,7 +6736,6 @@
   "housing.providerStatus": "提供元",
   "housing.lastRefresh": "最後に成功した更新",
   "housing.openPlotsReported": "報告された空き地数",
-  "housing.apiEndpointLabel": "エンドポイント",
   "housing.proxyCacheAge": "サービスのキャッシュ経過時間",
   "housing.dataSourceNotice": "「ハウジング」はAetherphoneのハウジングサービスを利用します。各クライアントが個別に問い合わせるのではなく、公開されているPaissaDB APIを全ユーザー分まとめて取得してキャッシュします。PaissaHouseプラグインは不要です。",
   "housing.refreshIntervalHint": "「ハウジング」の問い合わせは最短でも{0}分間隔で、このアプリを開いている間だけ行われます。区の情報はプレイヤーがその区を歩いたときにしか更新されないため、これより頻繁に確認しても新しい情報は得られません。手動更新はいつでも可能です。",

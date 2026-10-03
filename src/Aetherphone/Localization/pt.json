@@ -6736,7 +6736,6 @@
   "housing.providerStatus": "Fonte",
   "housing.lastRefresh": "Última atualização",
   "housing.openPlotsReported": "Lotes disponíveis",
-  "housing.apiEndpointLabel": "Endpoint",
   "housing.proxyCacheAge": "Idade do cache",
   "housing.dataSourceNotice": "O Housing usa o serviço de housing do Aetherphone, que consulta e guarda em cache a API pública do PaissaDB uma vez para todos os usuários, em vez de cada cliente consultá-la. O plugin PaissaHouse não é necessário.",
   "housing.refreshIntervalHint": "O Housing consulta no máximo a cada {0} minutos, e só enquanto este app está aberto. Os dados de um ward só mudam quando alguém percorre o ward, então consultar com mais frequência não mostra nada novo. Você pode atualizar manualmente quando quiser.",

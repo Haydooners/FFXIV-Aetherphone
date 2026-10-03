@@ -1510,7 +1510,6 @@ internal static class L
         public static readonly LocString ProviderStatus = new("housing.providerStatus", "Provider");
         public static readonly LocString LastRefresh = new("housing.lastRefresh", "Last successful refresh");
         public static readonly LocString OpenPlotsReported = new("housing.openPlotsReported", "Reported openings");
-        public static readonly LocString ApiEndpointLabel = new("housing.apiEndpointLabel", "Endpoint");
         public static readonly LocString ProxyCacheAge = new("housing.proxyCacheAge", "Service cache age");
         public static readonly LocString DataSourceNotice = new("housing.dataSourceNotice",
             "Housing reads Aetherphone's housing service, which polls and caches the public PaissaDB API once for all users rather than each client polling it. The PaissaHouse plugin is not required.");

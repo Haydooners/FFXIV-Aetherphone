@@ -6736,7 +6736,6 @@
   "housing.providerStatus": "Sağlayıcı",
   "housing.lastRefresh": "Son başarılı yenileme",
   "housing.openPlotsReported": "Bildirilen boş plot",
-  "housing.apiEndpointLabel": "Uç nokta",
   "housing.proxyCacheAge": "Servis önbellek yaşı",
   "housing.dataSourceNotice": "Housing, Aetherphone'un housing servisini okur. Bu servis herkese açık PaissaDB API'sini her istemci ayrı ayrı sorgulamak yerine tüm kullanıcılar için bir kez sorgular ve önbelleğe alır. PaissaHouse eklentisi gerekmez.",
   "housing.refreshIntervalHint": "Housing en fazla {0} dakikada bir sorgu yapar, o da yalnızca bu uygulama açıkken. Bir ward'ın verisi ancak bir oyuncu oradan geçtiğinde değişir, daha sık bakmak sana yeni bir şey göstermez. İstediğin zaman elle yenileyebilirsin.",

@@ -6736,7 +6736,6 @@
   "housing.providerStatus": "Fournisseur",
   "housing.lastRefresh": "Dernière actualisation réussie",
   "housing.openPlotsReported": "Disponibilités signalées",
-  "housing.apiEndpointLabel": "Point d'accès",
   "housing.proxyCacheAge": "Ancienneté du cache du service",
   "housing.dataSourceNotice": "Cette application interroge le service de logement d'Aetherphone, qui consulte et met en cache l'API publique PaissaDB une seule fois pour tout le monde, au lieu que chaque client l'interroge de son côté. Le plugin PaissaHouse n'est pas nécessaire.",
   "housing.refreshIntervalHint": "L'application n'interroge le service qu'une fois toutes les {0} minutes au maximum, et seulement tant qu'elle est ouverte. Les données d'un secteur ne changent que lorsqu'un joueur le parcourt, vérifier plus souvent ne montre donc rien de neuf. Vous pouvez actualiser manuellement à tout moment.",

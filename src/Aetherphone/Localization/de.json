@@ -6736,7 +6736,6 @@
   "housing.providerStatus": "Anbieter",
   "housing.lastRefresh": "Letzte erfolgreiche Aktualisierung",
   "housing.openPlotsReported": "Gemeldete freie Grundstücke",
-  "housing.apiEndpointLabel": "Endpunkt",
   "housing.proxyCacheAge": "Alter des Dienst-Caches",
   "housing.dataSourceNotice": "Housing liest den Housing-Dienst von Aetherphone, der die öffentliche PaissaDB-API einmal für alle Nutzer abfragt und zwischenspeichert, statt dass jeder Client sie einzeln abfragt. Das Plugin PaissaHouse wird nicht benötigt.",
   "housing.refreshIntervalHint": "Housing fragt höchstens alle {0} Minuten ab, und nur solange diese App geöffnet ist. Die Daten eines Bezirks ändern sich nur, wenn ein Spieler durch ihn läuft, häufigeres Prüfen zeigt dir also nichts Neues. Du kannst jederzeit manuell aktualisieren.",

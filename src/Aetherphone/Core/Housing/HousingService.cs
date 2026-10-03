@@ -112,8 +112,6 @@ internal sealed class HousingService : IDisposable
 
     public string ProviderName => ActiveProvider.DisplayName;
 
-    public string ApiBaseUrl => ActiveProvider.BaseUrl;
-
     public int? ProxyCacheAgeSeconds => ActiveProvider.LastProxyCacheAge;
 
     public HousingProviderStatus Status => new(ActiveSource, State, LastSuccessUtc, LastError);
