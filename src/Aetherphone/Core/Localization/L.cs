@@ -2532,8 +2532,30 @@ internal static class L
                 "Added a weight log for your character with charts over a week, month, 6 months or a year, and a single welcome page in place of the setup steps"),
         };
 
+        public static readonly LocString[] Release1042AppStore =
+        {
+            new("changelog.r1042.142",
+                "Overhauled the App Store with an App of the Day card that shows the app's live widget, app pages with live widget previews and What's New, and search"),
+            new("changelog.r1042.143",
+                "Sorted the App Store into clearer categories such as Out in the World, Your Character, Community and News & Info, and built-in apps now appear as Built in"),
+            new("changelog.r1042.144",
+                "Notifications is now a built-in app that cannot be removed, so its settings always stay reachable"),
+        };
+
+        public static readonly LocString[] Release1042Casino =
+        {
+            new("changelog.r1042.145",
+                "Overhauled the Gamba lobby with a chip card, a Tonight card showing today's result against your loss limit, live rooms and a Jump back in shelf"),
+            new("changelog.r1042.146",
+                "Fixed the daily loss limit, which could not be saved; you can now set, change or remove your own limit and see how much room is left tonight"),
+        };
+
         public static readonly LocString[] Release1042Games =
         {
+            new("changelog.r1042.140",
+                "Overhauled the Games hub with a daily challenge card, Continue Playing, a shelf for each genre, and Play with friends, Records and Search tabs"),
+            new("changelog.r1042.141",
+                "The Daily Game widget has a new medium size that lists your recent games, one tap to jump back in"),
             new("changelog.r1042.68",
                 "Added Coil to Games: shoot marbles into a chain rolling toward the drain and match three before it gets there, across twelve tracks with power-ups"),
             new("changelog.r1042.69",
