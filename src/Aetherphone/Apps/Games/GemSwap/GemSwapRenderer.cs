@@ -142,7 +142,7 @@ internal sealed class GemSwapRenderer
         var min = new Vector2(center.X - gemHalf, center.Y - gemHalf);
         var max = new Vector2(center.X + gemHalf, center.Y + gemHalf);
         var special = board.Special(index);
-        if (special == GemSpecial.Prism)
+        if (special == GemSpecial.Prism || color == GemSwapBoard.PrismColor)
         {
             DrawPrism(drawList, center, gemHalf, alpha, scale, time);
             DrawSelection(drawList, anim, index, center, min, max, gemHalf, rounding, scale, theme);
