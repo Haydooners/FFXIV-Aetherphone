@@ -14,6 +14,7 @@ internal sealed partial class MusicApp
     private const float MiniButtonGap = 4f;
     private const float MiniPlayGlyph = 8f;
     private const float MiniSkipGlyph = 7f;
+    private const float MiniStopGlyph = 6f;
     private const float MiniProgressThickness = 2f;
     private const float MiniProgressInset = 3f;
     private const float MiniHiddenArtAlpha = 0.06f;
@@ -75,6 +76,12 @@ internal sealed partial class MusicApp
             playback.TogglePlayPause();
         }
 
+        if (playback.IsPaused)
+        {
+            DrawMiniStop(drawList, nextCenter, buttonRadius, playHit, scale);
+            return;
+        }
+
         var nextEnabled = playback.SongActive || playback.HasQueue;
         var nextScale = MiniButton(drawList, "music.mini.next", nextCenter, buttonRadius, nextEnabled,
             out var nextTapped);
@@ -86,6 +93,24 @@ internal sealed partial class MusicApp
         {
             playback.Next();
         }
+    }
+
+    private void DrawMiniStop(ImDrawListPtr drawList, Vector2 center, float buttonRadius, Vector2 hit, float scale)
+    {
+        var stopScale = MiniButton(drawList, "music.mini.stop", center, buttonRadius, true, out var stopTapped);
+        MediaGlyph.Stop(drawList, center, MiniStopGlyph * scale * stopScale, ImGui.GetColorU32(ui.TitleInk));
+        HoverTooltip.Show(new Rect(center - hit, center + hit), Loc.T(L.Music.NowPlaying.StopPlaying),
+            HoverLabelSide.Above);
+        if (stopTapped)
+        {
+            StopPlaying();
+        }
+    }
+
+    private void StopPlaying()
+    {
+        CloseNowPlaying();
+        playback.Stop();
     }
 
     private void DrawMiniArt(ImDrawListPtr drawList, Vector2 artMin, float artSide)

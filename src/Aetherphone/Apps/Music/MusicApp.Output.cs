@@ -55,7 +55,7 @@ internal sealed partial class MusicApp
         var scale = UiScale.Current;
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, MaxFrameSeconds);
         var session = windowsMedia.IsSupported && windowsMedia.Current.HasSession;
-        var height = (SheetMetrics.GrabberZone + OutputTitleHeight + OutputRowHeight * 4f + OutputCrossfadeHeight +
+        var height = (SheetMetrics.GrabberZone + OutputTitleHeight + OutputRowHeight * 5f + OutputCrossfadeHeight +
                       Metrics.Size.HomeIndicatorInset + (session ? OutputSessionHeight : 0f)) * scale;
         using var layer = ScreenLayer.Begin("music.output", screen, false);
         var frame = outputSheet.Begin(ImGui.GetWindowDrawList(), screen, theme, SheetDetents.Fitted(height),
@@ -109,6 +109,15 @@ internal sealed partial class MusicApp
         y += OutputRowHeight * scale;
         Hairline(drawList, left, right, y, ink);
         DrawCrossfadeRow(drawList, left, right, y, ink, muted, interactive, scale, delta);
+        y += OutputCrossfadeHeight * scale;
+        Hairline(drawList, left, right, y, ink);
+        if (DrawOutputLinkRow(drawList, left, right, y, ink, muted, interactive, scale, FontAwesomeIcon.Stop,
+                Loc.T(L.Music.NowPlaying.StopPlaying), string.Empty))
+        {
+            outputSheet.Close();
+            StopPlaying();
+        }
+
         outputSheet.End(in frame);
     }
 

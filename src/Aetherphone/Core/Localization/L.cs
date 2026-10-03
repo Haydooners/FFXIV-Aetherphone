@@ -2102,6 +2102,8 @@ internal static class L
                 "Added Replay: minutes listened, top songs and top artists for the week, month, year or all time"),
             new("changelog.r1042.80",
                 "Added Sound Check, which keeps every song at the same volume"),
+            new("changelog.r1042.85",
+                "Added Stop playing: tap the stop button on the paused mini player, or use Stop playing in the Output sheet"),
             new("changelog.r1042.66",
                 "Your playlists, recently played songs and favorite stations carry over to the new Music automatically"),
             new("changelog.r1042.67",
@@ -5153,6 +5155,7 @@ internal static class L
 
         internal static class NowPlaying
         {
+            public static readonly LocString StopPlaying = new("music.nowPlaying.stopPlaying", "Stop playing");
             public static readonly LocString UpNext = new("music.nowPlaying.upNext", "Up Next");
             public static readonly LocString PlayingNext = new("music.nowPlaying.playingNext", "Playing Next");
             public static readonly LocString ContinuePlaying = new("music.nowPlaying.continuePlaying",
