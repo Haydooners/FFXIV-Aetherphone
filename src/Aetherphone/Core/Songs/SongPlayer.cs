@@ -35,6 +35,7 @@ internal sealed class SongPlayer : IDisposable
     private const int MonitorIntervalMilliseconds = 40;
     private const float DeclickSeconds = 0.04f;
     private const int DrainTimeoutMilliseconds = 1500;
+    private const long OutputRecoveryIntervalMilliseconds = 2000;
     private static readonly TimeSpan CacheMaxAge = TimeSpan.FromDays(14);
 
     private readonly YoutubeClient youtube;
@@ -49,6 +50,7 @@ internal sealed class SongPlayer : IDisposable
     private TrackVoice? currentVoice;
     private int session;
     private int liveVoices;
+    private long lastOutputRecoveryAt = long.MinValue / 2;
     private volatile SongPlaybackState state = SongPlaybackState.Stopped;
     private volatile bool paused;
     private Song currentSong;
@@ -195,12 +197,6 @@ internal sealed class SongPlayer : IDisposable
         }
 
         var videoId = song.VideoId;
-        if (OfflineSource?.Invoke(videoId) is not null || cache.Get(OpusCacheKey(videoId), CacheMaxAge) is not null ||
-            cache.Get(videoId, CacheMaxAge) is not null)
-        {
-            return;
-        }
-
         lock (prefetching)
         {
             if (!prefetching.Add(videoId))
@@ -213,6 +209,13 @@ internal sealed class SongPlayer : IDisposable
         {
             try
             {
+                if (OfflineSource?.Invoke(videoId) is not null ||
+                    cache.Get(OpusCacheKey(videoId), CacheMaxAge) is not null ||
+                    cache.Get(videoId, CacheMaxAge) is not null)
+                {
+                    return;
+                }
+
                 FillCacheThroughResolver(videoId, CancellationToken.None);
             }
             catch (Exception exception)
@@ -380,9 +383,18 @@ internal sealed class SongPlayer : IDisposable
                 return VoiceOutcome.Detached;
             }
 
+            try
+            {
+                EnsureOutput();
+            }
+            catch
+            {
+                reader.Dispose();
+                throw;
+            }
+
             currentVoice = voice;
             durationSeconds = (float)voice.DurationSeconds;
-            EnsureOutput();
             Interlocked.Increment(ref liveVoices);
             mixer.AddMixerInput(voice);
             state = SongPlaybackState.Playing;
@@ -466,7 +478,16 @@ internal sealed class SongPlayer : IDisposable
         }
 
         var created = AudioOutputFactory.Create();
-        created.Init(master, true);
+        try
+        {
+            created.Init(master, true);
+        }
+        catch
+        {
+            created.Dispose();
+            throw;
+        }
+
         created.PlaybackStopped += OnOutputStopped;
         output = created;
         if (!paused)
@@ -479,7 +500,18 @@ internal sealed class SongPlayer : IDisposable
     {
         lock (gate)
         {
-            if (output is not null && !paused && output.PlaybackState != PlaybackState.Playing)
+            if (paused)
+            {
+                return;
+            }
+
+            if (output is null)
+            {
+                RecoverOutput();
+                return;
+            }
+
+            if (output.PlaybackState != PlaybackState.Playing)
             {
                 output.Play();
             }
@@ -503,6 +535,31 @@ internal sealed class SongPlayer : IDisposable
             output.PlaybackStopped -= OnOutputStopped;
             output.Dispose();
             output = null;
+            var now = Environment.TickCount64;
+            if (arguments.Exception is null || paused || now - lastOutputRecoveryAt < OutputRecoveryIntervalMilliseconds)
+            {
+                return;
+            }
+
+            lastOutputRecoveryAt = now;
+            RecoverOutput();
+        }
+    }
+
+    private void RecoverOutput()
+    {
+        if (Volatile.Read(ref liveVoices) == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            EnsureOutput();
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, "Song output device could not be reopened");
         }
     }
 

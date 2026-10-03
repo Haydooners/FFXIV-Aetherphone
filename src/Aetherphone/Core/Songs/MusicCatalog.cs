@@ -71,6 +71,7 @@ internal sealed class MusicCatalog : IDisposable
 
     private readonly Dictionary<string, CatalogEntry> entries = new(StringComparer.Ordinal);
     private readonly object gate = new();
+    private readonly object writeGate = new();
     private readonly Func<string, CancellationToken, Task<Song[]>> search;
     private readonly Func<string, int, CancellationToken, Song[]> mix;
     private readonly Func<string, int, CancellationToken, CatalogList> playlist;
@@ -181,30 +182,33 @@ internal sealed class MusicCatalog : IDisposable
             return;
         }
 
-        string json;
-        lock (gate)
+        lock (writeGate)
         {
-            if (!dirty)
-            {
-                return;
-            }
-
-            dirty = false;
-            json = JsonConvert.SerializeObject(Snapshot());
-        }
-
-        try
-        {
-            var temp = path + ".tmp";
-            File.WriteAllText(temp, json);
-            File.Move(temp, path, true);
-        }
-        catch (Exception exception)
-        {
-            AepLog.Warning(exception, "Music catalog write failed");
+            string json;
             lock (gate)
             {
-                dirty = true;
+                if (!dirty)
+                {
+                    return;
+                }
+
+                dirty = false;
+                json = JsonConvert.SerializeObject(Snapshot());
+            }
+
+            try
+            {
+                var temp = path + ".tmp";
+                File.WriteAllText(temp, json);
+                File.Move(temp, path, true);
+            }
+            catch (Exception exception)
+            {
+                AepLog.Warning(exception, "Music catalog write failed");
+                lock (gate)
+                {
+                    dirty = true;
+                }
             }
         }
     }
@@ -359,6 +363,12 @@ internal sealed class MusicCatalog : IDisposable
             }
             else
             {
+                if (!string.Equals(entry.Argument, request.Argument, StringComparison.Ordinal))
+                {
+                    entry.Songs = Array.Empty<Song>();
+                    entry.Title = string.Empty;
+                }
+
                 entry.Argument = request.Argument;
                 entry.RetryAfterUnix = now + RetryBackoffSeconds;
                 entry.Failed = true;

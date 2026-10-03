@@ -61,7 +61,7 @@ internal sealed class SongLinkResolver
 
     public SongResolvedAudio? Fetch(string videoId, CancellationToken token)
     {
-        if (!HasResolver || token.IsCancellationRequested)
+        if (!HasResolver || token.IsCancellationRequested || !PlaylistImporter.IsVideoId(videoId))
         {
             return null;
         }
@@ -115,7 +115,7 @@ internal sealed class SongLinkResolver
 
     public SongResolvedStream? ResolveStreamUrl(string videoId, CancellationToken token)
     {
-        if (!HasResolver || token.IsCancellationRequested)
+        if (!HasResolver || token.IsCancellationRequested || !PlaylistImporter.IsVideoId(videoId))
         {
             return null;
         }
@@ -228,7 +228,7 @@ internal sealed class SongLinkResolver
 
     public SongSearchEntry[]? FetchMix(string videoId, int maxEntries, CancellationToken token)
     {
-        if (string.IsNullOrEmpty(videoId))
+        if (!PlaylistImporter.IsVideoId(videoId))
         {
             return null;
         }
@@ -263,8 +263,16 @@ internal sealed class SongLinkResolver
     {
         var response = StreamingClient
             .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token).GetAwaiter().GetResult();
-        response.EnsureSuccessStatusCode();
-        return response.Content.ReadAsStream(token);
+        try
+        {
+            response.EnsureSuccessStatusCode();
+            return response.Content.ReadAsStream(token);
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 
     private static SongSearchEntry[] ParseSearchOutput(string output)
