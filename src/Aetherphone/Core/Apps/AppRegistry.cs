@@ -109,7 +109,7 @@ internal static class AppRegistry
         apps.Add(new YellowPagesApp(services.YellowPages, services.AdInquiries, services.YellowPagesLauncher, services.SocialNotifications, services.Musters, new AethernetApi(services.Http, services.AethernetSession, "yellowpages"), services.GameData, services.RemoteImages, services.Lodestone, photoLibrary, services.WallpaperImages, services.Configuration, services.Confirm, services.Translation, services.Report, services.Conduct, services.EncryptionHelp, services.Http));
         apps.Add(new MapsApp(services.Maps, services.Configuration, services.ZoneMapTextures));
         apps.Add(new NewsApp(services.News, services.Media, services.Http, services.GameData));
-        apps.Add(new CollectionsApp(services.Collections, services.Lodestone, services.Media, services.Http, services.GameData));
+        apps.Add(new CollectionsApp(services.Collections, services.CollectionsJournal, services.Lodestone, services.Media, services.Http, services.GameData, services.MarketLauncher));
         apps.Add(new MarketApp(services.Market, services.MarketIndex, services.MarketAlerts, services.MarketLauncher, services.GameData, services.Textures, services.Configuration));
         apps.Add(new WalletApp(services.GameData, services.Textures, Plugin.Framework));
         apps.Add(new InventoryApp(services.InventoryCapture, services.GameData, services.Textures));

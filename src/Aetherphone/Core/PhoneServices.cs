@@ -179,6 +179,7 @@ internal sealed class PhoneServices : IDisposable
     public required YellowPagesLauncher YellowPagesLauncher { get; init; }
     public required AnnouncementsLauncher AnnouncementsLauncher { get; init; }
     public required CollectionsCatalogService Collections { get; init; }
+    public required CollectionsJournal CollectionsJournal { get; init; }
     public required InventoryCaptureService InventoryCapture { get; init; }
     public required ActivityTracker Activity { get; init; }
     public required ActivityRingNotifier RingNotifier { get; init; }
@@ -339,6 +340,8 @@ internal sealed class PhoneServices : IDisposable
         var collectionsRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "collections"));
         var collectionsDisk = new DiskCache(collectionsRoot, 32L * 1024 * 1024);
         var collections = new CollectionsCatalogService(http, collectionsDisk, dataManager, unlockState, framework);
+        var collectionsJournal = new CollectionsJournal(framework, unlockState, gameData, collections, notifications,
+            configDirectory, installer.Gate(CollectionsJournal.AppId));
         var cacheStorage = new CacheStorage(new[] { imageDisk, disk, audioCache, stratsDisk, collectionsDisk, lyricsDisk });
         var inventoryRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "inventory"));
         var inventoryStore = new InventoryStore(inventoryRoot);
@@ -532,6 +535,7 @@ internal sealed class PhoneServices : IDisposable
             YellowPagesLauncher = new YellowPagesLauncher(),
             AnnouncementsLauncher = new AnnouncementsLauncher(),
             Collections = collections,
+            CollectionsJournal = collectionsJournal,
             InventoryCapture = inventoryCapture,
             Activity = activity,
             RingNotifier = ringNotifier,
@@ -581,6 +585,7 @@ internal sealed class PhoneServices : IDisposable
         StreamSignals.Dispose();
         Calls.Dispose();
         Contacts.Dispose();
+        CollectionsJournal.Dispose();
         Collections.Dispose();
         InventoryCapture.Dispose();
         RingNotifier.Dispose();
