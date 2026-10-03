@@ -59,6 +59,9 @@ internal sealed class TabBar
 
     private static float CurrentGlassOpacity => WallpaperBackdrop.Available ? GlassOpacity : FlatGlassOpacity;
 
+    private static bool BarHover(Vector2 min, Vector2 max) =>
+        !UiInteract.InputBlocked && UiInteract.HoverWindowOnly(min, max);
+
     public static Rect ContentArea(Rect area, float scale) => TabBarLayout.ContentArea(area, scale);
 
     public static Rect Zone(Rect area, float scale) => TabBarLayout.Zone(area, scale);
@@ -101,7 +104,8 @@ internal sealed class TabBar
         var tone = Material.ToneFor(backdrop);
         var zone = TabBarLayout.Zone(area, scale);
         var layerRect = new Rect(new Vector2(zone.Min.X, zone.Min.Y - LayerHeadroomUnits * scale), zone.Max);
-        using var layer = ScreenLayer.BeginPassive("tabbar", layerRect);
+        using var layer = ScreenLayer.Begin("tabbar", layerRect, false);
+        UiInteract.HoverOverlay(layerRect);
         var drawList = ImGui.GetWindowDrawList();
         var radius = capsule.Height * 0.5f;
         Material.ThemedGlass(drawList, capsule.Min, capsule.Max, radius, scale, backdrop, CurrentGlassOpacity);
@@ -129,7 +133,7 @@ internal sealed class TabBar
             var labelCenter = Vector2.Lerp(TabBarLayout.LabelCenter(cell, scale), compactLabelCenter, amount);
             var fade = 1f - amount;
             var alpha = isActive ? 1f : fade * fade;
-            var hovered = !compactMode && UiInteract.Hover(cell.Min, cell.Max);
+            var hovered = !compactMode && BarHover(cell.Min, cell.Max);
             hover[index].Step(hovered ? 1f : 0f, Motion.HoverLift, delta);
             var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
             press[index].Step(pressed ? 1f : 0f, pressed ? Motion.PressIn : Motion.Release, delta);
@@ -177,7 +181,7 @@ internal sealed class TabBar
         drawList.PopClipRect();
         if (compactMode)
         {
-            var capsuleHovered = UiInteract.Hover(capsule.Min, capsule.Max);
+            var capsuleHovered = BarHover(capsule.Min, capsule.Max);
             if (capsuleHovered)
             {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -267,7 +271,7 @@ internal sealed class TabBar
         Vector4 backdrop, float delta, float scale)
     {
         var circle = TabBarLayout.ActionCircle(area, scale);
-        var hovered = UiInteract.Hover(circle.Min, circle.Max);
+        var hovered = BarHover(circle.Min, circle.Max);
         actionHover.Step(hovered ? 1f : 0f, Motion.HoverLift, delta);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         actionPress.Step(pressed ? 1f : 0f, pressed ? Motion.PressIn : Motion.Release, delta);
