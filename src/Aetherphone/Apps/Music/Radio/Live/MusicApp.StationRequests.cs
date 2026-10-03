@@ -271,7 +271,9 @@ internal sealed partial class MusicApp
                 SectionHeader.Draw(ui, Loc.T(L.Music.Live.PendingSection), false, 0f);
             }
 
+            ImGui.PushID(unchecked((int)entry.RequestId));
             DrawRequestRow(entry, bufferIndex, scale);
+            ImGui.PopID();
         }
     }
 

@@ -317,6 +317,30 @@ public sealed class RadioRoomSessionTests
     }
 
     [Fact]
+    public void ALateSnapshotAfterAQuickRevisitHealsWhenTheServerSaysNotInRoom()
+    {
+        var harness = new Harness();
+        harness.Session.Attach(Station);
+        harness.Session.Detach();
+        harness.Session.Attach(Station);
+        Assert.Equal(2, harness.Sent.Count);
+        Assert.Equal(SignalType.RadioDetach, harness.Sent[1].Type);
+
+        harness.Receive(RadioRoomSamples.Room(Station));
+        Assert.True(harness.Session.IsAttached);
+        harness.Tick += RadioRoomPacing.AttachMilliseconds;
+        harness.Session.Tick();
+        Assert.Equal(2, harness.Sent.Count);
+
+        harness.Receive($"{{\"type\":\"radio.refused\",\"stationId\":\"{Station}\",\"action\":\"radio.chat\",\"reason\":\"notInRoom\"}}");
+
+        Assert.Equal(RadioRoomStatus.Attaching, harness.Session.Status);
+        Assert.Equal(3, harness.Sent.Count);
+        Assert.Equal(SignalType.RadioAttach, harness.Sent[2].Type);
+        Assert.Equal(Station, harness.Sent[2].StationId);
+    }
+
+    [Fact]
     public void SwitchingStationsQuicklyDefersTheSecondAttach()
     {
         var harness = new Harness();

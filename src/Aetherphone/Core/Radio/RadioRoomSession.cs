@@ -615,6 +615,12 @@ internal sealed class RadioRoomSession
             Status = RadioRoomStatus.Unavailable;
             attachDueTick = 0;
         }
+        else if (kind == RadioRefusalKind.NotInRoom && Status == RadioRoomStatus.Attached)
+        {
+            Status = RadioRoomStatus.Attaching;
+            Bump();
+            RequestAttach();
+        }
 
         if (action == RadioRoomAction.React)
         {

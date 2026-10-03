@@ -27,6 +27,8 @@ internal sealed class RadioConnection : IDisposable
 internal static class RadioStreamOpener
 {
     private const int MaxPlaylistHops = 3;
+    private const int MaxFetchBytes = 16 * 1024 * 1024;
+    private const int FetchChunkBytes = 64 * 1024;
     private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan SegmentTimeout = TimeSpan.FromSeconds(20);
 
@@ -112,12 +114,32 @@ internal static class RadioStreamOpener
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
         timeout.CancelAfter(SegmentTimeout);
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        using var response = client.Send(request, HttpCompletionOption.ResponseContentRead, timeout.Token);
+        using var response = client.Send(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
         response.EnsureSuccessStatusCode();
+        if (response.Content.Headers.ContentLength > MaxFetchBytes)
+        {
+            throw new InvalidDataException("The HLS resource is larger than a segment can be");
+        }
+
+        using var abort = timeout.Token.Register(response.Dispose);
         using var body = response.Content.ReadAsStream(timeout.Token);
         using var memory = new MemoryStream();
-        body.CopyTo(memory);
-        return memory.ToArray();
+        var chunk = new byte[FetchChunkBytes];
+        while (true)
+        {
+            var read = body.Read(chunk, 0, chunk.Length);
+            if (read <= 0)
+            {
+                return memory.ToArray();
+            }
+
+            if (memory.Length + read > MaxFetchBytes)
+            {
+                throw new InvalidDataException("The HLS resource is larger than a segment can be");
+            }
+
+            memory.Write(chunk, 0, read);
+        }
     }
 
     private static Stream WrapMetadata(Stream network, HttpResponseMessage response, Action<string> onTitle)
