@@ -312,7 +312,7 @@ internal sealed class FishingApp : IPhoneApp
         return string.Concat(plan.BlueFish[0].Name, " · ", plan.BlueFish[1].Name);
     }
 
-    private static Vector4 TimeOfDayTint(OceanTimeOfDay timeOfDay) =>
+    internal static Vector4 TimeOfDayTint(OceanTimeOfDay timeOfDay) =>
         timeOfDay switch
         {
             OceanTimeOfDay.Sunset => Accent.Rose,
@@ -320,7 +320,7 @@ internal sealed class FishingApp : IPhoneApp
             _ => Accent.Amber,
         };
 
-    private static FontAwesomeIcon TimeOfDayIcon(OceanTimeOfDay timeOfDay) =>
+    internal static FontAwesomeIcon TimeOfDayIcon(OceanTimeOfDay timeOfDay) =>
         timeOfDay switch
         {
             OceanTimeOfDay.Sunset => FontAwesomeIcon.CloudSun,
@@ -328,7 +328,7 @@ internal sealed class FishingApp : IPhoneApp
             _ => FontAwesomeIcon.Sun,
         };
 
-    private static string TimeOfDayLabel(OceanTimeOfDay timeOfDay) =>
+    internal static string TimeOfDayLabel(OceanTimeOfDay timeOfDay) =>
         timeOfDay switch
         {
             OceanTimeOfDay.Sunset => Loc.T(L.Fishing.Sunset),
