@@ -50,11 +50,22 @@ internal sealed class AppSkin
 
     public Vector4 HoverWash => Palette.HoverWash;
 
+    public Vector4 BackdropColor
+    {
+        get
+        {
+            var body = Palette.BackdropBottom with { W = 1f };
+            var bloom = Palette.BloomBottom;
+            return Vector4.Lerp(body, bloom with { W = 1f }, Math.Clamp(bloom.W, 0f, 1f));
+        }
+    }
+
     public void Backdrop(Rect screen)
     {
         var scale = UiScale.Current;
         AppSurface.ScrollbarInk = Palette.TitleInk;
         PaintGradient(ImGui.GetWindowDrawList(), screen, screen, Theme.ScreenRounding * scale);
+        WallpaperBackdrop.RecordFlat(BackdropColor);
     }
 
     public void Body(Rect area)

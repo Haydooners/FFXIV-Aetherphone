@@ -13,6 +13,15 @@ internal static class AppSurface
 
     public static Vector4? ScrollbarInk { get; set; }
 
+    public static float LastScrollY { get; private set; }
+
+    public static float ScrollOffsetThisFrame => lastScrollFrame == ImGui.GetFrameCount() ? LastScrollY : 0f;
+
+    private static int lastScrollFrame = -1;
+    private static float ambientBottomInset;
+
+    public static BottomInsetScope ReserveBottom(float inset) => new(inset);
+
     public static SurfaceScope Begin(Rect area, bool disableMouseWheelScroll = false) =>
         BeginCore(area, SidePadding, disableMouseWheelScroll);
 
@@ -39,7 +48,7 @@ internal static class AppSurface
         var child = ImRaii.Child("##appSurface", area.Size, false, flags);
         var freshVisit = ResetScrollOnNewVisit();
         ActiveFreshVisit = freshVisit;
-        return new SurfaceScope(child, padding, scrollbar, DragScrollHost.Begin(key), freshVisit);
+        return new SurfaceScope(child, padding, scrollbar, DragScrollHost.Begin(key), freshVisit, ambientBottomInset);
     }
 
     public static bool ResetScrollOnNewVisit()
@@ -62,6 +71,19 @@ internal static class AppSurface
         return true;
     }
 
+    public ref struct BottomInsetScope
+    {
+        private readonly float previous;
+
+        internal BottomInsetScope(float inset)
+        {
+            previous = ambientBottomInset;
+            ambientBottomInset = MathF.Max(0f, inset);
+        }
+
+        public void Dispose() => ambientBottomInset = previous;
+    }
+
     public ref struct SurfaceScope
     {
         private ImRaii.ChildDisposable child;
@@ -69,15 +91,17 @@ internal static class AppSurface
         private readonly IDisposable? scrollbar;
         private readonly DragScrollHost.Surface surface;
         private readonly bool freshVisit;
+        private readonly float bottomInset;
 
         internal SurfaceScope(ImRaii.ChildDisposable child, IDisposable padding, IDisposable? scrollbar,
-            DragScrollHost.Surface surface, bool freshVisit)
+            DragScrollHost.Surface surface, bool freshVisit, float bottomInset)
         {
             this.child = child;
             this.padding = padding;
             this.scrollbar = scrollbar;
             this.surface = surface;
             this.freshVisit = freshVisit;
+            this.bottomInset = bottomInset;
         }
 
         public readonly float Pull => surface.Pull;
@@ -97,6 +121,13 @@ internal static class AppSurface
         public void Dispose()
         {
             ActiveFreshVisit = false;
+            if (bottomInset > 0f)
+            {
+                ImGui.Dummy(new Vector2(0f, bottomInset));
+            }
+
+            LastScrollY = ImGui.GetScrollY();
+            lastScrollFrame = ImGui.GetFrameCount();
             child.Dispose();
             padding?.Dispose();
             scrollbar?.Dispose();
