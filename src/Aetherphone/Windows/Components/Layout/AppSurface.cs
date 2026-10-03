@@ -1,5 +1,7 @@
 using Aetherphone.Core;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 
@@ -10,6 +12,22 @@ internal static class AppSurface
     public const float SidePadding = 16f;
     private const float TopPadding = 8f;
     private const float NavBarSnapTolerance = 0.5f;
+    private const float ScrollbarSizeUnits = 4f;
+    private const float ScrollbarRoundingUnits = 2f;
+    private const float IndicatorHoldSeconds = 0.8f;
+    private const float IndicatorStripUnits = 16f;
+    private const float IndicatorWidthUnits = 3f;
+    private const float IndicatorInsetUnits = 2f;
+    private const float IndicatorMinUnits = 24f;
+    private const float IndicatorAlphaScale = 0.45f;
+    private const float IndicatorMotionEpsilon = 0.5f;
+    private const float MaxFrameSeconds = 0.1f;
+
+    private static Spring indicator;
+    private static double lastScrollMotion = -IndicatorHoldSeconds;
+    private static int indicatorFrame = -1;
+
+    public static float IndicatorAlpha { get; private set; }
 
     private static int depth;
     private static bool navBarArmed;
@@ -66,7 +84,9 @@ internal static class AppSurface
         ImGui.SetCursorScreenPos(area.Min);
         var key = ImGui.GetID("##appSurface");
         var padding = ImRaii.PushStyle(ImGuiStyleVar.WindowPadding,
-            new Vector2(horizontalPadding * scale, TopPadding * scale));
+                new Vector2(horizontalPadding * scale, TopPadding * scale))
+            .Push(ImGuiStyleVar.ScrollbarSize, ScrollbarSizeUnits * scale)
+            .Push(ImGuiStyleVar.ScrollbarRounding, ScrollbarRoundingUnits * scale);
         var flags = DragScrollHost.ScrollFlags(ImGuiWindowFlags.NoBackground);
         if (disableMouseWheelScroll)
         {
@@ -95,6 +115,60 @@ internal static class AppSurface
         var style = ImGui.GetStyle();
         var reserve = MathF.Max(0f, navBarInset - style.WindowPadding.Y - style.ItemSpacing.Y);
         ImGui.Dummy(new Vector2(0f, reserve));
+    }
+
+    private static void TrackIndicator()
+    {
+        var frame = ImGui.GetFrameCount();
+        var now = ImGui.GetTime();
+        var scrollY = ImGui.GetScrollY();
+        var storage = ImGui.GetStateStorage();
+        var key = ImGui.GetID("##appSurfaceScrollY");
+        var previous = storage.GetFloat(key, scrollY);
+        if (MathF.Abs(previous - scrollY) > IndicatorMotionEpsilon)
+        {
+            lastScrollMotion = now;
+        }
+
+        storage.SetFloat(key, scrollY);
+        var scale = UiScale.Current;
+        var windowMin = ImGui.GetWindowPos();
+        var windowSize = ImGui.GetWindowSize();
+        var windowMax = windowMin + windowSize;
+        if (UiInteract.HoverWindowOnly(new Vector2(windowMax.X - IndicatorStripUnits * scale, windowMin.Y), windowMax))
+        {
+            lastScrollMotion = now;
+        }
+
+        if (indicatorFrame != frame)
+        {
+            indicatorFrame = frame;
+            var delta = MathF.Min(ImGui.GetIO().DeltaTime, MaxFrameSeconds);
+            var wanted = now - lastScrollMotion < IndicatorHoldSeconds ? 1f : 0f;
+            IndicatorAlpha = Math.Clamp(indicator.Step(wanted, Motion.Appear, delta), 0f, 1f);
+        }
+
+        if (!DragScrollHost.Enabled || IndicatorAlpha <= 0.01f)
+        {
+            return;
+        }
+
+        var maxY = ImGui.GetScrollMaxY();
+        if (maxY <= 0f)
+        {
+            return;
+        }
+
+        var viewHeight = windowSize.Y;
+        var inset = IndicatorInsetUnits * scale;
+        var thumbHeight = MathF.Max(IndicatorMinUnits * scale, viewHeight * viewHeight / (viewHeight + maxY));
+        var travel = MathF.Max(0f, viewHeight - thumbHeight - inset * 2f);
+        var top = windowMin.Y + inset + travel * (scrollY / maxY);
+        var right = windowMax.X - inset;
+        var width = IndicatorWidthUnits * scale;
+        var ink = ScrollbarInk ?? new Vector4(1f, 1f, 1f, 1f);
+        ImGui.GetWindowDrawList().AddRectFilled(new Vector2(right - width, top), new Vector2(right, top + thumbHeight),
+            ImGui.GetColorU32(Palette.WithAlpha(ink, ink.W * IndicatorAlphaScale * IndicatorAlpha)), width * 0.5f);
     }
 
     public static bool ResetScrollOnNewVisit()
@@ -174,6 +248,7 @@ internal static class AppSurface
 
             LastScrollY = ImGui.GetScrollY();
             lastScrollFrame = ImGui.GetFrameCount();
+            TrackIndicator();
             depth = Math.Max(0, depth - 1);
             child.Dispose();
             padding?.Dispose();

@@ -32,19 +32,20 @@ internal sealed class RootSettingsPage : ISettingsPage
     private readonly bool[][] matches;
     private readonly Configuration configuration;
     private readonly ISettingsPage accountPage;
+    private readonly ISettingsPage supportPage;
     private readonly ProfileCard profileCard;
-    private readonly SupportCard supportCard = new();
     private string query = string.Empty;
     private string filteredQuery = string.Empty;
     private LanguageInfo? filteredLanguage;
 
     public RootSettingsPage(ISettingsNavigator navigator, IReadOnlyList<ISettingsPage[]> groups,
-        Configuration configuration, ISettingsPage accountPage, ProfileCard profileCard)
+        Configuration configuration, ISettingsPage accountPage, ISettingsPage supportPage, ProfileCard profileCard)
     {
         this.navigator = navigator;
         this.groups = groups;
         this.configuration = configuration;
         this.accountPage = accountPage;
+        this.supportPage = supportPage;
         this.profileCard = profileCard;
         matches = new bool[groups.Count][];
         for (var groupIndex = 0; groupIndex < groups.Count; groupIndex++)
@@ -79,7 +80,7 @@ internal sealed class RootSettingsPage : ISettingsPage
             }
 
             ImGui.Dummy(new Vector2(0f, BlockGap * scale));
-            supportCard.Draw(theme);
+            DrawSupportRow(theme);
             ImGui.Dummy(new Vector2(0f, BlockGap * scale));
             DrawQuickSwitches(theme);
             DrawGroups(theme, scale);
@@ -141,6 +142,19 @@ internal sealed class RootSettingsPage : ISettingsPage
         var height = Typography.DrawWrappedCentered(new Vector2(origin.X + width * 0.5f, origin.Y),
             Loc.T(L.Settings.NoResults), theme.TextMuted, TextStyles.Footnote, maxWidth);
         ImGui.Dummy(new Vector2(width, height));
+    }
+
+    private void DrawSupportRow(PhoneTheme theme)
+    {
+        var card = GroupCard.Begin(theme, 1);
+        card.SeparatorInset = SettingsRow.TileTextInset;
+        if (SettingsRow.Link(card.NextRow(), supportPage.Icon, supportPage.Tint, supportPage.Title, string.Empty,
+                theme))
+        {
+            navigator.Open(supportPage);
+        }
+
+        card.End();
     }
 
     private void DrawQuickSwitches(PhoneTheme theme)

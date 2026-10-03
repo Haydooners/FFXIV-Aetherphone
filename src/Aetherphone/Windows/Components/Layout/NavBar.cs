@@ -29,8 +29,8 @@ internal readonly struct NavBarFrame
 
 internal static class NavBarMetrics
 {
-    public const float ExpandedHeight = 96f;
-    public const float InlineHeight = 52f;
+    public const float ExpandedHeight = 82f;
+    public const float InlineHeight = 44f;
     public const float CollapseDistance = 60f;
     public const float GlassFadeDistance = 20f;
     public const float EdgeFadeHeight = 14f;

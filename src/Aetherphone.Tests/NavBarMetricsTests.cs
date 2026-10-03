@@ -70,8 +70,8 @@ public sealed class NavBarMetricsTests
     [Fact]
     public void ExpandedBarIsTheInlineBarPlusTheTitleBand()
     {
-        Assert.Equal(96f, NavBarMetrics.ExpandedHeight, Tolerance);
-        Assert.Equal(52f, NavBarMetrics.InlineHeight, Tolerance);
+        Assert.Equal(82f, NavBarMetrics.ExpandedHeight, Tolerance);
+        Assert.Equal(44f, NavBarMetrics.InlineHeight, Tolerance);
         Assert.Equal(NavBarMetrics.ExpandedHeight, NavBarMetrics.InlineHeight + NavBarMetrics.BandHeight, Tolerance);
     }
 
