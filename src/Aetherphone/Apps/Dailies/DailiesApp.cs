@@ -77,7 +77,7 @@ internal sealed class DailiesApp : IPhoneApp
         for (var index = 0; index < items.Length; index++)
         {
             var item = items[index];
-            var status = ReadStatus(item);
+            var status = DailyProgress.ReadStatus(gameData, item);
             autoStatuses[index] = status;
 
             if (IsOutstanding(item, status, utcNow))
@@ -92,37 +92,13 @@ internal sealed class DailiesApp : IPhoneApp
         sinceRefresh = 0f;
     }
 
-    private DailyAutoStatus ReadStatus(in DailyItem item)
-    {
-        return item.Tracking switch
-        {
-            DailyTracking.Manual => DailyAutoStatus.Unavailable,
-            DailyTracking.DutyRoulettes => DailiesReader.ReadDutyRoulettes(gameData.DailyBonusRouletteRowIds()),
-            DailyTracking.HuntBills => DailiesReader.ReadHuntBills(gameData.WeeklyHuntBillIndices(),
-                gameData.HuntOrderTypeSheet(), gameData.HuntOrderSheet()),
-            _ => DailiesReader.Read(item.Tracking, item.Goal),
-        };
-    }
-
     private static bool IsValueTracking(DailyTracking tracking) =>
         tracking is DailyTracking.BeastTribeAllowances or DailyTracking.CustomDeliveries
             or DailyTracking.WondrousTails or DailyTracking.Levequests or DailyTracking.HuntBills
             or DailyTracking.DomanEnclave;
 
-    private bool IsOutstanding(in DailyItem item, in DailyAutoStatus status, DateTime utcNow)
-    {
-        if (item.Tracking == DailyTracking.Levequests)
-        {
-            return false;
-        }
-
-        if (item.Tracking != DailyTracking.Manual && status.Available)
-        {
-            return !status.Complete;
-        }
-
-        return !checkStore.IsChecked(item, utcNow);
-    }
+    private bool IsOutstanding(in DailyItem item, in DailyAutoStatus status, DateTime utcNow) =>
+        DailyProgress.IsOutstanding(item, status, checkStore, utcNow);
 
     public void Draw(in PhoneContext context)
     {

@@ -17,8 +17,8 @@ internal sealed partial class HuntsApp
     private static readonly Vector4 CappedBarColor = new(0.20f, 0.55f, 0.95f, 1f);
     private static readonly Vector4 UnmetBarColor = new(0.60f, 0.40f, 0.90f, 1f);
     private static readonly Vector4 SpawnedBarColor = new(0.95f, 0.78f, 0.20f, 1f);
-    private static readonly Vector4 RankSSColor = new(0.95f, 0.35f, 0.35f, 1f);
-    private static readonly Vector4 RankSColor = new(0.65f, 0.45f, 0.95f, 1f);
+    internal static readonly Vector4 RankSSColor = new(0.95f, 0.35f, 0.35f, 1f);
+    internal static readonly Vector4 RankSColor = new(0.65f, 0.45f, 0.95f, 1f);
     private static readonly Vector4 RankAColor = new(0.30f, 0.65f, 0.95f, 1f);
 
     private static readonly TimeSpan FilteredWindowsResortInterval = TimeSpan.FromSeconds(5);
@@ -438,7 +438,7 @@ internal sealed partial class HuntsApp
         return phaseLabel;
     }
 
-    private static string Prettify(string slug)
+    internal static string Prettify(string slug)
     {
         if (slug.Length == 0)
         {

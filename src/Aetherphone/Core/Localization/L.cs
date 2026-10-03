@@ -8927,4 +8927,46 @@ internal static class L
         public static readonly LocString SampleAlarmLater = new("widgetsTime.sampleAlarmLater", "Raid prep");
         public static readonly LocString SampleEvent = new("widgetsTime.sampleEvent", "Hunt train");
     }
+
+    internal static class WidgetsAdventure
+    {
+        public static readonly LocString FishingName = new("widgetsAdventure.fishingName", "Ocean Fishing");
+        public static readonly LocString CurrenciesName = new("widgetsAdventure.currenciesName", "Currencies");
+        public static readonly LocString JobName = new("widgetsAdventure.jobName", "Job");
+        public static readonly LocString TeleportName = new("widgetsAdventure.teleportName", "Teleport");
+        public static readonly LocString DailiesDescription = new("widgetsAdventure.dailiesDescription", "Your daily and weekly checklist, with a tap to tick off what the game cannot track.");
+        public static readonly LocString FishingDescription = new("widgetsAdventure.fishingDescription", "The next ocean fishing voyage and the blue fish worth chasing.");
+        public static readonly LocString CurrenciesDescription = new("widgetsAdventure.currenciesDescription", "Your gil and tomestones, with this week's cap.");
+        public static readonly LocString JobDescription = new("widgetsAdventure.jobDescription", "Your current job, level and experience, with quick gear set switching.");
+        public static readonly LocString HuntsDescription = new("widgetsAdventure.huntsDescription", "S ranks that are up right now on your data center.");
+        public static readonly LocString HousingDescription = new("widgetsAdventure.housingDescription", "The housing lottery phase, its countdown and the plots you watch.");
+        public static readonly LocString TeleportDescription = new("widgetsAdventure.teleportDescription", "Teleport to your favorite aetherytes in one tap.");
+        public static readonly LocString LogIn = new("widgetsAdventure.logIn", "Log in to a character");
+        public static readonly LocString ToDo = new("widgetsAdventure.toDo", "{0} to do");
+        public static readonly LocString OptionList = new("widgetsAdventure.optionList", "List");
+        public static readonly LocString OptionRoute = new("widgetsAdventure.optionRoute", "Route");
+        public static readonly LocString ClosesIn = new("widgetsAdventure.closesIn", "Closes in {0}");
+        public static readonly LocString Today = new("widgetsAdventure.today", "+{0} today");
+        public static readonly LocString Level = new("widgetsAdventure.level", "Level {0}");
+        public static readonly LocString MaxLevel = new("widgetsAdventure.maxLevel", "Max level");
+        public static readonly LocString ItemLevel = new("widgetsAdventure.itemLevel", "Item level {0}");
+        public static readonly LocString Experience = new("widgetsAdventure.experience", "{0}% EXP");
+        public static readonly LocString SlotFirst = new("widgetsAdventure.slotFirst", "First button");
+        public static readonly LocString SlotSecond = new("widgetsAdventure.slotSecond", "Second button");
+        public static readonly LocString SlotThird = new("widgetsAdventure.slotThird", "Third button");
+        public static readonly LocString SlotFourth = new("widgetsAdventure.slotFourth", "Fourth button");
+        public static readonly LocString Automatic = new("widgetsAdventure.automatic", "Automatic");
+        public static readonly LocString EquipFailed = new("widgetsAdventure.equipFailed", "You can't change gear sets right now");
+        public static readonly LocString LiveOn = new("widgetsAdventure.liveOn", "Live on {0}");
+        public static readonly LocString NoneLive = new("widgetsAdventure.noneLive", "No S ranks up right now");
+        public static readonly LocString WindowsOpen = new("widgetsAdventure.windowsOpen", "Open windows: {0}");
+        public static readonly LocString HuntsSetUp = new("widgetsAdventure.huntsSetUp", "Open Hunts to pick your data center");
+        public static readonly LocString HuntsFailed = new("widgetsAdventure.huntsFailed", "Hunt data is unavailable right now");
+        public static readonly LocString PlotsOpen = new("widgetsAdventure.plotsOpen", "Open plots: {0}");
+        public static readonly LocString Watching = new("widgetsAdventure.watching", "Watching");
+        public static readonly LocString NoWatched = new("widgetsAdventure.noWatched", "Watch plots in Housing to see them here");
+        public static readonly LocString NoLottery = new("widgetsAdventure.noLottery", "Open Housing to load the lottery");
+        public static readonly LocString NeedsLifestream = new("widgetsAdventure.needsLifestream", "Install Lifestream to teleport");
+        public static readonly LocString NoFavorites = new("widgetsAdventure.noFavorites", "Star aetherytes in Maps to add them here");
+    }
 }
