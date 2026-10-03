@@ -45,7 +45,18 @@ internal sealed class DailiesApp : IPhoneApp, ITabRouteTarget
 
     public string Glyph => "D";
 
-    public int BadgeCount => outstandingCount;
+    public int BadgeCount
+    {
+        get
+        {
+            if (!autoLoaded)
+            {
+                RefreshAuto();
+            }
+
+            return outstandingCount;
+        }
+    }
     public bool HasBadge => true;
 
     private readonly GameData gameData;
@@ -53,6 +64,7 @@ internal sealed class DailiesApp : IPhoneApp, ITabRouteTarget
     private readonly DailyAutoStatus[] autoStatuses;
     private readonly AppSkin ui = new(AppPalettes.Dailies);
 
+    private bool autoLoaded;
     private int outstandingCount;
     private float sinceRefresh;
     private int cadenceIndex;
@@ -64,7 +76,6 @@ internal sealed class DailiesApp : IPhoneApp, ITabRouteTarget
         this.gameData = gameData;
         checkStore = new DailyCheckStore(configuration);
         autoStatuses = new DailyAutoStatus[DailyCatalog.Items.Length];
-        RefreshAuto();
     }
 
     public void OnOpened() => RefreshAuto();
@@ -94,6 +105,7 @@ internal sealed class DailiesApp : IPhoneApp, ITabRouteTarget
         fashionReportWindow = DailiesReader.ReadFashionReportWindow(utcNow);
         nextJumboCactpot = DailiesReader.ReadNextJumboCactpot(utcNow, gameData.LocalRegionCode());
         sinceRefresh = 0f;
+        autoLoaded = true;
     }
 
     private static bool IsValueTracking(DailyTracking tracking) =>
