@@ -962,6 +962,7 @@
   "settings.supportMemberInactive": "Henüz üye değilsin",
   "settings.supportTiersTitle": "Üyelik kademeleri",
   "settings.supportTierMembership": "{0} üyeliği",
+  "settings.supportJoinTier": "{0} üyesi ol",
   "settings.supportMostPopular": "En popüler",
   "settings.supportPerkDiscordRole": "Discord sunucusunda Patreon destekçi rolü",
   "settings.supportPerkColoredName": "Yanında rozet olan özel renkli bir kullanıcı adı",

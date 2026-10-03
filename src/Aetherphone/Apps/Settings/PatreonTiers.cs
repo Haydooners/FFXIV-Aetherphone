@@ -1,4 +1,3 @@
-using Aetherphone.Core;
 using Aetherphone.Core.Localization;
 
 namespace Aetherphone.Apps.Settings;
@@ -42,7 +41,10 @@ internal static class PatreonTiers
 {
     public const string MemberBadgeId = "legacy-patreon";
     public const string GildedBadgeId = "global-patreon-gilded";
-    private const string MembershipUrl = AepConstants.PatreonUrl + "/membership";
+    private const string CheckoutUrl = "https://www.patreon.com/checkout/XeldarAlz?rid=";
+    private const string ShardCheckout = CheckoutUrl + "29160166";
+    private const string CrystalCheckout = CheckoutUrl + "29160172";
+    private const string ClusterCheckout = CheckoutUrl + "29160176";
     private static readonly string[] MemberBadges = { MemberBadgeId };
     private static readonly string[] GildedBadges = { GildedBadgeId };
 
@@ -52,20 +54,20 @@ internal static class PatreonTiers
 
     public static readonly PatreonTier[] All =
     {
-        new("Shard", ShardTeal, false, "", MemberBadges, MembershipUrl, new[]
+        new("Shard", ShardTeal, false, "", MemberBadges, ShardCheckout, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkColoredName),
             new PatreonPerk(L.Settings.SupportPerkFrame),
         }),
-        new("Crystal", CrystalViolet, true, "", MemberBadges, MembershipUrl, new[]
+        new("Crystal", CrystalViolet, true, "", MemberBadges, CrystalCheckout, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkEarlyAccess),
             new PatreonPerk(L.Settings.SupportPerkColoredName),
             new PatreonPerk(L.Settings.SupportPerkFrame),
         }),
-        new("Cluster", ClusterGold, false, "", GildedBadges, MembershipUrl, new[]
+        new("Cluster", ClusterGold, false, "", GildedBadges, ClusterCheckout, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkEarlyAccess),

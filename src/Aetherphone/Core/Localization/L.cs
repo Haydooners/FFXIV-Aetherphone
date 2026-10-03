@@ -1841,6 +1841,7 @@ internal static class L
         public static readonly LocString SupportMemberInactive = new("settings.supportMemberInactive", "Not a member yet");
         public static readonly LocString SupportTiersTitle = new("settings.supportTiersTitle", "Membership tiers");
         public static readonly LocString SupportTierMembership = new("settings.supportTierMembership", "{0} membership");
+        public static readonly LocString SupportJoinTier = new("settings.supportJoinTier", "Become a {0} member");
         public static readonly LocString SupportMostPopular = new("settings.supportMostPopular", "Most popular");
         public static readonly LocString SupportPerkDiscordRole = new("settings.supportPerkDiscordRole", "Patreon supporter role in the Discord server");
         public static readonly LocString SupportPerkColoredName = new("settings.supportPerkColoredName", "A custom coloured username with a badge beside it");

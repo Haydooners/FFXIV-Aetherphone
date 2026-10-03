@@ -252,7 +252,7 @@ internal sealed class SupportPage : ISettingsPage
             ImGui.GetColorU32(Palette.Lighten(tier.Accent, hovered ? 0.14f : 0.06f)),
             ImGui.GetColorU32(Palette.Darken(tier.Accent, 0.12f)));
         Material.EdgeSquircle(drawList, drawMin, drawMax, half.Y, scale);
-        var label = Loc.T(L.Settings.SupportOnPatreon);
+        var label = Loc.T(L.Settings.SupportJoinTier, tier.Name);
         var size = Typography.Measure(label, TextStyles.SubheadlineEmphasized);
         Typography.Draw(drawList, new Vector2(center.X - size.X * 0.5f, center.Y - size.Y * 0.5f), label,
             Vector4.One, TextStyles.SubheadlineEmphasized);

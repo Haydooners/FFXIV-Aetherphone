@@ -962,6 +962,7 @@
   "settings.supportMemberInactive": "Ainda não é membro",
   "settings.supportTiersTitle": "Níveis de assinatura",
   "settings.supportTierMembership": "Assinatura {0}",
+  "settings.supportJoinTier": "Torne-se membro {0}",
   "settings.supportMostPopular": "Mais popular",
   "settings.supportPerkDiscordRole": "Cargo de apoiador do Patreon no servidor do Discord",
   "settings.supportPerkColoredName": "Um nome de usuário colorido com um emblema ao lado",
