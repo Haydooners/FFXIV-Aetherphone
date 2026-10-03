@@ -212,7 +212,7 @@ internal sealed partial class MusicApp
         if (stackWidth > 0f && right - stackWidth - gap > cursor)
         {
             JamAvatarStack.Draw(drawList, new Vector2(right - stackWidth, pillMin.Y + radius), stackRadius, jamMembers,
-                jamMemberNames, JamBadgeStackMax, jamOverflowLabel, ui.Palette.BackdropBottom, theme, images,
+                jamMemberNames, JamBadgeStackMax, jamBadgeOverflowLabel, ui.Palette.BackdropBottom, theme, images,
                 lodestone, scale);
             right -= stackWidth + gap;
         }

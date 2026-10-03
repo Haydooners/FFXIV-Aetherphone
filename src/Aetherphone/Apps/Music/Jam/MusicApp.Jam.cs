@@ -32,6 +32,7 @@ internal sealed partial class MusicApp
     private string[] jamMemberNames = Array.Empty<string>();
     private string[] jamMemberHandles = Array.Empty<string>();
     private string jamOverflowLabel = string.Empty;
+    private string jamBadgeOverflowLabel = string.Empty;
     private string jamHostName = string.Empty;
     private int jamMeIndex = -1;
     private int jamMembersVersion = -1;
@@ -217,6 +218,9 @@ internal sealed partial class MusicApp
         jamMemberHandles = handles;
         jamOverflowLabel = count > JamStackMax
             ? string.Concat(JamOverflowPrefix, (count - JamStackMax).ToString(Loc.Culture))
+            : string.Empty;
+        jamBadgeOverflowLabel = count > JamBadgeStackMax
+            ? string.Concat(JamOverflowPrefix, (count - JamBadgeStackMax).ToString(Loc.Culture))
             : string.Empty;
     }
 
