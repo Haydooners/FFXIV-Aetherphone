@@ -132,8 +132,9 @@ internal sealed partial class SkywatcherApp : IPhoneApp
         var drawList = ImGui.GetWindowDrawList();
         WeatherSky.Paint(drawList, screen, rounding, palette);
         sky.Draw(drawList, screen, rounding, hasData ? daylight : 0f, scale);
-        ui.Palette = ui.Palette with { BackdropTop = palette.Top, BackdropBottom = palette.Bottom };
-        WallpaperBackdrop.RecordFlat(palette.Horizon);
+        var glassBase = WeatherCard.GlassBase(palette);
+        ui.Palette = ui.Palette with { BackdropTop = glassBase, BackdropBottom = glassBase, Accent = palette.Ink };
+        WallpaperBackdrop.RecordFlat(glassBase);
         AppSurface.ScrollbarInk = palette.Ink;
         SceneChrome.BackChevron(content, context.Navigation, palette.Ink, scale);
         var body = new Rect(new Vector2(content.Min.X, content.Min.Y + ChevronUnits * scale), content.Max);

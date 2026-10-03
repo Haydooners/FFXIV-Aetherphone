@@ -37,6 +37,9 @@ internal static class WeatherCard
         return tint with { W = CalmFillAlpha + (DenseFillAlpha - CalmFillAlpha) * density };
     }
 
+    public static Vector4 GlassBase(in SkyPalette palette) =>
+        palette.LightSky ? palette.Horizon with { W = 1f } : Vector4.Lerp(palette.Top, Black, 0.50f) with { W = 1f };
+
     public static Vector4 Behind(in SkyPalette palette, float density)
     {
         var fill = Fill(palette, density);
