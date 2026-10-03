@@ -4175,7 +4175,7 @@
   "onboarding.aethergramReactTitle": "Лайк, комментарий, отправка",
   "onboarding.aethergramReactBody": "Нажмите на сердце, чтобы поставить лайк, на облачко, чтобы прокомментировать, на самолётик, чтобы отправить пост, или на закладку, чтобы сохранить.",
   "onboarding.aethergramNavTitle": "Навигация",
-  "onboarding.aethergramNavBody": "«Поиск» находит людей и теги, «Профиль» показывает вашу сетку фото, а самолётик справа открывает сообщения.",
+  "onboarding.aethergramNavBody": "«Поиск» находит людей и теги, «Сообщения» хранят ваши переписки, а «Профиль» показывает вашу сетку фото.",
   "onboarding.aethergramPostTitle": "Поделитесь фото",
   "onboarding.aethergramPostBody": "Нажмите на плюс, чтобы начать новый пост. Ничего не будет опубликовано без вашего решения.",
   "onboarding.aethergramPickTitle": "Выберите снимки",

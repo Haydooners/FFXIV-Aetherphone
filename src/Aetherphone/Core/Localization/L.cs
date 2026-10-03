@@ -7731,7 +7731,7 @@ internal static class L
         public static readonly LocString AethergramReactTitle = new("onboarding.aethergramReactTitle", "Like, comment, send");
         public static readonly LocString AethergramReactBody = new("onboarding.aethergramReactBody", "Tap the heart to like, the bubble to comment, the plane to send the post to someone, or the bookmark to save it.");
         public static readonly LocString AethergramNavTitle = new("onboarding.aethergramNavTitle", "Find your way");
-        public static readonly LocString AethergramNavBody = new("onboarding.aethergramNavBody", "Search finds people and tags, Profile shows your grid, and the plane on the right opens your messages.");
+        public static readonly LocString AethergramNavBody = new("onboarding.aethergramNavBody", "Search finds people and tags, Messages holds your conversations, and Profile shows your grid.");
         public static readonly LocString AethergramPostTitle = new("onboarding.aethergramPostTitle", "Share a photo");
         public static readonly LocString AethergramPostBody = new("onboarding.aethergramPostBody", "Tap the plus to start a new post. Nothing is shared until you say so.");
         public static readonly LocString AethergramPickTitle = new("onboarding.aethergramPickTitle", "Pick your shots");

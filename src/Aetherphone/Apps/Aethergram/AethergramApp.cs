@@ -69,7 +69,7 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
     private const int MaxCaptionLength = 500;
     private const int MaxPhotoTags = 20;
     private const int MaxCommentLength = 500;
-    private const int NavTabCount = 3;
+    private const int NavTabCount = 4;
     private const int FilterToggleCount = 3;
     private const float TopBarIconSize = 26f;
     private const float LogoSize = 30f;
@@ -1594,20 +1594,20 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         tabItems[(int)AethergramTab.Home] = new TabItem(Loc.T(L.Aethergram.Home), PhoneIcons.Home,
             PhoneIcons.HomeFilled);
         tabItems[(int)AethergramTab.Search] = new TabItem(Loc.T(L.Aethergram.Search), PhoneIcons.Search);
+        tabItems[(int)AethergramTab.Messages] = new TabItem(Loc.T(L.Aethergram.InboxTitle), PhoneIcons.Send,
+            PhoneIcons.SendFilled, dmStore.UnreadCount, "aethergram.inbox");
         tabItems[(int)AethergramTab.Profile] = new TabItem(Loc.T(L.Aethergram.Profile), PhoneIcons.User,
             PhoneIcons.UserFilled, CustomIcon: hasAvatar);
-        var inbox = new TabBarAction(PhoneIcons.Send, Loc.T(L.Aethergram.InboxTitle), dmStore.UnreadCount,
-            "aethergram.inbox");
-        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab, inbox, this);
+        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab, null, this);
         UiAnchors.Report("aethergram.tabbar", tabBar.Bounds);
-        if (result.ActionTapped)
+        if (result.Tapped < 0)
         {
-            OpenInbox();
             return;
         }
 
-        if (result.Tapped < 0)
+        if (result.Tapped == (int)AethergramTab.Messages)
         {
+            OpenInbox();
             return;
         }
 
