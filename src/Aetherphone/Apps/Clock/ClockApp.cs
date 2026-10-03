@@ -2,7 +2,6 @@ using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -12,9 +11,11 @@ namespace Aetherphone.Apps.Clock;
 
 internal sealed partial class ClockApp : IPhoneApp, ITabRouteTarget
 {
-    private PendingTab pendingTab;
-
-    public void OpenTab(string tab) => pendingTab.Request(tab);
+    private const string WorldRoute = "clock.tab.world";
+    private const string AlarmsRoute = "clock.tab.alarms";
+    private const string StopwatchRoute = "clock.tab.stopwatch";
+    private const string TimerRoute = "clock.tab.timer";
+    private const int TabCount = 4;
 
     private enum ClockScreen : byte
     {
@@ -23,15 +24,18 @@ internal sealed partial class ClockApp : IPhoneApp, ITabRouteTarget
         AddCity,
     }
 
-    private const int TabWorld = 0;
-    private const int TabAlarms = 1;
-    private const int TabStopwatch = 2;
-    private const int TabTimer = 3;
+    private enum ClockTab : byte
+    {
+        World,
+        Alarms,
+        Stopwatch,
+        Timer,
+    }
 
     public string Id => "clock";
     public string DisplayName => Loc.T(L.Apps.Clock);
     public string Glyph => "T";
-    public Vector4 Accent => AppAccents.For("clock");
+    public Vector4 Accent => AppAccents.For(Id);
     public int BadgeCount => 0;
 
     private readonly Configuration configuration;
@@ -40,11 +44,13 @@ internal sealed partial class ClockApp : IPhoneApp, ITabRouteTarget
     private readonly ViewRouter<ClockScreen> router;
     private readonly RouterDraw<ClockScreen> drawView;
     private readonly Action back;
-    private readonly string[] tabOptions = new string[4];
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabItems = new TabItem[TabCount];
+    private readonly NavBarButton[] navButtons = new NavBarButton[2];
+    private PendingTab pendingTab;
     private PhoneTheme theme = PhoneTheme.Default;
     private INavigator navigation = null!;
-    private int activeTab;
-    private readonly List<double> swLaps;
+    private ClockTab activeTab;
 
     public ClockApp(Configuration configuration, ConfirmService confirm)
     {
@@ -56,14 +62,22 @@ internal sealed partial class ClockApp : IPhoneApp, ITabRouteTarget
         swLaps = new List<double>();
     }
 
+    public void OpenTab(string tab) => pendingTab.Request(tab);
+
     public void OnOpened()
     {
         router.Reset();
+        editingWorld = false;
+        editingAlarms = false;
+        alarmsDirty = true;
     }
 
     public void OnClosed()
     {
         router.Reset();
+        editingWorld = false;
+        editingAlarms = false;
+        EndCityDrag(false);
     }
 
     public void Draw(in PhoneContext context)
@@ -71,121 +85,121 @@ internal sealed partial class ClockApp : IPhoneApp, ITabRouteTarget
         theme = context.Theme;
         navigation = context.Navigation;
         ui.Theme = context.Theme;
+        ConsumePendingTab();
         var scale = UiScale.Current;
-        var screen = SceneChrome.ScreenFrom(context.Content, context.Theme, scale);
-        ui.Backdrop(screen);
+        ui.Backdrop(SceneChrome.ScreenFrom(context.Content, context.Theme, scale));
         router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+    }
+
+    private void ConsumePendingTab()
+    {
+        if (pendingTab.Take(AlarmsRoute))
+        {
+            OpenRootTab(ClockTab.Alarms);
+        }
+        else if (pendingTab.Take(TimerRoute))
+        {
+            OpenRootTab(ClockTab.Timer);
+        }
+        else if (pendingTab.Take(StopwatchRoute))
+        {
+            OpenRootTab(ClockTab.Stopwatch);
+        }
+        else if (pendingTab.Take(WorldRoute))
+        {
+            OpenRootTab(ClockTab.World);
+        }
+    }
+
+    private void OpenRootTab(ClockTab tab)
+    {
+        router.Reset();
+        SelectTab(tab);
     }
 
     private void DrawView(ClockScreen screen, Rect area, int depth)
     {
-        var scale = UiScale.Current;
         ui.Body(area);
+        var context = new PhoneContext(area, theme, navigation);
         switch (screen)
         {
             case ClockScreen.EditAlarm:
-                DrawAlarmEditor(area, scale);
+                DrawAlarmEditor(context);
                 return;
             case ClockScreen.AddCity:
-                DrawCityPicker(area, scale);
+                DrawCityPicker(context);
                 return;
             default:
-                DrawRoot(area, scale);
+                DrawRoot(context, area);
                 return;
         }
     }
 
-    private void DrawRoot(Rect content, float scale)
+    private void DrawRoot(in PhoneContext context, Rect area)
     {
-        if (pendingTab.Take("clock.tab.alarms"))
+        var scale = UiScale.Current;
+        using (TabBar.ReserveContent(scale))
         {
-            activeTab = TabAlarms;
-        }
-        else if (pendingTab.Take("clock.tab.timer"))
-        {
-            activeTab = TabTimer;
-        }
-        else if (pendingTab.Take("clock.tab.world"))
-        {
-            activeTab = TabWorld;
+            switch (activeTab)
+            {
+                case ClockTab.Alarms:
+                    DrawAlarms(context);
+                    break;
+                case ClockTab.Stopwatch:
+                    DrawStopwatch(context);
+                    break;
+                case ClockTab.Timer:
+                    DrawTimer(context);
+                    break;
+                default:
+                    DrawWorld(context);
+                    break;
+            }
         }
 
-        var context = new PhoneContext(content, theme, navigation);
-        AppHeader.Draw(context, DisplayName);
-        DrawRootAction(content, scale);
-
-        var segMargin = Metrics.Space.Lg * scale;
-        var segTop = content.Min.Y + AppHeader.Height * scale + Metrics.Space.Sm * scale;
-        var segRow = new Rect(new Vector2(content.Min.X + segMargin, segTop),
-            new Vector2(content.Max.X - segMargin, segTop + 30f * scale));
-        var segmentWidth = segRow.Width / tabOptions.Length;
-        UiAnchors.Report("clock.tab.alarms",
-            new Rect(new Vector2(segRow.Min.X + segmentWidth * TabAlarms, segRow.Min.Y),
-                new Vector2(segRow.Min.X + segmentWidth * (TabAlarms + 1), segRow.Max.Y)));
-        tabOptions[TabWorld] = Loc.T(L.Clock.TabWorld);
-        tabOptions[TabAlarms] = Loc.T(L.Clock.TabAlarms);
-        tabOptions[TabStopwatch] = Loc.T(L.Clock.TabStopwatch);
-        tabOptions[TabTimer] = Loc.T(L.Clock.TabTimer);
-        activeTab = SegmentStrip.Draw("clock.tabs", segRow, tabOptions, activeTab, theme);
-
-        var body = new Rect(new Vector2(content.Min.X, segRow.Max.Y + 10f * scale), content.Max);
-        switch (activeTab)
-        {
-            case TabAlarms:
-                DrawAlarms(body, scale);
-                return;
-            case TabStopwatch:
-                DrawStopwatch(body, scale);
-                return;
-            case TabTimer:
-                DrawTimer(body, scale);
-                return;
-            default:
-                DrawWorld(body, scale);
-                return;
-        }
+        DrawTabBar(area);
     }
 
-    private void DrawRootAction(Rect content, float scale)
+    private void DrawTabBar(Rect area)
     {
-        if (activeTab != TabWorld && activeTab != TabAlarms)
+        tabItems[(int)ClockTab.World] = new TabItem(Loc.T(L.Clock.TabWorld), IconGlyph.Of(FontAwesomeIcon.Globe),
+            AnchorKey: WorldRoute);
+        tabItems[(int)ClockTab.Alarms] = new TabItem(Loc.T(L.Clock.TabAlarms), PhoneIcons.Bell, PhoneIcons.BellFilled,
+            AnchorKey: AlarmsRoute);
+        tabItems[(int)ClockTab.Stopwatch] = new TabItem(Loc.T(L.Clock.TabStopwatch),
+            IconGlyph.Of(FontAwesomeIcon.Stopwatch), AnchorKey: StopwatchRoute);
+        tabItems[(int)ClockTab.Timer] = new TabItem(Loc.T(L.Clock.TabTimer),
+            IconGlyph.Of(FontAwesomeIcon.HourglassHalf), AnchorKey: TimerRoute);
+        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab);
+        if (result.Tapped < 0 || result.Tapped == (int)activeTab)
         {
             return;
         }
 
-        var radius = 15f * scale;
-        var center = new Vector2(content.Max.X - Metrics.Space.Lg * scale - radius,
-            content.Min.Y + AppHeader.Height * scale * 0.5f);
-        UiAnchors.Report("clock.add",
-            new Rect(center - new Vector2(radius, radius), center + new Vector2(radius, radius)));
-        var tooltip = activeTab == TabWorld ? Loc.T(L.Clock.AddCity) : Loc.T(L.Clock.NewAlarm);
-        if (ui.IconButton(center, radius, IconGlyph.Of(FontAwesomeIcon.Plus), ui.TitleInk,
-                Palette.WithAlpha(ui.TitleInk, 0.12f), 0.6f, tooltip))
+        SelectTab((ClockTab)result.Tapped);
+    }
+
+    private void SelectTab(ClockTab tab)
+    {
+        if (tab == activeTab)
         {
-            if (activeTab == TabWorld)
-            {
-                router.Push(ClockScreen.AddCity);
-            }
-            else
-            {
-                StartNewAlarm();
-            }
+            return;
+        }
+
+        activeTab = tab;
+        editingWorld = false;
+        editingAlarms = false;
+        EndCityDrag(false);
+        if (tab == ClockTab.Timer)
+        {
+            primeTimerPicker = true;
         }
     }
 
-    private bool DrawPillButton(Rect rect, string label, Vector4 fill, Vector4 ink)
+    private int NavButton(int count, string glyph, string tooltip)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var shown = hovered ? Palette.Mix(fill, new Vector4(1f, 1f, 1f, 1f), 0.12f) : fill;
-        Squircle.Fill(drawList, rect.Min, rect.Max, rect.Height * 0.5f, ImGui.GetColorU32(shown));
-        Typography.DrawCentered(drawList, rect.Center, label, ink, TextStyles.Headline.Scale, TextStyles.Headline.Weight);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+        navButtons[count] = new NavBarButton(glyph, tooltip);
+        return count + 1;
     }
 
     public void Dispose()

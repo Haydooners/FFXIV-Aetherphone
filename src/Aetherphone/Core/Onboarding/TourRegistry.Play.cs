@@ -42,7 +42,7 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.CoinShelvesTitle, L.Onboarding.CoinShelvesBody, "coin.shop",
                     GuideGesture.Tap),
             });
-        Add(tours, "clock", 3,
+        Add(tours, "clock", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.ClockGameTimeTitle, L.Onboarding.ClockGameTimeBody, "clock.world.game",

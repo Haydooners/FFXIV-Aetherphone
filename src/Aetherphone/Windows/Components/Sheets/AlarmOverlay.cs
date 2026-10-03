@@ -63,9 +63,9 @@ internal sealed class AlarmOverlay
         var timer = ringer.Kind == AlarmRingKind.Timer;
         DrawBell(drawList, new Vector2(centerX, screen.Min.Y + 120f * scale + rise), timer, alpha);
         var headline = timer ? Loc.T(L.Clock.TimerTitle) : TimeText.Clock(DateTime.Now);
-        var caption = timer
-            ? Loc.T(L.Clock.TimerFinished)
-            : ringer.Label.Length > 0 ? ringer.Label : Loc.T(L.Clock.Alarm);
+        var caption = ringer.Label.Length > 0
+            ? ringer.Label
+            : Loc.T(timer ? L.Clock.TimerFinished : L.Clock.Alarm);
         var headlineY = screen.Min.Y + 200f * scale + rise;
         Typography.DrawCentered(drawList, new Vector2(centerX, headlineY), headline, Ink with { W = alpha },
             TextStyles.WidgetDisplay);

@@ -15,6 +15,7 @@ internal sealed class AlarmRinger
     private readonly Action stopTone;
     private DateTime ringStartedUtc;
     private DateTime? snoozeEndsUtc;
+    private TimeSpan snoozeLength = SnoozeLength;
     private string snoozedLabel = string.Empty;
 
     public AlarmRinger(Action<AlarmRingKind> startTone, Action stopTone)
@@ -31,7 +32,7 @@ internal sealed class AlarmRinger
 
     public string Label { get; private set; } = string.Empty;
 
-    public bool CanSnooze => IsRinging && Kind == AlarmRingKind.Alarm;
+    public bool CanSnooze => IsRinging && Kind == AlarmRingKind.Alarm && snoozeLength > TimeSpan.Zero;
 
     public bool IsSnoozed => snoozeEndsUtc is not null;
 
@@ -39,7 +40,9 @@ internal sealed class AlarmRinger
 
     public string SnoozedLabel => snoozedLabel;
 
-    public void Ring(AlarmRingKind kind, string label, DateTime utcNow)
+    public void Ring(AlarmRingKind kind, string label, DateTime utcNow) => Ring(kind, label, utcNow, SnoozeLength);
+
+    public void Ring(AlarmRingKind kind, string label, DateTime utcNow, TimeSpan snooze)
     {
         if (IsRinging)
         {
@@ -48,6 +51,7 @@ internal sealed class AlarmRinger
 
         Kind = kind;
         Label = label;
+        snoozeLength = snooze;
         ringStartedUtc = utcNow;
         IsRinging = true;
         startTone(kind);
@@ -73,7 +77,7 @@ internal sealed class AlarmRinger
         }
 
         snoozedLabel = Label;
-        snoozeEndsUtc = utcNow + SnoozeLength;
+        snoozeEndsUtc = utcNow + snoozeLength;
         Stop();
     }
 
@@ -90,6 +94,6 @@ internal sealed class AlarmRinger
         }
 
         snoozeEndsUtc = null;
-        Ring(AlarmRingKind.Alarm, snoozedLabel, utcNow);
+        Ring(AlarmRingKind.Alarm, snoozedLabel, utcNow, snoozeLength);
     }
 }

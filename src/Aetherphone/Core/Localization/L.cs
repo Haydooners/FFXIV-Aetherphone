@@ -6753,7 +6753,6 @@ internal static class L
         public static readonly LocString DayToday = new("clock.dayToday", "Today");
         public static readonly LocString DayTomorrow = new("clock.dayTomorrow", "Tomorrow");
         public static readonly LocString DayYesterday = new("clock.dayYesterday", "Yesterday");
-        public static readonly LocString AlarmsEmpty = new("clock.alarmsEmpty", "No alarms yet. Tap + to add one.");
         public static readonly LocString NewAlarm = new("clock.newAlarm", "New Alarm");
         public static readonly LocString EditAlarm = new("clock.editAlarm", "Edit Alarm");
         public static readonly LocString AlarmLabelHint = new("clock.alarmLabelHint", "Alarm");
@@ -6782,6 +6781,32 @@ internal static class L
         public static readonly LocString TimerTitle = new("clock.timerTitle", "Timer");
         public static readonly LocString TimerFinished = new("clock.timerFinished", "Timer finished");
         public static readonly LocString LapNumber = new("clock.lapNumber", "Lap {0}");
+        public static readonly LocString Edit = new("clock.edit", "Edit");
+        public static readonly LocString Done = new("clock.done", "Done");
+        public static readonly LocString RemoveCity = new("clock.removeCity", "Remove");
+        public static readonly LocString ChooseCity = new("clock.chooseCity", "Choose a City");
+        public static readonly LocString SearchCities = new("clock.searchCities", "Search");
+        public static readonly LocString NoCityMatches = new("clock.noCityMatches", "No Matching Cities");
+        public static readonly LocString NoCityMatchesHint = new("clock.noCityMatchesHint", "Try another spelling or a nearby city.");
+        public static readonly LocString NextBellIn = new("clock.nextBellIn", "Next bell in {0}");
+        public static readonly LocString AlarmsEmptyTitle = new("clock.alarmsEmptyTitle", "No Alarms");
+        public static readonly LocString AlarmsEmptyHint = new("clock.alarmsEmptyHint", "Set one for your local time or for an Eorzean bell. It rings until you stop or snooze it.");
+        public static readonly LocString LocalTime = new("clock.localTime", "Local Time");
+        public static readonly LocString EorzeaTime = new("clock.eorzeaTime", "Eorzea Time");
+        public static readonly LocString EorzeaShort = new("clock.eorzeaShort", "ET");
+        public static readonly LocString EorzeaTimeOf = new("clock.eorzeaTimeOf", "ET {0}");
+        public static readonly LocString RepeatEorzeaDaily = new("clock.repeatEorzeaDaily", "Every Eorzean day");
+        public static readonly LocString RingsIn = new("clock.ringsIn", "Rings {0}");
+        public static readonly LocString RingsAtLocal = new("clock.ringsAtLocal", "Rings at {0} your time, {1}");
+        public static readonly LocString AlarmSetToast = new("clock.alarmSetToast", "Alarm set. It rings {0}.");
+        public static readonly LocString Label = new("clock.label", "Label");
+        public static readonly LocString SnoozeOff = new("clock.snoozeOff", "Off");
+        public static readonly LocString SwitchFace = new("clock.switchFace", "Switch face");
+        public static readonly LocString Recents = new("clock.recents", "Recents");
+        public static readonly LocString Paused = new("clock.paused", "Paused");
+        public static readonly LocString DurationHours = new("clock.durationHours", "{0} hr");
+        public static readonly LocString DurationMinutes = new("clock.durationMinutes", "{0} min");
+        public static readonly LocString DurationSeconds = new("clock.durationSeconds", "{0} sec");
     }
 
     internal static class Notes
@@ -9342,16 +9367,16 @@ internal static class L
         public static readonly LocString CoinShopTabBody = new("onboarding.coinShopTabBody", "Tap Shop to see what your coin can buy.");
         public static readonly LocString CoinShelvesTitle = new("onboarding.coinShelvesTitle", "Browse by category");
         public static readonly LocString CoinShelvesBody = new("onboarding.coinShelvesBody", "Each tile opens a category and shows how many items it holds.");
-        public static readonly LocString ClockGameTimeTitle = new("onboarding.clockGameTimeTitle", "Eorzea and server time");
-        public static readonly LocString ClockGameTimeBody = new("onboarding.clockGameTimeBody", "Eorzea time and server time (UTC) tick side by side, so you always know both.");
+        public static readonly LocString ClockGameTimeTitle = new("onboarding.clockGameTimeTitle", "Eorzea time");
+        public static readonly LocString ClockGameTimeBody = new("onboarding.clockGameTimeBody", "Eorzea time leads the page. The sky follows the bell, and the bar counts down to the next one.");
         public static readonly LocString ClockAlarmsTabTitle = new("onboarding.clockAlarmsTabTitle", "Open Alarms");
         public static readonly LocString ClockAlarmsTabBody = new("onboarding.clockAlarmsTabBody", "Tap Alarms to see the alarms you have set.");
         public static readonly LocString ClockNewAlarmTitle = new("onboarding.clockNewAlarmTitle", "New alarm");
         public static readonly LocString ClockNewAlarmBody = new("onboarding.clockNewAlarmBody", "Tap + to set up a new alarm.");
         public static readonly LocString ClockAlarmTimeTitle = new("onboarding.clockAlarmTimeTitle", "Time and repeat");
-        public static readonly LocString ClockAlarmTimeBody = new("onboarding.clockAlarmTimeBody", "Step the hour and minute, then pick the days it repeats on. Leave every day off for a one-time alarm.");
+        public static readonly LocString ClockAlarmTimeBody = new("onboarding.clockAlarmTimeBody", "Spin the hour and minute, then pick the days it repeats on. Leave every day off for a one-time alarm.");
         public static readonly LocString ClockAlarmSaveTitle = new("onboarding.clockAlarmSaveTitle", "Save it");
-        public static readonly LocString ClockAlarmSaveBody = new("onboarding.clockAlarmSaveBody", "Tap Save to add the alarm and switch it on.");
+        public static readonly LocString ClockAlarmSaveBody = new("onboarding.clockAlarmSaveBody", "Tap the check to add the alarm and switch it on.");
         public static readonly LocString CalendarPickDayTitle = new("onboarding.calendarPickDayTitle", "Pick a day");
         public static readonly LocString CalendarPickDayBody = new("onboarding.calendarPickDayBody", "Dots mark days with events. Tap any day to see what is on.");
         public static readonly LocString CalendarDayEventsTitle = new("onboarding.calendarDayEventsTitle", "That day's events");
