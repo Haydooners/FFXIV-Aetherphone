@@ -2234,6 +2234,8 @@ internal static class L
                 "Added Zones: keep any zone on a live sky card, search to add more, and tap one for its full forecast"),
             new("changelog.r1042.76",
                 "The weather widgets on the home screen now show the same living skies"),
+            new("changelog.r1042.84",
+                "Added the extra weathers a zone can show beyond its forecast to Control, like snow in Limsa Lominsa, each marked with a star"),
         };
 
         public static readonly LocString[] Release1042MogCast =

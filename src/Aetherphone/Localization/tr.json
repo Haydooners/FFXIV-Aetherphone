@@ -6654,6 +6654,7 @@
   "changelog.r1042.74": "Tahmin baştan kuruldu: kaydırdıkça küçülen büyük bir Eorzea saati, saatlik özet, her hava dönemi için bir gün çizelgesi, Güneş ve Bu Dönem kutucukları ve her havanın bir sonraki ne zaman geleceğini gösteren Hava Olasılıkları",
   "changelog.r1042.75": "Bölgeler eklendi: istediğin bölgeyi canlı gökyüzü kartında takip et, yenilerini ara ve tam tahmin için birine dokun",
   "changelog.r1042.76": "Ana ekrandaki hava widget'ları artık aynı canlı gökyüzlerini gösteriyor",
+  "changelog.r1042.84": "Bir bölgenin tahmini dışında gösterebildiği ek havalar Kontrol'e eklendi, Limsa Lominsa'da kar gibi, her biri yıldızla işaretli",
   "changelog.r1042.48": "Alarmlar ve zamanlayıcılar artık sen durdurana ya da erteleyene kadar çalıyor ve telefonu tam ekran bir alarmla açıyor",
   "changelog.r1042.49": "Mesajlar ayrı gelen kutusu düğmesi yerine sekme çubuğuna taşındı",
   "changelog.r1042.50": "MogCast'in panonu her saniye kontrol etmesi düzeltildi; artık yalnızca değiştiğinde okuyor",
