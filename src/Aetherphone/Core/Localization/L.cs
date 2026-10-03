@@ -2202,6 +2202,44 @@ internal static class L
                 "Fixed Maps showing Unknown inside shared housing and other places without a zone name"),
         };
 
+        public static readonly LocString[] Release1042Wallet =
+        {
+            new("changelog.r1042.87",
+                "Overhauled Wallet: a gil card with today's and this week's change, a weekly tomestone ring, rings around each currency that fill toward its cap, and a Near Cap card when something is about to max out"),
+            new("changelog.r1042.88",
+                "Added a history of every gain and spend for each character, with where it happened and a 30 day balance chart for each currency"),
+            new("changelog.r1042.89",
+                "Grand Company seals now use the real cap for your rank"),
+        };
+
+        public static readonly LocString[] Release1042Dailies =
+        {
+            new("changelog.r1042.90",
+                "Overhauled Dailies into a checklist with Daily and Weekly tiles that show what is left and when each list resets"),
+            new("changelog.r1042.91",
+                "Added your own daily and weekly tasks, Edit List to hide the ones you never do, and an optional reminder before reset while something is still open"),
+            new("changelog.r1042.92",
+                "Ticked tasks are now kept for each character"),
+        };
+
+        public static readonly LocString[] Release1042Activity =
+        {
+            new("changelog.r1042.93",
+                "Overhauled Activity around three daily rings for experience, duties and gil, with a week strip, streaks, weekly trends and awards for your best days"),
+            new("changelog.r1042.94",
+                "Added a day view with a card and a 7 day chart for each ring, and a Goals page with large plus and minus buttons"),
+        };
+
+        public static readonly LocString[] Release1042Notifications =
+        {
+            new("changelog.r1042.95",
+                "Overhauled Notifications with Today, Yesterday and Earlier sections, a filter for each app and a new empty screen"),
+            new("changelog.r1042.96",
+                "Added muting an app for an hour or for the rest of the day, and a Do Not Disturb button right in the list"),
+            new("changelog.r1042.97",
+                "Clear All now asks before it clears"),
+        };
+
         public static readonly LocString[] Release1042Games =
         {
             new("changelog.r1042.68",
