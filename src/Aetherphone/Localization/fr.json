@@ -1114,7 +1114,6 @@
   "settings.searchHint": "Rechercher dans les réglages",
   "settings.noResults": "Aucun réglage ne correspond",
   "settings.phoneWidthReadout": "{0} px de large",
-  "settings.phoneSizeHint": "Choisissez un préréglage ici, ou faites glisser la poignée d'angle du téléphone pour toute taille intermédiaire.",
   "settings.banners": "Bannières",
   "settings.badges": "Pastilles",
   "settings.removeApp": "Supprimer l'app",

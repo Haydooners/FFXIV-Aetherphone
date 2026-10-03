@@ -1114,7 +1114,6 @@
   "settings.searchHint": "Search settings",
   "settings.noResults": "No settings match that",
   "settings.phoneWidthReadout": "{0} px wide",
-  "settings.phoneSizeHint": "Pick a preset here, or drag the corner grip of the phone for any size in between.",
   "settings.banners": "Banners",
   "settings.badges": "Badges",
   "settings.removeApp": "Remove App",

@@ -1114,7 +1114,6 @@
   "settings.searchHint": "Поиск настроек",
   "settings.noResults": "Ни одна настройка не подходит",
   "settings.phoneWidthReadout": "{0} px в ширину",
-  "settings.phoneSizeHint": "Выберите здесь готовый размер или потяните за угловой захват телефона, чтобы задать любой промежуточный.",
   "settings.banners": "Баннеры",
   "settings.badges": "Значки",
   "settings.removeApp": "Удалить приложение",

@@ -35,8 +35,6 @@ internal sealed class DisplayPage : ISettingsPage
     private const int LiveGlassDetailRows = 1;
 #endif
     private static readonly LiveGlassSource[] SourceOrder = { LiveGlassSource.World, LiveGlassSource.Composite };
-    private static readonly string[] WidthLabels = BuildWidthLabels();
-    private static readonly string[] ZoomLabels = BuildZoomLabels();
     private readonly string[] sourceLabels = new string[SourceOrder.Length];
     private LanguageInfo? sourceLabelsLanguage;
     private string widthReadout = string.Empty;
@@ -83,52 +81,46 @@ internal sealed class DisplayPage : ISettingsPage
 
     private void DrawPhoneSizeCard(PhoneTheme theme)
     {
+        var smallest = PhoneSizeCatalog.MinimumWidth;
+        var largest = MathF.Max(PhoneBounds.ClampWidth(PhoneSizeCatalog.MaximumWidth), smallest + 1f);
+        var span = largest - smallest;
         var effective = PhoneBounds.ClampWidth(configuration.PhoneWidth);
         var card = GroupCard.Begin(theme, 2);
         SettingsRow.Info(card.NextRow(), Loc.T(L.Settings.PhoneSize), WidthReadout(effective), theme);
-        var selected = NearestIndex(PhoneSizeCatalog.PresetWidths, effective);
-        var picked = SegmentStrip.Draw("settings.phoneSizePreset", card.NextRow(), WidthLabels, selected, theme,
-            out var pressed);
+        var slider = Slider.Draw("settings.phoneSize", card.NextRow(), (effective - smallest) / span, theme, 0f, 0f);
         card.End();
-        SettingsSection.Hint(Loc.T(L.Settings.PhoneSizeHint), theme);
-        if (!pressed)
+        var width = PhoneSizeCatalog.Snap(PhoneBounds.ClampWidth(smallest + slider.Value * span));
+        if ((slider.Dragging || slider.Released) && MathF.Abs(width - configuration.PhoneWidth) > 0.01f)
         {
-            return;
+            configuration.PhoneWidth = width;
         }
 
-        var width = PhoneBounds.ClampWidth(PhoneSizeCatalog.PresetWidths[picked]);
-        if (MathF.Abs(width - configuration.PhoneWidth) <= 0.01f)
+        if (slider.Released)
         {
-            return;
+            configuration.Save();
         }
-
-        configuration.PhoneWidth = width;
-        configuration.Save();
     }
 
     private void DrawTextSizeCard(PhoneTheme theme)
     {
-        var zoom = TextZoomCatalog.Clamp(configuration.TextZoom);
+        const float smallest = TextZoomCatalog.MinimumZoom;
+        const float span = TextZoomCatalog.MaximumZoom - TextZoomCatalog.MinimumZoom;
+        var effective = TextZoomCatalog.Clamp(configuration.TextZoom);
         var card = GroupCard.Begin(theme, 2);
-        SettingsRow.Info(card.NextRow(), Loc.T(L.Settings.TextSize), ZoomReadout(zoom), theme);
-        var selected = NearestIndex(TextZoomCatalog.PresetZooms, zoom);
-        var picked = SegmentStrip.Draw("settings.textZoomPreset", card.NextRow(), ZoomLabels, selected, theme,
-            out var pressed);
+        SettingsRow.Info(card.NextRow(), Loc.T(L.Settings.TextSize), ZoomReadout(effective), theme);
+        var slider = Slider.Draw("settings.textZoom", card.NextRow(), (effective - smallest) / span, theme, 0f, 0f);
         card.End();
-        if (!pressed)
+        var zoom = TextZoomCatalog.Snap(TextZoomCatalog.Clamp(smallest + slider.Value * span));
+        if ((slider.Dragging || slider.Released) && MathF.Abs(zoom - configuration.TextZoom) > 0.001f)
         {
-            return;
+            configuration.TextZoom = zoom;
+            Plugin.Fonts.SetZoom(zoom);
         }
 
-        var next = TextZoomCatalog.PresetZooms[picked];
-        if (MathF.Abs(next - configuration.TextZoom) <= 0.001f)
+        if (slider.Released)
         {
-            return;
+            configuration.Save();
         }
-
-        configuration.TextZoom = next;
-        Plugin.Fonts.SetZoom(next);
-        configuration.Save();
     }
 
     private void DrawLiveGlassCard(PhoneTheme theme)
@@ -258,48 +250,6 @@ internal sealed class DisplayPage : ISettingsPage
         return liveGlassReadout;
     }
 #endif
-
-    private static int NearestIndex(IReadOnlyList<float> presets, float value)
-    {
-        var nearest = 0;
-        var nearestDistance = float.MaxValue;
-        for (var index = 0; index < presets.Count; index++)
-        {
-            var distance = MathF.Abs(presets[index] - value);
-            if (distance >= nearestDistance)
-            {
-                continue;
-            }
-
-            nearestDistance = distance;
-            nearest = index;
-        }
-
-        return nearest;
-    }
-
-    private static string[] BuildWidthLabels()
-    {
-        var labels = new string[PhoneSizeCatalog.PresetWidths.Count];
-        for (var index = 0; index < labels.Length; index++)
-        {
-            labels[index] = ((int)MathF.Round(PhoneSizeCatalog.PresetWidths[index])).ToString(
-                CultureInfo.InvariantCulture);
-        }
-
-        return labels;
-    }
-
-    private static string[] BuildZoomLabels()
-    {
-        var labels = new string[TextZoomCatalog.PresetZooms.Count];
-        for (var index = 0; index < labels.Length; index++)
-        {
-            labels[index] = PercentLabel((int)MathF.Round(TextZoomCatalog.PresetZooms[index] * PercentScale));
-        }
-
-        return labels;
-    }
 
     private static string PercentLabel(int percent) =>
         string.Concat(percent.ToString(CultureInfo.InvariantCulture), "%");
