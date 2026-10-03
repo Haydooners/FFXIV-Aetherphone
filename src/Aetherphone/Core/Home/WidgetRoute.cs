@@ -17,6 +17,7 @@ internal enum WidgetRouteKind : byte
     Note,
     NewNote,
     Venue,
+    Notification,
 }
 
 internal readonly struct WidgetRoute

@@ -1,4 +1,5 @@
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Onboarding;
 
 namespace Aetherphone.Core.Home;
@@ -7,6 +8,7 @@ internal sealed class WidgetActions
 {
     private readonly Dictionary<string, IPhoneApp> appsById = new(StringComparer.Ordinal);
     private INavigator? navigator;
+    private NotificationRouter? notificationRouter;
 
     public WidgetActions(WidgetServices services)
     {
@@ -24,6 +26,8 @@ internal sealed class WidgetActions
 
     public void Bind(INavigator target) => navigator = target;
 
+    public void BindNotifications(NotificationRouter router) => notificationRouter = router;
+
     public IPhoneApp? App(string appId) => appsById.TryGetValue(appId, out var app) ? app : null;
 
     public bool IsAvailable(string appId) => App(appId) is { IsAvailable: true };
@@ -35,8 +39,34 @@ internal sealed class WidgetActions
             return;
         }
 
+        if (route.Kind == WidgetRouteKind.Notification && notificationRouter is not null
+            && FindNotification(route.Argument) is { } notification)
+        {
+            notificationRouter.Open(notification);
+            return;
+        }
+
         Request(route, app);
         navigator.OpenAppFrom(app, origin, LaunchOrigin.Surface);
+    }
+
+    private PhoneNotification? FindNotification(string? argument)
+    {
+        if (!long.TryParse(argument, out var id))
+        {
+            return null;
+        }
+
+        var recent = Services.Phone.Notifications.Recent;
+        for (var index = recent.Count - 1; index >= 0; index--)
+        {
+            if (recent[index].Id == id)
+            {
+                return recent[index];
+            }
+        }
+
+        return null;
     }
 
     private void Request(in WidgetRoute route, IPhoneApp app)

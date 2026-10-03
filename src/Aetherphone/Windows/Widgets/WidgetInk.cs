@@ -81,6 +81,9 @@ internal readonly struct WidgetInk
     public static WidgetInk From(in WidgetContext context) =>
         new(context.Mode, IsLightTheme(context.Theme), context.Opacity, context.Tint);
 
+    public static WidgetInk OnImage(in WidgetContext context) =>
+        new(context.Mode, false, context.Opacity, context.Tint);
+
     public static bool IsLightTheme(PhoneTheme theme) => Palette.Luminance(theme.AppBackground) >= 0.5f;
 
     public bool KeepsOwnColors => Mode == WidgetMode.FullColor;
