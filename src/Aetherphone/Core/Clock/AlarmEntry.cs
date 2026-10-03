@@ -10,8 +10,14 @@ internal sealed class AlarmEntry
     public bool Enabled { get; set; } = true;
     public string Label { get; set; } = string.Empty;
     public long LastFiredEpochMinute { get; set; }
+    public bool Eorzea { get; set; }
+    public int SnoozeMinutes { get; set; } = AlarmSchedule.DefaultSnoozeMinutes;
 
     public bool Repeats => RepeatDays != 0;
+
+    public int MinuteOfDay => Hour * 60 + Minute;
+
+    public TimeSpan SnoozeLength => TimeSpan.FromMinutes(Math.Clamp(SnoozeMinutes, 0, AlarmSchedule.MaxSnoozeMinutes));
 
     public bool RepeatsOn(DayOfWeek day) => (RepeatDays & (1 << (int)day)) != 0;
 

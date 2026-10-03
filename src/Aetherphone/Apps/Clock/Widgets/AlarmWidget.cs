@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Clock;
+using Aetherphone.Core.Game;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
 using Aetherphone.Windows.Components;
@@ -21,6 +22,7 @@ internal sealed class AlarmWidget : IHomeWidget
     private const float RelevanceWindowMinutes = 60f;
     private const byte EveryDay = 0x7F;
     private const byte Weekdays = 0x3E;
+    private const long EorzeaKeyBase = 10_000L;
 
     private struct AlarmRow
     {
@@ -28,6 +30,7 @@ internal sealed class AlarmWidget : IHomeWidget
         public int Minute;
         public byte RepeatDays;
         public bool Enabled;
+        public bool Eorzea;
         public string Label;
         public DateTime Next;
         public int Source;
@@ -162,6 +165,7 @@ internal sealed class AlarmWidget : IHomeWidget
         Minute = alarm.Minute,
         RepeatDays = alarm.RepeatDays,
         Enabled = alarm.Enabled,
+        Eorzea = alarm.Eorzea,
         Label = alarm.Label,
         Next = AlarmSchedule.NextOccurrence(alarm, now),
         Source = index,
@@ -289,7 +293,14 @@ internal sealed class AlarmWidget : IHomeWidget
             entry.Enabled, accent);
         if (next != entry.Enabled && entry.Source >= 0 && entry.Source < configuration.Alarms.Count)
         {
-            configuration.Alarms[entry.Source].Enabled = next;
+            var alarm = configuration.Alarms[entry.Source];
+            alarm.Enabled = next;
+            if (next)
+            {
+                var now = DateTime.Now;
+                AlarmSchedule.Arm(alarm, now, now.ToUniversalTime());
+            }
+
             configuration.Save();
         }
 
@@ -393,11 +404,18 @@ internal sealed class AlarmWidget : IHomeWidget
     private string Subtitle(int index, in AlarmRow row)
     {
         var dayIndex = (row.Next.Date - DateTime.Today).Days;
-        var key = row.RepeatDays != 0 ? row.RepeatDays : 1000L + dayIndex;
+        var key = row.Eorzea
+            ? EorzeaKeyBase + row.Hour * 60L + row.Minute
+            : row.RepeatDays != 0 ? row.RepeatDays : 1000L + dayIndex;
         ref var cache = ref subtitles[index];
         if (cache.IsCurrent(key))
         {
             return cache.Value;
+        }
+
+        if (row.Eorzea)
+        {
+            return cache.Store(key, Loc.T(L.Clock.EorzeaTimeOf, new EorzeaTime(row.Hour, row.Minute).Formatted));
         }
 
         if (row.RepeatDays == 0)

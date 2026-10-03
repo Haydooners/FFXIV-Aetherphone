@@ -519,6 +519,9 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public DateTime? TimerEndsAtUtc { get; set; }
     public int TimerDurationSeconds { get; set; }
     public bool TimerNotified { get; set; }
+    public int TimerPausedSeconds { get; set; }
+    public string TimerLabel { get; set; } = string.Empty;
+    public List<int> ClockRecentTimers { get; set; } = new();
     public string LastSeenChangelogVersion { get; set; } = string.Empty;
     public bool ChangelogSeenInitialized { get; set; }
     

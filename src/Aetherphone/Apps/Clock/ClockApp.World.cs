@@ -1,246 +1,523 @@
+using Aetherphone.Apps.Clock.Widgets;
 using Aetherphone.Core;
-using Aetherphone.Core.Clock;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Clock;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Onboarding;
+using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
+using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Clock;
 
 internal sealed partial class ClockApp
 {
-    private const double EorzeaRate = 144.0 / 7.0;
-    private const float WorldRowHeight = 74f;
+    private const float WorldRowHeight = 76f;
+    private const float WorldDialRadius = 21f;
+    private const float WorldTextGap = 12f;
+    private const float WorldTimeGap = 10f;
+    private const float WorldSubtitleGap = 1f;
+    private const float WorldBadgeRadius = 11f;
+    private const float WorldGripWidth = 18f;
+    private const float WorldGripHit = 44f;
+    private const float WorldLiftRadius = 16f;
+    private const int PinnedWorldRows = 2;
+    private const float HeroPad = 16f;
+    private const float HeroTrackHeight = 6f;
+    private const float HeroTrackGap = 12f;
+    private const float HeroLabelGap = 5f;
+    private const float HeroFooterGap = 12f;
+    private const float HeroMarkerRadius = 6f;
+    private const float HeroCelestialRadius = 16f;
+    private const int HeroTrackSegments = 48;
+    private const int HeroTrackLabelStep = 6;
+    private const float HeroNightAlpha = 0.20f;
 
-    private void DrawWorld(Rect body, float scale)
+    private static readonly TextStyle HeroClockStyle = TextStyles.WidgetDisplay;
+    private static readonly TextStyle WorldTimeStyle = TextStyles.WidgetDisplayCompact;
+    private static readonly Vector4 SunCore = new(1.00f, 0.86f, 0.46f, 1f);
+    private static readonly Vector4 SunBand = new(1.00f, 0.80f, 0.40f, 0.92f);
+    private static readonly Vector4 MoonCore = new(0.93f, 0.94f, 0.98f, 1f);
+    private static readonly Vector4 MarkerShadow = new(0f, 0f, 0f, 0.28f);
+
+    private CachedText heroEyebrow;
+    private CachedText heroNextBell;
+    private CachedText localDetail;
+    private CachedText[] worldDetails = new CachedText[8];
+    private Spring[] citySlots = Array.Empty<Spring>();
+    private bool editingWorld;
+    private int dragCity = -1;
+    private float dragPressY;
+    private float dragOffset;
+    private int dragTarget = -1;
+    private int pendingRemoveCity = -1;
+
+    private void DrawWorld(in PhoneContext context)
     {
-        using (AppSurface.Begin(body))
+        var scale = UiScale.Current;
+        var cities = configuration.WorldClocks;
+        if (cities.Count == 0)
         {
-            var available = ImGui.GetContentRegionAvail().Y;
-            var spacer = 14f * scale;
-            var fixedRows = 2f * WorldRowHeight * scale;
-            var heroHeight = Math.Clamp(available - fixedRows - spacer, 132f * scale, 200f * scale);
-            DrawHero(heroHeight, scale);
-            ImGui.Dummy(new Vector2(0f, spacer));
+            editingWorld = false;
+        }
 
-            var cities = configuration.WorldClocks;
-            var rowCount = 2 + cities.Count;
-            var card = GroupCard.Begin(ui, rowCount, WorldRowHeight);
-
-            var eorzea = EorzeaTime.Now();
-            var eorzeaSeconds = (float)(EorzeaSeconds() % 60.0);
-            var eorzeaRow = card.NextRow();
-            DrawWorldRow(eorzeaRow, "Eorzea", Loc.T(L.Clock.InGame), eorzea.Formatted,
-                eorzea.Hour, eorzea.Minute, eorzeaSeconds);
-
-            var utc = DateTime.UtcNow;
-            var utcSeconds = utc.Second + utc.Millisecond / 1000f;
-            var serverRow = card.NextRow();
-            DrawWorldRow(serverRow, Loc.T(L.Clock.Server), "UTC", TimeText.Clock(utc),
-                utc.Hour, utc.Minute, utcSeconds);
-            UiAnchors.Report("clock.world.game", new Rect(eorzeaRow.Min, serverRow.Max));
-
-            for (var index = 0; index < cities.Count; index++)
+        var navBar = AppHeader.BeginLargeTitle(context, false);
+        using (ImRaii.PushId("clock.world"))
+        using (var surface = AppSurface.Begin(navBar.Body))
+        {
+            var width = ImGui.GetContentRegionAvail().X;
+            DrawEorzeaHero(width, scale);
+            DrawWorldList(width, scale);
+            ImGui.Dummy(new Vector2(0f, ClockArt.BottomPad * scale));
+            if (dragCity >= 0)
             {
-                DrawCityRow(card.NextRow(), cities[index]);
+                surface.CancelDrag();
             }
+        }
 
-            card.End();
-            ImGui.Dummy(new Vector2(0f, 10f * scale));
+        ApplyPendingCityRemoval();
+        var count = 0;
+        if (cities.Count > 0)
+        {
+            count = NavButton(count, editingWorld ? PhoneIcons.Check : PhoneIcons.Edit,
+                Loc.T(editingWorld ? L.Clock.Done : L.Clock.Edit));
+        }
+
+        var addIndex = count;
+        count = NavButton(count, PhoneIcons.Plus, Loc.T(L.Clock.AddCity));
+        UiAnchors.Report("clock.add", AppHeader.LargeTitleButtonRect(in navBar, addIndex, count));
+        var pressed = AppHeader.EndLargeTitle(in navBar, context, "clock.world.nav", Loc.T(L.Clock.TabWorld),
+            NavBarStyle.From(ui), navButtons.AsSpan(0, count));
+        if (pressed == addIndex)
+        {
+            editingWorld = false;
+            EndCityDrag(false);
+            cityQuery = string.Empty;
+            router.Push(ClockScreen.AddCity);
+        }
+        else if (pressed == 0)
+        {
+            editingWorld = !editingWorld;
+            EndCityDrag(false);
         }
     }
 
-    private void DrawHero(float heroHeight, float scale)
+    private void DrawEorzeaHero(float width, float scale)
     {
-        var local = DateTime.Now;
-        var localSeconds = local.Second + local.Millisecond / 1000f;
-        var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var heroMin = origin;
-        var heroMax = new Vector2(origin.X + width, origin.Y + heroHeight);
-        var rounding = 24f * scale;
-        ui.Card(drawList, heroMin, heroMax, rounding, elevated: true);
-
-        var pad = 20f * scale;
-        var minTextColumn = 100f * scale;
-        var radiusFromHeight = (heroHeight - pad * 2f) * 0.5f;
-        var radiusFromWidth = MathF.Max(30f * scale, (width - pad * 2f - 22f * scale - minTextColumn) * 0.5f);
-        var clockRadius = MathF.Min(radiusFromHeight, radiusFromWidth);
-        var clockCenter = new Vector2(heroMin.X + pad + clockRadius, heroMin.Y + heroHeight * 0.5f);
-        ProgressRing.Glow(clockCenter, clockRadius * 0.92f, theme.Accent, 0.45f);
-        AnalogClock.Draw(clockCenter, clockRadius, local.Hour, local.Minute, localSeconds, theme);
-
-        var textX = clockCenter.X + clockRadius + 22f * scale;
-        var textMaxWidth = MathF.Max(1f, heroMax.X - pad - textX);
-        var digital = TimeText.Clock(local);
-        var date = local.ToString("ddd d MMM", Loc.Culture);
-        var zone = $"{Loc.T(L.Clock.Local)} · {LocalOffsetLabel()}";
-        var digitalSize = Typography.Measure(digital, TextStyles.LargeTitle);
-        var dateSize = Typography.Measure(date, TextStyles.Subheadline);
-        var zoneSize = Typography.Measure(zone, TextStyles.FootnoteEmphasized);
-        var stackHeight = digitalSize.Y + 6f * scale + dateSize.Y + 4f * scale + zoneSize.Y;
-        var startY = clockCenter.Y - stackHeight * 0.5f;
-        Marquee.DrawLeftAuto("clock.hero.digital", digital, textX, startY, textMaxWidth, TextStyles.LargeTitle,
-            ui.TitleInk);
-        Marquee.DrawLeftAuto("clock.hero.date", date, textX, startY + digitalSize.Y + 6f * scale, textMaxWidth,
-            TextStyles.Subheadline, ui.MutedInk);
-        Marquee.DrawLeftAuto("clock.hero.zone", zone, textX, startY + digitalSize.Y + dateSize.Y + 10f * scale,
-            textMaxWidth, TextStyles.FootnoteEmphasized, ui.Accent);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, heroHeight));
-    }
-
-    private void DrawWorldRow(Rect row, string name, string sublabel, string digital, float hours, float minutes,
-        float seconds)
-    {
-        var scale = UiScale.Current;
-        var dialRadius = (row.Height - 22f * scale) * 0.5f;
-        var dialCenter = new Vector2(row.Min.X + dialRadius, row.Center.Y);
-        AnalogClock.Draw(dialCenter, dialRadius, hours, minutes, seconds, theme);
-        var textLeft = dialCenter.X + dialRadius + 16f * scale;
-        var availableWidth = MathF.Max(1f, row.Max.X - 10f * scale - textLeft);
-        var minTextWidth = availableWidth * 0.35f;
-        var digitalNaturalSize = Typography.Measure(digital, TextStyles.Title1);
-        var digitalMaxWidth = MathF.Max(1f, MathF.Min(digitalNaturalSize.X, availableWidth - minTextWidth - 8f * scale));
-        Marquee.DrawRightAuto(new MarqueeId("clock.worldrow.digital.", name), digital, row.Max.X,
-            row.Center.Y - digitalNaturalSize.Y * 0.5f, digitalMaxWidth, TextStyles.Title1, ui.TitleInk);
-        var textMaxWidth = MathF.Max(1f, availableWidth - digitalMaxWidth - 8f * scale);
-        Marquee.DrawLeftAuto(new MarqueeId("clock.worldrow.name.", name), name, textLeft, row.Center.Y - 17f * scale, textMaxWidth,
-            TextStyles.Headline, ui.TitleInk);
-        Marquee.DrawLeftAuto(new MarqueeId("clock.worldrow.sub.", name), sublabel, textLeft, row.Center.Y + 4f * scale, textMaxWidth,
-            TextStyles.Footnote, ui.MutedInk);
-    }
-
-    private void DrawCityRow(Rect row, WorldClockEntry entry)
-    {
-        if (!WorldClockCatalog.TryResolve(entry.TimeZoneId, out var zone))
+        var pad = HeroPad * scale;
+        var eyebrowHeight = Typography.LineHeight(TextStyles.FootnoteEmphasized);
+        var clockHeight = Typography.LineHeight(HeroClockStyle);
+        var labelHeight = Typography.LineHeight(TextStyles.Caption1);
+        var footerHeight = Typography.LineHeight(TextStyles.Subheadline);
+        var height = pad * 2f + eyebrowHeight + clockHeight + labelHeight + footerHeight +
+                     (HeroTrackGap + HeroTrackHeight + HeroLabelGap + HeroFooterGap) * scale;
+        var max = new Vector2(origin.X + width, origin.Y + height);
+        UiAnchors.Report("clock.world.game", new Rect(origin, max));
+        if (!ImGui.IsRectVisible(origin, max))
         {
-            DrawWorldRow(row, entry.City, entry.TimeZoneId, "--:--", 0f, 0f, 0f);
+            ClockArt.Advance(origin, width, height, ClockArt.SectionGap, scale);
             return;
         }
 
-        var cityNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
-        var citySeconds = cityNow.Second + cityNow.Millisecond / 1000f;
-        DrawWorldRow(row, entry.City, CityOffsetLabel(zone, cityNow), TimeText.Clock(cityNow), cityNow.Hour,
-            cityNow.Minute, citySeconds);
+        var secondOfDay = EorzeaTime.CurrentSeconds() % EorzeaClock.SecondsPerDay;
+        var hour = (int)(secondOfDay / EorzeaClock.SecondsPerBell);
+        var minute = (int)(secondOfDay / 60 % 60);
+        var bell = secondOfDay / (float)EorzeaClock.SecondsPerBell;
+        var daylight = WeatherSky.Daylight(bell);
+        var sky = WeatherSky.Blend(WeatherKind.Clear, daylight);
+        var drawList = ImGui.GetWindowDrawList();
+        var radius = ClockArt.CardRadius * scale;
+        Squircle.FillVerticalGradient(drawList, origin, max, radius, ImGui.GetColorU32(sky.Top),
+            ImGui.GetColorU32(sky.Bottom));
+        Squircle.Stroke(drawList, origin, max, radius, ImGui.GetColorU32(sky.CardStroke), scale);
+
+        var left = origin.X + pad;
+        var right = max.X - pad;
+        var top = origin.Y + pad;
+        var eyebrow = heroEyebrow.IsCurrent(0)
+            ? heroEyebrow.Value
+            : heroEyebrow.Store(0, Loc.Upper(Loc.T(L.Home.Eorzea)));
+        Typography.Draw(drawList, new Vector2(left, top), eyebrow, sky.InkSoft, TextStyles.FootnoteEmphasized);
+        var clockTop = top + eyebrowHeight;
+        ClockArt.DrawTime(drawList, new Vector2(left, clockTop), hour, minute, true, HeroClockStyle,
+            TextStyles.Title3, sky.Ink, sky.InkSoft);
+        var celestialRadius = HeroCelestialRadius * scale;
+        DrawCelestial(drawList, new Vector2(right - celestialRadius, clockTop + clockHeight * 0.5f), celestialRadius,
+            daylight, sky);
+
+        var trackTop = clockTop + clockHeight + HeroTrackGap * scale;
+        DrawBellTrack(drawList, left, right, trackTop, bell, sky, scale);
+        var labelTop = trackTop + (HeroTrackHeight + HeroLabelGap) * scale;
+        DrawBellLabels(drawList, left, right, labelTop, sky);
+
+        var footerTop = labelTop + labelHeight + HeroFooterGap * scale;
+        var untilBell = (int)Math.Ceiling((EorzeaClock.SecondsPerBell - secondOfDay % EorzeaClock.SecondsPerBell) /
+                                          EorzeaClock.Rate);
+        var footer = heroNextBell.IsCurrent(untilBell)
+            ? heroNextBell.Value
+            : heroNextBell.Store(untilBell, Loc.T(L.Clock.NextBellIn, TimeText.MinutesSeconds(untilBell)));
+        Typography.Draw(drawList, new Vector2(left, footerTop),
+            Typography.FitText(footer, right - left, TextStyles.Subheadline), sky.Ink, TextStyles.Subheadline);
+        ClockArt.Advance(origin, width, height, ClockArt.SectionGap, scale);
     }
 
-    private void DrawCityPicker(Rect content, float scale)
+    private static void DrawCelestial(ImDrawListPtr drawList, Vector2 center, float radius, float daylight,
+        in SkyPalette sky)
     {
-        var context = new PhoneContext(content, theme, navigation);
-        AppHeader.Draw(context, Loc.T(L.Clock.AddCity), back);
-        var body = new Rect(new Vector2(content.Min.X, content.Min.Y + AppHeader.Height * scale), content.Max);
-        using (AppSurface.Begin(body))
+        if (daylight >= 0.5f)
         {
-            var catalog = WorldClockCatalog.All;
-            var card = GroupCard.Begin(ui, catalog.Count, Metrics.Size.Row + 12f);
-            for (var index = 0; index < catalog.Count; index++)
+            for (var ring = 3; ring >= 1; ring--)
             {
-                DrawCityOption(card.NextRow(), catalog[index]);
+                drawList.AddCircleFilled(center, radius * (1f + ring * 0.28f),
+                    ImGui.GetColorU32(SunCore with { W = 0.10f }), 40);
             }
 
-            card.End();
-            ImGui.Dummy(new Vector2(0f, 10f * scale));
+            drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(SunCore), 40);
+            return;
+        }
+
+        drawList.AddCircleFilled(center, radius * 1.45f, ImGui.GetColorU32(MoonCore with { W = 0.08f }), 40);
+        drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(MoonCore), 40);
+        drawList.AddCircleFilled(center + new Vector2(radius * 0.42f, -radius * 0.28f), radius * 0.86f,
+            ImGui.GetColorU32(Vector4.Lerp(sky.Top, sky.Bottom, 0.3f)), 40);
+    }
+
+    private static void DrawBellTrack(ImDrawListPtr drawList, float left, float right, float top, float bell,
+        in SkyPalette sky, float scale)
+    {
+        var height = HeroTrackHeight * scale;
+        var bottom = top + height;
+        var night = sky.Ink with { W = HeroNightAlpha };
+        drawList.AddRectFilled(new Vector2(left, top), new Vector2(right, bottom), ImGui.GetColorU32(night),
+            height * 0.5f);
+        var segmentWidth = (right - left) / HeroTrackSegments;
+        for (var segment = 0; segment < HeroTrackSegments; segment++)
+        {
+            var light = WeatherSky.Daylight((segment + 0.5f) * EorzeaClock.BellsPerDay / HeroTrackSegments);
+            if (light <= 0.01f)
+            {
+                continue;
+            }
+
+            var segmentLeft = left + segment * segmentWidth;
+            drawList.AddRectFilled(new Vector2(segmentLeft, top), new Vector2(segmentLeft + segmentWidth, bottom),
+                ImGui.GetColorU32(SunBand with { W = SunBand.W * light }));
+        }
+
+        var markerRadius = HeroMarkerRadius * scale;
+        var marker = new Vector2(left + (right - left) * Math.Clamp(bell / EorzeaClock.BellsPerDay, 0f, 1f),
+            top + height * 0.5f);
+        drawList.AddCircleFilled(marker + new Vector2(0f, scale), markerRadius + scale,
+            ImGui.GetColorU32(MarkerShadow), 20);
+        drawList.AddCircleFilled(marker, markerRadius, ImGui.GetColorU32(ClockArt.White), 20);
+    }
+
+    private static void DrawBellLabels(ImDrawListPtr drawList, float left, float right, float top, in SkyPalette sky)
+    {
+        for (var bell = 0; bell <= EorzeaClock.BellsPerDay; bell += HeroTrackLabelStep)
+        {
+            var text = ClockArt.Pair(bell);
+            var textWidth = Typography.Measure(text, TextStyles.Caption1).X;
+            var x = left + (right - left) * bell / EorzeaClock.BellsPerDay - textWidth * 0.5f;
+            x = Math.Clamp(x, left, right - textWidth);
+            Typography.Draw(drawList, new Vector2(x, top), text, sky.InkSoft, TextStyles.Caption1);
         }
     }
 
-    private void DrawCityOption(Rect row, WorldCity city)
+    private void DrawWorldList(float width, float scale)
     {
-        var scale = UiScale.Current;
-        var added = configuration.WorldClocks.Exists(entry => entry.TimeZoneId == city.TimeZoneId &&
-                                                              entry.City == city.City);
-        var hovering = UiInteract.Hover(row.Min, row.Max);
-        var textMaxWidth = MathF.Max(1f, row.Max.X - 34f * scale - row.Min.X);
-        Marquee.DrawLeft(new MarqueeId("clock.cityPicker.name.", city.City), city.City, row.Min.X, row.Center.Y - 16f * scale,
-            textMaxWidth, TextStyles.Headline, ui.TitleInk, hovering);
-        if (WorldClockCatalog.TryResolve(city.TimeZoneId, out var zone))
-        {
-            var cityNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone);
-            var offsetLabel = Typography.FitText(CityOffsetLabel(zone, cityNow), textMaxWidth, TextStyles.Footnote);
-            Typography.Draw(new Vector2(row.Min.X, row.Center.Y + 4f * scale), offsetLabel,
-                ui.MutedInk, TextStyles.Footnote);
-        }
-
+        var cities = configuration.WorldClocks;
+        var rowCount = PinnedWorldRows + cities.Count;
+        EnsureWorldCaches(cities.Count);
+        var rowHeight = WorldRowHeight * scale;
+        var origin = ImGui.GetCursorScreenPos();
+        var max = new Vector2(origin.X + width, origin.Y + rowCount * rowHeight);
         var drawList = ImGui.GetWindowDrawList();
-        var iconCenter = new Vector2(row.Max.X - 12f * scale, row.Center.Y);
-        if (added)
+        ui.Card(drawList, origin, max, ClockArt.CardRadius * scale);
+        var utcNow = DateTime.UtcNow;
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        UpdateCityDrag(cities.Count, rowHeight);
+
+        DrawWorldRow(drawList, RowRect(origin, width, 0f, rowHeight), ClockZones.Local, ref localDetail, -1, utcNow);
+        DrawWorldRow(drawList, RowRect(origin, width, rowHeight, rowHeight), ClockZones.Server, ref worldDetails[0],
+            -1, utcNow);
+        for (var index = 0; index < cities.Count; index++)
         {
-            drawList.AddCircleFilled(iconCenter, 11f * scale, ImGui.GetColorU32(ui.Accent), 24);
-            var check = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 1f));
-            drawList.AddLine(iconCenter + new Vector2(-4.6f * scale, 0f), iconCenter + new Vector2(-1f * scale, 4f * scale),
-                check, 2f * scale);
-            drawList.AddLine(iconCenter + new Vector2(-1f * scale, 4f * scale), iconCenter + new Vector2(5f * scale, -4f * scale),
-                check, 2f * scale);
-        }
-        else
-        {
-            drawList.AddCircle(iconCenter, 11f * scale, ImGui.GetColorU32(ui.MutedInk), 24, 1.6f * scale);
+            var slot = CitySlot(index, cities.Count);
+            var settled = citySlots[index].Step(slot, Motion.PageSettle, delta);
+            if (index == dragCity)
+            {
+                continue;
+            }
+
+            var top = (PinnedWorldRows + settled) * rowHeight;
+            ClockArt.Separator(drawList, origin.X + Metrics.Space.Lg * scale, max.X, origin.Y + top, ui.Hairline);
+            DrawWorldRow(drawList, RowRect(origin, width, top, rowHeight), CitySlotOf(cities[index]),
+                ref worldDetails[index + 1], index, utcNow);
         }
 
-        if (UiInteract.HoverClick(row.Min, row.Max))
+        ClockArt.Separator(drawList, origin.X + Metrics.Space.Lg * scale, max.X, origin.Y + rowHeight, ui.Hairline);
+        if (dragCity >= 0 && dragCity < cities.Count)
         {
-            ToggleCity(city, added);
+            var top = (PinnedWorldRows + dragCity) * rowHeight + dragOffset;
+            var lifted = RowRect(origin, width, top, rowHeight);
+            var liftRadius = WorldLiftRadius * scale;
+            var cardFill = ui.Palette.CardFill;
+            var opaque = Vector4.Lerp(ui.Palette.BackdropTop, cardFill with { W = 1f }, cardFill.W * 2f) with { W = 1f };
+            ui.Card(drawList, lifted.Min, lifted.Max, liftRadius, elevated: true);
+            Squircle.Fill(drawList, lifted.Min, lifted.Max, liftRadius, ImGui.GetColorU32(opaque));
+            Squircle.Stroke(drawList, lifted.Min, lifted.Max, liftRadius, ImGui.GetColorU32(ui.Palette.CardStroke),
+                scale);
+            DrawWorldRow(drawList, lifted, CitySlotOf(cities[dragCity]), ref worldDetails[dragCity + 1], dragCity,
+                utcNow);
+        }
+
+        ClockArt.Advance(origin, width, max.Y - origin.Y, 0f, scale);
+    }
+
+    private static Rect RowRect(Vector2 origin, float width, float top, float height) =>
+        new(new Vector2(origin.X, origin.Y + top), new Vector2(origin.X + width, origin.Y + top + height));
+
+    private static ClockSlot CitySlotOf(WorldClockEntry entry) =>
+        new(ClockSlotKind.City, entry.City, ClockZones.Resolve(entry.TimeZoneId));
+
+    private void EnsureWorldCaches(int cityCount)
+    {
+        if (worldDetails.Length < cityCount + 1)
+        {
+            Array.Resize(ref worldDetails, Math.Max(cityCount + 1, worldDetails.Length * 2));
+        }
+
+        if (citySlots.Length == cityCount)
+        {
+            return;
+        }
+
+        citySlots = new Spring[cityCount];
+        for (var index = 0; index < cityCount; index++)
+        {
+            citySlots[index].SnapTo(index);
+        }
+
+        for (var index = 0; index < worldDetails.Length; index++)
+        {
+            worldDetails[index].Reset();
         }
     }
 
-    private void ToggleCity(WorldCity city, bool added)
+    private void DrawWorldRow(ImDrawListPtr drawList, Rect row, in ClockSlot slot, ref CachedText detail,
+        int cityIndex, DateTime utcNow)
     {
-        if (added)
+        if (!ImGui.IsRectVisible(row.Min, row.Max))
         {
-            configuration.WorldClocks.RemoveAll(entry => entry.TimeZoneId == city.TimeZoneId && entry.City == city.City);
+            return;
+        }
+
+        var scale = UiScale.Current;
+        var inset = Metrics.Space.Lg * scale;
+        var left = row.Min.X + inset;
+        var right = row.Max.X - inset;
+        var reading = ClockZones.Read(slot, utcNow);
+        var editable = editingWorld && cityIndex >= 0;
+        var dialRadius = WorldDialRadius * scale;
+        var dialCenter = new Vector2(left + dialRadius, row.Center.Y);
+        if (editable)
+        {
+            DrawRemoveBadge(drawList, dialCenter, cityIndex, scale);
         }
         else
         {
-            configuration.WorldClocks.Add(new WorldClockEntry { TimeZoneId = city.TimeZoneId, City = city.City });
+            AnalogClock.Draw(drawList, dialCenter, dialRadius, reading.Moment.Hour, reading.Moment.Minute,
+                reading.Seconds, AnalogClock.DayNight(reading.Moment.Hour, ui.Accent), scale);
         }
 
+        float contentRight;
+        if (editable)
+        {
+            contentRight = DrawGrip(drawList, row, right, cityIndex, scale);
+        }
+        else
+        {
+            var timeWidth = ClockArt.TimeWidth(reading.Moment.Hour, reading.Moment.Minute, false, WorldTimeStyle,
+                TextStyles.Subheadline);
+            var timeTop = row.Center.Y - Typography.LineHeight(WorldTimeStyle) * 0.5f;
+            ClockArt.DrawTime(drawList, new Vector2(right - timeWidth, timeTop), reading.Moment.Hour,
+                reading.Moment.Minute, false, WorldTimeStyle, TextStyles.Subheadline, ui.TitleInk, ui.TitleInk);
+            contentRight = right - timeWidth - WorldTimeGap * scale;
+        }
+
+        var textLeft = dialCenter.X + dialRadius + WorldTextGap * scale;
+        var textWidth = MathF.Max(1f, contentRight - textLeft);
+        var subtitle = slot.Kind == ClockSlotKind.Local
+            ? LocalDetail(ref detail, utcNow)
+            : ClockZones.Detail(ref detail, slot, reading);
+        var subtitleHeight = Typography.LineHeight(TextStyles.Footnote);
+        var nameHeight = Typography.LineHeight(TextStyles.Title3);
+        var top = row.Center.Y - (subtitleHeight + WorldSubtitleGap * scale + nameHeight) * 0.5f;
+        Typography.Draw(drawList, new Vector2(textLeft, top),
+            Typography.FitText(subtitle, textWidth, TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
+        Typography.Draw(drawList, new Vector2(textLeft, top + subtitleHeight + WorldSubtitleGap * scale),
+            Typography.FitText(slot.Name, textWidth, TextStyles.Title3), ui.TitleInk, TextStyles.Title3);
+    }
+
+    private string LocalDetail(ref CachedText cache, DateTime utcNow)
+    {
+        var local = utcNow.ToLocalTime();
+        var offset = (int)TimeZoneInfo.Local.GetUtcOffset(utcNow).TotalMinutes;
+        var key = local.Date.Ticks / TimeSpan.TicksPerDay * 10_000L + offset + 5_000L;
+        if (cache.IsCurrent(key))
+        {
+            return cache.Value;
+        }
+
+        var date = local.ToString("ddd d MMM", Loc.Culture);
+        return cache.Store(key, string.Concat(date, " · ", ClockZones.UtcLabel(offset)));
+    }
+
+    private void DrawRemoveBadge(ImDrawListPtr drawList, Vector2 center, int cityIndex, float scale)
+    {
+        var radius = WorldBadgeRadius * scale;
+        var hit = new Vector2(Metrics.Size.TapTarget * 0.5f * scale);
+        var hovered = dragCity < 0 && UiInteract.Hover(center - hit, center + hit);
+        var grow = PressFx.Scale(ImGui.GetID($"clock.city.remove.{cityIndex}"),
+            hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left), Motion.PressScaleControl);
+        ClockArt.MinusBadge(drawList, center, radius * grow, theme.Danger);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        HoverTooltip.Show(new Rect(center - hit, center + hit), Loc.T(L.Clock.RemoveCity));
+        if (UiInteract.Click(center - hit, center + hit, hovered))
+        {
+            pendingRemoveCity = cityIndex;
+        }
+    }
+
+    private float DrawGrip(ImDrawListPtr drawList, Rect row, float right, int cityIndex, float scale)
+    {
+        var hitWidth = WorldGripHit * scale;
+        var gripRect = new Rect(new Vector2(row.Max.X - hitWidth, row.Min.Y), row.Max);
+        var cursor = ImGui.GetCursorScreenPos();
+        ImGui.SetCursorScreenPos(gripRect.Min);
+        ImGui.InvisibleButton($"##clockCityGrip{cityIndex}", gripRect.Size);
+        var hovered = ImGui.IsItemHovered() && UiInteract.Hover(gripRect.Min, gripRect.Max);
+        var activated = hovered && ImGui.IsItemActivated();
+        ImGui.SetCursorScreenPos(cursor);
+        if (activated && dragCity < 0)
+        {
+            dragCity = cityIndex;
+            dragPressY = ImGui.GetMousePos().Y;
+            dragOffset = 0f;
+            dragTarget = cityIndex;
+        }
+
+        if (hovered || dragCity == cityIndex)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeNs);
+        }
+
+        var gripWidth = WorldGripWidth * scale;
+        var center = new Vector2(right - gripWidth * 0.5f, row.Center.Y);
+        ClockArt.Grip(drawList, center, gripWidth, dragCity == cityIndex ? ui.TitleInk : ui.MutedInk);
+        return right - gripWidth - WorldTimeGap * scale;
+    }
+
+    private void UpdateCityDrag(int cityCount, float rowHeight)
+    {
+        if (dragCity < 0)
+        {
+            return;
+        }
+
+        if (dragCity >= cityCount || !editingWorld)
+        {
+            EndCityDrag(false);
+            return;
+        }
+
+        var raw = ImGui.GetMousePos().Y - dragPressY;
+        dragOffset = Math.Clamp(raw, -dragCity * rowHeight, (cityCount - 1 - dragCity) * rowHeight);
+        dragTarget = Math.Clamp(dragCity + (int)MathF.Round(dragOffset / rowHeight), 0, cityCount - 1);
+        if (!ImGui.IsMouseDown(ImGuiMouseButton.Left))
+        {
+            EndCityDrag(true);
+        }
+    }
+
+    private int CitySlot(int index, int cityCount)
+    {
+        if (dragCity < 0 || dragCity >= cityCount || dragTarget == dragCity)
+        {
+            return index;
+        }
+
+        if (dragCity < dragTarget && index > dragCity && index <= dragTarget)
+        {
+            return index - 1;
+        }
+
+        if (dragTarget < dragCity && index >= dragTarget && index < dragCity)
+        {
+            return index + 1;
+        }
+
+        return index;
+    }
+
+    private void EndCityDrag(bool commit)
+    {
+        if (dragCity < 0)
+        {
+            return;
+        }
+
+        var from = dragCity;
+        var to = dragTarget;
+        dragCity = -1;
+        dragTarget = -1;
+        dragOffset = 0f;
+        if (!commit || !ClockReorder.Move(configuration.WorldClocks, from, to))
+        {
+            return;
+        }
+
+        for (var index = 0; index < citySlots.Length; index++)
+        {
+            citySlots[index].SnapTo(index);
+        }
+
+        for (var index = 0; index < worldDetails.Length; index++)
+        {
+            worldDetails[index].Reset();
+        }
+
+        UiFeedback.Play(UiSound.Tap);
         configuration.Save();
     }
 
-    private static string CityOffsetLabel(TimeZoneInfo zone, DateTime cityNow)
+    private void ApplyPendingCityRemoval()
     {
-        var day = RelativeDayLabel(cityNow.Date);
-        var diff = zone.GetUtcOffset(DateTime.UtcNow) - TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow);
-        var sign = diff < TimeSpan.Zero ? "-" : "+";
-        var magnitude = diff < TimeSpan.Zero ? diff.Negate() : diff;
-        var offset = magnitude.Minutes == 0
-            ? $"{sign}{magnitude.Hours}HR"
-            : $"{sign}{magnitude.Hours}:{magnitude.Minutes:D2}";
-        return diff == TimeSpan.Zero ? day : $"{day}, {offset}";
-    }
-
-    private static string RelativeDayLabel(DateTime day)
-    {
-        var today = DateTime.Today;
-        if (day == today)
+        var index = pendingRemoveCity;
+        pendingRemoveCity = -1;
+        var cities = configuration.WorldClocks;
+        if (index < 0 || index >= cities.Count)
         {
-            return Loc.T(L.Clock.DayToday);
+            return;
         }
 
-        if (day == today.AddDays(1))
+        cities.RemoveAt(index);
+        if (cities.Count == 0)
         {
-            return Loc.T(L.Clock.DayTomorrow);
+            editingWorld = false;
         }
 
-        if (day == today.AddDays(-1))
-        {
-            return Loc.T(L.Clock.DayYesterday);
-        }
-
-        return day.ToString("ddd", Loc.Culture);
-    }
-
-    private static double EorzeaSeconds() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0 * EorzeaRate;
-
-    private static string LocalOffsetLabel()
-    {
-        var offset = DateTimeOffset.Now.Offset;
-        var sign = offset < TimeSpan.Zero ? "-" : "+";
-        return offset.Minutes == 0
-            ? $"UTC{sign}{Math.Abs(offset.Hours)}"
-            : $"UTC{sign}{Math.Abs(offset.Hours)}:{Math.Abs(offset.Minutes):D2}";
+        configuration.Save();
     }
 }

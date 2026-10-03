@@ -28,6 +28,7 @@ internal sealed class TimerWidget : IHomeWidget
     {
         Idle,
         Running,
+        Paused,
         Done,
     }
 
@@ -61,6 +62,7 @@ internal sealed class TimerWidget : IHomeWidget
             TimerPhase.Running when remaining <= SecondsPerMinute => 0.95f,
             TimerPhase.Running when remaining <= 5 * SecondsPerMinute => 0.75f,
             TimerPhase.Running => 0.45f,
+            TimerPhase.Paused => 0.35f,
             _ => 0f,
         };
     }
@@ -101,19 +103,19 @@ internal sealed class TimerWidget : IHomeWidget
 
     private TimerPhase Phase(DateTime utcNow, out double remaining)
     {
-        remaining = 0;
         if (IsRinging)
         {
+            remaining = 0;
             return TimerPhase.Done;
         }
 
-        if (configuration.TimerEndsAtUtc is not { } endsAt)
+        return CountdownTimer.Phase(configuration, utcNow, out remaining) switch
         {
-            return TimerPhase.Idle;
-        }
-
-        remaining = (endsAt - utcNow).TotalSeconds;
-        return remaining > 0 ? TimerPhase.Running : TimerPhase.Done;
+            CountdownPhase.Running => TimerPhase.Running,
+            CountdownPhase.Paused => TimerPhase.Paused,
+            CountdownPhase.Finished => TimerPhase.Done,
+            _ => TimerPhase.Idle,
+        };
     }
 
     private void DrawSmall(in WidgetContext context, in WidgetInk ink, TimerPhase phase, double remaining,
@@ -186,7 +188,7 @@ internal sealed class TimerWidget : IHomeWidget
         var ringRadius = radius - thickness * 0.5f;
         var fraction = phase switch
         {
-            TimerPhase.Running => (float)(remaining / duration),
+            TimerPhase.Running or TimerPhase.Paused => (float)(remaining / duration),
             TimerPhase.Done when IsRinging || remaining > -SecondsPerMinute => 1f,
             _ => 0f,
         };
@@ -232,6 +234,15 @@ internal sealed class TimerWidget : IHomeWidget
                 }
 
                 return;
+            case TimerPhase.Paused:
+                if (WidgetControls.Button(context, ink, MainControl, center, diameterUnits, FontAwesomeIcon.Play,
+                        accent))
+                {
+                    CountdownTimer.Resume(configuration, DateTime.UtcNow);
+                    configuration.Save();
+                }
+
+                return;
             default:
                 if (WidgetControls.Button(context, ink, MainControl, center, diameterUnits, FontAwesomeIcon.Play,
                         accent))
@@ -245,7 +256,7 @@ internal sealed class TimerWidget : IHomeWidget
 
     private string Digits(TimerPhase phase, double remaining) => phase switch
     {
-        TimerPhase.Running => TimeText.Duration((int)Math.Ceiling(remaining)),
+        TimerPhase.Running or TimerPhase.Paused => TimeText.Duration((int)Math.Ceiling(remaining)),
         TimerPhase.Done => TimeText.Duration(0),
         _ => TimeText.Duration(LastDuration),
     };
@@ -256,6 +267,8 @@ internal sealed class TimerWidget : IHomeWidget
         {
             case TimerPhase.Done:
                 return Loc.T(L.Clock.TimerFinished);
+            case TimerPhase.Paused:
+                return Loc.T(L.Clock.Paused);
             case TimerPhase.Idle:
                 return Loc.T(wide ? L.WidgetsTime.PickMinutes : L.Clock.TimerTitle);
         }
@@ -279,9 +292,7 @@ internal sealed class TimerWidget : IHomeWidget
             ringer.Stop();
         }
 
-        configuration.TimerDurationSeconds = seconds;
-        configuration.TimerEndsAtUtc = DateTime.UtcNow.AddSeconds(seconds);
-        configuration.TimerNotified = false;
+        CountdownTimer.Start(configuration, seconds, configuration.TimerLabel, DateTime.UtcNow);
         configuration.Save();
     }
 
@@ -292,8 +303,7 @@ internal sealed class TimerWidget : IHomeWidget
             ringer.Stop();
         }
 
-        configuration.TimerEndsAtUtc = null;
-        configuration.TimerNotified = false;
+        CountdownTimer.Cancel(configuration);
         configuration.Save();
     }
 
