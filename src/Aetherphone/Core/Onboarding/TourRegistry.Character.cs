@@ -62,11 +62,14 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.DailiesAddTitle, L.Onboarding.DailiesAddBody, "dailies.add",
                     GuideGesture.Tap),
             });
-        Add(tours, "housing", 2,
+        Add(tours, "housing", 3,
             new[]
             {
-                GuideStep.Point(L.Onboarding.HousingWhereTitle, L.Onboarding.HousingWhereBody, "housing.context",
+                GuideStep.Point(L.Onboarding.HousingLotteryTitle, L.Onboarding.HousingLotteryBody, "housing.lottery",
                     GuideGesture.None),
+                GuideStep.Point(L.Onboarding.HousingDistrictsTitle, L.Onboarding.HousingDistrictsBody,
+                    "housing.districts", GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.HousingMapTitle, L.Onboarding.HousingMapBody, "housing.tab.map"),
                 GuideStep.Point(L.Onboarding.HousingNarrowTitle, L.Onboarding.HousingNarrowBody, "housing.filters",
                     GuideGesture.None),
                 GuideStep.TryUntil(L.Onboarding.HousingPlotTitle, L.Onboarding.HousingPlotBody, "housing.map",
