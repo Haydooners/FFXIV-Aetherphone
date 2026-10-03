@@ -156,6 +156,7 @@ internal sealed class PhoneServices : IDisposable
     public required SongLinkResolver SongResolver { get; init; }
     public required PlaybackHub Playback { get; init; }
     public required LibraryStore MusicLibrary { get; init; }
+    public required DownloadStore MusicDownloads { get; init; }
     public required WindowsMediaSessions WindowsMedia { get; init; }
     public required WindowsMediaPublisher WindowsMediaPublisher { get; init; }
     public required LyricsService Lyrics { get; init; }
@@ -314,6 +315,10 @@ internal sealed class PhoneServices : IDisposable
         var songPlayer = new SongPlayer(youtube, audioCache, songResolver);
         var musicLibrary = new LibraryStore(new DirectoryInfo(Path.Combine(configDirectory.FullName, "Music")),
             configuration);
+        var musicDownloads = new DownloadStore(
+            new DirectoryInfo(Path.Combine(configDirectory.FullName, "Music", "downloads")), audioCache, songResolver,
+            musicLibrary, action => _ = framework.RunOnFrameworkThread(action));
+        songPlayer.OfflineSource = musicDownloads.TryRead;
         var playback = new PlaybackHub(radioPlayer, songPlayer, musicLibrary, songResolver, configuration, framework);
         var lyricsDisk = new DiskCache(new DirectoryInfo(Path.Combine(cacheRoot.FullName, "lyrics")),
             16L * 1024 * 1024);
@@ -498,6 +503,7 @@ internal sealed class PhoneServices : IDisposable
             SongResolver = songResolver,
             Playback = playback,
             MusicLibrary = musicLibrary,
+            MusicDownloads = musicDownloads,
             WindowsMedia = new WindowsMediaSessions(configuration),
             WindowsMediaPublisher = new WindowsMediaPublisher(configuration, framework,
                 static () => Platform.GameWindowHandle.Current),
@@ -584,6 +590,7 @@ internal sealed class PhoneServices : IDisposable
         WindowsMediaPublisher.Dispose();
         WindowsMedia.Dispose();
         SongPlayer.Dispose();
+        MusicDownloads.Dispose();
         MusicLibrary.Dispose();
         SongSearch.Dispose();
         VideoMetadata.Dispose();

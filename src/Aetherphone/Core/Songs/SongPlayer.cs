@@ -71,6 +71,8 @@ internal sealed class SongPlayer : IDisposable
         MediaFoundationApi.Startup();
     }
 
+    public Func<string, SongResolvedAudio?>? OfflineSource { get; set; }
+
     public event Action? TrackCompleted;
     public event Action? TrackNearEnd;
     public event Action? CrossfadePoint;
@@ -193,7 +195,8 @@ internal sealed class SongPlayer : IDisposable
         }
 
         var videoId = song.VideoId;
-        if (cache.Get(OpusCacheKey(videoId), CacheMaxAge) is not null || cache.Get(videoId, CacheMaxAge) is not null)
+        if (OfflineSource?.Invoke(videoId) is not null || cache.Get(OpusCacheKey(videoId), CacheMaxAge) is not null ||
+            cache.Get(videoId, CacheMaxAge) is not null)
         {
             return;
         }
@@ -522,8 +525,9 @@ internal sealed class SongPlayer : IDisposable
         int workerSession)
     {
         var videoId = song.VideoId;
-        var bytes = cache.Get(OpusCacheKey(videoId), CacheMaxAge);
-        var bytesAreOpus = bytes is not null;
+        var offline = OfflineSource?.Invoke(videoId);
+        var bytes = offline?.Bytes ?? cache.Get(OpusCacheKey(videoId), CacheMaxAge);
+        var bytesAreOpus = offline?.IsOpus ?? bytes is not null;
         bytes ??= cache.Get(videoId, CacheMaxAge);
         if (bytes is null && linkResolver.IsInstalled && !token.IsCancellationRequested)
         {
