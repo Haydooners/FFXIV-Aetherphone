@@ -151,7 +151,8 @@ internal static class AppHeader
         var progress = NavBarMetrics.Progress(scrollY, scale);
         var glass = NavBarMetrics.GlassOpacity(scrollY, scale);
         var inlineHeight = NavBarMetrics.InlineHeight * scale;
-        var band = new Rect(content.Min, new Vector2(content.Max.X, frame.Body.Min.Y));
+        var chromeBottom = content.Min.Y + inlineHeight + NavBarMetrics.EdgeFadeHeight * scale;
+        var band = new Rect(content.Min, new Vector2(content.Max.X, MathF.Max(frame.Body.Min.Y, chromeBottom)));
         var buttonCount = Math.Min(buttons.Length, NavBarMetrics.MaxButtons);
         var pressedButton = -1;
         var backPressed = false;

@@ -19,7 +19,12 @@ internal readonly record struct TabBarResult(int Tapped, bool ActionTapped)
     public static readonly TabBarResult None = new(-1, false);
 }
 
-internal readonly record struct TabItemPose(Vector2 IconCenter, float Scale, float Alpha);
+internal readonly record struct TabItemPose(Vector2 IconCenter, float Scale, float Alpha)
+{
+    public float AvatarRadius(float uiScale) => TabBarLayout.AvatarRadius * uiScale * Scale;
+
+    public float AvatarRingRadius(float uiScale) => AvatarRadius(uiScale) + TabBarLayout.AvatarRingGap * uiScale;
+}
 
 internal interface ITabIconDrawer
 {

@@ -79,8 +79,6 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
     private const float LatestScopePillPadX = 14f;
     private const float LatestScopePillGap = 8f;
     private const float FeedTabUnderline = 4f;
-    private const float TabBarAvatarRadius = 13f;
-    private const float TabBarAvatarRingGap = 2.5f;
     private const int TabCount = 4;
     private const int FilterToggleCount = 3;
     private const int TabRevalidateCooldownSeconds = 15;
@@ -663,15 +661,14 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
         }
 
         var scale = UiScale.Current;
-        var radius = TabBarAvatarRadius * scale * pose.Scale;
-        DrawAvatar(drawList, pose.IconCenter, radius, me.Name, me.World, me.AvatarUrl, 0.85f, 28,
+        DrawAvatar(drawList, pose.IconCenter, pose.AvatarRadius(scale), me.Name, me.World, me.AvatarUrl, 0.85f, 28,
             Frames.Of(me.FrameId));
         if (!active)
         {
             return;
         }
 
-        drawList.AddCircle(pose.IconCenter, radius + TabBarAvatarRingGap * scale,
+        drawList.AddCircle(pose.IconCenter, pose.AvatarRingRadius(scale),
             ImGui.GetColorU32(ChirperInk.AccentLink), 32, 1.6f * scale);
     }
 
