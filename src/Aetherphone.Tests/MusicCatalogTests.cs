@@ -95,6 +95,26 @@ public sealed class MusicCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task A_failed_fetch_for_a_new_argument_drops_the_old_songs_and_retries_after_backoff()
+    {
+        using var catalog = Create(null);
+        catalog.Ensure(Key, CatalogRequest.Query("lofi"));
+        await catalog.Pending(Key);
+        searchResult = _ => Task.FromResult(Array.Empty<Song>());
+
+        Assert.True(catalog.Ensure(Key, CatalogRequest.Query("jazz")));
+        await catalog.Pending(Key);
+
+        Assert.Empty(catalog.Songs(Key));
+        Assert.Equal(CatalogState.Failed, catalog.State(Key));
+        searchResult = query => Task.FromResult(Songs(query, 3));
+        now += MusicCatalog.RetryBackoffSeconds + 1;
+        Assert.True(catalog.Ensure(Key, CatalogRequest.Query("jazz")));
+        await catalog.Pending(Key);
+        Assert.StartsWith("jazz", catalog.Songs(Key)[0].Title, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Persisted_shelves_load_from_disk_without_a_network_call()
     {
         var path = Path.Combine(root.FullName, "catalog.json");

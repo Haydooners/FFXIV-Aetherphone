@@ -359,6 +359,12 @@ internal sealed class MusicCatalog : IDisposable
             }
             else
             {
+                if (!string.Equals(entry.Argument, request.Argument, StringComparison.Ordinal))
+                {
+                    entry.Songs = Array.Empty<Song>();
+                    entry.Title = string.Empty;
+                }
+
                 entry.Argument = request.Argument;
                 entry.RetryAfterUnix = now + RetryBackoffSeconds;
                 entry.Failed = true;
