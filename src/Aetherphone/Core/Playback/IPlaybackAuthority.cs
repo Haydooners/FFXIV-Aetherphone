@@ -15,6 +15,7 @@ internal enum PlaybackIntentKind : byte
     RemoveQueued,
     MoveQueued,
     Stop,
+    TrackEnded,
 }
 
 internal readonly struct PlaybackIntent

@@ -14,6 +14,7 @@ using Aetherphone.Core.Health;
 using Aetherphone.Core.Housing;
 using Aetherphone.Core.Hunts;
 using Aetherphone.Core.Inventory;
+using Aetherphone.Core.Jam;
 using Aetherphone.Core.Lodestone;
 using Aetherphone.Core.Lyrics;
 using Aetherphone.Core.Maps;
@@ -169,6 +170,8 @@ internal sealed class PhoneServices : IDisposable
     public required MusterLauncher MusterLauncher { get; init; }
 
     public required RadioLauncher RadioLauncher { get; init; }
+    public required JamSession Jam { get; init; }
+    public required JamLauncher JamLauncher { get; init; }
     public required YellowPagesStore YellowPages { get; init; }
 
     public required AdInquiryStore AdInquiries { get; init; }
@@ -354,6 +357,7 @@ internal sealed class PhoneServices : IDisposable
             confirm, installer.Gate("message"), contacts);
         var streamSignals = new StreamSignalRouter(calls.Router);
         var radioRooms = new RadioRoomRouter(realtimeSignals, aethernetSession, framework);
+        var jam = new JamSession(calls.Router, playback, aethernetSession, notifications, framework);
         var characterSwitcher = new CharacterSessionManager(framework, aethernetSession, aethernet.Account,
             gameData, configuration, confirm);
         var socialNotifications = new SocialNotificationService(aethernetSession, aethernet.Account, notifications, configuration, framework, visibility, realtimeSignals, installer);
@@ -512,6 +516,8 @@ internal sealed class PhoneServices : IDisposable
             Musters = musters,
             MusterLauncher = new MusterLauncher(),
             RadioLauncher = new RadioLauncher(),
+            Jam = jam,
+            JamLauncher = new JamLauncher(),
             YellowPages = yellowPages,
             AdInquiries = adInquiries,
             YellowPagesLauncher = new YellowPagesLauncher(),
@@ -561,6 +567,7 @@ internal sealed class PhoneServices : IDisposable
         DeviceLinks.Dispose();
         KeyVault.Dispose();
         RadioRooms.Dispose();
+        Jam.Dispose();
         StreamSignals.Dispose();
         Calls.Dispose();
         Contacts.Dispose();

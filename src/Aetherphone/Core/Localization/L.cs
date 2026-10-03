@@ -4438,6 +4438,14 @@ internal static class L
         public static readonly LocString LiveDjs          = new("music.liveDjs",           "Live Twitch DJs");
         public static readonly LocString LiveDjsEmpty     = new("music.liveDjsEmpty",     "No DJs are live right now. Check out Community Radio or Radio Stations.");
         public static readonly LocString PoweredByRolladeck = new("music.poweredByRolladeck", "Powered by XIV Rolladeck");
+
+        internal static class Jam
+        {
+            public static readonly LocString InviteTitle = new("music.jam.inviteTitle", "Jam invite");
+            public static readonly LocString InviteBody = new("music.jam.inviteBody", "{0} invited you to listen together");
+            public static readonly LocString InviteBodyTitled = new("music.jam.inviteBodyTitled", "{0} invited you to {1}");
+            public static readonly LocString SomeoneName = new("music.jam.someoneName", "Someone");
+        }
     }
 
     internal static class Messages

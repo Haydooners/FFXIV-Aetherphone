@@ -123,6 +123,37 @@ internal static class SignalType
     public const string RadioReaction = "radio.reaction";
     public const string RadioRequests = "radio.requests";
     public const string RadioRefused = "radio.refused";
+    public const string JamPrefix = "jam.";
+    public const string JamStart = "jam.start";
+    public const string JamJoin = "jam.join";
+    public const string JamLeave = "jam.leave";
+    public const string JamEnd = "jam.end";
+    public const string JamKick = "jam.kick";
+    public const string JamTransfer = "jam.transfer";
+    public const string JamApprove = "jam.approve";
+    public const string JamDeny = "jam.deny";
+    public const string JamSettings = "jam.settings";
+    public const string JamState = "jam.state";
+    public const string JamControl = "jam.control";
+    public const string JamQueueAdd = "jam.queueAdd";
+    public const string JamQueueRemove = "jam.queueRemove";
+    public const string JamQueueMove = "jam.queueMove";
+    public const string JamQueueAdvance = "jam.queueAdvance";
+    public const string JamReact = "jam.react";
+    public const string JamInvite = "jam.invite";
+    public const string JamJoined = "jam.joined";
+    public const string JamDeclined = "jam.declined";
+    public const string JamJoinPending = "jam.joinPending";
+    public const string JamJoinRequest = "jam.joinRequest";
+    public const string JamJoinCancelled = "jam.joinCancelled";
+    public const string JamRoster = "jam.roster";
+    public const string JamQueue = "jam.queue";
+    public const string JamHostChanged = "jam.hostChanged";
+    public const string JamControlRequest = "jam.controlRequest";
+    public const string JamReaction = "jam.reaction";
+    public const string JamKicked = "jam.kicked";
+    public const string JamEnded = "jam.ended";
+    public const string JamInvited = "jam.invited";
 }
 
 internal static class StreamPermission
@@ -197,6 +228,13 @@ internal sealed record RadioSongRequest(
     string Text,
     int State,
     long CreatedAtUnixMs);
+internal sealed record JamTrack(string VideoId, string? Title = null, string? Author = null,
+    string? ThumbnailUrl = null, double? DurationSeconds = null);
+
+internal sealed record JamQueueEntry(int EntryId, JamTrack Track, string AddedByUserId = "", string AddedByName = "");
+
+internal sealed record JamMember(string UserId, string DisplayName = "", string Handle = "", string? AvatarUrl = null,
+    bool IsHost = false, int Permissions = 0);
 
 internal sealed record CallControl
 {
@@ -310,6 +348,34 @@ internal sealed record CallControl
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RadioSongRequest[]? Requests { get; init; }
+    public string? JamId { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Title { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public JamTrack? Track { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? QueueVersion { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public JamQueueEntry[]? Entries { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? EntryId { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ToIndex { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Mode { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Stale { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public JamMember[]? JamMembers { get; init; }
 }
 
 internal sealed record CasinoPayload
