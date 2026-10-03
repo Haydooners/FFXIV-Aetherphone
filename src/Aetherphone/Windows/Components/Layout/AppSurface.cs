@@ -38,11 +38,6 @@ internal static class AppSurface
 
     public static Vector4? ScrollbarInk { get; set; }
 
-    public static float LastScrollY { get; private set; }
-
-    public static float ScrollOffsetThisFrame => lastScrollFrame == ImGui.GetFrameCount() ? LastScrollY : 0f;
-
-    private static int lastScrollFrame = -1;
     private static float ambientBottomInset;
 
     public static BottomInsetScope ReserveBottom(float inset) => new(inset);
@@ -246,8 +241,6 @@ internal static class AppSurface
                 ImGui.Dummy(new Vector2(0f, bottomInset));
             }
 
-            LastScrollY = ImGui.GetScrollY();
-            lastScrollFrame = ImGui.GetFrameCount();
             TrackIndicator();
             depth = Math.Max(0, depth - 1);
             child.Dispose();

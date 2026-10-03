@@ -6619,6 +6619,7 @@
   "changelog.r1042.17": "Der Akkustand steht jetzt im Akkusymbol, und wenn du mit der Maus über das Signal-, WLAN- oder Akkusymbol fährst, siehst du, was es misst",
   "changelog.r1042.18": "Die Telefon-Emote wird jetzt einmal abgespielt, wenn du das Telefon öffnest, und kehrt nicht mehr zurück, wenn du weggehst oder sie abbrichst",
   "changelog.r1042.19": "Behoben, dass das Teilen-Blatt über jeder App ein verstecktes Fenster offen hielt",
+  "changelog.r1042.86": "Die Tableisten der Apps bleiben beim Scrollen jetzt in voller Größe und zeigen nur Symbole, mit dem Namen jedes Tabs beim Darüberfahren",
   "changelog.r1042.20": "Widgets von Grund auf überarbeitet: ein Widget für fast jede App in klein, mittel oder groß, alle passend zum Look deiner Symbole",
   "changelog.r1042.21": "Die Widget-Galerie neu aufgebaut, mit Suche, einer Reihe Empfohlen mit Live-Vorschauen und jeder Widget-Größe in echter Größe als Vorschau, bevor du sie hinzufügst",
   "changelog.r1042.22": "Intelligente Stapel hinzugefügt: Lege ein Widget auf ein anderes gleicher Größe, um bis zu zehn zu stapeln, blättere mit dem Mausrad durch sie und lass Intelligentes Drehen das passende nach vorn holen",

@@ -215,7 +215,7 @@ internal sealed partial class SkywatcherApp : IPhoneApp
             AnchorKey: "skywatcher.tab.zones");
         tabItems[2] = new TabItem(Loc.T(L.Skywatcher.Control), IconGlyph.Of(FontAwesomeIcon.SlidersH),
             AnchorKey: "skywatcher.tab.control");
-        var result = tabBar.Draw(content, ui, tabItems, (int)activeTab, scrollY);
+        var result = tabBar.Draw(content, ui, tabItems, (int)activeTab);
         if (result.Tapped < 0 || result.Tapped == (int)activeTab)
         {
             return;

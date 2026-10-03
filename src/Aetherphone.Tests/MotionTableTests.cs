@@ -64,6 +64,5 @@ public sealed class MotionTableTests
         Assert.Equal(Motion.PressScaleCard, PressFx.CardPressedScale, Tolerance);
         Assert.Equal(Motion.HoverLift, HoverFx.DefaultSmoothTime, Tolerance);
         Assert.Equal(Motion.Sheet, SheetMetrics.PresentSmoothTime, Tolerance);
-        Assert.Equal(Motion.TabBar, TabBarShrink.SmoothTime, Tolerance);
     }
 }
