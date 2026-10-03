@@ -344,6 +344,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public string WordRunBank { get; set; } = string.Empty;
     public bool TetrisModern { get; set; }
     public string PendingCoinGameSession { get; set; } = string.Empty;
+    public Dictionary<string, Core.Coins.CoinSavingGoal> CoinSavingGoals { get; set; } = new();
     public Dictionary<ulong, string> PendingCasinoSittings { get; set; } = new();
     public Dictionary<ulong, long> CasinoSittingSeenAtUnix { get; set; } = new();
     public Dictionary<ulong, PendingCasinoRound> PendingCasinoRounds { get; set; } = new();
