@@ -60,6 +60,26 @@ internal static class MediaAppNames
             .Equals(ExecutableStem(processFileName.AsSpan()), StringComparison.OrdinalIgnoreCase);
     }
 
+    public static bool MatchesProcess(string appUserModelId, ReadOnlySpan<char> packageFamilyName,
+        ReadOnlySpan<char> imagePath)
+    {
+        var value = appUserModelId.AsSpan().Trim();
+        if (value.IsEmpty)
+        {
+            return false;
+        }
+
+        var separator = value.IndexOf(PackageSeparator);
+        if (separator >= 0)
+        {
+            return !packageFamilyName.IsEmpty
+                   && value[..separator].Equals(packageFamilyName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return !imagePath.IsEmpty
+               && ExecutableStem(value).Equals(ExecutableStem(imagePath), StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string Fallback(string appUserModelId)
     {
         var value = appUserModelId.AsSpan().Trim();

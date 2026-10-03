@@ -98,7 +98,8 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
                 configuration.Save();
             });
         installedApps = new InstalledAppList(services.Installer, apps);
-        appSettingsPages = new AppSettingsPages(configuration, sound, services.Installer, confirm, this);
+        appSettingsPages = new AppSettingsPages(configuration, sound, services.Installer, confirm, this,
+            services.PcMedia);
         notificationsPage = new NotificationsPage(configuration, this, installedApps, appSettingsPages);
         var appsPage = new AppsPage(installedApps, appSettingsPages, this, configuration);
         var ringtonePage = new SoundSettingsPage(sound, SoundKind.Ringtone, L.Settings.Ringtone, FontAwesomeIcon.Music,

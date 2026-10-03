@@ -63,8 +63,8 @@ public sealed class SystemMediaTests
     {
         var candidates = new[]
         {
-            new MediaSessionCandidate(false, false, true, false),
-            new MediaSessionCandidate(false, true, true, false),
+            new MediaSessionCandidate(true, false, true, false),
+            new MediaSessionCandidate(true, true, true, false),
         };
 
         Assert.Equal(1, MediaSessionPicker.Pick(candidates));
@@ -75,8 +75,8 @@ public sealed class SystemMediaTests
     {
         var candidates = new[]
         {
-            new MediaSessionCandidate(false, true, false, false),
-            new MediaSessionCandidate(false, false, true, false),
+            new MediaSessionCandidate(true, true, false, false),
+            new MediaSessionCandidate(true, false, true, false),
         };
 
         Assert.Equal(1, MediaSessionPicker.Pick(candidates));
@@ -87,32 +87,128 @@ public sealed class SystemMediaTests
     {
         var candidates = new[]
         {
-            new MediaSessionCandidate(false, true, false, false),
-            new MediaSessionCandidate(false, false, false, true),
+            new MediaSessionCandidate(true, true, false, false),
+            new MediaSessionCandidate(true, false, false, true),
         };
 
         Assert.Equal(1, MediaSessionPicker.Pick(candidates));
     }
 
     [Fact]
-    public void PickerIgnoresOwnProcessEvenWhenPlaying()
+    public void PickerIgnoresIneligibleSessionsEvenWhenPlaying()
     {
         var candidates = new[]
         {
-            new MediaSessionCandidate(true, true, true, true),
-            new MediaSessionCandidate(false, false, false, false),
+            new MediaSessionCandidate(false, true, true, true),
+            new MediaSessionCandidate(true, false, false, false),
         };
 
         Assert.Equal(1, MediaSessionPicker.Pick(candidates));
     }
 
     [Fact]
-    public void PickerReturnsNoneWhenOnlyOwnProcessExists()
+    public void PickerReturnsNoneWhenNothingIsEligible()
     {
-        var candidates = new[] { new MediaSessionCandidate(true, true, true, false), };
+        var candidates = new[] { new MediaSessionCandidate(false, true, true, false), };
 
         Assert.Equal(MediaSessionPicker.None, MediaSessionPicker.Pick(candidates));
         Assert.Equal(MediaSessionPicker.None, MediaSessionPicker.Pick(ReadOnlySpan<MediaSessionCandidate>.Empty));
+    }
+
+    [Fact]
+    public void PickerDoesNotFallBackToAStalePausedSession()
+    {
+        var candidates = new[]
+        {
+            new MediaSessionCandidate(false, true, false, false),
+            new MediaSessionCandidate(false, false, false, false),
+        };
+
+        Assert.Equal(MediaSessionPicker.None, MediaSessionPicker.Pick(candidates));
+    }
+
+    [Theory]
+    [InlineData(false, true, "Spotify.exe", "", true)]
+    [InlineData(true, true, "ffxiv_dx11.exe", "", false)]
+    [InlineData(false, false, "Spotify.exe", "", false)]
+    [InlineData(false, true, "Spotify.exe", "spotify.exe", true)]
+    [InlineData(false, true, "chrome", "Spotify.exe", false)]
+    public void EligibilityHonoursOwnProcessRecencyAndThePinnedSource(bool isOwnProcess, bool isRecent,
+        string appId, string pinnedAppId, bool expected)
+    {
+        Assert.Equal(expected, MediaSessionPicker.IsEligible(isOwnProcess, isRecent, appId, pinnedAppId));
+    }
+
+    [Fact]
+    public void UnseenPausedSessionIsNotRecent()
+    {
+        var activity = new MediaSessionActivity();
+
+        Assert.False(activity.IsRecent("Spotify.exe", false, 1_000));
+        Assert.True(activity.IsRecent("Spotify.exe", true, 1_000));
+    }
+
+    [Fact]
+    public void PausedSessionStaysRecentUntilTheWindowPasses()
+    {
+        var activity = new MediaSessionActivity();
+        activity.Observe("Spotify.exe", true, 10_000);
+        activity.Observe("Spotify.exe", false, 20_000);
+
+        Assert.True(activity.IsRecent("spotify.exe", false, 10_000 + MediaSessionActivity.RecentMilliseconds - 1));
+        Assert.False(activity.IsRecent("Spotify.exe", false, 10_000 + MediaSessionActivity.RecentMilliseconds));
+    }
+
+    [Fact]
+    public void ActivityEvictsTheOldestAppWhenFull()
+    {
+        var activity = new MediaSessionActivity();
+        for (var index = 0; index < 33; index++)
+        {
+            activity.Observe($"app{index}", true, 1_000 + index);
+        }
+
+        Assert.False(activity.IsRecent("app0", false, 2_000));
+        Assert.True(activity.IsRecent("app1", false, 2_000));
+        Assert.True(activity.IsRecent("app32", false, 2_000));
+    }
+
+    [Theory]
+    [InlineData(0, 2)]
+    [InlineData(2, 1)]
+    [InlineData(1, 0)]
+    public void RepeatCyclesOffAllOne(int current, int expected)
+    {
+        Assert.Equal((MediaSessionRepeat)expected, PcMediaSource.NextRepeat((MediaSessionRepeat)current));
+    }
+
+    [Theory]
+    [InlineData("SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify", "SpotifyAB.SpotifyMusic_zpdnekdrzrea0",
+        "C:\\Program Files\\WindowsApps\\Spotify.exe", true)]
+    [InlineData("SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify", "", "C:\\Apps\\Spotify.exe", false)]
+    [InlineData("Spotify.exe", "", "C:\\Users\\me\\AppData\\Roaming\\Spotify\\Spotify.exe", true)]
+    [InlineData("foobar2000.exe", "", "C:\\Program Files\\foobar2000\\foobar2000.exe", true)]
+    [InlineData("Chrome", "", "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", true)]
+    [InlineData("Spotify.exe", "", "C:\\Windows\\explorer.exe", false)]
+    [InlineData("", "", "C:\\Apps\\Spotify.exe", false)]
+    public void AudioSessionProcessMatchesTheMediaApp(string appUserModelId, string packageFamilyName,
+        string imagePath, bool expected)
+    {
+        Assert.Equal(expected, MediaAppNames.MatchesProcess(appUserModelId, packageFamilyName, imagePath));
+    }
+
+    [Fact]
+    public void SnapshotReportsShuffleRepeatAndVolumeSupport()
+    {
+        var snapshot = new MediaSessionSnapshot("Spotify.exe", "Spotify", "Title", "Artist", "Album",
+            MediaSessionPlayback.Playing, MediaSessionControls.Shuffle | MediaSessionControls.Repeat, TimeSpan.Zero,
+            TimeSpan.Zero, 0, null, 0, true, MediaSessionRepeat.Track, 0.5f);
+
+        Assert.True(snapshot.CanShuffle);
+        Assert.True(snapshot.CanRepeat);
+        Assert.True(snapshot.HasVolume);
+        Assert.False(MediaSessionSnapshot.Empty.HasVolume);
+        Assert.False(snapshot.SameContent(MediaSessionSnapshot.Empty));
     }
 
     [Fact]
@@ -220,5 +316,6 @@ public sealed class SystemMediaTests
     private static MediaSessionSnapshot Snapshot(MediaSessionPlayback playback, TimeSpan position, TimeSpan duration,
         long stamp) =>
         new("Spotify.exe", "Spotify", "Title", "Artist", "Album", playback,
-            MediaSessionControls.PlayPauseToggle | MediaSessionControls.Seek, position, duration, stamp, null, 0);
+            MediaSessionControls.PlayPauseToggle | MediaSessionControls.Seek, position, duration, stamp, null, 0,
+            false, MediaSessionRepeat.None, MediaSessionSnapshot.NoVolume);
 }

@@ -247,6 +247,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public float MusicCrossfadeSeconds { get; set; }
     public bool MusicSoundCheck { get; set; } = true;
     public bool ShowWindowsMedia { get; set; } = true;
+    public string WindowsMediaSource { get; set; } = string.Empty;
     public bool PublishToWindowsMedia { get; set; } = true;
     public bool ShareListeningActivity { get; set; }
     public bool ListeningPromptShown { get; set; }

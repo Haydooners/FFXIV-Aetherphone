@@ -2,9 +2,11 @@ namespace Aetherphone.Core.SystemMedia;
 
 internal readonly struct MediaSessionSnapshot
 {
+    public const float NoVolume = -1f;
+
     public static readonly MediaSessionSnapshot Empty = new(string.Empty, string.Empty, string.Empty, string.Empty,
         string.Empty, MediaSessionPlayback.Closed, MediaSessionControls.None, TimeSpan.Zero, TimeSpan.Zero, 0, null,
-        0);
+        0, false, MediaSessionRepeat.None, NoVolume);
 
     public readonly string AppId;
     public readonly string AppName;
@@ -18,10 +20,14 @@ internal readonly struct MediaSessionSnapshot
     public readonly long PositionUpdatedUtcTicks;
     public readonly byte[]? Artwork;
     public readonly int ArtworkRevision;
+    public readonly bool ShuffleActive;
+    public readonly MediaSessionRepeat Repeat;
+    public readonly float Volume;
 
     public MediaSessionSnapshot(string appId, string appName, string title, string artist, string album,
         MediaSessionPlayback playback, MediaSessionControls controls, TimeSpan position, TimeSpan duration,
-        long positionUpdatedUtcTicks, byte[]? artwork, int artworkRevision)
+        long positionUpdatedUtcTicks, byte[]? artwork, int artworkRevision, bool shuffleActive,
+        MediaSessionRepeat repeat, float volume)
     {
         AppId = appId;
         AppName = appName;
@@ -35,6 +41,9 @@ internal readonly struct MediaSessionSnapshot
         PositionUpdatedUtcTicks = positionUpdatedUtcTicks;
         Artwork = artwork;
         ArtworkRevision = artworkRevision;
+        ShuffleActive = shuffleActive;
+        Repeat = repeat;
+        Volume = volume;
     }
 
     public bool HasSession => AppId.Length > 0;
@@ -48,6 +57,12 @@ internal readonly struct MediaSessionSnapshot
     public bool CanNext => (Controls & MediaSessionControls.Next) != 0;
 
     public bool CanPrevious => (Controls & MediaSessionControls.Previous) != 0;
+
+    public bool CanShuffle => (Controls & MediaSessionControls.Shuffle) != 0;
+
+    public bool CanRepeat => (Controls & MediaSessionControls.Repeat) != 0;
+
+    public bool HasVolume => Volume >= 0f;
 
     public bool CanSeek => (Controls & MediaSessionControls.Seek) != 0 && Duration > TimeSpan.Zero;
 
@@ -77,5 +92,8 @@ internal readonly struct MediaSessionSnapshot
         && Position == other.Position
         && Duration == other.Duration
         && PositionUpdatedUtcTicks == other.PositionUpdatedUtcTicks
-        && ArtworkRevision == other.ArtworkRevision;
+        && ArtworkRevision == other.ArtworkRevision
+        && ShuffleActive == other.ShuffleActive
+        && Repeat == other.Repeat
+        && Volume == other.Volume;
 }

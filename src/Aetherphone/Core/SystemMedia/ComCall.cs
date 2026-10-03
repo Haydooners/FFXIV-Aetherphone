@@ -60,6 +60,15 @@ internal static unsafe class ComCall
         return status;
     }
 
+    public static int GetPointerWithBoolean(nint instance, int slot, bool argument, out nint result)
+    {
+        nint value = 0;
+        var status = ((delegate* unmanaged<nint, byte, nint*, int>)Slot(instance, slot))(instance,
+            argument ? (byte)1 : (byte)0, &value);
+        result = value;
+        return status;
+    }
+
     public static int GetPointerWithUInt32(nint instance, int slot, uint argument, out nint result)
     {
         nint value = 0;

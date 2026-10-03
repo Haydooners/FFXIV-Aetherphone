@@ -86,6 +86,7 @@ internal sealed partial class MusicApp
     private void DrawShell(Rect content, Rect screen, float scale, float delta)
     {
         TickJam();
+        pcSourceMenu.Gate();
         var sheetsCapture = songMenu.CapturesPointer || playlistPicker.CapturesPointer || PcMediaCapturesPointer ||
                             JamCapturesPointer || LibraryOverlaysCapture;
         var stage = TabBar.ContentArea(content, scale);
@@ -110,6 +111,7 @@ internal sealed partial class MusicApp
         }
 
         DrawPcMediaSheet(screen, scale);
+        DrawPcSourceMenu(screen);
 
         DrawSongMenu(screen);
         playlistPicker.Draw(screen, kit);

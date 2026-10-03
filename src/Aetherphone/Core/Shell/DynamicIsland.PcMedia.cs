@@ -9,7 +9,7 @@ internal sealed partial class DynamicIsland
 {
     private const float PcControlRadius = 15f;
     private const float PcControlStride = 31f;
-    private const float PcArtRadiusFraction = 0.22f;
+    private const float ArtRadiusFraction = 0.22f;
 
     private readonly PcMediaSource? pcMedia;
     private MediaSessionSnapshot pcSnapshot = MediaSessionSnapshot.Empty;
@@ -35,7 +35,9 @@ internal sealed partial class DynamicIsland
         float trailingRight, Rect bounds, float scale, Vector4 accent, float alpha)
     {
         var texture = pcMedia?.Artwork(pcSnapshot, bubbleRadius * 2f);
-        PcMediaView.DrawDisc(drawList, bubbleCenter, bubbleRadius, texture, pcSnapshot, accent, alpha);
+        var side = bubbleRadius * 2f;
+        PcMediaView.DrawArt(drawList, bubbleCenter - new Vector2(bubbleRadius, bubbleRadius), side,
+            side * ArtRadiusFraction, texture, pcSnapshot, accent, alpha);
         Equalizer.Draw(drawList, new Vector2(trailingRight - 3f * scale, bounds.Center.Y), scale,
             bounds.Height * 0.44f, clock, accent, alpha, pcSnapshot.IsPlaying);
     }
@@ -50,7 +52,7 @@ internal sealed partial class DynamicIsland
 
         var side = CardIconRadius * 2f * scale;
         var artMin = new Vector2(bounds.Min.X + CardPadX * scale, bounds.Center.Y - side * 0.5f);
-        PcMediaView.DrawArt(drawList, artMin, side, side * PcArtRadiusFraction, pcMedia.Artwork(pcSnapshot, side),
+        PcMediaView.DrawArt(drawList, artMin, side, side * ArtRadiusFraction, pcMedia.Artwork(pcSnapshot, side),
             pcSnapshot, accent, alpha);
         var radius = PcControlRadius * scale;
         var stride = PcControlStride * scale;

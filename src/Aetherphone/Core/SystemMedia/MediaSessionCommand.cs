@@ -8,6 +8,9 @@ internal enum MediaSessionCommandKind : byte
     Next,
     Previous,
     Seek,
+    SetShuffle,
+    SetRepeat,
+    SetVolume,
 }
 
-internal readonly record struct MediaSessionCommand(MediaSessionCommandKind Kind, long PositionTicks);
+internal readonly record struct MediaSessionCommand(MediaSessionCommandKind Kind, long Argument);

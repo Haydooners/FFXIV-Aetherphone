@@ -44,5 +44,5 @@ public sealed class PcMediaTests
 
     private static MediaSessionSnapshot Snapshot(string appId, MediaSessionPlayback playback) =>
         new(appId, "Spotify", "Title", "Artist", "Album", playback, MediaSessionControls.None, TimeSpan.Zero,
-            TimeSpan.Zero, 0, null, 0);
+            TimeSpan.Zero, 0, null, 0, false, MediaSessionRepeat.None, MediaSessionSnapshot.NoVolume);
 }

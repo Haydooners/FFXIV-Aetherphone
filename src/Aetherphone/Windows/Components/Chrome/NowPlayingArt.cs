@@ -22,6 +22,20 @@ internal static class NowPlayingArt
         ArtGradient.DrawDisc(drawList, center, radius, ArtGradient.FromName(seed), alpha);
     }
 
+    public static void DrawSquircle(ImDrawListPtr drawList, Vector2 min, float side, float radius, string url,
+        string seed, float alpha)
+    {
+        if (TryDrawSquircle(drawList, min, side, radius, url, alpha))
+        {
+            return;
+        }
+
+        var swatch = ArtGradient.FromName(seed);
+        Squircle.FillVerticalGradient(drawList, min, min + new Vector2(side, side), radius,
+            ImGui.GetColorU32(Palette.WithAlpha(swatch.Top, alpha)),
+            ImGui.GetColorU32(Palette.WithAlpha(swatch.Bottom, alpha)));
+    }
+
     public static bool TryDrawDisc(ImDrawListPtr drawList, Vector2 center, float radius, string url, float alpha)
     {
         var texture = Texture(url, radius * 2f);

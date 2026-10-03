@@ -2256,6 +2256,12 @@ internal static class L
                 "Added Sound Check, which keeps every song at the same volume"),
             new("changelog.r1042.85",
                 "Added Stop playing: tap the stop button on the paused mini player, or use Stop playing in the Output sheet"),
+            new("changelog.r1042.136",
+                "Added shuffle, repeat and a volume slider for the app playing on your PC, plus a Source button to choose which app Music follows"),
+            new("changelog.r1042.137",
+                "An app on your PC that stays paused for 15 minutes now hides until it plays again"),
+            new("changelog.r1042.138",
+                "Album art in the Dynamic Island is now a rounded square that matches the Island's shape"),
             new("changelog.r1042.66",
                 "Your playlists, recently played songs and favorite stations carry over to the new Music automatically"),
             new("changelog.r1042.67",
@@ -5277,6 +5283,12 @@ internal static class L
             public static readonly LocString ShowWindowsMedia = new("music.pcMedia.showWindowsMedia", "Show Windows media");
             public static readonly LocString PublishToWindowsMedia = new("music.pcMedia.publishToWindowsMedia", "Control phone music with media keys");
             public static readonly LocString SettingsHint = new("music.pcMedia.settingsHint", "Show what Spotify, foobar2000 or your browser is playing on this PC, and let your keyboard media keys pause and skip the phone's music.");
+            public static readonly LocString Source = new("music.pcMedia.source", "Source");
+            public static readonly LocString SourceMenuHeader = new("music.pcMedia.sourceMenuHeader", "Show media from");
+            public static readonly LocString SourceHeader = new("music.pcMedia.sourceHeader", "Windows media source");
+            public static readonly LocString SourceAutomatic = new("music.pcMedia.sourceAutomatic", "Automatic");
+            public static readonly LocString SourceNotOpen = new("music.pcMedia.sourceNotOpen", "{0} (not open)");
+            public static readonly LocString SourceHint = new("music.pcMedia.sourceHint", "Automatic shows the app that played most recently. Pick an app to only ever show that one. An app that stays paused for 15 minutes hides until it plays again.");
         }
 
         internal static class Home

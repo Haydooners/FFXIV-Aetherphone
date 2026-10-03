@@ -21,6 +21,8 @@ internal sealed class WindowsMediaSessions : IDisposable
     private const int SessionNextSlot = 16;
     private const int SessionPreviousSlot = 17;
     private const int SessionTogglePlayPauseSlot = 20;
+    private const int SessionChangeRepeatSlot = 21;
+    private const int SessionChangeShuffleSlot = 23;
     private const int SessionSeekSlot = 24;
     private const int MediaTitleSlot = 6;
     private const int MediaAlbumArtistSlot = 8;
@@ -33,17 +35,23 @@ internal sealed class WindowsMediaSessions : IDisposable
     private const int TimelineUpdatedSlot = 11;
     private const int PlaybackControlsSlot = 6;
     private const int PlaybackStatusSlot = 7;
+    private const int PlaybackRepeatSlot = 9;
+    private const int PlaybackShuffleSlot = 11;
+    private const int ReferenceValueSlot = 6;
     private const int ControlsPlaySlot = 6;
     private const int ControlsPauseSlot = 7;
     private const int ControlsNextSlot = 12;
     private const int ControlsPreviousSlot = 13;
     private const int ControlsToggleSlot = 16;
+    private const int ControlsShuffleSlot = 17;
+    private const int ControlsRepeatSlot = 18;
     private const int ControlsSeekSlot = 20;
 
     private const int PollMilliseconds = 1000;
     private const int CommandSettleMilliseconds = 150;
     private const int DisabledRecheckMilliseconds = 2000;
     private const long IdleAfterMilliseconds = 5000;
+    private const int IdleObserveMilliseconds = 30000;
     private const int RequestTimeoutMilliseconds = 5000;
     private const int PropertiesTimeoutMilliseconds = 2000;
     private const int ArtworkTimeoutMilliseconds = 3000;
@@ -64,8 +72,11 @@ internal sealed class WindowsMediaSessions : IDisposable
     private readonly nint[] sessions = new nint[MaximumSessions];
     private readonly string[] sessionAppIds = new string[MaximumSessions];
     private readonly MediaSessionCandidate[] candidates = new MediaSessionCandidate[MaximumSessions];
+    private readonly MediaSessionActivity activity = new();
+    private readonly AppAudioVolume audioVolume = new();
 
     private SnapshotBox current = new(MediaSessionSnapshot.Empty);
+    private MediaSourceOption[] sources = Array.Empty<MediaSourceOption>();
     private volatile int support = SupportUnknown;
     private long demandedAt;
 
@@ -98,6 +109,15 @@ internal sealed class WindowsMediaSessions : IDisposable
         }
     }
 
+    public MediaSourceOption[] Sources
+    {
+        get
+        {
+            MarkDemand();
+            return Volatile.Read(ref sources);
+        }
+    }
+
     private ref readonly MediaSessionSnapshot Latest => ref Volatile.Read(ref current).Value;
 
     public void Play() => Enqueue(MediaSessionCommandKind.Play, 0);
@@ -112,16 +132,29 @@ internal sealed class WindowsMediaSessions : IDisposable
 
     public void Seek(TimeSpan position) => Enqueue(MediaSessionCommandKind.Seek, Math.Max(0, position.Ticks));
 
+    public void SetShuffle(bool active) => Enqueue(MediaSessionCommandKind.SetShuffle, active ? 1 : 0);
+
+    public void SetRepeat(MediaSessionRepeat repeat) => Enqueue(MediaSessionCommandKind.SetRepeat, (long)repeat);
+
+    public void SetVolume(float volume) =>
+        Enqueue(MediaSessionCommandKind.SetVolume, BitConverter.SingleToInt32Bits(Math.Clamp(volume, 0f, 1f)));
+
+    public void Refresh()
+    {
+        Volatile.Write(ref demandedAt, Environment.TickCount64);
+        worker.Wake();
+    }
+
     public void Dispose() => worker.Dispose();
 
-    private void Enqueue(MediaSessionCommandKind kind, long positionTicks)
+    private void Enqueue(MediaSessionCommandKind kind, long argument)
     {
         if (support == SupportUnavailable)
         {
             return;
         }
 
-        commands.Enqueue(new MediaSessionCommand(kind, positionTicks));
+        commands.Enqueue(new MediaSessionCommand(kind, argument));
         Volatile.Write(ref demandedAt, Environment.TickCount64);
         worker.Wake();
     }
@@ -141,7 +174,7 @@ internal sealed class WindowsMediaSessions : IDisposable
     {
         if (Environment.TickCount64 - Volatile.Read(ref demandedAt) >= IdleAfterMilliseconds)
         {
-            return Timeout.Infinite;
+            return Observe();
         }
 
         if (!configuration.ShowWindowsMedia)
@@ -160,6 +193,22 @@ internal sealed class WindowsMediaSessions : IDisposable
         var commanded = ExecuteCommands();
         Poll();
         return commanded ? CommandSettleMilliseconds : PollMilliseconds;
+    }
+
+    private int Observe()
+    {
+        if (manager == 0 || !configuration.ShowWindowsMedia)
+        {
+            return Timeout.Infinite;
+        }
+
+        var count = CollectSessions();
+        for (var index = 0; index < count; index++)
+        {
+            ComCall.Release(ref sessions[index]);
+        }
+
+        return IdleObserveMilliseconds;
     }
 
     private bool TryInitialize()
@@ -210,10 +259,17 @@ internal sealed class WindowsMediaSessions : IDisposable
     private bool ExecuteCommands()
     {
         var executed = false;
+        var volume = float.NaN;
         while (commands.TryDequeue(out var command))
         {
             if (selected == 0)
             {
+                continue;
+            }
+
+            if (command.Kind == MediaSessionCommandKind.SetVolume)
+            {
+                volume = BitConverter.Int32BitsToSingle((int)command.Argument);
                 continue;
             }
 
@@ -226,11 +282,21 @@ internal sealed class WindowsMediaSessions : IDisposable
                     out operation),
                 MediaSessionCommandKind.Next => ComCall.GetPointer(selected, SessionNextSlot, out operation),
                 MediaSessionCommandKind.Previous => ComCall.GetPointer(selected, SessionPreviousSlot, out operation),
-                _ => ComCall.GetPointerWithInt64(selected, SessionSeekSlot, command.PositionTicks + timelineStartTicks,
+                MediaSessionCommandKind.SetShuffle => ComCall.GetPointerWithBoolean(selected,
+                    SessionChangeShuffleSlot, command.Argument != 0, out operation),
+                MediaSessionCommandKind.SetRepeat => ComCall.GetPointerWithInt32(selected, SessionChangeRepeatSlot,
+                    (int)command.Argument, out operation),
+                _ => ComCall.GetPointerWithInt64(selected, SessionSeekSlot, command.Argument + timelineStartTicks,
                     out operation),
             };
             ComCall.Release(operation);
             executed |= ComCall.Succeeded(status);
+        }
+
+        if (!float.IsNaN(volume))
+        {
+            audioVolume.Set(selectedAppId, volume, Environment.TickCount64);
+            executed = true;
         }
 
         return executed;
@@ -239,6 +305,7 @@ internal sealed class WindowsMediaSessions : IDisposable
     private void Poll()
     {
         var count = CollectSessions();
+        PublishSources(count);
         try
         {
             var picked = MediaSessionPicker.Pick(candidates.AsSpan(0, count));
@@ -262,6 +329,76 @@ internal sealed class WindowsMediaSessions : IDisposable
                 ComCall.Release(ref sessions[index]);
             }
         }
+    }
+
+    private void PublishSources(int count)
+    {
+        var published = Volatile.Read(ref sources);
+        var listed = 0;
+        var changed = false;
+        for (var index = 0; index < count; index++)
+        {
+            if (!IsListedSource(index))
+            {
+                continue;
+            }
+
+            changed |= listed >= published.Length
+                       || !string.Equals(published[listed].AppId, sessionAppIds[index], StringComparison.Ordinal);
+            listed++;
+        }
+
+        if (!changed && listed == published.Length)
+        {
+            return;
+        }
+
+        var next = new MediaSourceOption[listed];
+        var filled = 0;
+        for (var index = 0; index < count; index++)
+        {
+            if (!IsListedSource(index))
+            {
+                continue;
+            }
+
+            var appId = sessionAppIds[index];
+            next[filled++] = new MediaSourceOption(appId, KnownSourceName(published, appId));
+        }
+
+        Volatile.Write(ref sources, next);
+    }
+
+    private bool IsListedSource(int index)
+    {
+        var appId = sessionAppIds[index];
+        if (appId.Length == 0 || MediaAppNames.IsOwnProcess(appId, processFileName))
+        {
+            return false;
+        }
+
+        for (var earlier = 0; earlier < index; earlier++)
+        {
+            if (string.Equals(sessionAppIds[earlier], appId, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static string KnownSourceName(MediaSourceOption[] published, string appId)
+    {
+        for (var index = 0; index < published.Length; index++)
+        {
+            if (string.Equals(published[index].AppId, appId, StringComparison.Ordinal))
+            {
+                return published[index].Name;
+            }
+        }
+
+        return ResolveAppName(appId);
     }
 
     private int CollectSessions()
@@ -329,14 +466,42 @@ internal sealed class WindowsMediaSessions : IDisposable
             ComCall.Release(identity);
         }
 
-        var playback = ReadPlayback(session, out _);
-        return new MediaSessionCandidate(MediaAppNames.IsOwnProcess(appId, processFileName), isCurrent,
-            playback == MediaSessionPlayback.Playing, appId.Length > 0 && appId == selectedAppId);
+        var playing = ReadStatus(session) == MediaSessionPlayback.Playing;
+        var now = Environment.TickCount64;
+        activity.Observe(appId, playing, now);
+        var eligible = MediaSessionPicker.IsEligible(MediaAppNames.IsOwnProcess(appId, processFileName),
+            activity.IsRecent(appId, playing, now), appId, configuration.WindowsMediaSource);
+        return new MediaSessionCandidate(eligible, isCurrent, playing, appId.Length > 0 && appId == selectedAppId);
     }
 
-    private static MediaSessionPlayback ReadPlayback(nint session, out MediaSessionControls controls)
+    private static MediaSessionPlayback ReadStatus(nint session)
+    {
+        if (!ComCall.Succeeded(ComCall.GetPointer(session, SessionPlaybackInfoSlot, out var info)) || info == 0)
+        {
+            return MediaSessionPlayback.Closed;
+        }
+
+        try
+        {
+            return ReadStatusFrom(info);
+        }
+        finally
+        {
+            ComCall.Release(info);
+        }
+    }
+
+    private static MediaSessionPlayback ReadStatusFrom(nint info) =>
+        ComCall.Succeeded(ComCall.GetInt32(info, PlaybackStatusSlot, out var status))
+            ? (MediaSessionPlayback)status
+            : MediaSessionPlayback.Closed;
+
+    private static MediaSessionPlayback ReadPlayback(nint session, out MediaSessionControls controls,
+        out bool shuffleActive, out MediaSessionRepeat repeat)
     {
         controls = MediaSessionControls.None;
+        shuffleActive = false;
+        repeat = MediaSessionRepeat.None;
         if (!ComCall.Succeeded(ComCall.GetPointer(session, SessionPlaybackInfoSlot, out var info)) || info == 0)
         {
             return MediaSessionPlayback.Closed;
@@ -345,13 +510,49 @@ internal sealed class WindowsMediaSessions : IDisposable
         try
         {
             controls = ReadControls(info);
-            return ComCall.Succeeded(ComCall.GetInt32(info, PlaybackStatusSlot, out var status))
-                ? (MediaSessionPlayback)status
-                : MediaSessionPlayback.Closed;
+            shuffleActive = ReadShuffle(info);
+            repeat = ReadRepeat(info);
+            return ReadStatusFrom(info);
         }
         finally
         {
             ComCall.Release(info);
+        }
+    }
+
+    private static bool ReadShuffle(nint info)
+    {
+        if (!ComCall.Succeeded(ComCall.GetPointer(info, PlaybackShuffleSlot, out var reference)) || reference == 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            return ComCall.Succeeded(ComCall.GetBoolean(reference, ReferenceValueSlot, out var active)) && active;
+        }
+        finally
+        {
+            ComCall.Release(reference);
+        }
+    }
+
+    private static MediaSessionRepeat ReadRepeat(nint info)
+    {
+        if (!ComCall.Succeeded(ComCall.GetPointer(info, PlaybackRepeatSlot, out var reference)) || reference == 0)
+        {
+            return MediaSessionRepeat.None;
+        }
+
+        try
+        {
+            return ComCall.Succeeded(ComCall.GetInt32(reference, ReferenceValueSlot, out var mode))
+                ? (MediaSessionRepeat)Math.Clamp(mode, 0, (int)MediaSessionRepeat.List)
+                : MediaSessionRepeat.None;
+        }
+        finally
+        {
+            ComCall.Release(reference);
         }
     }
 
@@ -372,6 +573,8 @@ internal sealed class WindowsMediaSessions : IDisposable
             flags |= Flag(controls, ControlsNextSlot, MediaSessionControls.Next);
             flags |= Flag(controls, ControlsPreviousSlot, MediaSessionControls.Previous);
             flags |= Flag(controls, ControlsSeekSlot, MediaSessionControls.Seek);
+            flags |= Flag(controls, ControlsShuffleSlot, MediaSessionControls.Shuffle);
+            flags |= Flag(controls, ControlsRepeatSlot, MediaSessionControls.Repeat);
             return flags;
         }
         finally
@@ -388,7 +591,8 @@ internal sealed class WindowsMediaSessions : IDisposable
     private void ReadSelected()
     {
         var previous = Latest;
-        var playback = ReadPlayback(selected, out var controls);
+        var playback = ReadPlayback(selected, out var controls, out var shuffleActive, out var repeat);
+        var volume = audioVolume.Read(selectedAppId, Environment.TickCount64);
         var timeline = ReadTimeline(selected, previous);
         var title = previous.Title;
         var artist = previous.Artist;
@@ -422,7 +626,8 @@ internal sealed class WindowsMediaSessions : IDisposable
             ? previous.AppName
             : ResolveAppName(selectedAppId);
         Publish(new MediaSessionSnapshot(selectedAppId, appName, title, artist, album, playback, controls,
-            timeline.Position, timeline.Duration, timeline.UpdatedUtcTicks, artwork, artworkRevision));
+            timeline.Position, timeline.Duration, timeline.UpdatedUtcTicks, artwork, artworkRevision, shuffleActive,
+            repeat, volume));
     }
 
     private static string ResolveAppName(string appId)
@@ -554,6 +759,7 @@ internal sealed class WindowsMediaSessions : IDisposable
     private void Teardown()
     {
         ReleaseSelected();
+        audioVolume.Dispose();
         ComCall.Release(ref manager);
         Publish(MediaSessionSnapshot.Empty);
     }
