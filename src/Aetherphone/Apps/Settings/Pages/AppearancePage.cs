@@ -4,7 +4,6 @@ using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Photos;
-using Aetherphone.Core.Shell;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Wallpapers;
 using Aetherphone.Windows.Components;
@@ -20,23 +19,20 @@ internal sealed class AppearancePage : ISettingsPage
     public FontAwesomeIcon Icon => FontAwesomeIcon.Palette;
     public Vector4 Tint => new(0.55f, 0.45f, 0.95f, 1f);
     public string? GuideAnchor => "settings.row.appearance";
-    private const float SizeReadoutColumn = 46f;
-    private const float LabelColumnShare = 0.42f;
-    private const int DisplayBaseRows = 4;
-#if DEBUG
-    private const int LiveGlassDetailRows = 2;
-#else
-    private const int LiveGlassDetailRows = 1;
-#endif
+    private const float CardGap = Metrics.Space.Xl;
+    private const float HeaderGap = Metrics.Space.Sm;
+    private const float WallpaperRowHeight = 132f;
+    private const float WallpaperPreviewHeight = 88f;
+    private const float WallpaperPreviewGap = 24f;
+    private const float WallpaperLabelGap = 6f;
+    private const float WallpaperPadY = 12f;
+    private const float FallbackWallpaperAspect = 0.5f;
+    private const float MinimumWallpaperAspect = 0.1f;
     private static readonly ThemeMode[] ModeOrder = { ThemeMode.Light, ThemeMode.Dark, ThemeMode.Auto };
-    private static readonly LiveGlassSource[] SourceOrder = { LiveGlassSource.World, LiveGlassSource.Composite };
-    private string[]? sourceLabels;
-    private LanguageInfo? sourceLabelsLanguage;
-#if DEBUG
-    private string liveGlassReadout = string.Empty;
-    private int liveGlassReadoutTenths = -1;
-    private Vector2 liveGlassReadoutSize;
-#endif
+    private static readonly int[] GridRowOptions = { 5, 6, 7 };
+    private readonly string[] modeLabels = new string[ModeOrder.Length];
+    private readonly string[] densityLabels = new string[GridRowOptions.Length];
+    private LanguageInfo? labelsLanguage;
     private readonly Configuration configuration;
     private readonly ThemeProvider themes;
     private readonly ISettingsNavigator navigator;
@@ -44,14 +40,12 @@ internal sealed class AppearancePage : ISettingsPage
     private readonly ConfirmService confirm;
     private readonly WallpaperLibrary wallpapers;
     private readonly WallpaperImageCache wallpaperImages;
-    private readonly MinimizedLayoutService minimizedLayout;
     private readonly HomeLookService looks;
 
     public AppearancePage(Configuration configuration, ThemeProvider themes, ISettingsNavigator navigator,
         PhotoLibrary photos, ConfirmService confirm, WallpaperLibrary wallpapers,
-        WallpaperImageCache wallpaperImages, MinimizedLayoutService minimizedLayout, HomeLookService looks)
+        WallpaperImageCache wallpaperImages, HomeLookService looks)
     {
-        this.minimizedLayout = minimizedLayout;
         this.looks = looks;
         this.configuration = configuration;
         this.themes = themes;
@@ -64,238 +58,184 @@ internal sealed class AppearancePage : ISettingsPage
 
     public void Draw(in PhoneContext context, Rect body)
     {
+        var scale = UiScale.Current;
         var theme = context.Theme;
+        EnsureLabels();
         using (AppSurface.Begin(body))
         {
-            SettingsSection.Header(Loc.T(L.Settings.Theme), theme);
-            var accentLabel = Loc.T(L.Settings.Accent);
-            var cardWidth = ImGui.GetContentRegionAvail().X - 2f * Metrics.Space.Lg * UiScale.Current;
-            var accentStacked = SwatchStrip.NeedsTwoRows(accentLabel, ThemeCatalog.Accents.Count + 1, cardWidth);
-            var card = GroupCard.Begin(theme, accentStacked ? 5 : 4);
-            var modeIndex = SegmentStrip.Draw("settings.themeMode", card.NextRow(), ModeLabels(), CurrentModeIndex(),
-                theme);
-            var mode = ModeOrder[modeIndex];
-            if (mode != configuration.ThemeMode)
-            {
-                configuration.ThemeMode = mode;
-                ApplyTheme();
-            }
-
-            var customAccent = ThemeCatalog.IsCustomAccent(configuration.AccentName);
-            var accentIndex = SwatchStrip.Draw(card.NextRow(accentStacked ? 2 : 1), accentLabel, ThemeCatalog.Accents,
-                customAccent ? -1 : ThemeCatalog.IndexOf(ThemeCatalog.Accents, configuration.AccentName), theme,
-                accentStacked, ThemeCatalog.ResolveAccent(configuration.AccentName), customAccent);
-            if (accentIndex == ThemeCatalog.Accents.Count)
-            {
-                navigator.Open(new AccentPage(configuration, themes));
-            }
-            else if (accentIndex >= 0)
-            {
-                var accentName = ThemeCatalog.Accents[accentIndex].Name;
-                if (accentName != configuration.AccentName)
-                {
-                    configuration.AccentName = accentName;
-                    ApplyTheme();
-                }
-            }
-
-            if (SettingsRow.Disclosure(card.NextRow(), Loc.T(L.Settings.PhoneCase),
-                    CatalogLabels.PhoneCase(configuration.PhoneCaseName), theme))
-            {
-                navigator.Open(new PhoneCasePage(configuration, themes, navigator));
-            }
-
-            if (SettingsRow.Disclosure(card.NextRow(), Loc.T(L.Settings.Wallpaper), string.Empty, theme))
-            {
-                navigator.Open(new WallpaperPage(configuration, themes, navigator, photos, wallpapers,
-                    wallpaperImages));
-            }
-
-            card.End();
-            SettingsSection.Header(Loc.T(L.Settings.Display), theme);
-            var liveGlassOn = configuration.LiveGlass;
-            var displayCard = GroupCard.Begin(theme, DisplayBaseRows + LiveGlassRowCount(liveGlassOn));
-            DrawTextSizeSlider(displayCard.NextRow(), Loc.T(L.Settings.TextSize), theme);
-            DrawPhoneSizeSlider(displayCard.NextRow(), Loc.T(L.Settings.PhoneSize), theme);
-            var use24Hour = SettingsRow.Bool(displayCard.NextRow(), Loc.T(L.Settings.Use24HourClock),
-                TimeText.Use24Hour, theme, null, TimeText.Clock(DateTime.Now));
-            if (SettingsRow.Disclosure(displayCard.NextRow(), Loc.T(L.Minimized.Title), string.Empty, theme))
-            {
-                navigator.Open(new MinimizedPhonePage(minimizedLayout, configuration));
-            }
-
-            DrawLiveGlassRows(ref displayCard, theme, liveGlassOn);
-            displayCard.End();
-            if (use24Hour != TimeText.Use24Hour)
-            {
-                configuration.Use24HourClock = use24Hour;
-                TimeText.ApplyClockPreference(use24Hour);
-                configuration.Save();
-            }
-
-            DrawHomeSection(theme);
+            DrawThemeCard(theme);
+            ImGui.Dummy(new Vector2(0f, CardGap * scale));
+            DrawAccentCard(theme, scale);
+            ImGui.Dummy(new Vector2(0f, CardGap * scale));
+            DrawIconCard(theme);
+            ImGui.Dummy(new Vector2(0f, HeaderGap * scale));
+            DrawWallpaperCard(theme, scale);
+            ImGui.Dummy(new Vector2(0f, CardGap * scale));
+            DrawCaseCard(theme);
+            ImGui.Dummy(new Vector2(0f, HeaderGap * scale));
+            DrawHomeCard(theme);
+            ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
         }
     }
 
-    private static int LiveGlassRowCount(bool liveGlassOn) => liveGlassOn ? 1 + LiveGlassDetailRows : 1;
-
-    private void DrawLiveGlassRows(ref GroupCard card, PhoneTheme theme, bool liveGlassOn)
+    private void EnsureLabels()
     {
-        var liveGlass = SettingsRow.Bool(card.NextRow(), Loc.T(L.Settings.LiveGlass), configuration.LiveGlass, theme,
-            null, Loc.T(L.Settings.LiveGlassHint));
-        if (liveGlass != configuration.LiveGlass)
-        {
-            configuration.LiveGlass = liveGlass;
-            configuration.Save();
-        }
-
-        if (!liveGlassOn)
+        if (ReferenceEquals(labelsLanguage, Loc.Current))
         {
             return;
         }
 
-        var sourceIndex = SegmentStrip.Draw("settings.liveGlassSource", card.NextRow(), SourceLabels(),
-            SourceIndex(configuration.LiveGlassSource), theme);
-        var source = SourceOrder[sourceIndex];
-        if (source != configuration.LiveGlassSource)
+        labelsLanguage = Loc.Current;
+        modeLabels[0] = Loc.T(L.Settings.ThemeLight);
+        modeLabels[1] = Loc.T(L.Settings.ThemeDark);
+        modeLabels[2] = Loc.T(L.Settings.ThemeAuto);
+        densityLabels[0] = Loc.T(L.Home.GridComfortable);
+        densityLabels[1] = Loc.T(L.Home.GridStandard);
+        densityLabels[2] = Loc.T(L.Home.GridCompact);
+    }
+
+    private void DrawThemeCard(PhoneTheme theme)
+    {
+        SettingsSection.Header(Loc.T(L.Settings.Theme), theme);
+        var card = GroupCard.Begin(theme, 1);
+        var modeIndex = SegmentStrip.Draw("settings.themeMode", card.NextRow(), modeLabels, CurrentModeIndex(), theme);
+        card.End();
+        var mode = ModeOrder[modeIndex];
+        if (mode == configuration.ThemeMode)
         {
-            configuration.LiveGlassSource = source;
-            configuration.Save();
+            return;
         }
 
-#if DEBUG
-        SettingsRow.Info(card.NextRow(), Loc.T(L.Settings.LiveGlassReadout), LiveGlassReadout(), theme);
-#endif
+        configuration.ThemeMode = mode;
+        ApplyTheme();
     }
 
-    private string[] SourceLabels()
+    private void DrawAccentCard(PhoneTheme theme, float scale)
     {
-        if (sourceLabels is not null && ReferenceEquals(sourceLabelsLanguage, Loc.Current))
+        var accentLabel = Loc.T(L.Settings.Accent);
+        var cardWidth = ImGui.GetContentRegionAvail().X - 2f * Metrics.Space.Lg * scale;
+        var stacked = SwatchStrip.NeedsTwoRows(accentLabel, ThemeCatalog.Accents.Count + 1, cardWidth);
+        var card = GroupCard.Begin(theme, stacked ? 2 : 1);
+        var customAccent = ThemeCatalog.IsCustomAccent(configuration.AccentName);
+        var accentIndex = SwatchStrip.Draw(card.NextRow(stacked ? 2 : 1), accentLabel, ThemeCatalog.Accents,
+            customAccent ? -1 : ThemeCatalog.IndexOf(ThemeCatalog.Accents, configuration.AccentName), theme, stacked,
+            ThemeCatalog.ResolveAccent(configuration.AccentName), customAccent);
+        card.End();
+        if (accentIndex == ThemeCatalog.Accents.Count)
         {
-            return sourceLabels;
+            navigator.Open(new AccentPage(configuration, themes));
+            return;
         }
 
-        sourceLabelsLanguage = Loc.Current;
-        sourceLabels = new[] { Loc.T(L.Settings.LiveGlassSourceWorld), Loc.T(L.Settings.LiveGlassSourceComposite), };
-        return sourceLabels;
-    }
-
-    private static int SourceIndex(LiveGlassSource source)
-    {
-        for (var index = 0; index < SourceOrder.Length; index++)
+        if (accentIndex < 0)
         {
-            if (SourceOrder[index] == source)
-            {
-                return index;
-            }
+            return;
         }
 
-        return 0;
-    }
-
-#if DEBUG
-    private string LiveGlassReadout()
-    {
-        var tenths = (int)MathF.Round((float)LiveBackdrop.LastPassMilliseconds * 10f);
-        var size = LiveBackdrop.LastCaptureSize;
-        if (tenths == liveGlassReadoutTenths && size == liveGlassReadoutSize && liveGlassReadout.Length > 0)
+        var accentName = ThemeCatalog.Accents[accentIndex].Name;
+        if (accentName == configuration.AccentName)
         {
-            return liveGlassReadout;
+            return;
         }
 
-        liveGlassReadoutTenths = tenths;
-        liveGlassReadoutSize = size;
-        liveGlassReadout = $"{tenths / 10f:0.0} ms, {(int)size.X}x{(int)size.Y}";
-        return liveGlassReadout;
+        configuration.AccentName = accentName;
+        ApplyTheme();
     }
-#endif
 
-    private void DrawPhoneSizeSlider(Rect row, string label, PhoneTheme theme)
+    private void DrawIconCard(PhoneTheme theme)
     {
-        var leading = DrawSliderLabel(row, label, theme);
-        var smallest = PhoneSizeCatalog.MinimumWidth;
-        var largest = MathF.Max(PhoneBounds.ClampWidth(PhoneSizeCatalog.MaximumWidth), smallest + 1f);
-        var span = largest - smallest;
-        var effective = PhoneBounds.ClampWidth(configuration.PhoneWidth);
-        var slider = DrawSettingSlider("settings.phoneSize", row, theme, leading, (effective - smallest) / span);
-        var width = PhoneSizeCatalog.Snap(PhoneBounds.ClampWidth(smallest + slider.Value * span));
-        if ((slider.Dragging || slider.Released) && MathF.Abs(width - configuration.PhoneWidth) > 0.01f)
+        var card = GroupCard.Begin(theme, IconAppearancePicker.RowSpan);
+        var iconAppearance = IconAppearancePicker.Draw(card.NextRow(IconAppearancePicker.RowSpan),
+            configuration.IconAppearance, theme);
+        card.End();
+        SettingsSection.Hint(Loc.T(L.Settings.IconAppearanceHint), theme);
+        if (iconAppearance == configuration.IconAppearance)
         {
-            configuration.PhoneWidth = width;
+            return;
         }
 
-        if (slider.Released)
+        configuration.IconAppearance = iconAppearance;
+        configuration.Save();
+    }
+
+    private void DrawWallpaperCard(PhoneTheme theme, float scale)
+    {
+        SettingsSection.Header(Loc.T(L.Settings.Wallpaper), theme);
+        var card = GroupCard.Begin(theme, WallpaperRowHeight);
+        var row = card.NextRow(WallpaperRowHeight);
+        var hovered = UiInteract.Hover(row.Min, row.Max);
+        if (hovered)
         {
-            configuration.Save();
+            SettingsRow.DrawRowHighlight(row, theme);
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        DrawPercentReadout(row, theme, PhoneSizeCatalog.ZoomFor(PhoneBounds.ClampWidth(configuration.PhoneWidth)));
-    }
-
-    private void DrawTextSizeSlider(Rect row, string label, PhoneTheme theme)
-    {
-        var leading = DrawSliderLabel(row, label, theme);
-        const float smallest = TextZoomCatalog.MinimumZoom;
-        const float span = TextZoomCatalog.MaximumZoom - TextZoomCatalog.MinimumZoom;
-        var effective = TextZoomCatalog.Clamp(configuration.TextZoom);
-        var slider = DrawSettingSlider("settings.textZoom", row, theme, leading, (effective - smallest) / span);
-        var zoom = TextZoomCatalog.Snap(TextZoomCatalog.Clamp(smallest + slider.Value * span));
-        if ((slider.Dragging || slider.Released) && MathF.Abs(zoom - configuration.TextZoom) > 0.001f)
+        var drawList = ImGui.GetWindowDrawList();
+        var aspect = WallpaperAspect();
+        var previewHeight = WallpaperPreviewHeight * scale;
+        var previewWidth = previewHeight * aspect;
+        var halfGap = WallpaperPreviewGap * scale * 0.5f;
+        var centerX = row.Min.X + (row.Width - SettingsRow.ChevronReserve(scale)) * 0.5f;
+        var top = row.Min.Y + WallpaperPadY * scale;
+        var lightRect = new Rect(new Vector2(centerX - halfGap - previewWidth, top),
+            new Vector2(centerX - halfGap, top + previewHeight));
+        var darkRect = new Rect(new Vector2(centerX + halfGap, top),
+            new Vector2(centerX + halfGap + previewWidth, top + previewHeight));
+        DrawWallpaperPreview(drawList, lightRect, configuration.LightWallpaperId, Loc.T(L.Wallpaper.Light), aspect,
+            theme, scale);
+        DrawWallpaperPreview(drawList, darkRect, configuration.DarkWallpaperId, Loc.T(L.Wallpaper.Dark), aspect, theme,
+            scale);
+        SettingsRow.DrawChevron(drawList, new Vector2(row.Max.X, row.Center.Y), scale, theme.TextMuted);
+        var clicked = UiInteract.Click(row.Min, row.Max, hovered);
+        card.End();
+        if (!clicked)
         {
-            configuration.TextZoom = zoom;
-            Plugin.Fonts.SetZoom(zoom);
+            return;
         }
 
-        if (slider.Released)
+        navigator.Open(new WallpaperPage(configuration, themes, navigator, photos, wallpapers, wallpaperImages));
+    }
+
+    private void DrawWallpaperPreview(ImDrawListPtr drawList, Rect rect, string wallpaperId, string label,
+        float aspect, PhoneTheme theme, float scale)
+    {
+        var radius = Metrics.Radius.Md * scale;
+        WallpaperRenderer.DrawSingle(drawList, rect, radius, wallpapers.Resolve(wallpaperId), aspect, 1f,
+            theme.SurfaceMuted);
+        Squircle.Stroke(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(theme.Separator),
+            Metrics.Stroke.Hairline * scale);
+        var maxWidth = rect.Width + WallpaperPreviewGap * scale - Metrics.Space.Sm * scale;
+        var fitted = Typography.FitText(label, maxWidth, TextStyles.Footnote);
+        var size = Typography.Measure(fitted, TextStyles.Footnote);
+        Typography.Draw(drawList, new Vector2(rect.Center.X - size.X * 0.5f, rect.Max.Y + WallpaperLabelGap * scale),
+            fitted, theme.TextMuted, TextStyles.Footnote);
+    }
+
+    private float WallpaperAspect()
+    {
+        var aspect = wallpapers.CurrentTargetAspect;
+        return aspect > MinimumWallpaperAspect ? aspect : FallbackWallpaperAspect;
+    }
+
+    private void DrawCaseCard(PhoneTheme theme)
+    {
+        var card = GroupCard.Begin(theme, 1);
+        var opened = SettingsRow.Disclosure(card.NextRow(), Loc.T(L.Settings.PhoneCase),
+            CatalogLabels.PhoneCase(configuration.PhoneCaseName), theme);
+        card.End();
+        if (opened)
         {
-            configuration.Save();
+            navigator.Open(new PhoneCasePage(configuration, themes, navigator));
         }
-
-        DrawPercentReadout(row, theme, TextZoomCatalog.Clamp(configuration.TextZoom));
     }
 
-    private static float DrawSliderLabel(Rect row, string label, PhoneTheme theme)
-    {
-        var scale = UiScale.Current;
-        var fitted = Typography.FitText(label, row.Width * LabelColumnShare, TextStyles.BodyEmphasized);
-        var size = Typography.Measure(fitted, TextStyles.BodyEmphasized);
-        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(row.Min.X, row.Center.Y - size.Y * 0.5f), fitted,
-            theme.TextStrong, TextStyles.BodyEmphasized);
-        return size.X + Metrics.Space.Lg * scale;
-    }
-
-    private static Slider.Result DrawSettingSlider(string id, Rect row, PhoneTheme theme, float leadingInset,
-        float normalized)
-    {
-        var scale = UiScale.Current;
-        return Slider.Draw(id, row, normalized, theme, leadingInset,
-            SizeReadoutColumn * scale + Metrics.Space.Md * scale);
-    }
-
-    private static void DrawPercentReadout(Rect row, PhoneTheme theme, float fraction)
-    {
-        var text = $"{(int)MathF.Round(fraction * 100f)}%";
-        var size = Typography.Measure(text, TextStyles.Body);
-        Typography.Draw(new Vector2(row.Max.X - size.X, row.Center.Y - size.Y * 0.5f), text, theme.TextMuted,
-            TextStyles.Body);
-    }
-
-    private void DrawHomeSection(PhoneTheme theme)
+    private void DrawHomeCard(PhoneTheme theme)
     {
         SettingsSection.Header(Loc.T(L.Home.HomeScreen), theme);
-        var card = GroupCard.Begin(theme, 4 + IconAppearancePicker.RowSpan);
+        var card = GroupCard.Begin(theme, 4);
         if (SettingsRow.Disclosure(card.NextRow(), Loc.T(L.Home.Looks), LooksPage.NameOf(looks.Active), theme))
         {
             navigator.Open(new LooksPage(looks, wallpapers, navigator, confirm));
-        }
-
-        var densityIndex = SegmentStrip.Draw("settings.homeGrid", card.NextRow(), DensityLabels(),
-            DensityIndex(configuration.HomeGridRows), theme);
-        var rows = GridRowOptions[densityIndex];
-        if (rows != configuration.HomeGridRows)
-        {
-            configuration.HomeGridRows = rows;
-            configuration.Save();
         }
 
         var showAppNames = SettingsRow.Bool(card.NextRow(), Loc.T(L.Home.ShowAppNames), configuration.ShowAppNames,
@@ -306,11 +246,12 @@ internal sealed class AppearancePage : ISettingsPage
             configuration.Save();
         }
 
-        var iconAppearance = IconAppearancePicker.Draw(card.NextRow(IconAppearancePicker.RowSpan),
-            configuration.IconAppearance, theme);
-        if (iconAppearance != configuration.IconAppearance)
+        var densityIndex = SegmentStrip.Draw("settings.homeGrid", card.NextRow(), densityLabels,
+            DensityIndex(configuration.HomeGridRows), theme);
+        var rows = GridRowOptions[densityIndex];
+        if (rows != configuration.HomeGridRows)
         {
-            configuration.IconAppearance = iconAppearance;
+            configuration.HomeGridRows = rows;
             configuration.Save();
         }
 
@@ -328,7 +269,6 @@ internal sealed class AppearancePage : ISettingsPage
         }
 
         card.End();
-        SettingsSection.Hint(Loc.T(L.Settings.IconAppearanceHint), theme);
     }
 
     private void ResetHomeLayout()
@@ -336,11 +276,6 @@ internal sealed class AppearancePage : ISettingsPage
         configuration.Home = null;
         configuration.Save();
     }
-
-    private static readonly int[] GridRowOptions = { 5, 6, 7 };
-
-    private static string[] DensityLabels() =>
-        new[] { Loc.T(L.Home.GridComfortable), Loc.T(L.Home.GridStandard), Loc.T(L.Home.GridCompact), };
 
     private static int DensityIndex(int rows)
     {
@@ -354,9 +289,6 @@ internal sealed class AppearancePage : ISettingsPage
 
         return 1;
     }
-
-    private static string[] ModeLabels() =>
-        new[] { Loc.T(L.Settings.ThemeLight), Loc.T(L.Settings.ThemeDark), Loc.T(L.Settings.ThemeAuto), };
 
     private int CurrentModeIndex()
     {

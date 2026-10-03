@@ -8,6 +8,23 @@ namespace Aetherphone.Windows.Components;
 internal static class SettingsRow
 {
     public const float CheckWidth = 21f;
+    public const float TileTextInset = Metrics.Size.IconTile + Metrics.Space.Md;
+    private const float ChevronWidthFactor = 0.55f;
+    private const float ChevronThickness = 2.2f;
+    private const float ChevronGap = 12f;
+
+    public static float ChevronReserve(float scale) =>
+        (NavBarMetrics.ChevronSize * ChevronWidthFactor + ChevronGap) * scale;
+
+    public static void DrawChevron(ImDrawListPtr drawList, Vector2 tip, float scale, Vector4 color)
+    {
+        var half = NavBarMetrics.ChevronSize * scale * 0.5f;
+        var armX = tip.X - NavBarMetrics.ChevronSize * ChevronWidthFactor * scale;
+        var packed = ImGui.GetColorU32(color);
+        var thickness = ChevronThickness * scale;
+        drawList.AddLine(new Vector2(armX, tip.Y - half), tip, packed, thickness);
+        drawList.AddLine(tip, new Vector2(armX, tip.Y + half), packed, thickness);
+    }
 
     public static bool Bool(Rect row, string label, bool value, PhoneTheme theme, string? id = null,
         string? hint = null, bool dimmed = false)
@@ -100,14 +117,11 @@ internal static class SettingsRow
 
         var tileMax = DrawIconTile(row, icon, tint, theme, hovered, badge, scale);
         var labelStartX = tileMax.X + Metrics.Space.Md * scale;
-        var chevronWidth = Metrics.Space.Xs * scale;
         var chevronTip = new Vector2(row.Max.X, row.Center.Y);
-        var chevronGap = 12f * scale;
+        var textRight = chevronTip.X - ChevronReserve(scale);
         var midGap = 8f * scale;
-        var available = chevronTip.X - chevronWidth - chevronGap - labelStartX;
-        DrawTwoColumnText(row, label, value, theme, labelStartX, chevronTip.X - chevronWidth - chevronGap, available,
-            midGap, id);
-        DrawChevronRight(chevronTip, chevronWidth, 2.2f * scale, theme.TextMuted);
+        DrawTwoColumnText(row, label, value, theme, labelStartX, textRight, textRight - labelStartX, midGap, id);
+        DrawChevron(ImGui.GetWindowDrawList(), chevronTip, scale, theme.TextMuted);
 
         if (hovered)
         {
@@ -136,14 +150,12 @@ internal static class SettingsRow
         IconTile.DrawApp(dl, appId, (tileMin + tileMax) * 0.5f, tileSize, tileFill);
 
         var labelStartX = tileMax.X + Metrics.Space.Md * scale;
-        var chevronWidth = Metrics.Space.Xs * scale;
         var chevronTip = new Vector2(row.Max.X, row.Center.Y);
-        var chevronGap = 12f * scale;
+        var textRight = chevronTip.X - ChevronReserve(scale);
         var midGap = 8f * scale;
-        var available = chevronTip.X - chevronWidth - chevronGap - labelStartX;
-        DrawTwoColumnText(row, label, value, theme, labelStartX, chevronTip.X - chevronWidth - chevronGap, available,
-            midGap, id ?? appId);
-        DrawChevronRight(chevronTip, chevronWidth, 2.2f * scale, theme.TextMuted);
+        DrawTwoColumnText(row, label, value, theme, labelStartX, textRight, textRight - labelStartX, midGap,
+            id ?? appId);
+        DrawChevron(dl, chevronTip, scale, theme.TextMuted);
 
         if (hovered)
         {
@@ -163,14 +175,11 @@ internal static class SettingsRow
             DrawRowHighlight(row, theme);
         }
 
-        var chevronWidth = 6f * scale;
         var chevronTip = new Vector2(row.Max.X, row.Center.Y);
-        var chevronGap = 12f * scale;
+        var textRight = chevronTip.X - ChevronReserve(scale);
         var midGap = 8f * scale;
-        var available = chevronTip.X - chevronWidth - chevronGap - row.Min.X;
-        DrawTwoColumnText(row, label, value, theme, row.Min.X, chevronTip.X - chevronWidth - chevronGap, available,
-            midGap, id, dimmed);
-        DrawChevronRight(chevronTip, chevronWidth, 2.2f * scale, theme.TextMuted);
+        DrawTwoColumnText(row, label, value, theme, row.Min.X, textRight, textRight - row.Min.X, midGap, id, dimmed);
+        DrawChevron(ImGui.GetWindowDrawList(), chevronTip, scale, theme.TextMuted);
 
         if (hovered)
         {
@@ -300,13 +309,5 @@ internal static class SettingsRow
         var alpha = pressed ? 0.10f : 0.05f;
         Squircle.Fill(ImGui.GetWindowDrawList(), min, max, 8f * scale,
             ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, alpha)));
-    }
-
-    private static void DrawChevronRight(Vector2 tip, float size, float thickness, Vector4 color)
-    {
-        var dl = ImGui.GetWindowDrawList();
-        var packed = ImGui.GetColorU32(color);
-        dl.AddLine(new Vector2(tip.X - size, tip.Y - size), tip, packed, thickness);
-        dl.AddLine(tip, new Vector2(tip.X - size, tip.Y + size), packed, thickness);
     }
 }

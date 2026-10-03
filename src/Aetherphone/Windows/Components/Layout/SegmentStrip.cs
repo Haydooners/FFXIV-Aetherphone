@@ -14,15 +14,27 @@ internal static class SegmentStrip
     private static readonly Dictionary<string, Spring> Thumbs = new(StringComparer.Ordinal);
 
     public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, PhoneTheme theme) =>
-        Draw(id, row, options, selected, theme.ToggleOff, theme.Accent, theme.TextMuted, theme.TextStrong);
+        Draw(id, row, options, selected, theme, out _);
+
+    public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, PhoneTheme theme,
+        out bool pressed) =>
+        Draw(id, row, options, selected, theme.ToggleOff, theme.Accent, theme.TextMuted, theme.TextStrong,
+            out pressed);
 
     public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, in AppPalette palette,
         float trackHeight = TrackHeight, float textScale = 0.82f) =>
-        Draw(id, row, options, selected, FrostTrack, palette.Accent, palette.MutedInk, White, trackHeight, textScale);
+        Draw(id, row, options, selected, FrostTrack, palette.Accent, palette.MutedInk, White, out _, trackHeight,
+            textScale);
 
     public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, Vector4 track,
-        Vector4 accent, Vector4 mutedInk, Vector4 activeInk, float trackHeight = TrackHeight, float textScale = 0.82f)
+        Vector4 accent, Vector4 mutedInk, Vector4 activeInk, float trackHeight = TrackHeight, float textScale = 0.82f) =>
+        Draw(id, row, options, selected, track, accent, mutedInk, activeInk, out _, trackHeight, textScale);
+
+    public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, Vector4 track,
+        Vector4 accent, Vector4 mutedInk, Vector4 activeInk, out bool pressed, float trackHeight = TrackHeight,
+        float textScale = 0.82f)
     {
+        pressed = false;
         if (options.Count == 0)
         {
             return selected;
@@ -50,6 +62,7 @@ internal static class SegmentStrip
             if (UiInteract.Click(segmentMin, segmentMax, segmentHovered))
             {
                 result = index;
+                pressed = true;
             }
         }
 
