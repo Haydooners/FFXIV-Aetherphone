@@ -32,6 +32,7 @@ internal sealed partial class MusicApp
 
         using (AppSurface.BeginEdgeToEdge(frame.Body))
         {
+            DrawPcMediaCard(scale);
             DrawHomeRecentShelf(scale);
             ImGui.Dummy(new Vector2(0f, MusicUi.SectionGap * scale));
         }
