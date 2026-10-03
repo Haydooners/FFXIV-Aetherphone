@@ -32,8 +32,11 @@ internal sealed partial class JamSession : IDisposable
     private readonly JamInviteGate inviteGate = new();
     private readonly JamHostAuthority hostAuthority;
     private readonly JamGuestAuthority guestAuthority;
+    private readonly JamPendingMoves pendingMoves = new();
+    private readonly Func<JamLocation> locate;
 
     private JamMember[] members = Array.Empty<JamMember>();
+    private JamQueueItem[] serverQueue = Array.Empty<JamQueueItem>();
     private JamQueueItem[] queue = Array.Empty<JamQueueItem>();
     private JamJoinRequest[] joinRequests = Array.Empty<JamJoinRequest>();
     private string jamId = string.Empty;
@@ -47,12 +50,14 @@ internal sealed partial class JamSession : IDisposable
     private long lastTickTicks;
     private long reactedAtTicks;
     private long controlledAtTicks;
+    private long lastAddSentAtTicks;
     private volatile bool stopRequested;
 
     public JamSession(CallSignalRouter calls, PlaybackHub hub, AethernetSession session,
-        NotificationService? notifications, IFramework? framework)
+        NotificationService? notifications, IFramework? framework, Func<JamLocation>? locate = null)
     {
         signals = new JamSignalRouter(calls);
+        this.locate = locate ?? LocateLocalPlayer;
         this.hub = hub;
         this.session = session;
         this.notifications = notifications;
@@ -327,7 +332,13 @@ internal sealed partial class JamSession : IDisposable
             TickGuest(deltaSeconds);
         }
 
+        if (pendingMoves.Count > 0 && pendingMoves.HasExpired(now))
+        {
+            ProjectQueue(now);
+        }
+
         DrainOperations(now);
+        TickNearby(now);
     }
 
     public void Dispose()
@@ -383,6 +394,12 @@ internal sealed partial class JamSession : IDisposable
             return;
         }
 
+        if (message.Type == SignalType.JamNearbyRoster)
+        {
+            OnNearbyRoster(message);
+            return;
+        }
+
         if (Mode == JamMode.Idle)
         {
             if (message.Type == SignalType.JamJoined)
@@ -435,6 +452,15 @@ internal sealed partial class JamSession : IDisposable
             case SignalType.JamReaction:
                 OnReaction(message);
                 return;
+            case SignalType.JamMessage:
+                OnChatMessage(message);
+                return;
+            case SignalType.JamMessageDeleted:
+                OnChatDeleted(message);
+                return;
+            case SignalType.JamRefused:
+                OnRefused(message);
+                return;
             case SignalType.JamKicked:
                 ExitLocal(JamDeclineReason.Kicked);
                 return;
@@ -448,7 +474,9 @@ internal sealed partial class JamSession : IDisposable
     {
         awaitingSinceTicks = 0;
         disconnectedSinceTicks = 0;
-        jamId = message.JamId ?? string.Empty;
+        var incomingJamId = message.JamId ?? string.Empty;
+        var sameJam = jamId.Length > 0 && string.Equals(jamId, incomingJamId, StringComparison.Ordinal);
+        jamId = incomingJamId;
         hostId = message.HostId ?? string.Empty;
         if (message.Code is { Length: > 0 } code)
         {
@@ -459,8 +487,10 @@ internal sealed partial class JamSession : IDisposable
         GuestPermissions = message.GuestPermissions ?? GuestPermissions;
         ApprovalRequired = message.ApprovalRequired ?? false;
         Stale = message.Stale ?? false;
+        ApplyDiscoverable(message.Discoverable ?? false);
         SetMembers(message.JamMembers);
         ApplyQueue(message, snapshot: true);
+        LoadChat(message, sameJam);
 
         if (string.Equals(hostId, MyUserId, StringComparison.Ordinal))
         {
@@ -516,6 +546,7 @@ internal sealed partial class JamSession : IDisposable
         Title = message.Title ?? string.Empty;
         GuestPermissions = message.GuestPermissions ?? GuestPermissions;
         ApprovalRequired = message.ApprovalRequired ?? ApprovalRequired;
+        ApplyDiscoverable(message.Discoverable);
         SetMembers(message.JamMembers);
     }
 
@@ -527,7 +558,7 @@ internal sealed partial class JamSession : IDisposable
         }
 
         ApplyQueue(message, snapshot: false);
-        ArmAdvanceIfPopped();
+        OnHostQueue();
     }
 
     private void ApplyQueue(CallControl message, bool snapshot)
@@ -538,8 +569,14 @@ internal sealed partial class JamSession : IDisposable
             return;
         }
 
-        queue = JamWire.ToQueue(message.Entries);
+        serverQueue = JamWire.ToQueue(message.Entries);
         serverQueueVersion = incoming;
+        ProjectQueue(Environment.TickCount64);
+    }
+
+    private void ProjectQueue(long now)
+    {
+        queue = pendingMoves.Project(serverQueue, now);
         QueueVersion++;
     }
 
@@ -679,6 +716,8 @@ internal sealed partial class JamSession : IDisposable
         disconnectedSinceTicks = 0;
         awaitingSinceTicks = now;
         pacer.Reset();
+        chatPacer.Reset();
+        nearbyCadence.Reset();
         if (Mode == JamMode.Starting || Code.Length == 0)
         {
             signals.Start(Title.Length > 0 ? Title : null);
@@ -772,7 +811,11 @@ internal sealed partial class JamSession : IDisposable
 
     private void EnqueueMove(int entryId, int toIndex)
     {
-        Enqueue(new CallControl { Type = SignalType.JamQueueMove, EntryId = entryId, ToIndex = Math.Max(0, toIndex) });
+        var target = Math.Max(0, toIndex);
+        Enqueue(new CallControl { Type = SignalType.JamQueueMove, EntryId = entryId, ToIndex = target });
+        var now = Environment.TickCount64;
+        pendingMoves.Add(entryId, target, now);
+        ProjectQueue(now);
     }
 
     private void DrainOperations(long now)
@@ -784,8 +827,13 @@ internal sealed partial class JamSession : IDisposable
 
         while (pendingOperations.Count > 0 && pacer.TryAcquire(now))
         {
-            signals.Send(pendingOperations[0]);
+            var operation = pendingOperations[0];
+            signals.Send(operation);
             pendingOperations.RemoveAt(0);
+            if (string.Equals(operation.Type, SignalType.JamQueueAdd, StringComparison.Ordinal))
+            {
+                lastAddSentAtTicks = now;
+            }
         }
 
         if (invites.TryDequeue(now, out var invitee))
@@ -827,6 +875,11 @@ internal sealed partial class JamSession : IDisposable
         pendingOperations.Clear();
         invites.Clear();
         pacer.Reset();
+        pendingMoves.Clear();
+        ResetChat();
+        nearbyCadence.Reset();
+        Discoverable = false;
+        lastAddSentAtTicks = 0;
         Mode = JamMode.Idle;
         jamId = string.Empty;
         hostId = string.Empty;
@@ -837,6 +890,7 @@ internal sealed partial class JamSession : IDisposable
         Title = string.Empty;
         SetCode(string.Empty);
         SetMembers(null);
+        serverQueue = Array.Empty<JamQueueItem>();
         queue = Array.Empty<JamQueueItem>();
         serverQueueVersion = 0;
         QueueVersion++;
@@ -894,6 +948,21 @@ internal sealed partial class JamSession : IDisposable
         }
 
         return string.Empty;
+    }
+
+    private bool AddInFlight(long now)
+    {
+        var queued = false;
+        for (var index = 0; index < pendingOperations.Count; index++)
+        {
+            if (string.Equals(pendingOperations[index].Type, SignalType.JamQueueAdd, StringComparison.Ordinal))
+            {
+                queued = true;
+                break;
+            }
+        }
+
+        return JamHostRecovery.AddInFlight(queued, lastAddSentAtTicks, now);
     }
 
     private bool OwnsEntry(int entryId)

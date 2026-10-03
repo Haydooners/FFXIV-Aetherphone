@@ -14,6 +14,7 @@ namespace Aetherphone.Core.Telephony.Contracts;
 [JsonSerializable(typeof(JamTrack))]
 [JsonSerializable(typeof(JamQueueEntry))]
 [JsonSerializable(typeof(JamMember))]
+[JsonSerializable(typeof(JamNearbyInfo))]
 [JsonSerializable(typeof(Aethernet.Contracts.ChatMessageDto))]
 [JsonSerializable(typeof(CasinoPayload))]
 [JsonSerializable(typeof(Aethernet.Contracts.CasinoRoomSnapshotDto))]

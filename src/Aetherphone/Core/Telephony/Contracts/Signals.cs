@@ -155,6 +155,13 @@ internal static class SignalType
     public const string JamKicked = "jam.kicked";
     public const string JamEnded = "jam.ended";
     public const string JamInvited = "jam.invited";
+    public const string JamChat = "jam.chat";
+    public const string JamMessage = "jam.message";
+    public const string JamDeleteMessage = "jam.deleteMessage";
+    public const string JamMessageDeleted = "jam.messageDeleted";
+    public const string JamRefused = "jam.refused";
+    public const string JamNearby = "jam.nearby";
+    public const string JamNearbyRoster = "jam.nearby.roster";
 }
 
 internal static class StreamPermission
@@ -236,6 +243,10 @@ internal sealed record JamQueueEntry(int EntryId, JamTrack Track, string AddedBy
 
 internal sealed record JamMember(string UserId, string DisplayName = "", string Handle = "", string? AvatarUrl = null,
     bool IsHost = false, int Permissions = 0);
+
+internal sealed record JamNearbyInfo(string JamId, string Code, string? Title = null, string HostId = "",
+    string HostDisplayName = "", string HostHandle = "", string? HostAvatarUrl = null, int MemberCount = 0,
+    JamTrack? Track = null);
 
 internal sealed record CallControl
 {
@@ -379,6 +390,9 @@ internal sealed record CallControl
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public JamMember[]? JamMembers { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public JamNearbyInfo[]? NearbyJams { get; init; }
 }
 
 internal sealed record CasinoPayload
