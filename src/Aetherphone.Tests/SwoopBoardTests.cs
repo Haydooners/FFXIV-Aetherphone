@@ -197,9 +197,14 @@ public sealed class SwoopBoardTests
         Assert.True(board.Night);
         Assert.True(board.GameOver);
         Assert.Equal(0f, board.Speed);
+        Assert.True(board.EndedThisTick);
         var score = board.Score;
         board.Tick(1f, true);
         Assert.Equal(score, board.Score);
+        Assert.False(board.EndedThisTick);
+        Assert.False(board.ThudThisTick);
+        Assert.False(board.SmoothThisTick);
+        Assert.Equal(0, board.PickupsThisTick);
     }
 
     [Fact]

@@ -139,19 +139,20 @@ internal sealed class SwoopApp : IMiniGame
         var rowY = area.Min.Y + 30f * scale;
         var restartCenter = new Vector2(area.Max.X - 26f * scale, rowY);
         var restartRadius = 16f * scale;
+        var holding = false;
         if (!finished)
         {
-            var holding = ReadInput(area, restartCenter, restartRadius, out var pressed);
+            holding = ReadInput(area, restartCenter, restartRadius, out var pressed);
             if (!playing && pressed)
             {
                 playing = true;
                 ShowBanner(Loc.T(L.Swoop.Island, GameNumber.Label(board.CurrentIsland + 1)));
             }
+        }
 
-            if (playing)
-            {
-                board.Tick(deltaSeconds, holding);
-            }
+        if (playing)
+        {
+            board.Tick(deltaSeconds, holding);
         }
 
         if (!cameraReady)
