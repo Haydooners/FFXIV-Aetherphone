@@ -3707,6 +3707,7 @@
   "skywatcher.sun": "太阳",
   "skywatcher.thisWindow": "当前时段",
   "skywatcher.then": "之后{0}",
+  "skywatcher.extraWeather": "不在该区域的天气预报中",
   "news.topics": "头条新闻",
   "news.notices": "公告",
   "news.maintenance": "维护",

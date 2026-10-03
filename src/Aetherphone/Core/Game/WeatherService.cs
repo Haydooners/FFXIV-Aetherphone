@@ -24,6 +24,8 @@ internal sealed class WeatherService
     private readonly IClientState clientState;
     private readonly Dictionary<byte, WeatherEntry> entries = new();
     private readonly List<WeatherEntry> zoneWeathers = new();
+    private readonly List<WeatherEntry> extraWeathers = new();
+    private readonly List<byte> levelWeathers = new();
     private readonly List<WeatherChance> chances = new();
     private readonly Dictionary<uint, WeatherChance[]> territoryChances = new();
     private readonly Dictionary<uint, string> territoryNames = new();
@@ -52,6 +54,12 @@ internal sealed class WeatherService
     {
         RefreshZone();
         return zoneWeathers;
+    }
+
+    public IReadOnlyList<WeatherEntry> ExtraWeathers()
+    {
+        RefreshZone();
+        return extraWeathers;
     }
 
     public unsafe WeatherEntry? LiveRenderedWeather()
@@ -248,6 +256,7 @@ internal sealed class WeatherService
     {
         chances.Clear();
         zoneWeathers.Clear();
+        extraWeathers.Clear();
         if (territoryId == 0 || !data.GetExcelSheet<TerritoryType>().TryGetRow(territoryId, out var territory))
         {
             return;
@@ -277,6 +286,68 @@ internal sealed class WeatherService
                 zoneWeathers.Add(Entry(id));
             }
         }
+
+        if (!territory.IsPvpZone)
+        {
+            LoadExtraWeathers(territory.Bg.ExtractText());
+        }
+    }
+
+    private void LoadExtraWeathers(string background)
+    {
+        if (background.Length == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var level = data.GetFile($"bg/{background}.lvb");
+            if (level is null)
+            {
+                return;
+            }
+
+            LevelWeatherTable.Read(level.Data, levelWeathers);
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, "[Skywatcher] could not read the zone's level weathers");
+            return;
+        }
+
+        for (var index = 0; index < levelWeathers.Count; index++)
+        {
+            var id = levelWeathers[index];
+            if (!HasIcon(id))
+            {
+                continue;
+            }
+
+            var entry = Entry(id);
+            if (entry.Name.Length == 0 || entry.EnglishKey.Length == 0 || Listed(zoneWeathers, entry.Name) ||
+                Listed(extraWeathers, entry.Name))
+            {
+                continue;
+            }
+
+            extraWeathers.Add(entry);
+        }
+    }
+
+    private bool HasIcon(byte id) => data.GetExcelSheet<Weather>().TryGetRow(id, out var row) && row.Icon != 0;
+
+    private static bool Listed(List<WeatherEntry> entries, string name)
+    {
+        for (var index = 0; index < entries.Count; index++)
+        {
+            if (string.Equals(entries[index].Name, name, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private bool KnownInZone(byte id)

@@ -3707,6 +3707,7 @@
   "skywatcher.sun": "Sol",
   "skywatcher.thisWindow": "Periodo actual",
   "skywatcher.then": "Luego {0}",
+  "skywatcher.extraWeather": "No está en el pronóstico de esta zona",
   "news.topics": "Temas",
   "news.notices": "Avisos",
   "news.maintenance": "Mantenimiento",

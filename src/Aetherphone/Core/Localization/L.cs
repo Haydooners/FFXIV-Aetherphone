@@ -6989,6 +6989,7 @@ internal static class L
         public static readonly LocString Sun = new("skywatcher.sun", "Sun");
         public static readonly LocString ThisWindow = new("skywatcher.thisWindow", "This Window");
         public static readonly LocString Then = new("skywatcher.then", "Then {0}");
+        public static readonly LocString ExtraWeather = new("skywatcher.extraWeather", "Not in this zone's forecast");
     }
 
     internal static class News
