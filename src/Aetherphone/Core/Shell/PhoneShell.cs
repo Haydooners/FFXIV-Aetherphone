@@ -104,6 +104,7 @@ internal sealed class PhoneShell : IDisposable
             services.DmLauncher, services.ChatInbox, services.ChatLog, services.LinkpearlLauncher,
             services.MarketIndex, services.MarketLauncher, services.Shortcuts, services.ShortcutRunner,
             services.Maps, services.StratsManifest, services.Venues, themes, calls, configuration);
+        navigation.AppOpened += spotlightIndex.NoteLaunched;
         home = new HomeScreen(apps, bundle.Widgets, services.Shortcuts, services.ShortcutRunner, configuration,
             services.Confirm, spotlightIndex);
         services.Installer.Bind(home.Layout);

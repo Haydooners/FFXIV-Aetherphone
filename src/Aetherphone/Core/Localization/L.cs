@@ -7298,6 +7298,12 @@ internal static class L
         public static readonly LocString Notes = new("spotlight.notes", "Notes");
         public static readonly LocString Items = new("spotlight.items", "Market Items");
         public static readonly LocString Store = new("spotlight.store", "From the App Store");
+        public static readonly LocString Recents = new("spotlight.recents", "Recents");
+        public static readonly LocString Open = new("spotlight.open", "Open");
+        public static readonly LocString Copy = new("spotlight.copy", "Copy");
+        public static readonly LocString Call = new("spotlight.call", "Call");
+        public static readonly LocString Run = new("spotlight.run", "Run");
+        public static readonly LocString Teleport = new("spotlight.teleport", "Teleport");
     }
 
     internal static class Onboarding
