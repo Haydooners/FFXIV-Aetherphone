@@ -6619,7 +6619,6 @@
   "changelog.r1042.17": "Le pourcentage de batterie se trouve désormais dans l'icône de batterie, et survoler l'icône de signal, de Wi-Fi ou de batterie montre ce qu'elle mesure",
   "changelog.r1042.18": "L'emote du téléphone se joue désormais une fois à l'ouverture du téléphone, et s'éloigner ou l'annuler ne la relance plus",
   "changelog.r1042.19": "Correction de la feuille de partage qui gardait une fenêtre cachée ouverte au-dessus de chaque app",
-  "changelog.r1042.86": "Les barres d'onglets des apps gardent désormais leur taille pendant le défilement et n'affichent que des icônes, avec le nom de chaque onglet au survol",
   "changelog.r1042.20": "Widgets refaits de fond en comble : un widget pour presque chaque app en petit, moyen ou grand, tous assortis au style de vos icônes",
   "changelog.r1042.21": "Galerie de widgets reconstruite avec recherche, une rangée À la une d'aperçus en direct, et chaque taille de widget prévisualisée à l'échelle réelle avant de l'ajouter",
   "changelog.r1042.22": "Ajout des Piles intelligentes : déposez un widget sur un autre de même taille pour en empiler jusqu'à dix, faites-les défiler à la molette, et laissez la Rotation intelligente mettre le bon en avant",

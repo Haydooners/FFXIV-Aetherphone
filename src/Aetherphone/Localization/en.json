@@ -6619,7 +6619,6 @@
   "changelog.r1042.17": "The battery percentage now sits inside the battery icon, and hovering the signal, Wi-Fi or battery icon shows what it measures",
   "changelog.r1042.18": "The phone emote now plays once when you open the phone, and walking off or cancelling it no longer brings it back",
   "changelog.r1042.19": "Fixed the share sheet keeping a hidden window open over every app",
-  "changelog.r1042.86": "App tab bars now stay full size while you scroll and show icons only, with each tab's name on hover",
   "changelog.r1042.20": "Overhauled widgets from top to bottom: a widget for nearly every app in small, medium or large, all following your icon look",
   "changelog.r1042.21": "Rebuilt the widget gallery with search, a Featured row of live previews, and every widget size previewed at true scale before you add it",
   "changelog.r1042.22": "Added Smart Stacks: drop a widget onto another of the same size to stack up to ten, flip through them with the mouse wheel, and let Smart Rotate bring the right one forward",

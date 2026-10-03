@@ -6619,7 +6619,6 @@
   "changelog.r1042.17": "A porcentagem da bateria agora fica dentro do ícone da bateria, e passar o cursor sobre o ícone de sinal, Wi-Fi ou bateria mostra o que ele mede",
   "changelog.r1042.18": "O emote do telefone agora toca uma vez ao abrir o telefone, e sair andando ou cancelá-lo não o faz voltar",
   "changelog.r1042.19": "Corrigida a folha de compartilhamento que mantinha uma janela oculta aberta sobre todos os apps",
-  "changelog.r1042.86": "As barras de abas dos apps agora mantêm o tamanho total ao rolar e mostram só ícones, com o nome de cada aba ao passar o cursor",
   "changelog.r1042.20": "Widgets reformulados de cima a baixo: um widget para quase todo app em tamanho pequeno, médio ou grande, todos seguindo o visual dos seus ícones",
   "changelog.r1042.21": "Galeria de widgets reconstruída com busca, uma fileira de Destaques com prévias ao vivo e cada tamanho de widget em escala real antes de adicionar",
   "changelog.r1042.22": "Adicionadas as Pilhas Inteligentes: solte um widget sobre outro do mesmo tamanho para empilhar até dez, passe por eles com a roda do mouse e deixe a Rotação inteligente trazer o certo para a frente",
