@@ -1,5 +1,6 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Animation;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
@@ -46,9 +47,19 @@ internal sealed class SheetSurface
 
         open = true;
         openedFrame = ImGui.GetFrameCount();
+        UiFeedback.Play(UiSound.SheetPresent);
     }
 
-    internal void Close() => open = false;
+    internal void Close()
+    {
+        if (!open)
+        {
+            return;
+        }
+
+        open = false;
+        UiFeedback.Play(UiSound.SheetDismiss);
+    }
 
     internal void Toggle()
     {

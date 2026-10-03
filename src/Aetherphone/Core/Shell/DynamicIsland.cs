@@ -3,6 +3,7 @@ using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Muster;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Playback;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
@@ -233,6 +234,7 @@ internal sealed class DynamicIsland
 
             expanded = true;
             expandedFrame = ImGui.GetFrameCount();
+            UiFeedback.Play(UiSound.IslandExpand);
             return;
         }
 
@@ -249,6 +251,7 @@ internal sealed class DynamicIsland
         if (ImGui.GetFrameCount() != expandedFrame && UiInteract.ClickedOutside(bounds.Min, bounds.Max, false))
         {
             expanded = false;
+            UiFeedback.Play(UiSound.IslandCollapse);
         }
     }
 

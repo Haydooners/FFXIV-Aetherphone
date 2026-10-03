@@ -1,5 +1,6 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Animation;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
 
@@ -123,18 +124,26 @@ internal sealed class Sheet
         launchPending = true;
         largeDetent = false;
         openedFrame = ImGui.GetFrameCount();
+        UiFeedback.Play(UiSound.SheetPresent);
     }
 
     public void Close()
     {
+        var wasOpen = open;
         open = false;
         pressed = false;
         dragging = false;
+        if (wasOpen)
+        {
+            UiFeedback.Play(UiSound.SheetDismiss);
+        }
     }
 
     public void CloseImmediately()
     {
-        Close();
+        open = false;
+        pressed = false;
+        dragging = false;
         shown.SnapTo(0f);
     }
 

@@ -62,12 +62,22 @@ internal sealed class FeedFilterSheet
         {
             snapPending = true;
             openedFrame = ImGui.GetFrameCount();
+            UiFeedback.Play(UiSound.SheetPresent);
         }
 
         open = true;
     }
 
-    public void Close() => open = false;
+    public void Close()
+    {
+        if (!open)
+        {
+            return;
+        }
+
+        open = false;
+        UiFeedback.Play(UiSound.SheetDismiss);
+    }
 
     public void Gate()
     {
