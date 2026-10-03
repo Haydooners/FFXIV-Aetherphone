@@ -30,7 +30,7 @@ internal sealed class SwoopBoard
     public const float GlideGravity = 11f;
     public const float CruiseSpeed = 11f;
     public const float CruiseThrust = 8f;
-    public const float MinDaySpeed = 5f;
+    public const float MinDaySpeed = 1.5f;
     public const float FeverThrust = 4f;
     public const float FeverTopSpeed = 38f;
     public const float MaxSpeed = 48f;
@@ -42,6 +42,11 @@ internal sealed class SwoopBoard
     public const float MinCountedAirSeconds = 0.35f;
     public const float SmoothBoost = 1.6f;
     public const float ThudKeep = 0.45f;
+    public const float MildThudKeep = 0.75f;
+    public const float ThudSeverityRange = 0.6f;
+    public const float SlamKeep = 0.55f;
+    public const float SlamSlope = 0.2f;
+    public const float SlamPress = 30f;
     public const int FeverStreak = 3;
     public const int SmoothPoints = 50;
     public const int CrystalPoints = 25;
@@ -77,6 +82,7 @@ internal sealed class SwoopBoard
     private double furthestX;
     private float distancePoints;
     private float stillSeconds;
+    private bool slammed;
 
     public SwoopTerrain Terrain => terrain;
     public double X { get; private set; }
@@ -151,18 +157,26 @@ internal sealed class SwoopBoard
 
     public float PickupY(int index) => pickupY[index];
 
-    public static SwoopLanding Classify(Vector2 velocity, float slope)
+    public static SwoopLanding Classify(Vector2 velocity, float slope) =>
+        LandingAngle(velocity, slope) <= SmoothAngle && slope <= SmoothMaxSlope ? SwoopLanding.Smooth : SwoopLanding.Thud;
+
+    public static float LandingAngle(Vector2 velocity, float slope)
     {
         var speed = velocity.Length();
         if (speed < 0.001f)
         {
-            return SwoopLanding.Smooth;
+            return 0f;
         }
 
         var norm = MathF.Sqrt(1f + slope * slope);
         var along = (velocity.X + velocity.Y * slope) / norm;
-        var angle = MathF.Acos(Math.Clamp(along / speed, -1f, 1f));
-        return angle <= SmoothAngle && slope <= SmoothMaxSlope ? SwoopLanding.Smooth : SwoopLanding.Thud;
+        return MathF.Acos(Math.Clamp(along / speed, -1f, 1f));
+    }
+
+    public static float ThudRetention(float angle)
+    {
+        var severity = Math.Clamp((angle - SmoothAngle) / ThudSeverityRange, 0f, 1f);
+        return ThudKeep + (MildThudKeep - ThudKeep) * (1f - severity);
     }
 
     public void Start(uint seed)
@@ -191,6 +205,7 @@ internal sealed class SwoopBoard
         BonusPoints = 0;
         distancePoints = 0f;
         stillSeconds = 0f;
+        slammed = false;
         furthestX = X;
         crystalCount = 0;
         nextCrystalX = FirstCrystalX;
@@ -273,7 +288,7 @@ internal sealed class SwoopBoard
         var gravity = heavy ? HeavyGravity : Grounded ? LightGravity : GlideGravity;
         if (Grounded)
         {
-            StepGround(gravity);
+            StepGround(gravity, heavy);
         }
         else
         {
@@ -293,7 +308,7 @@ internal sealed class SwoopBoard
         CheckStopped();
     }
 
-    private void StepGround(float gravity)
+    private void StepGround(float gravity, bool heavy)
     {
         terrain.Evaluate(X, out _, out var slopeValue, out var curvatureValue);
         var slope = (float)slopeValue;
@@ -327,8 +342,17 @@ internal sealed class SwoopBoard
         }
 
         Speed = MathF.Min(Speed, MaxSpeed);
-        var normalForce = gravity / norm + Speed * Speed * (float)curvatureValue / (norm * norm * norm);
-        if (normalForce < 0f && Speed > 0f)
+        var press = Speed * Speed * (float)curvatureValue / (norm * norm * norm);
+        if (!heavy || slope <= 0f)
+        {
+            slammed = false;
+        }
+        else if (!slammed && !Night && slope > SlamSlope && press > SlamPress)
+        {
+            Slam(press);
+        }
+
+        if (!heavy && gravity / norm + press < 0f && Speed > 0f)
         {
             Launch(slope, norm);
             return;
@@ -338,6 +362,16 @@ internal sealed class SwoopBoard
         Y = (float)terrain.Height(X);
         VelocityX = Speed / norm;
         VelocityY = Speed * slope / norm;
+    }
+
+    private void Slam(float press)
+    {
+        slammed = true;
+        LastImpactSpeed = MathF.Sqrt(press);
+        Speed = ClampLandingSpeed(Speed * SlamKeep);
+        SmoothStreak = 0;
+        ThudThisTick = true;
+        EndFever();
     }
 
     private void Launch(float slope, float norm)
@@ -408,7 +442,7 @@ internal sealed class SwoopBoard
             return;
         }
 
-        Speed = ClampLandingSpeed(along * ThudKeep);
+        Speed = ClampLandingSpeed(along * ThudRetention(LandingAngle(velocity, slope)));
         SmoothStreak = 0;
         ThudThisTick = true;
         EndFever();
