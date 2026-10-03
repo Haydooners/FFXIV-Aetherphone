@@ -30,6 +30,7 @@ internal sealed partial class AetherStreamApp
     private QueueAddMode addMode = QueueAddMode.PlayNow;
     private QueueAddMode pendingPlaylistMode = QueueAddMode.PlayNow;
     private RefreshCadence clipboardCadence;
+    private uint clipboardSequence = ClipboardWatch.UnseenSequence;
 
     private void OpenAddSheet()
     {
@@ -247,6 +248,11 @@ internal sealed partial class AetherStreamApp
         }
 
         clipboardCadence.Reset();
+        if (!ClipboardWatch.HasChanged(ref clipboardSequence))
+        {
+            return;
+        }
+
         var clipboard = MediaInput.Normalize(ImGui.GetClipboardText());
         if (string.Equals(clipboard, copiedLink, StringComparison.Ordinal))
         {
