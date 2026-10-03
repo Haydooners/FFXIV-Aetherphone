@@ -33,6 +33,7 @@ using Aetherphone.Core.Shell;
 using Aetherphone.Core.Shortcuts;
 using Aetherphone.Core.Songs;
 using Aetherphone.Core.Strats;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Translation;
@@ -154,6 +155,8 @@ internal sealed class PhoneServices : IDisposable
     public required SongHistory SongHistory { get; init; }
     public required PlaylistStore Playlists { get; init; }
     public required PlaybackHub Playback { get; init; }
+    public required WindowsMediaSessions WindowsMedia { get; init; }
+    public required WindowsMediaPublisher WindowsMediaPublisher { get; init; }
     public required GameStatsStore GameStats { get; init; }
     public required VenuesService Venues { get; init; }
     public required RolladeckService Rolladeck { get; init; }
@@ -486,6 +489,9 @@ internal sealed class PhoneServices : IDisposable
             SongHistory = songHistory,
             Playlists = playlists,
             Playback = playback,
+            WindowsMedia = new WindowsMediaSessions(configuration),
+            WindowsMediaPublisher = new WindowsMediaPublisher(configuration, framework,
+                static () => Platform.GameWindowHandle.Current),
             GameStats = gameStats,
             Venues = venues,
             Rolladeck = rolladeck,
@@ -558,6 +564,8 @@ internal sealed class PhoneServices : IDisposable
         Musters.Dispose();
         YellowPages.Dispose();
         AdInquiries.Dispose();
+        WindowsMediaPublisher.Dispose();
+        WindowsMedia.Dispose();
         SongPlayer.Dispose();
         SongSearch.Dispose();
         VideoMetadata.Dispose();
