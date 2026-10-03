@@ -15,9 +15,9 @@ and the ringtone and notification sounds are not AI-generated either; they are
 of third-party origin and are not yet credited in this file.
 
 Phone case art is drawn by community artists and each case credits its artist
-by name in Settings. App icons are derived from Tabler Icons, emoji from
-Twemoji, audio from SND and CC0 sound packs. See the sections below for the
-licenses covering each.
+by name in Settings. App icons are derived from Phosphor Icons, in-app glyphs
+from Tabler Icons, emoji from Twemoji, audio from SND and CC0 sound packs. See
+the sections below for the licenses covering each.
 
 The plugin's eight translated language catalogs are AI-assisted with human
 review, and in-game terminology is verified against the game's own data rather
@@ -34,13 +34,26 @@ Bold) are redistributed unmodified.
 - Full license text: `src/Aetherphone/Fonts/Inter-OFL.txt`, shipped next to
   the fonts in every release archive.
 
+## Phosphor Icons
+
+The painted application icons under `src/Aetherphone/Icons/` (`<appid>.png`
+and `<appid>.fg.png`) are derived from
+[Phosphor Icons](https://phosphoricons.com) 2.1.1 fill glyphs (recolored,
+composed on a tile and rasterized to PNG); see `tools/icon-generator/` for
+the generator.
+
+- Homepage: https://phosphoricons.com
+- Source: https://github.com/phosphor-icons/core
+- License: MIT (Copyright (c) 2023 Phosphor Icons); full text reproduced in
+  the MIT section below.
+
 ## Tabler Icons
 
-The application icons under `src/Aetherphone/Icons/` are derived from
-[Tabler Icons](https://tabler.io/icons) (recolored and rasterized to PNG).
-`src/Aetherphone/Fonts/TablerIcons.ttf` is a 97 glyph subset of the same
-project's webfont, remapped into a private codepoint range; see
-`tools/icon-font/` for the generator.
+`src/Aetherphone/Fonts/TablerIcons.ttf` is a 97 glyph subset of the
+[Tabler Icons](https://tabler.io/icons) webfont, remapped into a private
+codepoint range; see `tools/icon-font/` for the generator. The legacy stencil
+generator in `tools/icon-generator/generate-app-icons.mjs` rasterizes Tabler
+outline icons and is kept for reference.
 
 - Homepage: https://tabler.io/icons
 - Source: https://github.com/tabler/tabler-icons
@@ -229,7 +242,7 @@ once at the end of this section:
 
 | Component | Version | Copyright / project |
 | --- | --- | --- |
-| Tabler Icons (rasterized) | n/a | 2020-2026 Paweł Kuna (https://github.com/tabler/tabler-icons) |
+| Phosphor Icons (rasterized) | 2.1.1 | 2023 Phosphor Icons (https://github.com/phosphor-icons/core) |
 | Tabler Icons webfont (subset) | 3.46.0 | 2020-2026 Paweł Kuna (https://github.com/tabler/tabler-icons) |
 | emojibase-data (catalog metadata) | 15.x | Miles Johnson (https://github.com/milesj/emojibase) |
 | NAudio.Core / NAudio.WinMM / NAudio.Wasapi | 2.3.0 | Mark Heath (https://github.com/naudio/NAudio) |
