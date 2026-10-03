@@ -6591,11 +6591,20 @@ internal static class L
     {
         public static readonly LocString SignInRequired = new("announcements.signInRequired", "Sign in to Aethernet in Settings to read announcements");
         public static readonly LocString SignInTitle = new("announcements.signInTitle", "Sign in required");
-        public static readonly LocString NewBadge = new("announcements.newBadge", "NEW");
-        public static readonly LocString EmptyTitle = new("announcements.emptyTitle", "Nothing announced yet");
+        public static readonly LocString EmptyTitle = new("announcements.emptyTitle", "No announcements yet");
         public static readonly LocString EmptyHint = new("announcements.emptyHint", "News from the Aetherphone team lands here.");
         public static readonly LocString UnavailableTitle = new("announcements.unavailableTitle", "Announcement unavailable");
         public static readonly LocString UnavailableHint = new("announcements.unavailableHint", "This announcement was taken down.");
+        public static readonly LocString SearchHint = new("announcements.searchHint", "Search announcements");
+        public static readonly LocString MarkAllRead = new("announcements.markAllRead", "Mark all as read");
+        public static readonly LocString Latest = new("announcements.latest", "Latest");
+        public static readonly LocString NoResultsTitle = new("announcements.noResultsTitle", "No results");
+        public static readonly LocString NoResultsHint = new("announcements.noResultsHint", "Nothing matches \"{0}\". Try another word.");
+        public static readonly LocString Newer = new("announcements.newer", "Newer");
+        public static readonly LocString Older = new("announcements.older", "Older");
+        public static readonly LocString CopyText = new("announcements.copyText", "Copy text");
+        public static readonly LocString OpenSettings = new("announcements.openSettings", "Open Settings");
+        public static readonly LocString RefreshFailed = new("announcements.refreshFailed", "Couldn't refresh. Showing what you already have.");
     }
 
     internal static class Loadout
