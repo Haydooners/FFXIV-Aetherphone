@@ -67,15 +67,17 @@ internal sealed partial class VelvetShell
             {
                 var min = new Vector2(origin.X + inset, origin.Y + inset + index * (cardHeight + gap));
                 var card = new Rect(min, new Vector2(min.X + cardWidth, min.Y + cardHeight));
+                if (!ImGui.IsRectVisible(card.Min, card.Max))
+                {
+                    continue;
+                }
+
                 if (index == 0)
                 {
                     UiAnchors.Report("velvet.discover.card", card);
                 }
 
-                if (ImGui.IsRectVisible(card.Min, card.Max))
-                {
-                    DrawGridCard(drawList, index, card, scale);
-                }
+                DrawGridCard(drawList, index, card, scale);
             }
 
             ImGui.SetCursorScreenPos(origin);
