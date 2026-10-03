@@ -1,602 +1,207 @@
 using Aetherphone.Core;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Media;
-using Aetherphone.Core.Net;
 using Aetherphone.Core.News;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
-using Aetherphone.Windows;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
-using Dalamud.Interface.Utility.Raii;
+using Dalamud.Interface.Textures.TextureWraps;
 
 namespace Aetherphone.Apps.News;
 
-internal sealed class NewsApp : IPhoneApp
+internal sealed partial class NewsApp : IPhoneApp, ITabRouteTarget
 {
-    private const float RegionRowHeight = 24f;
-    private const float SegmentRowHeight = 36f;
-    private const float CardGap = 14f;
-    private const float CardRounding = 20f;
-    private const float CardPadding = 16f;
-    private const float ImageAspectFallback = 0.56f;
-    private const float ImageAspectMin = 0.22f;
-    private const float ImageAspectMax = 0.75f;
-    private const float TitleScale = 1.10f;
-    private const float DescriptionScale = 0.88f;
-    private const float MetaScale = 0.78f;
-    private const float ImageFadeSeconds = 0.28f;
-    private const int MaxItems = 40;
-    private const int MaxTitleLines = 2;
-    private const int MaxDescriptionLines = 3;
-    private const float RowHeightNotices = 58f;
-    private const float RowHeightMaintenance = 72f;
-    private const float RowTitleScale = 0.95f;
-    private static readonly int MaintenanceIndex = Array.IndexOf(NewsCategories.All, NewsCategory.Maintenance);
-    private static readonly Vector4 StatusUpcoming = new(0.95f, 0.62f, 0.22f, 1f);
-    private static readonly Vector4 StatusActive = new(0.30f, 0.78f, 0.46f, 1f);
-    public string Id => "news";
+    private const string AppId = "news";
+
+    public string Id => AppId;
     public Vector4 Accent => AppAccents.For(Id);
     public string DisplayName => Loc.T(L.Apps.News);
     public string Glyph => "Ne";
     public int BadgeCount => 0;
+
+    private static readonly string[] NavIds =
+    {
+        "news.nav.topics", "news.nav.notices", "news.nav.maintenance", "news.nav.updates", "news.nav.status",
+    };
+
+    private static readonly string[] TabAnchors =
+    {
+        "news.tab.topics", "news.tab.notices", "news.tab.maintenance", "news.tab.updates", "news.tab.status",
+    };
+
     private readonly NewsService news;
-    private readonly MediaCache media;
-    private readonly HttpService http;
+    private readonly RemoteImageCache images;
     private readonly GameData gameData;
     private readonly AppSkin ui = new(AppPalettes.News);
-    private readonly string[] categoryLabels = new string[NewsCategories.All.Length];
-    private readonly List<string> titleLines = new();
-    private readonly List<string> descriptionLines = new();
-    private readonly Dictionary<string, float> imageFade = new();
+    private readonly Dictionary<string, NewsStory> storyCache = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Spring> imageReveal = new(StringComparer.Ordinal);
+    private readonly NewsFeed[] feeds = new NewsFeed[NewsCategories.All.Length];
+    private readonly ViewRouter<NewsView> router;
+    private readonly RouterDraw<NewsView> drawView;
+    private readonly Action back;
+    private readonly Action refresh;
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabItems = new TabItem[NewsCategories.All.Length];
+    private readonly NewsCategory[] tabCategories = new NewsCategory[NewsCategories.All.Length];
+    private readonly ScreenToast toast = new();
+    private PendingTab pendingTab;
     private PhoneTheme theme = PhoneTheme.Default;
+    private INavigator navigation = null!;
     private string locale = "na";
-    private int categoryIndex;
-    private bool forceRefresh;
+    private NewsCategory activeCategory = NewsCategory.Topics;
+    private int tabCount;
     private bool resetScroll;
-    private int visibleItems = MaxItems;
+    private float deltaSeconds;
+    private float fontKey;
 
-    public NewsApp(NewsService news, MediaCache media, HttpService http, GameData gameData)
+    public NewsApp(NewsService news, RemoteImageCache images, GameData gameData)
     {
         this.news = news;
-        this.media = media;
-        this.http = http;
+        this.images = images;
         this.gameData = gameData;
+        for (var index = 0; index < feeds.Length; index++)
+        {
+            feeds[index] = new NewsFeed(NewsCategories.All[index], storyCache);
+        }
+
+        router = new ViewRouter<NewsView>(NewsView.Feed(NewsCategory.Topics));
+        drawView = DrawView;
+        back = () => router.Pop();
+        refresh = Refresh;
     }
+
+    public void OpenTab(string tab) => pendingTab.Request(tab);
 
     public void OnOpened()
     {
         locale = gameData.LodestoneLocale();
-        categoryIndex = 0;
+        router.Reset();
+        activeCategory = NewsCategory.Topics;
         resetScroll = true;
+        shownArticleId = string.Empty;
     }
 
-    public void OnClosed() => imageFade.Clear();
+    public void OnClosed()
+    {
+        router.Reset();
+        imageReveal.Clear();
+    }
 
     public void Draw(in PhoneContext context)
     {
         theme = context.Theme;
+        navigation = context.Navigation;
         ui.Theme = theme;
-        var area = context.Content;
+        deltaSeconds = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        fontKey = Typography.LineHeight(TextStyles.Body);
+        ConsumePendingTab();
         var scale = UiScale.Current;
-        var screen = SceneChrome.ScreenFrom(area, theme, scale);
+        var screen = SceneChrome.ScreenFrom(context.Content, theme, scale);
         ui.Backdrop(screen);
-        AppHeader.Draw(context, DisplayName);
-        var top = area.Min.Y + AppHeader.Height * scale;
-        DrawRegionRow(new Vector2(area.Min.X + 18f * scale, top + RegionRowHeight * scale * 0.5f));
-        var segmentTop = top + RegionRowHeight * scale;
-        var segmentRow = new Rect(new Vector2(area.Min.X + 16f * scale, segmentTop),
-            new Vector2(area.Max.X - 16f * scale, segmentTop + SegmentRowHeight * scale));
-        FillCategoryLabels();
-        UiAnchors.Report("news.tab.maintenance",
-            SegmentStrip.SegmentRect(segmentRow, MaintenanceIndex, categoryLabels.Length));
-        var selected = SegmentStrip.Draw("news.category", segmentRow, categoryLabels, categoryIndex, theme);
-        if (selected != categoryIndex)
-        {
-            categoryIndex = selected;
-            resetScroll = true;
-            forceRefresh = false;
-            visibleItems = MaxItems;
-        }
+        router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+        toast.Draw(screen, ScreenToastStyle.From(ui));
+        UpdateTourHold();
+    }
 
-        var category = NewsCategories.All[categoryIndex];
-        var entry = news.Request(category, locale, forceRefresh);
-        forceRefresh = false;
-        DrawRefreshControl(new Vector2(area.Max.X - 20f * scale, area.Min.Y + AppHeader.Height * scale * 0.5f),
-            entry.State, scale);
-        var body = new Rect(new Vector2(area.Min.X, segmentRow.Max.Y), area.Max);
-        var hasItems = entry.Items.Length > 0;
-        if (!hasItems)
+    private void DrawView(NewsView view, Rect area, int depth)
+    {
+        ui.Body(area);
+        if (view.Screen == NewsScreen.Article)
         {
-            ui.Body(body);
-            DrawState(body, entry.State, scale);
+            DrawArticle(area, view, depth);
             return;
         }
 
-        ui.Body(body);
-        using (var surface = AppSurface.BeginEdgeToEdge(body))
-        {
-            if (resetScroll)
-            {
-                surface.JumpToTop();
-                resetScroll = false;
-            }
-
-            var count = Math.Min(entry.Items.Length, visibleItems);
-            DrawFeed(entry.Items, count, category, scale);
-            if (entry.Items.Length > count && InfiniteScroll.ReachedBottom())
-            {
-                visibleItems += MaxItems;
-            }
-        }
+        DrawRoot(area);
     }
 
-    private void DrawState(Rect body, NewsState state, float scale)
-    {
-        var center = body.Center;
-        if (state == NewsState.Failed)
-        {
-            ProgressRing.CenterIcon(new Vector2(center.X, center.Y - 26f * scale), FontAwesomeIcon.CloudDownloadAlt,
-                theme.TextMuted, 34f * scale);
-            Typography.DrawCentered(new Vector2(center.X, center.Y + 18f * scale), Loc.T(L.News.CouldntReach),
-                theme.TextMuted, 0.95f, FontWeight.Medium);
-            if (TextButton.Draw(new Vector2(center.X, center.Y + 48f * scale), Loc.T(L.News.TryAgain), Accent, scale))
-            {
-                forceRefresh = true;
-            }
-
-            return;
-        }
-
-        if (state == NewsState.Empty)
-        {
-            ProgressRing.CenterIcon(new Vector2(center.X, center.Y - 24f * scale), FontAwesomeIcon.Newspaper,
-                theme.TextMuted, 34f * scale);
-            Typography.DrawCentered(new Vector2(center.X, center.Y + 20f * scale), Loc.T(L.News.NoNews),
-                theme.TextMuted, 0.95f, FontWeight.Medium);
-            return;
-        }
-
-        Skeleton.Feed(ImGui.GetWindowDrawList(),
-            new Rect(new Vector2(body.Min.X + 14f * scale, body.Min.Y + 16f * scale),
-                new Vector2(body.Max.X - 14f * scale, body.Max.Y - 12f * scale)), scale);
-    }
-
-    private void DrawFeed(LodestoneNewsItem[] items, int count, NewsCategory category, float scale)
-    {
-        ImGui.Dummy(new Vector2(0f, 4f * scale));
-        var inset = FeedCell.PadX * scale;
-        if (category == NewsCategory.Topics)
-        {
-            for (var index = 0; index < count; index++)
-            {
-                var origin = ImGui.GetCursorScreenPos();
-                var width = ScrollLayout.StableContentWidth();
-                var height = DrawTopicCard(items[index], new Vector2(origin.X + inset, origin.Y),
-                    width - inset * 2f, scale);
-                ImGui.SetCursorScreenPos(origin);
-                ImGui.Dummy(new Vector2(width, height));
-                ImGui.Dummy(new Vector2(0f, CardGap * scale));
-            }
-
-            return;
-        }
-
-        var rowHeight = (category == NewsCategory.Maintenance ? RowHeightMaintenance : RowHeightNotices) * scale;
-        var drawList = ImGui.GetWindowDrawList();
-        for (var index = 0; index < count; index++)
-        {
-            var cell = FeedCell.Begin(drawList, rowHeight, theme.HoverWash);
-            if (index == 0)
-            {
-                UiAnchors.Report("news.row", cell.Bounds);
-            }
-
-            var row = new Rect(new Vector2(cell.Bounds.Min.X + inset, cell.Bounds.Min.Y),
-                new Vector2(cell.Bounds.Max.X - inset, cell.Bounds.Max.Y));
-            if (category == NewsCategory.Maintenance)
-            {
-                DrawMaintenanceRow(row, items[index], scale, cell.Hovered);
-            }
-            else
-            {
-                DrawSimpleRow(row, items[index], scale, cell.Hovered);
-            }
-
-            if (cell.Tapped)
-            {
-                UrlActions.OpenInBrowser(items[index].Url);
-            }
-
-            FeedCell.End(drawList, cell, theme.Hairline);
-        }
-    }
-
-    private float DrawTopicCard(LodestoneNewsItem item, Vector2 origin, float width, float scale)
-    {
-        var hasImage = !string.IsNullOrEmpty(item.Image);
-        var imageHeight = 0f;
-        if (hasImage)
-        {
-            var probe = Thumb(item.Image!);
-            if (probe.Texture is { } probeTexture && probeTexture.Size.X > 0f && probeTexture.Size.Y > 0f)
-            {
-                var naturalAspect = probeTexture.Size.Y / probeTexture.Size.X;
-                imageHeight = width * Math.Clamp(naturalAspect, ImageAspectMin, ImageAspectMax);
-            }
-            else
-            {
-                imageHeight = width * ImageAspectFallback;
-            }
-        }
-
-        var innerWidth = width - 2f * CardPadding * scale;
-        WrapInto(titleLines, item.Title, innerWidth, TitleScale, FontWeight.SemiBold, MaxTitleLines);
-        var hasDescription = !string.IsNullOrWhiteSpace(item.Description);
-        if (hasDescription)
-        {
-            WrapInto(descriptionLines, item.Description!, innerWidth, DescriptionScale, FontWeight.Regular,
-                MaxDescriptionLines);
-        }
-        else
-        {
-            descriptionLines.Clear();
-        }
-
-        var titleLineHeight = Typography.Measure("Ag", TitleScale, FontWeight.SemiBold).Y + 2f * scale;
-        var descLineHeight = Typography.Measure("Ag", DescriptionScale, FontWeight.Regular).Y + 2f * scale;
-        var metaHeight = Typography.Measure("Ag", MetaScale, FontWeight.Regular).Y;
-        var contentHeight = titleLines.Count * titleLineHeight +
-                            (descriptionLines.Count > 0 ? 5f * scale + descriptionLines.Count * descLineHeight : 0f) +
-                            8f * scale + metaHeight;
-        var cardHeight = imageHeight + CardPadding * scale + contentHeight + CardPadding * scale;
-        var cardMax = new Vector2(origin.X + width, origin.Y + cardHeight);
-        var rounding = CardRounding * scale;
-        var drawList = ImGui.GetWindowDrawList();
-        Elevation.Card(drawList, origin, cardMax, rounding, scale, 0.7f);
-        Squircle.Fill(drawList, origin, cardMax, rounding, ImGui.GetColorU32(theme.GroupedCard));
-        if (hasImage)
-        {
-            var imageMax = new Vector2(cardMax.X, origin.Y + imageHeight);
-            drawList.AddRectFilled(origin, imageMax, ImGui.GetColorU32(theme.SurfaceMuted), rounding,
-                ImDrawFlags.RoundCornersTop);
-            DrawCardImage(drawList, item.Image!, origin, imageMax, rounding, scale);
-        }
-
-        var textX = origin.X + CardPadding * scale;
-        var cursorY = origin.Y + imageHeight + CardPadding * scale;
-        for (var lineIndex = 0; lineIndex < titleLines.Count; lineIndex++)
-        {
-            Typography.Draw(new Vector2(textX, cursorY), titleLines[lineIndex], theme.TextStrong, TitleScale,
-                FontWeight.SemiBold);
-            cursorY += titleLineHeight;
-        }
-
-        if (descriptionLines.Count > 0)
-        {
-            cursorY += 5f * scale;
-            for (var lineIndex = 0; lineIndex < descriptionLines.Count; lineIndex++)
-            {
-                Typography.Draw(new Vector2(textX, cursorY), descriptionLines[lineIndex], theme.TextMuted,
-                    DescriptionScale, FontWeight.Regular);
-                cursorY += descLineHeight;
-            }
-        }
-
-        cursorY += 8f * scale;
-        Typography.Draw(new Vector2(textX, cursorY), TimeText.Ago(item.Time), theme.TextMuted, MetaScale,
-            FontWeight.Medium);
-        Material.EdgeSquircle(drawList, origin, cardMax, rounding, scale);
-        InteractCard(new Rect(origin, cardMax), rounding, item.Url, drawList);
-        return cardHeight;
-    }
-
-    private void DrawCardImage(ImDrawListPtr drawList, string url, Vector2 min, Vector2 max, float rounding,
-        float scale)
-    {
-        var result = Thumb(url);
-        if (result.Texture is { } texture)
-        {
-            var fade = StepFade(url, true);
-            var tint = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, fade));
-            drawList.AddImageRounded(texture.Handle, min, max, Vector2.Zero, Vector2.One, tint, rounding,
-                ImDrawFlags.RoundCornersTop);
-            if (fade < 1f)
-            {
-                DrawSpinner((min + max) * 0.5f, 11f * scale, Palette.WithAlpha(theme.TextMuted, 1f - fade));
-            }
-
-            return;
-        }
-
-        StepFade(url, false);
-        if (result.Loading)
-        {
-            DrawSpinner((min + max) * 0.5f, 11f * scale, theme.TextMuted);
-            return;
-        }
-
-        ProgressRing.CenterIcon((min + max) * 0.5f, FontAwesomeIcon.Image, Palette.WithAlpha(theme.TextMuted, 0.5f),
-            22f * scale);
-    }
-
-    private void DrawSimpleRow(Rect row, LodestoneNewsItem item, float scale, bool hovered)
-    {
-        var titleY = row.Min.Y + 10f * scale;
-        var maxTitleWidth = row.Width - 24f * scale;
-        Marquee.DrawLeft(new MarqueeId("news.simpleRow.", item.Url), item.Title, row.Min.X, titleY, maxTitleWidth,
-            new TextStyle(RowTitleScale, FontWeight.Medium), theme.TextStrong, hovered);
-        Typography.Draw(new Vector2(row.Min.X, titleY + 23f * scale), TimeText.Ago(item.Time), theme.TextMuted,
-            MetaScale, FontWeight.Regular);
-        DrawChevronRight(new Vector2(row.Max.X, row.Center.Y), 6f * scale, 2.2f * scale,
-            hovered ? theme.TextStrong : theme.TextMuted);
-    }
-
-    private void DrawMaintenanceRow(Rect row, LodestoneNewsItem item, float scale, bool hovered)
-    {
-        var titleY = row.Min.Y + 10f * scale;
-        var subY = titleY + 25f * scale;
-        var status = NewsFormat.Status(item.Start, item.End);
-        var pillInfo = status != MaintenanceStatus.None
-            ? MeasurePill(StatusLabel(status), MetaScale, FontWeight.SemiBold, scale)
-            : default;
-        var rightPadding = 8f * scale;
-        var pillReserved = pillInfo.hasPill ? pillInfo.width + 12f * scale + rightPadding : rightPadding + 4f * scale;
-        var maxTitleWidth = row.Width - pillReserved;
-        Marquee.DrawLeft(new MarqueeId("news.maintenanceRow.", item.Url), item.Title, row.Min.X, titleY, maxTitleWidth,
-            new TextStyle(RowTitleScale, FontWeight.Medium), theme.TextStrong, hovered);
-        var sub = item.Start is { } start && item.End is { } end
-            ? NewsFormat.Window(start, end)
-            : TimeText.Ago(item.Time);
-        var subWidth = Typography.Measure(sub, MetaScale, FontWeight.Regular).X;
-        var maxSubWidth = row.Width - rightPadding;
-        if (subWidth > maxSubWidth)
-        {
-            sub = Typography.FitText(sub, maxSubWidth, MetaScale, FontWeight.Regular);
-        }
-
-        Typography.Draw(new Vector2(row.Min.X, subY), sub, theme.TextMuted, MetaScale, FontWeight.Regular);
-        if (pillInfo.hasPill)
-        {
-            var drawList = ImGui.GetWindowDrawList();
-            var pillRight = row.Max.X - rightPadding;
-            DrawStatusPill(drawList, pillRight, titleY + 2f * scale, status, scale);
-        }
-
-        DrawChevronRight(new Vector2(row.Max.X, row.Max.Y - 14f * scale), 5f * scale, 2f * scale,
-            hovered ? theme.TextStrong : Palette.WithAlpha(theme.TextMuted, 0.6f));
-    }
-
-    private (bool hasPill, float width, float height) MeasurePill(string label, float labelScale,
-        FontWeight labelWeight, float scale)
-    {
-        if (string.IsNullOrEmpty(label))
-        {
-            return (false, 0f, 0f);
-        }
-
-        var labelSize = Typography.Measure(label, labelScale, labelWeight);
-        var padX = 8f * scale;
-        var padY = 3f * scale;
-        return (true, labelSize.X + 2f * padX, labelSize.Y + 2f * padY);
-    }
-
-    private void DrawStatusPill(ImDrawListPtr drawList, float right, float top, MaintenanceStatus status, float scale)
-    {
-        var label = StatusLabel(status);
-        var color = StatusColor(status);
-        var size = MeasurePill(label, MetaScale, FontWeight.SemiBold, scale);
-        if (!size.hasPill)
-        {
-            return;
-        }
-
-        var pillMin = new Vector2(right - size.width, top);
-        var pillMax = new Vector2(right, top + size.height);
-        var pillRounding = size.height * 0.5f;
-        drawList.AddRectFilled(pillMin, pillMax, ImGui.GetColorU32(Palette.WithAlpha(color, 0.18f)), pillRounding);
-        var labelCenterY = (pillMin.Y + pillMax.Y) * 0.5f;
-        Typography.DrawCentered(drawList, new Vector2((pillMin.X + pillMax.X) * 0.5f, labelCenterY), label, color,
-            MetaScale, FontWeight.SemiBold);
-    }
-
-    private void DrawRefreshControl(Vector2 center, NewsState state, float scale)
-    {
-        if (state == NewsState.Loading)
-        {
-            DrawSpinner(center, 9f * scale, theme.TextMuted);
-            return;
-        }
-
-        var box = 14f * scale;
-        UiAnchors.Report("news.refresh", new Rect(center - new Vector2(box, box), center + new Vector2(box, box)));
-        var hovered = UiInteract.Hover(center - new Vector2(box, box), center + new Vector2(box, box));
-        var glyph = IconGlyph.Of(FontAwesomeIcon.Sync);
-        using (ImRaii.PushFont(UiBuilder.IconFont))
-        {
-            var size = ImGui.CalcTextSize(glyph);
-            ImGui.SetCursorScreenPos(center - size * 0.5f);
-            using (ImRaii.PushColor(ImGuiCol.Text, hovered ? theme.TextStrong : theme.TextMuted))
-            {
-                Typography.Plain(glyph);
-            }
-        }
-
-        if (!hovered)
-        {
-            return;
-        }
-
-        ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
-        {
-            forceRefresh = true;
-        }
-    }
-
-    private void DrawRegionRow(Vector2 leftCenter)
-    {
-        var label = RegionLabel(locale);
-        var size = Typography.Measure(label, 0.78f, FontWeight.Medium);
-        Typography.Draw(new Vector2(leftCenter.X, leftCenter.Y - size.Y * 0.5f), label, theme.TextMuted, 0.78f,
-            FontWeight.Medium);
-    }
-
-    private void InteractCard(Rect rect, float rounding, string url, ImDrawListPtr drawList)
-    {
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        if (hovered)
-        {
-            var pressed = ImGui.IsMouseDown(ImGuiMouseButton.Left);
-            var wash = pressed ? new Vector4(0f, 0f, 0f, 0.08f) : new Vector4(1f, 1f, 1f, 0.05f);
-            Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(wash));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (!string.IsNullOrEmpty(url) && UiInteract.Click(rect.Min, rect.Max, hovered))
-        {
-            UrlActions.OpenInBrowser(url);
-        }
-    }
-
-    private static void DrawSpinner(Vector2 center, float radius, Vector4 color) =>
-        ProgressRing.Sweep(center, radius, 2.4f * UiScale.Current, color, 900.0, 1.8f, 0.95f);
-
-    private static void DrawChevronRight(Vector2 tip, float size, float thickness, Vector4 color)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        var packed = ImGui.GetColorU32(color);
-        drawList.AddLine(new Vector2(tip.X - size, tip.Y - size), tip, packed, thickness);
-        drawList.AddLine(tip, new Vector2(tip.X - size, tip.Y + size), packed, thickness);
-    }
-
-    private float StepFade(string url, bool ready)
-    {
-        imageFade.TryGetValue(url, out var fade);
-        var target = ready ? 1f : 0f;
-        if (fade < target)
-        {
-            fade = Math.Min(target, fade + ImGui.GetIO().DeltaTime / ImageFadeSeconds);
-        }
-
-        imageFade[url] = fade;
-        return fade;
-    }
-
-    private void FillCategoryLabels()
+    private void ConsumePendingTab()
     {
         for (var index = 0; index < NewsCategories.All.Length; index++)
         {
-            categoryLabels[index] = CategoryLabel(NewsCategories.All[index]);
+            var category = NewsCategories.All[index];
+            if (!pendingTab.Take(NewsCategories.Path(category)))
+            {
+                continue;
+            }
+
+            router.Reset();
+            locale = gameData.LodestoneLocale();
+            activeCategory = NewsCategories.AvailableFor(category, locale) ? category : NewsCategory.Topics;
+            resetScroll = true;
         }
     }
 
-    private MediaResult Thumb(string url) => media.GetOrRequest(url, token => http.GetBytesAsync(new Uri(url), token));
-
-    private void WrapInto(List<string> output, string text, float maxWidth, float scale, FontWeight weight,
-        int maxLines)
+    private NewsFeed Feed(NewsCategory category)
     {
-        output.Clear();
-        if (maxWidth <= 0f || maxLines <= 0)
+        var feed = feeds[(int)category];
+        feed.Sync(news.Request(category, locale, false));
+        return feed;
+    }
+
+    private void Refresh()
+    {
+        feeds[(int)activeCategory].Sync(news.Request(activeCategory, locale, true));
+        if (activeCategory == NewsCategory.Topics)
+        {
+            feeds[(int)NewsCategory.Maintenance].Sync(news.Request(NewsCategory.Maintenance, locale, true));
+        }
+    }
+
+    private void SelectCategory(NewsCategory category)
+    {
+        if (category == activeCategory)
         {
             return;
         }
 
-        var words = Normalize(text).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (words.Length == 0)
+        UiFeedback.Play(UiSound.Tap);
+        activeCategory = category;
+        resetScroll = true;
+    }
+
+    private void OpenStory(NewsCategory category, NewsStory story)
+    {
+        UiFeedback.Play(UiSound.Tap);
+        router.Push(NewsView.Article(category, story.Id));
+    }
+
+    private void UpdateTourHold()
+    {
+        if (router.Depth == 1 && feeds[(int)NewsCategory.Maintenance].HasStories)
         {
+            TourHolds.Release(Id);
             return;
         }
 
-        using (Plugin.Fonts.Push(scale, weight))
-        {
-            var current = string.Empty;
-            for (var wordIndex = 0; wordIndex < words.Length; wordIndex++)
-            {
-                var word = words[wordIndex];
-                var candidate = current.Length == 0 ? word : string.Concat(current, " ", word);
-                if (current.Length == 0 || ImGui.CalcTextSize(candidate).X <= maxWidth)
-                {
-                    current = candidate;
-                    continue;
-                }
-
-                if (output.Count == maxLines - 1)
-                {
-                    output.Add(Ellipsize(current, maxWidth));
-                    return;
-                }
-
-                output.Add(current);
-                current = word;
-            }
-
-            if (current.Length > 0)
-            {
-                output.Add(current);
-            }
-        }
+        TourHolds.Hold(Id);
     }
 
-    private static string Ellipsize(string line, float maxWidth)
+    private IDalamudTextureWrap? Banner(string? url, float drawnPixels, out float reveal, out bool failed)
     {
-        var trimmed = line;
-        while (trimmed.Length > 1 && ImGui.CalcTextSize(string.Concat(trimmed, "…")).X > maxWidth)
+        reveal = 0f;
+        failed = false;
+        if (string.IsNullOrEmpty(url))
         {
-            trimmed = trimmed.Substring(0, trimmed.Length - 1).TrimEnd();
+            return null;
         }
 
-        return string.Concat(trimmed, "…");
+        var texture = images.Sized(url, drawnPixels);
+        imageReveal.TryGetValue(url, out var spring);
+        spring.Step(texture is null ? 0f : 1f, Motion.Appear, deltaSeconds);
+        imageReveal[url] = spring;
+        reveal = Math.Clamp(spring.Value, 0f, 1f);
+        failed = texture is null && images.Failed(url);
+        return texture;
     }
 
-    private static string Normalize(string text)
-    {
-        if (string.IsNullOrEmpty(text))
-        {
-            return string.Empty;
-        }
-
-        return text.Replace('\n', ' ').Replace('\r', ' ').Replace('\t', ' ');
-    }
-
-    private static string CategoryLabel(NewsCategory category) =>
-        category switch
-        {
-            NewsCategory.Notices => Loc.T(L.News.Notices),
-            NewsCategory.Maintenance => Loc.T(L.News.Maintenance),
-            NewsCategory.Updates => Loc.T(L.News.Updates),
-            _ => Loc.T(L.News.Topics),
-        };
-
-    private static string StatusLabel(MaintenanceStatus status) =>
-        status switch
-        {
-            MaintenanceStatus.Upcoming => Loc.T(L.News.Upcoming),
-            MaintenanceStatus.Active => Loc.T(L.News.Active),
-            _ => Loc.T(L.News.Ended),
-        };
-
-    private Vector4 StatusColor(MaintenanceStatus status) =>
-        status switch
-        {
-            MaintenanceStatus.Upcoming => StatusUpcoming,
-            MaintenanceStatus.Active => StatusActive,
-            _ => theme.TextMuted,
-        };
-
-    private static string RegionLabel(string locale) =>
-        locale switch
-        {
-            "jp" => Loc.T(L.News.RegionJapan),
-            "fr" => Loc.T(L.News.RegionFrance),
-            "de" => Loc.T(L.News.RegionGermany),
-            "eu" => Loc.T(L.News.RegionEurope),
-            "cn" => Loc.T(L.News.RegionChina),
-            _ => Loc.T(L.News.RegionNorthAmerica),
-        };
+    private string PageTitle(NewsCategory category) =>
+        category == NewsCategory.Topics ? DisplayName : Loc.T(NewsCategories.Label(category));
 
     public void Dispose()
     {

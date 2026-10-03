@@ -12,6 +12,9 @@ internal enum MaintenanceStatus : byte
 
 internal static class NewsFormat
 {
+    private const string ParagraphBreak = "\n\n";
+    private const string MetaSeparator = " · ";
+
     public static string Window(DateTimeOffset start, DateTimeOffset end)
     {
         var localStart = start.ToLocalTime();
@@ -23,29 +26,23 @@ internal static class NewsFormat
         return string.Concat(startText, " – ", endText);
     }
 
-    public static MaintenanceStatus Status(DateTimeOffset? start, DateTimeOffset? end)
+    public static string Window(in MaintenanceWindow window) =>
+        Window(DateTimeOffset.FromUnixTimeSeconds(window.StartUnix), DateTimeOffset.FromUnixTimeSeconds(window.EndUnix));
+
+    public static string LongDate(DateTimeOffset moment)
     {
-        if (start is not { } startTime || end is not { } endTime)
-        {
-            return MaintenanceStatus.None;
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        if (now < startTime.ToUniversalTime())
-        {
-            return MaintenanceStatus.Upcoming;
-        }
-
-        return now <= endTime.ToUniversalTime() ? MaintenanceStatus.Active : MaintenanceStatus.Done;
+        var local = moment.ToLocalTime();
+        return string.Concat(local.ToString("D", Loc.Culture), MetaSeparator, TimeText.Clock(local));
     }
 
-    public static string Clip(string value, int maxLength)
+    public static string[] Paragraphs(string? text)
     {
-        if (value.Length <= maxLength)
+        if (string.IsNullOrWhiteSpace(text))
         {
-            return value;
+            return Array.Empty<string>();
         }
 
-        return string.Concat(value.AsSpan(0, maxLength - 1), "…");
+        var normalized = text.Replace("\r\n", "\n", StringComparison.Ordinal).Trim();
+        return normalized.Split(ParagraphBreak, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     }
 }

@@ -48,13 +48,13 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.ShortcutsPluginRowTitle, L.Onboarding.ShortcutsPluginRowBody,
                     "shortcuts.plugin.row", GuideGesture.Tap),
             });
-        Add(tours, "news", 3,
+        Add(tours, "news", 4,
             new[]
             {
                 GuideStep.TryTap(L.Onboarding.NewsMaintenanceTitle, L.Onboarding.NewsMaintenanceBody,
                     "news.tab.maintenance"),
-                GuideStep.Point(L.Onboarding.NewsWindowTitle, L.Onboarding.NewsWindowBody, "news.row",
-                    GuideGesture.None),
+                GuideStep.Point(L.Onboarding.NewsWindowTitle, L.Onboarding.NewsWindowBody, "news.status",
+                    GuideGesture.Tap),
                 GuideStep.Point(L.Onboarding.NewsLatestTitle, L.Onboarding.NewsLatestBody, "news.refresh",
                     GuideGesture.Tap),
             });

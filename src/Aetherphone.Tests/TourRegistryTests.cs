@@ -20,7 +20,7 @@ public sealed class TourRegistryTests
         { "settings", (3, 5) },
         { "camera", (4, 6) },
         { "photos", (3, 5) },
-        { "news", (3, 3) },
+        { "news", (4, 3) },
         { "notes", (3, 6) },
         { "dailies", (4, 5) },
         { "velvet", (5, 8) },
