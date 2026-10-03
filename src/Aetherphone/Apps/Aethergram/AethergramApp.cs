@@ -71,8 +71,6 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
     private const int MaxCommentLength = 500;
     private const int NavTabCount = 3;
     private const int FilterToggleCount = 3;
-    private const float NavAvatarRadius = 13f;
-    private const float NavAvatarRingGap = 2.5f;
     private const float TopBarIconSize = 26f;
     private const float LogoSize = 30f;
     private const float LogoGap = 10f;
@@ -1588,14 +1586,13 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         }
 
         var scale = UiScale.Current;
-        var radius = NavAvatarRadius * scale * pose.Scale;
-        DrawAvatar(pose.IconCenter, radius, me.Name, me.World, me.AvatarUrl, 0.85f, 28, Frames.Of(me.FrameId));
+        DrawAvatar(pose.IconCenter, pose.AvatarRadius(scale), me.Name, me.World, me.AvatarUrl, 0.85f, 28, Frames.Of(me.FrameId));
         if (!active)
         {
             return;
         }
 
-        drawList.AddCircle(pose.IconCenter, radius + NavAvatarRingGap * scale, ImGui.GetColorU32(ui.Accent), 32,
+        drawList.AddCircle(pose.IconCenter, pose.AvatarRingRadius(scale), ImGui.GetColorU32(ui.Accent), 32,
             1.6f * scale);
     }
 
