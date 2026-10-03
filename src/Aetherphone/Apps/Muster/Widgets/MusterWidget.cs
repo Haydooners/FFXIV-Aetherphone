@@ -68,8 +68,7 @@ internal sealed class MusterWidget : IHomeWidget
     private MusterDto[]? seenGoing;
     private MusterDto? seenMine;
     private long sampleAnchor;
-    private CachedText heroText;
-    private CachedText captionText;
+    private readonly WidgetStates<SmallTexts> smallTexts = new();
 
     public MusterWidget(MusterStore store)
     {
@@ -171,6 +170,7 @@ internal sealed class MusterWidget : IHomeWidget
         top += WidgetMetrics.Gutter * scale;
         var started = nowUnix >= row.StartsAt;
         var heroStyle = WidgetType.DisplayCompact;
+        var texts = smallTexts.For(context);
         if (started)
         {
             var live = Loc.T(L.Island.Live);
@@ -180,12 +180,12 @@ internal sealed class MusterWidget : IHomeWidget
         }
         else
         {
-            var hero = WidgetText.Countdown(ref heroText, TimeSpan.FromSeconds(row.StartsAt - nowUnix));
+            var hero = WidgetText.Countdown(ref texts.Hero, TimeSpan.FromSeconds(row.StartsAt - nowUnix));
             WidgetText.Tabular(drawList, new Vector2(content.Min.X, top), hero, ink.Primary, heroStyle);
             top += Typography.Measure(hero, heroStyle).Y;
         }
 
-        var caption = Caption(ref captionText, row, started);
+        var caption = Caption(ref texts.Caption, row, started);
         WidgetText.Draw(drawList, new Vector2(content.Min.X, top), caption, ink.Secondary,
             WidgetType.Caption, content.Width);
 
@@ -469,5 +469,11 @@ internal sealed class MusterWidget : IHomeWidget
 
         public int Compare(MusterDto? left, MusterDto? right) =>
             (left?.StartsAtUnix ?? 0).CompareTo(right?.StartsAtUnix ?? 0);
+    }
+
+    private sealed class SmallTexts
+    {
+        public CachedText Hero;
+        public CachedText Caption;
     }
 }

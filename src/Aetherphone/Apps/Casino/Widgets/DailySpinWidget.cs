@@ -25,6 +25,7 @@ internal sealed class DailySpinWidget : IHomeWidget
     private readonly AethernetSession session;
     private WidgetRefresh fresh;
     private CachedText countdownText;
+    private CachedText sampleCountdownText;
     private CachedText awardText;
     private long expiredRefreshFor;
 
@@ -62,7 +63,8 @@ internal sealed class DailySpinWidget : IHomeWidget
         if (context.Preview && (!signedIn || claim == DailySpinClaim.Unknown))
         {
             var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            DrawClaimed(context, ink, body, accent, nowUnix + SampleRemaining, nowUnix, SampleAward);
+            DrawClaimed(context, ink, body, accent, nowUnix + SampleRemaining, nowUnix, SampleAward,
+                ref sampleCountdownText);
             return;
         }
 
@@ -82,7 +84,7 @@ internal sealed class DailySpinWidget : IHomeWidget
                 var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 RefreshWhenExpired(answer!.NextSpinAtUnix, nowUnix);
                 DrawClaimed(context, ink, body, accent, answer.NextSpinAtUnix, nowUnix,
-                    DailySpinStatus.AwardOf(answer));
+                    DailySpinStatus.AwardOf(answer), ref countdownText);
                 return;
             case DailySpinClaim.Denied:
                 WidgetChrome.Message(context, ink, body, FontAwesomeIcon.Gift, accent,
@@ -118,7 +120,7 @@ internal sealed class DailySpinWidget : IHomeWidget
     }
 
     private void DrawClaimed(in WidgetContext context, in WidgetInk ink, Rect body, Vector4 accent, long nextAtUnix,
-        long nowUnix, long award)
+        long nowUnix, long award, ref CachedText countdown)
     {
         var drawList = context.DrawList;
         var scale = context.Scale;
@@ -127,7 +129,7 @@ internal sealed class DailySpinWidget : IHomeWidget
         WidgetText.Tracked(drawList, body.Min, caption, ink.Secondary, WidgetType.Eyebrow,
             WidgetType.EyebrowTracking * scale);
         var heroTop = body.Min.Y + WidgetText.EyebrowHeight() + WidgetMetrics.RowGap * scale;
-        var hero = WidgetText.Countdown(ref countdownText, TimeSpan.FromSeconds(remaining));
+        var hero = WidgetText.Countdown(ref countdown, TimeSpan.FromSeconds(remaining));
         WidgetText.Tabular(drawList, new Vector2(body.Min.X, heroTop), hero, ink.Primary, WidgetType.DisplayCompact);
 
         var bar = BarUnits * scale;
