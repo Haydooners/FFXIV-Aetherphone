@@ -141,6 +141,13 @@ internal static class RadioRoomWire
     {
         return displayName.Length > 0 ? displayName : handle;
     }
+
+    public static RadioChatEntry BuildEntry(long messageId, string userId, string displayName, string handle,
+        string? avatarUrl, string text, long sentAtUnixMs, string timeLabel, bool isDj, string? me)
+    {
+        return new RadioChatEntry(messageId, userId, PublicNameOf(displayName, handle), handle, HandleLabelOf(handle),
+            avatarUrl, text, sentAtUnixMs, timeLabel, isDj, string.Equals(userId, me, StringComparison.Ordinal));
+    }
 }
 
 internal static class RadioRoomReport
