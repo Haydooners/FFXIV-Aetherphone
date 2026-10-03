@@ -2200,6 +2200,44 @@ internal static class L
                 "Fixed Maps showing Unknown inside shared housing and other places without a zone name"),
         };
 
+        public static readonly LocString[] Release1042Wallet =
+        {
+            new("changelog.r1042.87",
+                "Overhauled Wallet: a gil card with today's and this week's change, a weekly tomestone ring, rings around each currency that fill toward its cap, and a Near Cap card when something is about to max out"),
+            new("changelog.r1042.88",
+                "Added a history of every gain and spend for each character, with where it happened and a 30 day balance chart for each currency"),
+            new("changelog.r1042.89",
+                "Grand Company seals now use the real cap for your rank"),
+        };
+
+        public static readonly LocString[] Release1042Dailies =
+        {
+            new("changelog.r1042.90",
+                "Overhauled Dailies into a checklist with Daily and Weekly tiles that show what is left and when each list resets"),
+            new("changelog.r1042.91",
+                "Added your own daily and weekly tasks, Edit List to hide the ones you never do, and an optional reminder before reset while something is still open"),
+            new("changelog.r1042.92",
+                "Ticked tasks are now kept for each character"),
+        };
+
+        public static readonly LocString[] Release1042Activity =
+        {
+            new("changelog.r1042.93",
+                "Overhauled Activity around three daily rings for experience, duties and gil, with a week strip, streaks, weekly trends and awards for your best days"),
+            new("changelog.r1042.94",
+                "Added a day view with a card and a 7 day chart for each ring, and a Goals page with large plus and minus buttons"),
+        };
+
+        public static readonly LocString[] Release1042Notifications =
+        {
+            new("changelog.r1042.95",
+                "Overhauled Notifications with Today, Yesterday and Earlier sections, a filter for each app and a new empty screen"),
+            new("changelog.r1042.96",
+                "Added muting an app for an hour or for the rest of the day, and a Do Not Disturb button right in the list"),
+            new("changelog.r1042.97",
+                "Clear All now asks before it clears"),
+        };
+
         public static readonly LocString[] Release1042Games =
         {
             new("changelog.r1042.68",
@@ -5465,9 +5503,7 @@ internal static class L
 
     internal static class Character
     {
-        public static readonly LocString LogInToView = new("character.logInToView", "Log in to view your character");
         public static readonly LocString Activity = new("character.activity", "Activity");
-        public static readonly LocString Today = new("character.today", "Today");
         public static readonly LocString ThisSession = new("character.thisSession", "This session");
         public static readonly LocString RingProgress = new("character.ringProgress", "Progress");
         public static readonly LocString RingAdventure = new("character.ringAdventure", "Adventure");
@@ -5477,7 +5513,6 @@ internal static class L
         public static readonly LocString GilEarned = new("character.gilEarned", "Gil earned");
         public static readonly LocString TimePlayed = new("character.timePlayed", "Time played");
         public static readonly LocString NewCollectibles = new("character.newCollectibles", "New collectibles");
-        public static readonly LocString LevelsGained = new("character.levelsGained", "{0} levels gained");
         public static readonly LocString PercentOfGoal = new("character.percentOfGoal", "{0}% of goal");
         public static readonly LocString Mounts = new("character.mounts", "Mounts");
         public static readonly LocString Minions = new("character.minions", "Minions");
@@ -5490,17 +5525,50 @@ internal static class L
         public static readonly LocString GoalsHint = new("character.goalsHint", "Rings close when you reach these goals. Progress resets at midnight.");
         public static readonly LocString DurationHoursMinutes = new("character.durationHoursMinutes", "{0}h {1}m");
         public static readonly LocString DurationMinutes = new("character.durationMinutes", "{0}m");
-        public static readonly LocString History = new("character.history", "History");
-        public static readonly LocString ThisWeek = new("character.thisWeek", "This week");
         public static readonly LocString Streaks = new("character.streaks", "Streaks");
         public static readonly LocString CurrentStreak = new("character.currentStreak", "Current streak");
         public static readonly LocString BestStreak = new("character.bestStreak", "Best streak");
         public static readonly LocPlural StreakDays = new("character.streakDays", "{0} day", "{0} days");
         public static readonly LocString StreaksHint = new("character.streaksHint", "A day counts toward your streak when all three rings close.");
-        public static readonly LocString PersonalBests = new("character.personalBests", "Personal bests");
         public static readonly LocString RingClosedBody = new("character.ringClosedBody", "You reached today's goal.");
         public static readonly LocString AllRingsTitle = new("character.allRingsTitle", "All rings closed");
         public static readonly LocString AllRingsBody = new("character.allRingsBody", "You hit all three goals today. Perfect day!");
+        public static readonly LocString SignedOutTitle = new("character.signedOutTitle", "Log in to start your rings");
+        public static readonly LocString SignedOutBody = new("character.signedOutBody", "Activity follows the character you are playing. Your rings, streaks and awards appear once you are logged in.");
+        public static readonly LocString UnitLevels = new("character.unitLevels", "Lv");
+        public static readonly LocString UnitDuties = new("character.unitDuties", "duties");
+        public static readonly LocString UnitGil = new("character.unitGil", "gil");
+        public static readonly LocString ExperienceDetail = new("character.experienceDetail", "{0} experience");
+        public static readonly LocPlural LevelUps = new("character.levelUps", "{0} level gained", "{0} levels gained");
+        public static readonly LocString GilDetail = new("character.gilDetail", "{0} gil");
+        public static readonly LocString SinceTime = new("character.sinceTime", "Since {0}");
+        public static readonly LocString TodayPercent = new("character.todayPercent", "Today {0}%");
+        public static readonly LocString ChangeGoals = new("character.changeGoals", "Change goals");
+        public static readonly LocString Trends = new("character.trends", "Trends");
+        public static readonly LocString TrendsHint = new("character.trendsHint", "Daily averages over the last 7 days, compared with the 7 days before.");
+        public static readonly LocString TrendsEmptyTitle = new("character.trendsEmptyTitle", "Trends are on the way");
+        public static readonly LocString TrendsEmptyBody = new("character.trendsEmptyBody", "After two weeks of play, arrows show whether each ring is going up or down.");
+        public static readonly LocString DayEmptyTitle = new("character.dayEmptyTitle", "Nothing recorded");
+        public static readonly LocString DayEmptyBody = new("character.dayEmptyBody", "Activity only counts the days you were logged in on this character.");
+        public static readonly LocString Awards = new("character.awards", "Awards");
+        public static readonly LocString AwardNotYet = new("character.awardNotYet", "Not yet");
+        public static readonly LocPlural Times = new("character.times", "{0} time", "{0} times");
+        public static readonly LocString AwardPerfectDay = new("character.awardPerfectDay", "Perfect Day");
+        public static readonly LocString AwardPerfectDayHint = new("character.awardPerfectDayHint", "Close all three rings in one day.");
+        public static readonly LocString AwardPerfectWeek = new("character.awardPerfectWeek", "Perfect Week");
+        public static readonly LocString AwardPerfectWeekHint = new("character.awardPerfectWeekHint", "Close all three rings 7 days in a row.");
+        public static readonly LocString AwardPerfectMonth = new("character.awardPerfectMonth", "Perfect Month");
+        public static readonly LocString AwardPerfectMonthHint = new("character.awardPerfectMonthHint", "Close all three rings 30 days in a row.");
+        public static readonly LocString AwardExperience = new("character.awardExperience", "Experience Record");
+        public static readonly LocString AwardExperienceHint = new("character.awardExperienceHint", "Your most experience earned in a single day.");
+        public static readonly LocString AwardDuties = new("character.awardDuties", "Duty Record");
+        public static readonly LocString AwardDutiesHint = new("character.awardDutiesHint", "Your most duties cleared in a single day.");
+        public static readonly LocString AwardFortune = new("character.awardFortune", "Fortune Record");
+        public static readonly LocString AwardFortuneHint = new("character.awardFortuneHint", "Your most gil earned in a single day.");
+        public static readonly LocString AwardLongestDay = new("character.awardLongestDay", "Longest Day");
+        public static readonly LocString AwardLongestDayHint = new("character.awardLongestDayHint", "Your most time played in a single day.");
+        public static readonly LocString AwardLevels = new("character.awardLevels", "Level Record");
+        public static readonly LocString AwardLevelsHint = new("character.awardLevelsHint", "Your most levels gained in a single day.");
     }
 
     internal static class Camera
@@ -6571,6 +6639,33 @@ internal static class L
             "{0} notification waiting", "{0} notifications waiting");
 
         public static readonly LocString Oldest = new("notifications.oldest", "Oldest {0}");
+        public static readonly LocString Earlier = new("notifications.earlier", "Earlier");
+        public static readonly LocString AllApps = new("notifications.allApps", "All");
+        public static readonly LocString CaughtUpTitle = new("notifications.caughtUpTitle", "You're All Caught Up");
+        public static readonly LocString CaughtUpHint = new("notifications.caughtUpHint",
+            "Messages, likes, timers and reminders collect here as they arrive.");
+        public static readonly LocString DoNotDisturbHint = new("notifications.doNotDisturbHint",
+            "Banners and sounds are paused. Notifications still collect here.");
+        public static readonly LocString BusyHint = new("notifications.busyHint",
+            "Banners and sounds wait until you are out of combat, duties and cutscenes.");
+        public static readonly LocString TurnOff = new("notifications.turnOff", "Turn Off");
+        public static readonly LocString TurnOnFocus = new("notifications.turnOnFocus", "Turn on Do Not Disturb");
+        public static readonly LocString TurnOffFocus = new("notifications.turnOffFocus", "Turn off Do Not Disturb");
+        public static readonly LocString ClearTooltip = new("notifications.clearTooltip", "Clear notifications");
+        public static readonly LocString ClearAllTitle = new("notifications.clearAllTitle", "Clear All Notifications?");
+        public static readonly LocString ClearAppTitle = new("notifications.clearAppTitle", "Clear {0} Notifications?");
+
+        public static readonly LocPlural ClearBody = new("notifications.clearBody",
+            "This removes {0} notification from the list.", "This removes {0} notifications from the list.");
+
+        public static readonly LocPlural Count = new("notifications.count", "{0} notification", "{0} notifications");
+
+        public static readonly LocString MuteHour = new("notifications.muteHour", "Mute 1 Hour");
+        public static readonly LocString MuteToday = new("notifications.muteToday", "Mute Today");
+        public static readonly LocString Unmute = new("notifications.unmute", "Unmute");
+        public static readonly LocString MutedUntil = new("notifications.mutedUntil", "Muted until {0}");
+        public static readonly LocString AppSettings = new("notifications.appSettings", "Settings");
+        public static readonly LocString Settings = new("notifications.settings", "Notification Settings");
     }
 
     internal static class Timers
@@ -6706,10 +6801,7 @@ internal static class L
         public static readonly LocString Daily = new("dailies.daily", "Daily");
         public static readonly LocString Weekly = new("dailies.weekly", "Weekly");
         public static readonly LocString AllDone = new("dailies.allDone", "All done");
-        public static readonly LocString NothingLeft = new("dailies.nothingLeft", "Nothing left to do");
-        public static readonly LocString Remaining = new("dailies.remaining", "{0} remaining");
         public static readonly LocString Resets = new("dailies.resets", "Resets {0}");
-        public static readonly LocString AutoTracked = new("dailies.autoTracked", "Auto");
         public static readonly LocString DutyRoulettes = new("dailies.dutyRoulettes", "Duty Roulettes");
         public static readonly LocString BeastTribe = new("dailies.beastTribe", "Tribal Quests");
         public static readonly LocString MiniCactpot = new("dailies.miniCactpot", "Mini Cactpot");
@@ -6728,7 +6820,24 @@ internal static class L
         public static readonly LocString VotingOpenCloses = new("dailies.votingOpenCloses", "Open · closes {0}");
         public static readonly LocString VotingOpensIn = new("dailies.votingOpensIn", "Opens {0}");
         public static readonly LocString NextDrawing = new("dailies.nextDrawing", "Next drawing {0}");
-        public static readonly LocString SealBalance = new("dailies.sealBalance", "{0} seals");
+        public static readonly LocString NewTask = new("dailies.newTask", "New Task");
+        public static readonly LocString More = new("dailies.more", "More");
+        public static readonly LocString EditList = new("dailies.editList", "Edit List");
+        public static readonly LocString Done = new("dailies.done", "Done");
+        public static readonly LocString RemindDaily = new("dailies.remindDaily", "Remind Before Daily Reset");
+        public static readonly LocString RemindWeekly = new("dailies.remindWeekly", "Remind Before Weekly Reset");
+        public static readonly LocString ReminderDaily = new("dailies.reminderDaily", "Daily reset {0}");
+        public static readonly LocString ReminderWeekly = new("dailies.reminderWeekly", "Weekly reset {0}");
+        public static readonly LocString NotUnlocked = new("dailies.notUnlocked", "Not unlocked on this character");
+        public static readonly LocString LevequestsCapped = new("dailies.levequestsCapped", "At the cap, new allowances are lost");
+        public static readonly LocString Hide = new("dailies.hide", "Hide");
+        public static readonly LocString Show = new("dailies.show", "Show");
+        public static readonly LocString Delete = new("dailies.delete", "Delete");
+        public static readonly LocString EmptyTitle = new("dailies.emptyTitle", "Nothing on this list");
+        public static readonly LocString EmptyBody = new("dailies.emptyBody", "Tap + to add a task, or bring hidden items back with Edit List.");
+        public static readonly LocString SignedOutTitle = new("dailies.signedOutTitle", "Log in to a character");
+        public static readonly LocString SignedOutBody = new("dailies.signedOutBody", "Dailies reads your progress from the game and keeps a separate list for each character.");
+        public static readonly LocPlural OpenTasks = new("dailies.openTasks", "{0} task still open", "{0} tasks still open");
     }
 
     internal static class Island
@@ -7019,15 +7128,35 @@ internal static class L
 
     internal static class Wallet
     {
-        public static readonly LocString LogInToView = new("wallet.logInToView", "Log in to view your wallet");
-        public static readonly LocString GilBalance = new("wallet.gilBalance", "GIL BALANCE");
-        public static readonly LocString SectionCurrency = new("wallet.sectionCurrency", "Currency");
-        public static readonly LocString SectionHunt = new("wallet.sectionHunt", "Hunt");
+        public static readonly LocString SignedOutTitle = new("wallet.signedOutTitle", "Your wallet is waiting");
+        public static readonly LocString SignedOutBody = new("wallet.signedOutBody", "Log in to a character to see your gil, tomestones, scrips and seals.");
         public static readonly LocString SectionTomestones = new("wallet.sectionTomestones", "Tomestones");
-        public static readonly LocString SectionPvp = new("wallet.sectionPvp", "PvP");
         public static readonly LocString SectionCrafting = new("wallet.sectionCrafting", "Crafting & Gathering");
+        public static readonly LocString SectionHunt = new("wallet.sectionHunt", "Hunt");
+        public static readonly LocString SectionGrandCompany = new("wallet.sectionGrandCompany", "Grand Company");
+        public static readonly LocString SectionPvp = new("wallet.sectionPvp", "PvP");
         public static readonly LocString SectionOther = new("wallet.sectionOther", "Other");
         public static readonly LocString WeeklyCap = new("wallet.weeklyCap", "This week: {0} / {1}");
+        public static readonly LocString Today = new("wallet.today", "Today {0}");
+        public static readonly LocString ThisWeek = new("wallet.thisWeek", "This week {0}");
+        public static readonly LocString NoChangeThisWeek = new("wallet.noChangeThisWeek", "No change this week");
+        public static readonly LocString WeeklyLimit = new("wallet.weeklyLimit", "Weekly limit");
+        public static readonly LocString WeeklyLeft = new("wallet.weeklyLeft", "{0} left, resets {1}");
+        public static readonly LocString WeeklyDone = new("wallet.weeklyDone", "Limit reached, resets {0}");
+        public static readonly LocString NearCapTitle = new("wallet.nearCapTitle", "Near cap");
+        public static readonly LocString NearCapHint = new("wallet.nearCapHint", "Spend these soon: anything earned past the cap is lost.");
+        public static readonly LocString Full = new("wallet.full", "Full");
+        public static readonly LocString OfCap = new("wallet.ofCap", "of {0}");
+        public static readonly LocString LeftToCap = new("wallet.leftToCap", "{0} left");
+        public static readonly LocString UntilFull = new("wallet.untilFull", "{0} until full");
+        public static readonly LocString RecentTitle = new("wallet.recentTitle", "Latest activity");
+        public static readonly LocString SeeAll = new("wallet.seeAll", "See all");
+        public static readonly LocString RecentEmptyTitle = new("wallet.recentEmptyTitle", "No activity yet");
+        public static readonly LocString RecentEmptyBody = new("wallet.recentEmptyBody", "Every change to your currencies lands here as you earn and spend.");
+        public static readonly LocString ActivityTitle = new("wallet.activityTitle", "Activity");
+        public static readonly LocString ChartLastMonth = new("wallet.chartLastMonth", "Last 30 days");
+        public static readonly LocString ChartSince = new("wallet.chartSince", "Since {0}");
+        public static readonly LocString ChartEmpty = new("wallet.chartEmpty", "The balance chart fills in as you play on more days.");
     }
 
     internal static class Jobs
@@ -8552,6 +8681,8 @@ internal static class L
         public static readonly LocString NotificationsAlertsBody = new("onboarding.notificationsAlertsBody", "Alerts from all your apps stack up here. Tap a stack to fan it out, tap an alert to open it, or swipe left to dismiss it.");
         public static readonly LocString NotificationsAnywhereTitle = new("onboarding.notificationsAnywhereTitle", "From any app");
         public static readonly LocString NotificationsAnywhereBody = new("onboarding.notificationsAnywhereBody", "Swipe down from the top of the screen, or tap it, to open Control Center. Your notifications are there too.");
+        public static readonly LocString NotificationsFocusTitle = new("onboarding.notificationsFocusTitle", "Quiet time");
+        public static readonly LocString NotificationsFocusBody = new("onboarding.notificationsFocusBody", "The moon turns on Do Not Disturb. Banners and sounds pause, and every notification still collects here.");
         public static readonly LocString SkywatcherHoursBody = new("onboarding.skywatcherHoursBody", "Each upcoming weather window, with the real minutes until it starts.");
         public static readonly LocString SkywatcherControlTitle = new("onboarding.skywatcherControlTitle", "Set your own sky");
         public static readonly LocString SkywatcherControlBody = new("onboarding.skywatcherControlBody", "Tap Control to choose the time and weather you see.");
@@ -8670,10 +8801,10 @@ internal static class L
         public static readonly LocString NotesNudgeBody = new("onboarding.notesNudgeBody", "Turn this on to pick a day and time. The phone sends you a notification when it is due.");
         public static readonly LocString ActivityRingsTitle = new("onboarding.activityRingsTitle", "Today's rings");
         public static readonly LocString ActivityRingsBody = new("onboarding.activityRingsBody", "Progress fills as you gain experience, Adventure as you clear duties and Fortune as you earn gil. Close all three.");
-        public static readonly LocString ActivityHistoryTitle = new("onboarding.activityHistoryTitle", "Look back");
-        public static readonly LocString ActivityHistoryBody = new("onboarding.activityHistoryBody", "Tap History to see how your past days went.");
         public static readonly LocString ActivityWeekTitle = new("onboarding.activityWeekTitle", "Your week");
-        public static readonly LocString ActivityWeekBody = new("onboarding.activityWeekBody", "Each day keeps its own small rings, so you can spot the days you closed all three.");
+        public static readonly LocString ActivityWeekBody = new("onboarding.activityWeekBody", "Each day keeps its own small rings. Tap a day to see it in detail.");
+        public static readonly LocString ActivityGoalsTitle = new("onboarding.activityGoalsTitle", "Set your goals");
+        public static readonly LocString ActivityGoalsBody = new("onboarding.activityGoalsBody", "Tap here to change how much each ring asks of you every day.");
         public static readonly LocString CollectionsOpenTitle = new("onboarding.collectionsOpenTitle", "Open a collection");
         public static readonly LocString CollectionsOpenBody = new("onboarding.collectionsOpenBody", "Each tile is one collection. Tap Mounts to browse the full list.");
         public static readonly LocString CollectionsShowMissingTitle = new("onboarding.collectionsShowMissingTitle", "Show what's missing");
@@ -8700,6 +8831,8 @@ internal static class L
         public static readonly LocString DailiesTickBody = new("onboarding.dailiesTickBody", "The game does not report these, so tap one once it is done. Tap it again to undo.");
         public static readonly LocString DailiesWeeklyTitle = new("onboarding.dailiesWeeklyTitle", "Weekly routines");
         public static readonly LocString DailiesWeeklyBody = new("onboarding.dailiesWeeklyBody", "Tap Weekly for everything that resets once a week.");
+        public static readonly LocString DailiesAddTitle = new("onboarding.dailiesAddTitle", "Your own tasks");
+        public static readonly LocString DailiesAddBody = new("onboarding.dailiesAddBody", "Tap + to add anything you do every day or week. Ticks are kept separately for each character.");
         public static readonly LocString HousingWhereTitle = new("onboarding.housingWhereTitle", "Choose where");
         public static readonly LocString HousingWhereBody = new("onboarding.housingWhereBody", "Pick the world, district and ward whose plots you want to see.");
         public static readonly LocString HousingNarrowTitle = new("onboarding.housingNarrowTitle", "Narrow it down");
@@ -8709,9 +8842,11 @@ internal static class L
         public static readonly LocString HousingTrackTitle = new("onboarding.housingTrackTitle", "Keep track");
         public static readonly LocString HousingTrackBody = new("onboarding.housingTrackBody", "Watch adds the plot to your watchlist. Remind Me notifies you before its phase ends.");
         public static readonly LocString WalletBalanceTitle = new("onboarding.walletBalanceTitle", "Your gil");
-        public static readonly LocString WalletBalanceBody = new("onboarding.walletBalanceBody", "Your balance, updated as you earn and spend while the app is open.");
+        public static readonly LocString WalletCardBody = new("onboarding.walletCardBody", "Your gil, with what changed today and this week. Tap the card to see its history.");
         public static readonly LocString WalletCapTitle = new("onboarding.walletCapTitle", "Know your caps");
-        public static readonly LocString WalletCapBody = new("onboarding.walletCapBody", "The bar fills toward the cap and turns gold once you reach it, so you know when to spend.");
+        public static readonly LocString WalletCapRingBody = new("onboarding.walletCapRingBody", "Each ring fills toward the cap and turns gold as you get close, so you know when to spend.");
+        public static readonly LocString WalletActivityTitle = new("onboarding.walletActivityTitle", "Every change, kept");
+        public static readonly LocString WalletActivityBody = new("onboarding.walletActivityBody", "Gains and spends land here with the place they happened, so you can see where your currency went.");
         public static readonly LocString ChirperFeedsTitle = new("onboarding.chirperFeedsTitle", "Pick your feed");
         public static readonly LocString ChirperFeedsBody = new("onboarding.chirperFeedsBody", "For You shows chirps you have not seen yet, ranked for you. Latest puts the newest first. Tap one to switch.");
         public static readonly LocString ChirperJoinTitle = new("onboarding.chirperJoinTitle", "Join the conversation");

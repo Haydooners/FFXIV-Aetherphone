@@ -6,4 +6,5 @@ internal sealed class AppNotificationSetting
     public string? Sound { get; set; }
     public bool ShowNotificationBanner { get; set; } = true;
     public bool PlaySound { get; set; } = true;
+    public long MutedUntilUnix { get; set; }
 }

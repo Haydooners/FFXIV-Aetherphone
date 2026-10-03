@@ -6,15 +6,14 @@ internal static partial class TourRegistry
 {
     private static void AddCharacterTours(Dictionary<string, GuideSequence> tours)
     {
-        Add(tours, "character", 3,
+        Add(tours, "character", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.ActivityRingsTitle, L.Onboarding.ActivityRingsBody, "character.rings",
                     GuideGesture.None),
-                GuideStep.TryUntil(L.Onboarding.ActivityHistoryTitle, L.Onboarding.ActivityHistoryBody,
-                    "character.tab.history", GuideGesture.Tap, "character.week"),
                 GuideStep.Point(L.Onboarding.ActivityWeekTitle, L.Onboarding.ActivityWeekBody, "character.week",
                     GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.ActivityGoalsTitle, L.Onboarding.ActivityGoalsBody, "character.goals"),
             });
         Add(tours, "collections", 3,
             new[]
@@ -46,7 +45,7 @@ internal static partial class TourRegistry
                 GuideStep.TryUntil(L.Onboarding.JobsGroupsTitle, L.Onboarding.JobsGroupsBody, "jobs.categories",
                     GuideGesture.Tap, "jobs.categories.menu"),
             });
-        Add(tours, "dailies", 3,
+        Add(tours, "dailies", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.DailiesProgressTitle, L.Onboarding.DailiesProgressBody, "dailies.hero",
@@ -56,6 +55,8 @@ internal static partial class TourRegistry
                 GuideStep.TryTap(L.Onboarding.DailiesTickTitle, L.Onboarding.DailiesTickBody, "dailies.manual"),
                 GuideStep.TryTap(L.Onboarding.DailiesWeeklyTitle, L.Onboarding.DailiesWeeklyBody,
                     "dailies.tab.weekly"),
+                GuideStep.Point(L.Onboarding.DailiesAddTitle, L.Onboarding.DailiesAddBody, "dailies.add",
+                    GuideGesture.Tap),
             });
         Add(tours, "housing", 2,
             new[]
@@ -69,12 +70,14 @@ internal static partial class TourRegistry
                 GuideStep.Span(L.Onboarding.HousingTrackTitle, L.Onboarding.HousingTrackBody, "housing.sheet.watch",
                     "housing.sheet.remind"),
             });
-        Add(tours, "wallet", 3,
+        Add(tours, "wallet", 4,
             new[]
             {
-                GuideStep.Point(L.Onboarding.WalletBalanceTitle, L.Onboarding.WalletBalanceBody, "wallet.gil",
+                GuideStep.Point(L.Onboarding.WalletBalanceTitle, L.Onboarding.WalletCardBody, "wallet.gil",
                     GuideGesture.None),
-                GuideStep.Point(L.Onboarding.WalletCapTitle, L.Onboarding.WalletCapBody, "wallet.capped",
+                GuideStep.Point(L.Onboarding.WalletCapTitle, L.Onboarding.WalletCapRingBody, "wallet.capped",
+                    GuideGesture.None),
+                GuideStep.Point(L.Onboarding.WalletActivityTitle, L.Onboarding.WalletActivityBody, "wallet.recent",
                     GuideGesture.None),
             });
     }
