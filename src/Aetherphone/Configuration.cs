@@ -173,6 +173,10 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public Dictionary<string, bool> BadgeSettings { get; set; } = new();
     public bool BadgeSettingsMigrated { get; set; }
     public List<DailyCheckRecord> DailyChecks { get; set; } = new();
+    public List<DailyCustomTask> DailyCustomTasks { get; set; } = new();
+    public List<string> DailyHiddenItems { get; set; } = new();
+    public bool NotifyDailiesBeforeDailyReset { get; set; }
+    public bool NotifyDailiesBeforeWeeklyReset { get; set; }
     public float ActivityGoalLevels { get; set; } = 1f;
     public int ActivityGoalDuties { get; set; } = 3;
     public long ActivityGoalGil { get; set; } = 50000;

@@ -13,7 +13,6 @@ namespace Aetherphone.Apps.Dailies.Widgets;
 
 internal sealed class DailiesWidget : IHomeWidget
 {
-    private const int RefreshMilliseconds = 2000;
     private const string CadenceKey = "cadence";
     private const string DailyValue = "daily";
     private const string WeeklyValue = "weekly";
@@ -38,24 +37,18 @@ internal sealed class DailiesWidget : IHomeWidget
             DailyValue),
     };
 
-    private readonly GameData gameData;
-    private readonly DailyCheckStore checkStore;
-    private readonly DailyAutoStatus[] statuses = new DailyAutoStatus[DailyCatalog.Items.Length];
-    private readonly bool[] done = new bool[DailyCatalog.Items.Length];
-    private readonly int[] order = new int[DailyCatalog.Items.Length];
+    private readonly DailiesTracker tracker;
+    private readonly int[] order = new int[DailyCatalog.Items.Length + DailyLedger.MaxCustomTasks];
     private readonly CachedText[] valueTexts = new CachedText[DailyCatalog.Items.Length];
     private readonly CachedText[] resetTexts = new CachedText[2];
     private readonly CachedText[] countTexts = new CachedText[2];
     private readonly CachedText[] heroTexts = new CachedText[2];
     private readonly CachedText[] tallyTexts = new CachedText[2];
     private readonly WidgetStates<RingState> rings = new();
-    private WidgetRefresh refresh;
-    private bool hasData;
 
-    public DailiesWidget(Configuration configuration, GameData gameData)
+    public DailiesWidget(DailiesTracker tracker)
     {
-        this.gameData = gameData;
-        checkStore = new DailyCheckStore(configuration);
+        this.tracker = tracker;
     }
 
     public string Id => "dailies.checklist";
@@ -77,26 +70,20 @@ internal sealed class DailiesWidget : IHomeWidget
             return 0f;
         }
 
-        if (refresh.Due(RefreshMilliseconds))
-        {
-            Refresh(DateTime.UtcNow);
-        }
-
-        if (!hasData)
+        if (!tracker.HasData)
         {
             return 0f;
         }
 
         var cadence = CadenceOf(config);
         var utcNow = DateTime.UtcNow;
-        CountProgress(cadence, false, out var trackedCount, out var doneCount);
-        if (doneCount >= trackedCount)
+        if (tracker.Remaining(cadence) <= 0)
         {
             return 0f;
         }
 
         var window = cadence == DailyCadence.Weekly ? RelevanceWeeklyHours : RelevanceDailyHours;
-        var hoursLeft = (float)(NextReset(cadence, utcNow) - utcNow).TotalHours;
+        var hoursLeft = (float)(DailyLedger.NextReset(cadence, utcNow) - utcNow).TotalHours;
         if (hoursLeft > window)
         {
             return 0.15f;
@@ -113,10 +100,6 @@ internal sealed class DailiesWidget : IHomeWidget
         var loggedIn = AdventureWidgetArt.IsLoggedIn;
         var sample = !loggedIn && context.Preview;
         var utcNow = DateTime.UtcNow;
-        if (loggedIn && refresh.Due(RefreshMilliseconds))
-        {
-            Refresh(utcNow);
-        }
 
         if (!loggedIn && !sample)
         {
@@ -172,7 +155,7 @@ internal sealed class DailiesWidget : IHomeWidget
         var radius = diameter * 0.5f;
         DrawRing(context, ink, cadence, sample, new Vector2(body.Min.X + radius, body.Center.Y), radius);
         var list = new Rect(new Vector2(body.Min.X + diameter + gutter * 2f, body.Min.Y), body.Max);
-        DrawList(context, ink, cadence, sample, utcNow, list);
+        DrawList(context, ink, cadence, sample, list);
     }
 
     private void DrawLarge(in WidgetContext context, in WidgetInk ink, DailyCadence cadence, bool sample,
@@ -213,7 +196,7 @@ internal sealed class DailiesWidget : IHomeWidget
         var separatorY = heroTop + diameter + gutter * 1.5f;
         WidgetChrome.Separator(context, ink, content.Min.X, content.Max.X, separatorY);
         var list = new Rect(new Vector2(content.Min.X, separatorY + gutter), content.Max);
-        DrawList(context, ink, cadence, sample, utcNow, list);
+        DrawList(context, ink, cadence, sample, list);
     }
 
     private float Header(in WidgetContext context, in WidgetInk ink, DailyCadence cadence) =>
@@ -256,7 +239,7 @@ internal sealed class DailiesWidget : IHomeWidget
     }
 
     private void DrawList(in WidgetContext context, in WidgetInk ink, DailyCadence cadence, bool sample,
-        DateTime utcNow, Rect area)
+        Rect area)
     {
         var count = BuildOrder(cadence, sample);
         if (count == 0 || area.Height <= 0f)
@@ -272,46 +255,48 @@ internal sealed class DailiesWidget : IHomeWidget
         {
             var top = area.Min.Y + rowIndex * rowHeight;
             var row = new Rect(new Vector2(area.Min.X, top), new Vector2(area.Max.X, top + rowHeight));
-            DrawRow(context, ink, row, order[rowIndex], sample, utcNow);
+            DrawRow(context, ink, row, order[rowIndex], sample);
         }
     }
 
-    private void DrawRow(in WidgetContext context, in WidgetInk ink, Rect row, int itemIndex, bool sample,
-        DateTime utcNow)
+    private void DrawRow(in WidgetContext context, in WidgetInk ink, Rect row, int entry, bool sample)
     {
-        var item = DailyCatalog.Items[itemIndex];
         var drawList = context.DrawList;
         var scale = context.Scale;
         var gutter = WidgetMetrics.Gutter * scale;
         var badge = BadgeUnits * scale;
-        AdventureWidgetArt.IconBadge(drawList, ink, new Vector2(row.Min.X + badge * 0.5f, row.Center.Y), badge,
-            item.Icon, item.Accent);
-        var isDone = IsDone(itemIndex, sample);
+        var custom = entry < 0 ? tracker.CustomTasks[-entry - 1] : null;
+        var itemIndex = Math.Max(entry, 0);
+        var item = DailyCatalog.Items[itemIndex];
+        var icon = custom is null ? item.Icon : FontAwesomeIcon.ListUl;
+        var accent = custom is null ? item.Accent : DailiesAccent;
+        AdventureWidgetArt.IconBadge(drawList, ink, new Vector2(row.Min.X + badge * 0.5f, row.Center.Y), badge, icon,
+            accent);
+        var isDone = IsDone(entry, sample);
         float textRight;
-        if (item.Tracking == DailyTracking.Manual)
+        if (custom is not null || item.Tracking == DailyTracking.Manual)
         {
             var control = WidgetMetrics.ControlSmall * scale;
             var center = new Vector2(row.Max.X - control * 0.5f, row.Center.Y);
-            var next = WidgetControls.Toggle(context, ink, ControlBase + itemIndex, center, WidgetMetrics.ControlSmall,
-                FontAwesomeIcon.Check, isDone, item.Accent);
+            var controlId = ControlBase + (custom is null ? itemIndex : DailyCatalog.Items.Length - entry);
+            var next = WidgetControls.Toggle(context, ink, controlId, center, WidgetMetrics.ControlSmall,
+                FontAwesomeIcon.Check, isDone, accent);
             if (next != isDone && !sample)
             {
-                checkStore.SetChecked(item, next, utcNow);
-                done[itemIndex] = next;
+                tracker.SetChecked(custom?.Id ?? item.Id, custom?.Cadence ?? item.Cadence, next);
             }
 
             textRight = center.X - control * 0.5f - gutter;
         }
-        else if (!isDone && !sample && IsValueTracking(item.Tracking) && statuses[itemIndex].Available)
+        else if (!isDone && !sample && DailyProgress.ShowsCount(item.Tracking))
         {
-            var status = statuses[itemIndex];
-            var goal = status.Goal;
-            var progress = Math.Clamp(goal - status.Remaining, 0, goal);
-            var key = progress * 10000L + goal;
+            var status = tracker.Status(itemIndex);
+            var progress = DailyProgress.DoneCount(status, item.Tracking);
+            var key = progress * 10000L + status.Goal;
             var text = valueTexts[itemIndex].IsCurrent(key)
                 ? valueTexts[itemIndex].Value
                 : valueTexts[itemIndex].Store(key,
-                    string.Concat(progress.ToString(Loc.Culture), "/", goal.ToString(Loc.Culture)));
+                    string.Concat(progress.ToString(Loc.Culture), "/", status.Goal.ToString(Loc.Culture)));
             var height = WidgetText.LineHeight(WidgetType.Caption);
             var width = WidgetText.TabularRight(drawList, row.Max.X, row.Center.Y - height * 0.5f, text,
                 ink.Secondary, WidgetType.Caption);
@@ -321,12 +306,12 @@ internal sealed class DailiesWidget : IHomeWidget
         {
             var mark = MarkUnits * scale;
             WidgetChrome.CheckCircle(drawList, ink, new Vector2(row.Max.X - WidgetMetrics.ControlSmall * scale * 0.5f,
-                row.Center.Y), mark * 0.5f, isDone ? 1f : 0f, item.Accent, scale);
+                row.Center.Y), mark * 0.5f, isDone ? 1f : 0f, accent, scale);
             textRight = row.Max.X - WidgetMetrics.ControlSmall * scale - gutter;
         }
 
         var textLeft = row.Min.X + badge + gutter;
-        var name = Loc.T(item.Label);
+        var name = custom?.Title ?? Loc.T(item.Label);
         var nameHeight = WidgetText.LineHeight(WidgetType.Body);
         WidgetText.Draw(drawList, new Vector2(textLeft, row.Center.Y - nameHeight * 0.5f), name,
             isDone ? ink.Secondary : ink.Primary, WidgetType.Body, MathF.Max(1f, textRight - textLeft));
@@ -335,19 +320,36 @@ internal sealed class DailiesWidget : IHomeWidget
     private int BuildOrder(DailyCadence cadence, bool sample)
     {
         var items = DailyCatalog.Items;
+        var tasks = tracker.CustomTasks;
         var count = 0;
         for (var pass = 0; pass < 2; pass++)
         {
             var wantDone = pass == 1;
             for (var index = 0; index < items.Length; index++)
             {
-                if (items[index].Cadence != cadence || !DailyProgress.IsTracked(items[index]) ||
-                    IsDone(index, sample) != wantDone)
+                if (items[index].Cadence != cadence || !Counts(index, sample) || IsDone(index, sample) != wantDone)
                 {
                     continue;
                 }
 
                 order[count] = index;
+                count++;
+            }
+
+            if (sample)
+            {
+                continue;
+            }
+
+            for (var index = 0; index < tasks.Count && count < order.Length; index++)
+            {
+                var entry = -index - 1;
+                if (tasks[index].Cadence != cadence || IsDone(entry, false) != wantDone)
+                {
+                    continue;
+                }
+
+                order[count] = entry;
                 count++;
             }
         }
@@ -357,42 +359,51 @@ internal sealed class DailiesWidget : IHomeWidget
 
     private void CountProgress(DailyCadence cadence, bool sample, out int trackedCount, out int doneCount)
     {
+        if (!sample)
+        {
+            trackedCount = tracker.Tracked(cadence);
+            doneCount = tracker.Done(cadence);
+            return;
+        }
+
         var items = DailyCatalog.Items;
         trackedCount = 0;
         doneCount = 0;
         for (var index = 0; index < items.Length; index++)
         {
-            if (items[index].Cadence != cadence || !DailyProgress.IsTracked(items[index]))
+            if (items[index].Cadence != cadence || !Counts(index, true))
             {
                 continue;
             }
 
             trackedCount++;
-            if (IsDone(index, sample))
+            if (IsDone(index, true))
             {
                 doneCount++;
             }
         }
     }
 
-    private bool IsDone(int index, bool sample) => sample ? WidgetSamples.Checked(index) : done[index];
+    private bool Counts(int index, bool sample) =>
+        sample
+            ? DailyCatalog.Items[index].Tracking != DailyTracking.Levequests
+            : DailyProgress.Counts(tracker.State(index));
 
-    private void Refresh(DateTime utcNow)
+    private bool IsDone(int entry, bool sample)
     {
-        var items = DailyCatalog.Items;
-        for (var index = 0; index < items.Length; index++)
+        if (sample)
         {
-            var status = DailyProgress.ReadStatus(gameData, items[index]);
-            statuses[index] = status;
-            done[index] = !DailyProgress.IsOutstanding(items[index], status, checkStore, utcNow);
+            return WidgetSamples.Checked(entry);
         }
 
-        hasData = true;
+        return entry < 0
+            ? tracker.IsCustomDone(tracker.CustomTasks[-entry - 1])
+            : tracker.State(entry) == DailyRowState.Done;
     }
 
     private string ResetText(DailyCadence cadence, DateTime utcNow)
     {
-        var remaining = NextReset(cadence, utcNow) - utcNow;
+        var remaining = DailyLedger.NextReset(cadence, utcNow) - utcNow;
         var key = (long)remaining.TotalMinutes;
         var index = CadenceIndex(cadence);
         if (resetTexts[index].IsCurrent(key))
@@ -400,15 +411,8 @@ internal sealed class DailiesWidget : IHomeWidget
             return resetTexts[index].Value;
         }
 
-        return resetTexts[index].Store(key, Loc.T(L.Dailies.Resets, TimeFormat.Relative(remaining)));
+        return resetTexts[index].Store(key, Loc.T(L.Dailies.Resets, TimeText.Until(remaining)));
     }
-
-    private static DateTime NextReset(DailyCadence cadence, DateTime utcNow) =>
-        cadence == DailyCadence.Weekly ? GameSchedule.NextWeeklyReset(utcNow) : GameSchedule.NextDailyReset(utcNow);
-
-    private static bool IsValueTracking(DailyTracking tracking) =>
-        tracking is DailyTracking.BeastTribeAllowances or DailyTracking.CustomDeliveries
-            or DailyTracking.WondrousTails or DailyTracking.HuntBills or DailyTracking.DomanEnclave;
 
     private static int CadenceIndex(DailyCadence cadence) => cadence == DailyCadence.Weekly ? 1 : 0;
 

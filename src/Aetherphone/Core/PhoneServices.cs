@@ -204,6 +204,7 @@ internal sealed class PhoneServices : IDisposable
     public required WallpaperImageCache WallpaperImages { get; init; }
     public required Hunts.HuntsService Hunts { get; init; }
     public required Timers.GameTimers GameTimers { get; init; }
+    public required Dailies.DailiesTracker Dailies { get; init; }
     public required Hunts.HuntMobCatalog HuntMobCatalog { get; init; }
     public required Hunts.HuntZoneCatalog HuntZoneCatalog { get; init; }
     public required Maps.ZoneMapTextures ZoneMapTextures { get; init; }
@@ -425,6 +426,8 @@ internal sealed class PhoneServices : IDisposable
             notifications, configuration);
         var gameTimers = new Timers.GameTimers(configuration, framework, characterWatch, gameData, dataManager,
             installer.Gate("timers"));
+        var dailies = new Dailies.DailiesTracker(configuration, framework, gameData, characterWatch, notifications,
+            installer.Gate("dailies"));
         var huntCandidateCache = new HuntCandidateCache(huntMobCatalog, huntZoneCatalog, hunts);
         var huntsMapMarkers = new Maps.HuntsMapMarkers(configuration, hunts, huntMobCatalog, huntZoneCatalog,
             huntCandidateCache);
@@ -572,6 +575,7 @@ internal sealed class PhoneServices : IDisposable
             WallpaperImages = wallpaperImages,
             Hunts = hunts,
             GameTimers = gameTimers,
+            Dailies = dailies,
             HuntMobCatalog = huntMobCatalog,
             HuntZoneCatalog = huntZoneCatalog,
             ZoneMapTextures = zoneMapTextures,
@@ -615,6 +619,7 @@ internal sealed class PhoneServices : IDisposable
         Venues.Dispose();
         Hunts.Dispose();
         GameTimers.Dispose();
+        Dailies.Dispose();
         StratsManifest.Dispose();
         StratsGuides.Dispose();
         Musters.Dispose();
