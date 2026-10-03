@@ -74,7 +74,7 @@ jobs:
               ) | sort_by(.kind.rank)) as $entries
             | ($entries[:12] | map(.line)) as $lines
             | (if $total > 12 then $lines + ["*... and " + (($total - 12) | tostring) + " more*"] else $lines end) as $lines
-            | ([$commits[] | (.added + .modified + .removed)[]] | unique | length) as $files
+            | ([$commits[] | (.added // []) + (.modified // []) + (.removed // []) | .[]] | unique | length) as $files
             | {
                 username: "Aetherphone",
                 avatar_url: $icon,
@@ -85,7 +85,7 @@ jobs:
                   description: ($lines | join("\n")),
                   color: $entries[0].kind.color,
                   thumbnail: { url: $icon },
-                  footer: { text: ("Aetherphone · " + ($files | plural("file")) + " changed"), icon_url: $icon },
+                  footer: { text: ("Aetherphone" + (if $files > 0 then " · " + ($files | plural("file")) + " changed" else "" end)), icon_url: $icon },
                   timestamp: ($commits | last | .timestamp)
                 }]
               }
