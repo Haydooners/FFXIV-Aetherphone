@@ -11,14 +11,14 @@ internal sealed class HomeLayoutService
     public const int MaxRows = 8;
     public const int DefaultRows = 6;
     private const string DefaultWidgetId = "skywatcher.forecast";
-    private static readonly string[] DefaultDockApps = { "message", "messages", "settings" };
+    private static readonly string[] DefaultDockApps = { "message", "messages", "camera", "settings" };
 
     internal static readonly string[] DefaultFirstPageApps =
     {
-        "chirper", "aethergram", "velvet", "polls",
-        "announcements", "camera", "photos", "feedback", "music",
-        "maps", "venues", "games", "market",
-        "appstore",
+        "chirper", "aethergram", "velvet", "aetherstream",
+        "venues", "feedback", "market", "maps",
+        "music", "games", "polls", "photos",
+        "announcements", "coin", "yellowpages", "appstore",
     };
 
     internal static readonly string[] DefaultSecondPageApps =
