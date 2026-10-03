@@ -295,7 +295,6 @@ internal sealed unsafe class JobWidget : IHomeWidget
 
     private void Refresh()
     {
-        hasJob = false;
         var player = gameData.LocalPlayer;
         var playerState = PlayerState.Instance();
         if (player is null || playerState is null)

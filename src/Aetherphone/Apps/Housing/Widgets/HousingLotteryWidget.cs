@@ -296,11 +296,8 @@ internal sealed class HousingLotteryWidget : IHomeWidget
             {
                 phaseEndsUtc = ends;
                 phase = (HousingLotteryPhase)record.Phase;
-                if (worldName.Length == 0)
-                {
-                    worldName = record.WorldName;
-                    districtId = record.DistrictId;
-                }
+                worldName = record.WorldName;
+                districtId = record.DistrictId;
             }
 
             known = true;

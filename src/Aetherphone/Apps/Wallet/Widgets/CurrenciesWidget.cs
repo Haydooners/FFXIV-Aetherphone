@@ -352,7 +352,9 @@ internal sealed class CurrenciesWidget : IHomeWidget
                 continue;
             }
 
-            var fraction = entry.Cap > 0 ? amount / (float)entry.Cap : 0f;
+            var fraction = entry.HasWeeklyCap
+                ? entry.WeeklyAmount / (float)entry.WeeklyCap
+                : amount / (float)entry.Cap;
             var barTop = textTop + bodyHeight + WidgetMetrics.RowGap * scale;
             WidgetChrome.Bar(drawList,
                 new Rect(new Vector2(textLeft, barTop), new Vector2(textRight, barTop + bar)),
