@@ -226,6 +226,9 @@ internal sealed partial class MusicApp
             case MusicScreen.Import:
                 DrawImport(context);
                 break;
+            case MusicScreen.Replay:
+                DrawReplay(context);
+                break;
         }
     }
 
@@ -273,6 +276,7 @@ internal sealed partial class MusicApp
             MusicScreen.LiveDjs => Loc.T(L.Music.LiveDjs),
             MusicScreen.JamLobby => Loc.T(L.Music.Jam.Title),
             MusicScreen.Import => Loc.T(L.Music.ImportPlaylist),
+            MusicScreen.Replay => Loc.T(L.Music.Replay.Title),
             _ => route.Label,
         };
     }

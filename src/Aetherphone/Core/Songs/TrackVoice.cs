@@ -17,6 +17,7 @@ internal sealed class TrackVoice : ISampleProvider
     private readonly ISampleProvider source;
     private readonly WdlResampler resampler = new();
     private readonly object gate = new();
+    private readonly object readerGate = new();
     private readonly int sourceChannels;
     private readonly int sourceSampleRate;
     private float[] resampled = Array.Empty<float>();
@@ -26,6 +27,10 @@ internal sealed class TrackVoice : ISampleProvider
     private float gain;
     private float targetGain = 1f;
     private float gainStep;
+    private float level = 1f;
+    private float levelTarget = 1f;
+    private float levelStep;
+    private bool audible;
     private float rate = 1f;
     private bool rateDirty = true;
     private volatile bool finished;
@@ -64,6 +69,17 @@ internal sealed class TrackVoice : ISampleProvider
     public bool FadingOut => targetGain <= 0f;
     public double DurationSeconds => reader.TotalTime.TotalSeconds;
 
+    public float Level
+    {
+        get
+        {
+            lock (gate)
+            {
+                return levelTarget;
+            }
+        }
+    }
+
     public double PositionSeconds
     {
         get
@@ -96,11 +112,101 @@ internal sealed class TrackVoice : ISampleProvider
         }
     }
 
+    public bool SeekPending
+    {
+        get
+        {
+            lock (gate)
+            {
+                return pendingSeekSeconds >= 0;
+            }
+        }
+    }
+
     public void Seek(double seconds)
     {
         lock (gate)
         {
             pendingSeekSeconds = Math.Max(0, seconds);
+            Monitor.PulseAll(gate);
+        }
+    }
+
+    public void WaitForWork(int timeoutMilliseconds)
+    {
+        lock (gate)
+        {
+            if (pendingSeekSeconds >= 0 && !faulted)
+            {
+                return;
+            }
+
+            Monitor.Wait(gate, timeoutMilliseconds);
+        }
+    }
+
+    public void ServicePendingSeek()
+    {
+        double requested;
+        lock (gate)
+        {
+            if (pendingSeekSeconds < 0 || faulted || finished)
+            {
+                return;
+            }
+
+            requested = pendingSeekSeconds;
+        }
+
+        lock (readerGate)
+        {
+            double target;
+            try
+            {
+                var duration = reader.TotalTime.TotalSeconds;
+                target = duration > 0 ? Math.Min(requested, duration) : requested;
+                reader.CurrentTime = TimeSpan.FromSeconds(target);
+            }
+            catch (Exception exception)
+            {
+                AepLog.Warning(exception, "Song voice seek failed");
+                lock (gate)
+                {
+                    faulted = true;
+                    sourceEnded = true;
+                }
+
+                return;
+            }
+
+            lock (gate)
+            {
+                baseSeconds = target;
+                sourceFramesConsumed = 0;
+                sourceEnded = false;
+                resampler.Reset();
+                if (pendingSeekSeconds.Equals(requested))
+                {
+                    pendingSeekSeconds = -1;
+                }
+            }
+        }
+    }
+
+    public void SetLevel(float linear, float rampSeconds)
+    {
+        var target = Math.Max(0f, linear);
+        lock (gate)
+        {
+            levelTarget = target;
+            if (!audible || rampSeconds <= 0f)
+            {
+                level = target;
+                levelStep = 0f;
+                return;
+            }
+
+            levelStep = MathF.Abs(target - level) / (rampSeconds * OutputSampleRate);
         }
     }
 
@@ -120,65 +226,66 @@ internal sealed class TrackVoice : ISampleProvider
             return 0;
         }
 
-        lock (gate)
+        var readerHeld = Monitor.TryEnter(readerGate);
+        try
         {
-            SafeApplyPendingSeek();
-            if (rateDirty)
+            lock (gate)
             {
-                resampler.SetRates(sourceSampleRate * (double)rate, OutputSampleRate);
-                rateDirty = false;
-            }
+                if (!readerHeld || (pendingSeekSeconds >= 0 && !faulted))
+                {
+                    return WriteSilence(buffer, offset, count);
+                }
 
-            var outputFrames = count / OutputChannels;
-            var producedFrames = sourceEnded ? 0 : SafeResample(outputFrames);
-            WriteFrames(buffer, offset, producedFrames, outputFrames);
-            if ((producedFrames == 0 && sourceEnded) || (targetGain <= 0f && gain <= 0f))
+                if (rateDirty)
+                {
+                    resampler.SetRates(sourceSampleRate * (double)rate, OutputSampleRate);
+                    rateDirty = false;
+                }
+
+                var outputFrames = count / OutputChannels;
+                var producedFrames = sourceEnded ? 0 : SafeResample(outputFrames);
+                audible |= producedFrames > 0;
+                WriteFrames(buffer, offset, producedFrames, outputFrames);
+                if ((producedFrames == 0 && sourceEnded) || (targetGain <= 0f && gain <= 0f))
+                {
+                    finished = true;
+                }
+
+                return count;
+            }
+        }
+        finally
+        {
+            if (readerHeld)
             {
-                finished = true;
+                Monitor.Exit(readerGate);
             }
-
-            return count;
         }
     }
 
     public void DisposeReader()
     {
-        lock (gate)
+        lock (readerGate)
         {
+            lock (gate)
+            {
+                finished = true;
+                Monitor.PulseAll(gate);
+                reader.Dispose();
+            }
+        }
+    }
+
+    private int WriteSilence(float[] buffer, int offset, int count)
+    {
+        Array.Clear(buffer, offset, count);
+        if (targetGain <= 0f)
+        {
+            gain = 0f;
             finished = true;
-            reader.Dispose();
-        }
-    }
-
-    private void SafeApplyPendingSeek()
-    {
-        try
-        {
-            ApplyPendingSeek();
-        }
-        catch (Exception exception)
-        {
-            AepLog.Warning(exception, "Song voice seek failed");
-            faulted = true;
-            sourceEnded = true;
-        }
-    }
-
-    private void ApplyPendingSeek()
-    {
-        if (pendingSeekSeconds < 0 || faulted)
-        {
-            return;
         }
 
-        var duration = reader.TotalTime.TotalSeconds;
-        var target = duration > 0 ? Math.Min(pendingSeekSeconds, duration) : pendingSeekSeconds;
-        reader.CurrentTime = TimeSpan.FromSeconds(target);
-        baseSeconds = target;
-        sourceFramesConsumed = 0;
-        pendingSeekSeconds = -1;
-        sourceEnded = false;
-        resampler.Reset();
+        return count;
     }
 
     private int SafeResample(int outputFrames)
@@ -222,6 +329,7 @@ internal sealed class TrackVoice : ISampleProvider
         for (var frame = 0; frame < outputFrames; frame++)
         {
             StepGain();
+            StepLevel();
             var outputIndex = offset + frame * OutputChannels;
             if (frame >= producedFrames)
             {
@@ -233,8 +341,21 @@ internal sealed class TrackVoice : ISampleProvider
             var sourceIndex = frame * sourceChannels;
             var left = resampled[sourceIndex];
             var right = sourceChannels > 1 ? resampled[sourceIndex + 1] : left;
-            buffer[outputIndex] = left * gain;
-            buffer[outputIndex + 1] = right * gain;
+            var amplitude = gain * level;
+            buffer[outputIndex] = left * amplitude;
+            buffer[outputIndex + 1] = right * amplitude;
+        }
+    }
+
+    private void StepLevel()
+    {
+        if (level < levelTarget)
+        {
+            level = Math.Min(levelTarget, level + levelStep);
+        }
+        else if (level > levelTarget)
+        {
+            level = Math.Max(levelTarget, level - levelStep);
         }
     }
 

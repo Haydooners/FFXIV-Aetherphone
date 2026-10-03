@@ -98,6 +98,11 @@ internal sealed partial class MusicApp
                 Push(MusicRoute.Songs(SongListKind.Downloaded));
             }
 
+            if (DrawLibraryLink(scale, FontAwesomeIcon.ChartBar, Loc.T(L.Music.Replay.Title)))
+            {
+                Push(MusicRoute.Of(MusicScreen.Replay));
+            }
+
             if (recentlyAdded.Length > 0)
             {
                 SectionHeader.Draw(ui, Loc.T(L.Music.RecentlyAdded), false);

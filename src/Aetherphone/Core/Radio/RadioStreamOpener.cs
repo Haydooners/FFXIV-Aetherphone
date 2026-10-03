@@ -5,21 +5,27 @@ namespace Aetherphone.Core.Radio;
 internal sealed class RadioConnection : IDisposable
 {
     private readonly HttpResponseMessage? response;
+    private readonly StallWatchdogStream? watchdog;
 
-    public RadioConnection(Stream audio, StreamCodec codec, HttpResponseMessage? response)
+    public RadioConnection(Stream audio, StreamCodec codec, HttpResponseMessage? response,
+        StallWatchdogStream? watchdog = null)
     {
         Audio = audio;
         Codec = codec;
         this.response = response;
+        this.watchdog = watchdog;
     }
 
     public Stream Audio { get; }
 
     public StreamCodec Codec { get; }
 
+    public bool Stalled => watchdog?.Stalled ?? false;
+
     public void Dispose()
     {
         Audio.Dispose();
+        watchdog?.Dispose();
         response?.Dispose();
     }
 }
@@ -35,9 +41,11 @@ internal static class RadioStreamOpener
     // Returns null when the session ended while connecting; the publish callback is how the player
     // keeps a handle on the live response so Stop can abort a blocked read.
     public static RadioConnection? Open(HttpClient client, string url, string declaredCodec,
-        Func<HttpResponseMessage, bool> publish, Action<string> onTitle, CancellationToken token)
+        Func<HttpResponseMessage, bool> publish, Action<string> onTitle, CancellationToken token,
+        TimeSpan? stallTimeout = null)
     {
         var uri = new Uri(url);
+        var stallAfter = stallTimeout ?? StallWatchdogStream.DefaultTimeout;
         for (var hop = 0; hop <= MaxPlaylistHops; hop++)
         {
             var response = Connect(client, uri, token);
@@ -48,12 +56,15 @@ internal static class RadioStreamOpener
             }
 
             var handedOver = false;
+            StallWatchdogStream? watchdog = null;
             try
             {
                 response.EnsureSuccessStatusCode();
                 var finalUri = response.RequestMessage?.RequestUri ?? uri;
                 var contentType = response.Content.Headers.ContentType?.MediaType;
-                var audio = WrapMetadata(response.Content.ReadAsStream(token), response, onTitle);
+                watchdog = new StallWatchdogStream(response.Content.ReadAsStream(token), response.Dispose,
+                    stallAfter);
+                var audio = WrapMetadata(watchdog, response, onTitle);
                 var head = new byte[StreamSniffer.HeadLength];
                 var headLength = PrefixedStream.ReadHead(audio, head);
                 var headSpan = head.AsSpan(0, headLength);
@@ -61,7 +72,8 @@ internal static class RadioStreamOpener
                 {
                     var codec = StreamSniffer.Detect(contentType, declaredCodec, headSpan);
                     handedOver = true;
-                    return new RadioConnection(new PrefixedStream(head, headLength, audio), codec, response);
+                    return new RadioConnection(new PrefixedStream(head, headLength, audio), codec, response,
+                        watchdog);
                 }
 
                 var text = ReadText(head, headLength, audio);
@@ -79,6 +91,7 @@ internal static class RadioStreamOpener
             {
                 if (!handedOver)
                 {
+                    watchdog?.Dispose();
                     response.Dispose();
                 }
             }
