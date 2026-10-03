@@ -961,7 +961,7 @@
   "settings.supportMemberActive": "Membre actif, merci",
   "settings.supportMemberInactive": "Pas encore membre",
   "settings.supportTiersTitle": "Paliers d'adhésion",
-  "settings.supportPerMonth": "{0} par mois",
+  "settings.supportTierMembership": "Adhésion {0}",
   "settings.supportMostPopular": "Le plus populaire",
   "settings.supportPerkDiscordRole": "Rôle de soutien Patreon sur le serveur Discord",
   "settings.supportPerkColoredName": "Un nom d'utilisateur coloré avec un badge à côté",

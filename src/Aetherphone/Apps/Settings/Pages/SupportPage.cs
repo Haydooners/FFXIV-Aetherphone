@@ -24,17 +24,22 @@ internal sealed class SupportPage : ISettingsPage
     private const int AvatarSegments = 48;
     private const float MonogramScale = 1.1f;
     private const float TierHeaderHeight = 66f;
-    private const float TierPerkRowHeight = 34f;
+    private const float TierPerkMinHeight = 34f;
+    private const float TierPerkPadding = 10f;
     private const float TierPadding = 16f;
     private const float TierGap = 14f;
     private const float TierButtonHeight = 40f;
     private const float TierButtonGap = 12f;
-    private const float PopularChipHeight = 22f;
+    private const float ChipHeight = 22f;
     private const float ChipPadX = 10f;
     private const float CheckSize = 12f;
     private const float SectionGap = 22f;
     private const float HeaderBandAlpha = 0.26f;
-    private const float ComingSoonAlpha = 0.55f;
+    private const float ComingSoonAlpha = 0.62f;
+    private const float ChipFillAlpha = 0.10f;
+    private const float ChipInkAlpha = 0.80f;
+    private const float SubtitleAlpha = 0.72f;
+    private const int MaxPerks = 16;
 
     private readonly ISettingsNavigator navigator;
     private readonly ISettingsPage accountPage;
@@ -85,10 +90,10 @@ internal sealed class SupportPage : ISettingsPage
     private void DrawPreview(PhoneTheme theme, float scale)
     {
         var card = GroupCard.Begin(theme, PreviewRowHeight + PreviewSelectorHeight);
-        var row = card.NextRow(PreviewRowHeight * scale);
+        var row = card.NextRow(PreviewRowHeight);
         var drawList = ImGui.GetWindowDrawList();
         var radius = PreviewAvatarRadius * scale;
-        var center = new Vector2(row.Min.X + Metrics.Space.Lg * scale + radius, row.Center.Y);
+        var center = new Vector2(row.Min.X + radius, row.Center.Y);
         var tier = PatreonTiers.All[Math.Clamp(previewTier, 0, PatreonTiers.All.Length - 1)];
         var frame = tier.FrameId.Length > 0 ? frames.Find(tier.FrameId) : null;
         var user = session.CurrentUser;
@@ -99,15 +104,15 @@ internal sealed class SupportPage : ISettingsPage
         }
         else
         {
-            drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(Palette.Mix(theme.GroupedCard, PatreonCoral, 0.35f)),
-                AvatarSegments);
+            drawList.AddCircleFilled(center, radius,
+                ImGui.GetColorU32(Palette.Mix(theme.GroupedCard, PatreonCoral, 0.35f)), AvatarSegments);
             ProgressRing.CenterIcon(drawList, center, FontAwesomeIcon.Heart, Vector4.One, radius * 0.9f);
             AvatarView.DrawFrame(drawList, center, radius, images, frame);
         }
 
         var name = user?.DisplayName is { Length: > 0 } display ? display : Loc.T(L.Settings.SupportPreviewName);
         var textLeft = center.X + radius + Metrics.Space.Lg * scale;
-        var maxWidth = MathF.Max(1f, row.Max.X - Metrics.Space.Md * scale - textLeft);
+        var maxWidth = MathF.Max(1f, row.Max.X - textLeft);
         var light = Palette.Luminance(theme.AppBackground) >= 0.5f;
         var hint = Loc.T(L.Settings.SupportPreviewHint);
         var hintBlock = Typography.MeasureWrappedBlock(hint, TextStyles.Footnote, maxWidth);
@@ -119,10 +124,9 @@ internal sealed class SupportPage : ISettingsPage
         Typography.DrawWrappedLeft(new Vector2(textLeft, top + nameHeight + PreviewHintGap * scale), hint,
             theme.TextMuted, TextStyles.Footnote, maxWidth);
 
-        var selector = card.NextRow(PreviewSelectorHeight * scale);
-        var inset = Metrics.Space.Md * scale;
-        var strip = new Rect(new Vector2(selector.Min.X + inset, selector.Min.Y + Metrics.Space.Xs * scale),
-            new Vector2(selector.Max.X - inset, selector.Max.Y - Metrics.Space.Sm * scale));
+        var selector = card.NextRow(PreviewSelectorHeight);
+        var strip = new Rect(new Vector2(selector.Min.X, selector.Min.Y + Metrics.Space.Xs * scale),
+            new Vector2(selector.Max.X, selector.Max.Y - Metrics.Space.Sm * scale));
         previewTier = SegmentStrip.Draw("##settings.support.tier", strip, PatreonTiers.Names, previewTier, theme);
         card.End();
     }
@@ -163,62 +167,79 @@ internal sealed class SupportPage : ISettingsPage
         var width = ImGui.GetContentRegionAvail().X;
         var padding = TierPadding * scale;
         var headerHeight = TierHeaderHeight * scale;
-        var perkRow = TierPerkRowHeight * scale;
         var buttonHeight = TierButtonHeight * scale;
-        var height = headerHeight + tier.Perks.Length * perkRow + TierButtonGap * scale + buttonHeight + padding;
+        var comingSoon = Loc.T(L.Settings.SupportComingSoon);
+        var chipWidth = Typography.Measure(comingSoon, TextStyles.Caption2).X + ChipPadX * 2f * scale;
+        var textLeft = origin.X + padding + CheckSize * scale + Metrics.Space.Sm * scale;
+        var fullRight = origin.X + width - padding;
+        var chipRight = fullRight - chipWidth - Metrics.Space.Sm * scale;
+        var perkCount = Math.Min(tier.Perks.Length, MaxPerks);
+        Span<float> rowHeights = stackalloc float[MaxPerks];
+        var perksHeight = 0f;
+        for (var perkIndex = 0; perkIndex < perkCount; perkIndex++)
+        {
+            var perk = tier.Perks[perkIndex];
+            var maxWidth = MathF.Max(1f, (perk.ComingSoon ? chipRight : fullRight) - textLeft);
+            var block = Typography.MeasureWrappedBlock(Loc.T(perk.Label), TextStyles.Subheadline, maxWidth);
+            rowHeights[perkIndex] = MathF.Max(TierPerkMinHeight * scale, block.Y + TierPerkPadding * scale);
+            perksHeight += rowHeights[perkIndex];
+        }
+
+        var height = headerHeight + perksHeight + TierButtonGap * scale + buttonHeight + padding;
         var max = origin + new Vector2(width, height);
         var radius = Metrics.Radius.Grouped * scale;
         Squircle.Fill(drawList, origin, max, radius, ImGui.GetColorU32(theme.GroupedCard));
-        Squircle.FillCap(drawList, origin, new Vector2(max.X, origin.Y + headerHeight), radius,
-            ImGui.GetColorU32(Palette.WithAlpha(tier.Accent, HeaderBandAlpha)), true);
+        drawList.PushClipRect(origin, new Vector2(max.X, origin.Y + headerHeight), true);
+        Squircle.Fill(drawList, origin, max, radius, ImGui.GetColorU32(Palette.WithAlpha(tier.Accent, HeaderBandAlpha)));
+        drawList.PopClipRect();
         Material.EdgeSquircle(drawList, origin, max, radius, scale);
         var nameSize = Typography.Measure(tier.Name, TextStyles.Headline);
         var headerTop = origin.Y + padding * 0.7f;
         Typography.Draw(drawList, new Vector2(origin.X + padding, headerTop), tier.Name, theme.TextStrong,
             TextStyles.Headline);
-        var price = Loc.T(L.Settings.SupportPerMonth, tier.Price);
-        Typography.Draw(drawList, new Vector2(origin.X + padding, headerTop + nameSize.Y), price,
-            Palette.WithAlpha(theme.TextStrong, 0.72f), TextStyles.Footnote);
+        var membership = Loc.T(L.Settings.SupportTierMembership, tier.Name);
+        Typography.Draw(drawList, new Vector2(origin.X + padding, headerTop + nameSize.Y), membership,
+            Palette.WithAlpha(theme.TextStrong, SubtitleAlpha), TextStyles.Footnote);
         if (tier.Popular)
         {
-            DrawChip(drawList, new Vector2(max.X - padding, headerTop + nameSize.Y * 0.5f),
+            DrawChip(drawList, new Vector2(fullRight, headerTop + nameSize.Y * 0.5f),
                 Loc.T(L.Settings.SupportMostPopular), tier.Accent, Vector4.One, scale);
         }
 
         var rowTop = origin.Y + headerHeight;
-        var comingSoon = Loc.T(L.Settings.SupportComingSoon);
-        var chipWidth = Typography.Measure(comingSoon, TextStyles.Caption2).X + ChipPadX * 2f * scale;
-        for (var perkIndex = 0; perkIndex < tier.Perks.Length; perkIndex++)
+        var comingSoonInk = Palette.WithAlpha(theme.TextStrong, ComingSoonAlpha);
+        for (var perkIndex = 0; perkIndex < perkCount; perkIndex++)
         {
             var perk = tier.Perks[perkIndex];
-            var rowCenterY = rowTop + perkRow * (perkIndex + 0.5f);
+            var rowHeight = rowHeights[perkIndex];
+            var rowCenterY = rowTop + rowHeight * 0.5f;
             var check = new Vector2(origin.X + padding + CheckSize * scale * 0.5f, rowCenterY);
-            var ink = perk.ComingSoon ? Palette.WithAlpha(theme.TextStrong, ComingSoonAlpha) : theme.TextStrong;
             ProgressRing.CenterIcon(drawList, check, perk.ComingSoon ? FontAwesomeIcon.Clock : FontAwesomeIcon.Check,
-                perk.ComingSoon ? theme.TextMuted : tier.Accent, CheckSize * scale);
-            var textLeft = origin.X + padding + CheckSize * scale + Metrics.Space.Sm * scale;
-            var textRight = max.X - padding - (perk.ComingSoon ? chipWidth + Metrics.Space.Sm * scale : 0f);
-            var maxWidth = MathF.Max(1f, textRight - textLeft);
-            var label = Typography.FitText(Loc.T(perk.Label), maxWidth, TextStyles.Subheadline);
-            var labelSize = Typography.Measure(label, TextStyles.Subheadline);
-            Typography.Draw(drawList, new Vector2(textLeft, rowCenterY - labelSize.Y * 0.5f), label, ink,
-                TextStyles.Subheadline);
+                perk.ComingSoon ? comingSoonInk : tier.Accent, CheckSize * scale);
+            var maxWidth = MathF.Max(1f, (perk.ComingSoon ? chipRight : fullRight) - textLeft);
+            var label = Loc.T(perk.Label);
+            var block = Typography.MeasureWrappedBlock(label, TextStyles.Subheadline, maxWidth);
+            Typography.DrawWrappedLeft(new Vector2(textLeft, rowCenterY - block.Y * 0.5f), label,
+                perk.ComingSoon ? comingSoonInk : theme.TextStrong, TextStyles.Subheadline, maxWidth);
             if (perk.ComingSoon)
             {
-                DrawChip(drawList, new Vector2(max.X - padding, rowCenterY), comingSoon,
-                    Palette.WithAlpha(theme.TextMuted, 0.22f), theme.TextMuted, scale);
+                DrawChip(drawList, new Vector2(fullRight, rowCenterY), comingSoon,
+                    Palette.WithAlpha(theme.TextStrong, ChipFillAlpha), Palette.WithAlpha(theme.TextStrong, ChipInkAlpha),
+                    scale);
             }
+
+            rowTop += rowHeight;
         }
 
         var buttonMin = new Vector2(origin.X + padding, max.Y - padding - buttonHeight);
-        var buttonMax = new Vector2(max.X - padding, max.Y - padding);
-        DrawJoinButton(drawList, buttonMin, buttonMax, tier, index, theme, scale);
+        var buttonMax = new Vector2(fullRight, max.Y - padding);
+        DrawJoinButton(drawList, buttonMin, buttonMax, in tier, index, scale);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height));
     }
 
     private static void DrawJoinButton(ImDrawListPtr drawList, Vector2 min, Vector2 max, in PatreonTier tier,
-        int index, PhoneTheme theme, float scale)
+        int index, float scale)
     {
         var hovered = UiInteract.Hover(min, max);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
@@ -242,7 +263,7 @@ internal sealed class SupportPage : ISettingsPage
 
         if (UiInteract.Click(min, max, hovered))
         {
-            UrlActions.OpenInBrowser(AepConstants.PatreonUrl);
+            UrlActions.OpenInBrowser(tier.JoinUrl);
         }
     }
 
@@ -250,7 +271,7 @@ internal sealed class SupportPage : ISettingsPage
         float scale)
     {
         var size = Typography.Measure(label, TextStyles.Caption2);
-        var height = PopularChipHeight * scale;
+        var height = ChipHeight * scale;
         var width = size.X + ChipPadX * 2f * scale;
         var min = new Vector2(rightCenter.X - width, rightCenter.Y - height * 0.5f);
         var max = new Vector2(rightCenter.X, rightCenter.Y + height * 0.5f);
