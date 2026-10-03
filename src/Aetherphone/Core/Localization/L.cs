@@ -2184,6 +2184,20 @@ internal static class L
                 "Fixed Maps showing Unknown inside shared housing and other places without a zone name"),
         };
 
+        public static readonly LocString[] Release1042Games =
+        {
+            new("changelog.r1042.68",
+                "Added Coil to Games: shoot marbles into a chain rolling toward the drain and match three before it gets there, across twelve tracks with power-ups"),
+            new("changelog.r1042.69",
+                "Added Updraft to Games: bounce up through the clouds from dawn to the aurora, riding golden clouds and dodging storm clouds"),
+            new("changelog.r1042.70",
+                "Added Swoop to Games: hold to dive down the hills, let go to launch off the next one, and reach each island before the sun sets"),
+            new("changelog.r1042.71",
+                "Added Blitz to Gem Swap: a 60-second mode where matches earn extra time and four element powers clear the board"),
+            new("changelog.r1042.72",
+                "Added Line, Burst and Prism gems to Gem Swap, which combine with each other for bigger clears"),
+        };
+
         public static readonly LocString[] Release1042Clock =
         {
             new("changelog.r1042.48",
