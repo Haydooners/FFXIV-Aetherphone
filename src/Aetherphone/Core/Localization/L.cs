@@ -2210,6 +2210,18 @@ internal static class L
                 "Moved messages into the tab bar, in place of the separate inbox button"),
         };
 
+        public static readonly LocString[] Release1042Skywatcher =
+        {
+            new("changelog.r1042.73",
+                "Overhauled Skywatcher with living skies: drifting fog, soft layered clouds, rain at two depths, lightning that lights up the clouds, snow, dust, heat haze and starry nights, all fading smoothly as the weather turns"),
+            new("changelog.r1042.74",
+                "Rebuilt the forecast around a large Eorzea clock that tucks away as you scroll, an hourly summary, a day timeline for every weather window, Sun and This Window tiles, and Weather Odds showing when each weather comes next"),
+            new("changelog.r1042.75",
+                "Added Zones: keep any zone on a live sky card, search to add more, and tap one for its full forecast"),
+            new("changelog.r1042.76",
+                "The weather widgets on the home screen now show the same living skies"),
+        };
+
         public static readonly LocString[] Release1042MogCast =
         {
             new("changelog.r1042.2",

@@ -18,6 +18,7 @@ internal static class ChangelogData
             new(L.Apps.Announcements, L.Changelog.Release1042Announcements),
             new(L.Apps.Feedback, L.Changelog.Release1042Feedback),
             new(L.Apps.Maps, L.Changelog.Release1042Maps),
+            new(L.Apps.Skywatcher, L.Changelog.Release1042Skywatcher),
             new(L.Apps.Games, L.Changelog.Release1042Games),
             new(L.Apps.Clock, L.Changelog.Release1042Clock),
             new(L.Apps.Aethergram, L.Changelog.Release1042Aethergram),
