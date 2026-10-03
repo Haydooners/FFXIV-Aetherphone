@@ -2330,6 +2330,46 @@ internal static class L
                 "Clear All now asks before it clears"),
         };
 
+        public static readonly LocString[] Release1042Market =
+        {
+            new("changelog.r1042.98",
+                "Overhauled Market: a watchlist with 7 day sparklines and change pills, and item pages with a sale chart for 1, 7 or 30 days, a stats grid and prices world by world"),
+            new("changelog.r1042.99",
+                "Added price alerts you set with a gil amount, listed on their own page and shown first in the widget"),
+        };
+
+        public static readonly LocString[] Release1042Hunts =
+        {
+            new("changelog.r1042.100",
+                "Overhauled Hunts around what is up right now: live marks with a map preview and Go, then open windows, a spawn timeline on each mark and the same mark on every world"),
+            new("changelog.r1042.101",
+                "Added Trains, which shows every A rank zone by zone for a world, and per-mark alerts set right on the mark"),
+        };
+
+        public static readonly LocString[] Release1042Housing =
+        {
+            new("changelog.r1042.102",
+                "Overhauled Housing: your world's lottery countdown, open plots in every district at a glance, a full screen ward map with plot cards, and a list of every open plot"),
+            new("changelog.r1042.103",
+                "Plot details now open on a crop of the district map around the plot, and watched plots show their phase progress and reminder"),
+        };
+
+        public static readonly LocString[] Release1042Jobs =
+        {
+            new("changelog.r1042.104",
+                "Overhauled Jobs into a progression hub: your current job with its EXP ring and rested bonus, every job grouped by role, and your gearset categories as shelves"),
+            new("changelog.r1042.105",
+                "Added a page for each job with EXP to the next level, its gearsets and a Switch button; switching now explains why when it cannot happen, like in combat"),
+        };
+
+        public static readonly LocString[] Release1042Strats =
+        {
+            new("changelog.r1042.106",
+                "Overhauled Strats as a reader: the fight you are in and the one you last read up top, a setup card for your strat and spot, and a Contents sheet to jump between mechanics"),
+            new("changelog.r1042.107",
+                "Strats now remembers where you stopped in each fight and keeps each fight's scroll position"),
+        };
+
         public static readonly LocString[] Release1042Games =
         {
             new("changelog.r1042.68",
