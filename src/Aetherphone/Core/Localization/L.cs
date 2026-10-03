@@ -2060,6 +2060,42 @@ internal static class L
                 "Fixed the share sheet keeping a hidden window open over every app"),
         };
 
+        public static readonly LocString[] Release1042Music =
+        {
+            new("changelog.r1042.52",
+                "Overhauled Music from top to bottom: five tabs for Home, New, Radio, Library and Search, a floating mini player, and a full-screen Now Playing that takes its colors from the artwork"),
+            new("changelog.r1042.53",
+                "Added Up Next: play next, play last, drag songs to reorder, repeat all or one, and autoplay that keeps the music going when the queue runs out"),
+            new("changelog.r1042.54",
+                "Added synced lyrics that follow along with the song; tap a line to jump to it"),
+            new("changelog.r1042.55",
+                "Added crossfade between songs and a sleep timer"),
+            new("changelog.r1042.56",
+                "Added playlists you can reorder, rename, describe and give a cover"),
+            new("changelog.r1042.57",
+                "Added playlist import: paste a YouTube playlist link to bring the whole list into Music"),
+            new("changelog.r1042.58",
+                "Added loved songs, followed artists and downloads for offline listening"),
+            new("changelog.r1042.59",
+                "Added picks and daily mixes on Home built from what you play, plus new releases, charts and genres in New"),
+            new("changelog.r1042.60",
+                "Added search across songs, playlists, artists, radio stations and your own library"),
+            new("changelog.r1042.61",
+                "Added Jam: start one, share the code, and friends hear the same song in sync, with a shared queue and reactions"),
+            new("changelog.r1042.62",
+                "Added thousands more world radio stations now that AAC, HLS and Opus streams play"),
+            new("changelog.r1042.63",
+                "Added live chat to Community Radio, with song requests, a pinned host notice, reactions and moderation tools"),
+            new("changelog.r1042.64",
+                "Added what Spotify, foobar2000 or your browser is playing on your PC to Music, the Dynamic Island and Control Center, with pause and skip"),
+            new("changelog.r1042.65",
+                "Your keyboard media keys now pause and skip the phone's music"),
+            new("changelog.r1042.66",
+                "Your playlists, recently played songs and favorite stations carry over to the new Music automatically"),
+            new("changelog.r1042.67",
+                "Fixed some Community Radio station pages opening blank"),
+        };
+
         public static readonly LocString[] Release1042Widgets =
         {
             new("changelog.r1042.20",
