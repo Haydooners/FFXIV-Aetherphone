@@ -31,6 +31,7 @@ internal sealed class VenuesWidget : IHomeWidget
     private readonly ArtworkCache artwork;
     private readonly List<VenueEvent> live = new();
     private readonly Dictionary<string, CachedText> subtitles = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, CachedText> titles = new(StringComparer.Ordinal);
     private readonly LiveComparer liveOrder = new();
     private WidgetRefresh refresh;
     private WidgetRefresh fetch;
@@ -137,8 +138,10 @@ internal sealed class VenuesWidget : IHomeWidget
 
         var confirmed = venue.IsConfirmedLive(nowUtc);
         var pill = WidgetText.Upper(confirmed ? L.Venues.LiveNow : L.Venues.OpenNow);
+        ref var titleCache = ref WidgetCaches.Slot(titles, venue.Id);
+        var title = Title(ref titleCache, venue);
         ref var cache = ref WidgetCaches.Slot(subtitles, venue.Id);
-        DrawText(context, ink, rowRect, thumb, venue.Title, Subtitle(ref cache, venue), pill, confirmed);
+        DrawText(context, ink, rowRect, thumb, title, Subtitle(ref cache, venue), pill, confirmed);
     }
 
     private void DrawSample(in WidgetContext context, in WidgetInk ink, int index, Rect rowRect)
@@ -271,8 +274,19 @@ internal sealed class VenuesWidget : IHomeWidget
             return cache.Value;
         }
 
-        var text = venue.PlaceLine.Length == 0 ? venue.World : string.Concat(venue.World, " · ", venue.PlaceLine);
-        return cache.Store(key, text);
+        return cache.Store(key, venue.PlaceLine.Length == 0 ? venue.World : venue.PlaceLine);
+    }
+
+    private string Title(ref CachedText cache, VenueEvent venue)
+    {
+        var key = (long)seenVersion;
+        if (cache.IsCurrent(key))
+        {
+            return cache.Value;
+        }
+
+        var clean = VenueDisplayText.Clean(venue.Title);
+        return cache.Store(key, clean.Length > 0 ? clean : venue.Title);
     }
 
     public void Dispose()

@@ -87,7 +87,7 @@ internal static class RolladeckText
         return builder.ToString().Trim();
     }
 
-    private static char MapSupplementary(int codepoint)
+    public static char MapSupplementary(int codepoint)
     {
         for (var styleIndex = 0; styleIndex < StyleBases.Length; styleIndex++)
         {

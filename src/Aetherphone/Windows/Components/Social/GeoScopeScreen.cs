@@ -1,7 +1,9 @@
 using Aetherphone.Core;
+using Aetherphone.Core.Apps;
 using Aetherphone.Core.Geography;
 using Aetherphone.Core.Localization;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Windows.Components;
 
@@ -16,6 +18,9 @@ internal sealed class GeoScopeScreen
     private const float CellPadX = SocialChrome.CellPadX;
     private const float RadioSize = 22f;
     private const float ChevronReach = 16f;
+    private const float PageLabelHeight = 34f;
+    private const float PageLabelBottom = 6f;
+    private const float PageBottomPad = 24f;
 
     private static readonly TextStyle SectionStyle = TextStyles.FootnoteEmphasized;
     private static readonly TextStyle RowTitleStyle = TextStyles.BodyEmphasized;
@@ -40,6 +45,8 @@ internal sealed class GeoScopeScreen
     private string value = string.Empty;
     private bool worlds;
     private GeoScopeChoice choice;
+    private float sidePad = CellPadX;
+    private float cardRadius = Metrics.Radius.Card;
 
     public GeoScopeScreen(SocialInk ink, AppSkin ui, in TextStyle titleStyle)
     {
@@ -51,31 +58,80 @@ internal sealed class GeoScopeScreen
     public GeoScopeChoice Draw(Rect area, string title, Action back, string homeWorld, GeoScopeKind currentKind,
         string currentValue, bool pickWorlds)
     {
-        kind = currentKind;
-        value = currentValue;
-        worlds = pickWorlds;
-        choice = default;
+        Prepare(currentKind, currentValue, pickWorlds, CellPadX, Metrics.Radius.Card);
         var scale = UiScale.Current;
         SocialChrome.DrawScreenHeader(area, title, ink, back, titleStyle, 0f, string.Empty, true, true);
         var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
         using (AppSurface.BeginEdgeToEdge(body))
         {
-            DrawNearYouCard(homeWorld, scale);
-            var regions = WorldGeography.Regions;
-            for (var index = 0; index < regions.Length; index++)
-            {
-                DrawRegionCard(regions[index], scale);
-            }
-
+            DrawCards(homeWorld, scale);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Xl * scale));
         }
 
         return choice;
     }
 
+    public GeoScopeChoice DrawPage(in PhoneContext context, string id, string title, string backTitle, Action back,
+        string homeWorld, GeoScopeKind currentKind, string currentValue, bool pickWorlds)
+    {
+        Prepare(currentKind, currentValue, pickWorlds, 0f, Metrics.Radius.Widget);
+        var scale = UiScale.Current;
+        var navBar = AppHeader.BeginLargeTitle(context);
+        using (ImRaii.PushId(id))
+        using (AppSurface.Begin(navBar.Body))
+        {
+            DrawCards(homeWorld, scale);
+            ImGui.Dummy(new Vector2(0f, PageBottomPad * scale));
+        }
+
+        AppHeader.EndLargeTitle(in navBar, context, id, title, NavBarStyle.From(ui), ReadOnlySpan<NavBarButton>.Empty,
+            backTitle, back);
+        return choice;
+    }
+
+    private void Prepare(GeoScopeKind currentKind, string currentValue, bool pickWorlds, float pad, float radius)
+    {
+        kind = currentKind;
+        value = currentValue;
+        worlds = pickWorlds;
+        choice = default;
+        sidePad = pad;
+        cardRadius = radius;
+    }
+
+    private void DrawCards(string homeWorld, float scale)
+    {
+        DrawNearYouCard(homeWorld, scale);
+        var regions = WorldGeography.Regions;
+        for (var index = 0; index < regions.Length; index++)
+        {
+            DrawRegionCard(regions[index], scale);
+        }
+    }
+
+    private void SectionLabel(string label)
+    {
+        if (sidePad > 0f)
+        {
+            SocialChrome.DrawSectionLabel(label, ink, SectionStyle);
+            return;
+        }
+
+        var scale = UiScale.Current;
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        var height = PageLabelHeight * scale;
+        var labelHeight = Typography.LineHeight(SectionStyle);
+        Typography.Draw(ImGui.GetWindowDrawList(),
+            new Vector2(origin.X + CardInset * scale, origin.Y + height - labelHeight - PageLabelBottom * scale), label,
+            ui.MutedInk, SectionStyle);
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height));
+    }
+
     private void DrawNearYouCard(string homeWorld, float scale)
     {
-        SocialChrome.DrawSectionLabel(Loc.T(L.Venues.NearYouSection), ink, SectionStyle);
+        SectionLabel(Loc.T(L.Venues.NearYouSection));
         var home = WorldGeography.DataCenterOfWorld(homeWorld);
         var region = home is null ? null : WorldGeography.RegionById(home.RegionId);
         var rows = 1;
@@ -119,7 +175,7 @@ internal sealed class GeoScopeScreen
 
     private void DrawRegionCard(GeoRegionInfo region, float scale)
     {
-        SocialChrome.DrawSectionLabel(Loc.T(region.Label), ink, SectionStyle);
+        SectionLabel(Loc.T(region.Label));
         var dataCenters = region.DataCenters;
         var expanded = worlds ? ExpandedIn(region) : null;
         var rows = 1 + dataCenters.Length;
@@ -198,17 +254,17 @@ internal sealed class GeoScopeScreen
     {
         var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
-        var pad = CellPadX * scale;
+        var pad = sidePad * scale;
         var card = new Rect(new Vector2(origin.X + pad, origin.Y),
             new Vector2(origin.X + width - pad, origin.Y + height));
-        ui.Card(ImGui.GetWindowDrawList(), card.Min, card.Max, Metrics.Radius.Card * scale, elevated: true);
+        ui.Card(ImGui.GetWindowDrawList(), card.Min, card.Max, cardRadius * scale, elevated: true);
         return card;
     }
 
-    private static void EndCard(Rect card, float scale)
+    private void EndCard(Rect card, float scale)
     {
         var width = ScrollLayout.StableContentWidth();
-        ImGui.SetCursorScreenPos(new Vector2(card.Min.X - CellPadX * scale, card.Min.Y));
+        ImGui.SetCursorScreenPos(new Vector2(card.Min.X - sidePad * scale, card.Min.Y));
         ImGui.Dummy(new Vector2(width, card.Height + Metrics.Space.Sm * scale));
     }
 
@@ -221,7 +277,7 @@ internal sealed class GeoScopeScreen
         var hovered = UiInteract.Hover(min, max);
         if (hovered)
         {
-            DrawRowHover(drawList, min, max, index == 0, index == count - 1, Metrics.Radius.Card * scale);
+            DrawRowHover(drawList, min, max, index == 0, index == count - 1, cardRadius * scale);
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
@@ -245,7 +301,7 @@ internal sealed class GeoScopeScreen
         var hovered = UiInteract.Hover(row.Min, row.Max);
         if (hovered)
         {
-            DrawRowHover(drawList, row.Min, row.Max, false, last, Metrics.Radius.Card * scale);
+            DrawRowHover(drawList, row.Min, row.Max, false, last, cardRadius * scale);
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
@@ -294,7 +350,7 @@ internal sealed class GeoScopeScreen
         var hovered = UiInteract.Hover(row.Min, row.Max);
         if (hovered)
         {
-            DrawRowHover(drawList, row.Min, row.Max, false, last, Metrics.Radius.Card * scale);
+            DrawRowHover(drawList, row.Min, row.Max, false, last, cardRadius * scale);
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 

@@ -9,7 +9,8 @@ internal readonly record struct VenueSectionsKey(
     int FavoritesStamp,
     int TagsStamp,
     long Minute,
-    bool HideAdult = false);
+    bool HideAdult = false,
+    int RecentsStamp = 0);
 
 internal sealed class VenueSections
 {
@@ -17,6 +18,7 @@ internal sealed class VenueSections
     public const int MinFeatured = 3;
     public const int EventWindowDays = 14;
     public const int MaxRail = 12;
+    public const int MaxRecents = 12;
 
     private readonly List<VenueEvent> featured = new();
     private readonly List<VenueEvent> live = new();
@@ -26,7 +28,11 @@ internal sealed class VenueSections
     private readonly List<VenueEvent> saved = new();
     private readonly List<VenueEvent> laterRail = new();
     private readonly List<VenueEvent> nearRail = new();
+    private readonly List<VenueEvent> recents = new();
+    private readonly VenueEvent?[] recentSlots = new VenueEvent?[MaxRecents];
     private readonly int[] categoryCounts = new int[VenueCategories.Count];
+    private readonly VenueEvent?[] categoryCovers = new VenueEvent?[VenueCategories.Count];
+    private readonly bool[] categoryCoverLive = new bool[VenueCategories.Count];
     private readonly Order liveOrder = new(OrderMode.Live);
     private readonly Order startOrder = new(OrderMode.Start);
     private readonly Order mixedOrder = new(OrderMode.LiveThenStart);
@@ -42,15 +48,19 @@ internal sealed class VenueSections
     public IReadOnlyList<VenueEvent> Saved => saved;
     public IReadOnlyList<VenueEvent> LaterRail => laterRail;
     public IReadOnlyList<VenueEvent> NearRail => nearRail;
+    public IReadOnlyList<VenueEvent> Recents => recents;
     public bool FeaturedIsLive { get; private set; }
     public int Revision { get; private set; }
 
     public int CategoryCount(int category) => categoryCounts[category];
 
+    public VenueEvent? CategoryCover(int category) => categoryCovers[category];
+
     public void Invalidate() => built = false;
 
     public bool Update(in VenueSectionsKey wanted, IReadOnlyList<VenueEvent> source,
-        IReadOnlyList<string> favorites, IReadOnlyList<string> selectedTags, DateTime nowUtc)
+        IReadOnlyList<string> favorites, IReadOnlyList<string> recentIds, IReadOnlyList<string> selectedTags,
+        DateTime nowUtc)
     {
         if (built && key == wanted)
         {
@@ -66,14 +76,25 @@ internal sealed class VenueSections
         for (var index = 0; index < source.Count; index++)
         {
             var venue = source[index];
+            if (wanted.HideAdult && VenueFilter.IsAdult(venue))
+            {
+                continue;
+            }
+
+            if (VenueFilter.Contains(favorites, venue.Id))
+            {
+                saved.Add(venue);
+            }
+
+            PlaceRecent(venue, recentIds);
             if (!VenueFilter.MatchesScope(venue, wanted.Source, wanted.DataCenters, wanted.ScopeWorld, selectedTags,
                     wanted.HideAdult))
             {
                 continue;
             }
 
-            CountCategories(venue);
             var isLive = venue.IsLive(nowUtc);
+            CountCategories(venue, isLive);
             var upcoming = venue.StartUtc is { } start && start > nowUtc;
             if (isLive)
             {
@@ -94,12 +115,9 @@ internal sealed class VenueSections
             {
                 events.Add(venue);
             }
-
-            if (VenueFilter.Contains(favorites, venue.Id))
-            {
-                saved.Add(venue);
-            }
         }
+
+        CompactRecents();
 
         liveOrder.Now = nowUtc;
         startOrder.Now = nowUtc;
@@ -140,17 +158,55 @@ internal sealed class VenueSections
         saved.Clear();
         laterRail.Clear();
         nearRail.Clear();
+        recents.Clear();
+        Array.Clear(recentSlots);
         Array.Clear(categoryCounts);
+        Array.Clear(categoryCovers);
+        Array.Clear(categoryCoverLive);
     }
 
-    private void CountCategories(VenueEvent venue)
+    private void PlaceRecent(VenueEvent venue, IReadOnlyList<string> recentIds)
+    {
+        var count = Math.Min(recentIds.Count, MaxRecents);
+        for (var slot = 0; slot < count; slot++)
+        {
+            if (string.Equals(recentIds[slot], venue.Id, StringComparison.Ordinal))
+            {
+                recentSlots[slot] = venue;
+                return;
+            }
+        }
+    }
+
+    private void CompactRecents()
+    {
+        for (var slot = 0; slot < recentSlots.Length; slot++)
+        {
+            if (recentSlots[slot] is { } venue)
+            {
+                recents.Add(venue);
+            }
+        }
+    }
+
+    private void CountCategories(VenueEvent venue, bool isLive)
     {
         for (var category = 0; category < VenueCategories.Count; category++)
         {
-            if (VenueCategories.Matches(venue, category))
+            if (!VenueCategories.Matches(venue, category))
             {
-                categoryCounts[category]++;
+                continue;
             }
+
+            categoryCounts[category]++;
+            var covered = categoryCovers[category] is not null && (categoryCoverLive[category] || !isLive);
+            if (venue.BannerUrl is null || covered)
+            {
+                continue;
+            }
+
+            categoryCovers[category] = venue;
+            categoryCoverLive[category] = isLive;
         }
     }
 

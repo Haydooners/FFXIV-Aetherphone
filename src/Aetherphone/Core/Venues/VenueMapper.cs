@@ -9,6 +9,7 @@ internal static class VenueMapper
 {
     public const string AdultTag = "18+";
     public const string SafeTag = "SFW";
+    public const int OpeningWindowDays = 7;
 
     private static readonly Dictionary<string, string> AmenityLabels = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -57,7 +58,68 @@ internal static class VenueMapper
             Address = location is null
                 ? default
                 : VenueAddress.Of(world, location.District, location.Ward, location.Plot),
+            Openings = CollectOpenings(dto, nowUtc),
         };
+    }
+
+    public static IReadOnlyList<VenueOpening> CollectOpenings(FfxivVenueDto dto, DateTime nowUtc)
+    {
+        List<VenueOpening>? openings = null;
+        var horizon = nowUtc.AddDays(OpeningWindowDays);
+        if (dto.Schedule is { } schedule)
+        {
+            for (var index = 0; index < schedule.Length; index++)
+            {
+                var resolution = schedule[index].Resolution;
+                if (resolution?.Start is not { } start)
+                {
+                    continue;
+                }
+
+                AddOpening(ref openings, start.UtcDateTime, resolution.End?.UtcDateTime, resolution.IsNow, nowUtc,
+                    horizon);
+            }
+        }
+
+        if (dto.ScheduleOverrides is { } overrides)
+        {
+            for (var index = 0; index < overrides.Length; index++)
+            {
+                var entry = overrides[index];
+                if (entry.Open && entry.Start is { } start)
+                {
+                    AddOpening(ref openings, start.UtcDateTime, entry.End?.UtcDateTime, false, nowUtc, horizon);
+                }
+            }
+        }
+
+        if (openings is null)
+        {
+            return Array.Empty<VenueOpening>();
+        }
+
+        openings.Sort(static (left, right) => left.StartUtc.CompareTo(right.StartUtc));
+        return openings;
+    }
+
+    private static void AddOpening(ref List<VenueOpening>? openings, DateTime startUtc, DateTime? endUtc, bool isNow,
+        DateTime nowUtc, DateTime horizon)
+    {
+        if (!IsRelevant(startUtc, endUtc, isNow, nowUtc) || startUtc >= horizon)
+        {
+            return;
+        }
+
+        openings ??= new List<VenueOpening>(4);
+        for (var index = 0; index < openings.Count; index++)
+        {
+            if (openings[index].StartUtc == startUtc)
+            {
+                return;
+            }
+        }
+
+        openings.Add(new VenueOpening(startUtc, endUtc));
     }
 
     public static VenueEvent? FromPartake(PartakeEventDto dto)

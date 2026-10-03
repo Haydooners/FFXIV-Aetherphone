@@ -29,14 +29,17 @@ internal enum VenueListKind : byte
 }
 
 internal readonly record struct VenueRoute(VenueScreen Screen, VenueEvent? Venue = null,
-    VenueListKind List = VenueListKind.Directory, int Category = -1)
+    VenueListKind List = VenueListKind.Directory, int Category = -1, string BackTitle = "")
 {
     public static readonly VenueRoute Home = new(VenueScreen.Home);
-    public static readonly VenueRoute Filters = new(VenueScreen.Filters);
-    public static readonly VenueRoute Scope = new(VenueScreen.Scope);
 
-    public static VenueRoute Detail(VenueEvent venue) => new(VenueScreen.Detail, venue);
+    public static VenueRoute Filters(string backTitle) => new(VenueScreen.Filters, BackTitle: backTitle);
 
-    public static VenueRoute ListOf(VenueListKind kind, int category = -1) =>
-        new(VenueScreen.List, null, kind, category);
+    public static VenueRoute Scope(string backTitle) => new(VenueScreen.Scope, BackTitle: backTitle);
+
+    public static VenueRoute Detail(VenueEvent venue, string backTitle) =>
+        new(VenueScreen.Detail, venue, BackTitle: backTitle);
+
+    public static VenueRoute ListOf(VenueListKind kind, int category, string backTitle) =>
+        new(VenueScreen.List, null, kind, category, backTitle);
 }

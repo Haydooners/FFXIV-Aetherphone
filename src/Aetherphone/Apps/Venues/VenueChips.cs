@@ -7,7 +7,7 @@ namespace Aetherphone.Apps.Venues;
 
 internal static class VenueChips
 {
-    private const float SmallTextScale = 0.72f;
+    private static readonly TextStyle ChipStyle = TextStyles.Caption1;
     private static readonly Vector4 AdultColor = new(0.90f, 0.26f, 0.44f, 1f);
     private static readonly Vector4 SfwColor = new(0.86f, 0.72f, 0.24f, 1f);
     private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
@@ -42,7 +42,7 @@ internal static class VenueChips
     public static float Height(float scale) => 20f * scale;
 
     public static float Measure(string tag, float scale) =>
-        Typography.Measure(tag, SmallTextScale, FontWeight.Medium).X + 16f * scale;
+        Typography.Measure(tag, ChipStyle).X + 16f * scale;
 
     public static void Draw(ImDrawListPtr drawList, Vector2 position, string tag, float scale)
     {
@@ -56,9 +56,9 @@ internal static class VenueChips
         Squircle.Stroke(drawList, min, max, radius, ImGui.GetColorU32(Palette.WithAlpha(hue, 0.38f)),
             Metrics.Stroke.Hairline);
         var ink = Palette.WithAlpha(Palette.Mix(hue, White, 0.58f), 0.98f);
-        var textSize = Typography.Measure(tag, SmallTextScale, FontWeight.Medium);
-        Typography.Draw(new Vector2(min.X + (width - textSize.X) * 0.5f, min.Y + (height - textSize.Y) * 0.5f), tag,
-            ink, SmallTextScale, FontWeight.Medium);
+        var textSize = Typography.Measure(tag, ChipStyle);
+        var textOrigin = new Vector2(min.X + (width - textSize.X) * 0.5f, min.Y + (height - textSize.Y) * 0.5f);
+        Typography.Draw(drawList, textOrigin, tag, ink, ChipStyle);
     }
 
     public static void DrawNeutral(ImDrawListPtr drawList, Vector2 position, string label, float scale)
@@ -67,10 +67,10 @@ internal static class VenueChips
         var width = Measure(label, scale);
         var max = new Vector2(position.X + width, position.Y + height);
         Squircle.Fill(drawList, position, max, height * 0.5f, ImGui.GetColorU32(NeutralFill));
-        var textSize = Typography.Measure(label, SmallTextScale, FontWeight.Medium);
+        var textSize = Typography.Measure(label, ChipStyle);
         Typography.Draw(drawList,
             new Vector2(position.X + (width - textSize.X) * 0.5f, position.Y + (height - textSize.Y) * 0.5f), label,
-            NeutralInk, SmallTextScale, FontWeight.Medium);
+            NeutralInk, ChipStyle);
     }
 
     private static uint StableHash(string value)

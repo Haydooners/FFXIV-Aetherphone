@@ -1219,10 +1219,22 @@ internal static class L
         public static readonly LocString NotifyNew = new("venues.notifyNew", "New openings nearby");
         public static readonly LocString NotifyNewHelp = new("venues.notifyNewHelp",
             "Get a notification when a venue on your data center announces an opening within a day");
-        public static readonly LocString UntilTime = new("venues.untilTime", "until {0}");
         public static readonly LocString HostedBy = new("venues.hostedBy", "Hosted by {0}");
         public static readonly LocString EmptyHint = new("venues.emptyHint", "Try a different filter or search");
         public static readonly LocString Retry = new("venues.retry", "Retry");
+        public static readonly LocString FailedHint = new("venues.failedHint",
+            "Check your connection, then try again. Listings refresh every few minutes.");
+        public static readonly LocString LivePerformer = new("venues.livePerformer", "Live now: {0}");
+        public static readonly LocString RecentlyViewed = new("venues.recentlyViewed", "Recently viewed");
+        public static readonly LocString Clear = new("venues.clear", "Clear");
+        public static readonly LocString Hours = new("venues.hours", "Hours");
+        public static readonly LocString Closed = new("venues.closed", "Closed");
+        public static readonly LocString HoursLocalHint = new("venues.hoursLocalHint",
+            "From the posted weekly schedule, shown in your local time");
+        public static readonly LocString Copy = new("venues.copy", "Copy");
+        public static readonly LocString FiltersCount = new("venues.filtersCount", "Filters ({0})");
+        public static readonly LocString ComingUp = new("venues.comingUp", "Coming up");
+        public static readonly LocString NoHoursPosted = new("venues.noHoursPosted", "No hours posted");
     }
 
     internal static class Maps

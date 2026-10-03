@@ -41,6 +41,8 @@ internal sealed record VenueDj(string Name, string? AvatarUrl, int Viewers, stri
 
 internal readonly record struct VenueSnapshot(VenueEvent[] Events, VenueDj[] Djs);
 
+internal readonly record struct VenueOpening(DateTime StartUtc, DateTime? EndUtc);
+
 internal sealed record VenueEvent
 {
     private static readonly TimeSpan OpenEndedWindow = TimeSpan.FromHours(4);
@@ -76,6 +78,7 @@ internal sealed record VenueEvent
     public int LiveViewers { get; init; }
     public DateTime LiveConfirmedUntilUtc { get; init; }
     public DateTime DjLiveUntilUtc { get; init; }
+    public IReadOnlyList<VenueOpening> Openings { get; init; } = Array.Empty<VenueOpening>();
 
     public bool CanTeleport => !string.IsNullOrEmpty(TeleportCode);
     public bool HasOpening => StartUtc.HasValue;
