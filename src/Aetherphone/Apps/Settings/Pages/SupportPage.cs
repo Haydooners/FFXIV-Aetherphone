@@ -17,7 +17,6 @@ internal sealed class SupportPage : ISettingsPage
 {
     public static readonly Vector4 PatreonCoral = new(1f, 0.259f, 0.302f, 1f);
     private static readonly Vector4 MemberAmber = new(0.96f, 0.72f, 0.20f, 1f);
-    private static readonly string[] PreviewBadgeIds = { PatreonTiers.BadgeId };
     private const float PreviewRowHeight = 92f;
     private const float PreviewAvatarRadius = 30f;
     private const float PreviewSelectorHeight = 44f;
@@ -115,7 +114,7 @@ internal sealed class SupportPage : ISettingsPage
         var nameHeight = Typography.Measure(name, TextStyles.Headline).Y;
         var stack = nameHeight + PreviewHintGap * scale + hintBlock.Y;
         var top = row.Center.Y - stack * 0.5f;
-        UserName.Draw(drawList, "settings.support.preview", name, (int)AccountBadges.Patreon, PreviewBadgeIds,
+        UserName.Draw(drawList, "settings.support.preview", name, (int)AccountBadges.Patreon, tier.BadgeIds,
             textLeft, top, maxWidth, TextStyles.Headline, theme.TextStrong, false, light);
         Typography.DrawWrappedLeft(new Vector2(textLeft, top + nameHeight + PreviewHintGap * scale), hint,
             theme.TextMuted, TextStyles.Footnote, maxWidth);

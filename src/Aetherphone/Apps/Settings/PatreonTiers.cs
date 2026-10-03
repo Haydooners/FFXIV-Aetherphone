@@ -21,22 +21,28 @@ internal readonly struct PatreonTier
     public readonly Vector4 Accent;
     public readonly bool Popular;
     public readonly string FrameId;
+    public readonly string[] BadgeIds;
     public readonly PatreonPerk[] Perks;
 
-    public PatreonTier(string name, string price, Vector4 accent, bool popular, string frameId, PatreonPerk[] perks)
+    public PatreonTier(string name, string price, Vector4 accent, bool popular, string frameId, string[] badgeIds,
+        PatreonPerk[] perks)
     {
         Name = name;
         Price = price;
         Accent = accent;
         Popular = popular;
         FrameId = frameId;
+        BadgeIds = badgeIds;
         Perks = perks;
     }
 }
 
 internal static class PatreonTiers
 {
-    public const string BadgeId = "patreon";
+    public const string MemberBadgeId = "legacy-patreon";
+    public const string GildedBadgeId = "global-patreon-gilded";
+    private static readonly string[] MemberBadges = { MemberBadgeId };
+    private static readonly string[] GildedBadges = { GildedBadgeId };
 
     private static readonly Vector4 ShardTeal = new(0.25f, 0.78f, 0.80f, 1f);
     private static readonly Vector4 CrystalViolet = new(0.62f, 0.44f, 0.98f, 1f);
@@ -44,13 +50,13 @@ internal static class PatreonTiers
 
     public static readonly PatreonTier[] All =
     {
-        new("Shard", "$3", ShardTeal, false, "", new[]
+        new("Shard", "$3", ShardTeal, false, "", MemberBadges, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkColoredName),
             new PatreonPerk(L.Settings.SupportPerkFrame),
         }),
-        new("Crystal", "$10", CrystalViolet, true, "", new[]
+        new("Crystal", "$10", CrystalViolet, true, "", MemberBadges, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkDirectAccess),
@@ -58,7 +64,7 @@ internal static class PatreonTiers
             new PatreonPerk(L.Settings.SupportPerkColoredName),
             new PatreonPerk(L.Settings.SupportPerkFrame),
         }),
-        new("Cluster", "$20", ClusterGold, false, "", new[]
+        new("Cluster", "$20", ClusterGold, false, "", GildedBadges, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkDirectAccess),
