@@ -1842,6 +1842,19 @@ internal static class L
         public static readonly LocString SupportTiersTitle = new("settings.supportTiersTitle", "Membership tiers");
         public static readonly LocString SupportPerMonth = new("settings.supportPerMonth", "{0} per month");
         public static readonly LocString SupportMostPopular = new("settings.supportMostPopular", "Most popular");
+        public static readonly LocString SupportPerkDiscordRole = new("settings.supportPerkDiscordRole", "Patreon supporter role in the Discord server");
+        public static readonly LocString SupportPerkColoredName = new("settings.supportPerkColoredName", "A custom coloured username with a badge beside it");
+        public static readonly LocString SupportPerkFrame = new("settings.supportPerkFrame", "A custom profile frame");
+        public static readonly LocString SupportPerkDirectAccess = new("settings.supportPerkDirectAccess", "Direct one-on-one messages with the developer");
+        public static readonly LocString SupportPerkEarlyAccess = new("settings.supportPerkEarlyAccess", "See and test new features early, as a sneak peek");
+        public static readonly LocString SupportPerkExclusiveLooks = new("settings.supportPerkExclusiveLooks", "Exclusive cases, themes and app icons for your phone");
+        public static readonly LocString SupportPerkIdleAnimation = new("settings.supportPerkIdleAnimation", "A custom idle animation with the tomescroll emote");
+        public static readonly LocString SupportPerkMerch = new("settings.supportPerkMerch", "Aetherphone merchandise, including t-shirts and hoodies");
+        public static readonly LocString SupportPerkNotificationVfx = new("settings.supportPerkNotificationVfx", "Custom effects on the notification animation");
+        public static readonly LocString SupportComingSoon = new("settings.supportComingSoon", "Coming soon");
+        public static readonly LocString SupportPreviewTitle = new("settings.supportPreviewTitle", "How you will look");
+        public static readonly LocString SupportPreviewHint = new("settings.supportPreviewHint", "Your name, badge and frame as members see them across the social apps");
+        public static readonly LocString SupportPreviewName = new("settings.supportPreviewName", "Your name");
         public static readonly LocString BuyMeACoffee = new("settings.buyMeACoffee", "Buy me a coffee");        public static readonly LocString JoinDiscord = new("settings.joinDiscord", "Join our Discord");
         public static readonly LocString VisitWebsite = new("settings.visitWebsite", "Visit our website");
         public static readonly LocString Changelog = new("settings.changelog", "Changelog");
@@ -1944,6 +1957,12 @@ internal static class L
                 "The server info bar entry is now a phone icon with your unread count, in place of the Aetherphone name"),
             new("changelog.r1042.1",
                 "Hovering the server info bar entry now shows how many notifications are waiting and what a click does"),
+        };
+
+        public static readonly LocString[] Release1042MogCast =
+        {
+            new("changelog.r1042.2",
+                "Fixed MogCast dragging the game down to one frame per second for some players while it waited for a link"),
         };
 
         public static readonly LocString[] Release1041MogCast =

@@ -150,7 +150,8 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
             lodestone);
         router = new ViewRouter<ISettingsPage>(
             new RootSettingsPage(this, groups, configuration, accountPage,
-                new SupportPage(this, accountPage, aethernetSession), profileCard, installedApps, appSettingsPages));
+                new SupportPage(this, accountPage, aethernetSession, services.RemoteImages, services.Lodestone,
+                    services.FrameCatalog), profileCard, installedApps, appSettingsPages));
         drawPage = DrawPage;
         popBack = PopBack;
         assignWallpaper = AssignWallpaper;
