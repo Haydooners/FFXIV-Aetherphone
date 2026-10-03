@@ -233,6 +233,11 @@ internal sealed class OnboardingDirector
 
                 break;
             case CoachmarkAction.Skip:
+                if (step.OverControlCenter)
+                {
+                    step.OnAdvance?.Invoke(navigation);
+                }
+
                 BeginExit(false);
                 break;
         }
@@ -305,6 +310,11 @@ internal sealed class OnboardingDirector
 
         if (UiAnchors.TryGet(step.AnchorKey, out var rect))
         {
+            if (step.SecondaryAnchorKey is { } secondaryKey && UiAnchors.TryGet(secondaryKey, out var secondary))
+            {
+                rect = new Rect(Vector2.Min(rect.Min, secondary.Min), Vector2.Max(rect.Max, secondary.Max));
+            }
+
             missTimer = 0f;
             if (!anchorInitialized)
             {
