@@ -43,8 +43,14 @@ internal sealed partial class HuntsApp
 
     private void SyncFilterDataCenter()
     {
-        var dataCenter = hunts.CurrentDataCenter ?? string.Empty;
-        if (string.Equals(dataCenter, filterDataCenter, StringComparison.Ordinal))
+        if (hunts.CurrentDataCenter is not { Length: > 0 } dataCenter ||
+            string.Equals(dataCenter, filterDataCenter, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var worlds = HuntDataCenterWorlds.WorldsFor(dataCenter);
+        if (worlds.Length == 0)
         {
             return;
         }
@@ -55,7 +61,6 @@ internal sealed partial class HuntsApp
             return;
         }
 
-        var worlds = HuntDataCenterWorlds.WorldsFor(dataCenter);
         foreignWorlds.Clear();
         foreach (var selected in filter.Worlds)
         {
