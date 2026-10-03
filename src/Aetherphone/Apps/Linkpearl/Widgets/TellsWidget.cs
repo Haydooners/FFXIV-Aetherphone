@@ -152,8 +152,10 @@ internal sealed class TellsWidget : IHomeWidget
 
         nextCheckTicks = now + RefreshMilliseconds;
         inbox.Sync();
+        var unreadChanged = inbox.TotalUnread != unreadTotal;
         unreadTotal = inbox.TotalUnread;
-        if (log.Revision != seenRevision || NameMask.Enabled != seenMask || sinceRebuild >= ForcedRefreshSeconds)
+        if (unreadChanged || log.Revision != seenRevision || NameMask.Enabled != seenMask ||
+            sinceRebuild >= ForcedRefreshSeconds)
         {
             Rebuild();
         }

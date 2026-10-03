@@ -101,7 +101,9 @@ internal static class PeopleWidgetChrome
         var drawList = context.DrawList;
         var scale = context.Scale;
         var titleHeight = Typography.Measure(LineProbe, WidgetType.Headline).Y;
-        var subtitleHeight = subtitle.Length > 0 ? Typography.Measure(LineProbe, WidgetType.Body).Y : 0f;
+        var subtitleHeight = subtitle.Length > 0 || badge.Length > 0
+            ? Typography.Measure(LineProbe, WidgetType.Body).Y
+            : 0f;
         var gap = subtitleHeight > 0f ? WidgetMetrics.RowGap * scale : 0f;
         var top = row.Center.Y - (titleHeight + gap + subtitleHeight) * 0.5f;
         var titleRight = row.Max.X;
@@ -128,6 +130,11 @@ internal static class PeopleWidgetChrome
         if (badge.Length > 0)
         {
             subtitleRight -= TrailingGap * scale;
+        }
+
+        if (subtitle.Length == 0)
+        {
+            return;
         }
 
         Typography.Draw(drawList, new Vector2(textLeft, subtitleTop),
