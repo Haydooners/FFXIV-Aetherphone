@@ -6962,5 +6962,11 @@
   "widgets.activityDescription": "Today's progress, adventure and fortune rings.",
   "widgets.coinDescription": "Your Aether Coin balance and what you earned today.",
   "widgets.sampleEvent": "Raid night",
-  "widgets.sampleEventLater": "Treasure maps"
+  "widgets.sampleEventLater": "Treasure maps",
+  "widgetStacks.editWidget": "Edit Widget",
+  "widgetStacks.editStack": "Edit Stack",
+  "widgetStacks.removeWidget": "Remove Widget",
+  "widgetStacks.removeStack": "Remove Stack",
+  "widgetStacks.smartRotate": "Smart Rotate",
+  "widgetStacks.smartRotateHint": "Shows the most relevant widget at the right time."
 }

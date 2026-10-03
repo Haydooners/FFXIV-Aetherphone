@@ -6962,5 +6962,11 @@
   "widgets.activityDescription": "今日の進捗、冒険、金策のリング。",
   "widgets.coinDescription": "Aether Coinの残高と今日の獲得量。",
   "widgets.sampleEvent": "レイドの夜",
-  "widgets.sampleEventLater": "宝の地図"
+  "widgets.sampleEventLater": "宝の地図",
+  "widgetStacks.editWidget": "ウィジェットを編集",
+  "widgetStacks.editStack": "スタックを編集",
+  "widgetStacks.removeWidget": "ウィジェットを削除",
+  "widgetStacks.removeStack": "スタックを削除",
+  "widgetStacks.smartRotate": "スマートローテーション",
+  "widgetStacks.smartRotateHint": "適切なタイミングで最も関連性の高いウィジェットを表示します。"
 }

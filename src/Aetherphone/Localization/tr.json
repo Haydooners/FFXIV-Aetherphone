@@ -6962,5 +6962,11 @@
   "widgets.activityDescription": "Bugünün ilerleme, macera ve servet halkaları.",
   "widgets.coinDescription": "Aether Coin bakiyen ve bugün kazandıkların.",
   "widgets.sampleEvent": "Raid gecesi",
-  "widgets.sampleEventLater": "Hazine haritaları"
+  "widgets.sampleEventLater": "Hazine haritaları",
+  "widgetStacks.editWidget": "Widget'ı Düzenle",
+  "widgetStacks.editStack": "Yığını Düzenle",
+  "widgetStacks.removeWidget": "Widget'ı Kaldır",
+  "widgetStacks.removeStack": "Yığını Kaldır",
+  "widgetStacks.smartRotate": "Akıllı Döndürme",
+  "widgetStacks.smartRotateHint": "Doğru zamanda en uygun widget'ı gösterir."
 }

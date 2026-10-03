@@ -6962,5 +6962,11 @@
   "widgets.activityDescription": "今天的进度、冒险和财富圆环。",
   "widgets.coinDescription": "你的以太积分余额和今天的收入。",
   "widgets.sampleEvent": "团本之夜",
-  "widgets.sampleEventLater": "宝藏图"
+  "widgets.sampleEventLater": "宝藏图",
+  "widgetStacks.editWidget": "编辑小组件",
+  "widgetStacks.editStack": "编辑叠放",
+  "widgetStacks.removeWidget": "移除小组件",
+  "widgetStacks.removeStack": "移除叠放",
+  "widgetStacks.smartRotate": "智能旋转",
+  "widgetStacks.smartRotateHint": "在合适的时间显示最相关的小组件。"
 }
