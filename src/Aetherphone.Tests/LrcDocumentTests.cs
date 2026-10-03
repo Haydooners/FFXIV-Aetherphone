@@ -186,4 +186,16 @@ public sealed class LrcDocumentTests
         Assert.True(LrcDocument.TryParseTime("123:00.00", out var longSeconds));
         Assert.Equal(7380, longSeconds, Tolerance);
     }
+
+    [Fact]
+    public void IgnoresTimeTagsTooLargeToRepresent()
+    {
+        Assert.False(LrcDocument.TryParseTime("99999999999:00.00", out _));
+        Assert.False(LrcDocument.TryParseTime("00:99999999999", out _));
+
+        var document = LrcDocument.Parse("[99999999999:00.00]Broken\n[00:01.00]Kept");
+
+        Assert.Equal(1, document.Count);
+        Assert.Equal("Kept", document.Texts[0]);
+    }
 }

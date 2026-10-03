@@ -316,8 +316,12 @@ internal sealed class LrcDocument
             fractionSpan = fractionSpan[..3];
         }
 
-        var minutes = int.Parse(minutesSpan, NumberStyles.None, CultureInfo.InvariantCulture);
-        var wholeSeconds = int.Parse(secondsSpan, NumberStyles.None, CultureInfo.InvariantCulture);
+        if (!int.TryParse(minutesSpan, NumberStyles.None, CultureInfo.InvariantCulture, out var minutes) ||
+            !int.TryParse(secondsSpan, NumberStyles.None, CultureInfo.InvariantCulture, out var wholeSeconds))
+        {
+            return false;
+        }
+
         var fraction = 0d;
         if (fractionSpan.Length > 0)
         {
