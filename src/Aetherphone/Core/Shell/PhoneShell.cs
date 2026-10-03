@@ -109,6 +109,7 @@ internal sealed class PhoneShell : IDisposable
             services.Maps, services.StratsManifest, services.Venues, themes, calls, configuration);
         navigation.AppOpened += spotlightIndex.NoteLaunched;
         bundle.WidgetActions.Bind(navigation);
+        bundle.WidgetActions.BindNotifications(router);
         home = new HomeScreen(apps, bundle.Widgets, bundle.WidgetActions, services.Shortcuts, services.ShortcutRunner,
             configuration, services.Confirm, spotlightIndex);
         services.Installer.Bind(home.Layout);

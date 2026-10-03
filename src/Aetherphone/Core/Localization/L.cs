@@ -9057,4 +9057,42 @@ internal static class L
         public static readonly LocString SampleHeadlineEvent = new("widgetsUtility.sampleHeadlineEvent", "Seasonal event begins");
         public static readonly LocString SampleHeadlineFestival = new("widgetsUtility.sampleHeadlineFestival", "Fan Festival details announced");
     }
+
+    internal static class WidgetsPeople
+    {
+        public static readonly LocString NowPlaying = new("widgetsPeople.nowPlaying", "Now Playing");
+        public static readonly LocString NowPlayingDescription = new("widgetsPeople.nowPlayingDescription", "What is playing in Music, with play, pause and skip at hand.");
+        public static readonly LocString NotPlaying = new("widgetsPeople.notPlaying", "Not Playing");
+        public static readonly LocString RecentlyPlayed = new("widgetsPeople.recentlyPlayed", "Recently Played");
+        public static readonly LocString MusicEmptyHint = new("widgetsPeople.musicEmptyHint", "Play a song or a radio station to see it here.");
+        public static readonly LocString Live = new("widgetsPeople.live", "Live");
+        public static readonly LocString NowWatching = new("widgetsPeople.nowWatching", "Now Watching");
+        public static readonly LocString NowWatchingDescription = new("widgetsPeople.nowWatchingDescription", "Your current video, how far in you are, and a pause button.");
+        public static readonly LocString UpNext = new("widgetsPeople.upNext", "Up Next");
+        public static readonly LocString NothingPlaying = new("widgetsPeople.nothingPlaying", "Nothing Playing");
+        public static readonly LocString WatchEmptyHint = new("widgetsPeople.watchEmptyHint", "Add a video to your queue to start watching.");
+        public static readonly LocString SampleVideoTitle = new("widgetsPeople.sampleVideoTitle", "Moogle cooking stream");
+        public static readonly LocString SampleVideoSource = new("widgetsPeople.sampleVideoSource", "Gold Saucer TV");
+        public static readonly LocString People = new("widgetsPeople.people", "People");
+        public static readonly LocString PeopleDescription = new("widgetsPeople.peopleDescription", "Your favourite people, one tap away from a conversation.");
+        public static readonly LocString PersonOption = new("widgetsPeople.personOption", "Person");
+        public static readonly LocString NoPeople = new("widgetsPeople.noPeople", "No people yet");
+        public static readonly LocString NoPeopleHint = new("widgetsPeople.noPeopleHint", "Favourite a contact or pin a chat to keep them here.");
+        public static readonly LocString Chats = new("widgetsPeople.chats", "Chats");
+        public static readonly LocString ChatsDescription = new("widgetsPeople.chatsDescription", "Your latest conversations and what you missed.");
+        public static readonly LocString NoChats = new("widgetsPeople.noChats", "No conversations yet");
+        public static readonly LocString NoChatsHint = new("widgetsPeople.noChatsHint", "Start a chat and it shows up here.");
+        public static readonly LocString TellsDescription = new("widgetsPeople.tellsDescription", "Your latest tells and chat channels.");
+        public static readonly LocString NoTells = new("widgetsPeople.noTells", "No tells yet");
+        public static readonly LocString NoTellsHint = new("widgetsPeople.noTellsHint", "Tells and channel messages show up here.");
+        public static readonly LocString NotificationsDescription = new("widgetsPeople.notificationsDescription", "Your latest notifications at a glance.");
+        public static readonly LocString NoNotifications = new("widgetsPeople.noNotifications", "No Notifications");
+        public static readonly LocString CaughtUp = new("widgetsPeople.caughtUp", "You're all caught up.");
+        public static readonly LocString SignInHint = new("widgetsPeople.signInHint", "Sign in to Aethernet to see this.");
+        public static readonly LocString SampleMessage = new("widgetsPeople.sampleMessage", "See you at the Gold Saucer tonight?");
+        public static readonly LocString SampleMessageRaid = new("widgetsPeople.sampleMessageRaid", "Raid starts at nine, bring food.");
+        public static readonly LocString SampleMessageThanks = new("widgetsPeople.sampleMessageThanks", "Thanks for the help earlier!");
+        public static readonly LocString SampleNotificationLike = new("widgetsPeople.sampleNotificationLike", "Liked your photo.");
+        public static readonly LocString SampleNotificationMuster = new("widgetsPeople.sampleNotificationMuster", "Your meetup starts in 15 minutes.");
+    }
 }

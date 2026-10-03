@@ -1,4 +1,5 @@
 using Aetherphone.Apps.Activity.Widgets;
+using Aetherphone.Apps.AetherStream.Widgets;
 using Aetherphone.Apps.Calendar.Widgets;
 using Aetherphone.Apps.Casino.Widgets;
 using Aetherphone.Apps.Clock.Widgets;
@@ -10,11 +11,15 @@ using Aetherphone.Apps.Health.Widgets;
 using Aetherphone.Apps.Housing.Widgets;
 using Aetherphone.Apps.Hunts.Widgets;
 using Aetherphone.Apps.Jobs.Widgets;
+using Aetherphone.Apps.Linkpearl.Widgets;
 using Aetherphone.Apps.Maps.Widgets;
 using Aetherphone.Apps.Market.Widgets;
+using Aetherphone.Apps.Message.Widgets;
+using Aetherphone.Apps.Music.Widgets;
 using Aetherphone.Apps.Muster.Widgets;
 using Aetherphone.Apps.News.Widgets;
 using Aetherphone.Apps.Notes.Widgets;
+using Aetherphone.Apps.Notifications.Widgets;
 using Aetherphone.Apps.Photos.Widgets;
 using Aetherphone.Apps.Settings.Widgets;
 using Aetherphone.Apps.Shortcuts.Widgets;
@@ -54,6 +59,13 @@ internal static class WidgetCatalog
             new HuntsLiveWidget(phone.Hunts, phone.HuntMobCatalog, phone.Configuration),
             new HousingLotteryWidget(phone.Housing),
             new TeleportWidget(phone.Maps, phone.Configuration),
+            new NowPlayingWidget(phone.Playback, phone.SongHistory, phone.Media, phone.Http),
+            new NowWatchingWidget(services.Video, phone.RemoteImages, phone.Http),
+            new PeopleWidget(services.Messages, services.Messages.Contacts, phone.Configuration,
+                phone.AethernetSession, phone.RemoteImages),
+            new ChatsWidget(services.Messages, phone.Configuration, phone.AethernetSession, phone.RemoteImages),
+            new TellsWidget(phone.ChatInbox, phone.ChatLog, phone.Lodestone),
+            new RecentNotificationsWidget(phone.Notifications),
         };
 
         AddUtility(widgets, services);
