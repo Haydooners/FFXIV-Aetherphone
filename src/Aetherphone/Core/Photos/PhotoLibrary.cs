@@ -89,7 +89,7 @@ internal sealed class PhotoLibrary
         {
             File.Move(temp, thumbnailPath, true);
         }
-        catch (IOException exception)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             AepLog.Debug(exception, $"[Photos] thumbnail for {Path.GetFileName(path)} was written elsewhere first");
             TryDelete(temp);
