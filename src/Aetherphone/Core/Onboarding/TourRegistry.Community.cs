@@ -24,13 +24,15 @@ internal static partial class TourRegistry
                 GuideStep.TryTap(L.Onboarding.VelvetFeedTitle, L.Onboarding.VelvetFeedBody, "velvet.tab.feed"),
                 GuideStep.TryTap(L.Onboarding.VelvetMeTitle, L.Onboarding.VelvetMeBody, "velvet.tab.me"),
             });
-        Add(tours, "muster", 2,
+        Add(tours, "muster", 3,
             new[]
             {
                 GuideStep.TryTap(L.Onboarding.MusterScopeTitle, L.Onboarding.MusterScopeBody, "muster.scope"),
                 GuideStep.Point(L.Onboarding.MusterActivityTitle, L.Onboarding.MusterActivityBody,
                     "muster.categories", GuideGesture.Tap),
                 GuideStep.Point(L.Onboarding.MusterCardTitle, L.Onboarding.MusterCardBody, "muster.card",
+                    GuideGesture.Tap),
+                GuideStep.Point(L.Onboarding.MusterPlansTitle, L.Onboarding.MusterPlansBody, "muster.tab.plans",
                     GuideGesture.Tap),
                 GuideStep.Point(L.Onboarding.MusterStartTitle, L.Onboarding.MusterStartBody, "muster.start",
                     GuideGesture.Tap),

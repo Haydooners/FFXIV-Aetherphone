@@ -2,119 +2,127 @@ using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Muster;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Muster;
 
 internal sealed partial class MusterApp
 {
-    private const float DataCenterRowHeight = 52f;
+    private const float DataCenterRowHeight = 50f;
+    private const float DataCenterGlyph = 15f;
+    private const float RegionHeaderHeight = 36f;
 
-    private void DrawDataCenters(Rect area)
+    private void DrawDataCenters(in PhoneContext context, MusterRoute route)
     {
-        var context = new PhoneContext(area, theme, navigation);
-        AppHeader.Draw(context, Loc.T(L.Muster.DataCenterSection), back);
         var scale = UiScale.Current;
-        var top = area.Min.Y + AppHeader.Height * scale;
-        var body = new Rect(new Vector2(area.Min.X, top), area.Max);
-        var all = MusterDataCenters.All;
-        var pinned = configuration.MusterDataCenterId;
-        using (AppSurface.Begin(body))
+        var navBar = AppHeader.BeginLargeTitle(context);
+        using (ImRaii.PushId("muster.datacenters"))
+        using (AppSurface.Begin(navBar.Body))
         {
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Xs * scale));
-            ui.HelpText(Loc.T(L.Muster.DataCenterHint));
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-            var homeName = MusterDataCenters.Name(store.CurrentDataCenterId);
-            if (DrawDataCenterRow(Loc.T(L.Muster.MyDataCenter), homeName, pinned == 0, true, scale))
+            var drawList = ImGui.GetWindowDrawList();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            var pad = Metrics.Space.Lg * scale;
+            var hintHeight = Typography.DrawWrappedLeft(new Vector2(origin.X + pad, origin.Y),
+                Loc.T(L.Muster.DataCenterHint), ui.MutedInk, TextStyles.Footnote, width - pad * 2f);
+            var pinned = configuration.MusterDataCenterId;
+            var cursorY = origin.Y + hintHeight + Metrics.Space.Md * scale;
+            var homeRow = new Rect(new Vector2(origin.X, cursorY),
+                new Vector2(origin.X + width, cursorY + DataCenterRowHeight * scale));
+            MusterArt.Card(drawList, ui, homeRow.Min, homeRow.Max, scale);
+            if (DrawDataCenterRow(drawList, homeRow, Loc.T(L.Muster.MyDataCenter),
+                    MusterDataCenters.Name(store.CurrentDataCenterId), pinned == 0, FontAwesomeIcon.Home, scale))
             {
                 PinDataCenter(0);
             }
 
-            var region = 0;
-            for (var index = 0; index < all.Length; index++)
+            cursorY = DrawRegionGroups(drawList, origin.X, homeRow.Max.Y, width, pinned, scale);
+            MusterArt.Reserve(origin, width, cursorY + MusterArt.BottomPad * scale);
+        }
+
+        AppHeader.EndLargeTitle(in navBar, context, "muster.datacenters.nav", Loc.T(L.Muster.DataCenterSection),
+            NavBarStyle.From(ui), ReadOnlySpan<NavBarButton>.Empty, route.BackTitle, back);
+    }
+
+    private float DrawRegionGroups(ImDrawListPtr drawList, float left, float top, float width, int pinned,
+        float scale)
+    {
+        var all = MusterDataCenters.All;
+        var rowHeight = DataCenterRowHeight * scale;
+        var cursorY = top;
+        var start = 0;
+        while (start < all.Length)
+        {
+            var region = all[start].RegionBit;
+            var end = start;
+            while (end < all.Length && all[end].RegionBit == region)
             {
-                var dataCenter = all[index];
-                if (dataCenter.RegionBit != region)
+                end++;
+            }
+
+            var headerTop = cursorY + MusterArt.CardGap * scale;
+            var label = Loc.T(MusterCategories.RegionLabel(region));
+            var labelHeight = Typography.LineHeight(TextStyles.FootnoteEmphasized);
+            Typography.Draw(drawList,
+                new Vector2(left + Metrics.Space.Lg * scale,
+                    headerTop + RegionHeaderHeight * scale - labelHeight - Metrics.Space.Xs * scale), label,
+                ui.MutedInk, TextStyles.FootnoteEmphasized);
+            var cardTop = headerTop + RegionHeaderHeight * scale;
+            var cardMax = new Vector2(left + width, cardTop + (end - start) * rowHeight);
+            MusterArt.Card(drawList, ui, new Vector2(left, cardTop), cardMax, scale);
+            for (var index = start; index < end; index++)
+            {
+                var rowTop = cardTop + (index - start) * rowHeight;
+                if (index > start)
                 {
-                    region = dataCenter.RegionBit;
-                    ui.SectionHeading(Loc.T(MusterCategories.RegionLabel(region)), 10f);
+                    MusterArt.Hairline(drawList, ui, left + Metrics.Space.Lg * scale, cardMax.X, rowTop);
                 }
 
-                if (DrawDataCenterRow(dataCenter.Name, string.Empty, pinned == dataCenter.Id, false, scale))
+                var row = new Rect(new Vector2(left, rowTop), new Vector2(cardMax.X, rowTop + rowHeight));
+                var dataCenter = all[index];
+                if (DrawDataCenterRow(drawList, row, dataCenter.Name, string.Empty, pinned == dataCenter.Id,
+                        FontAwesomeIcon.Server, scale))
                 {
                     PinDataCenter(dataCenter.Id);
                 }
             }
 
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
+            cursorY = cardMax.Y;
+            start = end;
         }
+
+        return cursorY;
     }
 
-    private bool DrawDataCenterRow(string label, string detail, bool selected, bool home, float scale)
+    private bool DrawDataCenterRow(ImDrawListPtr drawList, Rect row, string label, string detail, bool selected,
+        FontAwesomeIcon icon, float scale)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var height = DataCenterRowHeight * scale;
-        var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var rounding = Metrics.Radius.Card * scale;
-        var hovered = UiInteract.Hover(card.Min, card.Max);
-        ui.Card(drawList, card.Min, card.Max, rounding, elevated: true);
+        var hovered = MusterArt.RowWash(drawList, ui, row, scale);
+        var pad = Metrics.Space.Lg * scale;
+        var glyph = DataCenterGlyph * scale;
+        ProgressRing.CenterIcon(drawList, new Vector2(row.Min.X + pad + glyph * 0.5f, row.Center.Y), icon,
+            selected ? ui.Accent : ui.MutedInk, glyph);
+        var textLeft = row.Min.X + pad + glyph + MusterArt.TextGap * scale;
+        var trailing = selected ? glyph + Metrics.Space.Md * scale : 0f;
+        MusterArt.Labels(drawList, textLeft, row.Max.X - pad - trailing, row.Center.Y, label, detail, ui.TitleInk,
+            ui.MutedInk, scale);
         if (selected)
         {
-            Squircle.Fill(drawList, card.Min, card.Max, rounding,
-                ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.16f)));
-            Squircle.Stroke(drawList, card.Min, card.Max, rounding,
-                ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.55f)), 1.4f * scale);
+            ProgressRing.CenterIcon(drawList, new Vector2(row.Max.X - pad - glyph * 0.5f, row.Center.Y),
+                FontAwesomeIcon.Check, ui.Accent, glyph);
         }
 
-        var iconCenter = new Vector2(card.Min.X + 24f * scale, card.Center.Y);
-        AppSkin.Icon(drawList, iconCenter,
-            home ? IconGlyph.Of(FontAwesomeIcon.Home) : IconGlyph.Of(FontAwesomeIcon.Server),
-            selected ? ui.Accent : Palette.WithAlpha(AppPalettes.Muster.MutedInk, 0.9f), 0.7f);
-        var textLeft = card.Min.X + 44f * scale;
-        var hasDetail = detail.Length > 0;
-        var labelTop = hasDetail ? card.Min.Y + 9f * scale : card.Center.Y - 10f * scale;
-        Typography.Draw(drawList, new Vector2(textLeft, labelTop), label, AppPalettes.Muster.TitleInk,
-            TextStyles.Headline);
-        if (hasDetail)
-        {
-            Typography.Draw(drawList, new Vector2(textLeft, card.Min.Y + 29f * scale), detail,
-                AppPalettes.Muster.MutedInk, TextStyles.Subheadline);
-        }
-
-        if (selected)
-        {
-            DrawSelectedTick(drawList, new Vector2(card.Max.X - 22f * scale, card.Center.Y), scale);
-        }
-
-        if (hovered)
-        {
-            UiInteract.HoverHighlight(drawList, card.Min, card.Max, rounding);
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        var clicked = UiInteract.Click(card.Min, card.Max, hovered);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Sm * scale));
-        return clicked;
-    }
-
-    private void DrawSelectedTick(ImDrawListPtr drawList, Vector2 center, float scale)
-    {
-        var color = ImGui.GetColorU32(ui.Accent);
-        var thickness = 2f * scale;
-        drawList.AddLine(center + new Vector2(-5f * scale, 0f), center + new Vector2(-1.5f * scale, 4f * scale),
-            color, thickness);
-        drawList.AddLine(center + new Vector2(-1.5f * scale, 4f * scale), center + new Vector2(5.5f * scale,
-            -4.5f * scale), color, thickness);
+        return UiInteract.Click(row.Min, row.Max, hovered);
     }
 
     private void PinDataCenter(int dataCenterId)
     {
+        UiFeedback.Play(UiSound.Tap);
         if (configuration.MusterDataCenterId != dataCenterId)
         {
             configuration.MusterDataCenterId = dataCenterId;

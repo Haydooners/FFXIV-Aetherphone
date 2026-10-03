@@ -1,27 +1,36 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet;
+using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Conduct;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Translation;
 using Aetherphone.Core.Lodestone;
 using Aetherphone.Core.Media;
 using Aetherphone.Core.Muster;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Report;
 using Aetherphone.Core.Theme;
-using Aetherphone.Core.Venues;
+using Aetherphone.Core.Translation;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Muster;
 
+internal enum MusterTab : byte
+{
+    Discover,
+    Plans,
+}
+
 internal sealed partial class MusterApp : IPhoneApp
 {
-    private const float CopiedSeconds = 1.6f;
-    private const float NoticeSeconds = 6f;
+    private const string StartAnchor = "muster.start";
+    private const string PlansAnchor = "muster.tab.plans";
+    private const float SignedOutTop = 72f;
 
     public string Id => "muster";
     public string DisplayName => Loc.T(L.Apps.Muster);
@@ -43,20 +52,17 @@ internal sealed partial class MusterApp : IPhoneApp
     private readonly ViewRouter<MusterRoute> router;
     private readonly RouterDraw<MusterRoute> drawView;
     private readonly Action back;
-    private readonly Action decrementMaxAttendees;
-    private readonly Action incrementMaxAttendees;
+    private readonly MusterLabels labels = new();
+    private readonly MusterSections sections = new();
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabItems = new TabItem[2];
     private PhoneTheme theme = PhoneTheme.Default;
     private INavigator navigation = null!;
-    private float copiedTimer;
-    private float travelNoticeTimer;
-    private string copiedKey = string.Empty;
-    private bool lifestreamAvailable;
-    private int createMaxAttendees = DefaultMaxAttendees;
-    private float invitedTimer;
+    private MusterTab activeTab;
 
     public MusterApp(MusterStore store, MusterLauncher launcher, AethernetApi api, GameData gameData,
         RemoteImageCache images, LodestoneService lodestone, Configuration configuration, ConfirmService confirm,
-        TranslationService translation,         ReportService report, ConductGateService conduct)
+        TranslationService translation, ReportService report, ConductGateService conduct)
     {
         this.store = store;
         this.launcher = launcher;
@@ -69,23 +75,16 @@ internal sealed partial class MusterApp : IPhoneApp
         this.translation = translation;
         this.report = report;
         this.conduct = conduct;
-        router = new ViewRouter<MusterRoute>(MusterRoute.Directory);
+        router = new ViewRouter<MusterRoute>(MusterRoute.Root);
         drawView = DrawView;
         back = () => router.Pop();
-        decrementMaxAttendees = () => SetMaxAttendees(createMaxAttendees - 1);
-        incrementMaxAttendees = () => SetMaxAttendees(createMaxAttendees + 1);
     }
 
     public void OnOpened()
     {
         router.Reset();
-        lifestreamAvailable = LifestreamBridge.IsAvailable();
-        if (launcher.TryConsumeDetail(out var musterId))
-        {
-            ResetDetailState();
-            router.Push(MusterRoute.Detail(musterId), false);
-        }
-
+        activeTab = MusterTab.Discover;
+        sections.Invalidate();
         store.SyncNow();
         store.RefreshDirectory();
     }
@@ -95,7 +94,38 @@ internal sealed partial class MusterApp : IPhoneApp
         router.Reset();
         ResetDetailState();
         ResetManageState();
-        copiedTimer = 0f;
+    }
+
+    private void ConsumeLaunch()
+    {
+        if (!launcher.TryConsumeDetail(out var musterId))
+        {
+            return;
+        }
+
+        var current = router.Current;
+        if (store.Mine is { } mine && mine.Id == musterId)
+        {
+            if (current.Screen == MusterScreen.Manage)
+            {
+                return;
+            }
+
+            router.Reset();
+            activeTab = MusterTab.Plans;
+            OpenManage(false);
+            return;
+        }
+
+        if (current.Screen == MusterScreen.Detail
+            && string.Equals(current.MusterId, musterId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        router.Reset();
+        ResetDetailState();
+        router.Push(MusterRoute.Detail(musterId, RootTitle()), false);
     }
 
     public void Draw(in PhoneContext context)
@@ -105,116 +135,167 @@ internal sealed partial class MusterApp : IPhoneApp
         navigation = context.Navigation;
         ui.Theme = theme;
         var scale = UiScale.Current;
-        var screen = SceneChrome.ScreenFrom(context.Content, theme, scale);
-        ui.Backdrop(screen);
+        ui.Backdrop(SceneChrome.ScreenFrom(context.Content, theme, scale));
         if (!store.IsSignedIn)
         {
             TourHolds.Hold(Id);
-            var rowCenterY = context.Content.Min.Y + AppHeader.Height * scale * 0.5f;
-            Typography.DrawCentered(new Vector2(context.Content.Center.X, rowCenterY), DisplayName,
-                AppPalettes.Muster.TitleInk, 1.3f, FontWeight.Bold);
-            var body = new Rect(new Vector2(context.Content.Min.X, context.Content.Min.Y + AppHeader.Height * scale),
-                context.Content.Max);
-            Typography.DrawCentered(body.Center, Loc.T(L.Muster.SetUpAccount), AppPalettes.Muster.MutedInk);
+            DrawSignedOut(context);
             return;
         }
 
         TourHolds.Release(Id);
+        ConsumeLaunch();
+        TickTimers();
+        router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+    }
 
-        if (copiedTimer > 0f)
+    private void DrawSignedOut(in PhoneContext context)
+    {
+        var navBar = AppHeader.BeginLargeTitle(context, false);
+        using (AppSurface.Begin(navBar.Body))
         {
-            copiedTimer -= ImGui.GetIO().DeltaTime;
+            var scale = UiScale.Current;
+            var drawList = ImGui.GetWindowDrawList();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            var bottom = MusterArt.StateScreen(drawList, ui, origin.X + width * 0.5f, origin.Y + SignedOutTop * scale,
+                width, FontAwesomeIcon.UserFriends, Loc.T(L.Muster.SignedOutTitle), Loc.T(L.Muster.SetUpAccount),
+                scale);
+            MusterArt.Reserve(origin, width, bottom + MusterArt.BottomPad * scale);
         }
 
+        AppHeader.EndLargeTitle(in navBar, context, "muster.signedout.nav", DisplayName, NavBarStyle.From(ui),
+            ReadOnlySpan<NavBarButton>.Empty);
+    }
+
+    private void TickTimers()
+    {
+        var delta = ImGui.GetIO().DeltaTime;
         if (travelNoticeTimer > 0f)
         {
-            travelNoticeTimer -= ImGui.GetIO().DeltaTime;
+            travelNoticeTimer -= delta;
         }
 
         if (invitedTimer > 0f)
         {
-            invitedTimer -= ImGui.GetIO().DeltaTime;
+            invitedTimer -= delta;
         }
-
-        router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
     }
 
     private void DrawView(MusterRoute route, Rect area, int depth)
     {
         ui.Body(area);
+        var context = new PhoneContext(area, theme, navigation);
         switch (route.Screen)
         {
             case MusterScreen.Detail:
-                DrawDetail(area, route.MusterId!);
-                break;
+                DrawDetail(context, route);
+                return;
             case MusterScreen.Create:
-                DrawCreate(area);
-                break;
+                DrawCreate(context, route);
+                return;
             case MusterScreen.Manage:
-                DrawManage(area);
-                break;
+                DrawManage(context, route);
+                return;
             case MusterScreen.DataCenter:
-                DrawDataCenters(area);
-                break;
+                DrawDataCenters(context, route);
+                return;
             default:
-                DrawDirectory(area);
-                break;
+                DrawRoot(context, area);
+                return;
         }
     }
+
+    private void DrawRoot(in PhoneContext context, Rect area)
+    {
+        var scale = UiScale.Current;
+        sections.Sync(store.ContactMusters, store.Directory, store.GoingMusters, store.Mine, NowUnix());
+        using (TabBar.ReserveContent(scale))
+        {
+            if (activeTab == MusterTab.Plans)
+            {
+                DrawPlans(context);
+            }
+            else
+            {
+                DrawDiscover(context);
+            }
+        }
+
+        DrawTabBar(area);
+    }
+
+    private void DrawTabBar(Rect area)
+    {
+        tabItems[(int)MusterTab.Discover] = new TabItem(Loc.T(L.Muster.TabDiscover), PhoneIcons.Compass,
+            PhoneIcons.CompassFilled, AnchorKey: "muster.tab.discover");
+        tabItems[(int)MusterTab.Plans] = new TabItem(Loc.T(L.Muster.TabPlans), PhoneIcons.Calendar,
+            PhoneIcons.CalendarFilled, AnchorKey: PlansAnchor);
+        var hosting = store.Mine is not null;
+        var action = hosting
+            ? new TabBarAction(PhoneIcons.Flag, Loc.T(L.Muster.YourMuster), AnchorKey: StartAnchor)
+            : new TabBarAction(PhoneIcons.Plus, Loc.T(L.Muster.StartMuster), AnchorKey: StartAnchor);
+        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab, action);
+        if (result.ActionTapped)
+        {
+            UiFeedback.Play(UiSound.Tap);
+            if (hosting)
+            {
+                OpenManage();
+            }
+            else
+            {
+                OpenCreate();
+            }
+
+            return;
+        }
+
+        if (result.Tapped < 0 || result.Tapped == (int)activeTab)
+        {
+            return;
+        }
+
+        UiFeedback.Play(UiSound.Tap);
+        activeTab = (MusterTab)result.Tapped;
+        if (activeTab == MusterTab.Plans)
+        {
+            store.SyncNow();
+        }
+    }
+
+    private string RootTitle() => activeTab == MusterTab.Plans ? Loc.T(L.Muster.TabPlans) : DisplayName;
 
     private void OpenDetail(string musterId)
     {
-        ResetDetailState();
-        router.Push(MusterRoute.Detail(musterId));
-    }
-
-    private void Copy(string key, string text)
-    {
-        ImGui.SetClipboardText(text);
-        copiedKey = key;
-        copiedTimer = CopiedSeconds;
-    }
-
-    private bool JustCopied(string key) =>
-        copiedTimer > 0f && string.Equals(copiedKey, key, StringComparison.Ordinal);
-
-    private void SubmitReport(string musterId, string? reason, Action<bool> done)
-    {
-        _ = Task.Run(async () =>
+        if (store.Mine is { } mine && mine.Id == musterId)
         {
-            var ok = false;
-            try
-            {
-                ok = await api.Safety.ReportAsync("muster", musterId, reason, CancellationToken.None)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception exception)
-            {
-                AepLog.Warning(exception, "[Muster] report failed");
-            }
+            OpenManage();
+            return;
+        }
 
-            done(ok);
-        });
+        ResetDetailState();
+        router.Push(MusterRoute.Detail(musterId, RootTitle()));
     }
+
+    private bool IsGoing(MusterDto muster) =>
+        store.IsGoing(muster.Id) || (!store.Primed && muster.Going);
+
+    private bool IsMine(MusterDto muster) => store.Mine is { } mine && mine.Id == muster.Id;
+
+    private void RefreshEverything()
+    {
+        UiFeedback.Play(UiSound.Refresh);
+        store.SyncNow();
+        store.RefreshDirectory();
+    }
+
+    private static uint KeyFor(string scope, string musterId) => ImGui.GetID($"muster.{scope}.{musterId}");
+
+    private static uint KeyFor(string scope, int slot, string musterId) =>
+        ImGui.GetID($"muster.{scope}.{slot}.{musterId}");
 
     private static long NowUnix() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-    private static int TrimmedLength(string value)
-    {
-        var start = 0;
-        var end = value.Length - 1;
-        while (start <= end && char.IsWhiteSpace(value[start]))
-        {
-            start++;
-        }
-
-        while (end >= start && char.IsWhiteSpace(value[end]))
-        {
-            end--;
-        }
-
-        return end - start + 1;
-    }
 
     public void Dispose()
     {

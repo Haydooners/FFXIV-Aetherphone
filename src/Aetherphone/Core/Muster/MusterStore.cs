@@ -734,10 +734,57 @@ internal sealed class MusterStore : IDisposable
         goingIds = nextGoing;
         directory = WithRsvp(directory, musterId, result);
         contactMusters = WithRsvp(contactMusters, musterId, result);
+        MusterDto? updated = null;
         if (knownMusters.TryGetValue(musterId, out var cached))
         {
-            MergeKnown(new[] { cached with { RsvpCount = result.RsvpCount, Going = result.Going } });
+            updated = cached with { RsvpCount = result.RsvpCount, Going = result.Going };
+            MergeKnown(new[] { updated });
         }
+
+        goingMusters = WithGoing(goingMusters, musterId, updated, result.Going);
+    }
+
+    private static MusterDto[] WithGoing(MusterDto[] source, string musterId, MusterDto? updated, bool going)
+    {
+        var index = -1;
+        for (var candidate = 0; candidate < source.Length; candidate++)
+        {
+            if (source[candidate].Id == musterId)
+            {
+                index = candidate;
+                break;
+            }
+        }
+
+        if (!going)
+        {
+            if (index < 0)
+            {
+                return source;
+            }
+
+            var trimmed = new MusterDto[source.Length - 1];
+            Array.Copy(source, 0, trimmed, 0, index);
+            Array.Copy(source, index + 1, trimmed, index, source.Length - index - 1);
+            return trimmed;
+        }
+
+        if (updated is null)
+        {
+            return source;
+        }
+
+        if (index >= 0)
+        {
+            var replaced = (MusterDto[])source.Clone();
+            replaced[index] = updated;
+            return replaced;
+        }
+
+        var grown = new MusterDto[source.Length + 1];
+        Array.Copy(source, grown, source.Length);
+        grown[source.Length] = updated;
+        return grown;
     }
 
     private static MusterDto[] WithRsvp(MusterDto[] source, string musterId, MusterRsvpResult result)
