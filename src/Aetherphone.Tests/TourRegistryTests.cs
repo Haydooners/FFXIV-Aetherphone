@@ -48,7 +48,7 @@ public sealed class TourRegistryTests
         { "market", (3, 7) },
         { "strats", (2, 5) },
         { "venues", (4, 6) },
-        { "maps", (3, 3) },
+        { "maps", (4, 5) },
         { "fishing", (3, 4) },
         { "hunts", (6, 6) },
     };
