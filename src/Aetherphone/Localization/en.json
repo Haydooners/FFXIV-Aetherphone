@@ -2935,6 +2935,7 @@
   "controlCenter.addControls": "Add a Control",
   "controlCenter.allControlsAdded": "Every control is in place",
   "controlCenter.editHint": "Drag to rearrange · tap ⤢ to resize",
+  "controlCenter.quickToggles": "Quick Toggles",
   "appSwitcher.closeAll": "Close All",
   "appSwitcher.empty": "Nothing is open",
   "home.done": "Done",

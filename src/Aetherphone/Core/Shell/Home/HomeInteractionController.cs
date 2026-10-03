@@ -597,9 +597,14 @@ internal sealed class HomeInteractionController
             return Vector2.Zero;
         }
 
-        var phase = (tile.Key.GetHashCode() & 0x3ff) / 1023f * MathF.PI * 2f;
-        var x = MathF.Sin(editClock * 11f + phase);
-        var y = MathF.Cos(editClock * 13f + phase * 1.3f);
+        return JiggleOffset(tile.Key.GetHashCode(), editClock, scale);
+    }
+
+    public static Vector2 JiggleOffset(int seed, float clock, float scale)
+    {
+        var phase = (seed & 0x3ff) / 1023f * MathF.PI * 2f;
+        var x = MathF.Sin(clock * 11f + phase);
+        var y = MathF.Cos(clock * 13f + phase * 1.3f);
         return new Vector2(x, y) * 1.1f * scale;
     }
 

@@ -5851,6 +5851,7 @@ internal static class L
         public static readonly LocString AddControls = new("controlCenter.addControls", "Add a Control");
         public static readonly LocString AllControlsAdded = new("controlCenter.allControlsAdded", "Every control is in place");
         public static readonly LocString EditHint = new("controlCenter.editHint", "Drag to rearrange · tap ⤢ to resize");
+        public static readonly LocString QuickToggles = new("controlCenter.quickToggles", "Quick Toggles");
     }
 
     internal static class AppSwitcher
