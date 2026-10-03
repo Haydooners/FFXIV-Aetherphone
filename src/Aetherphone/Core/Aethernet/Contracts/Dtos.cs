@@ -635,7 +635,22 @@ internal sealed record ModerationNoticePage(
     int PendingCount,
     string? NextCursor = null);
 
-internal sealed record CreateFeedbackRequest(string Text, string[] ImageKeys);
+internal sealed record CreateFeedbackRequest(
+    string Text,
+    string[] ImageKeys,
+    string Category = "other",
+    string Context = "");
+
+internal sealed record MyFeedbackDto(
+    string Id,
+    string Text,
+    string Category,
+    string Status,
+    string[] ImageUrls,
+    long CreatedAtUnix,
+    long ResolvedAtUnix) : IIdentified;
+
+internal sealed record MyFeedbackPage(MyFeedbackDto[] Items, string? NextCursor = null);
 
 internal sealed record PollTranslationDto(string Lang, string Question, string[] Options);
 
