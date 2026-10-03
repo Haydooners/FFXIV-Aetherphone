@@ -459,6 +459,13 @@ internal sealed partial class ShortcutsApp
             return;
         }
 
+        var issue = ShortcutRules.Check(draft);
+        if (issue != ShortcutDraftIssue.None)
+        {
+            Refuse(issue);
+            return;
+        }
+
         var previousUnsavedIcon = UnsavedIconOf(draft);
         var copy = DuplicateEntry(draft);
         if (copy is null)
