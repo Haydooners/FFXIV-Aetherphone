@@ -87,41 +87,10 @@ public sealed class PollRulesTests
         var sooner = Poll("sooner", created: 20, closesAt: Now + 2 * Hour);
         var newer = Poll("newer", created: 95);
         var open = new List<PollDto>();
-        var ended = new List<PollDto>();
 
-        PollRules.Partition(new[] { voted, openEnded, later, sooner, newer }, Array.Empty<PollDto>(), Now,
-            new HashSet<string>(), open, ended);
+        PollRules.Order(new[] { voted, openEnded, later, sooner, newer }, open);
 
-        Assert.Empty(ended);
         Assert.Equal(new[] { "sooner", "later", "newer", "open-ended", "voted" }, Ids(open));
-    }
-
-    [Fact]
-    public void EndedPollsSortByMostRecentCloseAndMergeWithoutDuplicates()
-    {
-        var expired = Poll("expired", created: 1, closesAt: Now - Hour);
-        var server = Poll("server", created: 2, closed: true, closedAt: Now - 10);
-        var duplicate = Poll("expired", created: 1, closed: true, closedAt: Now - Hour);
-        var open = new List<PollDto>();
-        var ended = new List<PollDto>();
-
-        PollRules.Partition(new[] { expired }, new[] { server, duplicate }, Now, new HashSet<string>(), open, ended);
-
-        Assert.Empty(open);
-        Assert.Equal(new[] { "server", "expired" }, Ids(ended));
-    }
-
-    [Fact]
-    public void APollShownAsOpenStaysInPlaceWhenItEndsUnderTheReader()
-    {
-        var poll = Poll("p", closesAt: Now - 1);
-        var open = new List<PollDto>();
-        var ended = new List<PollDto>();
-
-        PollRules.Partition(new[] { poll }, Array.Empty<PollDto>(), Now, new HashSet<string> { "p" }, open, ended);
-
-        Assert.Single(open);
-        Assert.Empty(ended);
     }
 
     [Fact]
@@ -193,14 +162,6 @@ public sealed class PollRulesTests
         Assert.True(expired.Closed);
         Assert.Equal(Now - Hour, expired.ClosedAtUnix);
         Assert.Equal(Now, refused.ClosedAtUnix);
-    }
-
-    [Fact]
-    public void AnEndedPageWithAnOpenPollMeansTheServerIgnoredTheFilter()
-    {
-        Assert.True(PollRules.AnyOpen(new[] { Poll("a", closed: true), Poll("b") }));
-        Assert.False(PollRules.AnyOpen(new[] { Poll("a", closed: true) }));
-        Assert.False(PollRules.AnyOpen(Array.Empty<PollDto>()));
     }
 
     private static string[] Ids(List<PollDto> polls)

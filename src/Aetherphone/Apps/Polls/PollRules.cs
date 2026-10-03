@@ -7,7 +7,6 @@ internal static class PollRules
     public const long EndingSoonSeconds = 24L * 60L * 60L;
 
     private static readonly Comparison<PollDto> OpenOrderComparison = CompareOpen;
-    private static readonly Comparison<PollDto> EndedOrderComparison = CompareEnded;
 
     public static bool IsClosed(PollDto poll, long nowUnix) =>
         poll.Closed || (poll.ClosesAtUnix > 0 && nowUnix >= poll.ClosesAtUnix);
@@ -42,61 +41,11 @@ internal static class PollRules
         return poll with { Closed = true, ClosedAtUnix = closedAt };
     }
 
-    public static bool AnyOpen(PollDto[] polls)
+    public static void Order(PollDto[] source, List<PollDto> target)
     {
-        for (var index = 0; index < polls.Length; index++)
-        {
-            if (!polls[index].Closed)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static void Partition(PollDto[] openSource, PollDto[] endedSource, long nowUnix,
-        HashSet<string> keepOpen, List<PollDto> open, List<PollDto> ended)
-    {
-        open.Clear();
-        ended.Clear();
-        for (var index = 0; index < openSource.Length; index++)
-        {
-            var poll = openSource[index];
-            if (!IsClosed(poll, nowUnix) || keepOpen.Contains(poll.Id))
-            {
-                open.Add(poll);
-            }
-            else
-            {
-                ended.Add(poll);
-            }
-        }
-
-        for (var index = 0; index < endedSource.Length; index++)
-        {
-            var poll = endedSource[index];
-            if (!ContainsId(open, poll.Id) && !ContainsId(ended, poll.Id))
-            {
-                ended.Add(poll);
-            }
-        }
-
-        open.Sort(OpenOrderComparison);
-        ended.Sort(EndedOrderComparison);
-    }
-
-    private static bool ContainsId(List<PollDto> polls, string id)
-    {
-        for (var index = 0; index < polls.Count; index++)
-        {
-            if (polls[index].Id == id)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        target.Clear();
+        target.AddRange(source);
+        target.Sort(OpenOrderComparison);
     }
 
     public static int CompareOpen(PollDto left, PollDto right)
@@ -121,12 +70,6 @@ internal static class PollRules
         }
 
         return NewestFirst(left, right);
-    }
-
-    public static int CompareEnded(PollDto left, PollDto right)
-    {
-        var byClose = ClosedMoment(right).CompareTo(ClosedMoment(left));
-        return byClose != 0 ? byClose : NewestFirst(left, right);
     }
 
     public static int NewestFirst(PollDto left, PollDto right)

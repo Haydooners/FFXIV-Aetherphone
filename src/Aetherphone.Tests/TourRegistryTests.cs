@@ -26,7 +26,7 @@ public sealed class TourRegistryTests
         { "velvet", (5, 8) },
         { "notifications", (3, 2) },
         { "message", (3, 6) },
-        { "polls", (4, 3) },
+        { "polls", (5, 2) },
         { "muster", (2, 4) },
         { "yellowpages", (2, 6) },
         { "jobs", (2, 3) },

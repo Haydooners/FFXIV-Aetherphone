@@ -162,7 +162,7 @@ internal sealed class PollText
         if (poll.ClosesAtUnix <= 0)
         {
             Status = PollStatus.Open;
-            StatusLabel = Loc.T(L.Polls.Open);
+            StatusLabel = string.Empty;
             return;
         }
 

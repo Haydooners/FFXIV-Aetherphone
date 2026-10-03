@@ -23,25 +23,14 @@ internal sealed class PollsStore : IDisposable
     private readonly Lock voteGate = new();
     private readonly Dictionary<string, VoteTicket> tickets = new(StringComparer.Ordinal);
     private readonly FailureSlot listFailure = new();
-    private readonly FailureSlot endedFailure = new();
 
     private volatile PollDto[] polls = Array.Empty<PollDto>();
-    private volatile PollDto[] endedServer = Array.Empty<PollDto>();
-    private volatile PollDto[] endedLocal = Array.Empty<PollDto>();
-    private volatile PollDto[] endedView = Array.Empty<PollDto>();
     private volatile string? pollsCursor;
-    private volatile string? endedCursor;
     private volatile bool loadingMore;
     private volatile bool pagedDeeper;
     private volatile bool loading;
     private volatile bool loadedOnce;
     private volatile bool listFailed;
-    private volatile bool endedLoading;
-    private volatile bool endedLoadingMore;
-    private volatile bool endedLoadedOnce;
-    private volatile bool endedFailed;
-    private volatile bool endedStale = true;
-    private volatile bool endedSupported = true;
     private volatile bool pingRefreshRequested;
     private volatile PollVoteFailure? voteFailure;
     private int voteSequence;
@@ -66,8 +55,6 @@ internal sealed class PollsStore : IDisposable
 
     public PollDto[] Polls => polls;
 
-    public PollDto[] Ended => endedView;
-
     public bool Loading => loading;
 
     public bool LoadingMore => loadingMore;
@@ -79,20 +66,6 @@ internal sealed class PollsStore : IDisposable
     public bool ListFailed => listFailed;
 
     public string ListFailureText => listFailure.Text();
-
-    public bool EndedSupported => endedSupported;
-
-    public bool EndedLoading => endedLoading;
-
-    public bool EndedLoadingMore => endedLoadingMore;
-
-    public bool EndedHasMore => endedCursor is not null;
-
-    public bool EndedLoadedOnce => endedLoadedOnce;
-
-    public bool EndedFailed => endedFailed;
-
-    public string EndedFailureText => endedFailure.Text();
 
     public PollVoteFailure? VoteFailure => voteFailure;
 
@@ -122,13 +95,7 @@ internal sealed class PollsStore : IDisposable
 
     public void Refresh()
     {
-        if (!session.IsSignedIn)
-        {
-            return;
-        }
-
-        endedStale = true;
-        if (loading)
+        if (!session.IsSignedIn || loading)
         {
             return;
         }
@@ -152,7 +119,6 @@ internal sealed class PollsStore : IDisposable
             lock (voteGate)
             {
                 var items = KeepPendingVotes(page.Items);
-                RetireDeparted(items, page.NextCursor is null);
                 if (pagedDeeper)
                 {
                     polls = IdentifiedMerge.MergeById(DropDeparted(polls, items), items, PollRules.NewestFirst);
@@ -193,74 +159,6 @@ internal sealed class PollsStore : IDisposable
                 pollsCursor = page.NextCursor;
             }
         }, () => loadingMore = false);
-    }
-
-    public void EnsureEnded()
-    {
-        if (!session.IsSignedIn || !endedSupported || endedLoading || !endedStale)
-        {
-            return;
-        }
-
-        endedLoading = true;
-        endedStale = false;
-        var lang = Loc.Current.Code;
-        work.Run("polls ended", async token =>
-        {
-            var failure = AepFailure.None;
-            var page = await client.ListEndedAsync(null, lang, token, received => failure = received)
-                .ConfigureAwait(false);
-            if (page is null)
-            {
-                endedFailure.Set(failure);
-                endedFailed = true;
-                return;
-            }
-
-            endedFailure.Clear();
-            endedFailed = false;
-            if (PollRules.AnyOpen(page.Items))
-            {
-                endedSupported = false;
-                return;
-            }
-
-            lock (voteGate)
-            {
-                endedServer = page.Items;
-                endedCursor = page.NextCursor;
-                RebuildEndedView();
-            }
-
-            endedLoadedOnce = true;
-        }, () => endedLoading = false);
-    }
-
-    public void LoadMoreEnded()
-    {
-        var cursor = endedCursor;
-        if (!session.IsSignedIn || cursor is null || endedLoadingMore || endedLoading)
-        {
-            return;
-        }
-
-        endedLoadingMore = true;
-        var lang = Loc.Current.Code;
-        work.Run("polls ended more", async token =>
-        {
-            var page = await client.ListEndedAsync(cursor, lang, token).ConfigureAwait(false);
-            if (page is null || PollRules.AnyOpen(page.Items))
-            {
-                return;
-            }
-
-            lock (voteGate)
-            {
-                endedServer = IdentifiedMerge.MergeById(endedServer, page.Items, PollRules.CompareEnded);
-                endedCursor = page.NextCursor;
-                RebuildEndedView();
-            }
-        }, () => endedLoadingMore = false);
     }
 
     public bool Vote(PollDto poll, int optionIndex)
@@ -394,49 +292,13 @@ internal sealed class PollsStore : IDisposable
         return merged;
     }
 
-    private void RetireDeparted(PollDto[] incoming, bool complete)
-    {
-        var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var oldestIncoming = OldestCreated(incoming);
-        var snapshot = polls;
-        var retired = endedLocal;
-        var changed = false;
-        for (var index = 0; index < snapshot.Length; index++)
-        {
-            var poll = snapshot[index];
-            if (!Departed(poll, incoming, complete, oldestIncoming) || !PollRules.IsClosed(poll, nowUnix))
-            {
-                continue;
-            }
-
-            retired = IdentifiedMerge.MergeById(retired, new[] { PollRules.MarkClosed(poll, nowUnix) },
-                PollRules.CompareEnded);
-            changed = true;
-        }
-
-        for (var index = 0; index < incoming.Length; index++)
-        {
-            var reopened = CopyOnWrite.RemoveById(retired, incoming[index].Id);
-            changed |= !ReferenceEquals(reopened, retired);
-            retired = reopened;
-        }
-
-        if (!changed)
-        {
-            return;
-        }
-
-        endedLocal = retired;
-        RebuildEndedView();
-    }
-
     private static PollDto[] DropDeparted(PollDto[] existing, PollDto[] incoming)
     {
         var oldestIncoming = OldestCreated(incoming);
         var kept = existing;
         for (var index = 0; index < existing.Length; index++)
         {
-            if (Departed(existing[index], incoming, false, oldestIncoming))
+            if (Departed(existing[index], incoming, oldestIncoming))
             {
                 kept = CopyOnWrite.RemoveById(kept, existing[index].Id);
             }
@@ -445,7 +307,7 @@ internal sealed class PollsStore : IDisposable
         return kept;
     }
 
-    private static bool Departed(PollDto poll, PollDto[] incoming, bool complete, long oldestIncoming)
+    private static bool Departed(PollDto poll, PollDto[] incoming, long oldestIncoming)
     {
         for (var index = 0; index < incoming.Length; index++)
         {
@@ -455,7 +317,7 @@ internal sealed class PollsStore : IDisposable
             }
         }
 
-        return complete || poll.CreatedAtUnix >= oldestIncoming;
+        return poll.CreatedAtUnix >= oldestIncoming;
     }
 
     private static long OldestCreated(PollDto[] polls)
@@ -472,11 +334,6 @@ internal sealed class PollsStore : IDisposable
         }
 
         return oldest;
-    }
-
-    private void RebuildEndedView()
-    {
-        endedView = IdentifiedMerge.MergeById(endedLocal, endedServer, PollRules.CompareEnded);
     }
 
     private void OnFrameworkUpdate(IFramework framework)

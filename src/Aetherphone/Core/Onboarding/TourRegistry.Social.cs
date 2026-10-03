@@ -37,14 +37,13 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.AethergramPickTitle, L.Onboarding.AethergramPickBody,
                     "aethergram.compose.grid", GuideGesture.None),
             });
-        Add(tours, "polls", 4,
+        Add(tours, "polls", 5,
             new[]
             {
                 GuideStep.Point(L.Onboarding.PollsCastTitle, L.Onboarding.PollsCastBody, "polls.options",
                     GuideGesture.Tap),
                 GuideStep.Point(L.Onboarding.PollsTallyTitle, L.Onboarding.PollsTallyBody, "polls.footer",
                     GuideGesture.None),
-                GuideStep.TryTap(L.Onboarding.PollsEndedTitle, L.Onboarding.PollsEndedBody, "polls.tab.ended"),
             });
         Add(tours, "announcements", 2,
             new[]

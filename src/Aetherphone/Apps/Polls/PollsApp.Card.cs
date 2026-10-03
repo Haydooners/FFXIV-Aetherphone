@@ -126,14 +126,11 @@ internal sealed partial class PollsApp
             PollStatus.Ended => ui.MutedInk,
             _ => ui.Accent,
         };
-        var chipIcon = text.Status switch
-        {
-            PollStatus.Ended => FontAwesomeIcon.Flag,
-            PollStatus.Open => FontAwesomeIcon.CheckSquare,
-            _ => FontAwesomeIcon.HourglassHalf,
-        };
-        var chipWidth = PollsArt.Chip(drawList, new Vector2(left, centerY), text.StatusLabel, chipInk, chipIcon,
-            scale);
+        var chipIcon = text.Status == PollStatus.Ended ? FontAwesomeIcon.Flag : FontAwesomeIcon.HourglassHalf;
+        var chipWidth = text.Status == PollStatus.Open
+            ? 0f
+            : PollsArt.Chip(drawList, new Vector2(left, centerY), text.StatusLabel, chipInk, chipIcon, scale)
+              + Metrics.Space.Sm * scale;
 
         var needsVote = PollRules.NeedsVote(poll, nowUnix);
         var markLabel = needsVote ? Loc.T(L.Polls.NeedsVote) : string.Empty;
@@ -148,7 +145,7 @@ internal sealed partial class PollsApp
             return;
         }
 
-        var votesLeft = left + chipWidth + Metrics.Space.Sm * scale;
+        var votesLeft = left + chipWidth;
         var available = right - markWidth - votesLeft;
         if (available <= 0f)
         {

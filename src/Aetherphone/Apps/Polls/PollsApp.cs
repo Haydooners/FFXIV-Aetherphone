@@ -18,15 +18,11 @@ namespace Aetherphone.Apps.Polls;
 internal sealed partial class PollsApp : IPhoneApp
 {
     private const float RefreshSeconds = 60f;
-    private const float SegmentHeight = 32f;
-    private const float SegmentGap = 14f;
     private const float CardGap = 14f;
     private const float BannerHeight = 26f;
     private const float BottomPad = 24f;
     private const int SkeletonCards = 2;
     private const int SkeletonOptions = 3;
-    private const int OpenTab = 0;
-    private const int EndedTab = 1;
 
     public string Id => "polls";
     public string DisplayName => Loc.T(L.Apps.Polls);
@@ -39,22 +35,16 @@ internal sealed partial class PollsApp : IPhoneApp
     private readonly PullToRefresh listRefresh = new();
     private readonly Dictionary<string, PollMotion> motions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PollText> texts = new(StringComparer.Ordinal);
-    private readonly List<PollDto> openPolls = new();
-    private readonly List<PollDto> endedPolls = new();
-    private readonly List<PollDto> combinedPolls = new();
-    private readonly HashSet<string> keepOpen = new(StringComparer.Ordinal);
-    private readonly string[] tabLabels = new string[2];
+    private readonly List<PollDto> orderedPolls = new();
     private readonly Action refreshAll;
 
-    private PollDto[]? partitionOpenSource;
-    private PollDto[]? partitionEndedSource;
+    private PollDto[]? orderedSource;
     private PhoneTheme theme = PhoneTheme.Default;
     private INavigator navigation = null!;
     private PollVoteFailure? announcedFailure;
     private string widestPercent = string.Empty;
     private string widestPercentLang = string.Empty;
     private float sinceRefresh;
-    private int activeTab;
 
     public PollsApp(AethernetSession session, PollsClient client, AppInstaller installer, RealtimeSignalBus signals)
     {
@@ -65,22 +55,13 @@ internal sealed partial class PollsApp : IPhoneApp
     public void OnOpened()
     {
         sinceRefresh = 0f;
-        activeTab = OpenTab;
-        ResetPartition();
-        store.Refresh();
+        RefreshAll();
     }
 
     private void RefreshAll()
     {
-        ResetPartition();
+        orderedSource = null;
         store.Refresh();
-    }
-
-    private void ResetPartition()
-    {
-        keepOpen.Clear();
-        partitionOpenSource = null;
-        partitionEndedSource = null;
     }
 
     public void OnClosed()
@@ -98,7 +79,7 @@ internal sealed partial class PollsApp : IPhoneApp
         ui.Backdrop(SceneChrome.ScreenFrom(area, theme, scale));
         ui.Body(area);
 
-        var navBar = AppHeader.BeginLargeTitle(context);
+        var navBar = AppHeader.BeginLargeTitle(context, false);
         var body = navBar.Body;
         if (store.IsSignedIn)
         {
@@ -129,39 +110,21 @@ internal sealed partial class PollsApp : IPhoneApp
     private void DrawSignedIn(Rect body, float scale)
     {
         TickRefresh();
-        SyncPartition();
+        SyncOrder();
         AnnounceFailure();
-        var showTabs = store.EndedSupported;
-        if (!showTabs)
-        {
-            activeTab = OpenTab;
-        }
 
         using var surface = AppSurface.Begin(body);
-        listRefresh.Draw(body, surface.Pull, surface.Dragging, store.Loading || store.EndedLoading, ui.MutedInk,
-            refreshAll);
-        if (showTabs)
-        {
-            DrawTabs(scale);
-        }
-
+        listRefresh.Draw(body, surface.Pull, surface.Dragging, store.Loading, ui.MutedInk, refreshAll);
         if (!store.LoadedOnce)
         {
             TourHolds.Hold(Id);
             if (store.ListFailed && !store.Loading)
             {
-                DrawLoadFailed(body, false);
+                DrawLoadFailed(body);
                 return;
             }
 
             DrawSkeletons(scale);
-            return;
-        }
-
-        if (activeTab == EndedTab)
-        {
-            TourHolds.Hold(Id);
-            DrawEndedTab(body, scale);
             return;
         }
 
@@ -170,16 +133,15 @@ internal sealed partial class PollsApp : IPhoneApp
             DrawRefreshBanner(scale);
         }
 
-        var list = showTabs ? openPolls : combinedPolls;
-        if (list.Count == 0)
+        if (orderedPolls.Count == 0)
         {
             TourHolds.Hold(Id);
-            DrawEmpty(body, false);
+            DrawEmpty(body);
             return;
         }
 
         TourHolds.Release(Id);
-        DrawCards(list, scale, true);
+        DrawCards(scale);
         if (store.LoadingMore)
         {
             InfiniteScroll.DrawLoadingRow(body.Center.X, ui.MutedInk);
@@ -192,72 +154,14 @@ internal sealed partial class PollsApp : IPhoneApp
         ImGui.Dummy(new Vector2(0f, BottomPad * scale));
     }
 
-    private void DrawEndedTab(Rect body, float scale)
-    {
-        store.EnsureEnded();
-        if (endedPolls.Count == 0)
-        {
-            if (store.EndedLoading || (!store.EndedLoadedOnce && !store.EndedFailed))
-            {
-                DrawSkeletons(scale);
-                return;
-            }
-
-            if (store.EndedFailed)
-            {
-                DrawLoadFailed(body, true);
-                return;
-            }
-
-            DrawEmpty(body, true);
-            return;
-        }
-
-        if (store.EndedFailed)
-        {
-            DrawRefreshBanner(scale);
-        }
-
-        DrawCards(endedPolls, scale, false);
-        if (store.EndedLoadingMore)
-        {
-            InfiniteScroll.DrawLoadingRow(body.Center.X, ui.MutedInk);
-        }
-        else if (store.EndedHasMore && InfiniteScroll.ReachedBottom())
-        {
-            store.LoadMoreEnded();
-        }
-
-        ImGui.Dummy(new Vector2(0f, BottomPad * scale));
-    }
-
-    private void DrawCards(List<PollDto> list, float scale, bool tourTab)
+    private void DrawCards(float scale)
     {
         var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var width = ImGui.GetContentRegionAvail().X;
-        for (var index = 0; index < list.Count; index++)
+        for (var index = 0; index < orderedPolls.Count; index++)
         {
-            DrawCard(list[index], width, scale, nowUnix, tourTab && index == 0);
+            DrawCard(orderedPolls[index], width, scale, nowUnix, index == 0);
         }
-    }
-
-    private void DrawTabs(float scale)
-    {
-        var top = ImGui.GetCursorScreenPos();
-        var row = new Rect(top, new Vector2(top.X + ImGui.GetContentRegionAvail().X, top.Y + SegmentHeight * scale));
-        UiAnchors.Report("polls.tab.ended", new Rect(new Vector2(row.Center.X, row.Min.Y), row.Max));
-        tabLabels[OpenTab] = Loc.T(L.Polls.Open);
-        tabLabels[EndedTab] = Loc.T(L.Polls.Ended);
-        var selected = SegmentStrip.Draw("polls.tabs", row, tabLabels, activeTab, ui.Palette, SegmentHeight);
-        if (selected != activeTab)
-        {
-            activeTab = selected;
-            ResetPartition();
-            SyncPartition();
-            UiFeedback.Play(UiSound.Tap);
-        }
-
-        ImGui.Dummy(new Vector2(0f, (SegmentHeight + SegmentGap) * scale - ImGui.GetStyle().ItemSpacing.Y));
     }
 
     private void DrawSkeletons(float scale)
@@ -274,9 +178,9 @@ internal sealed partial class PollsApp : IPhoneApp
         }
     }
 
-    private void DrawLoadFailed(Rect body, bool ended)
+    private void DrawLoadFailed(Rect body)
     {
-        var reason = ended ? store.EndedFailureText : store.ListFailureText;
+        var reason = store.ListFailureText;
         if (!PollsArt.StateScreen(body, ui, FontAwesomeIcon.ExclamationTriangle, Loc.T(L.Common.LoadFailed),
                 reason.Length > 0 ? reason : Loc.T(L.Common.LoadFailedHint), Loc.T(L.Common.Retry)))
         {
@@ -306,11 +210,10 @@ internal sealed partial class PollsApp : IPhoneApp
         ImGui.Dummy(new Vector2(0f, height));
     }
 
-    private void DrawEmpty(Rect body, bool ended)
+    private void DrawEmpty(Rect body)
     {
-        PollsArt.StateScreen(body, ui, ended ? FontAwesomeIcon.Flag : FontAwesomeIcon.CheckSquare,
-            Loc.T(ended ? L.Polls.EmptyEndedTitle : L.Polls.EmptyOpenTitle),
-            Loc.T(ended ? L.Polls.EmptyEndedHint : L.Polls.EmptyOpenHint), string.Empty);
+        PollsArt.StateScreen(body, ui, FontAwesomeIcon.CheckSquare, Loc.T(L.Polls.EmptyOpenTitle),
+            Loc.T(L.Polls.EmptyOpenHint), string.Empty);
     }
 
     private void TickRefresh()
@@ -325,26 +228,16 @@ internal sealed partial class PollsApp : IPhoneApp
         store.Refresh();
     }
 
-    private void SyncPartition()
+    private void SyncOrder()
     {
-        var openSource = store.Polls;
-        var endedSource = store.Ended;
-        if (ReferenceEquals(openSource, partitionOpenSource) && ReferenceEquals(endedSource, partitionEndedSource))
+        var source = store.Polls;
+        if (ReferenceEquals(source, orderedSource))
         {
             return;
         }
 
-        partitionOpenSource = openSource;
-        partitionEndedSource = endedSource;
-        PollRules.Partition(openSource, endedSource, DateTimeOffset.UtcNow.ToUnixTimeSeconds(), keepOpen, openPolls,
-            endedPolls);
-        combinedPolls.Clear();
-        combinedPolls.AddRange(openPolls);
-        combinedPolls.AddRange(endedPolls);
-        for (var index = 0; index < openPolls.Count; index++)
-        {
-            keepOpen.Add(openPolls[index].Id);
-        }
+        orderedSource = source;
+        PollRules.Order(source, orderedPolls);
     }
 
     private void AnnounceFailure()
