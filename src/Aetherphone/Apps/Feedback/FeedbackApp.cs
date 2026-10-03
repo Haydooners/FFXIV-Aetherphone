@@ -235,6 +235,7 @@ internal sealed class FeedbackApp : IPhoneApp
         {
             var min = new Vector2(x + (tile + gap) * attachments.Count, y);
             var max = min + new Vector2(tile, tile);
+            UiAnchors.Report("feedback.attach", new Rect(min, max));
             if (DrawAddTile(drawList, min, max, rounding, scale))
             {
                 OpenPicker();

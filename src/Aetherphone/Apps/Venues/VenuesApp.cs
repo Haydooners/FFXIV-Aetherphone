@@ -125,6 +125,14 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         ui.Backdrop(screen);
         router.Draw(SceneChrome.AppAreaFrom(context.Content, theme, scale), AppSkin.Transparent,
             ImGui.GetIO().DeltaTime, drawView);
+        if (router.Depth == 1 && venues.Events.Count > 0)
+        {
+            TourHolds.Release(Id);
+        }
+        else
+        {
+            TourHolds.Hold(Id);
+        }
     }
 
     private void ConsumePendingVenue()
@@ -268,7 +276,6 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
             router.Push(VenueRoute.Filters);
         }
 
-        UiAnchors.Report("venues.chips", new Rect(pill.Min, filtersCenter + new Vector2(radius, radius)));
     }
 
     private Rect DrawScopePill(Vector2 rightCenter, float scale)
@@ -287,6 +294,7 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
             Ink.AccentLink, ScopePillStyle);
         PhoneIcon.Draw(drawList, new Vector2(rect.Max.X - 11f * scale, rect.Center.Y), PhoneIcons.ChevronDown,
             Palette.WithAlpha(Ink.AccentLink, 0.85f), 12f * scale);
+        UiAnchors.Report("venues.scope", rect);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -634,7 +642,15 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         for (var index = 0; index < count; index++)
         {
             var venue = feed[index];
-            HandleCardAction(VenueCard.DrawFeed(venue, text[index], IsFavorite(venue.Id), art, Ink, actions), venue);
+            var cardTop = ImGui.GetCursorScreenPos();
+            var action = VenueCard.DrawFeed(venue, text[index], IsFavorite(venue.Id), art, Ink, actions);
+            if (index == 0 && UiAnchors.Recording)
+            {
+                UiAnchors.Report("venues.card.first", new Rect(cardTop,
+                    new Vector2(cardTop.X + ScrollLayout.StableContentWidth(), ImGui.GetCursorScreenPos().Y)));
+            }
+
+            HandleCardAction(action, venue);
         }
 
         if (feed.Count <= count)

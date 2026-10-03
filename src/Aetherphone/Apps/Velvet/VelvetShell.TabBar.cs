@@ -10,8 +10,6 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetShell
 {
-    private const float TabBarAvatarRadius = 13f;
-    private const float TabBarAvatarRingGap = 3f;
     private const int TabCount = 4;
 
     private readonly TabBar tabBar = new();
@@ -50,15 +48,14 @@ internal sealed partial class VelvetShell
         }
 
         var scale = UiScale.Current;
-        var radius = TabBarAvatarRadius * scale * pose.Scale;
-        VAvatar.Draw(drawList, pose.IconCenter, radius, theme, DisplayNameOf(me.DisplayName, me.Handle), me.World,
+        VAvatar.Draw(drawList, pose.IconCenter, pose.AvatarRadius(scale), theme, DisplayNameOf(me.DisplayName, me.Handle), me.World,
             me.AvatarUrl, images, lodestone, -1, null, Frames.Of(me.FrameId));
         if (!active)
         {
             return;
         }
 
-        drawList.AddCircle(pose.IconCenter, radius + TabBarAvatarRingGap * scale,
+        drawList.AddCircle(pose.IconCenter, pose.AvatarRingRadius(scale),
             ImGui.GetColorU32(VelvetTheme.RoseInk), 32, 1.6f * scale);
     }
 

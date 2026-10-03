@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Collections;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -14,6 +15,7 @@ internal sealed partial class CollectionsApp
         DrawNavBar(area, item.Name, back);
         var scale = UiScale.Current;
         var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
+        UiAnchors.Report("collections.detail", body);
         using (AppSurface.Begin(body))
         {
             ImGui.Dummy(new Vector2(0f, 4f * scale));

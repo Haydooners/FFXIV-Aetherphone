@@ -100,16 +100,20 @@ internal sealed class WalletApp : IPhoneApp
         var body = new Rect(new Vector2(content.Min.X, content.Min.Y + AppHeader.Height * scale), content.Max);
         if (gil is null)
         {
+            TourHolds.Hold(Id);
             Typography.DrawCentered(body.Center, Loc.T(L.Wallet.LogInToView), AppPalettes.Wallet.MutedInk);
             return;
         }
+
+        TourHolds.Release(Id);
 
         using (AppSurface.Begin(body))
         {
             UiAnchors.Report("wallet.gil", CurrencyRow.Hero(gil, textures, AppPalettes.Wallet));
             ImGui.Dummy(new Vector2(0f, 6f * scale));
 
-            var currenciesAnchored = false;
+            var cappedAnchored = false;
+            var firstSection = true;
             for (var sectionIndex = 0; sectionIndex < sections.Length; sectionIndex++)
             {
                 var section = sections[sectionIndex];
@@ -118,14 +122,9 @@ internal sealed class WalletApp : IPhoneApp
                     continue;
                 }
 
-                ui.SectionHeading(Loc.T(section.Title), currenciesAnchored ? 4f : 8f);
-                var cardRect = DrawSectionCard(section, scale);
-                if (!currenciesAnchored)
-                {
-                    UiAnchors.Report("wallet.currencies", cardRect);
-                    currenciesAnchored = true;
-                }
-
+                ui.SectionHeading(Loc.T(section.Title), firstSection ? 8f : 4f);
+                firstSection = false;
+                DrawSectionCard(section, scale, ref cappedAnchored);
                 ImGui.Dummy(new Vector2(0f, SectionGap * scale));
             }
 
@@ -140,7 +139,7 @@ internal sealed class WalletApp : IPhoneApp
             1.15f, FontWeight.SemiBold);
     }
 
-    private Rect DrawSectionCard(WalletSection section, float scale)
+    private void DrawSectionCard(WalletSection section, float scale, ref bool cappedAnchored)
     {
         var width = ImGui.GetContentRegionAvail().X;
         var rowCount = section.Entries.Length;
@@ -158,12 +157,17 @@ internal sealed class WalletApp : IPhoneApp
             var contentRect = card.NextRow(CurrencyRow.HeightFor(entry));
             var band = new Rect(new Vector2(origin.X, contentRect.Min.Y),
                 new Vector2(origin.X + width, contentRect.Max.Y));
+            if (!cappedAnchored && entry.Cap > 0)
+            {
+                cappedAnchored = true;
+                UiAnchors.Report("wallet.capped", band);
+            }
+
             CurrencyRow.Draw(band, contentRect, entry, textures, ui.Palette,
                 Metrics.Radius.Md * scale, entryIndex == 0, entryIndex == rowCount - 1);
         }
 
         card.End();
-        return new Rect(origin, origin + new Vector2(width, totalHeight * scale));
     }
 
     public void Dispose()

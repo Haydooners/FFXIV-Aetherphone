@@ -343,10 +343,11 @@ internal sealed partial class MusicApp : IResumableApp
     {
         navTabs[0] = new TabItem(Loc.T(L.Music.TabHome), IconGlyph.Of(FontAwesomeIcon.Home));
         navTabs[1] = new TabItem(Loc.T(L.Music.TabLive), IconGlyph.Of(FontAwesomeIcon.BroadcastTower),
-            Badge: community.FollowedLiveCount);
+            Badge: community.FollowedLiveCount, AnchorKey: "music.tab.live");
         navTabs[2] = new TabItem(Loc.T(L.Music.TabRadio), IconGlyph.Of(FontAwesomeIcon.Podcast),
-            AnchorKey: "music.categories");
-        navTabs[3] = new TabItem(Loc.T(L.Music.TabLibrary), IconGlyph.Of(FontAwesomeIcon.LayerGroup));
+            AnchorKey: "music.tab.radio");
+        navTabs[3] = new TabItem(Loc.T(L.Music.TabLibrary), IconGlyph.Of(FontAwesomeIcon.LayerGroup),
+            AnchorKey: "music.tab.library");
         var result = bottomNav.Draw(area, ui, navTabs, (int)tab);
         if (result.Tapped < 0)
         {

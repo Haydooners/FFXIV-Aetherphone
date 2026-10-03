@@ -9,6 +9,8 @@ internal static class TabBarLayout
     public const float BottomInset = 10f;
     public const float ContentGap = 10f;
     public const float IconSize = 22f;
+    public const float AvatarRadius = 10f;
+    public const float AvatarRingGap = 2f;
     public const float ActionDiameter = 44f;
     public const float ActionGap = 8f;
     public const float CapsulePadding = 4f;

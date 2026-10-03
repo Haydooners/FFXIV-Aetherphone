@@ -221,7 +221,7 @@ internal sealed class OnboardingDirector
         var textProgress = Math.Clamp(textClock / TextSeconds, 0f, 1f);
         var anchor = ResolveAnchor(step);
         var result = coachmark.Draw(screen, theme, step, anchor, presenceValue, textProgress, stepIndex,
-            sequence.Steps.Length, !exiting);
+            sequence.Steps.Length, !exiting, sequence.RequiredAppId);
         if (exiting)
         {
             return;
@@ -231,6 +231,11 @@ internal sealed class OnboardingDirector
         {
             case CoachmarkAction.Advance:
                 step.OnAdvance?.Invoke(navigation);
+                if (step.IsAction)
+                {
+                    UiFeedback.Play(UiSound.Success);
+                }
+
                 StepForward(sequence);
                 break;
             case CoachmarkAction.Skip:
@@ -263,6 +268,7 @@ internal sealed class OnboardingDirector
             GuideCondition.AppOpened => !atHome && currentAppId is not null,
             GuideCondition.AtHome => atHome,
             GuideCondition.MinimizeRoundTrip => restoredFromMinimize,
+            GuideCondition.AnchorVisible => step.WaitAnchorKey is { } waitKey && UiAnchors.TryGet(waitKey, out _),
             _ => false,
         };
 

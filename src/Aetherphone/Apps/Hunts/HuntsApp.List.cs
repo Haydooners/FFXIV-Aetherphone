@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Hunts;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -34,9 +35,11 @@ internal sealed partial class HuntsApp
     private int filteredWindowsFilterRevision = -1;
     private string filteredWindowsSearchQuery = string.Empty;
     private DateTimeOffset filteredWindowsResortAt;
+    private bool listReadyForTour;
 
     private void DrawList(Rect body, float scale)
     {
+        listReadyForTour = false;
         using (AppSurface.Begin(body))
         {
             if (hunts.Failed)
@@ -60,10 +63,17 @@ internal sealed partial class HuntsApp
                 return;
             }
 
+            listReadyForTour = true;
             var card = GroupCard.Begin(ui, filteredWindows.Count, RowHeight);
             for (var index = 0; index < filteredWindows.Count; index++)
             {
-                DrawRow(card.NextRow(), filteredWindows[index], scale, now);
+                var row = card.NextRow();
+                if (index == 0)
+                {
+                    UiAnchors.Report("hunts.row.first", row);
+                }
+
+                DrawRow(row, filteredWindows[index], scale, now);
             }
 
             card.End();

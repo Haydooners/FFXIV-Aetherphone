@@ -3,6 +3,7 @@ using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Songs;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
@@ -200,6 +201,11 @@ internal sealed partial class MusicApp
             var hovered = UiInteract.Hover(min, max);
             if (index == list.Count)
             {
+                if (UiAnchors.Recording && ImGui.IsRectVisible(min, max))
+                {
+                    UiAnchors.Report("music.playlists.new", new Rect(min, max));
+                }
+
                 DrawNewPlaylistTile(drawList, min, max, rounding, hovered, scale);
                 if (UiInteract.Click(min, max, hovered))
                 {

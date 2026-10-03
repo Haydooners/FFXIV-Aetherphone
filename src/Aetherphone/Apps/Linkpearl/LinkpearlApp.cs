@@ -284,11 +284,6 @@ internal sealed partial class LinkpearlApp : IResumableApp
 
     private void DrawRoot(Rect area)
     {
-        if (GuideIntents.Consume("messages.tab.people"))
-        {
-            SelectTab(MessagesTab.People);
-        }
-
         var scale = UiScale.Current;
         var header = new Rect(area.Min, new Vector2(area.Max.X, area.Min.Y + AppHeader.Height * scale));
         var content = new Rect(new Vector2(area.Min.X, header.Max.Y), area.Max);
@@ -325,9 +320,8 @@ internal sealed partial class LinkpearlApp : IResumableApp
         {
             case MessagesTab.People:
                 chrome.DrawTabHeader(header, Loc.T(L.Linkpearl.People), backToList, 2);
-                var refreshCenter = SocialChrome.HeaderSlot(header, 0);
-                UiAnchors.Report("contacts.refresh", HeaderHit(refreshCenter));
-                if (chrome.DrawHeaderIcon(drawList, refreshCenter, PhoneIcons.Refresh, Loc.T(L.Common.Refresh)))
+                if (chrome.DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(header, 0), PhoneIcons.Refresh,
+                        Loc.T(L.Common.Refresh)))
                 {
                     RequestRefresh();
                 }
@@ -353,7 +347,7 @@ internal sealed partial class LinkpearlApp : IResumableApp
         var unread = inbox.TotalUnread > 0;
         chrome.DrawTabHeader(header, DisplayName, backToList, unread ? 3 : 2);
         var newChatCenter = SocialChrome.HeaderSlot(header, 0);
-        UiAnchors.Report("messages.new", HeaderHit(newChatCenter));
+        UiAnchors.Report("messages.new", ChatListChrome.HeaderHit(newChatCenter));
         if (chrome.DrawHeaderIcon(drawList, newChatCenter, PhoneIcons.MessagePlus, Loc.T(L.Linkpearl.NewChat)))
         {
             OpenNewChat();
@@ -370,13 +364,6 @@ internal sealed partial class LinkpearlApp : IResumableApp
         {
             MarkAllRead();
         }
-    }
-
-    private static Rect HeaderHit(Vector2 center)
-    {
-        var radius = SocialChrome.HeaderIconRadius * UiScale.Current;
-        var half = new Vector2(radius, radius);
-        return new Rect(center - half, center + half);
     }
 
     private void MarkAllRead()

@@ -47,6 +47,7 @@ internal sealed partial class ActivityApp : IPhoneApp
 
     public void OnOpened()
     {
+        screenIndex = 0;
     }
 
     public void OnClosed()
@@ -66,9 +67,12 @@ internal sealed partial class ActivityApp : IPhoneApp
         var body = new Rect(new Vector2(content.Min.X, content.Min.Y + AppHeader.Height * scale), content.Max);
         if (!tracker.IsTracking)
         {
+            TourHolds.Hold(Id);
             Typography.DrawCentered(body.Center, Loc.T(L.Character.LogInToView), AppPalettes.Activity.MutedInk);
             return;
         }
+
+        TourHolds.Release(Id);
 
         using (AppSurface.Begin(body))
         {
@@ -97,6 +101,8 @@ internal sealed partial class ActivityApp : IPhoneApp
         var width = ImGui.GetContentRegionAvail().X;
         var rect = new Rect(origin, origin + new Vector2(width, 34f * scale));
         var labels = new[] { Loc.T(L.Character.Today), Loc.T(L.Character.History) };
+        UiAnchors.Report("character.tab.history",
+            new Rect(new Vector2(rect.Center.X, rect.Min.Y), rect.Max));
         screenIndex = SegmentStrip.Draw("character.screens", rect, labels, screenIndex, AppPalettes.Activity);
         ImGui.SetCursorScreenPos(rect.Min);
         ImGui.Dummy(rect.Size);
@@ -153,10 +159,10 @@ internal sealed partial class ActivityApp : IPhoneApp
     {
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
-        UiAnchors.Report("character.rings",
-            new Rect(origin, origin + new Vector2(width, ActivityRings.Height * scale)));
         ActivityRings.Draw(AppPalettes.Activity.TitleInk, ProgressFraction, AdventureFraction, FortuneFraction);
         DrawLegend(scale);
+        UiAnchors.Report("character.rings",
+            new Rect(origin, new Vector2(origin.X + width, ImGui.GetCursorScreenPos().Y)));
     }
 
     private void DrawLegend(float scale)
@@ -199,10 +205,6 @@ internal sealed partial class ActivityApp : IPhoneApp
         var hasCollectibles = today.MountsGained + today.MinionsGained > 0;
         var rowCount = hasCollectibles ? 5 : 4;
         ui.SectionLabel(Loc.T(L.Character.Today), TextStyles.FootnoteEmphasized, 6f);
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        UiAnchors.Report("character.summary",
-            new Rect(origin, origin + new Vector2(width, rowCount * RowHeight * scale)));
         var card = GroupCard.Begin(ui, rowCount, RowHeight);
         var expDetail = today.LevelsGained > 0
             ? Loc.T(L.Character.LevelsGained, today.LevelsGained)

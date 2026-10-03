@@ -72,9 +72,9 @@ internal sealed class TimersApp : IPhoneApp
         {
             DrawHero(utcNow, scale);
             DrawResets(utcNow, scale);
-            DrawActivities(utcNow, scale);
+            DrawActivities(body, utcNow, scale);
             DrawRetainers(utcNow, scale);
-            DrawReminders(scale);
+            DrawReminders(body, scale);
             ImGui.Dummy(new Vector2(0f, 10f * scale));
         }
     }
@@ -115,9 +115,19 @@ internal sealed class TimersApp : IPhoneApp
         ImGui.Dummy(new Vector2(0f, CardGap * scale));
     }
 
-    private void DrawActivities(DateTime utcNow, float scale)
+    private void DrawActivities(Rect body, DateTime utcNow, float scale)
     {
         ui.SectionLabel(Loc.T(L.Timers.Activities), TextStyles.FootnoteEmphasized, 6f);
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        var top = MathF.Max(origin.Y, body.Min.Y);
+        var bottom = MathF.Min(origin.Y + 3 * RowHeight * scale, body.Max.Y);
+        if (bottom > top)
+        {
+            UiAnchors.Report("timers.activities",
+                new Rect(new Vector2(origin.X, top), new Vector2(origin.X + width, bottom)));
+        }
+
         var card = GroupCard.Begin(ui, 3, RowHeight);
 
         var fashion = GameSchedule.FashionReport(utcNow);
@@ -164,12 +174,17 @@ internal sealed class TimersApp : IPhoneApp
         ImGui.Dummy(new Vector2(0f, CardGap * scale));
     }
 
-    private void DrawReminders(float scale)
+    private void DrawReminders(Rect body, float scale)
     {
         ui.SectionLabel(Loc.T(L.Timers.Reminders), TextStyles.FootnoteEmphasized, 6f);
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
-        UiAnchors.Report("timers.reminders", new Rect(origin, origin + new Vector2(width, 4 * RowHeight * scale)));
+        var reminders = new Rect(origin, origin + new Vector2(width, 4 * RowHeight * scale));
+        if (reminders.Min.Y >= body.Min.Y && reminders.Max.Y <= body.Max.Y)
+        {
+            UiAnchors.Report("timers.reminders", reminders);
+        }
+
         var card = GroupCard.Begin(ui, 4, RowHeight);
 
         ApplyDaily(DrawNotifyRow(card.NextRow(), Loc.T(L.Timers.DailyReset), configuration.NotifyDailyReset,

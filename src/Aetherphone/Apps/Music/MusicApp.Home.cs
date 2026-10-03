@@ -26,7 +26,7 @@ internal sealed partial class MusicApp
         EnsureFeatured();
         DrawTopBar(context, Greeting(), null);
         var barRect = SearchBarRect(content, scale);
-        UiAnchors.Report("music.search", barRect);
+        UiAnchors.Report("music.search", SearchPillRect(barRect, scale));
         if (DrawSearchPill(barRect, scale, Loc.T(L.Music.SearchSongs)))
         {
             OpenSearch();
@@ -91,11 +91,18 @@ internal sealed partial class MusicApp
         }
     }
 
+    private static Rect SearchPillRect(Rect bar, float scale)
+    {
+        var inset = new Vector2(16f * scale, 8f * scale);
+        return new Rect(bar.Min + inset, bar.Max - inset);
+    }
+
     private bool DrawSearchPill(Rect bar, float scale, string hint)
     {
         var drawList = ImGui.GetWindowDrawList();
-        var pillMin = new Vector2(bar.Min.X + 16f * scale, bar.Min.Y + 8f * scale);
-        var pillMax = new Vector2(bar.Max.X - 16f * scale, bar.Max.Y - 8f * scale);
+        var pill = SearchPillRect(bar, scale);
+        var pillMin = pill.Min;
+        var pillMax = pill.Max;
         var rounding = (pillMax.Y - pillMin.Y) * 0.5f;
         var hovered = UiInteract.Hover(pillMin, pillMax);
         var fill = hovered ? Palette.WithAlpha(ui.TitleInk, 0.16f) : ui.FieldSurface;
@@ -314,8 +321,6 @@ internal sealed partial class MusicApp
         var tileHeight = CategoryTileHeight * scale;
         var origin = ImGui.GetCursorScreenPos();
         var rows = (categories.Length + 1) / 2;
-        UiAnchors.Report("music.categories",
-            new Rect(origin, origin + new Vector2(available, rows * tileHeight + (rows - 1) * gap)));
         var drawList = ImGui.GetWindowDrawList();
         for (var index = 0; index < categories.Length; index++)
         {

@@ -220,7 +220,8 @@ internal sealed partial class CollectionsApp
         {
             var segmentBar = new Rect(new Vector2(area.Min.X + pad, rowTop),
                 new Vector2(area.Max.X - pad, rowTop + SegmentHeight * scale));
-            UiAnchors.Report("collections.filters", segmentBar);
+            UiAnchors.Report("collections.filter.missing",
+                new Rect(new Vector2(segmentBar.Max.X - segmentBar.Width / 3f, segmentBar.Min.Y), segmentBar.Max));
             DrawOwnershipSegments(segmentBar);
             rowTop = segmentBar.Max.Y + 4f * scale;
         }
@@ -390,10 +391,17 @@ internal sealed partial class CollectionsApp
         var drawList = ImGui.GetWindowDrawList();
         var hasOwned = owned is { State: OwnedState.Ready };
         var padding = FeedCell.PadX * scale;
+        var rowAnchored = false;
         for (var index = start; index < end; index++)
         {
             var item = filtered[index];
             var cell = FeedCell.Begin(drawList, rowHeight, ui.HoverWash, !sourceMenuOpen);
+            if (!rowAnchored && ImGui.IsRectVisible(cell.Bounds.Min, cell.Bounds.Max))
+            {
+                rowAnchored = true;
+                UiAnchors.Report("collections.row", cell.Bounds);
+            }
+
             var row = new Rect(new Vector2(cell.Bounds.Min.X + padding, cell.Bounds.Min.Y),
                 new Vector2(cell.Bounds.Max.X - padding, cell.Bounds.Max.Y));
             DrawRow(row, item, hasOwned && owned!.Ids.Contains(item.Id), hasOwned, scale);

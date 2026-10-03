@@ -1,6 +1,5 @@
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Notifications;
-using Aetherphone.Core.Onboarding;
 
 namespace Aetherphone.Core.Home;
 
@@ -75,8 +74,8 @@ internal sealed class WidgetActions
         var phone = Services.Phone;
         switch (route.Kind)
         {
-            case WidgetRouteKind.Tab when argument.Length > 0:
-                GuideIntents.Post(argument);
+            case WidgetRouteKind.Tab when argument.Length > 0 && app is ITabRouteTarget target:
+                target.OpenTab(argument);
                 break;
             case WidgetRouteKind.Conversation when argument.Length > 0:
                 phone.DmLauncher.RequestConversation(argument);

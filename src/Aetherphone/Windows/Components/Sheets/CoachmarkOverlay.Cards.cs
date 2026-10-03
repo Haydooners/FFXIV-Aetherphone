@@ -1,5 +1,6 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Animation;
+using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Onboarding;
 using Dalamud.Bindings.ImGui;
@@ -8,7 +9,10 @@ namespace Aetherphone.Windows.Components;
 
 internal sealed partial class CoachmarkOverlay
 {
+    private const float StrandedSeconds = 0.6f;
     private static bool passthrough;
+    private float targetMissing;
+    private bool anchorPressed;
 
     private const float HeroScale = 1.5f;
     private const float HeroDropUnits = 108f;
@@ -16,7 +20,7 @@ internal sealed partial class CoachmarkOverlay
     private const int BurstSparks = 12;
 
     private CoachmarkAction DrawPage(ImDrawListPtr drawList, Rect screen, in GuideStep step, float alpha, bool live,
-        int index, int count, float scale)
+        int index, int count, float scale, string? appId)
     {
         var centerX = screen.Center.X;
         var heroCenter = new Vector2(centerX, screen.Min.Y + screen.Height * 0.32f);
@@ -25,6 +29,10 @@ internal sealed partial class CoachmarkOverlay
         if (step.Hero == HeroMotif.Finale)
         {
             DrawFinaleHero(drawList, heroCenter, heroReveal, alpha, scale);
+        }
+        else if (step.Hero == HeroMotif.AppIcon && appId is not null)
+        {
+            DrawAppHero(drawList, heroCenter, appId, heroReveal, alpha, scale);
         }
         else
         {
@@ -84,6 +92,36 @@ internal sealed partial class CoachmarkOverlay
             scale);
     }
 
+    private void DrawAppHero(ImDrawListPtr drawList, Vector2 center, string appId, float reveal, float alpha,
+        float scale)
+    {
+        var size = FinaleMarkUnits * scale * (0.7f + 0.3f * reveal);
+        var accent = AppAccents.For(appId);
+        BrandMark.Shockwave(drawList, center, size, (stepClock - 0.15f) / BurstSeconds, alpha, scale);
+        var glow = ImGui.GetColorU32(accent with { W = 0.05f * alpha * reveal });
+        for (var layerIndex = 0; layerIndex < 6; layerIndex++)
+        {
+            var spread = size * (0.5f + 0.16f * (layerIndex + 1));
+            Squircle.Fill(drawList, center - new Vector2(spread, spread), center + new Vector2(spread, spread),
+                spread * 2f * BrandMark.CornerFraction * 1.4f, glow);
+        }
+
+        var bob = MathF.Sin(Pulse.Phase(6200.0) * MathF.PI * 2f) * 3f * scale * reveal;
+        var half = new Vector2(size * 0.5f, size * 0.5f);
+        var iconCenter = center + new Vector2(0f, bob);
+        var radius = size * BrandMark.CornerFraction;
+        if (AppIconTile.TryDraw(drawList, appId, accent, iconCenter - half, iconCenter + half, radius, alpha * reveal,
+                true, scale))
+        {
+            Squircle.StrokeDirectional(drawList, iconCenter - half, iconCenter + half, radius,
+                ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.40f * alpha * reveal)), 1.3f * scale,
+                new Vector2(-0.55f, -1f), 2.2f);
+            return;
+        }
+
+        BrandMark.TryDraw(drawList, iconCenter, size, alpha * reveal, scale);
+    }
+
     private static void DrawBurst(ImDrawListPtr drawList, Vector2 center, float size, float progress, float alpha,
         float scale)
     {
@@ -110,7 +148,9 @@ internal sealed partial class CoachmarkOverlay
         float alpha, float contentAlpha, float contentRise, float contentProgress, float blend, bool live, int index,
         int count, float scale, float delta)
     {
-        var isTap = (step.Advance == GuideAdvance.TapTarget && hole.HasValue) || step.IsAction;
+        targetMissing = hole.HasValue ? 0f : targetMissing + delta;
+        var stranded = step.IsAction && targetMissing > StrandedSeconds;
+        var isTap = (step.Advance == GuideAdvance.TapTarget && hole.HasValue) || (step.IsAction && !stranded);
         var size = MeasureCard(screen, step, isTap, scale);
         StepPose(CoachmarkTarget(screen, size, hole, scale), screen.Min, delta);
         var card = PoseRect(screen.Min, 0.94f + 0.06f * alpha);
@@ -131,6 +171,24 @@ internal sealed partial class CoachmarkOverlay
 
         var action = DrawCard(drawList, step, card, alpha, contentAlpha, contentRise, isTap, live, index, count,
             scale);
+        if (step.IsAction && step.Condition == GuideCondition.TapAnchor && live && hole is { } actionHole)
+        {
+            var inside = UiInteract.HoverWindowOnly(actionHole.Min, actionHole.Max);
+            if (inside && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+            {
+                anchorPressed = true;
+            }
+
+            if (anchorPressed && ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+            {
+                anchorPressed = false;
+                if (inside)
+                {
+                    action = CoachmarkAction.Advance;
+                }
+            }
+        }
+
         if (!step.IsAction && isTap && live && hole is { } tapHole && UiInteract.Hover(tapHole.Min, tapHole.Max))
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -280,7 +338,8 @@ internal sealed partial class CoachmarkOverlay
                 BrandMark.Lilac with { W = contentAlpha }, TextStyles.FootnoteEmphasized);
         }
 
-        if (index < count - 1 && SkipLabel(drawList, new Vector2(card.Max.X - pad, y + headerHeight * 0.5f), false,
+        if ((index < count - 1 || step.IsAction) &&
+            SkipLabel(drawList, new Vector2(card.Max.X - pad, y + headerHeight * 0.5f), false,
                 contentAlpha, live))
         {
             action = CoachmarkAction.Skip;
@@ -395,7 +454,8 @@ internal sealed partial class CoachmarkOverlay
             return false;
         }
 
-        var hovered = live && UiInteract.Hover(rect.Min, rect.Max);
+        var hovered = live && (passthrough ? UiInteract.HoverWindowOnly(rect.Min, rect.Max)
+            : UiInteract.Hover(rect.Min, rect.Max));
         MotionButton.Brand(drawList, rect, label, label, alpha, hovered, true, DisabledFill, InkQuiet);
         return hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
     }
