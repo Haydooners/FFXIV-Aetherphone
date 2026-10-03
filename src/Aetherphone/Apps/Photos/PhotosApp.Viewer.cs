@@ -127,6 +127,11 @@ internal sealed partial class PhotosApp
         var live = router.Current.Route == PhotoRoute.Viewer && !router.IsTransitioning;
         if (live)
         {
+            if (UiInteract.Hover(screen.Min, screen.Max))
+            {
+                UiInteract.ReportGestureSurface();
+            }
+
             HandleViewerTap(screen, scale);
             HandleSwipe(screen, safe, scale, delta);
         }

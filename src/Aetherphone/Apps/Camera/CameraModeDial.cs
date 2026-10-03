@@ -112,6 +112,11 @@ internal sealed class CameraModeDial
 
     private int Swipe(Rect area, int selected, bool horizontal, float scale)
     {
+        if (UiInteract.Hover(area.Min, area.Max))
+        {
+            UiInteract.ReportGestureSurface();
+        }
+
         var mouse = ImGui.GetMousePos();
         if (!pressed)
         {
