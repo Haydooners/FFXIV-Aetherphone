@@ -120,4 +120,49 @@ public sealed class CalendarReminderTests
 
         Assert.False(calendarEvent.Notified);
     }
+
+    [Fact]
+    public void EditingAWeeklyEventAfterItsAlertDoesNotRingAgain()
+    {
+        var calendarEvent = new CalendarCustomEvent
+        {
+            When = When, Repeat = CalendarRepeat.Weekly, ReminderMinutesBefore = 30,
+        };
+        CalendarReminder.Arm(calendarEvent, When.AddDays(-1), true);
+        Assert.Equal(CalendarReminderDue.Notify, CalendarReminder.Due(calendarEvent, When.AddMinutes(-30), out var first));
+        CalendarReminder.MarkHandled(calendarEvent, first);
+
+        CalendarReminder.Arm(calendarEvent, When.AddMinutes(-20), false);
+
+        Assert.Equal(CalendarReminderDue.None, CalendarReminder.Due(calendarEvent, When.AddMinutes(-19), out _));
+    }
+
+    [Fact]
+    public void StoppingARepeatOnAPastSeriesDoesNotNotifyTheOldStart()
+    {
+        var calendarEvent = new CalendarCustomEvent
+        {
+            When = When, Repeat = CalendarRepeat.Daily, ReminderMinutesBefore = 15,
+        };
+        CalendarReminder.Arm(calendarEvent, When.AddDays(-1), true);
+        var now = When.AddDays(21).AddHours(-3);
+
+        calendarEvent.Repeat = CalendarRepeat.None;
+        CalendarReminder.Arm(calendarEvent, now, false);
+
+        Assert.Equal(CalendarReminderDue.None, CalendarReminder.Due(calendarEvent, now, out _));
+    }
+
+    [Fact]
+    public void AddingAnAlertToAnUpcomingEventStillNotifies()
+    {
+        var calendarEvent = new CalendarCustomEvent { When = When, ReminderMinutesBefore = CalendarReminder.None };
+        var now = When.AddHours(-2);
+        CalendarReminder.Arm(calendarEvent, now, true);
+
+        calendarEvent.ReminderMinutesBefore = 1440;
+        CalendarReminder.Arm(calendarEvent, now, false);
+
+        Assert.Equal(CalendarReminderDue.Notify, CalendarReminder.Due(calendarEvent, now, out _));
+    }
 }

@@ -118,9 +118,12 @@ internal static class CalendarReminder
         if (calendarEvent.Repeat != CalendarRepeat.None)
         {
             var index = CalendarRecurrence.IndexAtOrBefore(calendarEvent.When, calendarEvent.Repeat, now);
-            calendarEvent.LastNotifiedOccurrence = index == CalendarRecurrence.NoOccurrence
+            var latestPassed = index == CalendarRecurrence.NoOccurrence
                 ? DateTime.MinValue
                 : CalendarRecurrence.Occurrence(calendarEvent.When, calendarEvent.Repeat, index);
+            calendarEvent.LastNotifiedOccurrence = created || latestPassed > calendarEvent.LastNotifiedOccurrence
+                ? latestPassed
+                : calendarEvent.LastNotifiedOccurrence;
             return;
         }
 
@@ -133,6 +136,12 @@ internal static class CalendarReminder
         if (TryFireTime(calendarEvent, out var fireTime) && fireTime > now)
         {
             calendarEvent.Notified = false;
+            return;
+        }
+
+        if (calendarEvent.When <= now)
+        {
+            calendarEvent.Notified = true;
         }
     }
 
