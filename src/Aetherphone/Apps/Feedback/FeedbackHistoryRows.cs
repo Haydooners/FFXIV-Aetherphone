@@ -12,10 +12,11 @@ internal readonly struct HistoryRow
     public readonly string[] Preview;
     public readonly string Date;
     public readonly string Photos;
+    public readonly bool HasReply;
     public readonly float Height;
 
     public HistoryRow(string id, FeedbackCategory category, FeedbackStatus status, string[] preview, string date,
-        string photos, float height)
+        string photos, bool hasReply, float height)
     {
         Id = id;
         Category = category;
@@ -23,6 +24,7 @@ internal readonly struct HistoryRow
         Preview = preview;
         Date = date;
         Photos = photos;
+        HasReply = hasReply;
         Height = height;
     }
 }
@@ -94,7 +96,8 @@ internal sealed class FeedbackHistoryRows
             var height = (PadY * 2f + MetaGap + PillGap + FeedbackArt.PillHeight) * scale + metaHeight
                          + preview.Length * lineHeight;
             built[index] = new HistoryRow(item.Id, FeedbackKinds.Parse(item.Category),
-                FeedbackStatuses.Parse(item.Status), preview, TimeText.DayLabel(item.CreatedAtUnix), photos, height);
+                FeedbackStatuses.Parse(item.Status), preview, TimeText.DayLabel(item.CreatedAtUnix), photos,
+                !string.IsNullOrWhiteSpace(item.Reply), height);
         }
 
         return built;

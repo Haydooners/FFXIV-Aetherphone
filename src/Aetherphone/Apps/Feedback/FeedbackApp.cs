@@ -3,6 +3,7 @@ using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Aethernet.Clients;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
+using Aetherphone.Core.Feedback;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Media;
@@ -30,11 +31,12 @@ internal sealed partial class FeedbackApp : IPhoneApp
     private const float CardPad = 14f;
     private const float BottomBreathing = 24f;
 
-    public string Id => "feedback";
+    public string Id => FeedbackStore.AppId;
     public string DisplayName => Loc.T(L.Apps.Feedback);
     public string Glyph => "Fb";
     public Vector4 Accent => AppAccents.For(Id);
-    public int BadgeCount => 0;
+    public int BadgeCount => store.UnseenCount;
+    public bool HasBadge => true;
 
     private readonly FeedbackStore store;
     private readonly FeedbackDraft draft = new();
@@ -45,6 +47,7 @@ internal sealed partial class FeedbackApp : IPhoneApp
     private readonly WallpaperImageCache wallpaperImages;
     private readonly RemoteImageCache remoteImages;
     private readonly GameData gameData;
+    private readonly FeedbackLauncher launcher;
     private readonly AppSkin ui = new(AppPalettes.Feedback);
     private readonly ViewRouter<FeedbackRoute> router;
     private readonly RouterDraw<FeedbackRoute> drawView;
@@ -63,9 +66,11 @@ internal sealed partial class FeedbackApp : IPhoneApp
 
     public FeedbackApp(AethernetSession session, FeedbackClient client, MediaClient media, PhotoLibrary library,
         Configuration configuration, ConfirmService confirm, WallpaperImageCache wallpaperImages,
-        RemoteImageCache remoteImages, GameData gameData)
+        RemoteImageCache remoteImages, GameData gameData, NotificationService notifications,
+        RealtimeSignalBus signals, FeedbackLauncher launcher)
     {
-        store = new FeedbackStore(session, client, media);
+        store = new FeedbackStore(session, client, media, notifications, configuration, signals);
+        this.launcher = launcher;
         this.library = library;
         this.configuration = configuration;
         this.confirm = confirm;
@@ -83,7 +88,12 @@ internal sealed partial class FeedbackApp : IPhoneApp
         router.Reset();
         photoViewer.Close();
         deviceInfo.Capture(gameData, configuration);
-        if (resumeCompose && !draft.IsEmpty)
+        if (store.IsSignedIn && launcher.TryConsumeDetail(out var feedbackId))
+        {
+            router.Push(FindHistoryItem(feedbackId) is null ? FeedbackRoute.History : FeedbackRoute.Detail(feedbackId),
+                false);
+        }
+        else if (resumeCompose && !draft.IsEmpty)
         {
             router.Push(FeedbackRoute.Compose, false);
         }
@@ -217,6 +227,7 @@ internal sealed partial class FeedbackApp : IPhoneApp
 
         configuration.LastFeedbackSentUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         configuration.Save();
+        store.NoteSent();
         UiFeedback.Play(UiSound.MessageSent);
         store.RefreshHistory();
         if (router.Current.Screen == FeedbackScreen.Compose)

@@ -5,6 +5,7 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Feedback;
 
@@ -15,17 +16,19 @@ internal sealed partial class FeedbackApp
     private const float TimelineNodeRadius = 7f;
     private const float TimelineLineThickness = 2f;
     private const float TimelineLabelGap = 8f;
-    private const int TimelineSteps = 3;
     private const int DetailImageColumns = 3;
     private const float DetailImageGap = 6f;
+    private const float ReplyIconSize = 30f;
+    private const float ReplyWashAlpha = 0.1f;
 
-    private string detailCacheId = string.Empty;
+    private MyFeedbackDto? detailCacheItem;
     private LanguageInfo? detailCacheLanguage;
     private int detailCacheClock = -1;
     private DateTime detailCacheDay;
-    private long detailCacheResolved = -1;
+    private long detailCacheMinute = -1;
     private string detailSentStamp = string.Empty;
     private string detailResolvedStamp = string.Empty;
+    private string detailReplyAgo = string.Empty;
 
     private void DrawDetail(Rect area, string feedbackId)
     {
@@ -43,7 +46,15 @@ internal sealed partial class FeedbackApp
                 var origin = ImGui.GetCursorScreenPos();
                 var width = ScrollLayout.StableContentWidth();
                 RefreshDetailStamps(item);
+                NoteDetailViewed(item.Id);
                 var cursorY = DrawDetailStatus(drawList, origin, width, item, in kind, scale);
+                var reply = item.Reply ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(reply))
+                {
+                    cursorY += SectionGap * scale;
+                    cursorY = DrawDetailReply(drawList, new Vector2(origin.X, cursorY), width, reply, scale);
+                }
+
                 cursorY += SectionGap * scale;
                 cursorY += DrawSectionHeader(drawList, new Vector2(origin.X, cursorY), width,
                     Loc.T(L.Feedback.YourMessage), ui.TitleInk);
@@ -90,33 +101,44 @@ internal sealed partial class FeedbackApp
         return null;
     }
 
+    private void NoteDetailViewed(string feedbackId)
+    {
+        store.NoteViewing(feedbackId);
+        if (store.IsUnseen(feedbackId))
+        {
+            store.MarkViewed(feedbackId);
+        }
+    }
+
     private void RefreshDetailStamps(MyFeedbackDto item)
     {
         var today = DateTime.Today;
-        if (string.Equals(detailCacheId, item.Id, StringComparison.Ordinal) &&
-            ReferenceEquals(detailCacheLanguage, Loc.Current) && detailCacheClock == TimeText.FormatVersion &&
-            detailCacheDay == today && detailCacheResolved == item.ResolvedAtUnix)
+        var minute = DateTime.UtcNow.Ticks / TimeSpan.TicksPerMinute;
+        if (ReferenceEquals(detailCacheItem, item) && ReferenceEquals(detailCacheLanguage, Loc.Current) &&
+            detailCacheClock == TimeText.FormatVersion && detailCacheDay == today && detailCacheMinute == minute)
         {
             return;
         }
 
-        detailCacheId = item.Id;
+        detailCacheItem = item;
         detailCacheLanguage = Loc.Current;
         detailCacheClock = TimeText.FormatVersion;
         detailCacheDay = today;
-        detailCacheResolved = item.ResolvedAtUnix;
+        detailCacheMinute = minute;
         detailSentStamp = TimeText.Stamp(item.CreatedAtUnix);
         detailResolvedStamp = item.ResolvedAtUnix > 0 ? TimeText.Stamp(item.ResolvedAtUnix) : string.Empty;
+        detailReplyAgo = item.RepliedAtUnix > 0 ? TimeText.Ago(item.RepliedAtUnix) : string.Empty;
     }
 
     private float DrawDetailStatus(ImDrawListPtr drawList, Vector2 origin, float width, MyFeedbackDto item,
         in FeedbackKind kind, float scale)
     {
         var status = FeedbackStatuses.Parse(item.Status);
+        var reason = FeedbackStatuses.ParseReason(item.Reason);
         var pad = CardPad * scale;
         var iconSize = DetailIconSize * scale;
         var textWidth = width - pad * 2f;
-        var hint = Loc.T(FeedbackStatuses.Explanation(status));
+        var hint = Loc.T(FeedbackStatuses.Explanation(status, reason));
         var hintHeight = Typography.MeasureWrappedBlock(hint, TextStyles.Subheadline, textWidth).Y;
         var height = pad + iconSize + Metrics.Space.Md * scale + TimelineHeight * scale + Metrics.Space.Sm * scale
                      + hintHeight + pad;
@@ -152,29 +174,29 @@ internal sealed partial class FeedbackApp
     private void DrawTimeline(ImDrawListPtr drawList, Vector2 origin, float width, FeedbackStatus status,
         float scale)
     {
-        var columnWidth = width / TimelineSteps;
+        var steps = FeedbackStatuses.TimelineSteps(status);
+        var doneSteps = FeedbackStatuses.CompletedSteps(status);
+        var columnWidth = width / steps;
         var nodeRadius = TimelineNodeRadius * scale;
         var nodeY = origin.Y + nodeRadius + Metrics.Space.Xxs * scale;
         var finalTint = FeedbackStatuses.Tint(status);
-        var handled = status != FeedbackStatus.Received;
-        var doneSteps = handled ? TimelineSteps : 2;
-        for (var step = 0; step < TimelineSteps - 1; step++)
+        for (var step = 0; step < steps - 1; step++)
         {
             var fromX = origin.X + columnWidth * (step + 0.5f);
             var toX = fromX + columnWidth;
             var lineDone = step + 1 < doneSteps;
             drawList.AddLine(new Vector2(fromX + nodeRadius, nodeY), new Vector2(toX - nodeRadius, nodeY),
-                ImGui.GetColorU32(lineDone ? StepTint(step + 1, finalTint) : ui.Hairline),
+                ImGui.GetColorU32(lineDone ? StepTint(step + 1, steps, finalTint) : ui.Hairline),
                 TimelineLineThickness * scale);
         }
 
-        for (var step = 0; step < TimelineSteps; step++)
+        for (var step = 0; step < steps; step++)
         {
             var centerX = origin.X + columnWidth * (step + 0.5f);
             var center = new Vector2(centerX, nodeY);
             var done = step < doneSteps;
             var current = done && step == doneSteps - 1;
-            var tint = StepTint(step, finalTint);
+            var tint = current ? finalTint : StepTint(step, steps, finalTint);
             if (done)
             {
                 drawList.AddCircleFilled(center, nodeRadius, ImGui.GetColorU32(tint), 20);
@@ -190,13 +212,13 @@ internal sealed partial class FeedbackApp
                     TimelineLineThickness * scale);
             }
 
-            var label = Typography.FitText(Loc.T(StepLabel(step, status)), columnWidth - Metrics.Space.Xs * scale,
-                TextStyles.FootnoteEmphasized);
+            var label = Typography.FitText(Loc.T(FeedbackStatuses.StepLabel(status, step)),
+                columnWidth - Metrics.Space.Xs * scale, TextStyles.FootnoteEmphasized);
             var labelTop = nodeY + nodeRadius + TimelineLabelGap * scale;
             var labelHeight = Typography.LineHeight(TextStyles.FootnoteEmphasized);
             Typography.DrawCentered(drawList, new Vector2(centerX, labelTop + labelHeight * 0.5f), label,
                 done ? ui.TitleInk : ui.MutedInk, TextStyles.FootnoteEmphasized);
-            var date = StepDate(step);
+            var date = StepDate(step, steps, done);
             if (date.Length == 0)
             {
                 continue;
@@ -209,21 +231,51 @@ internal sealed partial class FeedbackApp
         }
     }
 
-    private Vector4 StepTint(int step, Vector4 finalTint) => step == TimelineSteps - 1 ? finalTint : ui.Accent;
+    private Vector4 StepTint(int step, int steps, Vector4 finalTint) => step == steps - 1 ? finalTint : ui.Accent;
 
-    private static LocString StepLabel(int step, FeedbackStatus status) => step switch
+    private string StepDate(int step, int steps, bool done)
     {
-        0 => L.Feedback.TimelineSent,
-        1 => L.Feedback.TimelineReview,
-        _ => status == FeedbackStatus.Closed ? L.Feedback.StatusClosed : L.Feedback.StatusResolved,
-    };
+        if (step == 0)
+        {
+            return detailSentStamp;
+        }
 
-    private string StepDate(int step) => step switch
+        return done && step == steps - 1 ? detailResolvedStamp : string.Empty;
+    }
+
+    private float DrawDetailReply(ImDrawListPtr drawList, Vector2 origin, float width, string reply, float scale)
     {
-        0 => detailSentStamp,
-        2 => detailResolvedStamp,
-        _ => string.Empty,
-    };
+        var pad = CardPad * scale;
+        var textWidth = width - pad * 2f;
+        var iconSize = ReplyIconSize * scale;
+        var gap = Metrics.Space.Sm * scale;
+        var bodyHeight = Typography.MeasureWrappedBlock(reply, TextStyles.Body, textWidth).Y;
+        var min = origin;
+        var max = new Vector2(origin.X + width, origin.Y + pad + iconSize + gap + bodyHeight + pad);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, min, max, radius, true);
+        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, ReplyWashAlpha)));
+
+        var iconCenter = new Vector2(min.X + pad + iconSize * 0.5f, min.Y + pad + iconSize * 0.5f);
+        FeedbackArt.GlyphTile(drawList, iconCenter, iconSize, FontAwesomeIcon.Reply, ui.Accent);
+        var textLeft = iconCenter.X + iconSize * 0.5f + Metrics.Space.Md * scale;
+        var agoWidth = detailReplyAgo.Length > 0 ? Typography.Measure(detailReplyAgo, TextStyles.Footnote).X : 0f;
+        if (agoWidth > 0f)
+        {
+            var agoHeight = Typography.LineHeight(TextStyles.Footnote);
+            Typography.Draw(drawList, new Vector2(max.X - pad - agoWidth, iconCenter.Y - agoHeight * 0.5f),
+                detailReplyAgo, ui.MutedInk, TextStyles.Footnote);
+        }
+
+        var titleWidth = MathF.Max(1f, max.X - pad - agoWidth - Metrics.Space.Sm * scale - textLeft);
+        var title = Typography.FitText(Loc.T(L.Feedback.ReplyFrom), titleWidth, TextStyles.Headline);
+        var titleHeight = Typography.LineHeight(TextStyles.Headline);
+        Typography.Draw(drawList, new Vector2(textLeft, iconCenter.Y - titleHeight * 0.5f), title, ui.TitleInk,
+            TextStyles.Headline);
+        Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad + iconSize + gap), reply, ui.TitleInk,
+            TextStyles.Body, textWidth);
+        return max.Y;
+    }
 
     private float DrawDetailMessage(ImDrawListPtr drawList, Vector2 origin, float width, string text, float scale)
     {

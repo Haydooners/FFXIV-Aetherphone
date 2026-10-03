@@ -648,7 +648,11 @@ internal sealed record MyFeedbackDto(
     string Status,
     string[] ImageUrls,
     long CreatedAtUnix,
-    long ResolvedAtUnix) : IIdentified;
+    long ResolvedAtUnix,
+    string Reason = "",
+    string Reply = "",
+    long RepliedAtUnix = 0,
+    long UpdatedAtUnix = 0) : IIdentified;
 
 internal sealed record MyFeedbackPage(MyFeedbackDto[] Items, string? NextCursor = null);
 

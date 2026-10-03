@@ -6808,13 +6808,36 @@ internal static class L
         public static readonly LocString StatusReceived = new("feedback.statusReceived", "Received");
         public static readonly LocString StatusResolved = new("feedback.statusResolved", "Resolved");
         public static readonly LocString StatusClosed = new("feedback.statusClosed", "Closed");
-        public static readonly LocString StatusReceivedHint = new("feedback.statusReceivedHint", "The developer reads every message. This changes once it's been handled.");
+        public static readonly LocString StatusReceivedHint = new("feedback.statusReceivedHint", "The developer reads every message. You'll get a notification when something changes.");
         public static readonly LocString StatusResolvedHint = new("feedback.statusResolvedHint", "Marked as resolved. Thanks for helping make Aetherphone better.");
         public static readonly LocString StatusClosedHint = new("feedback.statusClosedHint", "Closed without changes. Not every idea fits, but every one is read.");
         public static readonly LocString TimelineSent = new("feedback.timelineSent", "Sent");
         public static readonly LocString TimelineReview = new("feedback.timelineReview", "In review");
         public static readonly LocString YourMessage = new("feedback.yourMessage", "Your message");
         public static readonly LocString SentToast = new("feedback.sentToast", "Feedback sent");
+        public static readonly LocString StatusPlanned = new("feedback.statusPlanned", "Planned");
+        public static readonly LocString StatusReviewHint = new("feedback.statusReviewHint", "The developer is looking into this right now.");
+        public static readonly LocString StatusPlannedHint = new("feedback.statusPlannedHint", "Good news: this is on the list. You'll get a notification when it's done.");
+        public static readonly LocString ReasonDuplicateHint = new("feedback.reasonDuplicateHint", "Someone reported this already, so it's being followed there. Thanks for adding your voice.");
+        public static readonly LocString ReasonWontDoHint = new("feedback.reasonWontDoHint", "This was given real thought, but it isn't planned for now. Thank you for sharing it.");
+        public static readonly LocString ReasonCantReproduceHint = new("feedback.reasonCantReproduceHint", "The developer couldn't make this happen. If you see it again, send a new report with the steps and a screenshot.");
+        public static readonly LocString ReasonNotABugHint = new("feedback.reasonNotABugHint", "This turned out to be working as intended. Thanks for pointing it out all the same.");
+        public static readonly LocString ReplyFrom = new("feedback.replyFrom", "Reply from the developer");
+        public static readonly LocString RowReplied = new("feedback.rowReplied", "Replied");
+        public static readonly LocString UpdateReply = new("feedback.updateReply", "The developer replied to your feedback");
+        public static readonly LocString UpdateReopened = new("feedback.updateReopened", "Your feedback was reopened");
+        public static readonly LocString UpdateBugInReview = new("feedback.updateBugInReview", "Your bug report is in review");
+        public static readonly LocString UpdateBugPlanned = new("feedback.updateBugPlanned", "A fix for your bug report is planned");
+        public static readonly LocString UpdateBugResolved = new("feedback.updateBugResolved", "Your bug report is resolved");
+        public static readonly LocString UpdateBugClosed = new("feedback.updateBugClosed", "Your bug report was closed");
+        public static readonly LocString UpdateIdeaInReview = new("feedback.updateIdeaInReview", "Your idea is in review");
+        public static readonly LocString UpdateIdeaPlanned = new("feedback.updateIdeaPlanned", "Your idea is planned");
+        public static readonly LocString UpdateIdeaResolved = new("feedback.updateIdeaResolved", "Your idea is resolved");
+        public static readonly LocString UpdateIdeaClosed = new("feedback.updateIdeaClosed", "Your idea was closed");
+        public static readonly LocString UpdateInReview = new("feedback.updateInReview", "Your feedback is in review");
+        public static readonly LocString UpdatePlanned = new("feedback.updatePlanned", "Your feedback is planned");
+        public static readonly LocString UpdateResolved = new("feedback.updateResolved", "Your feedback is resolved");
+        public static readonly LocString UpdateClosed = new("feedback.updateClosed", "Your feedback was closed");
         public static readonly LocPlural PhotoCount = new("feedback.photoCount", "{0} photo", "{0} photos");
     }
 
