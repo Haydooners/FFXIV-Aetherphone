@@ -44,6 +44,7 @@ internal sealed partial class ClockApp
     private static readonly string[] Minutes60 = BuildPairs(60);
 
     private readonly AlarmEntry draft = new();
+    private byte draftLocalRepeatDays;
     private readonly ClockWheel alarmHourWheel = new("alarm.hour");
     private readonly ClockWheel alarmMinuteWheel = new("alarm.minute");
     private readonly ClockWheel alarmMeridiemWheel = new("alarm.meridiem");
@@ -104,6 +105,7 @@ internal sealed partial class ClockApp
 
     private void OpenEditor()
     {
+        draftLocalRepeatDays = draft.Eorzea ? (byte)0 : draft.RepeatDays;
         editorPrimed = false;
         editorWheelMode = -1;
         router.Push(ClockScreen.EditAlarm);
@@ -179,9 +181,17 @@ internal sealed partial class ClockApp
         if (eorzea != draft.Eorzea)
         {
             draft.Eorzea = eorzea;
-            if (eorzea && draft.Repeats)
+            if (eorzea)
             {
-                draft.RepeatDays = AlarmSchedule.EveryDayMask;
+                draftLocalRepeatDays = draft.RepeatDays;
+                if (draft.Repeats)
+                {
+                    draft.RepeatDays = AlarmSchedule.EveryDayMask;
+                }
+            }
+            else if (draft.Repeats && draftLocalRepeatDays != 0)
+            {
+                draft.RepeatDays = draftLocalRepeatDays;
             }
         }
 
