@@ -2062,6 +2062,8 @@ internal static class L
                 "Hovering the server info bar entry now shows how many notifications are waiting and what a click does"),
             new("changelog.r1042.19",
                 "Fixed the share sheet keeping a hidden window open over every app"),
+            new("changelog.r1042.86",
+                "App tab bars now stay full size while you scroll and show icons only, with each tab's name on hover"),
         };
 
         public static readonly LocString[] Release1042Music =

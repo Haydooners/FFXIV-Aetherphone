@@ -6619,6 +6619,7 @@
   "changelog.r1042.17": "El porcentaje de batería está ahora dentro del icono de batería, y al pasar el cursor sobre el icono de señal, Wi-Fi o batería ves lo que mide",
   "changelog.r1042.18": "El gesto del teléfono se reproduce ahora una vez al abrir el teléfono, y alejarte o cancelarlo ya no lo hace volver",
   "changelog.r1042.19": "Corregido que la hoja de compartir mantuviera una ventana oculta abierta sobre todas las apps",
+  "changelog.r1042.86": "Las barras de pestañas de las apps mantienen ahora su tamaño completo al desplazarte y muestran solo iconos, con el nombre de cada pestaña al pasar el cursor",
   "changelog.r1042.20": "Widgets renovados de arriba abajo: un widget para casi cada app en tamaño pequeño, mediano o grande, todos siguiendo el estilo de tus iconos",
   "changelog.r1042.21": "Reconstruida la galería de widgets con búsqueda, una fila de Destacados con vistas previas en vivo y cada tamaño de widget a escala real antes de añadirlo",
   "changelog.r1042.22": "Añadidas las Pilas inteligentes: suelta un widget sobre otro del mismo tamaño para apilar hasta diez, pásalos con la rueda del ratón y deja que la Rotación inteligente traiga el adecuado al frente",

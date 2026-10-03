@@ -6619,6 +6619,7 @@
   "changelog.r1042.17": "Pil yüzdesi artık pil simgesinin içinde duruyor; sinyal, Wi-Fi ya da pil simgesinin üzerine gelince neyi ölçtüğünü görebilirsin",
   "changelog.r1042.18": "Telefon emote'u artık telefonu açtığında bir kez oynatılıyor; yürüyüp gitmek ya da iptal etmek onu geri getirmiyor",
   "changelog.r1042.19": "Paylaşım sayfasının her uygulamanın üzerinde gizli bir pencere açık tutması düzeltildi",
+  "changelog.r1042.86": "Uygulama sekme çubukları artık kaydırırken tam boyutta kalıyor ve yalnızca simge gösteriyor, her sekmenin adı üzerine gelince görünüyor",
   "changelog.r1042.20": "Widget'lar baştan sona yenilendi: neredeyse her uygulama için küçük, orta ya da büyük bir widget var ve hepsi simge görünümünü izliyor",
   "changelog.r1042.21": "Widget galerisi yeniden kuruldu: arama, canlı önizlemelerden oluşan bir Öne Çıkanlar satırı ve eklemeden önce her widget boyutunun gerçek ölçekte önizlemesi",
   "changelog.r1042.22": "Akıllı Yığınlar eklendi: aynı boyuttaki bir widget'ın üzerine bırakarak ona kadar yığ, fare tekerleğiyle aralarında gezin ve Akıllı Döndürme doğru olanı öne getirsin",
