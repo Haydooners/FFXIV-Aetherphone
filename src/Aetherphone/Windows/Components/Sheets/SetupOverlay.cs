@@ -141,6 +141,8 @@ internal sealed partial class SetupOverlay : IDisposable
         }
 
         var theme = themes.Current;
+        var darkness = Plugin.Wallpapers.ThemeDarkness;
+        ResolveInk(darkness);
         var scale = UiScale.Current;
         var rounding = theme.ScreenRounding * scale;
         var backdropAlpha = 1f - exitProgress;
@@ -149,7 +151,7 @@ internal sealed partial class SetupOverlay : IDisposable
         using (ImRaii.Child("##setupOverlay", screen.Size, false, OverlayFlags))
         {
             var drawList = ImGui.GetWindowDrawList();
-            DrawBackdrop(drawList, screen, backdropAlpha, rounding);
+            DrawBackdrop(drawList, screen, backdropAlpha, rounding, darkness);
             var slide = Math.Clamp(pageSlide.Value, 0f, 1f);
             var live = interactive && !exiting && slide >= SlideLiveThreshold;
             if (slide < 1f - SlideSettledEpsilon && fromPage != page)
