@@ -2850,6 +2850,7 @@
   "clock.keepIt": "キャンセル",
   "clock.start": "スタート",
   "clock.stop": "停止",
+  "clock.snooze": "スヌーズ",
   "clock.pause": "一時停止",
   "clock.resume": "再開",
   "clock.reset": "リセット",

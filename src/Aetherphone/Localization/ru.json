@@ -2850,6 +2850,7 @@
   "clock.keepIt": "Отмена",
   "clock.start": "Старт",
   "clock.stop": "Стоп",
+  "clock.snooze": "Отложить",
   "clock.pause": "Пауза",
   "clock.resume": "Продолжить",
   "clock.reset": "Сбросить",

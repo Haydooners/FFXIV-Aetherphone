@@ -114,9 +114,10 @@ sound resources by Google, trimmed and level-matched as described above.
 The Ringtones "Cascade", "Horizon", "Lumen", "Orbit", "Prism", "Tide" and
 "Summit" (originally Atria, Dione, Ganymede, Luna, Phobos, Sedna and Umbriel)
 and the Notification sounds "Ripple", "Spark", "Drift", "Pulse", "Halo" and
-"Echo" (originally Carme, Rhea, Io, Europa, Tethys and Iapetus) are from the
-Android Open Source Project, renamed, trimmed and level-matched as described
-above.
+"Echo" (originally Carme, Rhea, Io, Europa, Tethys and Iapetus), and the
+Clock tones `Ui/alarm.wav` and `Ui/timer.wav` (originally the alarms Carbon
+and Timer) are from the Android Open Source Project, renamed, trimmed and
+level-matched as described above.
 
 - Copyright The Android Open Source Project
 - Source: https://android.googlesource.com/platform/frameworks/base/+/1cdfff555f4a21f71ccc978290e2e212e2f8b168/data/sounds/

@@ -2850,6 +2850,7 @@
   "clock.keepIt": "Annuler",
   "clock.start": "Démarrer",
   "clock.stop": "Arrêter",
+  "clock.snooze": "Répéter",
   "clock.pause": "Pause",
   "clock.resume": "Reprendre",
   "clock.reset": "Réinitialiser",

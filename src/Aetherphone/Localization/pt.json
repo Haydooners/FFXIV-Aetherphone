@@ -2850,6 +2850,7 @@
   "clock.keepIt": "Manter",
   "clock.start": "Iniciar",
   "clock.stop": "Parar",
+  "clock.snooze": "Soneca",
   "clock.pause": "Pausar",
   "clock.resume": "Retomar",
   "clock.reset": "Zerar",

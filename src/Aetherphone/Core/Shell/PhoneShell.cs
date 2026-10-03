@@ -115,6 +115,7 @@ internal sealed class PhoneShell : IDisposable
         services.Shortcuts.Bind(home.Layout);
         navigation.ReturningHome += home.PrepareReveal;
         var incomingOverlay = new IncomingCallOverlay(calls);
+        var alarmOverlay = new AlarmOverlay(services.AlarmRinger);
         var banOverlay = new BanOverlay(services.AethernetSession);
         suspensions.Blocked += banOverlay.Present;
         var confirmOverlay = new ConfirmOverlay(services.Confirm);
@@ -131,8 +132,8 @@ internal sealed class PhoneShell : IDisposable
         transition = new ShellTransitionRenderer(themes, navigation, home, painter);
         morph = new MinimizeMorphView(themes, minimize, minimizedPhone, painter);
         overlays = new ShellOverlayCoordinator(configuration, loading, navigation, controlCenter, appSwitcher, banner,
-            island, rateLimitPill, shortcutPill, coinPill, coinFloats, incomingOverlay, banOverlay, confirmOverlay,
-            reportOverlay, shareSheet, conductOverlay, encryptionHelpOverlay, director, setup);
+            island, rateLimitPill, shortcutPill, coinPill, coinFloats, incomingOverlay, alarmOverlay, banOverlay,
+            confirmOverlay, reportOverlay, shareSheet, conductOverlay, encryptionHelpOverlay, director, setup);
     }
 
     public void OnOpened()
