@@ -79,6 +79,18 @@ internal sealed class MarketboardService : IDisposable
         return aggregated.TryGetValue($"{itemId}:{scope.Key}", out var entry) ? entry.Price : 0;
     }
 
+    public bool TryGetAggregated(uint itemId, MarketScope scope, out long price)
+    {
+        price = 0;
+        if (!scope.IsValid || !aggregated.TryGetValue($"{itemId}:{scope.Key}", out var entry))
+        {
+            return false;
+        }
+
+        price = entry.Price;
+        return true;
+    }
+
     public bool TryGetLowestTax(string worldName, out int rate, out string city)
     {
         rate = 0;

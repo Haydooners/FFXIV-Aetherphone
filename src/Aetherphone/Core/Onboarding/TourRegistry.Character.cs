@@ -26,11 +26,13 @@ internal static partial class TourRegistry
                 GuideStep.TryUntil(L.Onboarding.CollectionsItemTitle, L.Onboarding.CollectionsItemBody,
                     "collections.row", GuideGesture.Tap, "collections.detail"),
             });
-        Add(tours, "inventory", 3,
+        Add(tours, "inventory", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.InventoryFindTitle, L.Onboarding.InventoryFindBody, "inventory.search",
                     GuideGesture.None),
+                GuideStep.Point(L.Onboarding.InventoryWealthTitle, L.Onboarding.InventoryWealthBody,
+                    "inventory.wealth", GuideGesture.None),
                 GuideStep.TryUntil(L.Onboarding.InventoryOpenTitle, L.Onboarding.InventoryOpenBody,
                     "inventory.storage", GuideGesture.Tap, "inventory.source"),
             });

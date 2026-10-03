@@ -16,7 +16,7 @@ public sealed class TourRegistryTests
         { "aethergram", (3, 6) },
         { "collections", (3, 3) },
         { "wallet", (3, 2) },
-        { "inventory", (3, 2) },
+        { "inventory", (4, 3) },
         { "settings", (3, 5) },
         { "camera", (4, 6) },
         { "photos", (3, 5) },
