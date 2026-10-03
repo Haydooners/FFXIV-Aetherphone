@@ -27,7 +27,7 @@ internal sealed partial class NotesApp
     private const float CheckTextGap = 14f;
     private const float ReminderTitleLift = 9f;
     private const float ReminderDueDrop = 11f;
-    private const float CompletedHeaderAction = 64f;
+    private const float CompletedHeaderActionShare = 0.3f;
     private const double LingerSeconds = 1.1;
     private const float EmptyMessageHeight = 220f;
     private const float CheckFillSeconds = 0.18f;
@@ -337,26 +337,35 @@ internal sealed partial class NotesApp
 
         var origin = ImGui.GetCursorScreenPos();
         var height = SectionHeaderHeight * scale;
-        var actionWidth = CompletedHeaderAction * scale;
+        var showLabel = Loc.T(L.Notes.ShowCompleted);
+        var hideLabel = Loc.T(L.Notes.HideCompleted);
+        var clearLabel = Loc.T(L.Notes.ClearCompleted);
+        var actionLimit = width * CompletedHeaderActionShare;
+        var toggleWidth = MathF.Min(actionLimit, MathF.Max(Typography.Measure(showLabel, TextStyles.Body).X,
+            Typography.Measure(hideLabel, TextStyles.Body).X));
+        var clearWidth = MathF.Min(actionLimit, Typography.Measure(clearLabel, TextStyles.Body).X);
+        var actionGap = Metrics.Space.Md * scale;
         var drawList = ImGui.GetWindowDrawList();
         var textHeight = Typography.LineHeight(TextStyles.Title3);
         var baseline = origin.Y + height - textHeight - Metrics.Space.Xs * scale;
-        var title = Typography.FitText(completedHeader, width - actionWidth * 2f, TextStyles.Title3);
+        var titleWidth = width - toggleWidth - clearWidth - actionGap * 2f - SectionHeaderInset * scale;
+        var title = Typography.FitText(completedHeader, MathF.Max(1f, titleWidth), TextStyles.Title3);
         Typography.Draw(drawList, new Vector2(origin.X + SectionHeaderInset * scale, baseline), title, ui.TitleInk,
             TextStyles.Title3);
 
         var actionTop = baseline;
         var actionHeight = textHeight;
-        var toggleRect = new Rect(new Vector2(origin.X + width - actionWidth, actionTop),
+        var toggleRect = new Rect(new Vector2(origin.X + width - toggleWidth, actionTop),
             new Vector2(origin.X + width, actionTop + actionHeight));
-        var clearRect = new Rect(new Vector2(toggleRect.Min.X - actionWidth, actionTop),
-            new Vector2(toggleRect.Min.X, actionTop + actionHeight));
-        if (HeaderLink(drawList, toggleRect, Loc.T(showCompleted ? L.Notes.HideCompleted : L.Notes.ShowCompleted)))
+        var clearRight = toggleRect.Min.X - actionGap;
+        var clearRect = new Rect(new Vector2(clearRight - clearWidth, actionTop),
+            new Vector2(clearRight, actionTop + actionHeight));
+        if (HeaderLink(drawList, toggleRect, showCompleted ? hideLabel : showLabel))
         {
             showCompleted = !showCompleted;
         }
 
-        if (HeaderLink(drawList, clearRect, Loc.T(L.Notes.ClearCompleted)))
+        if (HeaderLink(drawList, clearRect, clearLabel))
         {
             AskClearCompleted(count);
         }
