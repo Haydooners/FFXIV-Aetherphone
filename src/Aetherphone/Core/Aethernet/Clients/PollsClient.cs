@@ -23,6 +23,18 @@ internal sealed class PollsClient
         return net.GetAsync(path, AethernetJsonContext.Default.PollPage, token, null, onFailure);
     }
 
+    public Task<PollPage?> ListEndedAsync(string? cursor, string lang, CancellationToken token,
+        Action<AepFailure>? onFailure = null)
+    {
+        var path = $"/polls?state=ended&lang={Uri.EscapeDataString(lang)}";
+        if (cursor is not null)
+        {
+            path += $"&cursor={Uri.EscapeDataString(cursor)}";
+        }
+
+        return net.GetAsync(path, AethernetJsonContext.Default.PollPage, token, null, onFailure);
+    }
+
     public Task<PollDto?> VoteAsync(string pollId, int option, string lang, CancellationToken token,
         Action<AepFailure>? onFailure = null)
     {

@@ -1146,9 +1146,33 @@ internal static class L
         public static readonly LocString Search = new("maps.search", "Search places");
         public static readonly LocString Favorites = new("maps.favorites", "Favorites");
         public static readonly LocString CurrentLocation = new("maps.currentLocation", "Current Location");
-        public static readonly LocString Unknown = new("maps.unknown", "Unknown");
+        public static readonly LocString Somewhere = new("maps.somewhere", "Somewhere in Eorzea");
+        public static readonly LocString SomewhereHint = new("maps.somewhereHint", "This place has no name on the map");
+        public static readonly LocString OfflineHint = new("maps.offlineHint", "Log in to a character to see where you are");
+        public static readonly LocString WardLine = new("maps.wardLine", "{0}, Ward {1}");
+        public static readonly LocString PlotLine = new("maps.plotLine", "Plot {0}");
+        public static readonly LocString RoomLine = new("maps.roomLine", "Room {0}");
         public static readonly LocString NoZones = new("maps.noZones", "No places found");
-        public static readonly LocString NeedsLifestream = new("maps.needsLifestream", "Lifestream is not installed");
+        public static readonly LocString NoResultsHint = new("maps.noResultsHint", "Try an aetheryte, zone or region name");
+        public static readonly LocString NoMapHere = new("maps.noMapHere", "There is no map for this place");
+        public static readonly LocString Recents = new("maps.recents", "Recents");
+        public static readonly LocString Browse = new("maps.browse", "Browse");
+        public static readonly LocString AddFavorite = new("maps.addFavorite", "Add");
+        public static readonly LocString FavoritesHint = new("maps.favoritesHint", "Star a place to keep it one tap away");
+        public static readonly LocString Teleport = new("maps.teleport", "Teleport");
+        public static readonly LocString CopyCommand = new("maps.copyCommand", "Copy Teleport Command");
+        public static readonly LocString LifestreamHint = new("maps.lifestreamHint", "Install the Lifestream plugin to teleport in one tap");
+        public static readonly LocString Teleporting = new("maps.teleporting", "Teleporting to {0}");
+        public static readonly LocString TeleportCost = new("maps.teleportCost", "{0:N0} gil to teleport");
+        public static readonly LocString ShowOnMap = new("maps.showOnMap", "Show on Map");
+        public static readonly LocString GameMap = new("maps.gameMap", "Game Map");
+        public static readonly LocString CopyLocation = new("maps.copyLocation", "Copy Location");
+        public static readonly LocString Favorite = new("maps.favorite", "Favorite");
+        public static readonly LocString WholeZone = new("maps.wholeZone", "Whole Zone");
+        public static readonly LocString Zone = new("maps.zone", "Zone");
+        public static readonly LocString Region = new("maps.region", "Region");
+        public static readonly LocString Coordinates = new("maps.coordinates", "Coordinates");
+        public static readonly LocString Back = new("maps.back", "Back");
     }
 
     internal static class Housing
@@ -5904,6 +5928,12 @@ internal static class L
     internal static class Home
     {
         public static readonly LocString Done = new("home.done", "Done");
+        public static readonly LocString StatusPing = new("home.statusPing", "Ping to {0}: {1} ms, {2}% packet loss");
+        public static readonly LocString StatusPingNoCenter = new("home.statusPingNoCenter", "Ping: {0} ms, {1}% packet loss");
+        public static readonly LocString StatusOffline = new("home.statusOffline", "Can't reach the game servers");
+        public static readonly LocString StatusBattery = new("home.statusBattery", "Battery {0}%");
+        public static readonly LocString StatusBatteryCharging = new("home.statusBatteryCharging", "Battery {0}%, charging");
+        public static readonly LocString StatusNoBattery = new("home.statusNoBattery", "Plugged in, no battery");
         public static readonly LocString NewFolder = new("home.newFolder", "Folder");
         public static readonly LocString Widgets = new("home.widgets", "Widgets");
         public static readonly LocString AddWidget = new("home.addWidget", "Add Widget");
@@ -6577,41 +6607,132 @@ internal static class L
 
     internal static class Feedback
     {
-        public static readonly LocString SendFeedback = new("feedback.sendFeedback", "Send Feedback");
-        public static readonly LocString Placeholder = new("feedback.placeholder", "What's on your mind? Suggestions, bug reports, feature ideas…");
         public static readonly LocString Send = new("feedback.send", "Send");
         public static readonly LocString Sending = new("feedback.sending", "Sending…");
-        public static readonly LocString Sent = new("feedback.sent", "Feedback Sent");
         public static readonly LocString ThankYou = new("feedback.thankYou", "Thank you for your feedback!");
-        public static readonly LocString SentMessage = new("feedback.sentMessage", "Your message has been sent to the developer.");
-        public static readonly LocString ConfirmMessage = new("feedback.confirmMessage", "Send this feedback to the developer?");
-        public static readonly LocString SendMore = new("feedback.sendMore", "Send more feedback");
         public static readonly LocString Cooldown = new("feedback.cooldown", "You can send again in {0}");
-        public static readonly LocString ErrorMessage = new("feedback.errorMessage", "Couldn't send your feedback. Please try again.");
         public static readonly LocString AddPhotos = new("feedback.addPhotos", "Add photos");
-        public static readonly LocString ImportFromPc = new("feedback.importFromPc", "Import from PC");
-        public static readonly LocString NoGallery = new("feedback.noGallery", "No photos in your gallery yet");
+        public static readonly LocString HubIntro = new("feedback.hubIntro", "Tell the developer what's broken, what you'd love to see, or what made your day.");
+        public static readonly LocString NewSection = new("feedback.newSection", "New Feedback");
+        public static readonly LocString KindBug = new("feedback.kindBug", "Bug");
+        public static readonly LocString KindBugSubtitle = new("feedback.kindBugSubtitle", "Something isn't working");
+        public static readonly LocString KindIdea = new("feedback.kindIdea", "Idea");
+        public static readonly LocString KindIdeaSubtitle = new("feedback.kindIdeaSubtitle", "Suggest something new");
+        public static readonly LocString KindPraise = new("feedback.kindPraise", "Praise");
+        public static readonly LocString KindPraiseSubtitle = new("feedback.kindPraiseSubtitle", "Something you love");
+        public static readonly LocString KindOther = new("feedback.kindOther", "Other");
+        public static readonly LocString KindOtherSubtitle = new("feedback.kindOtherSubtitle", "Questions and anything else");
+        public static readonly LocString PromptBug = new("feedback.promptBug", "What went wrong?");
+        public static readonly LocString PlaceholderBug = new("feedback.placeholderBug", "What did you do, what did you expect, and what happened instead?");
+        public static readonly LocString PromptIdea = new("feedback.promptIdea", "What's your idea?");
+        public static readonly LocString PlaceholderIdea = new("feedback.placeholderIdea", "What problem would it solve for you? How do you picture it working?");
+        public static readonly LocString PromptPraise = new("feedback.promptPraise", "What do you love?");
+        public static readonly LocString PlaceholderPraise = new("feedback.placeholderPraise", "Tell us what made your day. It helps us know what to keep.");
+        public static readonly LocString PromptOther = new("feedback.promptOther", "What's on your mind?");
+        public static readonly LocString PlaceholderOther = new("feedback.placeholderOther", "Questions, thoughts, anything else.");
+        public static readonly LocString ThanksBug = new("feedback.thanksBug", "We'll look into it. Reports with clear steps get fixed fastest.");
+        public static readonly LocString ThanksIdea = new("feedback.thanksIdea", "Your idea is in. Some of the best features started as a message like this.");
+        public static readonly LocString ThanksPraise = new("feedback.thanksPraise", "That made our day. Thank you for taking the time.");
+        public static readonly LocString ThanksOther = new("feedback.thanksOther", "Your message is on its way to the developer.");
+        public static readonly LocString ContinueDraft = new("feedback.continueDraft", "Continue your draft");
+        public static readonly LocString DraftNoText = new("feedback.draftNoText", "Only screenshots so far");
+        public static readonly LocString YourFeedback = new("feedback.yourFeedback", "Your Feedback");
+        public static readonly LocString SeeAll = new("feedback.seeAll", "See All");
+        public static readonly LocString HistoryEmptyTitle = new("feedback.historyEmptyTitle", "Nothing sent yet");
+        public static readonly LocString HistoryEmptyHint = new("feedback.historyEmptyHint", "Feedback you send shows up here, so you can see when it's been handled.");
+        public static readonly LocString PrivacyNote = new("feedback.privacyNote", "The developer reads everything you send. Please leave out passwords and private details.");
+        public static readonly LocString SignInTitle = new("feedback.signInTitle", "Sign in to send feedback");
+        public static readonly LocString SignInHint = new("feedback.signInHint", "Feedback is tied to your Aethernet account, so you can follow what happens to it.");
+        public static readonly LocString OpenSettings = new("feedback.openSettings", "Open Settings");
+        public static readonly LocString Screenshots = new("feedback.screenshots", "Screenshots");
+        public static readonly LocString AddShort = new("feedback.addShort", "Add");
+        public static readonly LocString ScreenshotHint = new("feedback.screenshotHint", "A screenshot makes a bug much easier to fix.");
+        public static readonly LocString DeviceInfoTitle = new("feedback.deviceInfoTitle", "Include device info");
+        public static readonly LocString DeviceInfoHint = new("feedback.deviceInfoHint", "Helps reproduce bugs. Nothing personal.");
+        public static readonly LocString ShowDetails = new("feedback.showDetails", "What's included");
+        public static readonly LocString HideDetails = new("feedback.hideDetails", "Hide details");
+        public static readonly LocString InfoVersion = new("feedback.infoVersion", "Aetherphone version");
+        public static readonly LocString InfoLanguage = new("feedback.infoLanguage", "Phone language");
+        public static readonly LocString InfoGameClient = new("feedback.infoGameClient", "Game client");
+        public static readonly LocString InfoRegion = new("feedback.infoRegion", "Region");
+        public static readonly LocString InfoPhoneSize = new("feedback.infoPhoneSize", "Phone width");
+        public static readonly LocString Uploading = new("feedback.uploading", "Uploading {0} of {1}…");
+        public static readonly LocString SendFailed = new("feedback.sendFailed", "Couldn't send. Your draft is saved.");
+        public static readonly LocString TryAgain = new("feedback.tryAgain", "Try Again");
+        public static readonly LocString DiscardDraft = new("feedback.discardDraft", "Discard draft");
+        public static readonly LocString DiscardConfirm = new("feedback.discardConfirm", "Discard this draft? Your text and screenshots will be removed.");
+        public static readonly LocString Discard = new("feedback.discard", "Discard");
+        public static readonly LocString KeepEditing = new("feedback.keepEditing", "Keep Editing");
+        public static readonly LocString NoPhotosHint = new("feedback.noPhotosHint", "Take one with Camera, or import an image from your PC.");
+        public static readonly LocString ViewYourFeedback = new("feedback.viewYourFeedback", "View Your Feedback");
+        public static readonly LocString Done = new("feedback.done", "Done");
+        public static readonly LocString StatusReceived = new("feedback.statusReceived", "Received");
+        public static readonly LocString StatusResolved = new("feedback.statusResolved", "Resolved");
+        public static readonly LocString StatusClosed = new("feedback.statusClosed", "Closed");
+        public static readonly LocString StatusReceivedHint = new("feedback.statusReceivedHint", "The developer reads every message. This changes once it's been handled.");
+        public static readonly LocString StatusResolvedHint = new("feedback.statusResolvedHint", "Marked as resolved. Thanks for helping make Aetherphone better.");
+        public static readonly LocString StatusClosedHint = new("feedback.statusClosedHint", "Closed without changes. Not every idea fits, but every one is read.");
+        public static readonly LocString TimelineSent = new("feedback.timelineSent", "Sent");
+        public static readonly LocString TimelineReview = new("feedback.timelineReview", "In review");
+        public static readonly LocString YourMessage = new("feedback.yourMessage", "Your message");
+        public static readonly LocString SentToast = new("feedback.sentToast", "Feedback sent");
+        public static readonly LocPlural PhotoCount = new("feedback.photoCount", "{0} photo", "{0} photos");
     }
 
     internal static class Polls
     {
         public static readonly LocString SignInRequired = new("polls.signInRequired", "Sign in to Aethernet in Settings to see polls");
-        public static readonly LocString Empty = new("polls.empty", "No polls yet");
-        public static readonly LocString EmptySubtitle = new("polls.emptySubtitle", "New polls will land here.");
         public static readonly LocString FinalResults = new("polls.finalResults", "Final results");
         public static readonly LocString HiddenResults = new("polls.hiddenResults", "Vote to see results");
         public static readonly LocPlural Votes = new("polls.votes", "{0} vote", "{0} votes");
+        public static readonly LocString Open = new("polls.open", "Open");
+        public static readonly LocString Ended = new("polls.ended", "Ended");
+        public static readonly LocString EndsInDaysHours = new("polls.endsInDaysHours", "Ends in {0}d {1}h");
+        public static readonly LocString EndsInHoursMinutes = new("polls.endsInHoursMinutes", "Ends in {0}h {1}m");
+        public static readonly LocString EndsInMinutes = new("polls.endsInMinutes", "Ends in {0}m");
+        public static readonly LocString EndsInSeconds = new("polls.endsInSeconds", "Ends in {0}s");
+        public static readonly LocString EndedOn = new("polls.endedOn", "Ended {0}");
+        public static readonly LocString NeedsVote = new("polls.needsVote", "Vote now");
+        public static readonly LocString UndoVote = new("polls.undoVote", "Undo vote");
+        public static readonly LocString VoteFailed = new("polls.voteFailed", "Your vote wasn't saved. Try again.");
+        public static readonly LocString Percent = new("polls.percent", "{0}%");
+        public static readonly LocString Leading = new("polls.leading", "Leading");
+        public static readonly LocString Winner = new("polls.winner", "Winner");
+        public static readonly LocString Tie = new("polls.tie", "Tie");
+        public static readonly LocString SignInTitle = new("polls.signInTitle", "Sign in to vote");
+        public static readonly LocString OpenSettings = new("polls.openSettings", "Open Settings");
+        public static readonly LocString EmptyOpenTitle = new("polls.emptyOpenTitle", "No open polls");
+
+        public static readonly LocString EmptyOpenHint = new("polls.emptyOpenHint",
+            "New community polls land here, and the app badge tells you when one needs your vote.");
+
+        public static readonly LocString EmptyEndedTitle = new("polls.emptyEndedTitle", "No ended polls yet");
+
+        public static readonly LocString EmptyEndedHint = new("polls.emptyEndedHint",
+            "When a poll closes, its final results stay here.");
+
+        public static readonly LocString RefreshFailed = new("polls.refreshFailed",
+            "Couldn't refresh. Pull down to try again.");
     }
 
     internal static class Announcements
     {
         public static readonly LocString SignInRequired = new("announcements.signInRequired", "Sign in to Aethernet in Settings to read announcements");
         public static readonly LocString SignInTitle = new("announcements.signInTitle", "Sign in required");
-        public static readonly LocString NewBadge = new("announcements.newBadge", "NEW");
-        public static readonly LocString EmptyTitle = new("announcements.emptyTitle", "Nothing announced yet");
+        public static readonly LocString EmptyTitle = new("announcements.emptyTitle", "No announcements yet");
         public static readonly LocString EmptyHint = new("announcements.emptyHint", "News from the Aetherphone team lands here.");
         public static readonly LocString UnavailableTitle = new("announcements.unavailableTitle", "Announcement unavailable");
         public static readonly LocString UnavailableHint = new("announcements.unavailableHint", "This announcement was taken down.");
+        public static readonly LocString SearchHint = new("announcements.searchHint", "Search announcements");
+        public static readonly LocString MarkAllRead = new("announcements.markAllRead", "Mark all as read");
+        public static readonly LocString Latest = new("announcements.latest", "Latest");
+        public static readonly LocString NoResultsTitle = new("announcements.noResultsTitle", "No results");
+        public static readonly LocString NoResultsHint = new("announcements.noResultsHint", "Nothing matches \"{0}\". Try another word.");
+        public static readonly LocString Newer = new("announcements.newer", "Newer");
+        public static readonly LocString Older = new("announcements.older", "Older");
+        public static readonly LocString CopyText = new("announcements.copyText", "Copy text");
+        public static readonly LocString OpenSettings = new("announcements.openSettings", "Open Settings");
+        public static readonly LocString RefreshFailed = new("announcements.refreshFailed", "Couldn't refresh. Showing what you already have.");
     }
 
     internal static class Loadout
@@ -7456,8 +7577,12 @@ internal static class L
         public static readonly LocString MapsExpandTitle = new("onboarding.mapsExpandTitle", "Open an expansion");
         public static readonly LocString MapsExpandBody = new("onboarding.mapsExpandBody", "Tap an expansion to list its regions and every aetheryte in them.");
         public static readonly LocString MapsTravelTitle = new("onboarding.mapsTravelTitle", "Travel in one tap");
-        public static readonly LocString MapsTravelBody = new("onboarding.mapsTravelBody", "With the Lifestream plugin, tapping an aetheryte teleports you there.");
-        public static readonly LocString MapsPinBody = new("onboarding.mapsPinBody", "Tap the star to add this aetheryte to Favorites, listed above the expansions.");
+        public static readonly LocString MapsMapTitle = new("onboarding.mapsMapTitle", "Where you are");
+        public static readonly LocString MapsMapBody = new("onboarding.mapsMapBody", "Your zone's map follows you, and the arrow shows the way you face. Drag to look around and scroll to zoom.");
+        public static readonly LocString MapsOpenTitle = new("onboarding.mapsOpenTitle", "Open a place");
+        public static readonly LocString MapsOpenBody = new("onboarding.mapsOpenBody", "Tap an aetheryte to see it on a map, with its teleport and favorite actions.");
+        public static readonly LocString MapsTeleportBody = new("onboarding.mapsTeleportBody", "With the Lifestream plugin, Teleport takes you there. Without it, the button copies the command for chat.");
+        public static readonly LocString MapsFavoriteBody = new("onboarding.mapsFavoriteBody", "Tap Favorite to keep this place in the row at the top of the sheet.");
         public static readonly LocString HuntsWindowsTitle = new("onboarding.huntsWindowsTitle", "Spawn windows");
         public static readonly LocString HuntsWindowsBody = new("onboarding.huntsWindowsBody", "Each row is a mark on one world. The bar fills as its spawn window opens, and spawned marks rise to the top.");
         public static readonly LocString HuntsFilterTitle = new("onboarding.huntsFilterTitle", "Filter the list");
@@ -7612,9 +7737,11 @@ internal static class L
         public static readonly LocString AethergramPickTitle = new("onboarding.aethergramPickTitle", "Pick your shots");
         public static readonly LocString AethergramPickBody = new("onboarding.aethergramPickBody", "Tap photos from your Photos library to choose one or several, or bring one in with Import from PC.");
         public static readonly LocString PollsCastTitle = new("onboarding.pollsCastTitle", "Cast your vote");
-        public static readonly LocString PollsCastBody = new("onboarding.pollsCastBody", "Tap an option to vote. Tap another to switch, or tap your pick again to take it back.");
+        public static readonly LocString PollsCastBody = new("onboarding.pollsCastBody", "Tap an option to vote. Tap another one any time to move your vote.");
         public static readonly LocString PollsTallyTitle = new("onboarding.pollsTallyTitle", "Results after you vote");
-        public static readonly LocString PollsTallyBody = new("onboarding.pollsTallyBody", "The count stays hidden until you vote. Then the bars and totals appear and keep updating.");
+        public static readonly LocString PollsTallyBody = new("onboarding.pollsTallyBody", "Results stay hidden until you vote. Once you have, Undo vote appears on this line to take it back.");
+        public static readonly LocString PollsEndedTitle = new("onboarding.pollsEndedTitle", "Final results");
+        public static readonly LocString PollsEndedBody = new("onboarding.pollsEndedBody", "Tap Ended. Closed polls move there, with the winning option marked.");
         public static readonly LocString AnnouncementsReadTitle = new("onboarding.announcementsReadTitle", "Read the latest");
         public static readonly LocString AnnouncementsReadBody = new("onboarding.announcementsReadBody", "The newest post sits on top with the longest preview. Tap it to read it in full.");
         public static readonly LocString AnnouncementsFullTitle = new("onboarding.announcementsFullTitle", "The whole story");
@@ -7657,12 +7784,14 @@ internal static class L
         public static readonly LocString NewsWindowBody = new("onboarding.newsWindowBody", "Each entry shows its window in your local time and whether it is upcoming, in progress or completed. Tap one to read it in your browser.");
         public static readonly LocString NewsLatestTitle = new("onboarding.newsLatestTitle", "Get the latest");
         public static readonly LocString NewsLatestBody = new("onboarding.newsLatestBody", "News refreshes on its own every few minutes. Tap here to fetch the newest posts now.");
+        public static readonly LocString FeedbackKindTitle = new("onboarding.feedbackKindTitle", "Pick what it is");
+        public static readonly LocString FeedbackKindBody = new("onboarding.feedbackKindBody", "Start by choosing a bug, an idea, praise or something else. Tap one to open the composer.");
         public static readonly LocString FeedbackMessageTitle = new("onboarding.feedbackMessageTitle", "Write it down");
         public static readonly LocString FeedbackMessageBody = new("onboarding.feedbackMessageBody", "Tap here and describe a bug, an idea or a question. You have up to 1,000 characters.");
         public static readonly LocString FeedbackScreenshotsTitle = new("onboarding.feedbackScreenshotsTitle", "Add screenshots");
         public static readonly LocString FeedbackScreenshotsBody = new("onboarding.feedbackScreenshotsBody", "Attach up to five images from your gallery or your PC. A screenshot makes a bug much easier to fix.");
         public static readonly LocString FeedbackSubmitTitle = new("onboarding.feedbackSubmitTitle", "Send it");
-        public static readonly LocString FeedbackSubmitBody = new("onboarding.feedbackSubmitBody", "Tap Send when you are ready. You confirm before it goes, and you can send one message a minute.");
+        public static readonly LocString FeedbackSubmitBody = new("onboarding.feedbackSubmitBody", "Tap Send when you are ready. Your draft is kept if anything goes wrong, and you can send one message a minute.");
         public static readonly LocString HealthStepsTitle = new("onboarding.healthStepsTitle", "Steps today");
         public static readonly LocString HealthStepsBody = new("onboarding.healthStepsBody", "Your character's estimated steps today, counted from distance on foot and measured against your daily goal.");
         public static readonly LocString HealthWaterTabTitle = new("onboarding.healthWaterTabTitle", "Log a drink");
