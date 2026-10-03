@@ -119,8 +119,8 @@ internal sealed class PhotosWidget : IHomeWidget
     {
         var bounds = context.Bounds;
         var scale = context.Scale;
-        AppIconArt.TryDraw(context.DrawList, "photos", bounds.Center - new Vector2(0f, 8f * scale), 34f * scale,
-            context.Theme.TextMuted, new Vector4(0f, 0f, 0f, 0f));
+        AppIconTile.TryDrawGlyph(context.DrawList, "photos", bounds.Center - new Vector2(0f, 8f * scale),
+            34f * scale * AppIconTextures.GlyphFraction, context.Theme.TextMuted);
         Typography.DrawCentered(context.DrawList, new Vector2(bounds.Center.X, bounds.Center.Y + 20f * scale),
             Loc.T(L.Photos.NoPhotos), Palette.WithAlpha(context.Theme.TextMuted, context.Opacity),
             TextStyles.Caption1);

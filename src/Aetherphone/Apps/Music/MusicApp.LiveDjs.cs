@@ -910,7 +910,8 @@ internal sealed partial class MusicApp
         var iconCenter = new Vector2(rowLeft + radius, rowCenterY);
         var accent = AppAccents.For("rolladeck");
 
-        if (!AppIconTextures.TryDraw(drawList, "rolladeck", iconCenter, radius * 2f, Vector4.One))
+        if (!AppIconTile.TryDrawGlyph(drawList, "rolladeck", iconCenter, radius * 2f * AppIconTextures.GlyphFraction,
+                Vector4.One))
         {
             drawList.AddCircleFilled(iconCenter, radius, ImGui.GetColorU32(accent), 24);
         }

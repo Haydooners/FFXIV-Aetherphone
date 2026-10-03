@@ -228,12 +228,17 @@ internal sealed class ShellTransitionRenderer
         var glyphAlpha = 1f - Easing.SmootherStep(Easing.Segment(raw, GlyphFadeStart, GlyphFadeEnd));
         if (glyphAlpha > 0.001f)
         {
-            DrawZoomGlyph(drawList, over, card, glyphAlpha);
+            DrawZoomGlyph(drawList, over, card, rounding, glyphAlpha);
         }
     }
 
-    private static void DrawZoomGlyph(ImDrawListPtr drawList, IPhoneApp over, Rect card, float alpha)
+    private static void DrawZoomGlyph(ImDrawListPtr drawList, IPhoneApp over, Rect card, float rounding, float alpha)
     {
+        if (AppIconTile.TryDraw(drawList, over.Id, over.Accent, card.Min, card.Max, rounding, alpha, false))
+        {
+            return;
+        }
+
         var size = card.Width;
         var center = card.Center;
         var surface = IconTile.Surface(over.Accent);

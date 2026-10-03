@@ -18,6 +18,11 @@ internal sealed partial class AppStoreApp
         var min = new Vector2(center.X - half, center.Y - half);
         var max = new Vector2(center.X + half, center.Y + half);
         var radius = size * Metrics.Radius.TileFactor;
+        if (AppIconTile.TryDraw(drawList, app.Id, app.Accent, min, max, radius, 1f, true, scale))
+        {
+            return;
+        }
+
         var surface = IconTile.Surface(app.Accent);
         Elevation.IconRest(drawList, min, max, radius, scale);
         IconTile.FillShaded(drawList, min, max, radius, surface);

@@ -25,14 +25,9 @@ internal static class HomeTileView
         var ink = AppAccents.InkFor(app.Id);
         var firstVertex = dl.VtxBuffer.Size;
         Material.PointerHalo(dl, drawMin, drawMax, radius, pointer.Lift, scale);
-        Elevation.IconRest(dl, drawMin, drawMax, radius, scale);
-        IconTile.FillShaded(dl, drawMin, drawMax, radius, surface);
-        Material.EdgeSquircle(dl, drawMin, drawMax, radius, scale);
-        if (!AppIconArt.TryDraw(app.Id, center, size * drawScale, ink, Palette.Mix(surface, ink, 0.28f)))
+        if (!AppIconTile.TryDraw(dl, app.Id, app.Accent, drawMin, drawMax, radius, 1f, true, scale))
         {
-            var glyphHeight = Typography.Measure(app.Glyph).Y;
-            var glyphScale = glyphHeight > 0f ? size * drawScale * 0.5f / glyphHeight : 1f;
-            Typography.DrawCentered(center, app.Glyph, ink, glyphScale);
+            DrawAccentTile(dl, app, center, size * drawScale, drawMin, drawMax, radius, surface, ink, scale);
         }
 
         FinishPointer(dl, firstVertex, center, drawMin, drawMax, radius, drawHalf, pointer, scale);
@@ -41,6 +36,22 @@ internal static class HomeTileView
         {
             DrawBadge(center, size, app.BadgeCount, app.BadgeAsDot, theme, scale);
         }
+    }
+
+    private static void DrawAccentTile(ImDrawListPtr dl, IPhoneApp app, Vector2 center, float side, Vector2 min,
+        Vector2 max, float radius, Vector4 surface, Vector4 ink, float scale)
+    {
+        Elevation.IconRest(dl, min, max, radius, scale);
+        IconTile.FillShaded(dl, min, max, radius, surface);
+        Material.EdgeSquircle(dl, min, max, radius, scale);
+        if (AppIconArt.TryDraw(dl, app.Id, center, side, ink, Palette.Mix(surface, ink, 0.28f)))
+        {
+            return;
+        }
+
+        var glyphHeight = Typography.Measure(app.Glyph).Y;
+        var glyphScale = glyphHeight > 0f ? side * 0.5f / glyphHeight : 1f;
+        Typography.DrawCentered(center, app.Glyph, ink, glyphScale);
     }
 
     private static bool IsBadgeVisible(IPhoneApp app, Configuration configuration) =>
@@ -123,6 +134,11 @@ internal static class HomeTileView
             }
 
             var appItem = member.App!;
+            if (AppIconTile.TryDraw(dl, appItem.Id, appItem.Accent, miniMin, miniMax, mini * 0.3f, 1f, false, scale))
+            {
+                continue;
+            }
+
             var surface = IconTile.Surface(appItem.Accent);
             var memberInk = AppAccents.InkFor(appItem.Id);
             Squircle.Fill(dl, miniMin, miniMax, mini * 0.3f, ImGui.GetColorU32(surface));

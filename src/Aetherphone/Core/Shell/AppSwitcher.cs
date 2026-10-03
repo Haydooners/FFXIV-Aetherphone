@@ -779,6 +779,12 @@ internal sealed class AppSwitcher
     {
         var half = new Vector2(size, size) * 0.5f;
         var accent = card.App is { } app ? app.Accent : theme.Accent;
+        if (card.App is not null && AppIconTile.TryDraw(drawList, card.App.Id, accent, center - half, center + half,
+                size * Metrics.Radius.TileFactor, alpha, false))
+        {
+            return;
+        }
+
         var surface = IconTile.Surface(accent);
         Squircle.Fill(drawList, center - half, center + half, size * Metrics.Radius.TileFactor,
             ImGui.GetColorU32(Palette.WithAlpha(surface, alpha)));

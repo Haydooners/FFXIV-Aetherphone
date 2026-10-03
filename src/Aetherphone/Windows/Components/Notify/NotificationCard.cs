@@ -15,6 +15,26 @@ internal static class NotificationCard
     private const float TileLeftPad = 13f;
     private static readonly Vector4 Ink = new(0.99f, 0.99f, 1f, 1f);
 
+    private static void DrawAccentTile(ImDrawListPtr drawList, PhoneNotification notification, Vector2 tileMin,
+        Vector2 tileMax, float tileRounding, float tileSize, float scale, float opacity)
+    {
+        var tint = IconTile.Surface(notification.Accent);
+        Squircle.Fill(drawList, tileMin, tileMax, tileRounding, Color(tint, opacity));
+        var gloss = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.18f * opacity));
+        drawList.AddLine(new Vector2(tileMin.X + tileRounding, tileMin.Y + 1f * scale),
+            new Vector2(tileMax.X - tileRounding, tileMin.Y + 1f * scale), gloss, 1f * scale);
+        var iconCenter = (tileMin + tileMax) * 0.5f;
+        var tileInk = AccentRing.Ink;
+        var ink = Palette.WithAlpha(tileInk, opacity);
+        var hole = Palette.WithAlpha(Palette.Mix(tint, tileInk, 0.28f), opacity);
+        if (AppIconArt.TryDraw(drawList, notification.AppId, iconCenter, tileSize * 0.5f, ink, hole))
+        {
+            return;
+        }
+
+        drawList.AddCircleFilled(iconCenter, 4f * scale, ImGui.GetColorU32(ink), 16);
+    }
+
     public static void DrawBase(ImDrawListPtr drawList, Rect rect, PhoneNotification notification, PhoneTheme theme,
         float scale, float opacity, float shadowStrength)
     {
@@ -32,18 +52,10 @@ internal static class NotificationCard
         var tileMin = new Vector2(min.X + TileLeftPad * scale, min.Y + (rect.Height - tileSize) * 0.5f);
         var tileMax = tileMin + new Vector2(tileSize, tileSize);
         var tileRounding = tileSize * 0.28f;
-        var tint = IconTile.Surface(notification.Accent);
-        Squircle.Fill(drawList, tileMin, tileMax, tileRounding, Color(tint, opacity));
-        var gloss = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.18f * opacity));
-        drawList.AddLine(new Vector2(tileMin.X + tileRounding, tileMin.Y + 1f * scale),
-            new Vector2(tileMax.X - tileRounding, tileMin.Y + 1f * scale), gloss, 1f * scale);
-        var iconCenter = (tileMin + tileMax) * 0.5f;
-        var tileInk = AccentRing.Ink;
-        var ink = Palette.WithAlpha(tileInk, opacity);
-        var hole = Palette.WithAlpha(Palette.Mix(tint, tileInk, 0.28f), opacity);
-        if (!AppIconArt.TryDraw(drawList, notification.AppId, iconCenter, tileSize * 0.5f, ink, hole))
+        if (!AppIconTile.TryDraw(drawList, notification.AppId, notification.Accent, tileMin, tileMax, tileRounding,
+                opacity, false, scale))
         {
-            drawList.AddCircleFilled(iconCenter, 4f * scale, ImGui.GetColorU32(ink), 16);
+            DrawAccentTile(drawList, notification, tileMin, tileMax, tileRounding, tileSize, scale, opacity);
         }
 
         var textLeft = tileMax.X + 12f * scale;

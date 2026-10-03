@@ -1885,6 +1885,12 @@ internal static class L
         public static readonly LocString TranslateIntoHint = new("settings.translateIntoHint", "Posts, comments, and messages written in other languages get a one-tap Translate link that renders them in this language.");
         public static readonly LocString AutoTranslate = new("settings.autoTranslate", "Auto-translate posts and comments");
         public static readonly LocString AutoTranslateHint = new("settings.autoTranslateHint", "Posts and comments written in other languages are translated as soon as they appear, without tapping Translate. Private messages keep their own per-chat switch.");
+        public static readonly LocString IconAppearance = new("settings.iconAppearance", "App Icons");
+        public static readonly LocString IconAppearanceDefault = new("settings.iconAppearanceDefault", "Default");
+        public static readonly LocString IconAppearanceDark = new("settings.iconAppearanceDark", "Dark");
+        public static readonly LocString IconAppearanceTinted = new("settings.iconAppearanceTinted", "Tinted");
+        public static readonly LocString IconAppearanceClear = new("settings.iconAppearanceClear", "Clear");
+        public static readonly LocString IconAppearanceHint = new("settings.iconAppearanceHint", "Dark and Tinted repaint each icon on graphite, Clear shows it as glass over the wallpaper. Icons without painted artwork keep their colored tile.");
     }
 
     internal static class Translate

@@ -253,6 +253,20 @@ internal sealed class NotificationBanner : IDisposable
         return new Rect(min, max);
     }
 
+    private static void DrawAccentTile(ImDrawListPtr dl, PhoneNotification notification, Vector2 iconCenter,
+        Vector2 iconMin, Vector2 iconMax, float radius, Vector4 tileFill, Vector4 ink, float scale, float opacity)
+    {
+        Squircle.Fill(dl, iconMin, iconMax, radius, Color(tileFill, opacity));
+        if (AppIconArt.TryDraw(dl, notification.AppId, iconCenter, IconSize * scale, ink,
+                Palette.WithAlpha(tileFill, opacity)))
+        {
+            return;
+        }
+
+        var initial = notification.Title.Length > 0 ? notification.Title.Substring(0, 1) : "?";
+        Typography.DrawCentered(dl, iconCenter, initial, ink, 1.1f);
+    }
+
     private static void DrawCard(ImDrawListPtr dl, PhoneNotification notification, PhoneTheme theme, Vector2 min,
         Vector2 max, float scale, float opacity, bool hovered)
     {
@@ -269,13 +283,12 @@ internal sealed class NotificationBanner : IDisposable
         var iconMin = new Vector2(iconCenter.X - iconExtent, iconCenter.Y - iconExtent);
         var iconMax = new Vector2(iconCenter.X + iconExtent, iconCenter.Y + iconExtent);
         var tileFill = IconTile.Surface(notification.Accent);
-        Squircle.Fill(dl, iconMin, iconMax, iconExtent * 0.52f, Color(tileFill, opacity));
         var ink = Palette.WithAlpha(AccentRing.Ink, opacity);
-        if (!AppIconArt.TryDraw(dl, notification.AppId, iconCenter, IconSize * scale, ink,
-                Palette.WithAlpha(tileFill, opacity)))
+        if (!AppIconTile.TryDraw(dl, notification.AppId, notification.Accent, iconMin, iconMax, iconExtent * 0.52f,
+                opacity, false, scale))
         {
-            var initial = notification.Title.Length > 0 ? notification.Title.Substring(0, 1) : "?";
-            Typography.DrawCentered(dl, iconCenter, initial, ink, 1.1f);
+            DrawAccentTile(dl, notification, iconCenter, iconMin, iconMax, iconExtent * 0.52f, tileFill, ink, scale,
+                opacity);
         }
 
         var textLeft = iconMax.X + TextGap * scale;

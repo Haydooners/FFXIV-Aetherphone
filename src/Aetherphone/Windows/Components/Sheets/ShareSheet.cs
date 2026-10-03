@@ -153,6 +153,25 @@ internal sealed class ShareSheet
         return new Rect(panelMin, panelMax);
     }
 
+    private static void DrawAccentTile(ImDrawListPtr drawList, IPhoneApp app, Vector2 tileCenter, float tileSize,
+        Vector2 tileMin, Vector2 tileMax, float radius, Vector4 surface, float scale, float opacity)
+    {
+        Elevation.IconRest(drawList, tileMin, tileMax, radius, scale);
+        IconTile.FillShaded(drawList, tileMin, tileMax, radius, Palette.WithAlpha(surface, opacity));
+        Material.EdgeSquircle(drawList, tileMin, tileMax, radius, scale);
+        var ink = AppAccents.InkFor(app.Id);
+        if (AppIconArt.TryDraw(drawList, app.Id, tileCenter, tileSize, Palette.WithAlpha(ink, opacity),
+                Palette.Mix(surface, ink, 0.28f)))
+        {
+            return;
+        }
+
+        var glyphHeight = Typography.Measure(app.Glyph).Y;
+        var glyphScale = glyphHeight > 0f ? tileSize * 0.5f / glyphHeight : 1f;
+        Typography.DrawCentered(drawList, tileCenter, app.Glyph, Palette.WithAlpha(ink, opacity), glyphScale,
+            FontWeight.Regular);
+    }
+
     private static bool DrawTarget(ImDrawListPtr drawList, PhoneTheme theme, IPhoneApp app, ShareKind kind,
         Vector2 cellMin, float cellWidth, float cellHeight, float scale, float opacity, bool interactive)
     {
@@ -170,17 +189,9 @@ internal sealed class ShareSheet
                 ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.07f * opacity)));
         }
 
-        Elevation.IconRest(drawList, tileMin, tileMax, radius, scale);
-        IconTile.FillShaded(drawList, tileMin, tileMax, radius, Palette.WithAlpha(surface, opacity));
-        Material.EdgeSquircle(drawList, tileMin, tileMax, radius, scale);
-        var ink = AppAccents.InkFor(app.Id);
-        if (!AppIconArt.TryDraw(drawList, app.Id, tileCenter, tileSize, Palette.WithAlpha(ink, opacity),
-                Palette.Mix(surface, ink, 0.28f)))
+        if (!AppIconTile.TryDraw(drawList, app.Id, app.Accent, tileMin, tileMax, radius, opacity, true, scale))
         {
-            var glyphHeight = Typography.Measure(app.Glyph).Y;
-            var glyphScale = glyphHeight > 0f ? tileSize * 0.5f / glyphHeight : 1f;
-            Typography.DrawCentered(drawList, tileCenter, app.Glyph, Palette.WithAlpha(ink, opacity), glyphScale,
-                FontWeight.Regular);
+            DrawAccentTile(drawList, app, tileCenter, tileSize, tileMin, tileMax, radius, surface, scale, opacity);
         }
 
         var label = app.ShareLabel(kind) is { } custom ? Loc.T(custom) : app.DisplayName;

@@ -1737,7 +1737,7 @@ internal sealed partial class AethergramApp : IResumableApp
         var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
         var logoSize = LogoSize * scale;
         var logoCenter = new Vector2(area.Min.X + CellPadX * scale + logoSize * 0.5f, rowCenterY);
-        if (!AppIconTextures.TryDrawArtwork(drawList, Id, logoCenter, logoSize, Ink.AccentLink))
+        if (!AppIconTile.TryDrawGlyph(drawList, Id, logoCenter, logoSize, Ink.AccentLink))
         {
             PhoneIcon.Draw(drawList, logoCenter, PhoneIcons.Camera, Ink.AccentLink, logoSize);
         }
