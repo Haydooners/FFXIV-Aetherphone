@@ -69,7 +69,7 @@ internal static class VenueDisplayText
                 index++;
             }
 
-            var mapped = codepoint > char.MaxValue ? RolladeckText.MapSupplementary(codepoint) : '\0';
+            var mapped = codepoint > char.MaxValue ? RolladeckText.MapSupplementary(codepoint) : MapLetter(codepoint);
             var glyphClass = mapped != '\0' ? GlyphClass.Keep : Classify(codepoint);
             switch (glyphClass)
             {
@@ -121,7 +121,8 @@ internal static class VenueDisplayText
         }
 
         if (codepoint is 0x00AD or 0xFEFF || codepoint is >= 0x200B and <= 0x200F ||
-            codepoint is >= 0x2060 and <= 0x206F || codepoint is >= 0xFE00 and <= 0xFE0F ||
+            codepoint is >= 0x2028 and <= 0x202E || codepoint is >= 0x2060 and <= 0x206F ||
+            codepoint is >= 0xFE00 and <= 0xFE0F ||
             codepoint is >= 0x20D0 and <= 0x20FF)
         {
             return GlyphClass.Drop;
@@ -139,6 +140,38 @@ internal static class VenueDisplayText
 
         return IsRenderable(codepoint) ? GlyphClass.Keep : GlyphClass.Space;
     }
+
+    private static char MapLetter(int codepoint) =>
+        codepoint switch
+        {
+            >= 0x24B6 and <= 0x24CF => (char)('A' + codepoint - 0x24B6),
+            >= 0x24D0 and <= 0x24E9 => (char)('a' + codepoint - 0x24D0),
+            0x1D00 => 'A',
+            0x0299 => 'B',
+            0x1D04 => 'C',
+            0x1D05 => 'D',
+            0x1D07 => 'E',
+            0xA730 => 'F',
+            0x0262 => 'G',
+            0x029C => 'H',
+            0x026A => 'I',
+            0x1D0A => 'J',
+            0x1D0B => 'K',
+            0x029F => 'L',
+            0x1D0D => 'M',
+            0x0274 => 'N',
+            0x1D0F => 'O',
+            0x1D18 => 'P',
+            0x0280 => 'R',
+            0xA731 => 'S',
+            0x1D1B => 'T',
+            0x1D1C => 'U',
+            0x1D20 => 'V',
+            0x1D21 => 'W',
+            0x028F => 'Y',
+            0x1D22 => 'Z',
+            _ => '\0',
+        };
 
     private static bool IsSeparator(int codepoint) =>
         codepoint is 0x00B7 or 0x2022 or 0x2023 or 0x2027 or 0x2043 or 0x2219 or 0x22C4 or 0x22C5 or 0x22C6 ||

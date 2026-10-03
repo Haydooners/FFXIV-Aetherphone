@@ -68,4 +68,17 @@ public sealed class VenueDisplayTextTests
     {
         Assert.Equal("Club night", VenueDisplayText.Clean("Club ไทย night"));
     }
+
+    [Fact]
+    public void Clean_SmallCapsAndCircledLettersMapToAscii()
+    {
+        Assert.Equal("THE BAR", VenueDisplayText.Clean("\u1D1B\u029C\u1D07 \u0299\u1D00\u0280"));
+        Assert.Equal("The Bar", VenueDisplayText.Clean("The \u24B7\u24D0\u24E1"));
+    }
+
+    [Fact]
+    public void Clean_BidiAndLineSeparatorControlsAreRemoved()
+    {
+        Assert.Equal("Moonlit", VenueDisplayText.Clean("\u202AMoon\u2028lit\u202C"));
+    }
 }
