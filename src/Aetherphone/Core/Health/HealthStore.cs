@@ -117,6 +117,17 @@ internal sealed class HealthStore
                                           drink.Millilitres <= 0);
         }
 
+        profile.WeightLog ??= new List<WeightEntry>();
+        WeightHistory.Normalize(profile.WeightLog);
+        profile.ServingMillilitres = double.IsFinite(profile.ServingMillilitres)
+            ? Math.Clamp(profile.ServingMillilitres, HealthFormat.MinServingMillilitres,
+                HealthFormat.MaxServingMillilitres)
+            : HealthFormat.GlassMillilitres;
+        if (Array.IndexOf(DrinkKeys.All, profile.ServingKind) < 0)
+        {
+            profile.ServingKind = DrinkKeys.Water;
+        }
+
         profile.Goals.RemoveAll(goal => goal is null || goal.Target <= 0);
         for (var index = 0; index < profile.Goals.Count; index++)
         {

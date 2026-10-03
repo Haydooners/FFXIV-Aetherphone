@@ -72,6 +72,13 @@ internal sealed class HydrationEntry
     [JsonProperty("ml")] public double Millilitres { get; set; }
 }
 
+internal sealed class WeightEntry
+{
+    [JsonProperty("t")] public long Unix { get; set; }
+
+    [JsonProperty("kg")] public double Kilograms { get; set; }
+}
+
 internal sealed class HealthGoal
 {
     [JsonProperty("id")] public string Id { get; set; } = Guid.NewGuid().ToString("N");
@@ -191,6 +198,10 @@ internal sealed class HealthProfile
     [JsonProperty("quietEnd")] public int QuietEndHour { get; set; } = 8;
     [JsonProperty("quietEndMin")] public int QuietEndMinute { get; set; }
     [JsonProperty("remindPause")] public bool ReminderPauseInDuties { get; set; } = true;
+
+    [JsonProperty("weightLog")] public List<WeightEntry> WeightLog { get; set; } = new();
+    [JsonProperty("serving")] public double ServingMillilitres { get; set; } = HealthFormat.GlassMillilitres;
+    [JsonProperty("servingKind")] public string ServingKind { get; set; } = DrinkKeys.Water;
 
     [JsonIgnore] public HealthDay? LatestDay => Days.Count > 0 ? Days[Days.Count - 1] : null;
 }
