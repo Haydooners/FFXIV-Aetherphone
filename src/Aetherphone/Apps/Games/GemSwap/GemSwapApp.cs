@@ -341,11 +341,9 @@ internal sealed class GemSwapApp : IMiniGame
         var padding = 16f * scale;
         var halfWidth = MathF.Min(grid.Width * 0.46f, 150f * scale);
         var contentWidth = halfWidth * 2f - padding * 2f;
-        var hintScale = Typography.FitScale(hint, contentWidth, TextStyles.Footnote.Scale,
-            TextStyles.Footnote.Scale * 0.7f, TextStyles.Footnote.Weight);
         var tapScale = Typography.FitScale(tapText, contentWidth, TextStyles.Title2.Scale,
             TextStyles.Title2.Scale * 0.6f, TextStyles.Title2.Weight);
-        var hintHeight = Typography.Measure(hint, hintScale, TextStyles.Footnote.Weight).Y;
+        var hintHeight = Typography.MeasureWrappedBlock(hint, TextStyles.Footnote, contentWidth).Y;
         var tapHeight = Typography.Measure(tapText, tapScale, TextStyles.Title2.Weight).Y;
         var stripHeight = 30f * scale;
         var gap = 12f * scale;
@@ -361,7 +359,7 @@ internal sealed class GemSwapApp : IMiniGame
             new Vector2(max.X - padding, min.Y + padding + stripHeight));
         var selection = SegmentStrip.Draw("match3.mode", stripRow, modeLabels, (int)mode, theme);
         var hintCenter = new Vector2(grid.Center.X, stripRow.Max.Y + gap + hintHeight * 0.5f);
-        Typography.DrawCentered(drawList, hintCenter, hint, theme.TextMuted, hintScale, TextStyles.Footnote.Weight);
+        Typography.DrawWrappedCentered(drawList, hintCenter, hint, theme.TextMuted, TextStyles.Footnote, contentWidth);
         var pulse = 1f + 0.05f * Pulse.Wave(Pulse.Calm);
         var tapCenter = new Vector2(grid.Center.X, hintCenter.Y + hintHeight * 0.5f + gap * 1.5f + tapHeight * 0.5f);
         Typography.DrawCentered(drawList, tapCenter, tapText, theme.TextStrong, tapScale * pulse,
