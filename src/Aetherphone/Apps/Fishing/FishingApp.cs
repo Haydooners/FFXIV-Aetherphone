@@ -81,6 +81,7 @@ internal sealed class FishingApp : IPhoneApp
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
         var row = new Rect(origin, origin + new Vector2(width, RouteSwitchHeight * scale));
+        UiAnchors.Report("fishing.route", row);
         var selected = SegmentStrip.Draw("fishing.route", row, routeLabels, (int)route, ui.Palette);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, (RouteSwitchHeight + 12f) * scale));

@@ -2,6 +2,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Market;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -30,6 +31,7 @@ internal sealed partial class MarketApp
         var snapshot = entry.Snapshot;
         var top = area.Min.Y + AppHeader.Height * scale;
         var scopeBar = new Rect(new Vector2(area.Min.X, top), new Vector2(area.Max.X, top + ScopeBarHeight * scale));
+        UiAnchors.Report("market.scope", scopeBar);
         DrawBrandedScopeBar(scopeBar);
         var bodyTop = scopeBar.Max.Y + 4f * scale;
         if (snapshot is null)
@@ -93,6 +95,7 @@ internal sealed partial class MarketApp
 
         var cardMin = new Vector2(origin.X, origin.Y);
         var cardMax = new Vector2(origin.X + width, origin.Y + cardHeight);
+        UiAnchors.Report("market.detail.hero", new Rect(cardMin, cardMax));
         Squircle.Fill(drawList, cardMin, cardMax, cardRounding, ImGui.GetColorU32(frameTheme.GroupedCard));
         Material.EdgeSquircle(drawList, cardMin, cardMax, cardRounding, scale);
         GameIconTile.Draw(drawList, textures, view.IconId, iconMin, iconMax, tileRounding, scale,
@@ -190,7 +193,9 @@ internal sealed partial class MarketApp
         var existing = alerts.HasAlertFor(view.ItemId);
         var label = showAlertEditor ? Loc.T(L.Common.Cancel) :
             existing ? Loc.T(L.Market.AddAnotherAlert) : Loc.T(L.Market.SetPriceAlert);
-        if (SettingsRow.Link(card.NextRow(), FontAwesomeIcon.Bell, frameTheme.Accent, label, string.Empty, frameTheme))
+        var alertRow = card.NextRow();
+        UiAnchors.Report("market.alert", alertRow);
+        if (SettingsRow.Link(alertRow, FontAwesomeIcon.Bell, frameTheme.Accent, label, string.Empty, frameTheme))
         {
             showAlertEditor = !showAlertEditor;
             if (showAlertEditor)
@@ -411,6 +416,8 @@ internal sealed partial class MarketApp
         var starCenter = new Vector2(area.Max.X - 18f * scale, midY);
         var refreshCenter = new Vector2(area.Max.X - 46f * scale, midY);
         var favorite = IsFavorite(view.ItemId);
+        var starReach = new Vector2(14f * scale, 14f * scale);
+        UiAnchors.Report("market.favorite", new Rect(starCenter - starReach, starCenter + starReach));
         if (IconButton(starCenter, FontAwesomeIcon.Star, favorite ? frameTheme.Accent : frameTheme.TextMuted))
         {
             ToggleFavorite(view.ItemId);

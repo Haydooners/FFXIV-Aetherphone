@@ -76,6 +76,15 @@ internal sealed partial class SkywatcherApp : IPhoneApp
         var daylight = WeatherSky.Daylight(bell.Hour + bell.Minute / 60f);
         var isDay = daylight >= 0.5f;
         var hasData = forecast.Count > 0;
+        if (hasData)
+        {
+            TourHolds.Release(Id);
+        }
+        else
+        {
+            TourHolds.Hold(Id);
+        }
+
         var kind = hasData ? WeatherSky.Classify(forecast[0].Weather.EnglishKey) : WeatherKind.Clouds;
         var palette = WeatherSky.Blend(kind, hasData ? daylight : 0f);
         WeatherSky.Paint(screen, theme.ScreenRounding * scale, palette, kind, isDay);
@@ -138,8 +147,10 @@ internal sealed partial class SkywatcherApp : IPhoneApp
         var half = bar.Width * 0.5f;
         DrawNavItem(new Rect(bar.Min, new Vector2(bar.Min.X + half, bar.Max.Y)), FontAwesomeIcon.CloudSun,
             Loc.T(L.Skywatcher.Forecast), SkywatcherTab.Forecast, palette, scale);
-        DrawNavItem(new Rect(new Vector2(bar.Min.X + half, bar.Min.Y), bar.Max), FontAwesomeIcon.SlidersH,
-            Loc.T(L.Skywatcher.Control), SkywatcherTab.Control, palette, scale);
+        var controlCell = new Rect(new Vector2(bar.Min.X + half, bar.Min.Y), bar.Max);
+        UiAnchors.Report("skywatcher.tab.control", controlCell);
+        DrawNavItem(controlCell, FontAwesomeIcon.SlidersH, Loc.T(L.Skywatcher.Control), SkywatcherTab.Control,
+            palette, scale);
     }
 
     private void DrawNavItem(Rect cell, FontAwesomeIcon icon, string label, SkywatcherTab tab, in SkyPalette palette,

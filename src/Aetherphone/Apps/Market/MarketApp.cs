@@ -3,6 +3,7 @@ using Aetherphone.Core.Apps;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Market;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -141,6 +142,14 @@ internal sealed partial class MarketApp : IResumableApp
         var screen = SceneChrome.ScreenFrom(context.Content, frameTheme, UiScale.Current);
         ui.Backdrop(screen);
         router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+        if (router.Depth > 1)
+        {
+            TourHolds.Hold(Id);
+        }
+        else
+        {
+            TourHolds.Release(Id);
+        }
     }
 
     private void DrawView(MarketView? view, Rect area, int depth)

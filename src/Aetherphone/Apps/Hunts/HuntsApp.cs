@@ -123,11 +123,6 @@ internal sealed partial class HuntsApp : IPhoneApp
 
     public void Draw(in PhoneContext context)
     {
-        if (GuideIntents.Consume("hunts.tab.settings"))
-        {
-            router.Replace(new HuntsView(HuntsRoute.Settings));
-        }
-
         frameTheme = context.Theme;
         ui.Theme = context.Theme;
         navigation = context.Navigation;
@@ -138,6 +133,14 @@ internal sealed partial class HuntsApp : IPhoneApp
         menu.Gate();
         router.Draw(content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
         DrawMenu();
+        if (listReadyForTour && router.Depth == 1 && router.Current.Route == HuntsRoute.List)
+        {
+            TourHolds.Release(Id);
+        }
+        else
+        {
+            TourHolds.Hold(Id);
+        }
     }
 
     private void DrawView(HuntsView view, Rect area, int depth)
@@ -229,7 +232,7 @@ internal sealed partial class HuntsApp : IPhoneApp
             Disabled: authLocked);
         footerTabs[1] = new NavTab(FontAwesomeIcon.Book, Loc.T(L.Hunts.ListTab));
         footerTabs[2] = new NavTab(FontAwesomeIcon.Question, Loc.T(L.Hunts.GuideTab), AnchorKey: "hunts.guide");
-        footerTabs[3] = new NavTab(FontAwesomeIcon.Cog, Loc.T(L.Hunts.SettingsTab), AnchorKey: "hunts.settings");
+        footerTabs[3] = new NavTab(FontAwesomeIcon.Cog, Loc.T(L.Hunts.SettingsTab));
 
         var active = route switch
         {
@@ -329,6 +332,8 @@ internal sealed partial class HuntsApp : IPhoneApp
         SearchField.Draw(searchBar, "##hunts.search", Loc.T(L.Hunts.SearchHint), ref searchQuery, ui.Palette);
 
         var buttonCenter = new Vector2(content.Max.X - margin - buttonRadius, searchBar.Center.Y);
+        var buttonReach = new Vector2(buttonRadius, buttonRadius);
+        UiAnchors.Report("hunts.filters", new Rect(buttonCenter - buttonReach, buttonCenter + buttonReach));
         if (ui.IconButton(buttonCenter, buttonRadius, IconGlyph.Of(FontAwesomeIcon.Bars),
                 filter.HasNarrowingFilters ? ui.Accent : ui.MutedInk, AppSkin.Transparent, 1.24f,
                 Loc.T(L.Hunts.FiltersTitle)))

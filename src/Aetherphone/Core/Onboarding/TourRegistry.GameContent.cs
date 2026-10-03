@@ -6,68 +6,94 @@ internal static partial class TourRegistry
 {
     private static void AddGameContentTours(Dictionary<string, GuideSequence> tours)
     {
-        Add(tours, "skywatcher", 2,
+        Add(tours, "skywatcher", 3,
             new[]
             {
-                GuideStep.Note(L.Onboarding.SkywatcherTitle, L.Onboarding.SkywatcherBody),
                 GuideStep.Point(L.Onboarding.SkywatcherCurrentTitle, L.Onboarding.SkywatcherCurrentBody,
-                    "skywatcher.current"),
-                GuideStep.Point(L.Onboarding.SkywatcherForecastTitle, L.Onboarding.SkywatcherForecastBody,
-                    "skywatcher.forecast"),
+                    "skywatcher.current", GuideGesture.None),
+                GuideStep.Point(L.Onboarding.SkywatcherForecastTitle, L.Onboarding.SkywatcherHoursBody,
+                    "skywatcher.forecast", GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.SkywatcherControlTitle, L.Onboarding.SkywatcherControlBody,
+                    "skywatcher.tab.control"),
+                GuideStep.Point(L.Onboarding.SkywatcherTimeTitle, L.Onboarding.SkywatcherTimeBody,
+                    "skywatcher.control.time", GuideGesture.None),
+                GuideStep.Point(L.Onboarding.SkywatcherWeatherTitle, L.Onboarding.SkywatcherWeatherBody,
+                    "skywatcher.control.weather", GuideGesture.None),
             });
-        Add(tours, "market", 2,
+        Add(tours, "market", 3,
             new[]
             {
-                GuideStep.Note(L.Onboarding.MarketTitle, L.Onboarding.MarketBody),
-                GuideStep.Point(L.Onboarding.MarketSearchTitle, L.Onboarding.MarketSearchBody, "market.search"),
-                GuideStep.Point(L.Onboarding.MarketScopeTitle, L.Onboarding.MarketScopeBody, "market.scope"),
-                GuideStep.Note(L.Onboarding.MarketStatsTitle, L.Onboarding.MarketStatsBody),
+                GuideStep.Intro(L.Apps.Market, L.Onboarding.MarketIntroBody),
+                GuideStep.TryUntil(L.Onboarding.MarketSearchTitle, L.Onboarding.MarketFindBody, "market.search",
+                    GuideGesture.Tap, "market.result.first"),
+                GuideStep.TryTap(L.Onboarding.MarketOpenTitle, L.Onboarding.MarketOpenBody, "market.result.first"),
+                GuideStep.Point(L.Onboarding.MarketCheapestTitle, L.Onboarding.MarketCheapestBody,
+                    "market.detail.hero", GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.MarketScopeTitle, L.Onboarding.MarketCompareBody, "market.scope"),
+                GuideStep.Point(L.Onboarding.MarketAlertTitle, L.Onboarding.MarketAlertBody, "market.alert",
+                    GuideGesture.Tap),
+                GuideStep.Point(L.Onboarding.MarketStarTitle, L.Onboarding.MarketStarBody, "market.favorite",
+                    GuideGesture.Tap),
             });
-        Add(tours, "maps", 2,
+        Add(tours, "maps", 3,
             new[]
             {
-                GuideStep.Note(L.Apps.Maps, L.Onboarding.MapsBody),
-                GuideStep.Point(L.Onboarding.MapsLocationTitle, L.Onboarding.MapsLocationBody, "maps.location"),
-                GuideStep.Point(L.Onboarding.MapsSearchTitle, L.Onboarding.MapsSearchBody, "maps.search"),
-                GuideStep.Note(L.Onboarding.MapsStarTitle, L.Onboarding.MapsStarBody),
+                GuideStep.TryTap(L.Onboarding.MapsExpandTitle, L.Onboarding.MapsExpandBody, "maps.expansion.first"),
+                GuideStep.Point(L.Onboarding.MapsTravelTitle, L.Onboarding.MapsTravelBody, "maps.destination.first",
+                    GuideGesture.Tap),
+                GuideStep.TryTap(L.Onboarding.MapsStarTitle, L.Onboarding.MapsPinBody, "maps.star.first"),
             });
-        Add(tours, "hunts", 5,
+        Add(tours, "hunts", 6,
             new[]
             {
-                GuideStep.Note(L.Apps.Hunts, L.Onboarding.HuntsBody),
-                GuideStep.Point(L.Onboarding.HuntsSignInTitle, L.Onboarding.HuntsSignInBody, "hunts.auth"),
-                GuideStep.Point(L.Onboarding.HuntsGuideTitle, L.Onboarding.HuntsGuideBody, "hunts.guide"),
-                GuideStep.Tap(L.Onboarding.HuntsSettingsTitle, L.Onboarding.HuntsSettingsBody, "hunts.settings",
-                    "hunts.tab.settings"),
-                GuideStep.Point(L.Onboarding.HuntsMapMarkersTitle, L.Onboarding.HuntsMapMarkersBody,
-                    "hunts.settings.nativeMapMarkers"),
+                GuideStep.Point(L.Onboarding.HuntsWindowsTitle, L.Onboarding.HuntsWindowsBody, "hunts.row.first",
+                    GuideGesture.None),
+                GuideStep.Point(L.Onboarding.HuntsFilterTitle, L.Onboarding.HuntsFilterBody, "hunts.filters",
+                    GuideGesture.Tap),
+                GuideStep.Point(L.Onboarding.HuntsSignInTitle, L.Onboarding.HuntsLiveBody, "hunts.auth",
+                    GuideGesture.Tap),
+                GuideStep.Point(L.Hunts.GuideTab, L.Onboarding.HuntsGuidesBody, "hunts.guide", GuideGesture.Tap),
+                GuideStep.TryTap(L.Onboarding.HuntsOpenTitle, L.Onboarding.HuntsOpenBody, "hunts.row.first"),
+                GuideStep.Point(L.Onboarding.HuntsMapTitle, L.Onboarding.HuntsMapBody, "hunts.detail.map",
+                    GuideGesture.None),
             });
-        Add(tours, "fishing", 2,
+        Add(tours, "fishing", 3,
             new[]
             {
-                GuideStep.Note(L.Apps.Fishing, L.Onboarding.FishingBody),
-                GuideStep.Point(L.Onboarding.FishingHeroTitle, L.Onboarding.FishingHeroBody, "fishing.hero"),
-                GuideStep.Point(L.Onboarding.FishingBlueTitle, L.Onboarding.FishingBlueBody, "fishing.bluefish"),
-                GuideStep.Point(L.Onboarding.FishingUpcomingTitle, L.Onboarding.FishingUpcomingBody,
-                    "fishing.upcoming"),
+                GuideStep.Point(L.Onboarding.FishingHeroTitle, L.Onboarding.FishingHeroBody, "fishing.hero",
+                    GuideGesture.None),
+                GuideStep.Point(L.Onboarding.FishingBlueTitle, L.Onboarding.FishingBlueBody, "fishing.bluefish",
+                    GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.FishingRouteTitle, L.Onboarding.FishingRouteBody, "fishing.route"),
+                GuideStep.Point(L.Onboarding.FishingUpcomingTitle, L.Onboarding.FishingLaterBody, "fishing.upcoming",
+                    GuideGesture.None),
             });
-        Add(tours, "venues", 3,
+        Add(tours, "venues", 4,
             new[]
             {
-                GuideStep.Note(L.Onboarding.VenuesTitle, L.Onboarding.VenuesBody),
-                GuideStep.Point(L.Onboarding.VenuesLiveTitle, L.Onboarding.VenuesLiveBody, "venues.live"),
-                GuideStep.Point(L.Onboarding.VenuesCategoriesTitle, L.Onboarding.VenuesCategoriesBody,
-                    "venues.categories"),
-                GuideStep.Point(L.Onboarding.VenuesFilterTitle, L.Onboarding.VenuesFilterBody, "venues.chips"),
-                GuideStep.Point(L.Onboarding.VenuesSearchTitle, L.Onboarding.VenuesSearchBody, "venues.search"),
+                GuideStep.Point(L.Onboarding.VenuesScopeTitle, L.Onboarding.VenuesScopeBody, "venues.scope",
+                    GuideGesture.Tap),
+                GuideStep.Point(L.Onboarding.VenuesLiveTitle, L.Onboarding.VenuesOpenNowBody, "venues.live",
+                    GuideGesture.Tap),
+                GuideStep.TryTap(L.Onboarding.VenuesCategoriesTitle, L.Onboarding.VenuesCategoryBody,
+                    "venues.category.first"),
+                GuideStep.TryUntil(L.Onboarding.VenuesOpenTitle, L.Onboarding.VenuesOpenBody, "venues.card.first",
+                    GuideGesture.Tap, "venues.detail.favorite"),
+                GuideStep.Point(L.Travel.GoThere, L.Onboarding.VenuesGoBody, "venues.detail.go", GuideGesture.Tap),
+                GuideStep.Point(L.Onboarding.VenuesSaveTitle, L.Onboarding.VenuesSaveBody, "venues.detail.favorite",
+                    GuideGesture.Tap),
             });
-        Add(tours, "strats", 1,
+        Add(tours, "strats", 2,
             new[]
             {
-                GuideStep.Note(L.Onboarding.StratsTitle, L.Onboarding.StratsBody),
-                GuideStep.Point(L.Onboarding.StratsFightsTitle, L.Onboarding.StratsFightsBody, "strats.fights"),
-                GuideStep.Point(L.Onboarding.StratsRoleTitle, L.Onboarding.StratsRoleBody, "strats.role"),
-                GuideStep.Point(L.Onboarding.StratsChipsTitle, L.Onboarding.StratsChipsBody, "strats.chips"),
+                GuideStep.TryTap(L.Onboarding.StratsFightsTitle, L.Onboarding.StratsOpenBody, "strats.fight.first"),
+                GuideStep.Point(L.Onboarding.StratsStrategyTitle, L.Onboarding.StratsStrategyBody, "strats.strategy",
+                    GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.StratsRoleTitle, L.Onboarding.StratsSpotBody, "strats.role"),
+                GuideStep.TryUntil(L.Onboarding.StratsScrollTitle, L.Onboarding.StratsScrollBody, "strats.scroll",
+                    GuideGesture.SwipeUp, "strats.mechanic.first"),
+                GuideStep.Point(L.Onboarding.StratsMechanicTitle, L.Onboarding.StratsMechanicBody,
+                    "strats.mechanic.first", GuideGesture.None),
             });
     }
 }

@@ -13,6 +13,8 @@ namespace Aetherphone.Apps.Strats;
 
 internal sealed partial class StratsApp
 {
+    private const float ScrollAnchorShare = 0.45f;
+    private const float MechanicSettledShare = 0.55f;
     private const float RoleChipHeight = 34f;
     private const float RoleChipGap = 6f;
     private const float RoleCaptionGap = 4f;
@@ -46,6 +48,7 @@ internal sealed partial class StratsApp
     private string[] alignmentLabels = Array.Empty<string>();
     private string[] roleLabels = Array.Empty<string>();
     private bool roleLabelsJapanese;
+    private bool mechanicAnchorTaken;
     private string[] roleColumnRoles = Array.Empty<string>();
     private int[][] roleColumnSlots = Array.Empty<int[]>();
     private Vector4[] roleColumnInks = Array.Empty<Vector4>();
@@ -86,6 +89,9 @@ internal sealed partial class StratsApp
         }
 
         EnsureLabels(doc, current);
+        mechanicAnchorTaken = false;
+        UiAnchors.Report("strats.scroll",
+            new Rect(new Vector2(body.Min.X, body.Max.Y - body.Height * ScrollAnchorShare), body.Max));
         using (var surface = AppSurface.Begin(body))
         {
             DrawFightTitle(fight, scale);
@@ -375,7 +381,7 @@ internal sealed partial class StratsApp
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
         var rowCount = doc.Strats.Length;
-        UiAnchors.Report("strats.chips",
+        UiAnchors.Report("strats.strategy",
             new Rect(origin, new Vector2(origin.X + width, origin.Y + rowCount * GroupCard.DefaultRowHeight * scale)));
         var interactive = rowCount > 1;
         var drawList = ImGui.GetWindowDrawList();
@@ -982,6 +988,12 @@ internal sealed partial class StratsApp
         height += pad;
 
         var max = new Vector2(origin.X + width, origin.Y + height);
+        if (!mechanicAnchorTaken)
+        {
+            mechanicAnchorTaken = true;
+            ReportMechanicAnchor(origin, max);
+        }
+
         if (ImGui.IsRectVisible(origin, max))
         {
             ui.Card(drawList, origin, max, Metrics.Radius.Card * scale);
@@ -1067,6 +1079,25 @@ internal sealed partial class StratsApp
 
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height + Metrics.Space.Md * scale));
+    }
+
+    private static void ReportMechanicAnchor(Vector2 origin, Vector2 max)
+    {
+        if (!UiAnchors.Recording)
+        {
+            return;
+        }
+
+        var windowTop = ImGui.GetWindowPos().Y;
+        var windowBottom = windowTop + ImGui.GetWindowHeight();
+        var settledLine = windowTop + (windowBottom - windowTop) * MechanicSettledShare;
+        if (origin.Y < windowTop || origin.Y > settledLine)
+        {
+            return;
+        }
+
+        UiAnchors.Report("strats.mechanic.first",
+            new Rect(origin, new Vector2(max.X, MathF.Min(max.Y, windowBottom))));
     }
 
     private void DrawSpotPanel(ImDrawListPtr drawList, Rect panel, ResolvedMechanic mech, float spotPad,

@@ -3,6 +3,7 @@ using Aetherphone.Core.Apps;
 using Aetherphone.Core.Config;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Media;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Strats;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
@@ -100,6 +101,14 @@ internal sealed partial class StratsApp : IPhoneApp, ISpotlightFights
         var screen = SceneChrome.ScreenFrom(context.Content, theme, UiScale.Current);
         ui.Backdrop(screen);
         router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+        if (router.Depth > 1)
+        {
+            TourHolds.Hold(Id);
+        }
+        else
+        {
+            TourHolds.Release(Id);
+        }
     }
 
     private void DrawView(StratsView view, Rect area, int depth)
