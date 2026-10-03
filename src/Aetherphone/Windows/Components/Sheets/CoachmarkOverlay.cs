@@ -76,6 +76,8 @@ internal sealed partial class CoachmarkOverlay
         hasPose = false;
         hasHole = false;
         lastIndex = -1;
+        passRect = null;
+        pointerThrough = false;
         holeBlend.SnapTo(0f);
         stageBlend.SnapTo(0f);
         segmentFill.SnapTo(0f);
@@ -111,6 +113,7 @@ internal sealed partial class CoachmarkOverlay
             hasPose = false;
         }
 
+        passRect = step.IsAction && anchor is { } passAnchor ? passAnchor.Inset(-HolePadUnits * scale) : null;
         var edge = !fullCard && IsEdgeAnchor(screen, step, anchor);
         var targetHole = edge || fullCard ? null : PadHole(screen, anchor, step, scale);
         StepHole(targetHole, delta);

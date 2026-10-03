@@ -13,6 +13,26 @@ internal sealed partial class CoachmarkOverlay
     private static bool passthrough;
     private float targetMissing;
     private bool anchorPressed;
+    private Rect? passRect;
+    private bool pointerThrough;
+
+    public bool BlocksPointer()
+    {
+        if (passRect is not { } rect)
+        {
+            pointerThrough = false;
+            return true;
+        }
+
+        var inside = ImGui.IsMouseHoveringRect(rect.Min, rect.Max, false);
+        var held = ImGui.IsMouseDown(ImGuiMouseButton.Left) || ImGui.IsMouseReleased(ImGuiMouseButton.Left);
+        if (!held || ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+        {
+            pointerThrough = inside;
+        }
+
+        return !pointerThrough;
+    }
 
     private const float HeroScale = 1.5f;
     private const float HeroDropUnits = 108f;

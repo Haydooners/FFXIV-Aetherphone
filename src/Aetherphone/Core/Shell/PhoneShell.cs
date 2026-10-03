@@ -381,7 +381,7 @@ internal sealed class PhoneShell : IDisposable
         UiAnchors.Report("chrome.minimize", sideButtonRect);
         UiAnchors.Report("chrome.controlcenter",
             new Rect(screen.Min, new Vector2(screen.Max.X, screen.Min.Y + 44f * UiScale.Current)));
-        using (InputShield.Engage(state.ShieldBase || director.CapturesPointer))
+        using (InputShield.Engage(state.ShieldBase || director.ShieldsPointer))
         {
             DrawContent(chassis, theme);
             DrawChrome(chassis, theme);
