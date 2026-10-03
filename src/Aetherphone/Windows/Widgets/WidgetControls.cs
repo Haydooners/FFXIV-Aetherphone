@@ -32,7 +32,15 @@ internal static class WidgetControls
     }
 
     public static bool Button(in WidgetContext context, in WidgetInk ink, int controlId, Rect rect,
-        FontAwesomeIcon icon, string label, Vector4 accent = default)
+        FontAwesomeIcon icon, string label, Vector4 accent = default) =>
+        Capsule(context, ink, controlId, rect, true, icon, label, accent);
+
+    public static bool Button(in WidgetContext context, in WidgetInk ink, int controlId, Rect rect, string label,
+        Vector4 accent = default) =>
+        Capsule(context, ink, controlId, rect, false, default, label, accent);
+
+    private static bool Capsule(in WidgetContext context, in WidgetInk ink, int controlId, Rect rect, bool hasIcon,
+        FontAwesomeIcon icon, string label, Vector4 accent)
     {
         var key = WidgetHits.Key(context, controlId);
         var fired = Interact(context, key, rect, out var hovered);
@@ -42,10 +50,10 @@ internal static class WidgetControls
         var content = prominent ? ink.OnAccent : ink.Primary;
         var height = drawRect.Height;
         Squircle.Fill(context.DrawList, drawRect.Min, drawRect.Max, height * 0.5f, ImGui.GetColorU32(fill));
-        var glyphSize = height * CapsuleGlyphFraction;
+        var glyphSize = hasIcon ? height * CapsuleGlyphFraction : 0f;
         var labelText = label ?? string.Empty;
         var padding = height * 0.5f;
-        var gap = labelText.Length > 0 ? WidgetMetrics.RowGap * 2f * context.Scale : 0f;
+        var gap = hasIcon && labelText.Length > 0 ? WidgetMetrics.RowGap * 2f * context.Scale : 0f;
         var maxLabel = MathF.Max(0f, drawRect.Width - padding * 2f - glyphSize - gap);
         var labelScale = WidgetType.Headline.Scale;
         var fitted = string.Empty;
@@ -59,8 +67,12 @@ internal static class WidgetControls
             : Vector2.Zero;
         var total = glyphSize + gap + labelSize.X;
         var left = drawRect.Center.X - total * 0.5f;
-        ProgressRing.CenterIcon(context.DrawList, new Vector2(left + glyphSize * 0.5f, drawRect.Center.Y), icon,
-            content, glyphSize);
+        if (hasIcon)
+        {
+            ProgressRing.CenterIcon(context.DrawList, new Vector2(left + glyphSize * 0.5f, drawRect.Center.Y), icon,
+                content, glyphSize);
+        }
+
         if (fitted.Length > 0)
         {
             Typography.Draw(context.DrawList,
