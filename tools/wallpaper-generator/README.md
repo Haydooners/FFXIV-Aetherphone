@@ -2,7 +2,7 @@
 
 Renders the bundled abstract wallpapers in `src/Aetherphone/Wallpapers/`: soft colour fields built
 from a vertical base gradient, a few oversized blurred blobs, two soft light ribbons and a faint
-diagonal gloss band. Every bundled wallpaper comes from this script. Each name ships as a Light and a Dark variant so the day and
+diagonal gloss band. Each name ships as a Light and a Dark variant so the day and
 night slots and the theme crossfade have a matching pair.
 
 ## Run

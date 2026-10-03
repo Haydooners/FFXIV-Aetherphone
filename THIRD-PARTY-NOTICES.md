@@ -11,8 +11,7 @@ release archive alongside the components it covers.
 **No asset inside the phone is AI-generated.** The icons, sounds, and fonts in
 the device UI come from licensed sources credited in the sections below, and
 each phone case is the work of a named human artist. The built-in wallpapers
-are original, rendered by the project's own procedural generator in
-tools/wallpaper-generator. The ringtone and notification sounds are not
+are original to Aetherphone. The ringtone and notification sounds are not
 AI-generated either; they are of third-party origin and are not yet credited
 in this file.
 
