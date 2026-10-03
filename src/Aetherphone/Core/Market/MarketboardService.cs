@@ -496,6 +496,7 @@ internal sealed class MarketboardService : IDisposable
             keys[index] = MarketKey.Of(ids[index], scope);
         }
 
+        var startedUtc = DateTime.UtcNow;
         try
         {
             var token = cancellation.Token;
@@ -522,11 +523,6 @@ internal sealed class MarketboardService : IDisposable
                             SelectAggregatedField(result.Hq?.MinListing, MarketScopeKind.Region), now);
                     }
                 }
-
-                for (var index = 0; index < keys.Length; index++)
-                {
-                    aggregated.TryAdd(keys[index], new AggregatedEntry(0, 0, 0, default, default, default, default, now));
-                }
             }
         }
         catch (OperationCanceledException)
@@ -538,9 +534,29 @@ internal sealed class MarketboardService : IDisposable
         }
         finally
         {
+            StampUnanswered(keys, startedUtc);
             for (var index = 0; index < keys.Length; index++)
             {
                 aggregatedInFlight.TryRemove(keys[index], out _);
+            }
+        }
+    }
+
+    private void StampUnanswered(MarketKey[] keys, DateTime startedUtc)
+    {
+        var now = DateTime.UtcNow;
+        for (var index = 0; index < keys.Length; index++)
+        {
+            var key = keys[index];
+            if (!aggregated.TryGetValue(key, out var existing))
+            {
+                aggregated.TryAdd(key, new AggregatedEntry(0, 0, 0, default, default, default, default, now));
+                continue;
+            }
+
+            if (existing.FetchedUtc < startedUtc)
+            {
+                aggregated[key] = existing.FetchedAt(now);
             }
         }
     }
@@ -706,5 +722,8 @@ internal sealed class MarketboardService : IDisposable
             RegionHq = regionHq;
             FetchedUtc = fetchedUtc;
         }
+
+        public AggregatedEntry FetchedAt(DateTime fetchedUtc) =>
+            new(Price, NqPrice, HqPrice, DataCenterNq, DataCenterHq, RegionNq, RegionHq, fetchedUtc);
     }
 }
