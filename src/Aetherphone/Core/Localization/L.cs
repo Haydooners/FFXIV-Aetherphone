@@ -6680,6 +6680,31 @@ internal static class L
     internal static class Coil
     {
         public static readonly LocString Title = new("coil.title", "Coil");
+        public static readonly LocString HowTo = new("coil.howTo", "Aim with the mouse and click to fire. Right-click or Space swaps marbles.");
+        public static readonly LocString Goal = new("coil.goal", "Match three or more to clear the chain before it reaches the vortex.");
+        public static readonly LocString StageClear = new("coil.stageClear", "Stage clear!");
+        public static readonly LocString Bonus = new("coil.bonus", "Clear bonus");
+        public static readonly LocString Chain = new("coil.chain", "Chain x{0}");
+        public static readonly LocString GapShot = new("coil.gapShot", "Gap shot!");
+        public static readonly LocString ReachedStage = new("coil.reachedStage", "Reached stage {0}");
+        public static readonly LocString PowerFreeze = new("coil.powerFreeze", "Freeze");
+        public static readonly LocString PowerSlow = new("coil.powerSlow", "Slow");
+        public static readonly LocString PowerReverse = new("coil.powerReverse", "Reverse");
+        public static readonly LocString PowerBlast = new("coil.powerBlast", "Blast");
+        public static readonly LocString PowerPrism = new("coil.powerPrism", "Prism");
+        public static readonly LocString PowerGuide = new("coil.powerGuide", "Guide");
+        public static readonly LocString StageWhirlpool = new("coil.stageWhirlpool", "Whirlpool");
+        public static readonly LocString StageMeander = new("coil.stageMeander", "Meander");
+        public static readonly LocString StageTwinCoil = new("coil.stageTwinCoil", "Twin Coil");
+        public static readonly LocString StageHeart = new("coil.stageHeart", "Heartstring");
+        public static readonly LocString StageZigzag = new("coil.stageZigzag", "Zigzag");
+        public static readonly LocString StageStarburst = new("coil.stageStarburst", "Starburst");
+        public static readonly LocString StageHourglass = new("coil.stageHourglass", "Hourglass");
+        public static readonly LocString StageClover = new("coil.stageClover", "Clover");
+        public static readonly LocString StageKeystone = new("coil.stageKeystone", "Keystone");
+        public static readonly LocString StagePaperclip = new("coil.stagePaperclip", "Paperclip");
+        public static readonly LocString StageFigureEight = new("coil.stageFigureEight", "Figure Eight");
+        public static readonly LocString StageRipple = new("coil.stageRipple", "Ripple");
     }
 
     internal static class Updraft
