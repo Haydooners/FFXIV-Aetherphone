@@ -72,8 +72,8 @@ internal sealed partial class AetherStreamApp : IPhoneApp
     private readonly ViewRouter<StreamRoute> router = new(StreamRoute.Home);
     private readonly RouterDraw<StreamRoute> drawView;
     private readonly Action back;
-    private readonly BottomTabBar tabBar = new();
-    private readonly NavTab[] tabs = new NavTab[TabCount];
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabs = new TabItem[TabCount];
 
     private PhoneTheme theme = PhoneTheme.Default;
     private PhoneTheme accentedTheme = PhoneTheme.Default;
@@ -215,12 +215,11 @@ internal sealed partial class AetherStreamApp : IPhoneApp
         }
 
         TourHolds.Release(Id);
-        var barRect = new Rect(new Vector2(area.Min.X, area.Max.Y - BottomTabBar.Height * scale), area.Max);
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale),
-            new Vector2(area.Max.X, barRect.Min.Y));
+        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
 
         using (InputShield.Engage(SheetsCapturePointer))
         {
+            using (TabBar.ReserveContent(scale))
             using (ImRaii.PushId((int)activeTab))
             {
                 switch (activeTab)
@@ -238,7 +237,7 @@ internal sealed partial class AetherStreamApp : IPhoneApp
             }
 
             DrawTopBar(area, scale);
-            DrawTabBar(barRect);
+            DrawTabBar(area);
         }
 
         DrawAddSheet(area, scale);
@@ -286,21 +285,21 @@ internal sealed partial class AetherStreamApp : IPhoneApp
         }
     }
 
-    private void DrawTabBar(Rect bar)
+    private void DrawTabBar(Rect area)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        SocialChrome.PaintBarBackdrop(ui, drawList, bar, screenRect);
-        UiAnchors.Report("aetherstream.actions", bar);
-        tabs[0] = new NavTab(FontAwesomeIcon.Play, Loc.T(L.AetherStream.TabWatch));
-        tabs[1] = new NavTab(FontAwesomeIcon.UserFriends, Loc.T(L.AetherStream.Party),
-            watchAlong.PendingRequests.Count);
-        tabs[2] = new NavTab(FontAwesomeIcon.ListUl, Loc.T(L.AetherStream.Library),
-            watchAlong.IsHosting ? watchAlong.PendingQueueSuggestions.Count : 0);
-        var tapped = tabBar.Draw(bar, ui, theme, tabs, (int)activeTab);
-        if (tapped >= 0)
+        tabs[0] = new TabItem(Loc.T(L.AetherStream.TabWatch), IconGlyph.Of(FontAwesomeIcon.Play));
+        tabs[1] = new TabItem(Loc.T(L.AetherStream.Party), IconGlyph.Of(FontAwesomeIcon.UserFriends),
+            Badge: watchAlong.PendingRequests.Count);
+        tabs[2] = new TabItem(Loc.T(L.AetherStream.Library), IconGlyph.Of(FontAwesomeIcon.ListUl),
+            Badge: watchAlong.IsHosting ? watchAlong.PendingQueueSuggestions.Count : 0);
+        var result = tabBar.Draw(area, ui, tabs, (int)activeTab);
+        UiAnchors.Report("aetherstream.actions", tabBar.Bounds);
+        if (result.Tapped < 0)
         {
-            activeTab = (StreamTab)tapped;
+            return;
         }
+
+        activeTab = (StreamTab)result.Tapped;
     }
 
     private static PhoneTheme AccentedTheme(PhoneTheme baseTheme) =>

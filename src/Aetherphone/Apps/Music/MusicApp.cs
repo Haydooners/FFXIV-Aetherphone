@@ -112,8 +112,8 @@ internal sealed partial class MusicApp : IResumableApp
     private readonly LodestoneService lodestone;
     private readonly GameData gameData;
     private readonly RouterDraw<View> drawView;
-    private readonly BottomTabBar bottomNav = new();
-    private readonly NavTab[] navTabs = new NavTab[4];
+    private readonly TabBar bottomNav = new();
+    private readonly TabItem[] navTabs = new TabItem[4];
     private MusicTab tab = MusicTab.Home;
     private readonly AppSkin ui = new(AppPalettes.Music);
     private PhoneTheme theme = PhoneTheme.Default;
@@ -318,12 +318,13 @@ internal sealed partial class MusicApp : IResumableApp
         }
 
         TourHolds.Release(Id);
-        var stage = StageFrom(content, scale);
+        var stage = TabBar.ContentArea(content, scale);
         var chromeBlocked = sheetValue > 0.15f || overlayValue > 0.15f;
         using (InputShield.Engage(chromeBlocked))
+        using (TabBar.ReserveContent(scale))
         using (ImRaii.PushId((int)tab))
         {
-            Router.Draw(stage, AppSkin.Transparent, delta, drawView);
+            Router.Draw(content, AppSkin.Transparent, delta, drawView);
         }
 
         using (InputShield.Engage(overlayValue > 0.15f))
@@ -334,29 +335,28 @@ internal sealed partial class MusicApp : IResumableApp
 
         using (InputShield.Engage(chromeBlocked))
         {
-            DrawTabBar(new Rect(new Vector2(content.Min.X, stage.Max.Y), content.Max), scale);
+            DrawTabBar(content);
         }
 
         DrawPlaylistOverlay(content, scale, overlayValue, delta);
         DrawPlaylistSheet(screen);
     }
 
-    private static Rect StageFrom(Rect content, float scale)
+    private void DrawTabBar(Rect area)
     {
-        return new Rect(content.Min, new Vector2(content.Max.X, content.Max.Y - BottomTabBar.LabelledHeight * scale));
-    }
-
-    private void DrawTabBar(Rect bar, float scale)
-    {
-        navTabs[0] = new NavTab(FontAwesomeIcon.Home, Loc.T(L.Music.TabHome));
-        navTabs[1] = new NavTab(FontAwesomeIcon.BroadcastTower, Loc.T(L.Music.TabLive), community.FollowedLiveCount);
-        navTabs[2] = new NavTab(FontAwesomeIcon.Podcast, Loc.T(L.Music.TabRadio), AnchorKey: "music.categories");
-        navTabs[3] = new NavTab(FontAwesomeIcon.LayerGroup, Loc.T(L.Music.TabLibrary));
-        var tapped = bottomNav.Draw(bar, ui, theme, navTabs, (int)tab, true);
-        if (tapped >= 0)
+        navTabs[0] = new TabItem(Loc.T(L.Music.TabHome), IconGlyph.Of(FontAwesomeIcon.Home));
+        navTabs[1] = new TabItem(Loc.T(L.Music.TabLive), IconGlyph.Of(FontAwesomeIcon.BroadcastTower),
+            Badge: community.FollowedLiveCount);
+        navTabs[2] = new TabItem(Loc.T(L.Music.TabRadio), IconGlyph.Of(FontAwesomeIcon.Podcast),
+            AnchorKey: "music.categories");
+        navTabs[3] = new TabItem(Loc.T(L.Music.TabLibrary), IconGlyph.Of(FontAwesomeIcon.LayerGroup));
+        var result = bottomNav.Draw(area, ui, navTabs, (int)tab);
+        if (result.Tapped < 0)
         {
-            SelectTab((MusicTab)tapped);
+            return;
         }
+
+        SelectTab((MusicTab)result.Tapped);
     }
 
     private void DrawView(View view, Rect area, int depth)

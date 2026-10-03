@@ -860,11 +860,4 @@ internal sealed partial class ChirperApp
         SocialChrome.DrawHeaderIcon(drawList, center, radius,
             filter ? PhoneIcons.AdjustmentsHorizontal : PhoneIcons.Refresh, 18f, tooltip, ChirperInk.Shared,
             GlassPillInk, highlighted);
-
-    private static void DrawBellBadge(Vector2 bellCenter, int count)
-    {
-        var scale = UiScale.Current;
-        SocialChrome.DrawCountBadge(ImGui.GetWindowDrawList(), bellCenter + new Vector2(10f * scale, -10f * scale),
-            count, ChirperInk.Shared);
-    }
 }

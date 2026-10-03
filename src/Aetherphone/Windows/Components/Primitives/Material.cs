@@ -82,8 +82,10 @@ internal static class Material
         float opacity = 1f) =>
         LiquidGlass(drawList, min, max, radius, scale, GlassTone.Dark, 0f, opacity);
 
-    public static GlassTone ToneFor(PhoneTheme theme) =>
-        Palette.Luminance(theme.AppBackground) >= 0.5f ? GlassTone.Light : GlassTone.Dark;
+    public static GlassTone ToneFor(PhoneTheme theme) => ToneFor(theme.AppBackground);
+
+    public static GlassTone ToneFor(Vector4 background) =>
+        Palette.Luminance(background) >= 0.5f ? GlassTone.Light : GlassTone.Dark;
 
     public static void ThemedGlass(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
         PhoneTheme theme, float opacity = 1f) =>
@@ -101,6 +103,10 @@ internal static class Material
         GlassRim(drawList, min, max, radius, scale, GlassTone.Dark, opacity);
         PointerLight(drawList, min, max, radius, scale, GlassTone.Dark, opacity);
     }
+
+    public static void ThemedGlass(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
+        Vector4 background, float opacity = 1f) =>
+        LiquidGlass(drawList, min, max, radius, scale, ToneFor(background), 0f, opacity);
 
     public static void LiquidGlass(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
         GlassTone tone, float brightness, float opacity = 1f)

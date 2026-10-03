@@ -50,39 +50,43 @@ internal sealed partial class CasinoApp
         }
 
         var scale = UiScale.Current;
-        var barHeight = BottomTabBar.LabelledHeight * scale;
-        var stage = new Rect(body.Min, new Vector2(body.Max.X, MathF.Max(body.Min.Y, body.Max.Y - barHeight)));
-        switch (tab)
+        using (TabBar.ReserveContent(scale))
         {
-            case CasinoTab.Games:
-                DrawGamesTab(stage);
-                break;
-            case CasinoTab.Live:
-                DrawLiveTab(stage);
-                break;
-            case CasinoTab.Cashier:
-                DrawCashierTab(stage);
-                break;
-            default:
-                DrawLobbyTab(stage);
-                break;
+            switch (tab)
+            {
+                case CasinoTab.Games:
+                    DrawGamesTab(body);
+                    break;
+                case CasinoTab.Live:
+                    DrawLiveTab(body);
+                    break;
+                case CasinoTab.Cashier:
+                    DrawCashierTab(body);
+                    break;
+                default:
+                    DrawLobbyTab(body);
+                    break;
+            }
         }
 
-        DrawFloorTabBar(new Rect(new Vector2(body.Min.X, stage.Max.Y), body.Max));
+        DrawFloorTabBar(body);
     }
 
-    private void DrawFloorTabBar(Rect bar)
+    private void DrawFloorTabBar(Rect area)
     {
-        navTabs[0] = new NavTab(FontAwesomeIcon.DiceD20, Loc.T(L.Casino.TabLobby));
-        navTabs[1] = new NavTab(FontAwesomeIcon.Th, Loc.T(L.Casino.TabGames));
-        navTabs[2] = new NavTab(FontAwesomeIcon.BroadcastTower, Loc.T(L.Casino.TabLive), LiveHeadcount());
-        navTabs[3] = new NavTab(FontAwesomeIcon.CashRegister, Loc.T(L.Casino.TabCashier));
-        UiAnchors.Report("casino.tabs", bar);
-        var tapped = bottomNav.Draw(bar, ui, theme, navTabs, (int)tab, true);
-        if (tapped >= 0)
+        navTabs[0] = new TabItem(Loc.T(L.Casino.TabLobby), IconGlyph.Of(FontAwesomeIcon.DiceD20));
+        navTabs[1] = new TabItem(Loc.T(L.Casino.TabGames), IconGlyph.Of(FontAwesomeIcon.Th));
+        navTabs[2] = new TabItem(Loc.T(L.Casino.TabLive), IconGlyph.Of(FontAwesomeIcon.BroadcastTower),
+            Badge: LiveHeadcount());
+        navTabs[3] = new TabItem(Loc.T(L.Casino.TabCashier), IconGlyph.Of(FontAwesomeIcon.CashRegister));
+        var result = bottomNav.Draw(area, ui, navTabs, (int)tab);
+        UiAnchors.Report("casino.tabs", bottomNav.Bounds);
+        if (result.Tapped < 0)
         {
-            tab = (CasinoTab)tapped;
+            return;
         }
+
+        tab = (CasinoTab)result.Tapped;
     }
 
     private int LiveHeadcount()

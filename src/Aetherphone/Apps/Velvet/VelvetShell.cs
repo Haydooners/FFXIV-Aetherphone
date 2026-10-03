@@ -513,11 +513,8 @@ internal sealed partial class VelvetShell : IResumableApp
     {
         var scale = UiScale.Current;
         var headerHeight = VHeader.Height * scale;
-        var tabHeight = TabBarHeight * scale;
         var headerRect = new Rect(area.Min, new Vector2(area.Max.X, area.Min.Y + headerHeight));
-        var tabRect = new Rect(new Vector2(area.Min.X, area.Max.Y - tabHeight), area.Max);
-        var bodyRect = new Rect(new Vector2(area.Min.X, headerRect.Max.Y),
-            new Vector2(area.Max.X, tabRect.Min.Y));
+        var bodyRect = new Rect(new Vector2(area.Min.X, headerRect.Max.Y), area.Max);
 
         if (GuideIntents.Consume("velvet.tab.feed"))
         {
@@ -543,23 +540,26 @@ internal sealed partial class VelvetShell : IResumableApp
             bodyRect = DrawFeedScopeTabs(bodyRect);
         }
 
-        switch (activeTab)
+        using (TabBar.ReserveContent(scale))
         {
-            case VelvetPage.Feed:
-                DrawFeed(bodyRect);
-                break;
-            case VelvetPage.Messages:
-                DrawMessages(bodyRect);
-                break;
-            case VelvetPage.Me:
-                DrawMe(bodyRect);
-                break;
-            default:
-                DrawDiscover(bodyRect);
-                break;
+            switch (activeTab)
+            {
+                case VelvetPage.Feed:
+                    DrawFeed(bodyRect);
+                    break;
+                case VelvetPage.Messages:
+                    DrawMessages(bodyRect);
+                    break;
+                case VelvetPage.Me:
+                    DrawMe(bodyRect);
+                    break;
+                default:
+                    DrawDiscover(bodyRect);
+                    break;
+            }
         }
 
-        DrawTabBar(tabRect);
+        DrawTabBar(area);
     }
 
     private void DrawRichBody(ImDrawListPtr drawList, RichTextLayout layout, Vector2 origin)

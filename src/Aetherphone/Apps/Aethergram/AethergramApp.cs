@@ -69,14 +69,10 @@ internal sealed partial class AethergramApp : IResumableApp
     private const int MaxCaptionLength = 500;
     private const int MaxPhotoTags = 20;
     private const int MaxCommentLength = 500;
-    private const float BottomNavHeight = 52f;
-    private const int NavSlotCount = 4;
+    private const int NavTabCount = 3;
     private const int FilterToggleCount = 3;
-    private const float NavIconSize = 26f;
-    private const float NavHoverRadius = 20f;
     private const float NavAvatarRadius = 13f;
     private const float NavAvatarRingGap = 2.5f;
-    private const float NavAnchorHalf = 20f;
     private const float TopBarIconSize = 26f;
     private const float LogoSize = 30f;
     private const float LogoGap = 10f;
@@ -193,6 +189,8 @@ internal sealed partial class AethergramApp : IResumableApp
     private readonly DoubleTapLike doubleTapLike = new();
     private readonly DeferredTap pendingPhotoTap = new();
     private readonly AppSkin ui = new(AppPalettes.Aethergram);
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabItems = new TabItem[NavTabCount];
     private readonly SocialProfilePages profile;
     private readonly RichTextCache bodyLayouts = new(scanHashtags: true);
     private readonly FeedVirtualizer feedVirtualizer = new(400f);
@@ -551,25 +549,24 @@ internal sealed partial class AethergramApp : IResumableApp
             SelectTab(AethergramTab.Profile);
         }
 
-        var navRect = new Rect(new Vector2(area.Min.X, area.Max.Y - BottomNavHeight * scale), area.Max);
-        var tabArea = new Rect(area.Min, new Vector2(area.Max.X, navRect.Min.Y));
+        using (TabBar.ReserveContent(scale))
         using (ImRaii.PushId((int)activeTab))
         {
             switch (activeTab)
             {
                 case AethergramTab.Search:
-                    DrawSearchTab(tabArea);
+                    DrawSearchTab(area);
                     break;
                 case AethergramTab.Profile:
-                    DrawProfileTab(tabArea);
+                    DrawProfileTab(area);
                     break;
                 default:
-                    DrawFeedTab(tabArea);
+                    DrawFeedTab(area);
                     break;
             }
         }
 
-        DrawBottomNav(navRect);
+        DrawBottomNav(area);
     }
 
     private void DrawFeedTab(Rect area)
@@ -589,7 +586,7 @@ internal sealed partial class AethergramApp : IResumableApp
         var listTop = activeScope == SocialFeedScope.ForYou ? rowRect.Max.Y : DrawLatestScopeRow(area, rowRect.Max.Y);
         var listRect = new Rect(new Vector2(area.Min.X, listTop), area.Max);
         DrawFeedList(listRect, activeScope);
-        if (ComposeFab.Draw(listRect, "##aethergramComposeFab", Ink.Accent, PhoneIcons.Plus,
+        if (ComposeFab.Draw(TabBar.ContentArea(listRect, scale), "##aethergramComposeFab", Ink.Accent, PhoneIcons.Plus,
                 Loc.T(L.Aethergram.NewPost), "aethergram.compose", Ink.AccentDeep, FabRadius, true))
         {
             StartCompose(false);
@@ -1554,106 +1551,54 @@ internal sealed partial class AethergramApp : IResumableApp
         ModerationOverlay.Draw(drawList, rect.Min, rect.Max, rounding, scanStatus);
     }
 
-    private void DrawBottomNav(Rect bar)
+    private void DrawBottomNav(Rect area)
     {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        PaintBarBackdrop(drawList, bar);
-        DrawHairline(drawList, bar.Min.X, bar.Max.X, bar.Min.Y + 1f);
-        var slot = bar.Width / NavSlotCount;
-        var anchorHalf = new Vector2(NavAnchorHalf * scale, NavAnchorHalf * scale);
-        for (var index = 0; index < NavSlotCount; index++)
-        {
-            var cell = new Rect(new Vector2(bar.Min.X + slot * index, bar.Min.Y),
-                new Vector2(bar.Min.X + slot * (index + 1), bar.Max.Y));
-            var center = new Vector2(cell.Center.X, bar.Center.Y);
-            switch (index)
-            {
-                case 0:
-                    if (DrawNavSlot(drawList, cell, center, activeTab == AethergramTab.Home ? PhoneIcons.HomeFilled
-                            : PhoneIcons.Home, activeTab == AethergramTab.Home, Loc.T(L.Aethergram.Home), 0))
-                    {
-                        SelectTab(AethergramTab.Home);
-                    }
-
-                    break;
-                case 1:
-                    UiAnchors.Report("aethergram.tab.search", new Rect(center - anchorHalf, center + anchorHalf));
-                    if (DrawNavSlot(drawList, cell, center, PhoneIcons.Search, activeTab == AethergramTab.Search,
-                            Loc.T(L.Aethergram.Search), 0))
-                    {
-                        SelectTab(AethergramTab.Search);
-                    }
-
-                    break;
-                case 2:
-                    if (DrawNavSlot(drawList, cell, center, PhoneIcons.Send, false, Loc.T(L.Aethergram.InboxTitle),
-                            dmStore.UnreadCount))
-                    {
-                        OpenInbox();
-                    }
-
-                    break;
-                default:
-                    UiAnchors.Report("aethergram.tab.profile", new Rect(center - anchorHalf, center + anchorHalf));
-                    if (DrawNavProfile(drawList, cell, center))
-                    {
-                        SelectTab(AethergramTab.Profile);
-                    }
-
-                    break;
-            }
-        }
-    }
-
-    private static bool DrawNavSlot(ImDrawListPtr drawList, Rect cell, Vector2 center, string glyph, bool active,
-        string label, int badge)
-    {
-        var scale = UiScale.Current;
-        var hovered = DrawNavHover(drawList, cell, center);
-        var ink = active ? Ink.TitleInk : hovered ? Ink.BodyInk : Ink.MutedInk;
-        PhoneIcon.Draw(drawList, center, glyph, ink, NavIconSize * scale);
-        SocialChrome.DrawCountBadge(drawList, center + new Vector2(11f * scale, -10f * scale), badge, Ink);
-        HoverTooltip.Show(cell, label, HoverLabelSide.Above);
-        return UiInteract.Click(cell.Min, cell.Max, hovered);
-    }
-
-    private static bool DrawNavHover(ImDrawListPtr drawList, Rect cell, Vector2 center)
-    {
-        var hovered = UiInteract.Hover(cell.Min, cell.Max);
-        if (!hovered)
-        {
-            return false;
-        }
-
-        drawList.AddCircleFilled(center, NavHoverRadius * UiScale.Current, ImGui.GetColorU32(Ink.FieldFill), 32);
-        ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        return true;
-    }
-
-    private bool DrawNavProfile(ImDrawListPtr drawList, Rect cell, Vector2 center)
-    {
-        var scale = UiScale.Current;
-        var active = activeTab == AethergramTab.Profile;
-        var label = Loc.T(L.Aethergram.Profile);
-        if (store.Me is not { } me)
+        var hasAvatar = store.Me is not null;
+        if (!hasAvatar)
         {
             store.EnsureMe();
-            return DrawNavSlot(drawList, cell, center, active ? PhoneIcons.UserFilled : PhoneIcons.User, active, label,
-                0);
         }
 
-        var hovered = DrawNavHover(drawList, cell, center);
-        var radius = NavAvatarRadius * scale;
-        DrawAvatar(center, radius, me.Name, me.World, me.AvatarUrl, 0.85f, 28, Frames.Of(me.FrameId));
-        if (active)
+        tabItems[(int)AethergramTab.Home] = new TabItem(Loc.T(L.Aethergram.Home), PhoneIcons.Home,
+            PhoneIcons.HomeFilled);
+        tabItems[(int)AethergramTab.Search] = new TabItem(Loc.T(L.Aethergram.Search), PhoneIcons.Search,
+            AnchorKey: "aethergram.tab.search");
+        tabItems[(int)AethergramTab.Profile] = new TabItem(Loc.T(L.Aethergram.Profile), PhoneIcons.User,
+            PhoneIcons.UserFilled, AnchorKey: "aethergram.tab.profile", CustomIcon: hasAvatar);
+        var inbox = new TabBarAction(PhoneIcons.Send, Loc.T(L.Aethergram.InboxTitle), dmStore.UnreadCount);
+        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab, inbox);
+        DrawNavAvatar(tabBar.Pose((int)AethergramTab.Profile), activeTab == AethergramTab.Profile);
+        if (result.ActionTapped)
         {
-            drawList.AddCircle(center, radius + NavAvatarRingGap * scale, ImGui.GetColorU32(Ink.TitleInk), 32,
-                1.6f * scale);
+            OpenInbox();
+            return;
         }
 
-        HoverTooltip.Show(cell, label, HoverLabelSide.Above);
-        return UiInteract.Click(cell.Min, cell.Max, hovered);
+        if (result.Tapped < 0)
+        {
+            return;
+        }
+
+        SelectTab((AethergramTab)result.Tapped);
+    }
+
+    private void DrawNavAvatar(TabItemPose pose, bool active)
+    {
+        if (store.Me is not { } me || pose.Alpha < 0.5f)
+        {
+            return;
+        }
+
+        var scale = UiScale.Current;
+        var radius = NavAvatarRadius * scale * pose.Scale;
+        DrawAvatar(pose.IconCenter, radius, me.Name, me.World, me.AvatarUrl, 0.85f, 28, Frames.Of(me.FrameId));
+        if (!active)
+        {
+            return;
+        }
+
+        ImGui.GetWindowDrawList().AddCircle(pose.IconCenter, radius + NavAvatarRingGap * scale,
+            ImGui.GetColorU32(ui.Accent), 32, 1.6f * scale);
     }
 
     private void DrawAvatar(Vector2 center, float radius, string name, string world, string? avatarUrl,
