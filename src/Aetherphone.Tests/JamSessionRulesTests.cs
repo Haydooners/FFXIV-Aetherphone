@@ -300,6 +300,23 @@ public sealed class JamSessionRulesTests
     }
 
     [Fact]
+    public void InvitesAreSpacedPastTheServerCooldownAndDeduplicated()
+    {
+        var invites = new JamInviteQueue();
+        invites.Enqueue("first");
+        invites.Enqueue("second");
+        invites.Enqueue("first");
+        Assert.Equal(2, invites.Count);
+
+        Assert.True(invites.TryDequeue(5_000, out var firstSent));
+        Assert.Equal("first", firstSent);
+        Assert.False(invites.TryDequeue(5_000 + 2_000, out _));
+        Assert.True(invites.TryDequeue(5_000 + JamInviteQueue.SpacingMilliseconds, out var secondSent));
+        Assert.Equal("second", secondSent);
+        Assert.False(invites.TryDequeue(60_000, out _));
+    }
+
+    [Fact]
     public void PacerSlidingWindowFitsEveryFixedServerWindow()
     {
         var pacer = new JamOperationPacer();

@@ -28,6 +28,7 @@ internal sealed partial class JamSession : IDisposable
     private readonly ConcurrentQueue<CallControl> inbound = new();
     private readonly List<CallControl> pendingOperations = new();
     private readonly JamOperationPacer pacer = new();
+    private readonly JamInviteQueue invites = new();
     private readonly JamHostAuthority hostAuthority;
     private readonly JamGuestAuthority guestAuthority;
 
@@ -252,7 +253,7 @@ internal sealed partial class JamSession : IDisposable
     {
         if (InJam && userId.Length > 0)
         {
-            signals.Invite(userId);
+            invites.Enqueue(userId);
         }
     }
 
@@ -784,6 +785,11 @@ internal sealed partial class JamSession : IDisposable
             signals.Send(pendingOperations[0]);
             pendingOperations.RemoveAt(0);
         }
+
+        if (invites.TryDequeue(now, out var invitee))
+        {
+            signals.Invite(invitee);
+        }
     }
 
     private bool TrySendControl(string action, double? positionSeconds)
@@ -817,6 +823,7 @@ internal sealed partial class JamSession : IDisposable
         ResetHostState();
         ResetGuestState();
         pendingOperations.Clear();
+        invites.Clear();
         pacer.Reset();
         Mode = JamMode.Idle;
         jamId = string.Empty;
