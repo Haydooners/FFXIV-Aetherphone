@@ -6580,11 +6580,37 @@ internal static class L
     internal static class Polls
     {
         public static readonly LocString SignInRequired = new("polls.signInRequired", "Sign in to Aethernet in Settings to see polls");
-        public static readonly LocString Empty = new("polls.empty", "No polls yet");
-        public static readonly LocString EmptySubtitle = new("polls.emptySubtitle", "New polls will land here.");
         public static readonly LocString FinalResults = new("polls.finalResults", "Final results");
         public static readonly LocString HiddenResults = new("polls.hiddenResults", "Vote to see results");
         public static readonly LocPlural Votes = new("polls.votes", "{0} vote", "{0} votes");
+        public static readonly LocString Open = new("polls.open", "Open");
+        public static readonly LocString Ended = new("polls.ended", "Ended");
+        public static readonly LocString EndsInDaysHours = new("polls.endsInDaysHours", "Ends in {0}d {1}h");
+        public static readonly LocString EndsInHoursMinutes = new("polls.endsInHoursMinutes", "Ends in {0}h {1}m");
+        public static readonly LocString EndsInMinutes = new("polls.endsInMinutes", "Ends in {0}m");
+        public static readonly LocString EndsInSeconds = new("polls.endsInSeconds", "Ends in {0}s");
+        public static readonly LocString EndedOn = new("polls.endedOn", "Ended {0}");
+        public static readonly LocString NeedsVote = new("polls.needsVote", "Vote now");
+        public static readonly LocString UndoVote = new("polls.undoVote", "Undo vote");
+        public static readonly LocString VoteFailed = new("polls.voteFailed", "Your vote wasn't saved. Try again.");
+        public static readonly LocString Percent = new("polls.percent", "{0}%");
+        public static readonly LocString Leading = new("polls.leading", "Leading");
+        public static readonly LocString Winner = new("polls.winner", "Winner");
+        public static readonly LocString Tie = new("polls.tie", "Tie");
+        public static readonly LocString SignInTitle = new("polls.signInTitle", "Sign in to vote");
+        public static readonly LocString OpenSettings = new("polls.openSettings", "Open Settings");
+        public static readonly LocString EmptyOpenTitle = new("polls.emptyOpenTitle", "No open polls");
+
+        public static readonly LocString EmptyOpenHint = new("polls.emptyOpenHint",
+            "New community polls land here, and the app badge tells you when one needs your vote.");
+
+        public static readonly LocString EmptyEndedTitle = new("polls.emptyEndedTitle", "No ended polls yet");
+
+        public static readonly LocString EmptyEndedHint = new("polls.emptyEndedHint",
+            "When a poll closes, its final results stay here.");
+
+        public static readonly LocString RefreshFailed = new("polls.refreshFailed",
+            "Couldn't refresh. Pull down to try again.");
     }
 
     internal static class Announcements
@@ -7596,9 +7622,11 @@ internal static class L
         public static readonly LocString AethergramPickTitle = new("onboarding.aethergramPickTitle", "Pick your shots");
         public static readonly LocString AethergramPickBody = new("onboarding.aethergramPickBody", "Tap photos from your Photos library to choose one or several, or bring one in with Import from PC.");
         public static readonly LocString PollsCastTitle = new("onboarding.pollsCastTitle", "Cast your vote");
-        public static readonly LocString PollsCastBody = new("onboarding.pollsCastBody", "Tap an option to vote. Tap another to switch, or tap your pick again to take it back.");
+        public static readonly LocString PollsCastBody = new("onboarding.pollsCastBody", "Tap an option to vote. Tap another one any time to move your vote.");
         public static readonly LocString PollsTallyTitle = new("onboarding.pollsTallyTitle", "Results after you vote");
-        public static readonly LocString PollsTallyBody = new("onboarding.pollsTallyBody", "The count stays hidden until you vote. Then the bars and totals appear and keep updating.");
+        public static readonly LocString PollsTallyBody = new("onboarding.pollsTallyBody", "Results stay hidden until you vote. Once you have, Undo vote appears on this line to take it back.");
+        public static readonly LocString PollsEndedTitle = new("onboarding.pollsEndedTitle", "Final results");
+        public static readonly LocString PollsEndedBody = new("onboarding.pollsEndedBody", "Tap Ended. Closed polls move there, with the winning option marked.");
         public static readonly LocString AnnouncementsReadTitle = new("onboarding.announcementsReadTitle", "Read the latest");
         public static readonly LocString AnnouncementsReadBody = new("onboarding.announcementsReadBody", "The newest post sits on top with the longest preview. Tap it to read it in full.");
         public static readonly LocString AnnouncementsFullTitle = new("onboarding.announcementsFullTitle", "The whole story");
