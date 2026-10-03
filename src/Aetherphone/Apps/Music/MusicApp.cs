@@ -42,6 +42,7 @@ internal sealed partial class MusicApp : IResumableApp
     private readonly SongLinkResolver songResolver;
     private readonly PlaybackHub playback;
     private readonly LibraryStore library;
+    private readonly DownloadStore downloads;
     private readonly AethernetApi aethernet;
     private readonly RadioLauncher launcher;
     private readonly CommunityRadioService community;
@@ -72,7 +73,7 @@ internal sealed partial class MusicApp : IResumableApp
         RemoteImageCache images, LodestoneService lodestone, GameData gameData, RadioLauncher launcher,
         SocialNotificationService socialNotifications, RolladeckService rolladeck, PcMediaSource pcMedia,
         JamSession jam, JamLauncher jamLauncher, ContactBook contacts,
-        RadioRoomSession room)
+        RadioRoomSession room, DownloadStore downloads)
     {
         this.radio = radio;
         this.songSearch = songSearch;
@@ -99,8 +100,9 @@ internal sealed partial class MusicApp : IResumableApp
         jamAccount = session;
         this.room = room;
         this.session = session;
+        this.downloads = downloads;
         community = new CommunityRadioService(aethernet, session);
-        kit = new MusicKit(ui, images, playback, library);
+        kit = new MusicKit(ui, images, playback, library) { Downloads = downloads };
         routers = CreateRouters();
         drawView = DrawView;
         popPage = PopPage;
@@ -165,6 +167,7 @@ internal sealed partial class MusicApp : IResumableApp
     {
         DisposeWorldRadio();
         DisposeSearch();
+        DisposeLibrary();
         resolverWork.Dispose();
         community.Dispose();
     }

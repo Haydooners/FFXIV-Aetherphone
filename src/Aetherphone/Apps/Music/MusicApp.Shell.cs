@@ -86,7 +86,7 @@ internal sealed partial class MusicApp
     {
         TickJam();
         var sheetsCapture = songMenu.CapturesPointer || playlistPicker.CapturesPointer || PcMediaCapturesPointer ||
-                            JamCapturesPointer;
+                            JamCapturesPointer || LibraryOverlaysCapture;
         var stage = TabBar.ContentArea(content, scale);
         bottomChrome = TabBar.ContentInset(scale) + MiniPlayerInset(scale, delta);
         using (InputShield.Engage(sheetsCapture || NowPlayingCapturesPointer))
@@ -112,6 +112,7 @@ internal sealed partial class MusicApp
         DrawSongMenu(screen);
         playlistPicker.Draw(screen, kit);
         DrawJamOverlays(screen);
+        DrawLibraryOverlays(screen);
     }
 
     private void DrawTabBar(Rect area)

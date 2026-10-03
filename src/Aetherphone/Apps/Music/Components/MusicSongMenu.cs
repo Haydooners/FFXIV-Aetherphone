@@ -65,13 +65,13 @@ internal sealed class MusicSongMenu
             return SongMenuOutcome.None;
         }
 
-        var count = Build(kit.Library);
+        var count = Build(kit.Library, kit.Downloads);
         var picked = sheet.Draw(screen, ActionSheetStyle.From(kit.Ui), items.AsSpan(0, count),
             Loc.T(L.Common.Cancel), false, song.Title);
         return picked < 0 ? SongMenuOutcome.None : Run(commands[picked], kit);
     }
 
-    private int Build(LibraryStore library)
+    private int Build(LibraryStore library, DownloadStore? downloads)
     {
         var count = 0;
         Add(ref count, Command.PlayNext, Loc.T(L.Music.PlayNext), FontAwesomeIcon.Reply);
@@ -82,7 +82,9 @@ internal sealed class MusicSongMenu
         var inLibrary = library.InLibrary(song.VideoId);
         Add(ref count, Command.Library, Loc.T(inLibrary ? L.Music.RemoveFromLibrary : L.Music.AddToLibrary),
             inLibrary ? FontAwesomeIcon.Trash : FontAwesomeIcon.PlusCircle, inLibrary);
-        var downloaded = library.IsDownloaded(song.VideoId);
+        var downloaded = downloads is null
+            ? library.IsDownloaded(song.VideoId)
+            : downloads.StateOf(song.VideoId) is DownloadState.Queued or DownloadState.Downloading or DownloadState.Done;
         Add(ref count, Command.Download, Loc.T(downloaded ? L.Music.RemoveDownload : L.Music.Download),
             downloaded ? FontAwesomeIcon.Times : FontAwesomeIcon.ArrowDown);
         if (song.ChannelId.Length > 0)
@@ -123,7 +125,7 @@ internal sealed class MusicSongMenu
                 ToggleLibrary(library);
                 return SongMenuOutcome.None;
             case Command.Download:
-                library.SetDownloaded(song, !library.IsDownloaded(song.VideoId));
+                ToggleDownload(kit);
                 return SongMenuOutcome.None;
             case Command.GoToArtist:
                 return SongMenuOutcome.GoToArtist;
@@ -135,6 +137,17 @@ internal sealed class MusicSongMenu
                 StartStation(playback);
                 return SongMenuOutcome.None;
         }
+    }
+
+    private void ToggleDownload(MusicKit kit)
+    {
+        if (kit.Downloads is { } downloads)
+        {
+            downloads.Toggle(song);
+            return;
+        }
+
+        kit.Library.SetDownloaded(song, !kit.Library.IsDownloaded(song.VideoId));
     }
 
     private void ToggleLibrary(LibraryStore library)

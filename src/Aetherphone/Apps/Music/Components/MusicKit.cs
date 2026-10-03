@@ -23,6 +23,8 @@ internal sealed class MusicKit
 
     public LibraryStore Library { get; }
 
+    public DownloadStore? Downloads { get; init; }
+
     public float Clock { get; private set; }
 
     public void Tick(float delta) => Clock += delta;
