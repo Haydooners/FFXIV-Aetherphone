@@ -256,7 +256,7 @@ internal sealed partial class ShortcutsApp
         IconTile.FillShaded(drawList, min, max, radius, IconTile.Surface(AccentFor(entry.InternalName)),
             entry.Loaded ? 1f : 0.55f);
         Material.EdgeSquircle(drawList, min, max, radius, scale);
-        var monogram = ShortcutStore.Monogram(entry.Name);
+        var monogram = ShortcutsArt.Monogram(entry.Name);
         var measured = Typography.Measure(monogram, TextStyles.Title2);
         var glyphScale = measured.Y > 0f ? size * 0.42f / measured.Y : 1f;
         Typography.DrawCentered(drawList, center, monogram, new Vector4(1f, 1f, 1f, 1f),
