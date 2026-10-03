@@ -15,7 +15,7 @@ internal static class ReconnectVeil
     public static void Draw(ImDrawListPtr drawList, in Rect area, AppSkin ui, long heldRemainingMilliseconds,
         float scale)
     {
-        drawList.AddRectFilled(area.Min, area.Max, ImGui.GetColorU32(new Vector4(0f, 0f, 0f, Dim)));
+        Material.Veil(drawList, area.Min, area.Max, Dim);
 
         var title = Loc.T(L.Casino.ReconnectTitle);
         var body = heldRemainingMilliseconds > 0
@@ -30,10 +30,8 @@ internal static class ReconnectVeil
         var center = area.Center;
         var min = new Vector2(center.X - width * 0.5f, center.Y - height * 0.5f);
         var max = new Vector2(center.X + width * 0.5f, center.Y + height * 0.5f);
-        var rounding = Metrics.Radius.Card * scale;
-        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.Palette.CardFill));
-        Squircle.Stroke(drawList, min, max, rounding,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
+        var rounding = Metrics.Radius.Widget * scale;
+        Material.LiquidGlass(drawList, min, max, rounding, scale, GlassTone.Dark, 0f);
 
         var dotCenter = new Vector2(min.X + pad, min.Y + pad + titleSize.Y * 0.5f);
         drawList.AddCircleFilled(dotCenter, 3.2f * scale,

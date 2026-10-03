@@ -18,12 +18,14 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.GamesPickTitle, L.Onboarding.GamesPickBody, "games.filtered",
                     GuideGesture.Tap),
             });
-        Add(tours, "casino", 2,
+        Add(tours, "casino", 3,
             new[]
             {
                 GuideStep.Intro(L.Apps.Casino, L.Onboarding.CasinoIntroBody),
-                GuideStep.Point(L.Onboarding.CasinoChipBarTitle, L.Onboarding.CasinoChipBarBody, "casino.chipbar",
+                GuideStep.Point(L.Casino.TourBankrollTitle, L.Casino.TourBankrollBody, "casino.chipbar",
                     GuideGesture.None),
+                GuideStep.Point(L.Casino.TourTonightTitle, L.Casino.TourTonightBody, "casino.tonight",
+                    GuideGesture.Tap),
                 GuideStep.Point(L.Onboarding.CasinoDailySpinTitle, L.Onboarding.CasinoDailySpinBody, "casino.spin",
                     GuideGesture.Tap),
                 GuideStep.TryTap(L.Onboarding.CasinoGamesTabTitle, L.Onboarding.CasinoGamesTabBody,

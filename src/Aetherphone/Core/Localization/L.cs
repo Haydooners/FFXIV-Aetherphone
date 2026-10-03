@@ -8504,7 +8504,6 @@ internal static class L
         public static readonly LocString SignInTitle = new("casino.signInTitle", "Sign in required");
         public static readonly LocString SignInHint = new("casino.signInHint", "Sign in to Aethernet in Settings to step onto the floor");
         public static readonly LocString GamesHeading = new("casino.gamesHeading", "The floor");
-        public static readonly LocString CareHeading = new("casino.careHeading", "Take care");
         public static readonly LocString GameBlackjack = new("casino.game.blackjack", "Blackjack");
         public static readonly LocString GameHoldem = new("casino.game.holdem", "Hold'em");
         public static readonly LocString GameSlots = new("casino.game.slots", "Slots");
@@ -8513,7 +8512,6 @@ internal static class L
         public static readonly LocString GameWheel = new("casino.game.wheel", "Wheel");
         public static readonly LocString GameBarkeep = new("casino.game.barkeep", "Barkeep");
         public static readonly LocString GameDailySpin = new("casino.game.dailySpin", "Daily spin");
-        public static readonly LocString Soon = new("casino.soon", "Soon");
         public static readonly LocString LimitsRow = new("casino.limitsRow", "Daily loss limit");
         public static readonly LocString LimitsRowHint = new("casino.limitsRowHint", "Set an optional daily loss limit");
         public static readonly LocString CabinetSoonTitle = new("casino.cabinetSoonTitle", "The cabinet is on its way");
@@ -8528,10 +8526,6 @@ internal static class L
         public static readonly LocString CashOut = new("casino.cashOut", "Cash out");
         public static readonly LocString CashOutFor = new("casino.cashOutFor", "Cash out {0}");
         public static readonly LocString CashOutHint = new("casino.cashOutHint", "Chips settle back into your wallet as coins, rounded up in your favour. Leave them here and they wait for you.");
-        public static readonly LocString AmountMin = new("casino.amountMin", "Min");
-        public static readonly LocString AmountHalf = new("casino.amountHalf", "Half");
-        public static readonly LocString AmountMax = new("casino.amountMax", "Max");
-        public static readonly LocString BuyInBounds = new("casino.buyInBounds", "Between {0} and {1}");
         public static readonly LocString ChipRate = new("casino.chipRate", "100 chips = 1 coin");
         public static readonly LocString SlotsTurbo = new("casino.slotsTurbo", "Turbo");
         public static readonly LocString LotCost = new("casino.lotCost", "{0} coins");
@@ -8658,7 +8652,6 @@ internal static class L
         public static readonly LocString HistoryRowHint = new("casino.historyRowHint", "Every stake and payout, on the record");
         public static readonly LocString FairnessRow = new("casino.fairnessRow", "Fair play");
         public static readonly LocString FairnessRowHint = new("casino.fairnessRowHint", "Check settled rounds yourself");
-        public static readonly LocString ResumeAction = new("casino.resume", "Resume");
         public static readonly LocString SessionPill = new("casino.sessionPill", "At the tables for {0}");
         public static readonly LocString HistoryEmptyTitle = new("casino.history.emptyTitle", "No rounds yet");
         public static readonly LocString HistoryEmptyHint = new("casino.history.emptyHint", "Play a round and it lands here, newest first.");
@@ -8731,7 +8724,6 @@ internal static class L
         public static readonly LocString ReasonRuleCap = new("casino.reasonRuleCap", "The wheel has paid out all it can for now. Your other coin earnings carry on as normal.");
         public static readonly LocString ReasonCardsFull = new("casino.reasonCardsFull", "That is all four cards for this room. The next one opens shortly.");
         public static readonly LocString ReasonSoldOut = new("casino.reasonSoldOut", "That is all the house is taking on this round. The next one opens shortly.");
-        public static readonly LocString RoomClosesIn = new("casino.room.closesIn", "Closes in {0}");
         public static readonly LocString RoomNextIn = new("casino.room.nextIn", "Next in {0}");
         public static readonly LocString BingoInTheHall = new("casino.bingo.inTheHall", "{0} in the hall");
         public static readonly LocString BingoClosedTitle = new("casino.bingo.closedTitle", "This hall has gone quiet");
@@ -8770,7 +8762,6 @@ internal static class L
         public static readonly LocString BingoLadderGone = new("casino.bingo.ladderGone", "gone on {0}");
         public static readonly LocString BingoLadderGrows = new("casino.bingo.ladderGrows", "Prizes grow with the hall and stop growing at {0} cards.");
         public static readonly LocString BingoLadderCapped = new("casino.bingo.ladderCapped", "The hall is past {0} cards, so the prizes are at their ceiling and stay there.");
-        public static readonly LocString BingoStageWonOn = new("casino.bingo.stageWonOn", "{0} went on ball {1}");
         public static readonly LocString BingoYouWon = new("casino.bingo.youWon", "You won {0}");
         public static readonly LocString BingoNoWin = new("casino.bingo.noWin", "No card came home this room");
         public static readonly LocString BingoRoomWrapped = new("casino.bingo.roomWrapped", "That is the room");
@@ -8865,8 +8856,6 @@ internal static class L
         public static readonly LocString StandQueued = new("casino.seat.standQueued", "Leaving after this hand");
         public static readonly LocString StandAtHandEnd = new("casino.seat.standAtHandEnd", "You leave once this hand settles.");
         public static readonly LocString DealtNextHand = new("casino.seat.dealtNextHand", "You are dealt in next hand");
-        public static readonly LocString TakeOverAction = new("casino.seat.takeOver", "Take over here");
-        public static readonly LocString PlayingElsewhere = new("casino.seat.playingElsewhere", "You are playing this seat on another device");
         public static readonly LocString AwayBadge = new("casino.seat.awayBadge", "Away, your seat is protected");
         public static readonly LocString ReconnectTitle = new("casino.reconnect.title", "Reconnecting");
         public static readonly LocString ReconnectHint = new("casino.reconnect.hint", "Your hand is safe. We are picking the line back up.");
@@ -8903,7 +8892,6 @@ internal static class L
         public static readonly LocString JackpotHint = new("casino.jackpot.hint", "Every chip you stake is a ticket for the whole pot");
         public static readonly LocString JackpotWon = new("casino.jackpot.won", "JACKPOT");
         public static readonly LocString JackpotWonAmount = new("casino.jackpot.wonAmount", "{0} coins, the whole pot");
-        public static readonly LocString JackpotMeter = new("casino.jackpot.meter", "Every spin on the floor feeds it");
         public static readonly LocString TabLobby = new("casino.tabLobby", "Lobby");
         public static readonly LocString TabGames = new("casino.tabGames", "Games");
         public static readonly LocString TabLive = new("casino.tabLive", "Live");
@@ -8919,12 +8907,6 @@ internal static class L
         public static readonly LocString TierParlour = new("casino.tierParlour", "The Parlour");
         public static readonly LocString TierSalon = new("casino.tierSalon", "The Salon");
         public static readonly LocString TableSit = new("casino.tableSit", "Sit");
-        public static readonly LocString ConvertHeading = new("casino.convertHeading", "Coins and chips");
-        public static readonly LocString ConvertToChips = new("casino.convertToChips", "Coins to chips");
-        public static readonly LocString ConvertToChipsHint = new("casino.convertToChipsHint", "Buy the chips you play the floor with");
-        public static readonly LocString ConvertToCoins = new("casino.convertToCoins", "Chips to coins");
-        public static readonly LocString ConvertToCoinsHint = new("casino.convertToCoinsHint", "Turn your {0} chips back into coins whenever you like");
-        public static readonly LocString ConvertNoChips = new("casino.convertNoChips", "You have no chips on the floor right now");
         public static readonly LocString OpenWalletRow = new("casino.openWalletRow", "Open the wallet");
         public static readonly LocString OpenWalletRowHint = new("casino.openWalletRowHint", "Every way to earn Aether Coin, in one place");
         public static readonly LocString RulesHowToPlay = new("casino.rules.howToPlay", "HOW IT PLAYS");
@@ -8994,6 +8976,29 @@ internal static class L
         public static readonly LocString BlackjackSeatNatural = new("casino.blackjack.seatNatural", "Blackjack");
         public static readonly LocString BlackjackSeatPush = new("casino.blackjack.seatPush", "Push");
         public static readonly LocString BlackjackSeatBust = new("casino.blackjack.seatBust", "Bust");
+        public static readonly LocString RecentHeading = new("casino.recentHeading", "Jump back in");
+        public static readonly LocString TonightResultUp = new("casino.tonight.up", "{0} up");
+        public static readonly LocString TonightResultDown = new("casino.tonight.down", "{0} down");
+        public static readonly LocString TonightResultEven = new("casino.tonight.even", "Even so far");
+        public static readonly LocString TonightLimit = new("casino.tonight.limit", "Limit {0}");
+        public static readonly LocString TonightNoLimit = new("casino.tonight.noLimit", "No daily limit set");
+        public static readonly LocString TonightSetLimit = new("casino.tonight.setLimit", "Set one");
+        public static readonly LocString LimitLeftCaption = new("casino.limits.leftCaption", "left tonight");
+        public static readonly LocString LimitCoinEquivalent = new("casino.limits.coinEquivalent", "Worth {0} coins");
+        public static readonly LocString LimitStartsNow = new("casino.limits.startsNow", "Takes effect right away");
+        public static readonly LocString LimitNextDay = new("casino.limits.nextDay", "Takes effect when the next day starts");
+        public static readonly LocString LimitUnchanged = new("casino.limits.unchanged", "Drag the slider or tap + and - to change it");
+        public static readonly LocString LimitOffTitle = new("casino.limits.offTitle", "No limit of your own");
+        public static readonly LocString LimitOffBody = new("casino.limits.offBody", "Pick the most you are happy to lose in a day, and the floor stops you there.");
+        public static readonly LocString LimitSetAction = new("casino.limits.setAction", "Set a limit");
+        public static readonly LocString LimitRemove = new("casino.limits.remove", "Remove");
+        public static readonly LocString LimitRemoveTitle = new("casino.limits.removeTitle", "Remove your limit?");
+        public static readonly LocString LimitRemoveBody = new("casino.limits.removeBody", "It lifts when the next day starts. Until then it keeps working.");
+        public static readonly LocString PendingRemove = new("casino.limits.pendingRemove", "Your limit lifts with the next day");
+        public static readonly LocString TourBankrollTitle = new("casino.tour.bankrollTitle", "Your chips");
+        public static readonly LocString TourBankrollBody = new("casino.tour.bankrollBody", "Chips you change from Aether Coin wait here for every game. Buy more or cash out right on the card.");
+        public static readonly LocString TourTonightTitle = new("casino.tour.tonightTitle", "Your night at a glance");
+        public static readonly LocString TourTonightBody = new("casino.tour.tonightBody", "How your night is going sits right under your chips. Tap it any time to set a daily loss limit.");
     }
 
     internal static class Catalogs
@@ -9501,8 +9506,6 @@ internal static class L
         public static readonly LocString GamesPickTitle = new("onboarding.gamesPickTitle", "Pick a game");
         public static readonly LocString GamesPickBody = new("onboarding.gamesPickBody", "Tap any tile to play. Once you have played, your best result shows under its name.");
         public static readonly LocString CasinoIntroBody = new("onboarding.casinoIntroBody", "A casino floor played with chips you change from Aether Coin. No real money goes in, and none comes out.");
-        public static readonly LocString CasinoChipBarTitle = new("onboarding.casinoChipBarTitle", "Chips and coin");
-        public static readonly LocString CasinoChipBarBody = new("onboarding.casinoChipBarBody", "Your chips sit on the left and your coin on the right. Every 100 chips cost 1 coin.");
         public static readonly LocString CasinoDailySpinTitle = new("onboarding.casinoDailySpinTitle", "Free daily spin");
         public static readonly LocString CasinoDailySpinBody = new("onboarding.casinoDailySpinBody", "One turn of the coin wheel every day, on the house. It never costs chips.");
         public static readonly LocString CasinoGamesTabTitle = new("onboarding.casinoGamesTabTitle", "See every game");
