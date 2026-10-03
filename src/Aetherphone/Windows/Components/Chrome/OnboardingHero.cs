@@ -21,6 +21,7 @@ internal static class OnboardingHero
     private const float StaggerSpan = 0.34f;
     private const double DriftPeriodMs = 30000.0;
     private const double RipplePeriodMs = 2800.0;
+    private const float BrandCoreUnits = 36f;
 
     public static void Draw(ImDrawListPtr drawList, Vector2 center, HeroMotif motif, Vector4 accent, float scale,
         float reveal, float alpha)
@@ -186,6 +187,11 @@ internal static class OnboardingHero
     private static void Core(ImDrawListPtr drawList, Vector2 center, Vector4 accent, float scale, float settle,
         float alpha)
     {
+        if (BrandMark.TryDraw(drawList, center, BrandCoreUnits * scale * settle, alpha * settle, scale))
+        {
+            return;
+        }
+
         var pulse = Pulse.Wave(Pulse.Calm);
         var radius = (10f + 1.4f * pulse) * scale * settle;
         if (radius <= 0.2f)
