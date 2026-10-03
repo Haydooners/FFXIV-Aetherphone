@@ -15,6 +15,7 @@ using Aetherphone.Core.Housing;
 using Aetherphone.Core.Hunts;
 using Aetherphone.Core.Inventory;
 using Aetherphone.Core.Lodestone;
+using Aetherphone.Core.Lyrics;
 using Aetherphone.Core.Maps;
 using Aetherphone.Core.Market;
 using Aetherphone.Core.Media;
@@ -158,6 +159,7 @@ internal sealed class PhoneServices : IDisposable
     public required LibraryStore MusicLibrary { get; init; }
     public required WindowsMediaSessions WindowsMedia { get; init; }
     public required WindowsMediaPublisher WindowsMediaPublisher { get; init; }
+    public required LyricsService Lyrics { get; init; }
     public required GameStatsStore GameStats { get; init; }
     public required VenuesService Venues { get; init; }
     public required RolladeckService Rolladeck { get; init; }
@@ -313,6 +315,9 @@ internal sealed class PhoneServices : IDisposable
         var songHistory = new SongHistory(musicLibrary);
         var playlists = new PlaylistStore(musicLibrary);
         var playback = new PlaybackHub(radioPlayer, songPlayer, musicLibrary, songResolver, configuration, framework);
+        var lyricsDisk = new DiskCache(new DirectoryInfo(Path.Combine(cacheRoot.FullName, "lyrics")),
+            16L * 1024 * 1024);
+        var lyrics = new LyricsService(new LrcLibClient(http), lyricsDisk);
         var gameStats = new GameStatsStore(configuration);
         var rolladeck = new RolladeckService(http);
         var venues = new VenuesService(http, notifications, configuration, gameData, rolladeck);
@@ -323,7 +328,7 @@ internal sealed class PhoneServices : IDisposable
         var collectionsRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "collections"));
         var collectionsDisk = new DiskCache(collectionsRoot, 32L * 1024 * 1024);
         var collections = new CollectionsCatalogService(http, collectionsDisk, dataManager, unlockState, framework);
-        var cacheStorage = new CacheStorage(new[] { imageDisk, disk, audioCache, stratsDisk, collectionsDisk });
+        var cacheStorage = new CacheStorage(new[] { imageDisk, disk, audioCache, stratsDisk, collectionsDisk, lyricsDisk });
         var inventoryRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "inventory"));
         var inventoryStore = new InventoryStore(inventoryRoot);
         var inventoryCapture = new InventoryCaptureService(framework, inventoryStore, installer.Gate("inventory"));
@@ -496,6 +501,7 @@ internal sealed class PhoneServices : IDisposable
             WindowsMedia = new WindowsMediaSessions(configuration),
             WindowsMediaPublisher = new WindowsMediaPublisher(configuration, framework,
                 static () => Platform.GameWindowHandle.Current),
+            Lyrics = lyrics,
             GameStats = gameStats,
             Venues = venues,
             Rolladeck = rolladeck,
@@ -568,6 +574,7 @@ internal sealed class PhoneServices : IDisposable
         Musters.Dispose();
         YellowPages.Dispose();
         AdInquiries.Dispose();
+        Lyrics.Dispose();
         Playback.Dispose();
         WindowsMediaPublisher.Dispose();
         WindowsMedia.Dispose();
