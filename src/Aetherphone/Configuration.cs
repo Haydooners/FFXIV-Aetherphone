@@ -203,8 +203,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public string JobsAccentName { get; set; } = "Blue";
     public List<JobsCustomColor> JobsCustomColors { get; set; } = new();
     public Dictionary<ulong, List<JobsCategory>> JobsCategoriesByCharacter { get; set; } = new();
-    public string LightWallpaperId { get; set; } = "DuskLight";
-    public string DarkWallpaperId { get; set; } = "DuskDark";
+    public string LightWallpaperId { get; set; } = BuiltInWallpapers.DefaultLightId;
+    public string DarkWallpaperId { get; set; } = BuiltInWallpapers.DefaultDarkId;
     public List<CustomWallpaper> CustomWallpapers { get; set; } = new();
     public string RingtoneSound { get; set; } = SoundLibrary.BundledRingtoneToken;
     public string NotificationSound { get; set; } = SoundLibrary.BundledNotificationToken;
@@ -635,6 +635,31 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
         Looks.Add(look);
         ActiveLookId = look.Id;
         Save();
+    }
+
+    public void MigrateRetiredWallpapers()
+    {
+        if (!ReplaceRetiredWallpapers())
+        {
+            return;
+        }
+
+        Save();
+    }
+
+    public bool ReplaceRetiredWallpapers()
+    {
+        var changed = false;
+        LightWallpaperId = BuiltInWallpapers.Replace(LightWallpaperId, ref changed);
+        DarkWallpaperId = BuiltInWallpapers.Replace(DarkWallpaperId, ref changed);
+        for (var index = 0; index < Looks.Count; index++)
+        {
+            var look = Looks[index];
+            look.LightWallpaperId = BuiltInWallpapers.Replace(look.LightWallpaperId, ref changed);
+            look.DarkWallpaperId = BuiltInWallpapers.Replace(look.DarkWallpaperId, ref changed);
+        }
+
+        return changed;
     }
 
     public void MigrateEncryptionKeyStore()

@@ -55,7 +55,7 @@ Nobody is judged for the level they declare. An undeclared one is the problem.
 | Phone cases | 58 | Drawn by ten artists, each credited in the app's Settings |
 | Interface sounds | 22 | The SND01 "sine" kit by Yasuhiro Tsuchiya, and CC0 clips from BigSoundBank and Kenney |
 | Game sounds | 45 | Kenney CC0 packs, plus four synthesized tones |
-| Wallpapers | 8 | Third-party, not AI-generated |
+| Wallpapers | 16 | Rendered by the project's own procedural generator, not AI-generated |
 | Ringtones and notification sounds | 13 | Third-party, not AI-generated |
 
 Licenses and attributions are listed in [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md), which ships with every release.

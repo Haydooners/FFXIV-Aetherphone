@@ -115,6 +115,7 @@ public sealed class Plugin : IDalamudPlugin
             Cfg.MigrateEncryptionKeyStore();
             Cfg.MigrateHousingRefreshFloor();
             Cfg.MigrateHomeLooks();
+            Cfg.MigrateRetiredWallpapers();
             InitializeLocalization();
             InstallSource.Initialize(PluginInterface);
             Device = new DeviceStatus(ClientState, ObjectTable, DataManager);

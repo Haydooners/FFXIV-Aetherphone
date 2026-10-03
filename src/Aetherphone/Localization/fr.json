@@ -5725,6 +5725,7 @@
   "changelog.r1042.0": "L'entrée de la barre d'informations du serveur est désormais une icône de téléphone avec votre nombre de notifications non lues, à la place du nom Aetherphone",
   "changelog.r1042.1": "Survoler l'entrée de la barre d'informations du serveur affiche désormais le nombre de notifications en attente et l'effet d'un clic",
   "changelog.r1042.2": "Correction de MogCast qui faisait tomber le jeu à une image par seconde chez certains joueurs pendant qu'il attendait un lien",
+  "changelog.r1042.3": "Les fonds d'écran intégrés sont remplacés par une série originale de huit paires, et un fond d'écran retiré que vous utilisiez passe au nouveau le plus proche",
   "changelog.r1037.0": "Les DJ en direct quittent l'écran d'accueil pour la page de leur lieu : la carte En cours affiche la photo, le nom et les spectateurs du DJ, avec un lien Twitch pour chaque DJ",
   "changelog.r1037.1": "Ajout de l'étiquette DJ actif sur les cartes des lieux lorsqu'un DJ y est en direct",
   "changelog.r1037.2": "Correction des DJ en direct et des confirmations en direct de XIV Rolladeck qui ne s'affichaient plus",

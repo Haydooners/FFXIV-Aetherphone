@@ -28,6 +28,22 @@ PALETTES = {
         "Light": {"base": ("#E3F3EF", "#DEE0F7"), "blobs": ["#8FE9CC", "#B3A9F5", "#9CD3FF", "#FFB7DD"], "ribbons": ["#A6F0FF", "#D0B4FF"], "gloss": 0.10},
         "Dark": {"base": ("#1A2347", "#090B1C"), "blobs": ["#3A8DE0", "#8F55E3", "#22B3AA", "#D14A98"], "ribbons": ["#5EC8FF", "#B07CFF"], "gloss": 0.06},
     },
+    "Crystal": {
+        "Light": {"base": ("#E4ECFA", "#D6E4F6"), "blobs": ["#8FB4F5", "#A7E6E0", "#C2B6F7", "#7FD0F2"], "ribbons": ["#B9E8FF", "#9FB8FF"], "gloss": 0.12},
+        "Dark": {"base": ("#141E46", "#060A1E"), "blobs": ["#3C5FD6", "#24A6A0", "#6A4FD0", "#2C8FD8"], "ribbons": ["#6FD2FF", "#7E8CFF"], "gloss": 0.06},
+    },
+    "Frost": {
+        "Light": {"base": ("#EEF2F7", "#D9E2EE"), "blobs": ["#B4C7E0", "#CFE3F2", "#A9B9D8", "#DCE6F5"], "ribbons": ["#FFFFFF", "#C4D8F0"], "gloss": 0.14},
+        "Dark": {"base": ("#16203A", "#05080F"), "blobs": ["#2B4470", "#3E6A9A", "#232F5C", "#4F7DB0"], "ribbons": ["#9CC4F0", "#5F86C4"], "gloss": 0.05},
+    },
+    "Grove": {
+        "Light": {"base": ("#E6F2E4", "#D6E8D8"), "blobs": ["#9ED69A", "#C8E39A", "#7FCBB2", "#E6D99A"], "ribbons": ["#D4F0A8", "#9FE0C6"], "gloss": 0.10},
+        "Dark": {"base": ("#132A1E", "#050F0A"), "blobs": ["#2E8A4E", "#7A9E2E", "#1F7A6A", "#A08A2E"], "ribbons": ["#8FD66B", "#4FC9A0"], "gloss": 0.06},
+    },
+    "Sunset": {
+        "Light": {"base": ("#FCE9D6", "#F3D3E2"), "blobs": ["#FFC46B", "#F08DB4", "#7FD3D0", "#FFA38A"], "ribbons": ["#FFD58A", "#F7A8D0"], "gloss": 0.10},
+        "Dark": {"base": ("#3A1838", "#0E0614"), "blobs": ["#E08A2A", "#C23A7A", "#1F8E96", "#E05A4A"], "ribbons": ["#FFB84A", "#FF6FA8"], "gloss": 0.06},
+    },
 }
 
 
