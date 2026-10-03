@@ -25,7 +25,7 @@ internal sealed partial class SetupOverlay : IDisposable
 
     private const float SlideLiveThreshold = 0.9f;
     private const float SlideSettledEpsilon = 0.002f;
-    private const float ExitSeconds = 0.7f;
+    private const float ExitSeconds = 0.9f;
     private const int DisplayNameMax = 32;
     private const int HandleMax = 15;
 
@@ -66,6 +66,9 @@ internal sealed partial class SetupOverlay : IDisposable
     private int slideDirection = 1;
     private bool exiting;
     private float exitClock;
+    private float exitProgress;
+    private float pageAge;
+    private bool drawingCurrent;
 
     private string displayNameDraft = string.Empty;
     private string handleDraft = string.Empty;
@@ -120,7 +123,12 @@ internal sealed partial class SetupOverlay : IDisposable
 
         ConsumeOutcomes();
         pageSlide.Step(1f, Motion.PageSettle, delta);
-        var exitProgress = 0f;
+        if (interactive || exiting)
+        {
+            pageAge += delta;
+        }
+
+        exitProgress = 0f;
         if (exiting)
         {
             exitClock += delta;
@@ -136,17 +144,18 @@ internal sealed partial class SetupOverlay : IDisposable
         var scale = UiScale.Current;
         var rounding = theme.ScreenRounding * scale;
         var backdropAlpha = 1f - exitProgress;
-        var contentAlpha = 1f - Easing.Clamp01(exitProgress * 1.8f);
+        var contentAlpha = 1f - Easing.Clamp01((exitProgress - 0.25f) * 2.2f);
         ImGui.SetCursorScreenPos(screen.Min);
         using (ImRaii.Child("##setupOverlay", screen.Size, false, OverlayFlags))
         {
             var drawList = ImGui.GetWindowDrawList();
-            DrawBackdrop(drawList, screen, theme, backdropAlpha, rounding);
+            DrawBackdrop(drawList, screen, backdropAlpha, rounding);
             var slide = Math.Clamp(pageSlide.Value, 0f, 1f);
             var live = interactive && !exiting && slide >= SlideLiveThreshold;
             if (slide < 1f - SlideSettledEpsilon && fromPage != page)
             {
                 var exitOffset = new Vector2(-slideDirection * screen.Width * 0.3f * slide, 0f);
+                drawingCurrent = false;
                 using (Typography.WrapOffset(exitOffset.X))
                 {
                     DrawPage(fromPage, screen, theme, exitOffset, (1f - slide) * contentAlpha, false);
@@ -154,12 +163,13 @@ internal sealed partial class SetupOverlay : IDisposable
             }
 
             var enterOffset = new Vector2(slideDirection * screen.Width * (1f - slide), 0f);
+            drawingCurrent = true;
             using (Typography.WrapOffset(enterOffset.X))
             {
                 DrawPage(page, screen, theme, enterOffset, MathF.Min(slide + 0.35f, 1f) * contentAlpha, live);
             }
 
-            DrawBackButton(drawList, screen, theme, contentAlpha, live);
+            DrawBackButton(drawList, screen, contentAlpha, live);
         }
     }
 
@@ -264,6 +274,7 @@ internal sealed partial class SetupOverlay : IDisposable
         page = target;
         slideDirection = direction;
         pageSlide.SnapTo(0f);
+        pageAge = 0f;
     }
 
     private void Complete()

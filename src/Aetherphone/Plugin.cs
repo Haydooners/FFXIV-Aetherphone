@@ -278,6 +278,7 @@ public sealed class Plugin : IDalamudPlugin
         services?.Dispose();
         Device?.Dispose();
         Windows.Components.AppIconCache.Dispose();
+        Windows.Components.BrandMark.Dispose();
         Fonts?.Dispose();
     }
 
@@ -416,6 +417,7 @@ public sealed class Plugin : IDalamudPlugin
         services.Dispose();
         Device.Dispose();
         Windows.Components.AppIconCache.Dispose();
+        Windows.Components.BrandMark.Dispose();
         Fonts.Dispose();
         CommandManager.RemoveHandler(AepConstants.PrimaryCommand);
         CommandManager.RemoveHandler(AepConstants.AliasCommand);
