@@ -476,11 +476,13 @@ internal sealed partial class JamSession : IDisposable
         awaitingSinceTicks = 0;
         disconnectedSinceTicks = 0;
         jamId = message.JamId ?? jamId;
-        if (Mode == JamMode.Listening)
+        if (InJam)
         {
             ReleaseAuthority();
+            ResetHostState();
             ResetGuestState();
             SetMembers(null);
+            SetJoinRequests(Array.Empty<JamJoinRequest>());
             Mode = JamMode.Pending;
             return;
         }
@@ -674,7 +676,7 @@ internal sealed partial class JamSession : IDisposable
         disconnectedSinceTicks = 0;
         awaitingSinceTicks = now;
         pacer.Reset();
-        if (Mode is JamMode.Hosting or JamMode.Starting)
+        if (Mode == JamMode.Starting || Code.Length == 0)
         {
             signals.Start(Title.Length > 0 ? Title : null);
             return;
