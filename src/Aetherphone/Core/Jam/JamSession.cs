@@ -36,6 +36,7 @@ internal sealed partial class JamSession : IDisposable
     private JamJoinRequest[] joinRequests = Array.Empty<JamJoinRequest>();
     private string jamId = string.Empty;
     private string hostId = string.Empty;
+    private string boundUserId = string.Empty;
     private int serverQueueVersion;
     private int dropCount;
     private int seenDropCount;
@@ -135,6 +136,7 @@ internal sealed partial class JamSession : IDisposable
 
         Title = JamWire.NormalizeTitle(title);
         seedPending = hub.SongActive && hub.Queue.QueuedCount > 0;
+        boundUserId = MyUserId;
         Mode = JamMode.Starting;
         awaitingSinceTicks = Environment.TickCount64;
         signals.Start(Title.Length > 0 ? Title : null);
@@ -166,6 +168,7 @@ internal sealed partial class JamSession : IDisposable
         }
 
         SetCode(code);
+        boundUserId = MyUserId;
         Mode = JamMode.Joining;
         awaitingSinceTicks = Environment.TickCount64;
         signals.Join(code);
@@ -294,6 +297,11 @@ internal sealed partial class JamSession : IDisposable
         var now = Environment.TickCount64;
         var deltaSeconds = lastTickTicks == 0 ? 0f : Math.Clamp((now - lastTickTicks) / 1000f, 0f, 0.5f);
         lastTickTicks = now;
+
+        if (Mode != JamMode.Idle && !string.Equals(MyUserId, boundUserId, StringComparison.Ordinal))
+        {
+            ExitLocal(JamDeclineReason.None);
+        }
 
         while (inbound.TryDequeue(out var message))
         {
@@ -802,6 +810,7 @@ internal sealed partial class JamSession : IDisposable
         Mode = JamMode.Idle;
         jamId = string.Empty;
         hostId = string.Empty;
+        boundUserId = string.Empty;
         awaitingSinceTicks = 0;
         disconnectedSinceTicks = 0;
         Stale = false;
