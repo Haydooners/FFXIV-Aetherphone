@@ -148,6 +148,20 @@ public sealed class HealthLogicTests
     }
 
     [Fact]
+    public void LegacyWeightIsAdoptedOnlyIntoAnEmptyLog()
+    {
+        var entries = new List<WeightEntry>();
+        WeightHistory.Adopt(entries, 48d, 500);
+        Assert.Single(entries);
+        WeightHistory.Adopt(entries, 60d, 900);
+        Assert.Single(entries);
+        Assert.Equal(48d, WeightHistory.Latest(entries));
+        var empty = new List<WeightEntry>();
+        WeightHistory.Adopt(empty, null, 500);
+        Assert.Empty(empty);
+    }
+
+    [Fact]
     public void ServingSnapsToUnitSteps()
     {
         Assert.Equal(300d, HealthFormat.SnapServing(310d, HealthUnits.Metric));
@@ -179,7 +193,8 @@ public sealed class HealthLogicTests
             Assert.Single(profile.Days);
             Assert.Equal(DrinkKeys.Tea, profile.Days[0].Drinks[0].KindKey);
             Assert.Single(profile.Goals);
-            Assert.Empty(profile.WeightLog);
+            Assert.Single(profile.WeightLog);
+            Assert.Equal(62.5d, profile.WeightLog[0].Kilograms);
             Assert.Equal(HealthFormat.GlassMillilitres, profile.ServingMillilitres);
             Assert.Equal(DrinkKeys.Water, profile.ServingKind);
         }

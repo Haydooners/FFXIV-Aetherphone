@@ -206,6 +206,7 @@ internal sealed class HealthTracker : IDisposable
             Unix = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             Kilograms = kilograms,
         });
+        profile.WeightKg = WeightHistory.Latest(profile.WeightLog);
         SaveNow();
     }
 
@@ -216,6 +217,7 @@ internal sealed class HealthTracker : IDisposable
             return;
         }
 
+        profile.WeightKg = WeightHistory.Latest(profile.WeightLog);
         SaveNow();
     }
 

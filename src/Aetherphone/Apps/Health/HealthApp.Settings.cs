@@ -28,13 +28,11 @@ internal sealed partial class HealthApp
 
     private static readonly StepperIds HeightIds = StepperIds.For("health.settings.height");
     private static readonly StepperIds StrideIds = StepperIds.For("health.settings.stride");
-    private static readonly StepperIds AdventurerWeightIds = StepperIds.For("health.settings.weight");
 
     private readonly string[] unitLabels = new string[3];
     private CachedText heightText;
     private CachedText manualHeightText;
     private CachedText strideText;
-    private CachedText adventurerWeightText;
 
     private void DrawSettings(Rect area)
     {
@@ -95,7 +93,7 @@ internal sealed partial class HealthApp
         var cursorY = SectionTop(drawList, left, top, width, Loc.T(L.Health.Adventurer), scale);
         var manual = Profile.ManualHeightCm is not null;
         var energy = Profile.CaloriesEnabled;
-        var rows = 4 + (energy ? 1 : 0);
+        const int rows = 4;
         var bottom = RowsCard(drawList, new Vector2(left, cursorY), width, rows, scale, out var card);
         var row = 0;
         var useGame = ToggleRow(drawList, CardRow(drawList, card, row++, scale), "health.settings.gameHeight",
@@ -136,30 +134,12 @@ internal sealed partial class HealthApp
             tracker.SaveNow();
         }
 
-        var toggled = ToggleRow(drawList, CardRow(drawList, card, row++, scale), "health.settings.energy",
+        var toggled = ToggleRow(drawList, CardRow(drawList, card, row, scale), "health.settings.energy",
             Loc.T(L.Health.EstimateActivityEnergy), energy, scale);
         if (toggled != energy)
         {
             Profile.CaloriesEnabled = toggled;
             tracker.SaveNow();
-        }
-
-        if (energy)
-        {
-            var kilograms = Profile.WeightKg ?? 0d;
-            var display = Math.Round(HealthFormat.WeightFromKg(kilograms, Units));
-            var weightDelta = StepperRow(drawList, CardRow(drawList, card, row, scale), AdventurerWeightIds,
-                Loc.T(L.Health.AdventurerWeight), AdventurerWeightText(kilograms), kilograms > 0d,
-                kilograms < WeightHistory.MaxKilograms, scale);
-            if (weightDelta != 0)
-            {
-                var next = kilograms <= 0d
-                    ? Math.Round(HealthFormat.WeightFromKg(WeightHistory.DefaultKilograms, Units))
-                    : display + weightDelta;
-                var nextKilograms = HealthFormat.WeightToKg(next, Units);
-                Profile.WeightKg = WeightHistory.IsValid(nextKilograms) ? nextKilograms : null;
-                tracker.SaveNow();
-            }
         }
 
         var hint = Typography.DrawWrappedLeft(new Vector2(left, bottom + HealthArt.TileGap * scale),
@@ -200,18 +180,6 @@ internal sealed partial class HealthApp
         return strideText.IsCurrent(key)
             ? strideText.Value
             : strideText.Store(key, string.Concat(stride.ToString("0.00", Loc.Culture), Loc.T(L.Health.UnitYalms)));
-    }
-
-    private string AdventurerWeightText(double kilograms)
-    {
-        var key = kilograms <= 0d ? -1L : (long)Math.Round(kilograms * 100d) * 4L + (long)Units;
-        if (adventurerWeightText.IsCurrent(key))
-        {
-            return adventurerWeightText.Value;
-        }
-
-        return adventurerWeightText.Store(key,
-            kilograms <= 0d ? Loc.T(L.Health.NotSet) : HealthFormat.Weight(kilograms, Units));
     }
 
     private float DrawDataCard(ImDrawListPtr drawList, float left, float top, float width, float scale)

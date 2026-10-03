@@ -598,9 +598,9 @@ internal static class L
         public static readonly LocString CharacterSub = new("storeCopy.characterSub", "Your day, tracked");
         public static readonly LocString CharacterBody = new("storeCopy.characterBody",
             "Rings, streaks and history for the things you do every day.");
-        public static readonly LocString HealthSub = new("storeCopy.healthSub", "Water, weight and steps");
+        public static readonly LocString HealthSub = new("storeCopy.healthSub", "Your adventurer's activity");
         public static readonly LocString HealthBody = new("storeCopy.healthBody",
-            "Log the water you drink while you play, keep a weight log with charts, and count your character's steps, swims and active time with goals and streaks. Not a medical app.");
+            "Estimated steps, distance, swimming, hydration and personal goals for your character. A fictional activity tracker for roleplay and statistics.");
         public static readonly LocString HousingSub = new("storeCopy.housingSub", "Plots on a map");
         public static readonly LocString HousingBody = new("storeCopy.housingBody",
             "Browse reported openings ward by ward, watch a plot and get reminded before the lottery closes.");
@@ -9380,7 +9380,7 @@ internal static class L
         public static readonly LocString HealthTodayTitle = new("onboarding.healthTodayTitle", "Today's water");
         public static readonly LocString HealthTodayBody = new("onboarding.healthTodayBody", "The glass fills as you drink. Tap the plus to log a drink, or the card for your full log.");
         public static readonly LocString HealthMetricsTitle = new("onboarding.healthMetricsTitle", "Your metrics");
-        public static readonly LocString HealthMetricsBody = new("onboarding.healthMetricsBody", "Steps, weight, distance, swimming and active time. Tap any card for its chart.");
+        public static readonly LocString HealthMetricsBody = new("onboarding.healthMetricsBody", "Your character's steps, weight, distance, swimming and active time. Tap any card for its chart.");
         public static readonly LocString HealthGoalCardBody = new("onboarding.healthGoalCardBody", "The ring fills as you get closer. Tap a goal to change its target or switch it off.");
         public static readonly LocString GamesDailyTitle = new("onboarding.gamesDailyTitle", "Daily challenge");
         public static readonly LocString GamesDailyBody = new("onboarding.gamesDailyBody", "A new game takes this card every day. Tap it to play, and come back daily to build your streak.");
@@ -10371,9 +10371,9 @@ internal static class L
         public static readonly LocString DurationM = new("health.durationM", "{0}m");
         public static readonly LocString Settings = new("health.settings", "Settings");
         public static readonly LocString Data = new("health.data", "Data");
-        public static readonly LocString Disclaimer = new("health.notMedical", "Health is not a medical app and gives no medical advice. Water and weight are what you log; steps, distance and active time are estimated from your character's movement in game.");
+        public static readonly LocString Disclaimer = new("health.notMedical", "Health is a playful tracker for your character, not a medical app, and gives no medical advice. Steps, distance and active time are estimated from your character's movement in game, and weight is what you log for them.");
         public static readonly LocString SignedOutTitle = new("health.signedOutTitle", "Log in to see your Health");
-        public static readonly LocString SignedOutBody = new("health.signedOutBody", "Health keeps a separate log for each character. Your water, weight and steps appear once you are logged in.");
+        public static readonly LocString SignedOutBody = new("health.signedOutBody", "Health follows the character you are playing. Their steps, weight and goals appear once you are logged in.");
         public static readonly LocString Highlights = new("health.highlights", "Highlights");
         public static readonly LocString HighlightsEmptyTitle = new("health.highlightsEmptyTitle", "Highlights are on the way");
         public static readonly LocString HighlightsEmptyBody = new("health.highlightsEmptyBody", "After a couple of weeks of history, Health compares this week with the last one here.");
@@ -10411,8 +10411,8 @@ internal static class L
         public static readonly LocString HighlightActiveDown = new("health.highlightActiveDown", "Your adventurer was active for less time on average this week than last week.");
         public static readonly LocString HighlightSwimUp = new("health.highlightSwimUp", "Your adventurer swam farther on average this week than last week.");
         public static readonly LocString HighlightSwimDown = new("health.highlightSwimDown", "Your adventurer swam less on average this week than last week.");
-        public static readonly LocString HighlightWeightChange = new("health.highlightWeightChange", "Your weight changed by {0} over the last 30 days.");
-        public static readonly LocString HighlightWeightSteady = new("health.highlightWeightSteady", "Your weight stayed about the same over the last 30 days.");
+        public static readonly LocString HighlightWeightChange = new("health.highlightWeightChange", "Your character's weight changed by {0} over the last 30 days.");
+        public static readonly LocString HighlightWeightSteady = new("health.highlightWeightSteady", "Your character's weight stayed about the same over the last 30 days.");
         public static readonly LocString ThisWeekAverage = new("health.thisWeekAverage", "This week, per day");
         public static readonly LocString LastWeekAverage = new("health.lastWeekAverage", "Last week, per day");
         public static readonly LocString Latest = new("health.latest", "Latest");
@@ -10432,9 +10432,9 @@ internal static class L
         public static readonly LocString ChangeInRange = new("health.changeInRange", "{0} in this range");
         public static readonly LocString DateAtTime = new("health.dateAtTime", "{0}, {1}");
         public static readonly LocString WeightEmptyTitle = new("health.weightEmptyTitle", "No weight logged yet");
-        public static readonly LocString WeightEmptyBody = new("health.weightEmptyBody", "Log your weight now and then to see how it changes over weeks and months.");
+        public static readonly LocString WeightEmptyBody = new("health.weightEmptyBody", "Log your character's weight now and then to see how it changes over weeks and months.");
         public static readonly LocString LogWeight = new("health.logWeight", "Log Weight");
-        public static readonly LocString WeightNote = new("health.weightNote", "Weight entries are saved on this PC only, with your plugin settings.");
+        public static readonly LocString WeightNote = new("health.weightNote", "Your character's weight log is saved on this PC only, with your plugin settings. The optional energy estimate uses the latest entry.");
         public static readonly LocString RemoveEntry = new("health.removeEntry", "Remove entry");
         public static readonly LocString Add = new("health.add", "Add");
         public static readonly LocString GoalsEmptyTitle = new("health.goalsEmptyTitle", "No goals yet");
@@ -10442,16 +10442,15 @@ internal static class L
         public static readonly LocString GoalsHint = new("health.goalsHint", "Daily goals start over at midnight, weekly goals on Sunday, and session goals each time you log in.");
         public static readonly LocString EditGoal = new("health.editGoal", "Edit Goal");
         public static readonly LocString UseGameHeight = new("health.useGameHeight", "Use character height");
-        public static readonly LocString AdventurerWeight = new("health.adventurerWeight", "Adventurer weight");
-        public static readonly LocString AdventurerHint = new("health.adventurerHint", "These shape the in-game side of Health: steps are distance on foot divided by stride, and the optional energy estimate uses your adventurer's weight.");
+        public static readonly LocString AdventurerHint = new("health.adventurerHint", "These shape how Health reads your character's movement: steps are distance on foot divided by stride, and the optional energy estimate uses their latest logged weight.");
         public static readonly LocString NotifyWaterBody = new("health.notifyWaterBody", "Time for a glass of water.");
         public static readonly LocString WelcomeTitle = new("health.welcomeTitle", "Welcome to Health");
-        public static readonly LocString WelcomeBody = new("health.welcomeBody", "A calm place for the everyday things: the water you drink while you play, your weight over time, and how far your adventurer roams.");
+        public static readonly LocString WelcomeBody = new("health.welcomeBody", "A playful health tracker for your character: how far they roam, swim and stay active, their weight over time, and a gentle nudge for you to drink water while you play.");
         public static readonly LocString FeatureWaterTitle = new("health.featureWaterTitle", "Stay hydrated");
         public static readonly LocString FeatureWaterBody = new("health.featureWaterBody", "Log a drink in one tap, here or from a home screen widget, with gentle reminders.");
-        public static readonly LocString FeatureWeightTitle = new("health.featureWeightTitle", "Follow your weight");
-        public static readonly LocString FeatureWeightBody = new("health.featureWeightBody", "Add an entry whenever you like and see the trend over weeks and months.");
-        public static readonly LocString FeatureStepsTitle = new("health.featureStepsTitle", "Count your steps");
+        public static readonly LocString FeatureWeightTitle = new("health.featureWeightTitle", "Track their weight");
+        public static readonly LocString FeatureWeightBody = new("health.featureWeightBody", "Log your character's weight whenever it changes and see the trend over weeks and months.");
+        public static readonly LocString FeatureStepsTitle = new("health.featureStepsTitle", "Count their steps");
         public static readonly LocString FeatureStepsBody = new("health.featureStepsBody", "Your character's walks, runs and swims become steps and distance, with goals and streaks.");
         public static readonly LocString GetStarted = new("health.getStarted", "Get Started");
     }

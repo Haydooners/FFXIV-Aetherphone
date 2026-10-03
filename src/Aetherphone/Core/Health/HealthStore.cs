@@ -26,7 +26,16 @@ internal sealed class HealthStore
         try
         {
             var loaded = JsonConvert.DeserializeObject<HealthProfile>(File.ReadAllText(path));
-            return loaded is null ? new HealthProfile() : Sanitize(loaded);
+            if (loaded is null)
+            {
+                return new HealthProfile();
+            }
+
+            var profile = Sanitize(loaded);
+            var savedUnix = new DateTimeOffset(File.GetLastWriteTimeUtc(path)).ToUnixTimeSeconds();
+            WeightHistory.Adopt(profile.WeightLog, profile.WeightKg, savedUnix);
+            profile.WeightKg = WeightHistory.Latest(profile.WeightLog) ?? profile.WeightKg;
+            return profile;
         }
         catch (Exception exception)
         {

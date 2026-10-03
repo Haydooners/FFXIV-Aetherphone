@@ -67,6 +67,19 @@ internal static class WeightHistory
         }
     }
 
+    public static double? Latest(IReadOnlyList<WeightEntry> entries) =>
+        entries.Count > 0 ? entries[entries.Count - 1].Kilograms : null;
+
+    public static void Adopt(List<WeightEntry> entries, double? legacyKilograms, long legacyUnix)
+    {
+        if (entries.Count > 0 || legacyKilograms is not { } kilograms || !IsValid(kilograms) || legacyUnix <= 0)
+        {
+            return;
+        }
+
+        entries.Add(new WeightEntry { Unix = legacyUnix, Kilograms = kilograms });
+    }
+
     public static int FirstAtOrAfter(IReadOnlyList<WeightEntry> entries, long unix)
     {
         var low = 0;
