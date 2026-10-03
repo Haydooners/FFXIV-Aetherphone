@@ -112,6 +112,7 @@ internal sealed class CameraApp : IPhoneApp
         flashAge = FlashDuration + 1f;
         reticleAge = ReticleDuration + 1f;
         timerEndsAt = 0d;
+        flying = false;
         modeIndex = PhotoModeIndex;
         dial.Snap(modeIndex);
         SyncLandscape();
@@ -578,6 +579,7 @@ internal sealed class CameraApp : IPhoneApp
             var newest = await Task.Run(NewestPath, token).ConfigureAwait(false);
             if (newest.Length == 0)
             {
+                await Plugin.Framework.RunOnFrameworkThread(() => ClearWell(generation)).ConfigureAwait(false);
                 return;
             }
 
@@ -600,6 +602,27 @@ internal sealed class CameraApp : IPhoneApp
     {
         var paths = library.List();
         return paths.Length > 0 ? paths[0] : string.Empty;
+    }
+
+    private void ClearWell(int generation)
+    {
+        if (generation != wellGeneration || cancellation.IsCancellationRequested)
+        {
+            return;
+        }
+
+        lastShotPath = string.Empty;
+        if (pendingWellTexture is { } pending)
+        {
+            pending.Dispose();
+            pendingWellTexture = null;
+        }
+
+        if (wellTexture is { } old)
+        {
+            DeferredDispose.Later(old);
+            wellTexture = null;
+        }
     }
 
     private void AcceptWell(IDalamudTextureWrap wrap, int generation, string path)
