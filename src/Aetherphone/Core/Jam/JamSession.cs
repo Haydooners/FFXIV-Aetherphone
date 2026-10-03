@@ -476,6 +476,15 @@ internal sealed partial class JamSession : IDisposable
         awaitingSinceTicks = 0;
         disconnectedSinceTicks = 0;
         jamId = message.JamId ?? jamId;
+        if (Mode == JamMode.Listening)
+        {
+            ReleaseAuthority();
+            ResetGuestState();
+            SetMembers(null);
+            Mode = JamMode.Pending;
+            return;
+        }
+
         if (Mode is JamMode.Joining or JamMode.Pending)
         {
             Mode = JamMode.Pending;
