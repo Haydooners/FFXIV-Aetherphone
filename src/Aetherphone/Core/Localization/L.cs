@@ -2030,6 +2030,10 @@ internal static class L
                 "Rebuilt notifications in glass: banners slide in from the top, and Notification Center stacks each app's notifications, with a swipe to clear one"),
             new("changelog.r1042.9",
                 "Rebuilt the app switcher as glass cards over the blurred wallpaper, with your home screen as the first card and a swipe up to close an app"),
+            new("changelog.r1042.77",
+                "Rebuilt the minimized phone so it never changes size: a large clock over your wallpaper, and one glass card that flips between your widget pages and turns into music or call controls while they play"),
+            new("changelog.r1042.78",
+                "The minimap now shows the clock, notification banners, and music or call controls"),
             new("changelog.r1042.10",
                 "Apps with tabs now use a floating glass tab bar, and Notes, Calendar and Settings have large titles that shrink as you scroll"),
             new("changelog.r1042.11",
@@ -7422,13 +7426,16 @@ internal static class L
     internal static class Minimized
     {
         public static readonly LocString Title = new("minimized.title", "Minimized phone");
-        public static readonly LocString Hint = new("minimized.hint", "Pick what the small phone shows and the order it stacks in. Now playing, calls and alerts only take up room while something is happening.");
+        public static readonly LocString Live = new("minimized.live", "Live activities");
+        public static readonly LocString LiveHint = new("minimized.liveHint", "Music and calls take over the card at the bottom while they play. Notifications drop in as a banner over the clock.");
+        public static readonly LocString Pages = new("minimized.pages", "Card pages");
+        public static readonly LocString PagesHint = new("minimized.pagesHint", "Each page you turn on shows in the card at the bottom of the mini phone. Scroll the wheel over the card to flip between them.");
         public static readonly LocString Reset = new("minimized.reset", "Reset to default");
         public static readonly LocString Clock = new("minimized.clock", "Clock");
         public static readonly LocString Date = new("minimized.date", "Date");
         public static readonly LocString NowPlaying = new("minimized.nowPlaying", "Now playing");
         public static readonly LocString Calls = new("minimized.calls", "Calls");
-        public static readonly LocString Alerts = new("minimized.alerts", "Notification cards");
+        public static readonly LocString Banners = new("minimized.banners", "Notification banners");
         public static readonly LocString Badge = new("minimized.badge", "Unread badge");
         public static readonly LocString EorzeaClock = new("minimized.eorzeaClock", "Eorzea time");
         public static readonly LocString Weather = new("minimized.weather", "Weather");

@@ -33,32 +33,20 @@ internal sealed partial class MinimizedPhone
         return pcMusicShown;
     }
 
-    private float DrawPcMusic(ImDrawListPtr dl, Rect screen, float y, float presence)
+    private void DrawPcMusicCard(ImDrawListPtr drawList, Rect inner, float alpha, bool active)
     {
         var scale = frameScale;
-        var compactHeight = MusicHeight * scale;
-        var expandedHeight = MusicExpandedHeight * scale * frameExpandEased;
-        var section = SectionRect(screen, y, (compactHeight + expandedHeight) * presence);
-        musicHovered = frameBodyHovered && presence > 0.9f && UiInteract.Hover(section.Min, section.Max);
-        dl.PushClipRect(section.Min, section.Max, true);
-        var compact = new Rect(section.Min, new Vector2(section.Max.X, y + compactHeight));
-        var sectionAlpha = frameAlpha * presence;
-        var texture = pcMedia.Artwork(pcSnapshot, MinimizedPhoneRenderer.PcDiscDiameter(scale));
-        MinimizedPhoneRenderer.DrawPcMusicSection(dl, compact, pcSnapshot, texture, clock, sectionAlpha, scale,
-            frameTheme);
-        if (expandedHeight > 0.5f)
-        {
-            var row = new Rect(new Vector2(section.Min.X, compact.Max.Y),
-                new Vector2(section.Max.X, compact.Max.Y + expandedHeight));
-            var active = frameInteractive && frameExpandEased > ControlThreshold;
-            var result = MinimizedPhoneRenderer.DrawPcMusicTransport(dl, row, pcSnapshot, frameTheme,
-                sectionAlpha * frameExpandEased, active, scale);
-            ApplyPcMusicControl(result.Action);
-            controlHovered |= result.Hovered;
-        }
-
-        dl.PopClipRect();
-        return section.Max.Y;
+        var art = MinimizedPhoneRenderer.MusicArtRect(inner, scale);
+        var texture = pcMedia.Artwork(pcSnapshot, art.Width);
+        PcMediaView.DrawArt(drawList, art.Min, art.Width, MinimizedPhoneRenderer.ArtRadius(scale), texture,
+            pcSnapshot, MusicAccent, alpha);
+        MinimizedPhoneRenderer.DrawMusicText(drawList, inner, "minimized.pcmusic", PcMediaView.Title(pcSnapshot),
+            PcMediaView.Subtitle(pcSnapshot), frameInk, alpha, scale);
+        var state = new TransportState(pcSnapshot.CanPrevious, pcSnapshot.CanNext, pcSnapshot.CanPlayPause,
+            pcSnapshot.IsPlaying);
+        var result = MinimizedPhoneRenderer.DrawTransport(drawList, inner, state, frameInk, alpha, active, scale);
+        ApplyPcMusicControl(result.Action);
+        controlHovered |= result.Hovered;
     }
 
     private void ApplyPcMusicControl(MinimizedControl control)
