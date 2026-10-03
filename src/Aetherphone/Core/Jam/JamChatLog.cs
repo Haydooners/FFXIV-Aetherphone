@@ -3,7 +3,7 @@ using Aetherphone.Core.Telephony.Contracts;
 
 namespace Aetherphone.Core.Jam;
 
-internal sealed class JamChatLog
+internal sealed class JamChatLog : ILiveChatFeed
 {
     public const int Capacity = RadioChatRing.Capacity;
 

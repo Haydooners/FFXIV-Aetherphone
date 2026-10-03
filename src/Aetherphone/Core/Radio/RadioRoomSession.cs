@@ -3,7 +3,7 @@ using Aetherphone.Core.Telephony.Contracts;
 
 namespace Aetherphone.Core.Radio;
 
-internal sealed class RadioRoomSession
+internal sealed class RadioRoomSession : ILiveChatFeed
 {
     public const int MessageCapacity = RadioChatRing.Capacity;
     public const int MaxChatLength = 300;
@@ -85,6 +85,10 @@ internal sealed class RadioRoomSession
     {
         return messages.At(index);
     }
+
+    int ILiveChatFeed.Count => messages.Count;
+
+    RadioChatEntry ILiveChatFeed.At(int index) => messages.At(index);
 
     public RadioRequestEntry RequestAt(int index)
     {

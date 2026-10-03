@@ -90,7 +90,7 @@ internal sealed partial class MusicApp
     private void ResetStationPanels()
     {
         stationPanel = StationPanel.Chat;
-        chatFollow.Reset();
+        stationTranscript?.Reset();
         chatEditor.Adopt(string.Empty);
         requestDraft = string.Empty;
         reactionTrayOpen = false;
