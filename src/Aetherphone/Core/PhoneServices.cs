@@ -158,6 +158,7 @@ internal sealed class PhoneServices : IDisposable
     public required LibraryStore MusicLibrary { get; init; }
     public required WindowsMediaSessions WindowsMedia { get; init; }
     public required WindowsMediaPublisher WindowsMediaPublisher { get; init; }
+    public required PlaybackSystemBridge PlaybackBridge { get; init; }
     public required LyricsService Lyrics { get; init; }
     public required GameStatsStore GameStats { get; init; }
     public required VenuesService Venues { get; init; }
@@ -319,6 +320,8 @@ internal sealed class PhoneServices : IDisposable
         var lyricsDisk = new DiskCache(new DirectoryInfo(Path.Combine(cacheRoot.FullName, "lyrics")),
             16L * 1024 * 1024);
         var lyrics = new LyricsService(new LrcLibClient(http), lyricsDisk);
+        var mediaPublisher = new WindowsMediaPublisher(configuration, framework,
+            static () => Platform.GameWindowHandle.Current);
         var gameStats = new GameStatsStore(configuration);
         var rolladeck = new RolladeckService(http);
         var venues = new VenuesService(http, notifications, configuration, gameData, rolladeck);
@@ -500,8 +503,9 @@ internal sealed class PhoneServices : IDisposable
             Playback = playback,
             MusicLibrary = musicLibrary,
             WindowsMedia = new WindowsMediaSessions(configuration),
-            WindowsMediaPublisher = new WindowsMediaPublisher(configuration, framework,
-                static () => Platform.GameWindowHandle.Current),
+            WindowsMediaPublisher = mediaPublisher,
+            PlaybackBridge = new PlaybackSystemBridge(playback, mediaPublisher, remoteImages, configuration,
+                framework),
             Lyrics = lyrics,
             GameStats = gameStats,
             Venues = venues,
@@ -581,6 +585,7 @@ internal sealed class PhoneServices : IDisposable
         YellowPages.Dispose();
         AdInquiries.Dispose();
         Lyrics.Dispose();
+        PlaybackBridge.Dispose();
         Playback.Dispose();
         WindowsMediaPublisher.Dispose();
         WindowsMedia.Dispose();
