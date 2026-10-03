@@ -65,6 +65,17 @@ internal sealed partial class HuntsApp
             return;
         }
 
+        if (hunts.CurrentDataCenter is null)
+        {
+            if (DrawEmpty(body, FontAwesomeIcon.Globe, Loc.T(L.Hunts.NoDataCenterTitle),
+                    Loc.T(L.Hunts.NoDataCenterHint), Loc.T(L.Hunts.ChooseDataCenter)))
+            {
+                OpenFilters();
+            }
+
+            return;
+        }
+
         hunts.EnsureHistoryLoaded();
         if (!hunts.HistoryLoaded)
         {

@@ -233,7 +233,7 @@ internal sealed partial class HuntsApp
             case HuntBoardSection.Open:
                 trainOpenCount++;
                 break;
-            default:
+            case HuntBoardSection.Soon:
                 trainClosedCount++;
                 break;
         }
@@ -307,7 +307,8 @@ internal sealed partial class HuntsApp
 
     private void DrawTrainRow(Rect row, Rect bounds, HuntRow model, float scale)
     {
-        if (model.Section != HuntBoardSection.Live || model.TerritoryId == 0)
+        if (model.Section != HuntBoardSection.Live || model.TerritoryId == 0 ||
+            HuntDataCenterWorlds.WorldRowId(model.Window.WorldId) == 0)
         {
             DrawBoardRow(row, bounds, model, scale, Loc.T(L.Hunts.TrainsTab));
             return;

@@ -31,12 +31,64 @@ internal sealed partial class HuntsApp
     private readonly ChipRail dataCenterRail = new();
     private string[] dataCenterLabels = Array.Empty<string>();
     private bool[] dataCenterActive = Array.Empty<bool>();
+    private readonly List<string> foreignWorlds = new();
+    private string? filterDataCenter;
     private int savedFilterRevision = -1;
 
     private void OpenFilters()
     {
         savedFilterRevision = filter.Revision;
         Push(new HuntsView(HuntsRoute.Filters, BackTitle: RootTitle()));
+    }
+
+    private void SyncFilterDataCenter()
+    {
+        var dataCenter = hunts.CurrentDataCenter ?? string.Empty;
+        if (string.Equals(dataCenter, filterDataCenter, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        filterDataCenter = dataCenter;
+        if (filter.Worlds.Count == 0)
+        {
+            return;
+        }
+
+        var worlds = HuntDataCenterWorlds.WorldsFor(dataCenter);
+        foreignWorlds.Clear();
+        foreach (var selected in filter.Worlds)
+        {
+            if (!ContainsWorld(worlds, selected))
+            {
+                foreignWorlds.Add(selected);
+            }
+        }
+
+        if (foreignWorlds.Count == 0)
+        {
+            return;
+        }
+
+        for (var index = 0; index < foreignWorlds.Count; index++)
+        {
+            filter.ToggleWorld(foreignWorlds[index]);
+        }
+
+        filterStore.Save(filter.ToSnapshot());
+    }
+
+    private static bool ContainsWorld(string[] worlds, string worldId)
+    {
+        for (var index = 0; index < worlds.Length; index++)
+        {
+            if (string.Equals(worlds[index], worldId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void SaveFiltersIfDirty()

@@ -44,6 +44,8 @@ internal sealed partial class HuntsApp
     private readonly Dictionary<int, string> rewardCaptions = new();
     private readonly Dictionary<double, string> hoursLabels = new();
     private object? hoursLabelCulture;
+    private readonly Dictionary<int, string> coordinateLabels = new();
+    private float timelineLabelRight;
     private string detailKey = string.Empty;
     private string detailKeyWorld = string.Empty;
     private int detailKeyInstance;
@@ -322,6 +324,7 @@ internal sealed partial class HuntsApp
             HuntsArt.Timeline(drawList, bar, in line, statusInk == ui.TitleInk ? ui.Accent : statusInk, statusInk,
                 ui.TitleInk, scale);
             top += DetailBarHeight * scale + gap;
+            timelineLabelRight = float.MinValue;
             DrawTimelineLabel(drawList, bar, line.Minimum, detailOpensLabel, top);
             DrawTimelineLabel(drawList, bar, line.Cap, detailCapLabel, top);
             top += footHeight;
@@ -356,8 +359,15 @@ internal sealed partial class HuntsApp
         }
 
         var width = Typography.Measure(text, TextStyles.Footnote).X;
-        var x = Math.Clamp(bar.Min.X + bar.Width * fraction - width * 0.5f, bar.Min.X, bar.Max.X - width);
-        Typography.Draw(drawList, new Vector2(x, top), text, ui.MutedInk, TextStyles.Footnote);
+        var x = MathF.Max(bar.Min.X, MathF.Min(bar.Min.X + bar.Width * fraction - width * 0.5f, bar.Max.X - width));
+        if (x < timelineLabelRight)
+        {
+            return;
+        }
+
+        Typography.Draw(drawList, new Vector2(x, top), Typography.FitText(text, bar.Width, TextStyles.Footnote),
+            ui.MutedInk, TextStyles.Footnote);
+        timelineLabelRight = x + width + HuntsArt.TileGap * UiScale.Current;
     }
 
     private void DrawDetailActions(HuntsView view, float scale)
@@ -583,7 +593,13 @@ internal sealed partial class HuntsApp
             return;
         }
 
-        HoverTooltip.Show(new Rect(hitMin, hitMax), CoordinateText(coordinate.X, coordinate.Y), HoverLabelSide.Above);
+        if (!coordinateLabels.TryGetValue(poiId, out var label))
+        {
+            label = CoordinateText(coordinate.X, coordinate.Y);
+            coordinateLabels[poiId] = label;
+        }
+
+        HoverTooltip.Show(new Rect(hitMin, hitMax), label, HoverLabelSide.Above);
     }
 
     private void DrawAetheryteDot(ImDrawListPtr drawList, Vector2 center, float scale, HuntPoiEntry poi,
@@ -669,13 +685,14 @@ internal sealed partial class HuntsApp
         var settings = hunts.NotificationSettings;
         var mode = settings.MobOverrideModeFor(view.MobId);
         var overrideWorld = settings.MobOverrideWorldFor(view.MobId);
-        var worldId = mode == HuntMobNotificationMode.EnabledOnWorld && overrideWorld is { Length: > 0 }
+        var hintWorld = mode == HuntMobNotificationMode.EnabledOnWorld && overrideWorld is { Length: > 0 }
             ? overrideWorld
             : view.WorldId;
         alertOptions[0] = Loc.T(L.Hunts.AlertModeDefault);
         alertOptions[1] = Loc.T(L.Hunts.AlertModeOn);
-        alertOptions[2] = ResolveWorldLabel(worldId);
+        alertOptions[2] = ResolveWorldLabel(view.WorldId);
         alertOptions[3] = Loc.T(L.Hunts.AlertModeOff);
+        var signedIn = hunts.IsAuthenticated;
         var selected = mode switch
         {
             HuntMobNotificationMode.Enabled => 1,
@@ -683,7 +700,7 @@ internal sealed partial class HuntsApp
             HuntMobNotificationMode.Disabled => 3,
             _ => 0,
         };
-        var hint = AlertHint(mode, alertOptions[2]);
+        var hint = AlertHint(mode, ResolveWorldLabel(hintWorld));
         ui.SectionLabel(Loc.T(L.Hunts.MarkAlertsSection), TextStyles.FootnoteEmphasized, 6f);
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
@@ -696,20 +713,30 @@ internal sealed partial class HuntsApp
         ui.Card(drawList, card.Min, card.Max, HuntsArt.CardRadius * scale);
         var strip = new Rect(new Vector2(card.Min.X + pad, card.Min.Y + pad),
             new Vector2(card.Max.X - pad, card.Min.Y + pad + AlertStripHeight * scale));
-        var picked = SegmentStrip.Draw("hunts.detail.alertMode", strip, alertOptions, selected,
-            Palette.Mix(ui.FieldSurface, ui.TitleInk, 0.06f), ui.Accent, ui.MutedInk, AccentRing.Ink, AlertStripHeight);
+        int picked;
+        bool pressed;
+        using (ImRaii.PushStyle(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * (signedIn ? 1f : AlertsDisabledAlpha)))
+        {
+            picked = SegmentStrip.Draw("hunts.detail.alertMode", strip, alertOptions, selected,
+                Palette.Mix(ui.FieldSurface, ui.TitleInk, 0.06f), ui.Accent, ui.MutedInk, AccentRing.Ink, out pressed,
+                AlertStripHeight);
+        }
+
         Typography.DrawWrappedLeft(new Vector2(card.Min.X + pad, strip.Max.Y + HuntsArt.RowGap * scale * 0.75f), hint,
             ui.MutedInk, TextStyles.Footnote, width - pad * 2f);
-        if (picked != selected)
+        var next = picked switch
         {
-            var next = picked switch
-            {
-                1 => HuntMobNotificationMode.Enabled,
-                2 => HuntMobNotificationMode.EnabledOnWorld,
-                3 => HuntMobNotificationMode.Disabled,
-                _ => HuntMobNotificationMode.Default,
-            };
-            settings.SetMobOverride(view.MobId, next, next == HuntMobNotificationMode.EnabledOnWorld ? worldId : null);
+            1 => HuntMobNotificationMode.Enabled,
+            2 => HuntMobNotificationMode.EnabledOnWorld,
+            3 => HuntMobNotificationMode.Disabled,
+            _ => HuntMobNotificationMode.Default,
+        };
+        var retarget = next == HuntMobNotificationMode.EnabledOnWorld &&
+                       !string.Equals(overrideWorld, view.WorldId, StringComparison.OrdinalIgnoreCase);
+        if (signedIn && pressed && (next != mode || retarget))
+        {
+            settings.SetMobOverride(view.MobId, next,
+                next == HuntMobNotificationMode.EnabledOnWorld ? view.WorldId : null);
             hunts.SaveNotificationSettings();
             UiFeedback.Play(next == HuntMobNotificationMode.Disabled ? UiSound.ToggleOff : UiSound.ToggleOn);
         }

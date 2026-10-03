@@ -30,14 +30,18 @@ internal sealed partial class HuntsApp
         Push(new HuntsView(HuntsRoute.Account, BackTitle: RootTitle()));
     }
 
-    private void DrawAccount(in PhoneContext context, HuntsView view)
+    private void ConsumeLoginResult()
     {
+        var onAccount = router.Current.Route == HuntsRoute.Account;
         if (hunts.LoginFlow.ConsumeSucceeded())
         {
             hunts.Retry();
             hunts.EnsureHistoryLoaded();
             UiFeedback.Play(UiSound.Success);
-            router.Pop();
+            if (onAccount)
+            {
+                router.Pop();
+            }
         }
 
         if (hunts.LoginFlow.ConsumeFailure() is not null)
@@ -45,7 +49,10 @@ internal sealed partial class HuntsApp
             signupFailed = true;
             UiFeedback.Play(UiSound.Caution);
         }
+    }
 
+    private void DrawAccount(in PhoneContext context, HuntsView view)
+    {
         var scale = UiScale.Current;
         var navBar = AppHeader.BeginLargeTitle(context);
         using (ImRaii.PushId("hunts.account"))

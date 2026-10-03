@@ -41,6 +41,7 @@ internal sealed partial class HuntsApp
     private readonly List<string> alertOverrideLabels = new();
     private readonly List<string> alertOverrideRanks = new();
     private bool alertSettingsDirty;
+    private string alertOverridesLanguage = string.Empty;
     private volatile bool alertOverridesDirty = true;
 
     private void MarkAlertOverridesDirty() => alertOverridesDirty = true;
@@ -249,12 +250,13 @@ internal sealed partial class HuntsApp
 
     private void EnsureAlertOverrides()
     {
-        if (!alertOverridesDirty)
+        if (!alertOverridesDirty && string.Equals(configuration.Language, alertOverridesLanguage, StringComparison.Ordinal))
         {
             return;
         }
 
         alertOverridesDirty = false;
+        alertOverridesLanguage = configuration.Language;
         hunts.NotificationSettings.CollectMobOverrides(alertOverrides);
         alertOverrides.Sort((left, right) => string.Compare(ResolveMobLabel(mobCatalog.Find(left.MobId), left.MobId),
             ResolveMobLabel(mobCatalog.Find(right.MobId), right.MobId), StringComparison.CurrentCultureIgnoreCase));

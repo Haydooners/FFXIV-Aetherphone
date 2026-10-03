@@ -139,6 +139,10 @@ internal sealed partial class HuntsApp : IPhoneApp, ITabRouteTarget
         {
             router.Reset();
             activeTab = HuntsTab.Now;
+            if (hunts.CurrentDataCenter is null)
+            {
+                OpenFilters();
+            }
         }
 
         if (pendingTab.Take(AlertsIntent))
@@ -147,6 +151,8 @@ internal sealed partial class HuntsApp : IPhoneApp, ITabRouteTarget
             activeTab = HuntsTab.Alerts;
         }
 
+        SyncFilterDataCenter();
+        ConsumeLoginResult();
         frameTheme = context.Theme;
         ui.Theme = context.Theme;
         navigation = context.Navigation;
