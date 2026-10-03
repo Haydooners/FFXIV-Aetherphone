@@ -55,6 +55,40 @@ internal static class Squircle
         drawList.AddDrawCmd();
     }
 
+    public static void FillImageMapped(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius,
+        ImTextureID texture, in TextureMap map, uint topColor, uint bottomColor)
+    {
+        if (((topColor | bottomColor) & AlphaMask) == 0)
+        {
+            return;
+        }
+
+        var box = CornerBox(min, max, radius);
+        drawList.AddDrawCmd();
+        var firstCommand = drawList.CmdBuffer.Size - 1;
+        var firstVertex = drawList.VtxBuffer.Size;
+        if (box <= DegenerateBox)
+        {
+            drawList.AddRectFilled(min, max, topColor | AlphaMask);
+        }
+        else
+        {
+            TracePath(drawList, min, max, box);
+            drawList.PathFillConvex(topColor | AlphaMask);
+        }
+
+        var vertices = drawList.VtxBuffer.AsSpan();
+        for (var index = firstVertex; index < vertices.Length; index++)
+        {
+            ref var vertex = ref vertices[index];
+            vertex.Uv = map.At(vertex.Pos);
+        }
+
+        ShadeVertical(drawList, firstVertex, min.Y, max.Y, topColor, bottomColor);
+        BindTexture(drawList, firstCommand, texture);
+        drawList.AddDrawCmd();
+    }
+
     public static void FillImageEdge(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float band,
         ImTextureID texture, uint tint, Vector2 uv0, Vector2 uv1, float refraction)
     {

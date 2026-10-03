@@ -282,6 +282,7 @@ public sealed class Plugin : IDalamudPlugin
         Device?.Dispose();
         Windows.Components.AppIconCache.Dispose();
         Windows.Components.BrandMark.Dispose();
+        Apps.Skywatcher.Sky.SkyTextures.Dispose();
         Fonts?.Dispose();
     }
 
@@ -422,6 +423,7 @@ public sealed class Plugin : IDalamudPlugin
         Device.Dispose();
         Windows.Components.AppIconCache.Dispose();
         Windows.Components.BrandMark.Dispose();
+        Apps.Skywatcher.Sky.SkyTextures.Dispose();
         Fonts.Dispose();
         CommandManager.RemoveHandler(AepConstants.PrimaryCommand);
         CommandManager.RemoveHandler(AepConstants.AliasCommand);

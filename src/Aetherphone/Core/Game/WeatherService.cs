@@ -11,6 +11,8 @@ internal readonly record struct WeatherWindow(WeatherEntry Weather, int MinutesF
 
 internal readonly record struct WeatherZone(uint TerritoryId, string Name);
 
+internal readonly record struct WeatherOdds(WeatherEntry Weather, int Percent);
+
 internal sealed class WeatherService
 {
     private const long RealSecondsPerEorzeaHour = 175;
@@ -133,6 +135,53 @@ internal sealed class WeatherService
             var windowBell = (int)(timestamp / RealSecondsPerEorzeaHour % 24);
             into.Add(new WeatherWindow(entry, minutes, index == 0, windowBell));
         }
+    }
+
+    public void Odds(uint territoryId, List<WeatherOdds> into)
+    {
+        into.Clear();
+        var zoneChances = ChancesFor(territoryId);
+        var previous = 0;
+        for (var index = 0; index < zoneChances.Length; index++)
+        {
+            var chance = zoneChances[index];
+            var percent = chance.Cumulative - previous;
+            previous = chance.Cumulative;
+            var merged = false;
+            for (var existing = 0; existing < into.Count; existing++)
+            {
+                if (into[existing].Weather.Id != chance.Id)
+                {
+                    continue;
+                }
+
+                into[existing] = into[existing] with { Percent = into[existing].Percent + percent };
+                merged = true;
+                break;
+            }
+
+            if (!merged)
+            {
+                into.Add(new WeatherOdds(Entry(chance.Id), percent));
+            }
+        }
+    }
+
+    public int MinutesUntil(uint territoryId, byte weatherId, int maxWindows)
+    {
+        var zoneChances = ChancesFor(territoryId);
+        var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var startUnix = nowUnix - nowUnix % RealSecondsPerWindow;
+        for (var index = 0; index < maxWindows; index++)
+        {
+            var timestamp = startUnix + index * RealSecondsPerWindow;
+            if (Resolve(zoneChances, ForecastTarget(timestamp)) == weatherId)
+            {
+                return index == 0 ? 0 : Math.Max(1, (int)((timestamp - nowUnix) / 60));
+            }
+        }
+
+        return -1;
     }
 
     public void WeatherZones(List<WeatherZone> into)

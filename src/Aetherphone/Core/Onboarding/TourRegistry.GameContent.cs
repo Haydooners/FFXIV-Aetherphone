@@ -6,13 +6,15 @@ internal static partial class TourRegistry
 {
     private static void AddGameContentTours(Dictionary<string, GuideSequence> tours)
     {
-        Add(tours, "skywatcher", 3,
+        Add(tours, "skywatcher", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.SkywatcherCurrentTitle, L.Onboarding.SkywatcherCurrentBody,
                     "skywatcher.current", GuideGesture.None),
                 GuideStep.Point(L.Onboarding.SkywatcherForecastTitle, L.Onboarding.SkywatcherHoursBody,
                     "skywatcher.forecast", GuideGesture.None),
+                GuideStep.Point(L.Onboarding.SkywatcherZonesTitle, L.Onboarding.SkywatcherZonesBody,
+                    "skywatcher.tab.zones", GuideGesture.Tap),
                 GuideStep.TryTap(L.Onboarding.SkywatcherControlTitle, L.Onboarding.SkywatcherControlBody,
                     "skywatcher.tab.control"),
                 GuideStep.Point(L.Onboarding.SkywatcherTimeTitle, L.Onboarding.SkywatcherTimeBody,

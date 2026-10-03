@@ -6278,6 +6278,23 @@ internal static class L
 
         public static readonly LocString NothingToChange = new("skywatcher.nothingToChange",
             "No weather to change here");
+
+        public static readonly LocString Zones = new("skywatcher.zones", "Zones");
+        public static readonly LocString CurrentZone = new("skywatcher.currentZone", "Current Zone");
+        public static readonly LocString SearchZones = new("skywatcher.searchZones", "Search zones");
+        public static readonly LocString NoZoneMatch = new("skywatcher.noZoneMatch", "No zones match");
+
+        public static readonly LocString ZonesEmpty = new("skywatcher.zonesEmpty",
+            "Search for a zone to keep an eye on its sky.");
+
+        public static readonly LocString Edit = new("skywatcher.edit", "Edit");
+        public static readonly LocString Done = new("skywatcher.done", "Done");
+        public static readonly LocString WeatherOdds = new("skywatcher.weatherOdds", "Weather Odds");
+        public static readonly LocString Percent = new("skywatcher.percent", "{0}%");
+        public static readonly LocString NotSoon = new("skywatcher.notSoon", "Not soon");
+        public static readonly LocString Sun = new("skywatcher.sun", "Sun");
+        public static readonly LocString ThisWindow = new("skywatcher.thisWindow", "This Window");
+        public static readonly LocString Then = new("skywatcher.then", "Then {0}");
     }
 
     internal static class News
@@ -7715,6 +7732,8 @@ internal static class L
         public static readonly LocString SkywatcherHoursBody = new("onboarding.skywatcherHoursBody", "Each upcoming weather window, with the real minutes until it starts.");
         public static readonly LocString SkywatcherControlTitle = new("onboarding.skywatcherControlTitle", "Set your own sky");
         public static readonly LocString SkywatcherControlBody = new("onboarding.skywatcherControlBody", "Tap Control to choose the time and weather you see.");
+        public static readonly LocString SkywatcherZonesTitle = new("onboarding.skywatcherZonesTitle", "Watch other zones");
+        public static readonly LocString SkywatcherZonesBody = new("onboarding.skywatcherZonesBody", "Save zones under Zones to see their sky at a glance, then tap one for its full forecast.");
         public static readonly LocString SkywatcherTimeTitle = new("onboarding.skywatcherTimeTitle", "Pick a time");
         public static readonly LocString SkywatcherTimeBody = new("onboarding.skywatcherTimeBody", "Drag the bar, or tap Dawn, Noon, Dusk or Midnight, to change the time of day around you.");
         public static readonly LocString SkywatcherWeatherTitle = new("onboarding.skywatcherWeatherTitle", "Pick a weather");
