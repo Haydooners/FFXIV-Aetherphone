@@ -19,8 +19,6 @@ internal sealed class RootSettingsPage : ISettingsPage
     public string Summary => string.Empty;
     public FontAwesomeIcon Icon => FontAwesomeIcon.Cog;
     public Vector4 Tint => new(0.56f, 0.57f, 0.63f, 1f);
-    public bool OwnsChrome => true;
-    private const float TitleBand = 60f;
     private const float BlockGap = 18f;
     private const float CardGap = Metrics.Space.Xl;
     private static readonly Vector4 DiscordTint = new(0.345f, 0.396f, 0.949f, 1f);
@@ -51,12 +49,10 @@ internal sealed class RootSettingsPage : ISettingsPage
         this.accountPage = accountPage;
     }
 
-    public void Draw(in PhoneContext context, Rect area)
+    public void Draw(in PhoneContext context, Rect body)
     {
         var scale = UiScale.Current;
         var theme = context.Theme;
-        DrawTitle(area, theme, scale);
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + TitleBand * scale), area.Max);
         using (AppSurface.Begin(body))
         {
             var accountOpened = SettingsHero.Draw(theme, session, images, lodestone);
@@ -77,15 +73,6 @@ internal sealed class RootSettingsPage : ISettingsPage
             DrawVersion(theme);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
         }
-    }
-
-    private static void DrawTitle(Rect area, PhoneTheme theme, float scale)
-    {
-        var title = Loc.T(L.Settings.Title);
-        var size = Typography.Measure(title, TextStyles.LargeTitle);
-        var origin = new Vector2(area.Min.X + Metrics.Space.Lg * scale,
-            area.Min.Y + TitleBand * scale - size.Y - Metrics.Space.Md * scale);
-        Typography.Draw(ImGui.GetWindowDrawList(), origin, title, theme.TextStrong, TextStyles.LargeTitle);
     }
 
     private void DrawQuickSwitches(PhoneTheme theme)

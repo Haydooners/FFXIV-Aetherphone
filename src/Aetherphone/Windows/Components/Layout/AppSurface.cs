@@ -8,10 +8,32 @@ namespace Aetherphone.Windows.Components;
 internal static class AppSurface
 {
     public const float SidePadding = 16f;
+    private const float TopPadding = 8f;
+    private const float NavBarSnapTolerance = 0.5f;
+
+    private static int depth;
+    private static bool navBarArmed;
+    private static float navBarBodyTop;
+    private static float navBarInset;
 
     public static bool ActiveFreshVisit { get; private set; }
 
     public static Vector4? ScrollbarInk { get; set; }
+
+    public static bool NavBarConsumed { get; private set; }
+
+    public static float NavBarScrollY { get; private set; }
+
+    public static void ArmNavBar(float bodyTop, float topInset)
+    {
+        navBarArmed = true;
+        navBarBodyTop = bodyTop;
+        navBarInset = topInset;
+        NavBarConsumed = false;
+        NavBarScrollY = 0f;
+    }
+
+    public static void DisarmNavBar() => navBarArmed = false;
 
     public static SurfaceScope Begin(Rect area, bool disableMouseWheelScroll = false) =>
         BeginCore(area, SidePadding, disableMouseWheelScroll);
@@ -25,10 +47,17 @@ internal static class AppSurface
     private static SurfaceScope BeginCore(Rect area, float horizontalPadding, bool disableMouseWheelScroll)
     {
         var scale = UiScale.Current;
+        var hostsNavBar = navBarArmed && depth == 0 &&
+                          MathF.Abs(area.Min.Y - navBarBodyTop) <= NavBarSnapTolerance;
+        if (hostsNavBar)
+        {
+            area = new Rect(new Vector2(area.Min.X, area.Min.Y - navBarInset), area.Max);
+        }
+
         ImGui.SetCursorScreenPos(area.Min);
         var key = ImGui.GetID("##appSurface");
         var padding = ImRaii.PushStyle(ImGuiStyleVar.WindowPadding,
-            new Vector2(horizontalPadding * scale, 8f * scale));
+            new Vector2(horizontalPadding * scale, TopPadding * scale));
         var flags = DragScrollHost.ScrollFlags(ImGuiWindowFlags.NoBackground);
         if (disableMouseWheelScroll)
         {
@@ -39,7 +68,24 @@ internal static class AppSurface
         var child = ImRaii.Child("##appSurface", area.Size, false, flags);
         var freshVisit = ResetScrollOnNewVisit();
         ActiveFreshVisit = freshVisit;
-        return new SurfaceScope(child, padding, scrollbar, DragScrollHost.Begin(key), freshVisit);
+        var surface = DragScrollHost.Begin(key);
+        if (hostsNavBar)
+        {
+            ReserveNavBarBand(freshVisit);
+        }
+
+        depth++;
+        return new SurfaceScope(child, padding, scrollbar, surface, freshVisit);
+    }
+
+    private static void ReserveNavBarBand(bool freshVisit)
+    {
+        navBarArmed = false;
+        NavBarConsumed = true;
+        NavBarScrollY = freshVisit ? 0f : ImGui.GetScrollY();
+        var style = ImGui.GetStyle();
+        var reserve = MathF.Max(0f, navBarInset - style.WindowPadding.Y - style.ItemSpacing.Y);
+        ImGui.Dummy(new Vector2(0f, reserve));
     }
 
     public static bool ResetScrollOnNewVisit()
@@ -97,6 +143,7 @@ internal static class AppSurface
         public void Dispose()
         {
             ActiveFreshVisit = false;
+            depth = Math.Max(0, depth - 1);
             child.Dispose();
             padding?.Dispose();
             scrollbar?.Dispose();

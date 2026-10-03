@@ -281,11 +281,11 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
             return;
         }
 
-        var onBack = depth > 1 ? popBack : null;
-        AppHeader.Draw(context, page.Title, onBack);
-        var scale = UiScale.Current;
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
-        page.Draw(context, body);
+        var navBar = AppHeader.BeginLargeTitle(context);
+        page.Draw(context, navBar.Body);
+        var backTitle = depth > 1 && router.TryGetView(depth - 2, out var previous) ? previous.Title : string.Empty;
+        AppHeader.EndLargeTitle(in navBar, context, "settings.nav", page.Title, NavBarStyle.From(frameTheme),
+            ReadOnlySpan<NavBarButton>.Empty, backTitle, depth > 1 ? popBack : null);
     }
 
     private ISettingsPage PageFor(SettingsPageKind kind) => kind switch

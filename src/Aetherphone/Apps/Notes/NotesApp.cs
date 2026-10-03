@@ -25,6 +25,7 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes
     private const float ReminderRowHeight = 56f;
     private const int NoteMaxLength = 8000;
     private const int ReminderMaxLength = 120;
+    private const float SegmentHeight = 30f;
 
     public string Id => "notes";
     public string DisplayName => Loc.T(L.Apps.Notes);
@@ -40,6 +41,7 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes
     private readonly RouterDraw<NotesScreen> drawView;
     private readonly Action back;
     private readonly string[] tabOptions = new string[2];
+    private readonly NavBarButton[] headerButtons = new NavBarButton[1];
     private PhoneTheme theme = PhoneTheme.Default;
     private INavigator navigation = null!;
     private int activeTab;
@@ -150,22 +152,12 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes
             activeTab = 1;
         }
 
-        DrawTopBar(content, scale);
-
-        var segMargin = Metrics.Space.Lg * scale;
-        var segTop = content.Min.Y + AppHeader.Height * scale + Metrics.Space.Sm * scale;
-        var segRow = new Rect(new Vector2(content.Min.X + segMargin, segTop),
-            new Vector2(content.Max.X - segMargin, segTop + 30f * scale));
-        UiAnchors.Report("notes.tabs", segRow);
-        UiAnchors.Report("notes.tab.reminders",
-            new Rect(new Vector2(segRow.Center.X, segRow.Min.Y), segRow.Max));
-        tabOptions[0] = Loc.T(L.Notes.TabNotes);
-        tabOptions[1] = Loc.T(L.Notes.TabReminders);
-        activeTab = SegmentStrip.Draw("notes.tabs", segRow, tabOptions, activeTab, theme);
-
-        var body = new Rect(new Vector2(content.Min.X, segRow.Max.Y + 10f * scale), content.Max);
+        var context = new PhoneContext(content, theme, navigation);
+        var navBar = AppHeader.BeginLargeTitle(context);
+        var body = navBar.Body;
         using (AppSurface.Begin(body))
         {
+            DrawTabs(scale);
             if (activeTab == 0)
             {
                 DrawNotesList(body, scale);
@@ -177,30 +169,39 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes
 
             ImGui.Dummy(new Vector2(0f, 10f * scale));
         }
+
+        headerButtons[0] = new NavBarButton(IconGlyph.Of(FontAwesomeIcon.Plus),
+            activeTab == 0 ? Loc.T(L.Notes.NewNote) : Loc.T(L.Notes.NewReminder));
+        UiAnchors.Report("notes.new", AppHeader.LargeTitleButtonRect(in navBar, 0, headerButtons.Length));
+        var pressed = AppHeader.EndLargeTitle(in navBar, context, "notes.nav", DisplayName, NavBarStyle.From(ui),
+            headerButtons);
+        if (pressed != 0)
+        {
+            return;
+        }
+
+        if (activeTab == 0)
+        {
+            StartNewNote();
+        }
+        else
+        {
+            StartNewReminder();
+        }
     }
 
-    private void DrawTopBar(Rect content, float scale)
+    private void DrawTabs(float scale)
     {
-        var centerY = content.Min.Y + AppHeader.Height * scale * 0.5f;
-        Typography.DrawCentered(new Vector2(content.Center.X, centerY), DisplayName, ui.TitleInk, 1.15f,
-            FontWeight.SemiBold);
-        var radius = 15f * scale;
-        var buttonCenter = new Vector2(content.Max.X - Metrics.Space.Lg * scale - radius, centerY);
-        UiAnchors.Report("notes.new",
-            new Rect(buttonCenter - new Vector2(radius, radius), buttonCenter + new Vector2(radius, radius)));
-        var tooltip = activeTab == 0 ? Loc.T(L.Notes.NewNote) : Loc.T(L.Notes.NewReminder);
-        if (ui.IconButton(buttonCenter, radius, IconGlyph.Of(FontAwesomeIcon.Plus), ui.TitleInk,
-                Palette.WithAlpha(ui.TitleInk, 0.12f), 0.6f, tooltip))
-        {
-            if (activeTab == 0)
-            {
-                StartNewNote();
-            }
-            else
-            {
-                StartNewReminder();
-            }
-        }
+        var top = ImGui.GetCursorScreenPos();
+        var segRow = new Rect(top,
+            new Vector2(top.X + ImGui.GetContentRegionAvail().X, top.Y + SegmentHeight * scale));
+        UiAnchors.Report("notes.tabs", segRow);
+        UiAnchors.Report("notes.tab.reminders",
+            new Rect(new Vector2(segRow.Center.X, segRow.Min.Y), segRow.Max));
+        tabOptions[0] = Loc.T(L.Notes.TabNotes);
+        tabOptions[1] = Loc.T(L.Notes.TabReminders);
+        activeTab = SegmentStrip.Draw("notes.tabs", segRow, tabOptions, activeTab, theme);
+        ImGui.Dummy(new Vector2(0f, (SegmentHeight + Metrics.Space.Xs) * scale));
     }
 
     private void DrawNotesList(Rect body, float scale)
