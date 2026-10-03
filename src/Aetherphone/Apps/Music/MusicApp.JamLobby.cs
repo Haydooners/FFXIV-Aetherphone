@@ -34,6 +34,7 @@ internal sealed partial class MusicApp
     {
         var scale = UiScale.Current;
         EnsureJamMembers();
+        jam.WantNearby();
         var frame = BeginPage(context);
         using (AppSurface.BeginEdgeToEdge(frame.Body))
         {
@@ -113,6 +114,7 @@ internal sealed partial class MusicApp
 
         SectionHeader.Draw(ui, Loc.T(L.Music.Jam.JoinHeader), false);
         DrawJamCodeJoin(scale);
+        DrawJamNearby(scale);
     }
 
     private void DrawJamCodeJoin(float scale)

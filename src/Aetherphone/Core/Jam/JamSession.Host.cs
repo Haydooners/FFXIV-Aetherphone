@@ -9,7 +9,6 @@ internal sealed partial class JamSession
     // Comfortably inside the server's 30 s stale window even if one heartbeat is lost.
     private const float HeartbeatSeconds = 8f;
     private const double PositionJumpSeconds = 2.0;
-    private const long AdvanceTimeoutMilliseconds = 6_000;
 
     // Seeding goes through the queue pacer (7 operations per 4.25 s), so 20 songs land in about 12 s.
     private const int SeedCap = 20;
@@ -23,9 +22,12 @@ internal sealed partial class JamSession
     private long lastPublishedAtTicks;
     private bool lastPublishedPaused;
     private int advanceEntryId;
-    private string advanceVideoId = string.Empty;
+    private Song advanceSong;
     private bool advanceArmed;
+    private bool advanceRetried;
+    private bool advanceFromTrackEnd;
     private long advanceRequestedAtTicks;
+    private long queueWaitSinceTicks;
 
     private void BecomeHost()
     {
@@ -56,12 +58,14 @@ internal sealed partial class JamSession
         lastPublishedPosition = 0d;
         lastPublishedAtTicks = 0;
         lastPublishedPaused = false;
+        queueWaitSinceTicks = 0;
         ClearAdvance();
     }
 
     private bool HandleHostIntent(in PlaybackIntent intent)
     {
-        var context = new JamHostContext(hub.SongActive, queue.Length, hub.RepeatMode == SongRepeatMode.One);
+        var context = new JamHostContext(hub.SongActive, queue.Length, hub.RepeatMode == SongRepeatMode.One,
+            AddInFlight(Environment.TickCount64));
         var decision = JamIntentRouting.ForHost(intent.Kind, context);
         switch (decision.Route)
         {
@@ -69,10 +73,14 @@ internal sealed partial class JamSession
                 publishRequested = true;
                 return false;
             case JamRoute.Advance:
-                RequestAdvance(0);
+                RequestAdvance(0, intent.Kind == PlaybackIntentKind.TrackEnded);
                 return true;
             case JamRoute.AdvanceTo:
-                RequestAdvance(intent.EntryId);
+                RequestAdvance(intent.EntryId, false);
+                return true;
+            case JamRoute.AwaitQueue:
+                queueWaitSinceTicks = Environment.TickCount64;
+                publishRequested = true;
                 return true;
             case JamRoute.PlayNow:
                 PlayNowAsHost(intent.Songs, intent.Index);
@@ -117,6 +125,7 @@ internal sealed partial class JamSession
 
         var start = Math.Clamp(index, 0, songs.Length - 1);
         ClearAdvance();
+        queueWaitSinceTicks = 0;
         hub.PlayRemote(songs[start], 0d, false);
         publishRequested = true;
         if (queue.Length > 0)
@@ -131,7 +140,7 @@ internal sealed partial class JamSession
         }
     }
 
-    private void RequestAdvance(int entryId)
+    private void RequestAdvance(int entryId, bool fromTrackEnd)
     {
         var index = entryId == 0 ? (queue.Length > 0 ? 0 : -1) : JamWire.IndexOfEntry(queue, entryId);
         if (index < 0)
@@ -140,11 +149,19 @@ internal sealed partial class JamSession
         }
 
         var target = queue[index];
+        queueWaitSinceTicks = 0;
         advanceEntryId = target.EntryId;
-        advanceVideoId = target.Song.VideoId;
+        advanceSong = target.Song;
         advanceArmed = false;
+        advanceRetried = false;
+        advanceFromTrackEnd = fromTrackEnd;
+        SendAdvance();
+    }
+
+    private void SendAdvance()
+    {
         advanceRequestedAtTicks = Environment.TickCount64;
-        Enqueue(new CallControl { Type = SignalType.JamQueueAdvance, EntryId = target.EntryId }, urgent: true);
+        Enqueue(new CallControl { Type = SignalType.JamQueueAdvance, EntryId = advanceEntryId }, urgent: true);
     }
 
     private void ArmAdvanceIfPopped()
@@ -156,16 +173,29 @@ internal sealed partial class JamSession
         }
     }
 
+    private void OnHostQueue()
+    {
+        ArmAdvanceIfPopped();
+        if (Mode == JamMode.Hosting && queueWaitSinceTicks != 0 && queue.Length > 0)
+        {
+            RequestAdvance(0, true);
+        }
+    }
+
     private void OnHostStateEcho(CallControl message)
     {
         if (!advanceArmed || message.Track is not { } track
-            || !string.Equals(track.VideoId, advanceVideoId, StringComparison.Ordinal))
+            || !string.Equals(track.VideoId, advanceSong.VideoId, StringComparison.Ordinal))
         {
             return;
         }
 
         ClearAdvance();
-        var song = JamWire.ToSong(track);
+        PlayAdvanced(JamWire.ToSong(track));
+    }
+
+    private void PlayAdvanced(in Song song)
+    {
         if (hub.SongActive && string.Equals(hub.CurrentSong.VideoId, song.VideoId, StringComparison.Ordinal))
         {
             hub.Songs.Seek(0f);
@@ -185,9 +215,58 @@ internal sealed partial class JamSession
     private void ClearAdvance()
     {
         advanceEntryId = 0;
-        advanceVideoId = string.Empty;
+        advanceSong = default;
         advanceArmed = false;
+        advanceRetried = false;
+        advanceFromTrackEnd = false;
         advanceRequestedAtTicks = 0;
+    }
+
+    private void TickAdvance(long now)
+    {
+        switch (JamHostRecovery.Advance(now - advanceRequestedAtTicks, advanceRetried, advanceArmed))
+        {
+            case JamAdvanceStep.Retry:
+                advanceRetried = true;
+                SendAdvance();
+                return;
+            case JamAdvanceStep.PlayPopped:
+                var popped = advanceSong;
+                ClearAdvance();
+                PlayAdvanced(popped);
+                return;
+            case JamAdvanceStep.GiveUp:
+                var stop = advanceFromTrackEnd;
+                ClearAdvance();
+                if (stop)
+                {
+                    StopCleanly();
+                    return;
+                }
+
+                publishRequested = true;
+                return;
+        }
+    }
+
+    private void TickQueueWait(long now)
+    {
+        switch (JamHostRecovery.QueueWait(queue.Length, AddInFlight(now), now - queueWaitSinceTicks))
+        {
+            case JamQueueWaitStep.Advance:
+                RequestAdvance(0, true);
+                return;
+            case JamQueueWaitStep.Stop:
+                StopCleanly();
+                return;
+        }
+    }
+
+    private void StopCleanly()
+    {
+        queueWaitSinceTicks = 0;
+        StopWithoutAuthority();
+        publishRequested = true;
     }
 
     private void OnControlRequest(CallControl message)
@@ -237,13 +316,15 @@ internal sealed partial class JamSession
     {
         if (advanceEntryId != 0)
         {
-            if (now - advanceRequestedAtTicks <= AdvanceTimeoutMilliseconds)
+            TickAdvance(now);
+            if (advanceEntryId != 0)
             {
                 return;
             }
-
-            ClearAdvance();
-            publishRequested = true;
+        }
+        else if (queueWaitSinceTicks != 0)
+        {
+            TickQueueWait(now);
         }
 
         heartbeatTimer += deltaSeconds;

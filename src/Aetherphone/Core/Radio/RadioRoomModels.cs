@@ -141,17 +141,30 @@ internal static class RadioRoomWire
     {
         return displayName.Length > 0 ? displayName : handle;
     }
+
+    public static RadioChatEntry BuildEntry(long messageId, string userId, string displayName, string handle,
+        string? avatarUrl, string text, long sentAtUnixMs, string timeLabel, bool isDj, string? me)
+    {
+        return new RadioChatEntry(messageId, userId, PublicNameOf(displayName, handle), handle, HandleLabelOf(handle),
+            avatarUrl, text, sentAtUnixMs, timeLabel, isDj, string.Equals(userId, me, StringComparison.Ordinal));
+    }
 }
 
 internal static class RadioRoomReport
 {
     public const string TargetType = "user";
     public const int MaxReasonLength = 500;
+    public const string JamEvidenceTag = "Jam chat";
     private const string EvidenceTag = "Community Radio chat";
 
     public static string ComposeReason(string? reason, string stationId, RadioChatEntry entry)
     {
-        var evidence = $"{EvidenceTag} ({stationId}, message {entry.MessageId}): \"{entry.Text}\"";
+        return Compose(reason, EvidenceTag, stationId, entry);
+    }
+
+    public static string Compose(string? reason, string evidenceTag, string scopeId, RadioChatEntry entry)
+    {
+        var evidence = $"{evidenceTag} ({scopeId}, message {entry.MessageId}): \"{entry.Text}\"";
         var composed = string.IsNullOrWhiteSpace(reason) ? evidence : string.Concat(reason.Trim(), " | ", evidence);
         return composed.Length <= MaxReasonLength ? composed : composed[..MaxReasonLength];
     }

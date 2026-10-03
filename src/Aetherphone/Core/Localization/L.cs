@@ -4902,6 +4902,21 @@ internal static class L
             public static readonly LocString SwitchTitle = new("music.jam.switchTitle", "Join this Jam?");
             public static readonly LocString SwitchBody = new("music.jam.switchBody",
                 "You will leave the Jam you're in now.");
+            public static readonly LocString ChatHeader = new("music.jam.chatHeader", "Chat");
+            public static readonly LocString ChatHint = new("music.jam.chatHint", "Message everyone in the Jam");
+            public static readonly LocString ChatEmptyTitle = new("music.jam.chatEmptyTitle", "No messages yet");
+            public static readonly LocString ChatEmptyBody = new("music.jam.chatEmptyBody",
+                "Say hi and talk about the songs while you listen");
+            public static readonly LocString ChatNotInJam = new("music.jam.chatNotInJam",
+                "You are no longer in this Jam");
+            public static readonly LocString Discoverable = new("music.jam.discoverable",
+                "Let people nearby find this Jam");
+            public static readonly LocString DiscoverableHint = new("music.jam.discoverableHint",
+                "Players in your zone on this world see it under Nearby Jams and can join with one tap");
+            public static readonly LocString NearbyHeader = new("music.jam.nearbyHeader", "Nearby Jams");
+            public static readonly LocString NearbyIdle = new("music.jam.nearbyIdle", "Nothing playing yet");
+            public static readonly LocPlural NearbyCount =
+                new("music.jam.nearbyCount", "{0} Jam nearby", "{0} Jams nearby");
         }
         internal static class PcMedia
         {

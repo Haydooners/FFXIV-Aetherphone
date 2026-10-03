@@ -39,6 +39,7 @@ internal sealed partial class MusicApp
             DrawJamRequests(scale);
         }
 
+        DrawJamChat(scale);
         DrawJamMembers(scale);
         if (jam.IsHost)
         {

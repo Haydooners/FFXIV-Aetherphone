@@ -34,6 +34,36 @@ internal enum JamRefusal : byte
     NotYourEntry,
 }
 
+internal enum JamChatRefusal : byte
+{
+    None,
+    Cooldown,
+    TooLong,
+    Empty,
+    NotInJam,
+    Unknown,
+}
+
+internal static class JamChatRefusalCodes
+{
+    public const string Cooldown = "cooldown";
+    public const string TooLong = "tooLong";
+    public const string Empty = "empty";
+    public const string NotInJam = "notInJam";
+
+    public static JamChatRefusal Parse(string? reason)
+    {
+        return reason switch
+        {
+            Cooldown => JamChatRefusal.Cooldown,
+            TooLong => JamChatRefusal.TooLong,
+            Empty => JamChatRefusal.Empty,
+            NotInJam => JamChatRefusal.NotInJam,
+            _ => JamChatRefusal.Unknown,
+        };
+    }
+}
+
 internal static class JamPermission
 {
     public const int None = 0;
@@ -96,6 +126,17 @@ internal readonly struct JamQueueItem
         AddedByName = addedByName;
     }
 }
+
+internal sealed record JamNearbyJam(
+    string JamId,
+    string Code,
+    string Title,
+    string HostId,
+    string HostName,
+    string HostHandleLabel,
+    string? HostAvatarUrl,
+    int MemberCount,
+    Song Track);
 
 internal sealed record JamJoinRequest(string UserId, string DisplayName, string Handle, string? AvatarUrl);
 
