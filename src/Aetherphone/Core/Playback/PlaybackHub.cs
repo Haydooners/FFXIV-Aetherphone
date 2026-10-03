@@ -399,7 +399,7 @@ internal sealed class PlaybackHub : IDisposable
     public void Tick()
     {
         if (Interlocked.Exchange(ref crossfadeSignals, 0) > 0 && SongActive && RepeatMode != SongRepeatMode.One &&
-            !sleepAtTrackEnd)
+            !sleepAtTrackEnd && Authority is null)
         {
             AdvanceSong(true, false);
         }
@@ -453,6 +453,11 @@ internal sealed class PlaybackHub : IDisposable
         {
             sleepAtTrackEnd = false;
             StopSongs();
+            return;
+        }
+
+        if (Delegate(new PlaybackIntent(PlaybackIntentKind.TrackEnded)))
+        {
             return;
         }
 

@@ -4,6 +4,7 @@ using Aetherphone.Core.Casino;
 using Aetherphone.Core.Crypto;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Hunts;
+using Aetherphone.Core.Jam;
 using Aetherphone.Core.Moderation;
 using Aetherphone.Core.Muster;
 using Aetherphone.Core.Radio;
@@ -62,6 +63,7 @@ internal sealed class NotificationRouter
     private readonly CasinoLauncher casinoLauncher;
     private readonly AetherStreamLauncher aetherStreamLauncher;
     private readonly HuntsLauncher huntsLauncher;
+    private readonly JamLauncher jamLauncher;
 
     public NotificationRouter(INavigator navigation, NotificationService notifications,
         SocialNotificationService socialNotifications, LinkpearlLauncher linkpearlLauncher,
@@ -69,8 +71,10 @@ internal sealed class NotificationRouter
         MusterLauncher musterLauncher, YellowPagesLauncher yellowPagesLauncher,
         AnnouncementsLauncher announcementsLauncher, SafetyLauncher safetyLauncher,
         EncryptionSetupLauncher encryptionSetupLauncher, RadioLauncher radioLauncher,
-        CasinoLauncher casinoLauncher, AetherStreamLauncher aetherStreamLauncher, HuntsLauncher huntsLauncher)
+        CasinoLauncher casinoLauncher, AetherStreamLauncher aetherStreamLauncher, HuntsLauncher huntsLauncher,
+        JamLauncher jamLauncher)
     {
+        this.jamLauncher = jamLauncher;
         this.radioLauncher = radioLauncher;
         this.casinoLauncher = casinoLauncher;
         this.aetherStreamLauncher = aetherStreamLauncher;
@@ -157,6 +161,10 @@ internal sealed class NotificationRouter
         else if (notification.AppId == AnnouncementsAppId && !string.IsNullOrEmpty(notification.GroupKey))
         {
             announcementsLauncher.RequestDetail(notification.GroupKey);
+        }
+        else if (notification.AppId == MusicAppId && JamInviteNotification.TryParseCode(notification.GroupKey, out var jamCode))
+        {
+            jamLauncher.RequestLobby(jamCode);
         }
         else if (notification.AppId == MusicAppId && notification.SocialType == TypeRadioLive
                  && !string.IsNullOrEmpty(notification.PostId))

@@ -122,7 +122,8 @@ internal sealed class CallSignalRouter : IDisposable
 
         if (target is null)
         {
-            if (!message.Type.StartsWith(SignalType.StreamPrefix, StringComparison.Ordinal))
+            if (!message.Type.StartsWith(SignalType.StreamPrefix, StringComparison.Ordinal)
+                && !message.Type.StartsWith(SignalType.JamPrefix, StringComparison.Ordinal))
             {
                 AepLog.Warning($"[calls] unhandled-signal type={message.Type} call={message.CallId} reason={message.Reason}");
             }
