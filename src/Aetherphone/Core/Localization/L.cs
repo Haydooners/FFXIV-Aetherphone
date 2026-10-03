@@ -5904,6 +5904,12 @@ internal static class L
     internal static class Home
     {
         public static readonly LocString Done = new("home.done", "Done");
+        public static readonly LocString StatusPing = new("home.statusPing", "Ping to {0}: {1} ms, {2}% packet loss");
+        public static readonly LocString StatusPingNoCenter = new("home.statusPingNoCenter", "Ping: {0} ms, {1}% packet loss");
+        public static readonly LocString StatusOffline = new("home.statusOffline", "Can't reach the game servers");
+        public static readonly LocString StatusBattery = new("home.statusBattery", "Battery {0}%");
+        public static readonly LocString StatusBatteryCharging = new("home.statusBatteryCharging", "Battery {0}%, charging");
+        public static readonly LocString StatusNoBattery = new("home.statusNoBattery", "Plugged in, no battery");
         public static readonly LocString NewFolder = new("home.newFolder", "Folder");
         public static readonly LocString Widgets = new("home.widgets", "Widgets");
         public static readonly LocString AddWidget = new("home.addWidget", "Add Widget");
