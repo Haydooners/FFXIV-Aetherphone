@@ -2,6 +2,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Telephony.Contracts;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Video;
@@ -100,8 +101,10 @@ internal sealed partial class AetherStreamApp
         Typography.DrawWrappedCentered(drawList, new Vector2(card.Center.X, top + hintHeight * 0.5f), hint,
             Ink.MutedInk, TextStyles.Subheadline, innerWidth);
         top += hintHeight + Metrics.Space.Xl * scale;
-        if (PrimaryButton(new Rect(new Vector2(card.Min.X + pad, top), new Vector2(card.Max.X - pad, top + buttonHeight)),
-                Loc.T(L.AetherStream.StartParty), signedIn))
+        var startButton = new Rect(new Vector2(card.Min.X + pad, top),
+            new Vector2(card.Max.X - pad, top + buttonHeight));
+        UiAnchors.Report("aetherstream.party.start", startButton);
+        if (PrimaryButton(startButton, Loc.T(L.AetherStream.StartParty), signedIn))
         {
             watchAlong.OpenParty();
         }

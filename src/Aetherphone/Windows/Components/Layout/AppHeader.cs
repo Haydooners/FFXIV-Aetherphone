@@ -17,6 +17,7 @@ internal static class AppHeader
         !UiInteract.InputBlocked && UiInteract.HoverWindowOnly(min, max);
     private const float ButtonGlyphScale = 0.62f;
     private const float BackPadX = 6f;
+    private const float BackHitWidth = 44f;
     private const float BackLabelGap = 4f;
     private const float BackLabelMaxFraction = 0.4f;
     private const float BackPressedAlpha = 0.55f;
@@ -53,12 +54,14 @@ internal static class AppHeader
         return BackButton.Draw(id, center, 15f * scale, color, hovered, scale);
     }
 
+    public static Rect BackRect(Rect content, float scale) =>
+        new(content.Min, new Vector2(content.Min.X + BackHitWidth * scale, content.Min.Y + Height * scale));
+
     private static void DrawBack(in PhoneContext context, Action? onBack, float scale, float rowCenterY)
     {
         var content = context.Content;
-        var hitMin = new Vector2(content.Min.X, content.Min.Y);
-        var hitMax = new Vector2(content.Min.X + 44f * scale, content.Min.Y + Height * scale);
-        var hovered = UiInteract.Hover(hitMin, hitMax);
+        var hit = BackRect(content, scale);
+        var hovered = UiInteract.Hover(hit.Min, hit.Max);
         var center = new Vector2(content.Min.X + 13f * scale, rowCenterY);
         var clicked = BackButton.Draw("appheader.back", center, 15f * scale, context.Theme.Accent, hovered, scale);
         if (!clicked)

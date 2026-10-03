@@ -2,6 +2,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Songs;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
@@ -147,6 +148,9 @@ internal sealed partial class MusicApp
         {
             SetSearchScope(SongSearchScope.All);
         }
+
+        UiAnchors.Report("music.search.scopes", new Rect(new Vector2(content.Min.X + 16f * scale, barRect.Max.Y),
+            new Vector2(cursorX - gap, barRect.Max.Y + ScopeRowHeight * scale)));
     }
 
     private void DrawSearchPlaceholder(Rect body, float scale)

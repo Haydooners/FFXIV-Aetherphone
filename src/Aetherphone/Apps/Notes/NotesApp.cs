@@ -147,11 +147,6 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes
 
     private void DrawList(Rect content, float scale)
     {
-        if (GuideIntents.Consume("notes.tab.reminders"))
-        {
-            activeTab = 1;
-        }
-
         var context = new PhoneContext(content, theme, navigation);
         var navBar = AppHeader.BeginLargeTitle(context);
         var body = navBar.Body;
@@ -195,7 +190,6 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes
         var top = ImGui.GetCursorScreenPos();
         var segRow = new Rect(top,
             new Vector2(top.X + ImGui.GetContentRegionAvail().X, top.Y + SegmentHeight * scale));
-        UiAnchors.Report("notes.tabs", segRow);
         UiAnchors.Report("notes.tab.reminders",
             new Rect(new Vector2(segRow.Center.X, segRow.Min.Y), segRow.Max));
         tabOptions[0] = Loc.T(L.Notes.TabNotes);
@@ -365,6 +359,8 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes
             return;
         }
 
+        UiAnchors.Report("notes.editor.back", AppHeader.BackRect(content, scale));
+
         var radius = 15f * scale;
         var trashCenter = new Vector2(content.Max.X - Metrics.Space.Lg * scale - radius,
             content.Min.Y + AppHeader.Height * scale * 0.5f);
@@ -386,6 +382,7 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes
         var top = content.Min.Y + AppHeader.Height * scale + Metrics.Space.Sm * scale;
         var area = new Rect(new Vector2(content.Min.X + margin, top),
             new Vector2(content.Max.X - margin, content.Max.Y - margin));
+        UiAnchors.Report("notes.editor", area);
         var drawList = ImGui.GetWindowDrawList();
         Squircle.Fill(drawList, area.Min, area.Max, Metrics.Radius.Md * scale, ImGui.GetColorU32(ui.FieldSurface));
         ImGui.SetCursorScreenPos(new Vector2(area.Min.X + Metrics.Space.Md * scale, area.Min.Y + Metrics.Space.Sm * scale));
@@ -521,6 +518,7 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes
         var height = Metrics.Size.ToggleHeight * scale;
         var min = new Vector2(rect.Max.X - Metrics.Space.Md * scale - width, rect.Center.Y - height * 0.5f);
         var toggleRect = new Rect(min, min + new Vector2(width, height));
+        UiAnchors.Report("notes.reminder.remind", toggleRect);
         var label = Loc.T(L.Notes.RemindMe);
         var labelLeft = rect.Min.X + Metrics.Space.Md * scale;
         var labelMaxWidth = MathF.Max(1f, min.X - 8f * scale - labelLeft);
