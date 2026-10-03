@@ -73,8 +73,8 @@ internal sealed class FolderOverlay
         closing = true;
     }
 
-    public void Draw(Rect content, in HomeMetrics metrics, PhoneTheme theme, INavigator navigation, bool editing,
-        int currentPage, float delta)
+    public void Draw(Rect screen, Rect content, in HomeMetrics metrics, PhoneTheme theme, INavigator navigation,
+        bool editing, int currentPage, float delta)
     {
         if (folder is null)
         {
@@ -99,8 +99,8 @@ internal sealed class FolderOverlay
         var scale = metrics.Scale;
         var progress = Math.Clamp(anim.Value, 0f, 1f);
         var drawList = ImGui.GetWindowDrawList();
-        drawList.PushClipRect(content.Min, content.Max, true);
-        Material.Veil(drawList, content.Min, content.Max, VeilDim * progress);
+        drawList.PushClipRect(screen.Min, screen.Max, true);
+        Material.Veil(drawList, screen.Min, screen.Max, VeilDim * progress);
         var columns = current.Members.Count <= 9 ? 3 : 4;
         var rows = (current.Members.Count + columns - 1) / columns;
         var panelWidth = content.Width * PanelWidthFraction;
