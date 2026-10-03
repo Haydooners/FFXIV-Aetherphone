@@ -2,90 +2,161 @@ using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Translation;
 using Aetherphone.Core.Maps;
 using Aetherphone.Core.Muster;
+using Aetherphone.Core.Notifications;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Report;
 using Aetherphone.Core.Theme;
+using Aetherphone.Core.Translation;
 using Aetherphone.Core.Venues;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
-using Aetherphone.Core.Social;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Muster;
 
 internal sealed partial class MusterApp
 {
-    private const float ActionHeight = 52f;
-    private const float LocationActionHeight = 44f;
-    private const float LocationRowHeight = 24f;
-    private const float NoticeBannerHeight = 48f;
-    private const float HeroTopHeight = 108f;
-    private const float HeroStatHeight = 54f;
+    private const float NoticeSeconds = 6f;
+    private const float NoticeBannerHeight = 56f;
+    private const float NoticeGlyph = 16f;
+    private const float RsvpRowHeight = 58f;
+    private const float RsvpCheckRadius = 13f;
+    private const float StatusTileHeight = 64f;
+    private const float StatusTileGap = 10f;
+    private const float ActionTileHeight = 68f;
+    private const float ActionTileGap = 10f;
+    private const float InfoRowHeight = 50f;
+    private const float LocationLineHeight = 24f;
+    private const float LocationGlyph = 14f;
+    private const float FeedbackGap = 8f;
+    private const int MaxInfoRows = 3;
+    private const int MaxLocationLines = 5;
+    private const int MaxActionTiles = 3;
 
     private static readonly int[] QuickStatusCodes =
     {
         MusterStatuses.OnMyWay, MusterStatuses.RunningLate, MusterStatuses.Here, MusterStatuses.WhereExactly,
     };
 
-    private readonly string[] locationLines = new string[6];
-    private readonly string[] statLabels = new string[3];
-    private readonly string[] statValues = new string[3];
+    private readonly string[] infoLabels = new string[MaxInfoRows];
+    private readonly string[] infoValues = new string[MaxInfoRows];
+    private readonly string[] locationLines = new string[MaxLocationLines];
+    private readonly LocationTone[] locationTones = new LocationTone[MaxLocationLines];
+    private readonly LocationAction[] actionKinds = new LocationAction[MaxActionTiles];
     private string? detailFetchId;
     private MusterDto? detailFetched;
     private bool detailLoading;
-    private bool detailRsvpToggled;
     private bool rsvpBusy;
-    private bool statusBusy;
+    private bool rsvpFailed;
+    private int statusBusyCode;
+    private bool statusFailed;
     private string travelNotice = string.Empty;
+    private float travelNoticeTimer;
+    private TravelCache travelCache;
+
+    private enum LocationTone : byte
+    {
+        Primary,
+        Secondary,
+        Muted,
+        Here,
+    }
+
+    private enum LocationAction : byte
+    {
+        Flag,
+        Travel,
+        Invite,
+    }
+
+    private struct TravelCache
+    {
+        public string MusterId;
+        public int WorldId;
+        public uint TerritoryId;
+        public TravelDestination Destination;
+        public string Label;
+    }
 
     private void ResetDetailState()
     {
         detailFetchId = null;
         detailFetched = null;
         detailLoading = false;
-        detailRsvpToggled = false;
         rsvpBusy = false;
-        statusBusy = false;
+        rsvpFailed = false;
+        statusBusyCode = 0;
+        statusFailed = false;
         travelNotice = string.Empty;
         travelNoticeTimer = 0f;
+        travelCache = default;
     }
 
-    private void DrawDetail(Rect area, string musterId)
+    private void DrawDetail(in PhoneContext context, MusterRoute route)
     {
+        var musterId = route.MusterId ?? string.Empty;
         var muster = ResolveMuster(musterId);
-        var context = new PhoneContext(area, theme, navigation);
-        AppHeader.Draw(context, muster is null ? DisplayName : Loc.T(MusterCategories.Label(muster.Category)), back);
+        var navBar = AppHeader.BeginLargeTitle(context);
         var scale = UiScale.Current;
-        var top = area.Min.Y + AppHeader.Height * scale;
-        var body = new Rect(new Vector2(area.Min.X, top), area.Max);
-        if (muster is null)
+        using (ImRaii.PushId("muster.detail"))
+        using (AppSurface.Begin(navBar.Body))
         {
-            EnsureDetailFetch(musterId);
-            if (detailLoading)
+            var drawList = ImGui.GetWindowDrawList();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            float bottom;
+            if (muster is null)
             {
-                LoadingPulse.Draw(new Vector2(body.Center.X, body.Min.Y + 120f * scale), 13f * scale, ui.Accent,
-                    AppPalettes.Muster.MutedInk, Loc.T(L.Common.Loading));
-                return;
+                bottom = DrawDetailMissing(drawList, musterId, origin, width, scale);
+            }
+            else
+            {
+                bottom = DrawDetailBody(drawList, muster, origin, width, scale);
             }
 
-            EmptyState.Draw(body, ui, FontAwesomeIcon.MapMarkerAlt, Loc.T(L.Muster.UnavailableTitle),
-                Loc.T(L.Muster.UnavailableHint));
-            return;
+            MusterArt.Reserve(origin, width, bottom + MusterArt.BottomPad * scale);
         }
 
-        var nowUnix = NowUnix();
-        using (AppSurface.Begin(body))
+        var title = muster is null ? DisplayName : Loc.T(MusterCategories.Label(muster.Category));
+        AppHeader.EndLargeTitle(in navBar, context, "muster.detail.nav", title, NavBarStyle.From(ui),
+            ReadOnlySpan<NavBarButton>.Empty, route.BackTitle, back);
+    }
+
+    private float DrawDetailMissing(ImDrawListPtr drawList, string musterId, Vector2 origin, float width,
+        float scale)
+    {
+        EnsureDetailFetch(musterId);
+        var centerX = origin.X + width * 0.5f;
+        var top = origin.Y + StateTop * scale;
+        if (detailLoading)
         {
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Xs * scale));
-            DrawDetailHero(muster, nowUnix, scale);
-            DrawNoticeBanner(muster, nowUnix, scale);
-            DrawWrappedDescription(muster, scale);
-            DrawLocationBlock(muster, scale, includeTravel: true);
-            DrawDetailActions(muster, scale);
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
+            LoadingPulse.Spinner(new Vector2(centerX, top + 40f * scale), 13f * scale, ui.Accent);
+            return top + 80f * scale;
         }
+
+        return MusterArt.StateScreen(drawList, ui, centerX, top, width, FontAwesomeIcon.MapMarkerAlt,
+            Loc.T(L.Muster.UnavailableTitle), Loc.T(L.Muster.UnavailableHint), scale);
+    }
+
+    private float DrawDetailBody(ImDrawListPtr drawList, MusterDto muster, Vector2 origin, float width, float scale)
+    {
+        var nowUnix = NowUnix();
+        var mine = IsMine(muster);
+        var cursorY = DrawDetailHero(drawList, muster, origin.X, origin.Y, width, nowUnix, !mine, scale);
+        cursorY = DrawNoticeBanner(drawList, muster, origin.X, cursorY, width, nowUnix, scale);
+        if (!mine)
+        {
+            cursorY = DrawRsvp(drawList, muster, origin.X, cursorY + MusterArt.CardGap * scale, width, scale);
+        }
+
+        cursorY = DrawInfo(drawList, muster, origin.X, cursorY + MusterArt.SectionGap * scale, width, mine, scale);
+        cursorY = DrawWhere(drawList, muster, origin.X, cursorY + MusterArt.SectionGap * scale, width, !mine, scale);
+        return mine
+            ? cursorY
+            : DrawReportRow(drawList, muster, origin.X, cursorY + MusterArt.SectionGap * scale, width, scale);
     }
 
     private MusterDto? ResolveMuster(string musterId)
@@ -95,35 +166,28 @@ internal sealed partial class MusterApp
             return mine;
         }
 
-        var contacts = store.ContactMusters;
-        for (var index = 0; index < contacts.Length; index++)
+        var found = Find(store.ContactMusters, musterId) ?? Find(store.GoingMusters, musterId)
+            ?? Find(store.Directory, musterId);
+        if (found is not null)
         {
-            if (contacts[index].Id == musterId)
-            {
-                return contacts[index];
-            }
-        }
-
-        var going = store.GoingMusters;
-        for (var index = 0; index < going.Length; index++)
-        {
-            if (going[index].Id == musterId)
-            {
-                return going[index];
-            }
-        }
-
-        var directory = store.Directory;
-        for (var index = 0; index < directory.Length; index++)
-        {
-            if (directory[index].Id == musterId)
-            {
-                return directory[index];
-            }
+            return found;
         }
 
         var fetched = detailFetched;
         return fetched is not null && fetched.Id == musterId ? fetched : null;
+    }
+
+    private static MusterDto? Find(MusterDto[] source, string musterId)
+    {
+        for (var index = 0; index < source.Length; index++)
+        {
+            if (source[index].Id == musterId)
+            {
+                return source[index];
+            }
+        }
+
+        return null;
     }
 
     private void EnsureDetailFetch(string musterId)
@@ -143,137 +207,89 @@ internal sealed partial class MusterApp
         });
     }
 
-    private void DrawDetailHero(MusterDto muster, long nowUnix, float scale)
+    private float DrawDetailHero(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width,
+        long nowUnix, bool showHost, float scale)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var height = (HeroTopHeight + HeroStatHeight) * scale;
-        var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var rounding = Metrics.Radius.Card * scale * 1.3f;
+        var key = new TranslationKey(TranslationSurface.Muster, muster.Id);
+        var description = muster.Description.Length > 0
+            ? translation.View(key, muster.Description).Text
+            : Loc.T(MusterCategories.Label(muster.Category));
         var live = muster.StartsAtUnix <= nowUnix;
-        Elevation.Floating(drawList, card.Min, card.Max, rounding, scale, 0.85f);
-        Squircle.FillVerticalGradient(drawList, card.Min, card.Max, rounding,
-            ImGui.GetColorU32(Palette.Lighten(ui.Accent, 0.10f) with { W = 0.42f }),
-            ImGui.GetColorU32(Palette.Darken(ui.Accent, 0.62f) with { W = 0.30f }));
-        var stripTop = card.Min.Y + HeroTopHeight * scale;
-        Squircle.Stroke(drawList, card.Min, card.Max, rounding,
-            ImGui.GetColorU32(Palette.WithAlpha(Palette.Lighten(ui.Accent, 0.45f), 0.32f)), 1f * scale);
+        var span = MathF.Max(1f, muster.EndsAtUnix - muster.StartsAtUnix);
+        var poster = new MusterPoster
+        {
+            Category = muster.Category,
+            Eyebrow = labels.Range(muster),
+            Title = description,
+            Status = labels.Hero(muster, nowUnix),
+            Live = live,
+            Going = showHost && IsGoing(muster),
+            HostName = showHost ? MusterText.HostLabel(muster) : string.Empty,
+            HostWorld = muster.HostWorld,
+            HostFrameId = muster.HostFrameId,
+            Identity = MusterText.Identity(muster),
+            Place = string.Empty,
+            Count = labels.Count(muster),
+            Full = muster.MaxAttendees > 0 && muster.RsvpCount >= muster.MaxAttendees,
+            ShowProgress = live,
+            Progress = live ? Math.Clamp((nowUnix - muster.StartsAtUnix) / span, 0f, 1f) : 0f,
+        };
+        var origin = new Vector2(left, top);
+        var height = MusterArt.PosterHeight(in poster, width, 0, scale);
+        MusterArt.Poster(drawList, KeyFor("hero", muster.Id), in poster, origin, width, 0, theme, images, lodestone,
+            false, scale);
+        var cursorY = top + height;
+        if (muster.Description.Length == 0)
+        {
+            return cursorY;
+        }
 
-        var pad = 16f * scale;
-        var avatarRadius = 26f * scale;
-        var avatarCenter = new Vector2(card.Min.X + pad + avatarRadius, card.Min.Y + pad + avatarRadius);
-        AvatarView.DrawRemote(drawList, avatarCenter, avatarRadius, theme, MusterText.HostLabel(muster), muster.HostWorld,
-            null, images, lodestone, 1.25f, 40, 1f, Frames.Of(muster.HostFrameId));
-        drawList.AddCircle(avatarCenter, avatarRadius + 2f * scale,
-            ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.30f)), 40, 1.5f * scale);
+        var linkHeight = TranslateLink.Height(translation, key, muster.Lang, scale);
+        if (linkHeight <= 0f)
+        {
+            return cursorY;
+        }
 
-        var textLeft = avatarCenter.X + avatarRadius + 14f * scale;
-        var textRight = card.Max.X - pad;
-        UserName.DrawAuto(drawList, "muster.detail.hero.name." + muster.Id, MusterText.HostLabel(muster),
-            muster.HostBadges, muster.HostBadgeIds, textLeft, card.Min.Y + pad + 1f * scale, textRight - textLeft,
-            TextStyles.Title2, AppPalettes.Muster.TitleInk, theme);
-        Marquee.DrawLeftAuto(drawList, new MarqueeId("muster.detail.hero.world.", muster.Id), muster.HostWorld, textLeft,
-            card.Min.Y + pad + 28f * scale, textRight - textLeft, TextStyles.Subheadline,
-            AppPalettes.Muster.BodyInk);
-
-        var badgeLabel = live ? Loc.T(L.Common.Live)
-            : Loc.T(L.Muster.StartsIn, MusterText.Span(muster.StartsAtUnix - nowUnix));
-        var badgeTint = live ? MusterCard.LiveGreen : AppPalettes.Muster.TitleInk;
-        DrawHeroBadge(drawList, new Vector2(textLeft, card.Min.Y + pad + 56f * scale), badgeLabel, badgeTint, live,
+        var pad = Metrics.Space.Lg * scale;
+        TranslateLink.Draw(translation, confirm, key, muster.Lang, muster.Description,
+            new Vector2(left + pad, cursorY + Metrics.Space.Xs * scale), width - pad * 2f, ui.MutedInk, ui.Accent,
             scale);
-
-        DrawHeroStats(drawList, muster, nowUnix, live, card, stripTop, pad, scale);
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Md * scale));
+        return cursorY + Metrics.Space.Xs * scale + linkHeight;
     }
 
-    private static void DrawHeroBadge(ImDrawListPtr drawList, Vector2 topLeft, string label, Vector4 tint, bool live,
-        float scale)
-    {
-        var textSize = Typography.Measure(label, TextStyles.FootnoteEmphasized);
-        var height = 24f * scale;
-        var dotSpace = live ? 16f * scale : 0f;
-        var min = topLeft;
-        var max = new Vector2(topLeft.X + textSize.X + dotSpace + 22f * scale, topLeft.Y + height);
-        Squircle.Fill(drawList, min, max, height * 0.5f, ImGui.GetColorU32(Palette.WithAlpha(tint, 0.18f)));
-        Squircle.Stroke(drawList, min, max, height * 0.5f, ImGui.GetColorU32(Palette.WithAlpha(tint, 0.42f)),
-            1f * scale);
-        var centerY = (min.Y + max.Y) * 0.5f;
-        if (live)
-        {
-            MusterCard.DrawLiveDot(drawList, new Vector2(min.X + 14f * scale, centerY), scale);
-        }
-
-        Typography.Draw(drawList, new Vector2(min.X + 11f * scale + dotSpace, centerY - textSize.Y * 0.5f), label,
-            tint, TextStyles.FootnoteEmphasized);
-    }
-
-    private void DrawHeroStats(ImDrawListPtr drawList, MusterDto muster, long nowUnix, bool live, Rect card,
-        float stripTop, float pad, float scale)
-    {
-        var capped = muster.MaxAttendees > 0;
-        statLabels[0] = Loc.T(L.Muster.StatGoing);
-        statValues[0] = capped
-            ? $"{muster.RsvpCount}/{muster.MaxAttendees}"
-            : muster.RsvpCount.ToString(Loc.Culture);
-        statLabels[1] = live ? Loc.T(L.Muster.StatEndsIn) : Loc.T(L.Muster.StatStartsIn);
-        statValues[1] = MusterText.Span((live ? muster.EndsAtUnix : muster.StartsAtUnix) - nowUnix);
-        var slotCount = 2;
-        if (capped)
-        {
-            statLabels[2] = Loc.T(L.Muster.StatSpots);
-            statValues[2] = Math.Max(0, muster.MaxAttendees - muster.RsvpCount).ToString(Loc.Culture);
-            slotCount = 3;
-        }
-
-        var slotWidth = (card.Width - pad * 2f) / 3f;
-        var groupLeft = card.Min.X + (card.Width - slotWidth * slotCount) * 0.5f;
-        var centerY = stripTop + (card.Max.Y - stripTop) * 0.5f;
-        for (var index = 0; index < slotCount; index++)
-        {
-            var slotCenterX = groupLeft + slotWidth * (index + 0.5f);
-            Typography.DrawCentered(drawList, new Vector2(slotCenterX, centerY - 9f * scale), statValues[index],
-                AppPalettes.Muster.TitleInk, TextStyles.Title3);
-            Typography.DrawCentered(drawList, new Vector2(slotCenterX, centerY + 12f * scale), statLabels[index],
-                AppPalettes.Muster.MutedInk, TextStyles.Caption1);
-        }
-    }
-
-    private void DrawNoticeBanner(MusterDto muster, long nowUnix, float scale)
+    private float DrawNoticeBanner(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width,
+        long nowUnix, float scale)
     {
         if (muster.HostNotice == MusterNotices.None)
         {
-            return;
+            return top;
         }
 
-        var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var height = NoticeBannerHeight * scale;
-        var rounding = Metrics.Radius.Card * scale;
-        var max = new Vector2(origin.X + width, origin.Y + height);
-        Squircle.Fill(drawList, origin, max, rounding, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.16f)));
-        Squircle.Stroke(drawList, origin, max, rounding, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.38f)),
-            1f * scale);
-        var centerY = origin.Y + height * 0.5f;
-        AppSkin.Icon(drawList, new Vector2(origin.X + 22f * scale, centerY),
-            IconGlyph.Of(FontAwesomeIcon.Bullhorn), ui.Accent, 0.8f);
-        var ago = Loc.T(L.Muster.NoticeAgo, MusterText.Span(nowUnix - muster.HostNoticeAtUnix));
-        var agoSize = Typography.Measure(ago, TextStyles.Footnote);
-        Typography.Draw(drawList, new Vector2(max.X - 16f * scale - agoSize.X, centerY - agoSize.Y * 0.5f), ago,
-            AppPalettes.Muster.MutedInk, TextStyles.Footnote);
-        var label = NoticeLabel(muster.HostNotice);
-        var labelLeft = origin.X + 40f * scale;
-        var fitted = Typography.FitText(label, max.X - 24f * scale - agoSize.X - labelLeft,
-            TextStyles.BodyEmphasized);
-        var labelSize = Typography.Measure(fitted, TextStyles.BodyEmphasized);
-        Typography.Draw(drawList, new Vector2(labelLeft, centerY - labelSize.Y * 0.5f), fitted,
-            AppPalettes.Muster.TitleInk, TextStyles.BodyEmphasized);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Md * scale));
+        var bannerTop = top + MusterArt.CardGap * scale;
+        var min = new Vector2(left, bannerTop);
+        var max = new Vector2(left + width, bannerTop + NoticeBannerHeight * scale);
+        MusterArt.Card(drawList, ui, min, max, scale);
+        var pad = Metrics.Space.Lg * scale;
+        var centerY = (min.Y + max.Y) * 0.5f;
+        var tileSize = 32f * scale;
+        var tileMin = new Vector2(min.X + pad, centerY - tileSize * 0.5f);
+        IconTile.FillShaded(drawList, tileMin, tileMin + new Vector2(tileSize, tileSize),
+            tileSize * Metrics.Radius.TileFactor, IconTile.Surface(ui.Accent));
+        ProgressRing.CenterIcon(drawList, tileMin + new Vector2(tileSize, tileSize) * 0.5f, NoticeIcon(muster.HostNotice),
+            AccentRing.Ink, NoticeGlyph * scale);
+        var textLeft = tileMin.X + tileSize + MusterArt.TextGap * scale;
+        MusterArt.Labels(drawList, textLeft, max.X - pad, centerY, NoticeLabel(muster.HostNotice),
+            labels.NoticeAgo(muster, nowUnix), ui.TitleInk, ui.MutedInk, scale);
+        return max.Y;
     }
+
+    private static FontAwesomeIcon NoticeIcon(int notice) =>
+        notice switch
+        {
+            MusterNotices.StartingNow => FontAwesomeIcon.Bullhorn,
+            MusterNotices.MovedSpots => FontAwesomeIcon.MapMarkedAlt,
+            _ => FontAwesomeIcon.Moon,
+        };
 
     private static string NoticeLabel(int notice) =>
         notice switch
@@ -283,164 +299,424 @@ internal sealed partial class MusterApp
             _ => Loc.T(L.Muster.NoticeWrappingUp),
         };
 
-    private void DrawWrappedDescription(MusterDto muster, float scale)
+    private float DrawRsvp(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width, float scale)
     {
-        if (muster.Description.Length == 0)
+        var going = IsGoing(muster);
+        float bottom;
+        if (!going)
         {
-            return;
+            var rect = new Rect(new Vector2(left, top), new Vector2(left + width, top + MusterArt.PillHeight * scale));
+            UiAnchors.Report("muster.rsvp", rect);
+            if (rsvpBusy)
+            {
+                ui.PaintAccentPill(rect, string.Empty, false, false, TextStyles.Headline);
+                LoadingPulse.Spinner(rect.Center, 9f * scale, AccentRing.Ink);
+            }
+            else if (MusterArt.Pill(ui, rect, Loc.T(L.Muster.ImGoing), true))
+            {
+                SetRsvp(muster.Id, true);
+            }
+
+            bottom = rect.Max.Y;
+        }
+        else
+        {
+            bottom = DrawGoingCard(drawList, muster, left, top, width, scale);
+            bottom = DrawStatusTiles(drawList, muster, left, bottom + MusterArt.CardGap * scale, width, scale);
         }
 
-        var musterKey = new TranslationKey(TranslationSurface.Muster, muster.Id);
-        var description = translation.View(musterKey, muster.Description).Text;
-        var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var pad = Metrics.Space.Md * scale;
-        var textWidth = width - pad * 2f;
-        var textHeight = Typography.MeasureWrappedBlock(description, TextStyles.Callout, textWidth).Y;
-        var linkHeight = TranslateLink.Height(translation, musterKey, muster.Lang, scale);
-        var height = textHeight + linkHeight + pad * 2f;
-        var rounding = Metrics.Radius.Card * scale;
-        ui.Card(drawList, origin, new Vector2(origin.X + width, origin.Y + height), rounding, elevated: true);
-        Typography.DrawWrappedLeft(new Vector2(origin.X + pad, origin.Y + pad), description,
-            AppPalettes.Muster.BodyInk, TextStyles.Callout, textWidth);
-        if (linkHeight > 0f)
-        {
-            TranslateLink.Draw(translation, confirm, musterKey, muster.Lang, muster.Description,
-                new Vector2(origin.X + pad, origin.Y + pad + textHeight), textWidth, AppPalettes.Muster.MutedInk,
-                AppPalettes.Muster.Accent, scale);
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Md * scale));
+        var failure = rsvpFailed ? Loc.T(L.Muster.RsvpFailed) : statusFailed ? Loc.T(L.Muster.StatusFailed) : string.Empty;
+        return DrawFeedback(left, bottom, width, failure, scale);
     }
 
-    private void DrawLocationBlock(MusterDto muster, float scale, bool includeTravel)
+    private float DrawFeedback(float left, float top, float width, string text, float scale)
     {
-        ui.SectionHeading(Loc.T(L.Muster.WhereSection));
-        var lineCount = 0;
+        if (text.Length == 0)
+        {
+            return top;
+        }
+
+        var gap = FeedbackGap * scale;
+        var height = Typography.DrawWrappedLeft(new Vector2(left + Metrics.Space.Lg * scale, top + gap), text,
+            ui.Theme.Danger, TextStyles.Footnote, width - Metrics.Space.Lg * 2f * scale);
+        return top + gap + height;
+    }
+
+    private float DrawGoingCard(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width,
+        float scale)
+    {
+        var min = new Vector2(left, top);
+        var max = new Vector2(left + width, top + RsvpRowHeight * scale);
+        UiAnchors.Report("muster.rsvp", new Rect(min, max));
+        MusterArt.Card(drawList, ui, min, max, scale);
+        var pad = Metrics.Space.Lg * scale;
+        var centerY = (min.Y + max.Y) * 0.5f;
+        var radius = RsvpCheckRadius * scale;
+        var checkCenter = new Vector2(min.X + pad + radius, centerY);
+        drawList.AddCircleFilled(checkCenter, radius, ImGui.GetColorU32(MusterArt.LiveColor), 24);
+        ProgressRing.CenterIcon(drawList, checkCenter, FontAwesomeIcon.Check, AccentRing.Ink, radius);
+        var actionLabel = Loc.T(L.Muster.CantMakeIt);
+        var actionSize = Typography.Measure(actionLabel, TextStyles.Body);
+        var actionRect = new Rect(new Vector2(max.X - pad - actionSize.X - Metrics.Space.Sm * scale, min.Y),
+            new Vector2(max.X, max.Y));
+        var textLeft = checkCenter.X + radius + MusterArt.TextGap * scale;
+        var title = Typography.FitText(Loc.T(L.Muster.GoingSection),
+            MathF.Max(1f, actionRect.Min.X - Metrics.Space.Sm * scale - textLeft), TextStyles.Headline);
+        var titleHeight = Typography.LineHeight(TextStyles.Headline);
+        Typography.Draw(drawList, new Vector2(textLeft, centerY - titleHeight * 0.5f), title, ui.TitleInk,
+            TextStyles.Headline);
+        if (rsvpBusy)
+        {
+            LoadingPulse.Spinner(new Vector2(max.X - pad - 9f * scale, centerY), 8f * scale, ui.Accent);
+            return max.Y;
+        }
+
+        var hovered = UiInteract.Hover(actionRect.Min, actionRect.Max);
+        var ink = hovered ? Palette.Lighten(ui.Theme.Danger, 0.12f) : ui.Theme.Danger;
+        Typography.Draw(drawList, new Vector2(max.X - pad - actionSize.X, centerY - actionSize.Y * 0.5f), actionLabel,
+            ink, TextStyles.Body);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        if (UiInteract.Click(actionRect.Min, actionRect.Max, hovered))
+        {
+            UiFeedback.Play(UiSound.Tap);
+            SetRsvp(muster.Id, false);
+        }
+
+        return max.Y;
+    }
+
+    private void SetRsvp(string musterId, bool going)
+    {
+        rsvpBusy = true;
+        rsvpFailed = false;
+        statusFailed = false;
+        store.SetRsvp(musterId, going, ok =>
+        {
+            rsvpBusy = false;
+            rsvpFailed = !ok;
+            UiFeedback.Play(ok ? going ? UiSound.Success : UiSound.ToggleOff : UiSound.Caution);
+        });
+    }
+
+    private float DrawStatusTiles(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width,
+        float scale)
+    {
+        var labelHeight = Typography.LineHeight(TextStyles.FootnoteEmphasized);
+        Typography.Draw(drawList, new Vector2(left + Metrics.Space.Lg * scale, top), Loc.T(L.Muster.YourStatus),
+            ui.MutedInk, TextStyles.FootnoteEmphasized);
+        var gridTop = top + labelHeight + Metrics.Space.Sm * scale;
+        var gap = StatusTileGap * scale;
+        var tileWidth = (width - gap) * 0.5f;
+        var tileHeight = StatusTileHeight * scale;
+        var current = store.MyStatus(muster.Id);
+        UiAnchors.Report("muster.status", new Rect(new Vector2(left, gridTop),
+            new Vector2(left + width, gridTop + tileHeight * 2f + gap)));
+        for (var index = 0; index < QuickStatusCodes.Length; index++)
+        {
+            var code = QuickStatusCodes[index];
+            var column = index % 2;
+            var rowIndex = index / 2;
+            var min = new Vector2(left + column * (tileWidth + gap), gridTop + rowIndex * (tileHeight + gap));
+            var rect = new Rect(min, min + new Vector2(tileWidth, tileHeight));
+            var busy = statusBusyCode == code;
+            var tapped = MusterArt.ActionTile(drawList, ui, KeyFor("status", code, muster.Id), rect,
+                MusterArt.StatusIcon(code), StatusLabel(code), MusterArt.StatusColor(code), code == current,
+                statusBusyCode == 0, scale);
+            if (busy)
+            {
+                LoadingPulse.Spinner(new Vector2(rect.Max.X - 14f * scale, rect.Min.Y + 14f * scale), 6f * scale,
+                    MusterArt.StatusColor(code));
+            }
+
+            if (tapped && code != current)
+            {
+                SetStatus(muster.Id, code);
+            }
+        }
+
+        return gridTop + tileHeight * 2f + gap;
+    }
+
+    private void SetStatus(string musterId, int code)
+    {
+        statusBusyCode = code;
+        statusFailed = false;
+        rsvpFailed = false;
+        store.SetStatus(musterId, code, ok =>
+        {
+            statusBusyCode = 0;
+            statusFailed = !ok;
+            if (!ok)
+            {
+                UiFeedback.Play(UiSound.Caution);
+            }
+        });
+    }
+
+    private float DrawInfo(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width,
+        bool showListing, float scale)
+    {
+        var count = 0;
+        infoLabels[count] = Loc.T(L.Muster.WhenSection);
+        infoValues[count++] = labels.Range(muster);
+        infoLabels[count] = Loc.T(L.Muster.WhoSection);
+        infoValues[count++] = labels.Capacity(muster);
+        if (showListing)
+        {
+            infoLabels[count] = Loc.T(L.Muster.FactListing);
+            infoValues[count++] = Loc.T(muster.IsPublic ? L.Muster.ListedPublicly : L.Muster.ListedPrivately);
+        }
+        else
+        {
+            var dataCenter = MusterDataCenters.Name(muster.DataCenterId);
+            if (dataCenter.Length > 0)
+            {
+                infoLabels[count] = Loc.T(L.Muster.DataCenterSection);
+                infoValues[count++] = dataCenter;
+            }
+        }
+
+        var rowHeight = InfoRowHeight * scale;
+        var max = new Vector2(left + width, top + count * rowHeight);
+        MusterArt.Card(drawList, ui, new Vector2(left, top), max, scale);
+        var pad = Metrics.Space.Lg * scale;
+        var lineHeight = Typography.LineHeight(TextStyles.Body);
+        for (var index = 0; index < count; index++)
+        {
+            var rowTop = top + index * rowHeight;
+            var centerY = rowTop + rowHeight * 0.5f;
+            if (index > 0)
+            {
+                MusterArt.Hairline(drawList, ui, left + pad, max.X, rowTop);
+            }
+
+            var labelWidth = Typography.Measure(infoLabels[index], TextStyles.Body).X;
+            Typography.Draw(drawList, new Vector2(left + pad, centerY - lineHeight * 0.5f), infoLabels[index],
+                ui.TitleInk, TextStyles.Body);
+            var value = Typography.FitText(infoValues[index], MathF.Max(1f, width - pad * 3f - labelWidth),
+                TextStyles.Body);
+            var valueWidth = Typography.Measure(value, TextStyles.Body).X;
+            Typography.Draw(drawList, new Vector2(max.X - pad - valueWidth, centerY - lineHeight * 0.5f), value,
+                ui.MutedInk, TextStyles.Body);
+        }
+
+        return max.Y;
+    }
+
+    private float DrawWhere(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width,
+        bool includeTravel, float scale)
+    {
+        var cursorY = MusterArt.SectionHeader(drawList, ui, new Vector2(left, top), width,
+            Loc.T(L.Muster.WhereSection), scale);
+        var destination = includeTravel ? ResolveTravel(muster) : default;
+        var lineCount = CollectLocationLines(muster, destination.Kind == TravelKind.AlreadyThere);
+        if (lineCount > 0)
+        {
+            var pad = Metrics.Space.Lg * scale;
+            var lineHeight = LocationLineHeight * scale;
+            var max = new Vector2(left + width, cursorY + pad * 2f + lineCount * lineHeight);
+            MusterArt.Card(drawList, ui, new Vector2(left, cursorY), max, scale);
+            var glyph = LocationGlyph * scale;
+            ProgressRing.CenterIcon(drawList, new Vector2(left + pad + glyph * 0.5f, cursorY + pad + lineHeight * 0.5f),
+                FontAwesomeIcon.MapMarkerAlt, ui.Accent, glyph);
+            var textLeft = left + pad + glyph + MusterArt.TextGap * scale;
+            for (var index = 0; index < lineCount; index++)
+            {
+                var style = StyleFor(locationTones[index]);
+                var lineTop = cursorY + pad + index * lineHeight;
+                var fitted = Typography.FitText(locationLines[index], MathF.Max(1f, max.X - pad - textLeft), style);
+                var height = Typography.LineHeight(style);
+                Typography.Draw(drawList, new Vector2(textLeft, lineTop + (lineHeight - height) * 0.5f), fitted,
+                    InkFor(locationTones[index]), style);
+            }
+
+            cursorY = max.Y;
+        }
+
+        return DrawLocationActions(drawList, muster, destination, left, cursorY, width, includeTravel, scale);
+    }
+
+    private int CollectLocationLines(MusterDto muster, bool alreadyThere)
+    {
+        var count = 0;
         if (muster.Spot.Length > 0)
         {
-            locationLines[lineCount++] = muster.Spot;
+            AddLocationLine(ref count, muster.Spot, LocationTone.Primary);
         }
 
         var place = MusterText.Place(muster);
         if (place.Length > 0 && !string.Equals(place, muster.Spot, StringComparison.Ordinal))
         {
-            locationLines[lineCount++] = place;
+            AddLocationLine(ref count, place, count == 0 ? LocationTone.Primary : LocationTone.Secondary);
         }
 
         var housing = MusterText.HousingLine(muster);
         if (housing.Length > 0)
         {
-            locationLines[lineCount++] = housing;
+            AddLocationLine(ref count, housing, LocationTone.Secondary);
         }
 
         var coordinates = MusterText.Coordinates(muster);
         if (coordinates.Length > 0)
         {
-            locationLines[lineCount++] = coordinates;
+            AddLocationLine(ref count, coordinates, LocationTone.Muted);
         }
 
-        var destination = includeTravel
-            ? TravelPlanner.Resolve((uint)muster.TerritoryId, (uint)muster.WorldId, (uint)store.CurrentWorldId,
-                store.CurrentTerritoryId)
-            : default;
-        var alreadyThere = destination.Kind == TravelKind.AlreadyThere;
         if (alreadyThere)
         {
-            locationLines[lineCount++] = Loc.T(L.Muster.YoureHere);
+            AddLocationLine(ref count, Loc.T(L.Muster.YoureHere), LocationTone.Here);
         }
 
-        var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var consumed = 0f;
-        if (lineCount > 0)
-        {
-            var pad = Metrics.Space.Md * scale;
-            var iconLeft = origin.X + pad + 9f * scale;
-            var textLeft = origin.X + pad + 26f * scale;
-            var cardHeight = pad * 2f + lineCount * LocationRowHeight * scale;
-            var rounding = Metrics.Radius.Card * scale;
-            ui.Card(drawList, origin, new Vector2(origin.X + width, origin.Y + cardHeight), rounding,
-                elevated: true);
-            AppSkin.Icon(drawList, new Vector2(iconLeft, origin.Y + pad + 9f * scale),
-                IconGlyph.Of(FontAwesomeIcon.MapMarkerAlt), ui.Accent, 0.78f);
-            for (var index = 0; index < lineCount; index++)
-            {
-                var lineTop = origin.Y + pad + index * LocationRowHeight * scale;
-                var style = index == 0 ? TextStyles.BodyEmphasized : TextStyles.Callout;
-                var ink = index == 0 ? AppPalettes.Muster.TitleInk : AppPalettes.Muster.BodyInk;
-                if (locationLines[index] == coordinates && coordinates.Length > 0)
-                {
-                    style = TextStyles.Subheadline;
-                    ink = AppPalettes.Muster.MutedInk;
-                }
-                else if (alreadyThere && index == lineCount - 1)
-                {
-                    style = TextStyles.SubheadlineEmphasized;
-                    ink = MusterCard.LiveGreen;
-                }
-
-                Marquee.DrawLeftAuto(drawList, new MarqueeId("muster.detail.location.", muster.Id + "." + index),
-                    locationLines[index], textLeft, lineTop, origin.X + width - pad - textLeft, style, ink);
-            }
-
-            consumed = cardHeight + Metrics.Space.Sm * scale;
-        }
-
-        var actionTop = origin.Y + consumed;
-        var gap = Metrics.Space.Sm * scale;
-        var actionHeight = LocationActionHeight * scale;
-        var actionsHeight = 0f;
-        if (muster.MapId != 0)
-        {
-            var flagRect = new Rect(new Vector2(origin.X, actionTop),
-                new Vector2(origin.X + width, actionTop + actionHeight));
-            if (ui.PillButton(flagRect, Loc.T(L.Muster.FlagOnMap), false, "muster.detail.flagonmap"))
-            {
-                var location = MusterText.Location(muster);
-                LocationShare.OpenMap(in location);
-            }
-
-            actionsHeight = actionHeight;
-        }
-
-        if (TravelPlanner.CanGo(in destination))
-        {
-            var travelTop = actionTop + (actionsHeight > 0f ? actionsHeight + gap : 0f);
-            var travelRect = new Rect(new Vector2(origin.X, travelTop),
-                new Vector2(origin.X + width, travelTop + actionHeight));
-            var travelLabel = JustCopied("travel")
-                ? Loc.T(L.Muster.Copied)
-                : TravelPlanner.Label(in destination);
-            if (ui.PillButton(travelRect, travelLabel, true, "muster.detail.travel"))
-            {
-                TravelTo(in destination);
-            }
-
-            actionsHeight += (actionsHeight > 0f ? gap : 0f) + actionHeight;
-            actionsHeight += DrawTravelNotice(origin.X, travelTop + actionHeight, width, scale);
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, consumed + actionsHeight + Metrics.Space.Lg * scale));
+        return count;
     }
 
-    private float DrawTravelNotice(float left, float top, float width, float scale)
+    private void AddLocationLine(ref int count, string text, LocationTone tone)
     {
-        if (travelNoticeTimer <= 0f || travelNotice.Length == 0)
+        if (count >= MaxLocationLines)
         {
-            return 0f;
+            return;
         }
 
-        var pad = Metrics.Space.Md * scale;
-        var textWidth = width - pad * 2f;
-        var gap = Metrics.Space.Xs * scale;
-        Typography.DrawWrappedLeft(new Vector2(left + pad, top + gap), travelNotice, theme.Danger,
-            TextStyles.Footnote, textWidth);
-        return gap + Typography.MeasureWrappedBlock(travelNotice, TextStyles.Footnote, textWidth).Y;
+        locationLines[count] = text;
+        locationTones[count] = tone;
+        count++;
+    }
+
+    private static TextStyle StyleFor(LocationTone tone) =>
+        tone switch
+        {
+            LocationTone.Primary => TextStyles.BodyEmphasized,
+            LocationTone.Here => TextStyles.SubheadlineEmphasized,
+            LocationTone.Muted => TextStyles.Subheadline,
+            _ => TextStyles.Body,
+        };
+
+    private Vector4 InkFor(LocationTone tone) =>
+        tone switch
+        {
+            LocationTone.Primary => ui.TitleInk,
+            LocationTone.Here => MusterArt.LiveColor,
+            LocationTone.Muted => ui.MutedInk,
+            _ => ui.BodyInk,
+        };
+
+    private TravelDestination ResolveTravel(MusterDto muster)
+    {
+        var worldId = store.CurrentWorldId;
+        var territoryId = store.CurrentTerritoryId;
+        if (string.Equals(travelCache.MusterId, muster.Id, StringComparison.Ordinal) && travelCache.WorldId == worldId
+            && travelCache.TerritoryId == territoryId)
+        {
+            return travelCache.Destination;
+        }
+
+        var destination = TravelPlanner.Resolve((uint)muster.TerritoryId, (uint)muster.WorldId, (uint)worldId,
+            territoryId);
+        travelCache = new TravelCache
+        {
+            MusterId = muster.Id,
+            WorldId = worldId,
+            TerritoryId = territoryId,
+            Destination = destination,
+            Label = TravelPlanner.CanGo(in destination) ? TravelPlanner.Label(in destination) : string.Empty,
+        };
+        return destination;
+    }
+
+    private float DrawLocationActions(ImDrawListPtr drawList, MusterDto muster, TravelDestination destination,
+        float left, float top, float width, bool includeTravel, float scale)
+    {
+        var count = 0;
+        if (muster.MapId != 0)
+        {
+            actionKinds[count++] = LocationAction.Flag;
+        }
+
+        if (includeTravel && TravelPlanner.CanGo(in destination))
+        {
+            actionKinds[count++] = LocationAction.Travel;
+        }
+
+        var mine = store.Mine is { } hosted && hosted.Id == muster.Id;
+        if (muster.IsPublic || mine)
+        {
+            actionKinds[count++] = LocationAction.Invite;
+        }
+
+        if (count == 0)
+        {
+            return top;
+        }
+
+        var gap = ActionTileGap * scale;
+        var tilesTop = top + MusterArt.CardGap * scale;
+        var tileWidth = (width - gap * (count - 1)) / count;
+        var tileHeight = ActionTileHeight * scale;
+        for (var index = 0; index < count; index++)
+        {
+            var min = new Vector2(left + index * (tileWidth + gap), tilesTop);
+            var rect = new Rect(min, min + new Vector2(tileWidth, tileHeight));
+            var kind = actionKinds[index];
+            var tapped = MusterArt.ActionTile(drawList, ui, KeyFor("action", (int)kind, muster.Id), rect,
+                ActionIcon(kind), ActionLabel(kind), ui.Accent, false, true, scale);
+            if (kind == LocationAction.Travel && travelCache.Label.Length > 0)
+            {
+                HoverTooltip.Show(rect, travelCache.Label, HoverLabelSide.Above);
+            }
+
+            if (!tapped)
+            {
+                continue;
+            }
+
+            RunLocationAction(kind, muster, in destination);
+        }
+
+        var bottom = tilesTop + tileHeight;
+        if (travelNoticeTimer > 0f && travelNotice.Length > 0)
+        {
+            bottom = DrawFeedback(left, bottom, width, travelNotice, scale);
+        }
+
+        return bottom;
+    }
+
+    private static FontAwesomeIcon ActionIcon(LocationAction kind) =>
+        kind switch
+        {
+            LocationAction.Flag => FontAwesomeIcon.Flag,
+            LocationAction.Travel => FontAwesomeIcon.Route,
+            _ => FontAwesomeIcon.Link,
+        };
+
+    private static string ActionLabel(LocationAction kind) =>
+        kind switch
+        {
+            LocationAction.Flag => Loc.T(L.Muster.FlagOnMap),
+            LocationAction.Travel => Loc.T(L.Muster.Travel),
+            _ => Loc.T(L.Muster.CopyInvite),
+        };
+
+    private void RunLocationAction(LocationAction kind, MusterDto muster, in TravelDestination destination)
+    {
+        switch (kind)
+        {
+            case LocationAction.Flag:
+                var location = MusterText.Location(muster);
+                LocationShare.OpenMap(in location);
+                return;
+            case LocationAction.Travel:
+                TravelTo(in destination);
+                return;
+            default:
+                ImGui.SetClipboardText(MusterShare.Compose(muster.Id));
+                ShellToast.Show();
+                return;
+        }
     }
 
     private void TravelTo(in TravelDestination destination)
@@ -448,7 +724,6 @@ internal sealed partial class MusterApp
         travelNotice = string.Empty;
         travelNoticeTimer = 0f;
         var outcome = TravelPlanner.Go(in destination);
-        lifestreamAvailable = outcome != LifestreamOutcome.NotInstalled;
         if (outcome == LifestreamOutcome.Started)
         {
             return;
@@ -456,97 +731,30 @@ internal sealed partial class MusterApp
 
         if (outcome == LifestreamOutcome.NotInstalled)
         {
-            Copy("travel", TravelPlanner.Command(in destination));
+            ImGui.SetClipboardText(TravelPlanner.Command(in destination));
+            ShellToast.Show();
             return;
         }
 
+        UiFeedback.Play(UiSound.Caution);
         travelNotice = TravelPlanner.Notice(outcome, in destination);
         travelNoticeTimer = NoticeSeconds;
     }
 
-    private void DrawDetailActions(MusterDto muster, float scale)
+    private float DrawReportRow(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width,
+        float scale)
     {
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var rect = new Rect(origin, new Vector2(origin.X + width, origin.Y + ActionHeight * scale));
-        var isMine = store.Mine is { } mine && mine.Id == muster.Id;
-        if (isMine)
+        var row = new Rect(new Vector2(left, top), new Vector2(left + width, top + MusterArt.FieldRowHeight * scale));
+        MusterArt.Card(drawList, ui, row.Min, row.Max, scale);
+        var hovered = MusterArt.RowWash(drawList, ui, row, scale);
+        Typography.DrawCentered(drawList, row.Center, Loc.T(L.Muster.ReportTitle), ui.Theme.Danger, TextStyles.Body);
+        if (UiInteract.Click(row.Min, row.Max, hovered))
         {
-            if (ui.PillButton(rect, Loc.T(L.Muster.ManageAction), true))
-            {
-                router.Pop(false);
-                OpenManage(false);
-            }
-
-            ImGui.SetCursorScreenPos(origin);
-            ImGui.Dummy(new Vector2(width, ActionHeight * scale + Metrics.Space.Md * scale));
-            return;
-        }
-
-        var going = detailRsvpToggled
-            ? store.IsGoing(muster.Id)
-            : muster.Going || store.IsGoing(muster.Id);
-        var rsvpLabel = going ? Loc.T(L.Muster.CantMakeIt) : Loc.T(L.Muster.ImGoing);
-        if (rsvpBusy)
-        {
-            AppSkin.PillButton(rect, rsvpLabel, !going, false, theme);
-        }
-        else if (ui.PillButton(rect, rsvpLabel, !going))
-        {
-            rsvpBusy = true;
-            var next = !going;
-            store.SetRsvp(muster.Id, next, ok =>
-            {
-                rsvpBusy = false;
-                if (ok)
-                {
-                    detailRsvpToggled = true;
-                }
-            });
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, ActionHeight * scale + Metrics.Space.Md * scale));
-        if (going)
-        {
-            DrawQuickStatus(muster, scale);
-        }
-
-        var reportOrigin = ImGui.GetCursorScreenPos();
-        var reportLabel = Loc.T(L.Report.Action);
-        var reportWidth = Typography.Measure(reportLabel, 0.9f, FontWeight.SemiBold).X + 40f * scale;
-        var reportRect = new Rect(new Vector2(reportOrigin.X + (width - reportWidth) * 0.5f, reportOrigin.Y),
-            new Vector2(reportOrigin.X + (width + reportWidth) * 0.5f, reportOrigin.Y + 34f * scale));
-        if (ui.DangerGhostButton(reportRect, reportLabel))
-        {
+            UiFeedback.Play(UiSound.Tap);
             OpenReport(muster.Id);
         }
 
-        ImGui.SetCursorScreenPos(reportOrigin);
-        ImGui.Dummy(new Vector2(width, 34f * scale + Metrics.Space.Md * scale));
-    }
-
-    private void DrawQuickStatus(MusterDto muster, float scale)
-    {
-        ui.SectionHeading(Loc.T(L.Muster.YourStatus));
-        var current = store.MyStatus(muster.Id);
-        chipLabels[0] = Loc.T(L.Muster.OnMyWay);
-        chipLabels[1] = Loc.T(L.Muster.StatusRunningLate);
-        chipLabels[2] = Loc.T(L.Muster.StatusHere);
-        chipLabels[3] = Loc.T(L.Muster.StatusWhereExactly);
-        for (var index = 0; index < QuickStatusCodes.Length; index++)
-        {
-            chipActive[index] = QuickStatusCodes[index] == current;
-        }
-
-        var tapped = DrawChipFlow(QuickStatusCodes.Length, scale);
-        if (tapped >= 0 && !statusBusy && QuickStatusCodes[tapped] != current)
-        {
-            statusBusy = true;
-            store.SetStatus(muster.Id, QuickStatusCodes[tapped], _ => statusBusy = false);
-        }
-
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
+        return row.Max.Y;
     }
 
     private void OpenReport(string musterId)
@@ -555,6 +763,25 @@ internal sealed partial class MusterApp
         {
             Title = Loc.T(L.Muster.ReportTitle),
             Submit = (reason, done) => SubmitReport(musterId, reason, done),
+        });
+    }
+
+    private void SubmitReport(string musterId, string? reason, Action<bool> done)
+    {
+        _ = Task.Run(async () =>
+        {
+            var ok = false;
+            try
+            {
+                ok = await api.Safety.ReportAsync("muster", musterId, reason, CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                AepLog.Warning(exception, "[Muster] report failed");
+            }
+
+            done(ok);
         });
     }
 }
