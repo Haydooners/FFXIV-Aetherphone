@@ -65,6 +65,7 @@ internal sealed class JobRow
     public byte StartingLevel { get; init; }
     public int[] GearsetIndices { get; set; } = Array.Empty<int>();
     public string LevelText { get; init; } = string.Empty;
+    public string LockedText { get; init; } = string.Empty;
     public string ProgressText { get; init; } = string.Empty;
     public string ToGoText { get; init; } = string.Empty;
     public string PercentText { get; init; } = string.Empty;

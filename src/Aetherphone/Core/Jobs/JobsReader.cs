@@ -13,7 +13,7 @@ internal static unsafe class JobsReader
     public static JobsSnapshot Build(GameData gameData, IReadOnlyList<JobsCategory> categories)
     {
         var playerState = PlayerState.Instance();
-        if (playerState is null || gameData.LocalPlayer is null)
+        if (playerState is null || !playerState->IsLoaded)
         {
             return JobsSnapshot.Empty;
         }
@@ -79,6 +79,11 @@ internal static unsafe class JobsReader
                 IsLocked = slot.Locked,
                 StartingLevel = row.StartingLevel,
                 LevelText = slot.Locked ? Loc.T(L.Jobs.Locked) : Loc.T(L.Jobs.TileLevel, level),
+                LockedText = !slot.Locked
+                    ? string.Empty
+                    : row.StartingLevel > 1
+                        ? Loc.T(L.Jobs.LockedStartsAt, row.StartingLevel)
+                        : Loc.T(L.Jobs.LockedBody),
                 ProgressText = needed > 0
                     ? Loc.T(L.Jobs.ExpProgress, Grouped(current), Grouped(needed))
                     : string.Empty,

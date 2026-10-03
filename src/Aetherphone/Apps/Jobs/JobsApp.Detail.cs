@@ -201,12 +201,9 @@ internal sealed partial class JobsApp
     {
         if (job.IsLocked)
         {
-            var body = job.StartingLevel > 1
-                ? Loc.T(L.Jobs.LockedStartsAt, job.StartingLevel)
-                : Loc.T(L.Jobs.LockedBody);
             return top + JobsArt.TileGap * scale + JobsArt.State(drawList, ui,
                 new Vector2(left, top + JobsArt.TileGap * scale), width, FontAwesomeIcon.Lock,
-                JobsArt.Tint(job.Role), Loc.T(L.Jobs.LockedTitle), body, scale);
+                JobsArt.Tint(job.Role), Loc.T(L.Jobs.LockedTitle), job.LockedText, scale);
         }
 
         if (job.GearsetIndices.Length == 0)
