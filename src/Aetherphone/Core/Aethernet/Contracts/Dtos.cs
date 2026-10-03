@@ -648,7 +648,9 @@ internal sealed record PollDto(
     int TotalVotes,
     int MyVote,
     long CreatedAtUnix,
-    bool Closed) : IIdentified;
+    bool Closed,
+    long ClosesAtUnix = 0,
+    long ClosedAtUnix = 0) : IIdentified;
 
 internal sealed record PollPage(PollDto[] Items, string? NextCursor = null);
 
