@@ -321,10 +321,10 @@ def tick(scale=1.0, seed=0):
     return room(place((0, body), (0, click)), 0.05, decay=0.03, seed=seed)
 
 
-def key_click(low, mid, high, seed, body_decay=0.005):
-    resonance = partial(mid, body_decay, 0.7) + partial(low, body_decay * 0.8, 0.45) + partial(high, 0.0018, 0.25)
-    click = noise(0.006, 2200, 11000, 0.0011, 0.9, seed)
-    return room(place((0, click), (0, resonance)), 0.04, decay=0.025, seed=seed)
+def key_click(low, high, decay, thump_hz, seed, weight=1.0):
+    snap = noise(0.02, low, high, decay, 3.0, seed, attack=0.0001)
+    thump = partial(thump_hz, 0.004, 0.12 * weight, duration=0.06, attack=0.0002)
+    return place((0, snap), (0, thump))
 
 
 def switch_click(base, direction, seed):
@@ -440,9 +440,9 @@ def ui_sounds(output):
     for index, scale in enumerate((1.0, 1.035, 0.97, 1.06, 0.945), start=1):
         sounds[f"tap_{index}"] = (tick(scale, seed=index), "tick")
     for index, scale in enumerate((1.0, 1.04, 0.965, 1.07, 0.94), start=1):
-        sounds[f"type_{index}"] = (key_click(1450 * scale, 3300 * scale, 6200 * scale, seed=10 + index), "key")
-    sounds["type_delete"] = (key_click(1100, 2500, 4800, seed=21, body_decay=0.007), "key")
-    sounds["type_space"] = (key_click(700, 1800, 3900, seed=22, body_decay=0.008), "key")
+        sounds[f"type_{index}"] = (key_click(1600 * scale, 7500, 0.0009, 260 * scale, 320 + index), "key")
+    sounds["type_delete"] = (key_click(1200, 6000, 0.0012, 220, 330, weight=1.4), "key")
+    sounds["type_space"] = (key_click(900, 5000, 0.0015, 180, 331, weight=1.7), "key")
     sounds["toggle_on"] = (switch_click(2400, 1.08, 23), "event")
     sounds["toggle_off"] = (switch_click(2000, 0.93, 24), "event")
     sounds["refresh"] = (tick(1.18, seed=25), "tick")
