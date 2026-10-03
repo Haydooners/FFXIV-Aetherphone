@@ -226,7 +226,7 @@ internal sealed partial class AppStoreApp
         var count = AppStoreCatalog.Order.Length;
         var rowHeight = BrowseRowHeight * scale;
         var cardMax = new Vector2(origin.X + width, origin.Y + count * rowHeight);
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
         var inset = RowInset * scale;
         var tileSize = BrowseTileSize * scale;
         for (var categoryIndex = 0; categoryIndex < count; categoryIndex++)

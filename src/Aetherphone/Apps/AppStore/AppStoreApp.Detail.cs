@@ -19,7 +19,7 @@ internal sealed partial class AppStoreApp
     private const float DetailPillWidth = 84f;
     private const float DetailPillHeight = 30f;
     private const float DetailButtonGap = 10f;
-    private const float RemoveWidth = 92f;
+    private const float RemoveRowHeight = 50f;
     private const float StripHeight = 82f;
     private const float StripCellPad = 6f;
     private const float StripGlyphScale = 1.25f;
@@ -79,6 +79,10 @@ internal sealed partial class AppStoreApp
         {
             top = DrawBuiltInNote(drawList, new Vector2(origin.X, top + SectionGap * scale), width, scale);
         }
+        else if (installer.IsInstalled(app.Id) && !installing.ContainsKey(app.Id))
+        {
+            top = DrawRemoveRow(new Vector2(origin.X, top + SectionGap * scale), width, app, scale);
+        }
 
         Reserve(origin, width, top);
     }
@@ -111,24 +115,36 @@ internal sealed partial class AppStoreApp
         UiAnchors.Report("appstore.detail.get", pill);
         DrawStatePill(drawList, pill, app, UiInteract.Hover(pill.Min, pill.Max), ui.TitleInk,
             Palette.Lighten(app.Accent, PillInkLift), scale);
-        var nextLeft = pill.Max.X + DetailButtonGap * scale;
         if (!AppInstaller.CanUninstall(app.Id))
         {
-            DrawBuiltInTag(drawList, new Vector2(nextLeft, pill.Center.Y), scale);
-            return origin.Y + iconSize;
-        }
-
-        if (installer.IsInstalled(app.Id) && !installing.ContainsKey(app.Id))
-        {
-            var remove = new Rect(new Vector2(nextLeft, pillTop),
-                new Vector2(nextLeft + RemoveWidth * scale, pillTop + DetailPillHeight * scale));
-            if (ui.DangerGhostButton(remove, Loc.T(L.Store.Remove)))
-            {
-                AskRemove(app);
-            }
+            DrawBuiltInTag(drawList, new Vector2(pill.Max.X + DetailButtonGap * scale, pill.Center.Y), scale);
         }
 
         return origin.Y + iconSize;
+    }
+
+    private float DrawRemoveRow(Vector2 origin, float width, IPhoneApp app, float scale)
+    {
+        var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + RemoveRowHeight * scale));
+        var hovered = UiInteract.Hover(row.Min, row.Max);
+        var drawList = ImGui.GetWindowDrawList();
+        ui.Card(drawList, row.Min, row.Max, Metrics.Radius.Grouped * scale);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            Squircle.Fill(drawList, row.Min, row.Max, Metrics.Radius.Grouped * scale,
+                ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, HairlineAlpha)));
+        }
+
+        Typography.DrawCentered(drawList, row.Center,
+            Typography.FitText(Loc.T(L.Store.Remove), row.Width - DetailButtonGap * 2f * scale, TextStyles.Body),
+            ui.Theme.Danger, TextStyles.Body);
+        if (UiInteract.Click(row.Min, row.Max, hovered))
+        {
+            AskRemove(app);
+        }
+
+        return row.Max.Y;
     }
 
     private void DrawBuiltInTag(ImDrawListPtr drawList, Vector2 leftCenter, float scale)
@@ -147,7 +163,9 @@ internal sealed partial class AppStoreApp
         var widgetCount = WidgetsFor(app.Id).Count;
         var cells = widgetCount > 0 ? 4 : 3;
         var cardMax = new Vector2(origin.X + width, origin.Y + StripHeight * scale);
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale, true);
+        var hairline = ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, HairlineAlpha * 2f));
+        drawList.AddLine(origin, new Vector2(cardMax.X, origin.Y), hairline, 1f);
+        drawList.AddLine(new Vector2(origin.X, cardMax.Y), cardMax, hairline, 1f);
         var cellWidth = width / cells;
         var category = entry.Category;
         DrawStripCell(drawList, origin, cellWidth, 0, Loc.T(L.Store.Category),
@@ -302,7 +320,7 @@ internal sealed partial class AppStoreApp
         var hint = Loc.T(L.Store.BuiltInHint);
         var textHeight = Typography.MeasureWrappedBlock(hint, TextStyles.Subheadline, textWidth).Y;
         var cardMax = new Vector2(origin.X + width, origin.Y + textHeight + pad * 2f);
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
         AppSkin.Icon(drawList, new Vector2(origin.X + pad + glyphSize * 0.5f, origin.Y + pad + glyphSize * 0.5f),
             IconGlyph.Of(FontAwesomeIcon.Lock), ui.MutedInk, NoteGlyphScale);
         Typography.DrawWrappedLeft(new Vector2(textLeft, origin.Y + pad), hint, ui.MutedInk, TextStyles.Subheadline,

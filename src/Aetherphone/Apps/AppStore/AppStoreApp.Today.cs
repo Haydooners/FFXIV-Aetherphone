@@ -214,7 +214,7 @@ internal sealed partial class AppStoreApp
     private float DrawAllSetCard(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var cardMax = new Vector2(origin.X + width, origin.Y + AllSetHeight * scale);
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
         var iconCenter = new Vector2(origin.X + Metrics.Space.Lg * scale + RowIconSize * 0.5f * scale,
             (origin.Y + cardMax.Y) * 0.5f);
         var surface = IconTile.Surface(ui.Accent);

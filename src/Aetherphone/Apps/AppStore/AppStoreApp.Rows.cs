@@ -100,7 +100,7 @@ internal sealed partial class AppStoreApp
         }
 
         var cardMax = new Vector2(origin.X + width, origin.Y + count * RowHeight * scale);
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
         using var scope = ImRaii.PushId(RowsIdScope);
         for (var rowIndex = 0; rowIndex < count; rowIndex++)
         {
@@ -126,7 +126,7 @@ internal sealed partial class AppStoreApp
         }
 
         var cardMax = new Vector2(origin.X + width, origin.Y + count * RowHeight * scale);
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
         using var scope = ImRaii.PushId(UpdatesIdScope);
         for (var rowIndex = 0; rowIndex < count; rowIndex++)
         {
