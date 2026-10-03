@@ -6256,6 +6256,17 @@ internal static class L
     internal static class Calculator
     {
         public static readonly LocString Error = new("calculator.error", "Error");
+        public static readonly LocString History = new("calculator.history", "History");
+        public static readonly LocString Copy = new("calculator.copy", "Copy");
+        public static readonly LocString Paste = new("calculator.paste", "Paste");
+        public static readonly LocString Clear = new("calculator.clear", "Clear");
+        public static readonly LocString RemoveEntry = new("calculator.removeEntry", "Remove");
+        public static readonly LocString HistoryEmptyTitle = new("calculator.historyEmptyTitle", "No History Yet");
+        public static readonly LocString HistoryEmptyBody = new("calculator.historyEmptyBody",
+            "Answers you work out are kept here. Tap one to use it in your next sum.");
+        public static readonly LocString ClearConfirm = new("calculator.clearConfirm",
+            "Clear your whole calculation history? This can't be undone.");
+        public static readonly LocString ClearConfirmAction = new("calculator.clearConfirmAction", "Clear History");
     }
 
     internal static class AetherStream
@@ -9216,6 +9227,8 @@ internal static class L
         public static readonly LocString CalculatorSumBody = new("onboarding.calculatorSumBody", "Tap in a sum, then press = for the answer.");
         public static readonly LocString CalculatorReuseTitle = new("onboarding.calculatorReuseTitle", "Reuse an answer");
         public static readonly LocString CalculatorReuseBody = new("onboarding.calculatorReuseBody", "Every answer lands on this tape. Tap one to carry it into your next sum.");
+        public static readonly LocString CalculatorTypeTitle = new("onboarding.calculatorTypeTitle", "Type or paste");
+        public static readonly LocString CalculatorTypeBody = new("onboarding.calculatorTypeBody", "With the pointer over the phone, your keyboard and numpad work too. Press and hold the answer to copy it or paste a number.");
         public static readonly LocString TimersNextUpTitle = new("onboarding.timersNextUpTitle", "What comes next");
         public static readonly LocString TimersNextUpBody = new("onboarding.timersNextUpBody", "The top card shows what finishes soonest, or what is ready to collect right now.");
         public static readonly LocString TimersCharactersTitle = new("onboarding.timersCharactersTitle", "Every character");
