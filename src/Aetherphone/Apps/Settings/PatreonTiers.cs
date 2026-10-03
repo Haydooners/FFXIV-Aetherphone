@@ -61,7 +61,6 @@ internal static class PatreonTiers
         new("Crystal", CrystalViolet, true, "", MemberBadges, MembershipUrl, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
-            new PatreonPerk(L.Settings.SupportPerkDirectAccess),
             new PatreonPerk(L.Settings.SupportPerkEarlyAccess),
             new PatreonPerk(L.Settings.SupportPerkColoredName),
             new PatreonPerk(L.Settings.SupportPerkFrame),
@@ -69,7 +68,6 @@ internal static class PatreonTiers
         new("Cluster", ClusterGold, false, "", GildedBadges, MembershipUrl, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
-            new PatreonPerk(L.Settings.SupportPerkDirectAccess),
             new PatreonPerk(L.Settings.SupportPerkEarlyAccess),
             new PatreonPerk(L.Settings.SupportPerkColoredName),
             new PatreonPerk(L.Settings.SupportPerkFrame),

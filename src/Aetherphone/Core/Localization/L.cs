@@ -1845,7 +1845,6 @@ internal static class L
         public static readonly LocString SupportPerkDiscordRole = new("settings.supportPerkDiscordRole", "Patreon supporter role in the Discord server");
         public static readonly LocString SupportPerkColoredName = new("settings.supportPerkColoredName", "A custom coloured username with a badge beside it");
         public static readonly LocString SupportPerkFrame = new("settings.supportPerkFrame", "A custom profile frame");
-        public static readonly LocString SupportPerkDirectAccess = new("settings.supportPerkDirectAccess", "Direct one-on-one messages with the developer");
         public static readonly LocString SupportPerkEarlyAccess = new("settings.supportPerkEarlyAccess", "See and test new features early, as a sneak peek");
         public static readonly LocString SupportPerkExclusiveLooks = new("settings.supportPerkExclusiveLooks", "Exclusive cases, themes and app icons for your phone");
         public static readonly LocString SupportPerkIdleAnimation = new("settings.supportPerkIdleAnimation", "A custom idle animation with the tomescroll emote");
