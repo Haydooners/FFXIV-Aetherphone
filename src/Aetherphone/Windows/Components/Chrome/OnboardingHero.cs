@@ -187,7 +187,7 @@ internal static class OnboardingHero
     private static void Core(ImDrawListPtr drawList, Vector2 center, Vector4 accent, float scale, float settle,
         float alpha)
     {
-        if (BrandMark.TryDraw(drawList, center, BrandCoreUnits * scale * settle, alpha * settle, scale))
+        if (BrandMark.TryDraw(drawList, center, BrandCoreUnits * scale * settle, alpha * settle))
         {
             return;
         }

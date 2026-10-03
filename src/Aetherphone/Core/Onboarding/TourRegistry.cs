@@ -12,7 +12,7 @@ internal static partial class TourRegistry
         new[]
         {
             GuideStep.Page(L.Onboarding.HomeTourTitle, L.Onboarding.BasicsBody, L.Onboarding.TakeTour),
-            GuideStep.Try(L.Onboarding.OpenAppTitle, L.Onboarding.OpenAppBody, "home.app.skywatcher",
+            GuideStep.Try(L.Onboarding.OpenAppTitle, L.Onboarding.OpenAppBody, "home.app.market",
                 GuideGesture.Tap, GuideCondition.AppOpened),
             GuideStep.Try(L.Onboarding.HomeBarTitle, L.Onboarding.HomeBarBody, "chrome.home", GuideGesture.SwipeUp,
                 GuideCondition.AtHome),

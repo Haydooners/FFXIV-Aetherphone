@@ -70,7 +70,7 @@ internal static class BootScreen
             return;
         }
 
-        if (BrandMark.TryDraw(dl, center, markSize, alpha, scale))
+        if (BrandMark.TryDraw(dl, center, markSize, alpha))
         {
             return;
         }

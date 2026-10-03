@@ -151,7 +151,7 @@ internal sealed partial class SetupOverlay
             top + markSize * 0.5f + Float(scale) * markReveal + Rise(markReveal) * 1.6f);
         BrandMark.Shockwave(drawList, markCenter, markSize, Timeline(ShockwaveDelaySeconds, ShockwaveSeconds),
             alpha, scale);
-        BrandMark.TryDrawEmblem(drawList, markCenter, markSize * (0.70f + 0.30f * markReveal), alpha * markReveal);
+        BrandMark.TryDraw(drawList, markCenter, markSize * (0.70f + 0.30f * markReveal), alpha * markReveal);
         var titleReveal = Reveal(3);
         var titleTop = top + markSize + markGap + Rise(titleReveal);
         DrawWordmark(drawList, new Vector2(centerX, titleTop + titleHeight * 0.5f), title, ContentWidth(screen),

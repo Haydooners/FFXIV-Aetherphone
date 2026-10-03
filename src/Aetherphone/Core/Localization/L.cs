@@ -9574,7 +9574,7 @@ internal static class L
         public static readonly LocString StepCounter = new("onboarding.stepCounter", "{0} of {1}");
         public static readonly LocString BasicsBody = new("onboarding.basicsBody", "Your phone is ready. Let's try a few quick moves together so you feel right at home.");
         public static readonly LocString OpenAppTitle = new("onboarding.openAppTitle", "Open an app");
-        public static readonly LocString OpenAppBody = new("onboarding.openAppBody", "Every icon is an app. Tap Skywatcher to open it.");
+        public static readonly LocString OpenAppBody = new("onboarding.openAppBody", "Every icon is an app. Tap Market to open it.");
         public static readonly LocString HomeBarTitle = new("onboarding.homeBarTitle", "Back home, anytime");
         public static readonly LocString HomeBarBody = new("onboarding.homeBarBody", "Swipe up on this bar, or tap it, to return to the Home Screen. Press and hold it to switch between open apps.");
         public static readonly LocString ControlCenterCardBody = new("onboarding.controlCenterCardBody", "Tap the top of the screen anytime to open Control Center for Do Not Disturb, music, brightness, volume and your notifications.");
