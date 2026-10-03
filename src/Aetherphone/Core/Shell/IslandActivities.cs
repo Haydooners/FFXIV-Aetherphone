@@ -1,0 +1,96 @@
+using Aetherphone.Core.Aethernet.Contracts;
+
+namespace Aetherphone.Core.Shell;
+
+internal enum IslandActivity : byte
+{
+    None,
+    Call,
+    Session,
+    Playback,
+    Timer,
+    Muster,
+}
+
+internal readonly record struct IslandSignals(bool Call, bool Session, bool Playback, bool Timer, bool Muster);
+
+internal static class IslandActivities
+{
+    public const long MusterHorizonSeconds = 3600;
+    public const long MusterStartedGraceSeconds = 300;
+
+    public static IslandActivity Select(in IslandSignals signals)
+    {
+        if (signals.Call)
+        {
+            return IslandActivity.Call;
+        }
+
+        if (signals.Session)
+        {
+            return IslandActivity.Session;
+        }
+
+        if (signals.Playback)
+        {
+            return IslandActivity.Playback;
+        }
+
+        if (signals.Timer)
+        {
+            return IslandActivity.Timer;
+        }
+
+        return signals.Muster ? IslandActivity.Muster : IslandActivity.None;
+    }
+
+    public static string OwnerAppId(IslandActivity activity)
+    {
+        switch (activity)
+        {
+            case IslandActivity.Call:
+                return "message";
+            case IslandActivity.Session:
+                return "aetherstream";
+            case IslandActivity.Playback:
+                return "music";
+            case IslandActivity.Timer:
+                return "clock";
+            case IslandActivity.Muster:
+                return "muster";
+            default:
+                return string.Empty;
+        }
+    }
+
+    public static bool MusterInWindow(long startsAtUnix, long nowUnix)
+    {
+        var untilStart = startsAtUnix - nowUnix;
+        return untilStart <= MusterHorizonSeconds && untilStart > -MusterStartedGraceSeconds;
+    }
+
+    public static MusterDto? SoonestMuster(MusterDto[] going, MusterDto? mine, long nowUnix)
+    {
+        MusterDto? soonest = null;
+        if (mine is not null && MusterInWindow(mine.StartsAtUnix, nowUnix))
+        {
+            soonest = mine;
+        }
+
+        for (var index = 0; index < going.Length; index++)
+        {
+            var candidate = going[index];
+            if (!MusterInWindow(candidate.StartsAtUnix, nowUnix))
+            {
+                continue;
+            }
+
+            if (soonest is null || candidate.StartsAtUnix < soonest.StartsAtUnix)
+            {
+                soonest = candidate;
+            }
+        }
+
+        return soonest;
+    }
+}

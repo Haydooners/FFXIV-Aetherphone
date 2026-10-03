@@ -5815,6 +5815,15 @@ internal static class L
         public static readonly LocString SealBalance = new("dailies.sealBalance", "{0} seals");
     }
 
+    internal static class Island
+    {
+        public static readonly LocString Live = new("island.live", "Live");
+        public static readonly LocString Watching = new("island.watching", "Watching");
+        public static readonly LocString Hosting = new("island.hosting", "Hosting");
+        public static readonly LocPlural Viewers = new("island.viewers", "{0} watching", "{0} watching");
+        public static readonly LocString StartsIn = new("island.startsIn", "Starts in {0}");
+    }
+
     internal static class ControlCenter
     {
         public static readonly LocString Title = new("controlCenter.title", "Control Center");

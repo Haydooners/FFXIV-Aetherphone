@@ -6892,5 +6892,11 @@
   "onboarding.stratsRoleTitle": "あなたのロール",
   "onboarding.stratsRoleBody": "ロールとパーティを選びましょう。すべての図で立ち位置が強調されます。",
   "onboarding.stratsChipsTitle": "攻略法とオプション",
-  "onboarding.stratsChipsBody": "コミュニティの攻略法とそのバリエーションを切り替えられます。選択はコンテンツごとに記憶されます。"
+  "onboarding.stratsChipsBody": "コミュニティの攻略法とそのバリエーションを切り替えられます。選択はコンテンツごとに記憶されます。",
+  "island.live": "ライブ",
+  "island.watching": "視聴中",
+  "island.hosting": "ホスト中",
+  "island.viewers.one": "{0}人が視聴中",
+  "island.viewers.other": "{0}人が視聴中",
+  "island.startsIn": "{0}後に開始"
 }
