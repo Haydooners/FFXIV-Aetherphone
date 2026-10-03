@@ -298,7 +298,7 @@ internal sealed class AlarmWidget : IHomeWidget
         var labelHeight = Typography.Measure("A", WidgetType.Headline).Y;
         var subtitleHeight = Typography.Measure("A", WidgetType.Caption).Y;
         var top = row.Center.Y - (labelHeight + WidgetMetrics.RowGap * 0.5f * scale + subtitleHeight) * 0.5f;
-        Marquee.DrawLeftAuto(drawList, new MarqueeId("clock.alarm.row", index), LabelOf(entry), textLeft, top,
+        Marquee.DrawLeftAuto(drawList, new MarqueeId(context.InstanceKey, index), LabelOf(entry), textLeft, top,
             textWidth, WidgetType.Headline, entry.Enabled ? ink.Primary : ink.Secondary);
         WidgetText.Draw(drawList, new Vector2(textLeft, top + labelHeight + WidgetMetrics.RowGap * 0.5f * scale),
             Subtitle(index, entry), ink.Secondary, WidgetType.Caption, textWidth);

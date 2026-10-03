@@ -33,9 +33,23 @@ internal sealed class VenturesWidget : IHomeWidget
         public string Name;
         public VentureState State;
         public DateTime CompleteUtc;
+        public double LengthHours;
+    }
+
+    private readonly struct VentureLength
+    {
+        public readonly DateTime CompleteUtc;
+        public readonly double Hours;
+
+        public VentureLength(DateTime completeUtc, double hours)
+        {
+            CompleteUtc = completeUtc;
+            Hours = hours;
+        }
     }
 
     private readonly List<RetainerVenture> retainers = new();
+    private readonly Dictionary<ulong, VentureLength> lengths = new();
     private VentureRow[] rows = new VentureRow[10];
     private int rowCount;
     private int readyCount;
@@ -142,6 +156,7 @@ internal sealed class VenturesWidget : IHomeWidget
                 State = !venture.HasVenture ? VentureState.Idle :
                     venture.CompleteUtc <= utcNow ? VentureState.Ready : VentureState.Running,
                 CompleteUtc = venture.CompleteUtc,
+                LengthHours = LengthOf(venture, utcNow),
             };
         }
 
@@ -159,6 +174,7 @@ internal sealed class VenturesWidget : IHomeWidget
                 Name = WidgetSamples.Names[index % WidgetSamples.Names.Length],
                 State = minutes < 0 ? VentureState.Idle : minutes == 0 ? VentureState.Ready : VentureState.Running,
                 CompleteUtc = utcNow.AddMinutes(Math.Max(0, minutes)),
+                LengthHours = LengthGuess(minutes / 60.0),
             };
         }
 
@@ -323,7 +339,7 @@ internal sealed class VenturesWidget : IHomeWidget
         }
 
         var nameWidth = MathF.Max(1f, valueLeft - WidgetMetrics.Gutter * scale - row.Min.X);
-        Marquee.DrawLeftAuto(drawList, new MarqueeId("timers.ventures", index), entry.Name, row.Min.X, top, nameWidth,
+        Marquee.DrawLeftAuto(drawList, new MarqueeId(context.InstanceKey, index), entry.Name, row.Min.X, top, nameWidth,
             WidgetType.Headline, entry.State == VentureState.Idle ? ink.Secondary : ink.Primary);
 
         var barTop = top + nameHeight + WidgetMetrics.RowGap * scale;
@@ -351,9 +367,23 @@ internal sealed class VenturesWidget : IHomeWidget
         }
 
         var remaining = (row.CompleteUtc - utcNow).TotalHours;
-        var length = remaining > QuickVentureHours ? ExplorationVentureHours : QuickVentureHours;
-        return Math.Clamp(1f - (float)(remaining / length), 0f, 1f);
+        return Math.Clamp(1f - (float)(remaining / row.LengthHours), 0f, 1f);
     }
+
+    private double LengthOf(in RetainerVenture venture, DateTime utcNow)
+    {
+        if (lengths.TryGetValue(venture.RetainerId, out var known) && known.CompleteUtc == venture.CompleteUtc)
+        {
+            return known.Hours;
+        }
+
+        var hours = LengthGuess((venture.CompleteUtc - utcNow).TotalHours);
+        lengths[venture.RetainerId] = new VentureLength(venture.CompleteUtc, hours);
+        return hours;
+    }
+
+    private static double LengthGuess(double remainingHours) =>
+        remainingHours > QuickVentureHours ? ExplorationVentureHours : QuickVentureHours;
 
     private string Summary()
     {

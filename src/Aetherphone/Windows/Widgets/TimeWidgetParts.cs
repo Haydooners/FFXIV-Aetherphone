@@ -102,6 +102,13 @@ internal static class TimeWidgetParts
 
     public static long MinuteKey(DateTime moment) => moment.Ticks / TimeSpan.TicksPerMinute;
 
+    public static long DayAndClockKey(DateTime localMoment)
+    {
+        var dayOffset = (localMoment.Date - DateTime.Today).Days;
+        var relation = dayOffset is 0 or 1 ? dayOffset : 2;
+        return MinuteKey(localMoment) * 4 + relation;
+    }
+
     private static ClockSplit Split(string clock)
     {
         if (Splits.TryGetValue(clock, out var split))

@@ -28,7 +28,6 @@ internal sealed class ResetsWidget : IHomeWidget
     private const float ColumnLabelGap = 7f;
     private const float RelevanceSoonMinutes = 10f;
     private const float RelevanceWindowMinutes = 60f;
-    private const string MarqueePrefix = "timers.resets";
 
     private static readonly LocString[] Names =
     {
@@ -143,7 +142,7 @@ internal sealed class ResetsWidget : IHomeWidget
             var label = Loc.T(Names[index]);
             var maxWidth = columnWidth - WidgetMetrics.RowGap * 2f * scale;
             var labelWidth = MathF.Min(maxWidth, WidgetText.EyebrowWidth(label, scale));
-            WidgetText.EyebrowMarquee(drawList, new MarqueeId(MarqueePrefix, index), label,
+            WidgetText.EyebrowMarquee(drawList, new MarqueeId(context.InstanceKey, index), label,
                 new Vector2(centerX - labelWidth * 0.5f, labelTop), labelWidth, ink.Secondary, scale);
             var detail = Detail(index);
             var fitted = WidgetText.Fit(detail, maxWidth, WidgetType.Caption, out var detailScale);
@@ -259,7 +258,7 @@ internal sealed class ResetsWidget : IHomeWidget
     private string Detail(int index)
     {
         var local = moments[index].ToLocalTime();
-        var key = TimeWidgetParts.MinuteKey(local);
+        var key = TimeWidgetParts.DayAndClockKey(local);
         ref var cache = ref details[index];
         return cache.IsCurrent(key) ? cache.Value : cache.Store(key, TimeWidgetParts.DayAndClock(local));
     }
