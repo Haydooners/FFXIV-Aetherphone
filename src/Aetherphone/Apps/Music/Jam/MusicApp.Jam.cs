@@ -52,6 +52,7 @@ internal sealed partial class MusicApp
 
     private void OpenJamLobby()
     {
+        CloseNowPlaying();
         if (Router.Current == JamLobbyRoute)
         {
             return;

@@ -107,6 +107,7 @@ internal sealed partial class MusicApp : IResumableApp
         this.downloads = downloads;
         this.lyrics = lyrics;
         this.windowsMedia = windowsMedia;
+        PastedLinkHandler = TryHandlePastedLink;
         community = new CommunityRadioService(aethernet, session);
         kit = new MusicKit(ui, images, playback, library) { Downloads = downloads };
         routers = CreateRouters();

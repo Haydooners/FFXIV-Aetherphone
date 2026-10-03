@@ -54,7 +54,7 @@ internal sealed partial class MusicApp
         var scale = UiScale.Current;
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, MaxFrameSeconds);
         var session = windowsMedia.IsSupported && windowsMedia.Current.HasSession;
-        var height = (SheetMetrics.GrabberZone + OutputTitleHeight + OutputRowHeight * 2f + OutputCrossfadeHeight +
+        var height = (SheetMetrics.GrabberZone + OutputTitleHeight + OutputRowHeight * 3f + OutputCrossfadeHeight +
                       Metrics.Size.HomeIndicatorInset + (session ? OutputSessionHeight : 0f)) * scale;
         using var layer = ScreenLayer.Begin("music.output", screen, false);
         var frame = outputSheet.Begin(ImGui.GetWindowDrawList(), screen, theme, SheetDetents.Fitted(height),
@@ -86,7 +86,18 @@ internal sealed partial class MusicApp
         }
 
         Hairline(drawList, left, right, y, ink);
-        if (DrawSleepRow(drawList, left, right, y, ink, muted, interactive, scale))
+        var jamValue = JamActive ? jam.DisplayCode : Loc.T(L.Music.Jam.Start);
+        if (DrawOutputLinkRow(drawList, left, right, y, ink, muted, interactive, scale, FontAwesomeIcon.Users,
+                Loc.T(L.Music.Jam.Title), jamValue))
+        {
+            OpenJamLobby();
+        }
+
+        y += OutputRowHeight * scale;
+        Hairline(drawList, left, right, y, ink);
+        var sleepValue = playback.SleepTimerActive ? SleepStatusText() : Loc.T(L.Common.Off);
+        if (DrawOutputLinkRow(drawList, left, right, y, ink, muted, interactive, scale, FontAwesomeIcon.Moon,
+                Loc.T(L.Music.NowPlaying.SleepTimer), sleepValue))
         {
             OpenSleepMenu();
         }
@@ -194,8 +205,8 @@ internal sealed partial class MusicApp
         return enabled && UiInteract.Click(center - hit, center + hit, hovered);
     }
 
-    private bool DrawSleepRow(ImDrawListPtr drawList, float left, float right, float top, Vector4 ink,
-        Vector4 muted, bool interactive, float scale)
+    private static bool DrawOutputLinkRow(ImDrawListPtr drawList, float left, float right, float top, Vector4 ink,
+        Vector4 muted, bool interactive, float scale, FontAwesomeIcon icon, string label, string value)
     {
         var rowMin = new Vector2(left, top);
         var rowMax = new Vector2(right, top + OutputRowHeight * scale);
@@ -209,8 +220,7 @@ internal sealed partial class MusicApp
 
         var centerY = (rowMin.Y + rowMax.Y) * 0.5f;
         AppSkin.Icon(drawList, new Vector2(left + OutputIconColumn * 0.5f * scale, centerY),
-            IconGlyph.Of(FontAwesomeIcon.Moon), ink, OutputIconScale);
-        var value = playback.SleepTimerActive ? SleepStatusText() : Loc.T(L.Common.Off);
+            IconGlyph.Of(icon), ink, OutputIconScale);
         var chevronCenter = new Vector2(right - Metrics.Space.Sm * scale, centerY);
         AppSkin.Icon(drawList, chevronCenter, IconGlyph.Of(FontAwesomeIcon.ChevronRight), muted, VolumeIconScale);
         var valueSize = Typography.Measure(value, TextStyles.Body);
@@ -221,7 +231,7 @@ internal sealed partial class MusicApp
         var labelWidth = MathF.Max(1f, valueRight - valueSize.X - Metrics.Space.Md * scale - labelLeft);
         var labelHeight = Typography.LineHeight(TextStyles.Body);
         Typography.Draw(drawList, new Vector2(labelLeft, centerY - labelHeight * 0.5f),
-            Typography.FitText(Loc.T(L.Music.NowPlaying.SleepTimer), labelWidth, TextStyles.Body), ink,
+            Typography.FitText(label, labelWidth, TextStyles.Body), ink,
             TextStyles.Body);
         return interactive && UiInteract.Click(rowMin, rowMax, hovered);
     }
