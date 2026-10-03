@@ -72,6 +72,11 @@ internal sealed class AppSettingsPage : ISettingsPage
                 DrawAlerts(theme);
             }
 
+            if (string.Equals(app.Id, MusicMediaSettings.AppId, StringComparison.Ordinal))
+            {
+                MusicMediaSettings.Draw(configuration, theme);
+            }
+
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Xl * scale));
             DrawActions(context, theme);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));

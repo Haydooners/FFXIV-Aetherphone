@@ -14,7 +14,8 @@ internal sealed class ControlRegistry : IControlRegistry
     private readonly Dictionary<string, IControlModule> byId = new();
 
     public ControlRegistry(Configuration configuration, ThemeProvider themes, PlaybackHub playback, CallHub calls,
-        INavigator navigation, Action dismiss, Coins.CoinStore coins, Aethernet.AethernetSession session)
+        INavigator navigation, Action dismiss, Coins.CoinStore coins, Aethernet.AethernetSession session,
+        SystemMedia.PcMediaSource pcMedia)
     {
         Add(new ToggleModule("dnd", FontAwesomeIcon.Moon, L.Settings.DoNotDisturb,
             () => configuration.DoNotDisturb, () =>
@@ -43,7 +44,7 @@ internal sealed class ControlRegistry : IControlRegistry
                 configuration.Save();
             }));
         Add(new ClusterModule(ControlDefaults.ClusterId, ClusterMembers()));
-        Add(new MediaModule(playback));
+        Add(new MediaModule(playback, pcMedia));
         Add(new SliderModule("brightness", L.ControlCenter.Brightness, () => FontAwesomeIcon.Sun,
             () => configuration.ScreenBrightness, value => configuration.ScreenBrightness = value,
             configuration.Save));

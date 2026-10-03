@@ -4432,6 +4432,18 @@ internal static class L
             public static readonly LocString InviteBodyTitled = new("music.jam.inviteBodyTitled", "{0} invited you to {1}");
             public static readonly LocString SomeoneName = new("music.jam.someoneName", "Someone");
         }
+        internal static class PcMedia
+        {
+            public static readonly LocString PlayingOn = new("music.pcMedia.playingOn", "Playing on {0}");
+            public static readonly LocString PausedOn = new("music.pcMedia.pausedOn", "Paused on {0}");
+            public static readonly LocString ThisPc = new("music.pcMedia.thisPc", "this PC");
+            public static readonly LocString UnknownTitle = new("music.pcMedia.unknownTitle", "Unknown title");
+            public static readonly LocString SeekUnavailable = new("music.pcMedia.seekUnavailable", "This app does not support seeking");
+            public static readonly LocString SettingsHeader = new("music.pcMedia.settingsHeader", "Windows media");
+            public static readonly LocString ShowWindowsMedia = new("music.pcMedia.showWindowsMedia", "Show Windows media");
+            public static readonly LocString PublishToWindowsMedia = new("music.pcMedia.publishToWindowsMedia", "Control phone music with media keys");
+            public static readonly LocString SettingsHint = new("music.pcMedia.settingsHint", "Show what Spotify, foobar2000 or your browser is playing on this PC, and let your keyboard media keys pause and skip the phone's music.");
+        }
         public static readonly LocString TabNew = new("music.tabNew", "New");
         public static readonly LocString WorldRadio = new("music.worldRadio", "World radio");
         public static readonly LocString YourStations = new("music.yourStations", "Your stations");

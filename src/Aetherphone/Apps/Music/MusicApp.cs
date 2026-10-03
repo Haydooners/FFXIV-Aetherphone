@@ -15,6 +15,7 @@ using Aetherphone.Core.Radio;
 using Aetherphone.Core.Report;
 using Aetherphone.Core.Rolladeck;
 using Aetherphone.Core.Songs;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Wallpapers;
 using Aetherphone.Windows.Components;
@@ -67,7 +68,7 @@ internal sealed partial class MusicApp : IResumableApp
         AethernetSession session, ReportService report, PhotoLibrary photoLibrary,
         WallpaperImageCache wallpaperImages, ConfirmService confirm, Configuration configuration,
         RemoteImageCache images, LodestoneService lodestone, GameData gameData, RadioLauncher launcher,
-        SocialNotificationService socialNotifications, RolladeckService rolladeck)
+        SocialNotificationService socialNotifications, RolladeckService rolladeck, PcMediaSource pcMedia)
     {
         this.radio = radio;
         this.songSearch = songSearch;
@@ -87,6 +88,7 @@ internal sealed partial class MusicApp : IResumableApp
         this.launcher = launcher;
         this.socialNotifications = socialNotifications;
         this.rolladeck = rolladeck;
+        this.pcMedia = pcMedia;
         community = new CommunityRadioService(aethernet, session);
         kit = new MusicKit(ui, images, playback, library);
         routers = CreateRouters();
@@ -98,6 +100,7 @@ internal sealed partial class MusicApp : IResumableApp
     {
         ResetTabs();
         ResetNowPlaying();
+        pcMediaSheet.CloseImmediately();
         songMenu.Close();
         playlistPicker.Close();
         LoadFavoriteRadioStations();

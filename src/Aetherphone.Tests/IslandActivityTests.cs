@@ -30,6 +30,28 @@ public sealed class IslandActivityTests
     }
 
     [Fact]
+    public void PhonePlaybackOutranksPcMedia()
+    {
+        Assert.Equal(IslandActivity.Playback,
+            IslandActivities.Select(new IslandSignals(false, false, true, false, false, true)));
+    }
+
+    [Fact]
+    public void PcMediaOutranksTimerAndMuster()
+    {
+        Assert.Equal(IslandActivity.PcMedia,
+            IslandActivities.Select(new IslandSignals(false, false, false, true, true, true)));
+    }
+
+    [Fact]
+    public void CallAndSessionOutrankPcMedia()
+    {
+        Assert.Equal(IslandActivity.Call, IslandActivities.Select(new IslandSignals(true, false, false, false, false, true)));
+        Assert.Equal(IslandActivity.Session,
+            IslandActivities.Select(new IslandSignals(false, true, false, false, false, true)));
+    }
+
+    [Fact]
     public void TimerOutranksMuster()
     {
         Assert.Equal(IslandActivity.Timer, IslandActivities.Select(new IslandSignals(false, false, false, true, true)));
@@ -52,6 +74,7 @@ public sealed class IslandActivityTests
     [InlineData((byte)IslandActivity.Call, "message")]
     [InlineData((byte)IslandActivity.Session, "aetherstream")]
     [InlineData((byte)IslandActivity.Playback, "music")]
+    [InlineData((byte)IslandActivity.PcMedia, "music")]
     [InlineData((byte)IslandActivity.Timer, "clock")]
     [InlineData((byte)IslandActivity.Muster, "muster")]
     [InlineData((byte)IslandActivity.None, "")]

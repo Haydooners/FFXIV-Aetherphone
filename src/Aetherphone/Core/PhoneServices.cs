@@ -157,6 +157,7 @@ internal sealed class PhoneServices : IDisposable
     public required PlaybackHub Playback { get; init; }
     public required LibraryStore MusicLibrary { get; init; }
     public required WindowsMediaSessions WindowsMedia { get; init; }
+    public required PcMediaSource PcMedia { get; init; }
     public required WindowsMediaPublisher WindowsMediaPublisher { get; init; }
     public required LyricsService Lyrics { get; init; }
     public required GameStatsStore GameStats { get; init; }
@@ -401,6 +402,7 @@ internal sealed class PhoneServices : IDisposable
         var huntCandidateCache = new HuntCandidateCache(huntMobCatalog, huntZoneCatalog, hunts);
         var huntsMapMarkers = new Maps.HuntsMapMarkers(configuration, hunts, huntMobCatalog, huntZoneCatalog,
             huntCandidateCache);
+        var windowsMedia = new WindowsMediaSessions(configuration);
 
 
         return new PhoneServices
@@ -498,7 +500,8 @@ internal sealed class PhoneServices : IDisposable
             SongResolver = songResolver,
             Playback = playback,
             MusicLibrary = musicLibrary,
-            WindowsMedia = new WindowsMediaSessions(configuration),
+            WindowsMedia = windowsMedia,
+            PcMedia = new PcMediaSource(configuration, windowsMedia),
             WindowsMediaPublisher = new WindowsMediaPublisher(configuration, framework,
                 static () => Platform.GameWindowHandle.Current),
             Lyrics = lyrics,
@@ -582,6 +585,7 @@ internal sealed class PhoneServices : IDisposable
         Lyrics.Dispose();
         Playback.Dispose();
         WindowsMediaPublisher.Dispose();
+        PcMedia.Dispose();
         WindowsMedia.Dispose();
         SongPlayer.Dispose();
         MusicLibrary.Dispose();

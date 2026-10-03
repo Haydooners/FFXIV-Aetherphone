@@ -32,7 +32,7 @@ internal readonly struct MinimizedControlResult
     }
 }
 
-internal static class MinimizedPhoneRenderer
+internal static partial class MinimizedPhoneRenderer
 {
     private const float MeridiemScale = 0.6f;
     private const float MeridiemGap = 4f;

@@ -1,6 +1,7 @@
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Playback;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -8,7 +9,7 @@ using Dalamud.Interface;
 
 namespace Aetherphone.Core.ControlCenter.Modules;
 
-internal sealed class MediaModule : IControlModule
+internal sealed partial class MediaModule : IControlModule
 {
     private const string AppId = "music";
     private const float IdleArtAlpha = 0.55f;
@@ -29,9 +30,10 @@ internal sealed class MediaModule : IControlModule
 
     private readonly PlaybackHub playback;
 
-    public MediaModule(PlaybackHub playback)
+    public MediaModule(PlaybackHub playback, PcMediaSource pcMedia)
     {
         this.playback = playback;
+        this.pcMedia = pcMedia;
     }
 
     public string Id => "media";
@@ -48,6 +50,11 @@ internal sealed class MediaModule : IControlModule
         var opacity = context.Opacity;
         var theme = context.Theme;
         ControlTile.Surface(drawList, rect, theme, opacity);
+        if (!playback.IsActive && DrawPcMedia(in context))
+        {
+            return;
+        }
+
         var active = playback.IsActive;
         var title = active ? playback.Title : Loc.T(L.ControlCenter.NotPlaying);
         var subtitle = active ? playback.Subtitle : string.Empty;
