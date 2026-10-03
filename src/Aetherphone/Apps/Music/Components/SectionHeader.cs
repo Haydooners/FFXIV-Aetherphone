@@ -8,6 +8,7 @@ namespace Aetherphone.Apps.Music;
 internal static class SectionHeader
 {
     private const float BottomGap = 8f;
+    private const float FirstGap = 4f;
     private const float ChevronGap = 6f;
     private const float ChevronBox = 14f;
     private const float ChevronScale = 0.7f;
@@ -16,7 +17,8 @@ internal static class SectionHeader
         float topGap = MusicUi.SectionGap)
     {
         var scale = UiScale.Current;
-        ImGui.Dummy(new Vector2(0f, topGap * scale));
+        var firstOnPage = ImGui.GetCursorPosY() <= ImGui.GetStyle().WindowPadding.Y + 1f;
+        ImGui.Dummy(new Vector2(0f, (firstOnPage ? MathF.Min(topGap, FirstGap) : topGap) * scale));
         var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
         var left = origin.X + inset * scale;

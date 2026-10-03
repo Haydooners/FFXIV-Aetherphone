@@ -21,8 +21,6 @@ internal sealed partial class MusicApp
         var frame = BeginPage(context);
         using (AppSurface.Begin(frame.Body))
         {
-            DrawLiveGroup(scale, LiveGroup.OnAir, Loc.T(L.Music.OnAirSection));
-            DrawLiveDjsSection(scale);
             SectionHeader.Draw(ui, Loc.T(L.Music.CommunityRadio), false, 0f);
             if (stations.Length == 0)
             {
@@ -31,11 +29,13 @@ internal sealed partial class MusicApp
             else
             {
                 DrawTagFilterRail(scale, stations);
+                DrawLiveGroup(scale, LiveGroup.OnAir, Loc.T(L.Music.OnAirSection));
                 DrawLiveGroup(scale, LiveGroup.Upcoming, Loc.T(L.Music.UpNextSection));
                 DrawLiveGroup(scale, LiveGroup.Followed, Loc.T(L.Music.FollowingSection));
                 DrawLiveGroup(scale, LiveGroup.Resting, Loc.T(L.Music.AllStationsSection));
             }
 
+            DrawLiveDjsSection(scale);
             DrawWorldRadioShelf(scale);
             DrawFavoriteRadioStationsSection(scale);
             ImGui.Dummy(new Vector2(0f, 10f * scale));

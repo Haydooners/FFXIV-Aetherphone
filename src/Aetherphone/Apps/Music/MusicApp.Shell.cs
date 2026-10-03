@@ -228,7 +228,7 @@ internal sealed partial class MusicApp
         }
     }
 
-    private NavBarFrame BeginPage(in PhoneContext context) => AppHeader.BeginLargeTitle(context);
+    private NavBarFrame BeginPage(in PhoneContext context) => AppHeader.BeginLargeTitle(context, pageDepth > 1);
 
     private int EndPage(in NavBarFrame frame, in PhoneContext context, string title) =>
         EndPage(in frame, context, title, ReadOnlySpan<NavBarButton>.Empty);
