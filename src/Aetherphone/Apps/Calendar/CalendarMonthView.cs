@@ -1,7 +1,6 @@
 using System.Collections.Frozen;
 using Aetherphone.Core;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -10,12 +9,18 @@ namespace Aetherphone.Apps.Calendar;
 
 internal static class CalendarMonthView
 {
-    private const float DotRadius = 3f;
-    private const float NavHeight = 36f;
-    private const float DayHeaderHeight = 22f;
-    private const float SidePadding = 6f;
-    private const float NumberCenterFraction = 0.34f;
-    private const float DotRowFraction = 0.72f;
+    public const float WeekdayRowHeight = 26f;
+    public const float RootCellHeight = 54f;
+    public const float PickerCellHeight = 40f;
+    private const int DaysPerWeek = 7;
+    private const int MaxDots = 3;
+    private const float RootDiscRadius = 16f;
+    private const float PickerDiscRadius = 15f;
+    private const float RootNumberCenter = 22f;
+    private const float DotRadius = 2.8f;
+    private const float DotGap = 4f;
+    private const float DotOffset = 21f;
+    private const float HoverWashAlpha = 0.07f;
 
     private static readonly LocString[] WeekdayInitials =
     {
@@ -23,261 +28,179 @@ internal static class CalendarMonthView
         L.Calendar.WeekThu, L.Calendar.WeekFri, L.Calendar.WeekSat,
     };
 
-    public static float Draw(AppSkin ui, Rect area, float targetHeight, ref int monthOffset,
-        ref DateTime selectedDate, FrozenDictionary<long, ParsedEvent[]> events)
+    private static readonly string[] DayNumbers = BuildDayNumbers();
+
+    public static int WeekStart => (int)Loc.Culture.DateTimeFormat.FirstDayOfWeek;
+
+    public static int Rows(DateTime month)
     {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var referenceDate = DateTime.Today.AddMonths(monthOffset);
-        var firstOfMonth = new DateTime(referenceDate.Year, referenceDate.Month, 1);
-        var daysInMonth = DateTime.DaysInMonth(referenceDate.Year, referenceDate.Month);
-        var weekStart = (int)Loc.Culture.DateTimeFormat.FirstDayOfWeek;
-        var leadingBlanks = ((int)firstOfMonth.DayOfWeek - weekStart + 7) % 7;
-        var totalCells = leadingBlanks + daysInMonth;
-        var totalRows = (int)MathF.Ceiling(totalCells / 7f);
+        var first = new DateTime(month.Year, month.Month, 1);
+        var leading = ((int)first.DayOfWeek - WeekStart + DaysPerWeek) % DaysPerWeek;
+        var total = leading + DateTime.DaysInMonth(month.Year, month.Month);
+        return (total + DaysPerWeek - 1) / DaysPerWeek;
+    }
+
+    public static void DrawWeekdays(ImDrawListPtr drawList, AppSkin ui, Vector2 origin, float width, float scale)
+    {
+        var cellWidth = width / DaysPerWeek;
+        var weekStart = WeekStart;
+        var centerY = origin.Y + WeekdayRowHeight * scale * 0.5f;
+        for (var column = 0; column < DaysPerWeek; column++)
+        {
+            var weekday = (column + weekStart) % DaysPerWeek;
+            var ink = IsWeekend(weekday) ? Palette.WithAlpha(ui.MutedInk, ui.MutedInk.W * 0.7f) : ui.MutedInk;
+            Typography.DrawCentered(drawList, new Vector2(origin.X + (column + 0.5f) * cellWidth, centerY),
+                Loc.T(WeekdayInitials[weekday]), ink, TextStyles.FootnoteEmphasized);
+        }
+    }
+
+    public static bool Draw(ImDrawListPtr drawList, AppSkin ui, Vector2 origin, float width, DateTime month,
+        DateTime selected, FrozenDictionary<long, ParsedEvent[]>? events, bool picker, float alpha,
+        out DateTime tapped, float scale)
+    {
+        tapped = default;
+        var first = new DateTime(month.Year, month.Month, 1);
+        var daysInMonth = DateTime.DaysInMonth(month.Year, month.Month);
+        var leading = ((int)first.DayOfWeek - WeekStart + DaysPerWeek) % DaysPerWeek;
+        var rows = (leading + daysInMonth + DaysPerWeek - 1) / DaysPerWeek;
+        var cellWidth = width / DaysPerWeek;
+        var cellHeight = (picker ? PickerCellHeight : RootCellHeight) * scale;
+        var discRadius = MathF.Min((picker ? PickerDiscRadius : RootDiscRadius) * scale, cellWidth * 0.46f);
+        var numberOffset = picker ? cellHeight * 0.5f : RootNumberCenter * scale;
         var today = DateTime.Today;
-
-        var sidePad = SidePadding * scale;
-        var gridWidth = area.Width - sidePad * 2f;
-        var cellWidth = gridWidth / 7f;
-        var reservedHeight = NavHeight * scale + DayHeaderHeight * scale;
-        var rowHeight = Math.Clamp((targetHeight - reservedHeight) / totalRows, cellWidth * 0.90f, cellWidth * 1.75f);
-
-        var origin = new Vector2(area.Min.X + sidePad, area.Min.Y);
-
-        origin.Y += DrawNavigation(ui, drawList, origin, gridWidth, referenceDate, scale,
-            ref monthOffset, ref selectedDate, today);
-
-        var dayHeaderY = origin.Y;
-        DrawDayHeaders(ui, drawList, origin, cellWidth, dayHeaderY, scale, weekStart);
-
-        var gridTop = dayHeaderY + DayHeaderHeight * scale;
-        UiAnchors.Report("calendar.grid",
-            new Rect(new Vector2(area.Min.X, gridTop), new Vector2(area.Max.X, gridTop + totalRows * rowHeight)));
-        drawList.AddLine(new Vector2(area.Min.X, gridTop), new Vector2(area.Max.X, gridTop),
-            ImGui.GetColorU32(ui.Theme.Separator), 1f);
-
-        for (var row = 0; row < totalRows; row++)
+        var hairline = ImGui.GetColorU32(ui.Hairline with { W = ui.Hairline.W * alpha });
+        var interactive = alpha > 0.5f;
+        var tappedAny = false;
+        for (var row = 0; row < rows; row++)
         {
-            var rowTop = gridTop + row * rowHeight;
-            if (row > 0)
+            var rowTop = origin.Y + row * cellHeight;
+            if (!picker)
             {
-                drawList.AddLine(new Vector2(area.Min.X, rowTop), new Vector2(area.Max.X, rowTop),
-                    ImGui.GetColorU32(Palette.WithAlpha(ui.Theme.Separator, 0.5f)), 1f);
+                drawList.AddLine(new Vector2(origin.X, rowTop), new Vector2(origin.X + width, rowTop), hairline,
+                    Metrics.Stroke.Hairline);
             }
 
-            for (var column = 0; column < 7; column++)
+            for (var column = 0; column < DaysPerWeek; column++)
             {
-                var dayIndex = row * 7 + column;
-                var cellDay = dayIndex - leadingBlanks + 1;
-                var isCurrentMonth = cellDay >= 1 && cellDay <= daysInMonth;
-                var cellX = origin.X + column * cellWidth;
-                var cellY = rowTop;
-                var cellMin = new Vector2(cellX, cellY);
-                var cellMax = new Vector2(cellX + cellWidth, cellY + rowHeight);
-
-                DateTime dayDate;
-                if (isCurrentMonth)
+                var day = row * DaysPerWeek + column - leading + 1;
+                if (day < 1 || day > daysInMonth)
                 {
-                    dayDate = new DateTime(referenceDate.Year, referenceDate.Month, cellDay);
-                }
-                else if (cellDay < 1)
-                {
-                    var prevMonth = firstOfMonth.AddMonths(-1);
-                    var prevDays = DateTime.DaysInMonth(prevMonth.Year, prevMonth.Month);
-                    dayDate = new DateTime(prevMonth.Year, prevMonth.Month, prevDays + cellDay);
-                }
-                else
-                {
-                    var nextMonth = firstOfMonth.AddMonths(1);
-                    dayDate = new DateTime(nextMonth.Year, nextMonth.Month, cellDay - daysInMonth);
+                    continue;
                 }
 
-                var isToday = dayDate == today;
-                var isSelected = dayDate == selectedDate;
-                var textColor = isCurrentMonth ? ui.TitleInk : ui.MutedInk;
-                if (!isCurrentMonth)
+                var date = first.AddDays(day - 1);
+                var cellMin = new Vector2(origin.X + column * cellWidth, rowTop);
+                var cellMax = new Vector2(cellMin.X + cellWidth, rowTop + cellHeight);
+                var center = new Vector2(cellMin.X + cellWidth * 0.5f, rowTop + numberOffset);
+                var hovered = interactive && UiInteract.Hover(cellMin, cellMax);
+                var isToday = date == today;
+                var isSelected = date == selected;
+                var ink = DayInk(ui, date, isToday, isSelected);
+                if (isSelected)
                 {
-                    textColor = new Vector4(textColor.X, textColor.Y, textColor.Z, textColor.W * 0.4f);
+                    var fill = isToday ? ui.Accent : ui.TitleInk;
+                    drawList.AddCircleFilled(center, discRadius, ImGui.GetColorU32(fill with { W = fill.W * alpha }),
+                        40);
+                }
+                else if (hovered)
+                {
+                    drawList.AddCircleFilled(center, discRadius,
+                        ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, HoverWashAlpha * alpha)), 40);
                 }
 
-                var dayText = dayDate.Day.ToString();
-                var fnScale = TextStyles.SubheadlineEmphasized.Scale;
-                var fnWeight = TextStyles.SubheadlineEmphasized.Weight;
-                var numberCenter = new Vector2(cellX + cellWidth * 0.5f, cellY + rowHeight * NumberCenterFraction);
-                var textSize = Typography.Measure(dayText, fnScale, fnWeight);
-                var minSpan = MathF.Min(cellWidth, rowHeight);
-                var badgeRadius = Math.Clamp(textSize.X * 0.62f + 3f * scale, minSpan * 0.28f, minSpan * 0.38f);
-
-                if (isToday && isCurrentMonth)
+                var style = isToday || isSelected ? TextStyles.Headline : TextStyles.Body;
+                Typography.DrawCentered(drawList, center, DayNumbers[day], ink with { W = ink.W * alpha }, style);
+                if (!picker && events is not null)
                 {
-                    drawList.AddCircleFilled(numberCenter, badgeRadius, ImGui.GetColorU32(ui.Accent), 32);
-                    textColor = new Vector4(1f, 1f, 1f, 1f);
-                }
-                else if (isSelected && isCurrentMonth)
-                {
-                    drawList.AddCircleFilled(numberCenter, badgeRadius,
-                        ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.14f)), 32);
-                    drawList.AddCircle(numberCenter, badgeRadius, ImGui.GetColorU32(ui.Accent), 32, 1.5f * scale);
+                    DrawDots(drawList, events, date, new Vector2(center.X, rowTop + numberOffset + DotOffset * scale),
+                        alpha, scale);
                 }
 
-                ImGui.SetCursorScreenPos(cellMin);
-                ImGui.Dummy(cellMax - cellMin);
-                if (UiInteract.Click(cellMin, cellMax, UiInteract.Hover(cellMin, cellMax)))
+                if (hovered)
                 {
-                    selectedDate = dayDate;
-                    if (!isCurrentMonth)
-                    {
-                        monthOffset = ((dayDate.Year - today.Year) * 12) + dayDate.Month - today.Month;
-                    }
+                    ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
                 }
 
-                Typography.DrawCentered(drawList, numberCenter, dayText, textColor, fnScale, fnWeight);
-                DrawEventDots(ui, drawList, events, dayDate, cellX, cellY, cellWidth, rowHeight, isCurrentMonth,
-                    scale);
+                if (interactive && UiInteract.Click(cellMin, cellMax, hovered))
+                {
+                    tapped = date;
+                    tappedAny = true;
+                }
             }
         }
 
-        return gridTop + totalRows * rowHeight + 6f * scale;
+        return tappedAny;
     }
 
-    private static float DrawNavigation(AppSkin ui, ImDrawListPtr drawList, Vector2 origin, float gridWidth,
-        DateTime referenceDate, float scale, ref int monthOffset,
-        ref DateTime selectedDate, DateTime today)
+    public static float Height(DateTime month, bool picker, float scale) =>
+        Rows(month) * (picker ? PickerCellHeight : RootCellHeight) * scale;
+
+    private static Vector4 DayInk(AppSkin ui, DateTime date, bool isToday, bool isSelected)
     {
-        var monthName = referenceDate.ToString("MMMM yyyy", Loc.Culture);
-        var navY = origin.Y;
-
-        if (DrawNavChevron(ui, drawList, origin, "<", scale))
+        if (isSelected)
         {
-            monthOffset--;
-            selectedDate = new DateTime(referenceDate.Year, referenceDate.Month, 1).AddMonths(-1);
+            return isToday ? AccentRing.Ink : ui.Theme.AppBackground with { W = 1f };
         }
 
-        var isCurrentMonth = referenceDate.Year == today.Year && referenceDate.Month == today.Month;
-        var todayPillReserve = isCurrentMonth ? 0f : TodayButtonWidth(scale) + 4f * scale;
-        var monthMaxWidth = MathF.Max(1f, gridWidth - 76f * scale - todayPillReserve);
-        var monthFitted = Typography.FitText(monthName, monthMaxWidth, TextStyles.Title3);
-        var monthSize = Typography.Measure(monthFitted, TextStyles.Title3);
-        Typography.Draw(new Vector2(origin.X + gridWidth * 0.5f - monthSize.X * 0.5f,
-                navY + NavHeight * scale * 0.5f - monthSize.Y * 0.5f),
-            monthFitted, ui.TitleInk, TextStyles.Title3);
-
-        var rightChevronOrigin = new Vector2(origin.X + gridWidth - 30f * scale, navY);
-        if (DrawNavChevron(ui, drawList, rightChevronOrigin, ">", scale))
+        if (isToday)
         {
-            monthOffset++;
-            selectedDate = new DateTime(referenceDate.Year, referenceDate.Month, 1).AddMonths(1);
+            return ui.Accent;
         }
 
-        if (!isCurrentMonth)
-        {
-            var rightChevronMinX = rightChevronOrigin.X + 4f * scale;
-            DrawTodayButton(ui, drawList, rightChevronMinX, navY, scale, ref monthOffset, ref selectedDate);
-        }
-
-        return NavHeight * scale;
+        return IsWeekend((int)date.DayOfWeek) ? ui.MutedInk : ui.TitleInk;
     }
 
-    private static float TodayButtonWidth(float scale)
+    private static void DrawDots(ImDrawListPtr drawList, FrozenDictionary<long, ParsedEvent[]> events,
+        DateTime date, Vector2 center, float alpha, float scale)
     {
-        var todayText = Loc.T(L.Calendar.Today);
-        var textSize = Typography.Measure(todayText, TextStyles.FootnoteEmphasized.Scale,
-            TextStyles.FootnoteEmphasized.Weight);
-        return textSize.X + 8f * scale * 2f + 6f * scale;
-    }
-
-    private static void DrawTodayButton(AppSkin ui, ImDrawListPtr drawList, float rightLimitX, float navY,
-        float scale, ref int monthOffset, ref DateTime selectedDate)
-    {
-        var todayText = Loc.T(L.Calendar.Today);
-        var feScale = TextStyles.FootnoteEmphasized.Scale;
-        var feWeight = TextStyles.FootnoteEmphasized.Weight;
-        var textSize = Typography.Measure(todayText, feScale, feWeight);
-        var padX = 8f * scale;
-        var gapX = 6f * scale;
-        var height = NavHeight * scale * 0.68f;
-        var max = new Vector2(rightLimitX - gapX, navY + NavHeight * scale * 0.5f + height * 0.5f);
-        var min = new Vector2(max.X - textSize.X - padX * 2f, max.Y - height);
-        var hovered = UiInteract.Hover(min, max);
-        Squircle.Fill(drawList, min, max, height * 0.5f,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, hovered ? 0.24f : 0.14f)));
-        Typography.DrawCentered(drawList, (min + max) * 0.5f, todayText, ui.Accent, feScale, feWeight);
-        if (!UiInteract.HoverClick(min, max))
+        if (!events.TryGetValue(date.Ticks, out var dayEvents) || dayEvents.Length == 0)
         {
             return;
         }
 
-        monthOffset = 0;
-        selectedDate = DateTime.Today;
-    }
-
-    private static bool DrawNavChevron(AppSkin ui, ImDrawListPtr drawList, Vector2 origin, string chevron,
-        float scale)
-    {
-        var min = new Vector2(origin.X + 4f * scale, origin.Y);
-        var max = new Vector2(min.X + 30f * scale, min.Y + NavHeight * scale);
-        var mid = (min + max) * 0.5f;
-        var hovered = UiInteract.Hover(min, max);
-        if (hovered)
+        Span<Vector4> colors = stackalloc Vector4[MaxDots];
+        var count = 0;
+        for (var index = 0; index < dayEvents.Length && count < MaxDots; index++)
         {
-            Squircle.Fill(drawList, min, max, (max.Y - min.Y) * 0.5f, ImGui.GetColorU32(ui.HoverTint));
+            var color = dayEvents[index].Color;
+            var seen = false;
+            for (var existing = 0; existing < count; existing++)
+            {
+                if (colors[existing] == color)
+                {
+                    seen = true;
+                    break;
+                }
+            }
+
+            if (!seen)
+            {
+                colors[count++] = color;
+            }
         }
 
-        var hlScale = TextStyles.Headline.Scale;
-        var hlWeight = TextStyles.Headline.Weight;
-        Typography.DrawCentered(drawList, mid, chevron, ui.MutedInk, hlScale, hlWeight);
-
-        return UiInteract.HoverClick(min, max);
-    }
-
-    private static void DrawDayHeaders(AppSkin ui, ImDrawListPtr drawList, Vector2 origin, float cellWidth,
-        float topY, float scale, int weekStart)
-    {
-        var c2Scale = TextStyles.FootnoteEmphasized.Scale;
-        var c2Weight = TextStyles.FootnoteEmphasized.Weight;
-
-        for (var column = 0; column < WeekdayInitials.Length; column++)
+        var radius = DotRadius * scale;
+        var step = radius * 2f + DotGap * 0.5f * scale;
+        var startX = center.X - (count - 1) * step * 0.5f;
+        for (var index = 0; index < count; index++)
         {
-            var weekday = (column + weekStart) % WeekdayInitials.Length;
-            var cellX = origin.X + column * cellWidth;
-            var headerColor = weekday == (int)DayOfWeek.Sunday ? ui.Accent : ui.MutedInk;
-            Typography.DrawCentered(drawList,
-                new Vector2(cellX + cellWidth * 0.5f, topY + DayHeaderHeight * scale * 0.5f),
-                Loc.T(WeekdayInitials[weekday]), headerColor, c2Scale, c2Weight);
+            var color = colors[index];
+            drawList.AddCircleFilled(new Vector2(startX + index * step, center.Y), radius,
+                ImGui.GetColorU32(color with { W = color.W * alpha }), 16);
         }
     }
 
-    private static void DrawEventDots(AppSkin ui, ImDrawListPtr drawList,
-        FrozenDictionary<long, ParsedEvent[]> events, DateTime day, float cellX, float cellY, float cellWidth,
-        float rowHeight, bool isCurrentMonth, float scale)
+    private static bool IsWeekend(int weekday) =>
+        weekday == (int)DayOfWeek.Saturday || weekday == (int)DayOfWeek.Sunday;
+
+    private static string[] BuildDayNumbers()
     {
-        var key = day.Date.Ticks;
-        if (!events.TryGetValue(key, out var dayEvents) || dayEvents.Length == 0)
+        var numbers = new string[32];
+        for (var index = 0; index < numbers.Length; index++)
         {
-            return;
+            numbers[index] = index.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
-        var dotSpacing = DotRadius * 2.6f * scale;
-        var maxWidth = cellWidth - 6f * scale;
-        var visibleCount = (int)MathF.Min(dayEvents.Length, MathF.Floor(maxWidth / dotSpacing));
-        var actualWidth = visibleCount * dotSpacing;
-        var startX = cellX + cellWidth * 0.5f - actualWidth * 0.5f + dotSpacing * 0.5f;
-        var dotY = cellY + rowHeight * DotRowFraction;
-
-        for (var index = 0; index < visibleCount; index++)
-        {
-            var dotX = startX + index * dotSpacing;
-            var color = isCurrentMonth ? dayEvents[index].Color : dayEvents[index].DimColor;
-            drawList.AddCircleFilled(new Vector2(dotX, dotY), DotRadius * scale, ImGui.GetColorU32(color));
-        }
-
-        if (dayEvents.Length > visibleCount)
-        {
-            var plusX = startX + visibleCount * dotSpacing;
-            Typography.Draw(drawList, new Vector2(plusX, dotY - 6f * scale),
-                $"+{dayEvents.Length - visibleCount}", ui.MutedInk, TextStyles.Caption2.Scale,
-                TextStyles.Caption2.Weight);
-        }
+        return numbers;
     }
 }

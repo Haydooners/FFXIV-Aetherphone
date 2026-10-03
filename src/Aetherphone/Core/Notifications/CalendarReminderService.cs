@@ -34,16 +34,19 @@ internal sealed class CalendarReminderService : IDisposable
         for (var index = 0; index < events.Count; index++)
         {
             var calendarEvent = events[index];
-            if (calendarEvent.Notified || !CalendarReminder.TryFireTime(calendarEvent, out var fireTime) ||
-                fireTime > nowLocal)
+            var due = CalendarReminder.Due(calendarEvent, nowLocal, out var occurrence);
+            if (due == CalendarReminderDue.None)
             {
                 continue;
             }
 
-            calendarEvent.Notified = true;
+            CalendarReminder.MarkHandled(calendarEvent, occurrence);
             dirty = true;
-            notifications.Notify(new PhoneNotification("calendar", calendarEvent.Title,
-                CalendarReminder.Body(calendarEvent.When, nowLocal), nowLocal, Accent));
+            if (due == CalendarReminderDue.Notify)
+            {
+                notifications.Notify(new PhoneNotification("calendar", calendarEvent.Title,
+                    CalendarReminder.Body(occurrence, nowLocal), nowLocal, Accent));
+            }
         }
 
         if (dirty)
