@@ -92,7 +92,7 @@ internal sealed partial class ShortcutsApp
         if (draft is not null)
         {
             using (TabBar.ReserveContent(scale))
-            using (AppSurface.Begin(navBar.Body))
+            using (var surface = AppSurface.Begin(navBar.Body))
             {
                 var drawList = ImGui.GetWindowDrawList();
                 var origin = ImGui.GetCursorScreenPos();
@@ -103,6 +103,11 @@ internal sealed partial class ShortcutsApp
                     Loc.T(L.Shortcuts.Steps), ui.TitleInk, scale) + ShortcutsArt.HeaderGap * scale;
                 var stepsTop = cursorY;
                 cursorY = DrawEditableSteps(drawList, new Vector2(origin.X, cursorY), width, scale);
+                if (dragIndex >= 0)
+                {
+                    surface.CancelDrag();
+                }
+
                 UiAnchors.Report("shortcuts.editor.steps",
                     new Rect(new Vector2(origin.X, stepsTop), new Vector2(origin.X + width, cursorY)));
                 cursorY += HintGap * scale;
