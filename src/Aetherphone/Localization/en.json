@@ -5725,6 +5725,7 @@
   "changelog.r1042.0": "The server info bar entry is now a phone icon with your unread count, in place of the Aetherphone name",
   "changelog.r1042.1": "Hovering the server info bar entry now shows how many notifications are waiting and what a click does",
   "changelog.r1042.2": "Fixed MogCast dragging the game down to one frame per second for some players while it waited for a link",
+  "changelog.r1042.3": "Replaced the built-in wallpapers with an original set of eight pairs, and a retired wallpaper you had picked switches to the closest new one",
   "changelog.r1037.0": "Moved live DJs off the home screen and onto their venue's page: the Now playing card shows the DJ's picture, name and viewers, with a Twitch link for each DJ",
   "changelog.r1037.1": "Added an Active DJ tag to venue cards while a DJ is on air there",
   "changelog.r1037.2": "Fixed live DJs and XIV Rolladeck live confirmations not showing at all",

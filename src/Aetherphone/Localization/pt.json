@@ -5725,6 +5725,7 @@
   "changelog.r1042.0": "A entrada na barra de informações do servidor agora é um ícone de telefone com o número de notificações não lidas, no lugar do nome Aetherphone",
   "changelog.r1042.1": "Passar o mouse sobre a entrada na barra de informações do servidor agora mostra quantas notificações estão esperando e o que um clique faz",
   "changelog.r1042.2": "Corrigido MogCast derrubando o jogo para um quadro por segundo em alguns jogadores enquanto esperava um link",
+  "changelog.r1042.3": "Os papéis de parede incluídos foram substituídos por um conjunto original de oito pares, e um papel de parede removido que você usava muda para o novo mais parecido",
   "changelog.r1037.0": "Os DJs ao vivo saíram da tela inicial e foram para a página do local: o cartão Tocando agora mostra a foto, o nome e os espectadores do DJ, com um link da Twitch para cada DJ",
   "changelog.r1037.1": "Adicionada a etiqueta DJ ativo aos cartões de locais enquanto um DJ está ao vivo lá",
   "changelog.r1037.2": "Corrigido DJs ao vivo e confirmações ao vivo do XIV Rolladeck que não apareciam",

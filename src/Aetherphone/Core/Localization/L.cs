@@ -1957,6 +1957,8 @@ internal static class L
                 "The server info bar entry is now a phone icon with your unread count, in place of the Aetherphone name"),
             new("changelog.r1042.1",
                 "Hovering the server info bar entry now shows how many notifications are waiting and what a click does"),
+            new("changelog.r1042.3",
+                "Replaced the built-in wallpapers with an original set of eight pairs, and a retired wallpaper you had picked switches to the closest new one"),
         };
 
         public static readonly LocString[] Release1042MogCast =

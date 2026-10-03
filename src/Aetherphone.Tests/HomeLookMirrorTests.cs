@@ -79,8 +79,8 @@ public sealed class HomeLookMirrorTests
         Assert.Equal("Blue", configuration.AccentName);
         Assert.Equal(string.Empty, configuration.AccentCustomHex);
         Assert.Equal("Titanium", configuration.PhoneCaseName);
-        Assert.Equal("DuskLight", configuration.LightWallpaperId);
-        Assert.Equal("DuskDark", configuration.DarkWallpaperId);
+        Assert.Equal("BloomLight", configuration.LightWallpaperId);
+        Assert.Equal("BloomDark", configuration.DarkWallpaperId);
         var home = configuration.Home!;
         Assert.Equal(new[] { "a", "b" }, home.Dock);
         Assert.Equal(2, home.Pages.Count);
@@ -186,8 +186,8 @@ public sealed class HomeLookMirrorTests
             AccentName = "Blue",
             AccentCustomHex = string.Empty,
             PhoneCaseName = "Titanium",
-            LightWallpaperId = "DuskLight",
-            DarkWallpaperId = "DuskDark",
+            LightWallpaperId = "BloomLight",
+            DarkWallpaperId = "BloomDark",
         };
 
     private sealed class FakeLookConfiguration : ILookConfiguration

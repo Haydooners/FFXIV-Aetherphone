@@ -167,7 +167,7 @@ Bundled audio lives in src/Aetherphone/Sounds/ in two kind-specific folders, and
 
 ## Wallpapers
 
-Built-in wallpapers are the image files in src/Aetherphone/Wallpapers/, shipped as Light/Dark pairs (`DuskLight.jpg` and `DuskDark.jpg`, and so on). `WallpaperLibrary.DiscoverBuiltIns` (src/Aetherphone/Core/Wallpapers/WallpaperLibrary.cs) lists `*.png`, `*.jpg`, `*.jpeg`, and `*.bmp` and uses the file name without extension as the wallpaper id, so the pairing is a naming convention, not code: the user picks one wallpaper for Light appearance and one for Dark in Settings, stored as `Configuration.LightWallpaperId` and `Configuration.DarkWallpaperId` (defaults `DuskLight` and `DuskDark`).
+Built-in wallpapers are the image files in src/Aetherphone/Wallpapers/, shipped as Light/Dark pairs (`BloomLight.jpg` and `BloomDark.jpg`, and so on). Every one is rendered by tools/wallpaper-generator/generate-wallpapers.py, so the set carries no third-party artwork. `WallpaperLibrary.DiscoverBuiltIns` (src/Aetherphone/Core/Wallpapers/WallpaperLibrary.cs) lists `*.png`, `*.jpg`, `*.jpeg`, and `*.bmp` and uses the file name without extension as the wallpaper id, so the pairing is a naming convention, not code: the user picks one wallpaper for Light appearance and one for Dark in Settings, stored as `Configuration.LightWallpaperId` and `Configuration.DarkWallpaperId` (defaults `BuiltInWallpapers.DefaultLightId` and `DefaultDarkId`, Bloom). Removed pairs stay listed in `BuiltInWallpapers` (src/Aetherphone/Core/Wallpapers/BuiltInWallpapers.cs) with a replacement, and `Configuration.MigrateRetiredWallpapers` rewrites saved ids, Looks included, on load.
 
 Users can also import their own: `WallpaperLibrary.AddCustom` copies the picked image into `<Dalamud config dir>/Wallpapers/` under a generated `custom-` id and stores a `WallpaperCrop` (zoom plus center) in `Configuration.CustomWallpapers`.
 
@@ -186,7 +186,7 @@ Wallpaper luminance is a separate coupling, for legibility rather than theme cho
 
 ### To add a built-in wallpaper
 
-1. Add a Light/Dark pair to src/Aetherphone/Wallpapers/, named `<Name>Light.<ext>` and `<Name>Dark.<ext>` to match the existing convention. Ids are the file name stems, so choose them as final. The abstract set (Bloom, Current, Ember, Prism) is rendered by tools/wallpaper-generator/generate-wallpapers.py; add a palette entry there rather than hand-painting a sibling.
+1. Add a Light/Dark pair to src/Aetherphone/Wallpapers/, named `<Name>Light.<ext>` and `<Name>Dark.<ext>` to match the existing convention. Ids are the file name stems, so choose them as final; to remove a pair, add its ids to `BuiltInWallpapers` with a replacement. The set (Bloom, Crystal, Current, Ember, Frost, Grove, Prism, Sunset) is rendered by tools/wallpaper-generator/generate-wallpapers.py; add a palette entry there rather than hand-painting a sibling.
 2. Rebuild. The csproj glob ships them and discovery lists them in the Settings wallpaper picker automatically; there are no per-wallpaper localization keys.
 3. Check both appearance cards in Settings > Wallpaper, and check the home screen scrim on the brighter of the pair.
 
