@@ -4432,6 +4432,70 @@ internal static class L
             public static readonly LocString InviteBodyTitled = new("music.jam.inviteBodyTitled", "{0} invited you to {1}");
             public static readonly LocString SomeoneName = new("music.jam.someoneName", "Someone");
         }
+
+        internal static class Library
+        {
+            public static readonly LocString Play = new("music.library.play", "Play");
+            public static readonly LocString ImportFromYoutube = new("music.library.importFromYoutube", "Import from YouTube");
+            public static readonly LocString SortBy = new("music.library.sortBy", "Sort by");
+            public static readonly LocString SortRecentlyUpdated = new("music.library.sortRecentlyUpdated", "Recently updated");
+            public static readonly LocString SortTitle = new("music.library.sortTitle", "Title");
+            public static readonly LocString SortArtist = new("music.library.sortArtist", "Artist");
+            public static readonly LocString Edit = new("music.library.edit", "Edit");
+            public static readonly LocString Done = new("music.library.done", "Done");
+            public static readonly LocString SharePlaylist = new("music.library.sharePlaylist", "Share playlist");
+            public static readonly LocString AddDescription = new("music.library.addDescription", "Add description");
+            public static readonly LocString ChangeCover = new("music.library.changeCover", "Change cover");
+            public static readonly LocString RemoveCover = new("music.library.removeCover", "Remove cover");
+            public static readonly LocString CoverTitle = new("music.library.coverTitle", "Playlist cover");
+            public static readonly LocString CoverFailed = new("music.library.coverFailed", "Could not save that cover");
+            public static readonly LocString AddSongs = new("music.library.addSongs", "Add songs");
+            public static readonly LocString AddSongsHint = new("music.library.addSongsHint", "Search songs to add");
+            public static readonly LocString AddSongsEmptyTitle = new("music.library.addSongsEmptyTitle", "Find songs to add");
+            public static readonly LocString AddSongsEmptySub = new("music.library.addSongsEmptySub",
+                "Search YouTube, then tap a song to add it to this playlist.");
+            public static readonly LocString ImportedFrom = new("music.library.importedFrom", "Imported from YouTube");
+            public static readonly LocString Refreshing = new("music.library.refreshing", "Refreshing…");
+            public static readonly LocPlural RefreshAdded =
+                new("music.library.refreshAdded", "{0} new song added", "{0} new songs added");
+            public static readonly LocString RefreshNone = new("music.library.refreshNone", "Already up to date");
+            public static readonly LocString RefreshFailed = new("music.library.refreshFailed", "Could not refresh this playlist");
+            public static readonly LocString ImportHint = new("music.library.importHint",
+                "Paste a link to a YouTube or YouTube Music playlist, mix, channel or song.");
+            public static readonly LocString LinkHint = new("music.library.linkHint", "Paste a link");
+            public static readonly LocString Paste = new("music.library.paste", "Paste");
+            public static readonly LocString LookUp = new("music.library.lookUp", "Look up");
+            public static readonly LocString Fetching = new("music.library.fetching", "Fetching songs…");
+            public static readonly LocString FetchingSub = new("music.library.fetchingSub", "Big playlists can take a minute.");
+            public static readonly LocString ImportButton = new("music.library.importButton", "Import");
+            public static readonly LocString Imported = new("music.library.imported", "Imported {0}");
+            public static readonly LocString AddedToLibrary = new("music.library.addedToLibrary", "Added to library");
+            public static readonly LocString InvalidLink = new("music.library.invalidLink",
+                "That does not look like a YouTube playlist, channel or song link.");
+            public static readonly LocString Unavailable = new("music.library.unavailable",
+                "Could not load this link. It may be private, unavailable or blocked in your region.");
+            public static readonly LocString EmptyImport = new("music.library.emptyImport", "There are no playable songs at this link.");
+            public static readonly LocString NotInstalled = new("music.library.notInstalled",
+                "Song playback helpers are not set up yet. Set them up to import playlists.");
+            public static readonly LocString SetUp = new("music.library.setUp", "Set up");
+            public static readonly LocString KindPlaylist = new("music.library.kindPlaylist", "YouTube playlist");
+            public static readonly LocString KindMix = new("music.library.kindMix", "YouTube mix");
+            public static readonly LocString KindChannel = new("music.library.kindChannel", "Channel uploads");
+            public static readonly LocString KindVideo = new("music.library.kindVideo", "Single song");
+            public static readonly LocString ImportedPlaylist = new("music.library.importedPlaylist", "Imported playlist");
+            public static readonly LocString InYourLibrary = new("music.library.inYourLibrary", "In your library");
+            public static readonly LocString Summary = new("music.library.summary", "{0}, {1}");
+            public static readonly LocPlural DownloadingCount =
+                new("music.library.downloadingCount", "Downloading {0} song", "Downloading {0} songs");
+            public static readonly LocString DownloadsEmptyTitle = new("music.library.downloadsEmptyTitle", "No downloads yet");
+            public static readonly LocString DownloadsEmptySub = new("music.library.downloadsEmptySub",
+                "Download songs from their menu to play them without a connection.");
+            public static readonly LocString DownloadFailed = new("music.library.downloadFailed", "Download failed");
+            public static readonly LocString LovedEmptyTitle = new("music.library.lovedEmptyTitle", "No loved songs yet");
+            public static readonly LocString LovedEmptySub = new("music.library.lovedEmptySub",
+                "Love a song from its menu and it shows up here.");
+            public static readonly LocString NoTopSongs = new("music.library.noTopSongs", "No songs found for this artist");
+        }
         public static readonly LocString TabNew = new("music.tabNew", "New");
         public static readonly LocString WorldRadio = new("music.worldRadio", "World radio");
         public static readonly LocString YourStations = new("music.yourStations", "Your stations");

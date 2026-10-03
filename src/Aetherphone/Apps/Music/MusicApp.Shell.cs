@@ -84,7 +84,7 @@ internal sealed partial class MusicApp
 
     private void DrawShell(Rect content, Rect screen, float scale, float delta)
     {
-        var sheetsCapture = songMenu.CapturesPointer || playlistPicker.CapturesPointer;
+        var sheetsCapture = songMenu.CapturesPointer || playlistPicker.CapturesPointer || LibraryOverlaysCapture;
         var stage = TabBar.ContentArea(content, scale);
         bottomChrome = TabBar.ContentInset(scale) + MiniPlayerInset(scale, delta);
         using (InputShield.Engage(sheetsCapture || NowPlayingCapturesPointer))
@@ -107,6 +107,7 @@ internal sealed partial class MusicApp
 
         DrawSongMenu(screen);
         playlistPicker.Draw(screen, kit);
+        DrawLibraryOverlays(screen);
     }
 
     private void DrawTabBar(Rect area)
