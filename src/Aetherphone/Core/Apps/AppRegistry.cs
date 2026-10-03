@@ -149,15 +149,13 @@ internal static class AppRegistry
         {
             Phone = services,
             Photos = photoLibrary,
-            CalendarEvents = calendarEvents,
-            Messages = messageStore,
             Video = videoSuite,
             Apps = apps,
         };
         return new AppBundle
         {
             Apps = apps,
-            Widgets = WidgetCatalog.Build(widgetServices),
+            Widgets = WidgetCatalog.Build(widgetServices, calendarEvents, messageStore),
             WidgetActions = new WidgetActions(widgetServices),
             Photos = photoLibrary,
             Contacts = contactBook,

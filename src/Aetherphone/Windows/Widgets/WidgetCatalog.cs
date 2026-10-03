@@ -1,5 +1,6 @@
 using Aetherphone.Apps.Activity.Widgets;
 using Aetherphone.Apps.AetherStream.Widgets;
+using Aetherphone.Apps.Calendar;
 using Aetherphone.Apps.Calendar.Widgets;
 using Aetherphone.Apps.Casino.Widgets;
 using Aetherphone.Apps.Clock.Widgets;
@@ -14,6 +15,7 @@ using Aetherphone.Apps.Jobs.Widgets;
 using Aetherphone.Apps.Linkpearl.Widgets;
 using Aetherphone.Apps.Maps.Widgets;
 using Aetherphone.Apps.Market.Widgets;
+using Aetherphone.Apps.Message;
 using Aetherphone.Apps.Message.Widgets;
 using Aetherphone.Apps.Music.Widgets;
 using Aetherphone.Apps.Muster.Widgets;
@@ -33,10 +35,10 @@ namespace Aetherphone.Windows.Widgets;
 
 internal static class WidgetCatalog
 {
-    public static WidgetRegistry Build(WidgetServices services)
+    public static WidgetRegistry Build(WidgetServices services, CalendarEvents calendarEvents, DirectMessagesStore messages)
     {
         var phone = services.Phone;
-        var calendarFeed = new CalendarWidgetFeed(phone.Configuration, services.CalendarEvents);
+        var calendarFeed = new CalendarWidgetFeed(phone.Configuration, calendarEvents);
         var widgets = new List<IHomeWidget>
         {
             new WeatherWidget(phone.Weather),
@@ -61,9 +63,9 @@ internal static class WidgetCatalog
             new TeleportWidget(phone.Maps, phone.Configuration),
             new NowPlayingWidget(phone.Playback, phone.SongHistory, phone.Media, phone.Http),
             new NowWatchingWidget(services.Video, phone.RemoteImages, phone.Http),
-            new PeopleWidget(services.Messages, services.Messages.Contacts, phone.Configuration,
+            new PeopleWidget(messages, messages.Contacts, phone.Configuration,
                 phone.AethernetSession, phone.RemoteImages),
-            new ChatsWidget(services.Messages, phone.Configuration, phone.AethernetSession, phone.RemoteImages),
+            new ChatsWidget(messages, phone.Configuration, phone.AethernetSession, phone.RemoteImages),
             new TellsWidget(phone.ChatInbox, phone.ChatLog, phone.Lodestone),
             new RecentNotificationsWidget(phone.Notifications),
         };
