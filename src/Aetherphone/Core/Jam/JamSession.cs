@@ -29,6 +29,7 @@ internal sealed partial class JamSession : IDisposable
     private readonly List<CallControl> pendingOperations = new();
     private readonly JamOperationPacer pacer = new();
     private readonly JamInviteQueue invites = new();
+    private readonly JamInviteGate inviteGate = new();
     private readonly JamHostAuthority hostAuthority;
     private readonly JamGuestAuthority guestAuthority;
 
@@ -642,7 +643,8 @@ internal sealed partial class JamSession : IDisposable
     {
         var code = PartyCode.Normalize(message.Code);
         if (code.Length == 0 || notifications is null
-            || (Mode != JamMode.Idle && string.Equals(code, Code, StringComparison.Ordinal)))
+            || (Mode != JamMode.Idle && string.Equals(code, Code, StringComparison.Ordinal))
+            || !inviteGate.Admit(code, Environment.TickCount64))
         {
             return;
         }

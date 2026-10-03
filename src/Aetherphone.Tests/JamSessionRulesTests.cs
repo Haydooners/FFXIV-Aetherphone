@@ -317,6 +317,18 @@ public sealed class JamSessionRulesTests
     }
 
     [Fact]
+    public void RepeatedInvitesToTheSameJamNotifyOnce()
+    {
+        var gate = new JamInviteGate();
+        Assert.True(gate.Admit("ABC234", 1_000));
+        Assert.False(gate.Admit("ABC234", 1_500));
+        Assert.True(gate.Admit("XYZ789", 1_600));
+        Assert.True(gate.Admit("ABC234", 1_700));
+        Assert.False(gate.Admit("ABC234", 1_700 + JamInviteGate.RepeatMilliseconds - 1));
+        Assert.True(gate.Admit("ABC234", 1_700 + JamInviteGate.RepeatMilliseconds));
+    }
+
+    [Fact]
     public void PacerSlidingWindowFitsEveryFixedServerWindow()
     {
         var pacer = new JamOperationPacer();
