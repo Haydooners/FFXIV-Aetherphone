@@ -92,6 +92,7 @@ internal sealed class RootSettingsPage : ISettingsPage
         {
             ImGui.Dummy(new Vector2(0f, SearchTopGap * scale));
             SettingsSearchField.Draw("##settingsSearch", Loc.T(L.Settings.SearchHint), ref query, theme, scale);
+            UiAnchors.Report("settings.search", new Rect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax()));
             RefreshFilter();
             if (filteredQuery.Length > 0)
             {
@@ -324,7 +325,7 @@ internal sealed class RootSettingsPage : ISettingsPage
                 }
 
                 var row = card.NextRow();
-                if (page.GuideAnchor is { } anchorKey)
+                if (page.GuideAnchor is { } anchorKey && IsFullyVisible(row))
                 {
                     UiAnchors.Report(anchorKey, row);
                 }
@@ -339,6 +340,13 @@ internal sealed class RootSettingsPage : ISettingsPage
         }
 
         return drawn;
+    }
+
+    private static bool IsFullyVisible(Rect row)
+    {
+        var windowTop = ImGui.GetWindowPos().Y;
+        var windowBottom = windowTop + ImGui.GetWindowSize().Y;
+        return row.Min.Y >= windowTop && row.Max.Y <= windowBottom;
     }
 
     private static int VisibleCount(ISettingsPage[] pages, bool[] groupMatches)

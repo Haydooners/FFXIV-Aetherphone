@@ -19,6 +19,8 @@ internal sealed partial class HealthApp : IPhoneApp
     private const float CardRounding = 18f;
     private const float CardGap = 12f;
     private const float TileSize = 30f;
+    private const int WaterTabIndex = 2;
+    private const int GoalsTabIndex = 3;
 
     private readonly string[] tabOptions = new string[6];
 
@@ -94,11 +96,6 @@ internal sealed partial class HealthApp : IPhoneApp
         }
 
         TourHolds.Release(Id);
-        if (GuideIntents.Consume("health.tab.goals"))
-        {
-            screenIndex = 3;
-        }
-
         DrawTabs(body, scale);
         var tabbed = new Rect(new Vector2(body.Min.X, body.Min.Y + 40f * scale), body.Max);
         using (AppSurface.Begin(tabbed))
@@ -107,8 +104,8 @@ internal sealed partial class HealthApp : IPhoneApp
             {
                 case 0: DrawOverview(scale); break;
                 case 1: DrawActivity(scale); break;
-                case 2: DrawHydration(scale); break;
-                case 3: DrawGoals(scale); break;
+                case WaterTabIndex: DrawHydration(scale); break;
+                case GoalsTabIndex: DrawGoals(scale); break;
                 case 4: DrawHistory(scale); break;
                 default: DrawProfile(scale); break;
             }
@@ -121,13 +118,14 @@ internal sealed partial class HealthApp : IPhoneApp
     {
         var rect = new Rect(new Vector2(body.Min.X + 10f * scale, body.Min.Y + 4f * scale),
             new Vector2(body.Max.X - 10f * scale, body.Min.Y + 36f * scale));
-        UiAnchors.Report("health.tabs", rect);
         tabOptions[0] = Loc.T(L.Health.TabOverview);
         tabOptions[1] = Loc.T(L.Health.TabActivity);
         tabOptions[2] = Loc.T(L.Health.TabWater);
         tabOptions[3] = Loc.T(L.Health.TabGoals);
         tabOptions[4] = Loc.T(L.Health.TabHistory);
         tabOptions[5] = Loc.T(L.Health.TabProfile);
+        UiAnchors.Report("health.tab.water", SegmentStrip.SegmentRect(rect, WaterTabIndex, tabOptions.Length));
+        UiAnchors.Report("health.tab.goals", SegmentStrip.SegmentRect(rect, GoalsTabIndex, tabOptions.Length));
         screenIndex = SegmentStrip.Draw("health.tabs", rect, tabOptions, screenIndex, Pal);
     }
 
