@@ -203,6 +203,11 @@ internal sealed partial class MusterApp
         detailLoading = true;
         store.FetchDetail(musterId, muster =>
         {
+            if (!string.Equals(detailFetchId, musterId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
             detailFetched = muster;
             detailLoading = false;
         });
