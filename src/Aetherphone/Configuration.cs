@@ -637,6 +637,32 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
         Save();
     }
 
+    public void MigrateRetiredSounds()
+    {
+        if (!ReplaceRetiredSounds())
+        {
+            return;
+        }
+
+        Save();
+    }
+
+    public bool ReplaceRetiredSounds()
+    {
+        var changed = false;
+        RingtoneSound = RetiredSounds.Replace(RingtoneSound, SoundKind.Ringtone, ref changed) ??
+            SoundLibrary.BundledRingtoneToken;
+        NotificationSound = RetiredSounds.Replace(NotificationSound, SoundKind.Notification, ref changed) ??
+            SoundLibrary.BundledNotificationToken;
+        foreach (var pair in NotificationSettings)
+        {
+            var setting = pair.Value;
+            setting.Sound = RetiredSounds.Replace(setting.Sound, SoundKind.Notification, ref changed);
+        }
+
+        return changed;
+    }
+
     public void MigrateRetiredWallpapers()
     {
         if (!ReplaceRetiredWallpapers())
