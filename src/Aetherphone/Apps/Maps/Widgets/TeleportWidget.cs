@@ -153,7 +153,8 @@ internal sealed class TeleportWidget : IHomeWidget
 
         if (location.Due(LocationMilliseconds))
         {
-            zone = maps.CurrentLocation().Zone;
+            var current = maps.CurrentLocation();
+            zone = current.IsKnown ? current.Title : string.Empty;
         }
 
         if (zone.Length == 0)
