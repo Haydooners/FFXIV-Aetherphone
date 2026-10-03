@@ -11,7 +11,7 @@ public sealed class TourRegistryTests
     {
         { "messages", (4, 6) },
         { "music", (4, 7) },
-        { "character", (3, 3) },
+        { "character", (4, 3) },
         { "chirper", (3, 6) },
         { "aethergram", (3, 6) },
         { "collections", (3, 3) },

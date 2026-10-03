@@ -6,15 +6,14 @@ internal static partial class TourRegistry
 {
     private static void AddCharacterTours(Dictionary<string, GuideSequence> tours)
     {
-        Add(tours, "character", 3,
+        Add(tours, "character", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.ActivityRingsTitle, L.Onboarding.ActivityRingsBody, "character.rings",
                     GuideGesture.None),
-                GuideStep.TryUntil(L.Onboarding.ActivityHistoryTitle, L.Onboarding.ActivityHistoryBody,
-                    "character.tab.history", GuideGesture.Tap, "character.week"),
                 GuideStep.Point(L.Onboarding.ActivityWeekTitle, L.Onboarding.ActivityWeekBody, "character.week",
                     GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.ActivityGoalsTitle, L.Onboarding.ActivityGoalsBody, "character.goals"),
             });
         Add(tours, "collections", 3,
             new[]

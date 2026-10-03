@@ -5465,9 +5465,7 @@ internal static class L
 
     internal static class Character
     {
-        public static readonly LocString LogInToView = new("character.logInToView", "Log in to view your character");
         public static readonly LocString Activity = new("character.activity", "Activity");
-        public static readonly LocString Today = new("character.today", "Today");
         public static readonly LocString ThisSession = new("character.thisSession", "This session");
         public static readonly LocString RingProgress = new("character.ringProgress", "Progress");
         public static readonly LocString RingAdventure = new("character.ringAdventure", "Adventure");
@@ -5477,7 +5475,6 @@ internal static class L
         public static readonly LocString GilEarned = new("character.gilEarned", "Gil earned");
         public static readonly LocString TimePlayed = new("character.timePlayed", "Time played");
         public static readonly LocString NewCollectibles = new("character.newCollectibles", "New collectibles");
-        public static readonly LocString LevelsGained = new("character.levelsGained", "{0} levels gained");
         public static readonly LocString PercentOfGoal = new("character.percentOfGoal", "{0}% of goal");
         public static readonly LocString Mounts = new("character.mounts", "Mounts");
         public static readonly LocString Minions = new("character.minions", "Minions");
@@ -5490,17 +5487,50 @@ internal static class L
         public static readonly LocString GoalsHint = new("character.goalsHint", "Rings close when you reach these goals. Progress resets at midnight.");
         public static readonly LocString DurationHoursMinutes = new("character.durationHoursMinutes", "{0}h {1}m");
         public static readonly LocString DurationMinutes = new("character.durationMinutes", "{0}m");
-        public static readonly LocString History = new("character.history", "History");
-        public static readonly LocString ThisWeek = new("character.thisWeek", "This week");
         public static readonly LocString Streaks = new("character.streaks", "Streaks");
         public static readonly LocString CurrentStreak = new("character.currentStreak", "Current streak");
         public static readonly LocString BestStreak = new("character.bestStreak", "Best streak");
         public static readonly LocPlural StreakDays = new("character.streakDays", "{0} day", "{0} days");
         public static readonly LocString StreaksHint = new("character.streaksHint", "A day counts toward your streak when all three rings close.");
-        public static readonly LocString PersonalBests = new("character.personalBests", "Personal bests");
         public static readonly LocString RingClosedBody = new("character.ringClosedBody", "You reached today's goal.");
         public static readonly LocString AllRingsTitle = new("character.allRingsTitle", "All rings closed");
         public static readonly LocString AllRingsBody = new("character.allRingsBody", "You hit all three goals today. Perfect day!");
+        public static readonly LocString SignedOutTitle = new("character.signedOutTitle", "Log in to start your rings");
+        public static readonly LocString SignedOutBody = new("character.signedOutBody", "Activity follows the character you are playing. Your rings, streaks and awards appear once you are logged in.");
+        public static readonly LocString UnitLevels = new("character.unitLevels", "Lv");
+        public static readonly LocString UnitDuties = new("character.unitDuties", "duties");
+        public static readonly LocString UnitGil = new("character.unitGil", "gil");
+        public static readonly LocString ExperienceDetail = new("character.experienceDetail", "{0} experience");
+        public static readonly LocPlural LevelUps = new("character.levelUps", "{0} level gained", "{0} levels gained");
+        public static readonly LocString GilDetail = new("character.gilDetail", "{0} gil");
+        public static readonly LocString SinceTime = new("character.sinceTime", "Since {0}");
+        public static readonly LocString TodayPercent = new("character.todayPercent", "Today {0}%");
+        public static readonly LocString ChangeGoals = new("character.changeGoals", "Change goals");
+        public static readonly LocString Trends = new("character.trends", "Trends");
+        public static readonly LocString TrendsHint = new("character.trendsHint", "Daily averages over the last 7 days, compared with the 7 days before.");
+        public static readonly LocString TrendsEmptyTitle = new("character.trendsEmptyTitle", "Trends are on the way");
+        public static readonly LocString TrendsEmptyBody = new("character.trendsEmptyBody", "After two weeks of play, arrows show whether each ring is going up or down.");
+        public static readonly LocString DayEmptyTitle = new("character.dayEmptyTitle", "Nothing recorded");
+        public static readonly LocString DayEmptyBody = new("character.dayEmptyBody", "Activity only counts the days you were logged in on this character.");
+        public static readonly LocString Awards = new("character.awards", "Awards");
+        public static readonly LocString AwardNotYet = new("character.awardNotYet", "Not yet");
+        public static readonly LocPlural Times = new("character.times", "{0} time", "{0} times");
+        public static readonly LocString AwardPerfectDay = new("character.awardPerfectDay", "Perfect Day");
+        public static readonly LocString AwardPerfectDayHint = new("character.awardPerfectDayHint", "Close all three rings in one day.");
+        public static readonly LocString AwardPerfectWeek = new("character.awardPerfectWeek", "Perfect Week");
+        public static readonly LocString AwardPerfectWeekHint = new("character.awardPerfectWeekHint", "Close all three rings 7 days in a row.");
+        public static readonly LocString AwardPerfectMonth = new("character.awardPerfectMonth", "Perfect Month");
+        public static readonly LocString AwardPerfectMonthHint = new("character.awardPerfectMonthHint", "Close all three rings 30 days in a row.");
+        public static readonly LocString AwardExperience = new("character.awardExperience", "Experience Record");
+        public static readonly LocString AwardExperienceHint = new("character.awardExperienceHint", "Your most experience earned in a single day.");
+        public static readonly LocString AwardDuties = new("character.awardDuties", "Duty Record");
+        public static readonly LocString AwardDutiesHint = new("character.awardDutiesHint", "Your most duties cleared in a single day.");
+        public static readonly LocString AwardFortune = new("character.awardFortune", "Fortune Record");
+        public static readonly LocString AwardFortuneHint = new("character.awardFortuneHint", "Your most gil earned in a single day.");
+        public static readonly LocString AwardLongestDay = new("character.awardLongestDay", "Longest Day");
+        public static readonly LocString AwardLongestDayHint = new("character.awardLongestDayHint", "Your most time played in a single day.");
+        public static readonly LocString AwardLevels = new("character.awardLevels", "Level Record");
+        public static readonly LocString AwardLevelsHint = new("character.awardLevelsHint", "Your most levels gained in a single day.");
     }
 
     internal static class Camera
@@ -8670,10 +8700,10 @@ internal static class L
         public static readonly LocString NotesNudgeBody = new("onboarding.notesNudgeBody", "Turn this on to pick a day and time. The phone sends you a notification when it is due.");
         public static readonly LocString ActivityRingsTitle = new("onboarding.activityRingsTitle", "Today's rings");
         public static readonly LocString ActivityRingsBody = new("onboarding.activityRingsBody", "Progress fills as you gain experience, Adventure as you clear duties and Fortune as you earn gil. Close all three.");
-        public static readonly LocString ActivityHistoryTitle = new("onboarding.activityHistoryTitle", "Look back");
-        public static readonly LocString ActivityHistoryBody = new("onboarding.activityHistoryBody", "Tap History to see how your past days went.");
         public static readonly LocString ActivityWeekTitle = new("onboarding.activityWeekTitle", "Your week");
-        public static readonly LocString ActivityWeekBody = new("onboarding.activityWeekBody", "Each day keeps its own small rings, so you can spot the days you closed all three.");
+        public static readonly LocString ActivityWeekBody = new("onboarding.activityWeekBody", "Each day keeps its own small rings. Tap a day to see it in detail.");
+        public static readonly LocString ActivityGoalsTitle = new("onboarding.activityGoalsTitle", "Set your goals");
+        public static readonly LocString ActivityGoalsBody = new("onboarding.activityGoalsBody", "Tap here to change how much each ring asks of you every day.");
         public static readonly LocString CollectionsOpenTitle = new("onboarding.collectionsOpenTitle", "Open a collection");
         public static readonly LocString CollectionsOpenBody = new("onboarding.collectionsOpenBody", "Each tile is one collection. Tap Mounts to browse the full list.");
         public static readonly LocString CollectionsShowMissingTitle = new("onboarding.collectionsShowMissingTitle", "Show what's missing");
