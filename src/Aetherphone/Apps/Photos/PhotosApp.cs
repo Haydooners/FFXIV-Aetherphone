@@ -653,6 +653,7 @@ internal sealed partial class PhotosApp : IPhoneApp
         editSession.Dispose();
         thumbnails.DisposeAll();
         fullImages.DisposeAll();
+        covers.DisposeAll();
         cancellation.Dispose();
     }
 
