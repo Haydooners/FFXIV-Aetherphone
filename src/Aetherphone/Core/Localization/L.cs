@@ -2356,6 +2356,8 @@ internal static class L
                 "Overhauled Housing: your world's lottery countdown, open plots in every district at a glance, a full screen ward map with plot cards, and a list of every open plot"),
             new("changelog.r1042.103",
                 "Plot details now open on a crop of the district map around the plot, and watched plots show their phase progress and reminder"),
+            new("changelog.r1042.110",
+                "Added aethernet shard and market board markers to the housing maps, and plots no longer read Stale while the data is current, contributed by YozoraCho"),
         };
 
         public static readonly LocString[] Release1042Jobs =
