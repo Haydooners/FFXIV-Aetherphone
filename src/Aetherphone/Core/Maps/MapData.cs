@@ -3,7 +3,7 @@ using Lumina.Excel.Sheets;
 
 namespace Aetherphone.Core.Maps;
 
-internal sealed class MapData
+internal sealed partial class MapData
 {
     private const string UnknownRegionName = "Eorzea";
     private readonly IDataManager data;
@@ -35,19 +35,6 @@ internal sealed class MapData
             EnsureBuilt();
             return expansions;
         }
-    }
-
-    public MapLocation CurrentLocation()
-    {
-        var territoryId = clientState.TerritoryType;
-        if (territoryId == 0 || !data.GetExcelSheet<TerritoryType>().TryGetRow(territoryId, out var territory))
-        {
-            return new MapLocation(string.Empty, string.Empty);
-        }
-
-        var zone = PlaceName(territory.PlaceName.RowId);
-        var region = PlaceName(territory.PlaceNameRegion.RowId);
-        return new MapLocation(zone, region);
     }
 
     public bool TryGetAetheryte(uint rowId, out MapAetheryte aetheryte)

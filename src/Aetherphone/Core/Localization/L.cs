@@ -1146,7 +1146,12 @@ internal static class L
         public static readonly LocString Search = new("maps.search", "Search places");
         public static readonly LocString Favorites = new("maps.favorites", "Favorites");
         public static readonly LocString CurrentLocation = new("maps.currentLocation", "Current Location");
-        public static readonly LocString Unknown = new("maps.unknown", "Unknown");
+        public static readonly LocString Somewhere = new("maps.somewhere", "Somewhere in Eorzea");
+        public static readonly LocString SomewhereHint = new("maps.somewhereHint", "This place has no name on the map");
+        public static readonly LocString OfflineHint = new("maps.offlineHint", "Log in to a character to see where you are");
+        public static readonly LocString WardLine = new("maps.wardLine", "{0}, Ward {1}");
+        public static readonly LocString PlotLine = new("maps.plotLine", "Plot {0}");
+        public static readonly LocString RoomLine = new("maps.roomLine", "Room {0}");
         public static readonly LocString NoZones = new("maps.noZones", "No places found");
         public static readonly LocString NeedsLifestream = new("maps.needsLifestream", "Lifestream is not installed");
     }

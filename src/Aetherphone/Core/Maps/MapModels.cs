@@ -21,4 +21,17 @@ internal sealed class MapExpansion
     public required IReadOnlyList<MapRegion> Regions { get; init; }
 }
 
-internal readonly record struct MapLocation(string Zone, string Region);
+internal enum MapLocationKind : byte
+{
+    Offline,
+    Unknown,
+    Zone,
+    Ward,
+    House,
+    Duty,
+}
+
+internal readonly record struct MapLocation(string Title, string Subtitle, MapLocationKind Kind, uint TerritoryId)
+{
+    public bool IsKnown => Kind is not (MapLocationKind.Offline or MapLocationKind.Unknown);
+}

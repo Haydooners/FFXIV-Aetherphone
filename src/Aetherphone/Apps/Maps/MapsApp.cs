@@ -107,8 +107,8 @@ internal sealed class MapsApp : IPhoneApp
     {
         var scale = UiScale.Current;
         var location = maps.CurrentLocation();
-        var zoneName = location.Zone.Length > 0 ? location.Zone : Loc.T(L.Maps.Unknown);
-        var regionName = location.Region.Length > 0 ? location.Region : Loc.T(L.Maps.Unknown);
+        var zoneName = location.Title;
+        var regionName = location.Subtitle;
         SettingsSection.Header(Loc.T(L.Maps.CurrentLocation), frameTheme);
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
