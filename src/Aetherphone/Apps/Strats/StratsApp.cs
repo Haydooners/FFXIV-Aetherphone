@@ -1,4 +1,5 @@
 using Aetherphone.Core;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Config;
 using Aetherphone.Core.Localization;
@@ -52,6 +53,7 @@ internal sealed partial class StratsApp : IPhoneApp, ISpotlightFights
     private string pendingFightKey = string.Empty;
     private PhoneTheme theme = PhoneTheme.Default;
     private INavigator navigation = null!;
+    private Rect screen;
 
     public StratsApp(StratsManifestStore manifestStore, StratsGuideStore guideStore, RemoteImageCache images,
         Configuration configuration)
@@ -62,7 +64,7 @@ internal sealed partial class StratsApp : IPhoneApp, ISpotlightFights
         this.configuration = configuration;
         router = new ViewRouter<StratsView>(new StratsView(StratsScreen.Index));
         drawView = DrawView;
-        back = () => router.Pop();
+        back = LeaveFight;
         closeViewer = CloseViewer;
         snapshotStore = new SettingsSnapshotStore<StratsSnapshot>(configuration,
             static config => config.StratsSettings,
@@ -73,6 +75,8 @@ internal sealed partial class StratsApp : IPhoneApp, ISpotlightFights
     public void OnOpened()
     {
         router.Reset();
+        contentsSheet.CloseImmediately();
+        indexQuery = string.Empty;
         manifestStore.EnsureFresh(false);
     }
 
@@ -80,6 +84,7 @@ internal sealed partial class StratsApp : IPhoneApp, ISpotlightFights
     {
         PersistSelection();
         AppLandscape.Release(Id);
+        contentsSheet.CloseImmediately();
         router.Reset();
         zoom.Reset();
     }
@@ -98,9 +103,19 @@ internal sealed partial class StratsApp : IPhoneApp, ISpotlightFights
             AppLandscape.Release(Id);
         }
 
-        var screen = SceneChrome.ScreenFrom(context.Content, theme, UiScale.Current);
+        if (router.Current.Screen != StratsScreen.Fight && contentsSheet.IsOpen)
+        {
+            contentsSheet.Close();
+        }
+
+        screen = SceneChrome.ScreenFrom(context.Content, theme, UiScale.Current);
         ui.Backdrop(screen);
-        router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+        using (InputShield.Engage(contentsSheet.CapturesPointer))
+        {
+            router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+        }
+
+        DrawContentsSheet(screen);
         if (router.Depth > 1)
         {
             TourHolds.Hold(Id);
@@ -147,12 +162,23 @@ internal sealed partial class StratsApp : IPhoneApp, ISpotlightFights
     {
         PersistSelection();
         snapshot.Fights.TryGetValue(fight.Key, out var saved);
-        selection.Load(fight.Key, saved, snapshot.DefaultSlot);
+        selection.Load(fight.Key, saved, snapshot.DefaultSlot, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        selectionDirty = true;
         resolved = null;
         resolvedDoc = null;
         timelineOpen = false;
         linksOpen = false;
+        setupOpen = selection.Fresh;
+        setupReveal.SnapTo(setupOpen ? 1f : 0f);
+        PrepareReading(selection.ReadingEntry);
         router.Push(new StratsView(StratsScreen.Fight, fight.Key));
+    }
+
+    private void LeaveFight()
+    {
+        PersistSelection();
+        contentsSheet.Close();
+        router.Pop();
     }
 
     private void OpenViewer(StratsView view)
@@ -194,11 +220,15 @@ internal sealed partial class StratsApp : IPhoneApp, ISpotlightFights
             return resolved;
         }
 
+        var previous = resolved;
         resolved = StratsResolver.Build(doc, selection);
         resolvedDoc = doc;
         richText.Clear();
+        RebuildContents(resolved, previous);
         return resolved;
     }
+
+    private static float FrameDelta() => MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
 
     public void Dispose()
     {

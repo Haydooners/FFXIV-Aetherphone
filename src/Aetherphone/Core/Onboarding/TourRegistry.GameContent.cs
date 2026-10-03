@@ -91,13 +91,16 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.VenuesSaveTitle, L.Onboarding.VenuesSaveBody, "venues.detail.favorite",
                     GuideGesture.Tap),
             });
-        Add(tours, "strats", 2,
+        Add(tours, "strats", 3,
             new[]
             {
                 GuideStep.TryTap(L.Onboarding.StratsFightsTitle, L.Onboarding.StratsOpenBody, "strats.fight.first"),
                 GuideStep.Point(L.Onboarding.StratsStrategyTitle, L.Onboarding.StratsStrategyBody, "strats.strategy",
                     GuideGesture.None),
                 GuideStep.TryTap(L.Onboarding.StratsRoleTitle, L.Onboarding.StratsSpotBody, "strats.role"),
+                GuideStep.Point(L.Strats.TourSetupTitle, L.Strats.TourSetupBody, "strats.setup", GuideGesture.None),
+                GuideStep.Point(L.Strats.TourContentsTitle, L.Strats.TourContentsBody, "strats.contents",
+                    GuideGesture.Tap),
                 GuideStep.TryUntil(L.Onboarding.StratsScrollTitle, L.Onboarding.StratsScrollBody, "strats.scroll",
                     GuideGesture.SwipeUp, "strats.mechanic.first"),
                 GuideStep.Point(L.Onboarding.StratsMechanicTitle, L.Onboarding.StratsMechanicBody,
