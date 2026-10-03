@@ -9,10 +9,11 @@ namespace Aetherphone.Windows.Components;
 
 internal static class IconAppearancePicker
 {
-    public const int RowSpan = 2;
+    public const float Height = 108f;
     private const float PreviewTile = 32f;
     private const float LabelGap = 5f;
     private const float HighlightInset = 3f;
+    private const float HighlightPadY = 6f;
     private const float HighlightFillAlpha = 0.14f;
     private const float HighlightStrokeAlpha = 0.55f;
 
@@ -33,15 +34,17 @@ internal static class IconAppearancePicker
         var titleTop = row.Min.Y + Metrics.Space.Sm * scale;
         Typography.Draw(drawList, new Vector2(row.Min.X, titleTop), title, theme.TextStrong, TextStyles.Body);
         var cellsTop = titleTop + Typography.LineHeight(TextStyles.Body) + Metrics.Space.Xs * scale;
-        var cellsBottom = row.Max.Y - Metrics.Space.Xs * scale;
+        var cellsBottom = row.Max.Y - Metrics.Space.Sm * scale;
         var cellWidth = row.Width / Order.Length;
-        var selectedIndex = IndexOf(selected);
-        var position = AnimateHighlight(selectedIndex);
-        DrawHighlight(drawList, row, cellsTop, cellsBottom, cellWidth, position, theme, scale);
         var tile = PreviewTile * scale;
         var labelHeight = Typography.LineHeight(TextStyles.Caption1);
         var blockHeight = tile + LabelGap * scale + labelHeight;
         var blockTop = cellsTop + MathF.Max(0f, (cellsBottom - cellsTop - blockHeight) * 0.5f);
+        var selectedIndex = IndexOf(selected);
+        var position = AnimateHighlight(selectedIndex);
+        var padY = HighlightPadY * scale;
+        DrawHighlight(drawList, row, blockTop - padY, blockTop + blockHeight + padY, cellWidth, position, theme,
+            scale);
         var previewId = PreviewId();
         var result = selected;
         for (var index = 0; index < Order.Length; index++)
@@ -78,11 +81,10 @@ internal static class IconAppearancePicker
     private static void DrawHighlight(ImDrawListPtr drawList, Rect row, float top, float bottom, float cellWidth,
         float position, PhoneTheme theme, float scale)
     {
-        var inset = HighlightInset * scale;
         var centerX = row.Min.X + (position + 0.5f) * cellWidth;
-        var half = cellWidth * 0.5f - inset;
-        var min = new Vector2(centerX - half, top + inset);
-        var max = new Vector2(centerX + half, bottom - inset);
+        var half = cellWidth * 0.5f - HighlightInset * scale;
+        var min = new Vector2(centerX - half, top);
+        var max = new Vector2(centerX + half, bottom);
         var radius = Metrics.Radius.Md * scale;
         Squircle.Fill(drawList, min, max, radius,
             ImGui.GetColorU32(Palette.WithAlpha(theme.Accent, HighlightFillAlpha)));

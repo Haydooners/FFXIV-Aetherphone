@@ -157,8 +157,8 @@ internal sealed class AppearancePage : ISettingsPage
 
     private void DrawIconCard(PhoneTheme theme)
     {
-        var card = GroupCard.Begin(theme, IconAppearancePicker.RowSpan);
-        var iconAppearance = IconAppearancePicker.Draw(card.NextRow(IconAppearancePicker.RowSpan),
+        var card = GroupCard.Begin(theme, IconAppearancePicker.Height);
+        var iconAppearance = IconAppearancePicker.Draw(card.NextRow(IconAppearancePicker.Height),
             configuration.IconAppearance, theme);
         card.End();
         SettingsSection.Hint(Loc.T(L.Settings.IconAppearanceHint), theme);
