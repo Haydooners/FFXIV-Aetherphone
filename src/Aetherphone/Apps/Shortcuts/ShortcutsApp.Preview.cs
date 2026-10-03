@@ -105,13 +105,12 @@ internal sealed partial class ShortcutsApp
 
     private void CommitPreview()
     {
-        if (previewEntry is null || WarnIfFull())
+        if (previewEntry is null || router.Current.Route != ShortcutsRoute.Preview || WarnIfFull())
         {
             return;
         }
 
         store.Add(previewEntry);
-        previewEntry = null;
         UiFeedback.Play(UiSound.Success);
         ShellToast.Show(Loc.T(L.Shortcuts.AddedToLibrary));
         activeTab = ShortcutsTab.Library;
