@@ -311,14 +311,28 @@ internal static class DeviceChrome
         var quad = motion.Zoom == 1f ? screen : motion.Warp(screen);
         var shape = motion.Zoom >= 1f ? screen : quad;
         var radius = motion.Zoom >= 1f ? screenRadius : screenRadius * motion.Zoom;
+        DrawWallpaper(ImGui.GetWindowDrawList(), screen, shape, quad, radius, theme, motion.Recession);
+    }
+
+    public static void DrawWallpaper(ImDrawListPtr drawList, Rect screen, Rect shape, Rect quad, float radius,
+        PhoneTheme theme, float blur)
+    {
         var library = Plugin.Wallpapers;
         library.CurrentTargetAspect = screen.Height > 0f ? screen.Width / screen.Height : 0.5f;
         var light = library.Resolve(theme.LightWallpaperId);
         var dark = library.Resolve(theme.DarkWallpaperId);
         library.TryGetBlurred(light.FilePath, out _, out _);
         library.TryGetBlurred(dark.FilePath, out _, out _);
-        WallpaperRenderer.Draw(ImGui.GetWindowDrawList(), shape, quad, radius, light, dark,
-            library.CurrentTargetAspect, library.ThemeDarkness, theme.ScreenBase, motion.Recession);
+        WallpaperRenderer.Draw(drawList, shape, quad, radius, light, dark, library.CurrentTargetAspect,
+            library.ThemeDarkness, theme.ScreenBase, blur);
+    }
+
+    public static void RecordWallpaperBackdrop(Rect screen, Rect quad, PhoneTheme theme)
+    {
+        var library = Plugin.Wallpapers;
+        var aspect = screen.Height > 0f ? screen.Width / screen.Height : 0.5f;
+        WallpaperRenderer.RecordBackdrop(quad, library.Resolve(theme.LightWallpaperId),
+            library.Resolve(theme.DarkWallpaperId), aspect, library.ThemeDarkness);
     }
 
     public static void DrawHomeScrim(Rect screen, float radius, PhoneTheme theme)
