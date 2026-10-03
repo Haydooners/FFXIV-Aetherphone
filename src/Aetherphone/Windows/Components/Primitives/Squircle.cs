@@ -14,6 +14,7 @@ internal static class Squircle
     private const uint AlphaMask = 0xFF000000;
     private static readonly Vector2[][] UnitCorners = BuildUnitCorners();
     private static readonly Vector2[] PathScratch = new Vector2[(MaxCornerSegments + 1) * 4 + 4];
+    private static readonly Vector2[] ClipScratch = new Vector2[(MaxCornerSegments + 1) * 4 + 4];
     private static readonly Vector2[] OuterRing = new Vector2[(MaxCornerSegments + 1) * 4];
     private static readonly Vector2[] InnerRing = new Vector2[(MaxCornerSegments + 1) * 4];
 
@@ -455,14 +456,82 @@ internal static class Squircle
         return box * (1f - horizontal);
     }
 
-    private static void TracePath(ImDrawListPtr drawList, Vector2 min, Vector2 max, float box)
+    public static void FillGlint(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, Vector2 normal,
+        float center, float halfWidth, uint color)
+    {
+        if (halfWidth <= 0f)
+        {
+            return;
+        }
+
+        var box = CornerBox(min, max, radius);
+        FillRamp(drawList, min, max, box, normal, center - halfWidth, center, color);
+        FillRamp(drawList, min, max, box, -normal, -center - halfWidth, -center, color);
+    }
+
+    private static void FillRamp(ImDrawListPtr drawList, Vector2 min, Vector2 max, float box, Vector2 normal,
+        float start, float end, uint color)
+    {
+        var count = TraceScratch(min, max, box);
+        count = ClipHalfPlane(PathScratch, count, ClipScratch, normal, start);
+        count = ClipHalfPlane(ClipScratch, count, PathScratch, -normal, -end);
+        if (count < 3)
+        {
+            return;
+        }
+
+        var firstVertex = drawList.VtxBuffer.Size;
+        EmitScratch(drawList, count, true);
+        drawList.PathFillConvex(color);
+        var span = MathF.Max(end - start, 0.0001f);
+        var vertices = drawList.VtxBuffer.AsSpan();
+        for (var index = firstVertex; index < vertices.Length; index++)
+        {
+            ref var vertex = ref vertices[index];
+            var weight = Math.Clamp((Vector2.Dot(vertex.Pos, normal) - start) / span, 0f, 1f);
+            var alpha = (uint)MathF.Round((vertex.Col >> 24) * weight);
+            vertex.Col = (vertex.Col & ~AlphaMask) | (alpha << 24);
+        }
+    }
+
+    private static int ClipHalfPlane(Vector2[] source, int count, Vector2[] target, Vector2 normal, float limit)
+    {
+        var written = 0;
+        for (var index = 0; index < count; index++)
+        {
+            var current = source[index];
+            var next = source[index + 1 == count ? 0 : index + 1];
+            var currentDistance = Vector2.Dot(current, normal) - limit;
+            var nextDistance = Vector2.Dot(next, normal) - limit;
+            if (currentDistance >= 0f)
+            {
+                target[written] = current;
+                written++;
+            }
+
+            if (currentDistance >= 0f == nextDistance >= 0f)
+            {
+                continue;
+            }
+
+            target[written] = Vector2.Lerp(current, next, currentDistance / (currentDistance - nextDistance));
+            written++;
+        }
+
+        return written;
+    }
+
+    private static void TracePath(ImDrawListPtr drawList, Vector2 min, Vector2 max, float box) =>
+        EmitScratch(drawList, TraceScratch(min, max, box), true);
+
+    private static int TraceScratch(Vector2 min, Vector2 max, float box)
     {
         var count = 0;
         AppendCorner(new Vector2(min.X + box, min.Y + box), -1f, -1f, box, false, ref count);
         AppendCorner(new Vector2(max.X - box, min.Y + box), 1f, -1f, box, true, ref count);
         AppendCorner(new Vector2(max.X - box, max.Y - box), 1f, 1f, box, false, ref count);
         AppendCorner(new Vector2(min.X + box, max.Y - box), -1f, 1f, box, true, ref count);
-        EmitScratch(drawList, count, true);
+        return count;
     }
 
     private static void TraceCapPath(ImDrawListPtr drawList, Vector2 min, Vector2 max, float box, bool top)
