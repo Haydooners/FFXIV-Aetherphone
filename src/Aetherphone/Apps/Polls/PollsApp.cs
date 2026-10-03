@@ -85,6 +85,7 @@ internal sealed class PollsApp : IPhoneApp
 
         if (!store.IsSignedIn)
         {
+            TourHolds.Hold(Id);
             Typography.DrawCentered(body.Center, Loc.T(L.Polls.SignInRequired), ui.MutedInk);
             return;
         }
@@ -95,6 +96,16 @@ internal sealed class PollsApp : IPhoneApp
         {
             listRefresh.Draw(body, surface.Pull, surface.Dragging, store.Loading, ui.MutedInk, store.Refresh);
             var polls = store.Polls;
+            var tourIndex = FirstOpenIndex(polls);
+            if (tourIndex < 0)
+            {
+                TourHolds.Hold(Id);
+            }
+            else
+            {
+                TourHolds.Release(Id);
+            }
+
             if (polls.Length == 0)
             {
                 DrawEmptyState(body, scale);
@@ -104,7 +115,7 @@ internal sealed class PollsApp : IPhoneApp
             ImGui.Dummy(new Vector2(0f, 2f * scale));
             for (var index = 0; index < polls.Length; index++)
             {
-                DrawPollCard(polls[index], scale, index == 0);
+                DrawPollCard(polls[index], scale, index == tourIndex);
             }
 
             if (store.LoadingMore)
@@ -116,6 +127,19 @@ internal sealed class PollsApp : IPhoneApp
                 store.LoadMore();
             }
         }
+    }
+
+    private static int FirstOpenIndex(PollDto[] polls)
+    {
+        for (var index = 0; index < polls.Length; index++)
+        {
+            if (!polls[index].Closed)
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     private void TickRefresh()
@@ -145,7 +169,7 @@ internal sealed class PollsApp : IPhoneApp
             ui.MutedInk, 0.9f);
     }
 
-    private void DrawPollCard(PollDto poll, float scale, bool isFirstCard)
+    private void DrawPollCard(PollDto poll, float scale, bool isTourCard)
     {
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
@@ -189,9 +213,12 @@ internal sealed class PollsApp : IPhoneApp
         var cardBottom = footerTop + footerHeight + pad * 0.75f;
 
         var cell = FeedCell.Begin(drawList, cardBottom - origin.Y, ui.HoverWash, false);
-        if (isFirstCard)
+        if (isTourCard && UiAnchors.Recording)
         {
-            UiAnchors.Report("polls.card", cell.Bounds);
+            UiAnchors.Report("polls.options", new Rect(new Vector2(contentLeft - 8f * scale, optionsTop - 4f * scale),
+                new Vector2(contentRight + 8f * scale, optionsTop + optionsHeight)));
+            UiAnchors.Report("polls.footer", new Rect(new Vector2(contentLeft, footerTop),
+                new Vector2(contentRight, footerTop + footerHeight)));
         }
 
         ImGui.SetCursorScreenPos(new Vector2(contentLeft, origin.Y + pad));

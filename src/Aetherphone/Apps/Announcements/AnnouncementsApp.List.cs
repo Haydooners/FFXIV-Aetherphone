@@ -29,7 +29,6 @@ internal sealed partial class AnnouncementsApp
 
         var top = area.Min.Y + AppHeader.Height * scale;
         var body = new Rect(new Vector2(area.Min.X, top), area.Max);
-        UiAnchors.Report("announcements.feed", body);
 
         var announcements = store.Announcements;
         using (var surface = AppSurface.BeginEdgeToEdge(body))

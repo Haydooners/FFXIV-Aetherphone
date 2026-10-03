@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -88,6 +89,12 @@ internal sealed partial class AnnouncementsApp
         var height = pad + textHeight + pad;
         var max = new Vector2(origin.X + width, origin.Y + height);
         ui.Card(drawList, origin, max, DetailRounding * scale, true);
+        if (UiAnchors.Recording)
+        {
+            var visibleBottom = ImGui.GetWindowPos().Y + ImGui.GetWindowSize().Y;
+            UiAnchors.Report("announcements.detail",
+                new Rect(origin, new Vector2(max.X, MathF.Min(max.Y, visibleBottom))));
+        }
 
         var textOrigin = new Vector2(origin.X + pad, origin.Y + pad);
         if (layout is null)

@@ -6,6 +6,7 @@ using Aetherphone.Core.Announcements;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Notifications;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Runtime;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
@@ -85,6 +86,7 @@ internal sealed partial class AnnouncementsApp : IPhoneApp
 
         if (!store.IsSignedIn)
         {
+            TourHolds.Hold(Id);
             ui.Body(context.Content);
             AppHeader.Draw(context, DisplayName, navigation.Back);
             var top = context.Content.Min.Y + AppHeader.Height * scale;
@@ -96,6 +98,18 @@ internal sealed partial class AnnouncementsApp : IPhoneApp
 
         TickRefresh();
         router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+        UpdateTourHold();
+    }
+
+    private void UpdateTourHold()
+    {
+        if (router.Depth == 1 && store.Announcements.Length > 0)
+        {
+            TourHolds.Release(Id);
+            return;
+        }
+
+        TourHolds.Hold(Id);
     }
 
     private void DrawView(AnnouncementsRoute route, Rect area, int depth)
