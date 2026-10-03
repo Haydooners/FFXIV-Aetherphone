@@ -473,8 +473,8 @@ internal sealed partial class VenuesApp
             if (index == active)
             {
                 var halfWidth = DotActiveWidth * scale * 0.5f;
-                drawList.AddRectFilled(new Vector2(dotCenter.X - halfWidth * 0.5f, dotCenter.Y - radius),
-                    new Vector2(dotCenter.X + halfWidth * 0.5f, dotCenter.Y + radius), ImGui.GetColorU32(ink), radius);
+                drawList.AddRectFilled(new Vector2(dotCenter.X - halfWidth, dotCenter.Y - radius),
+                    new Vector2(dotCenter.X + halfWidth, dotCenter.Y + radius), ImGui.GetColorU32(ink), radius);
             }
             else
             {
