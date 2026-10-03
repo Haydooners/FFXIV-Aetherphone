@@ -12,6 +12,7 @@ internal static class Metrics
         public const float Lg = 16f;
         public const float Xl = 22f;
         public const float Xxl = 32f;
+        public const float GlassInset = 10f;
     }
 
     internal static class Radius
@@ -41,6 +42,9 @@ internal static class Metrics
         public const float HomeIndicatorInset = 34f;
         public const float GrabberWidth = 36f;
         public const float GrabberHeight = 5f;
+        public const float Pill = 44f;
+        public const float TapTarget = 44f;
+        public const float GlassButton = 36f;
     }
 
     internal static class Stroke
