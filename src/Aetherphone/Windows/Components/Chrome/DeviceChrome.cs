@@ -18,8 +18,7 @@ internal static class DeviceChrome
     private static readonly KeyPlacement[] Placements =
     {
         new(0.157f, 0.046f, false),
-        new(0.241f, 0.077f, false),
-        new(0.335f, 0.077f, false),
+        new(0.241f, 0.090f, false),
         new(0.243f, 0.113f, true),
         new(0.590f, 0.050f, true),
     };
