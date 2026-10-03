@@ -11,6 +11,8 @@ internal sealed class HomeTile : IGridTile
     public ShortcutEntry? Shortcut { get; init; }
     public GridCell Cell { get; set; } = HomeGridSolver.Unassigned;
     public WidgetSize Size { get; set; } = WidgetSize.Medium;
+    public string InstanceKey { get; init; } = string.Empty;
+    public string Config { get; set; } = string.Empty;
     public string FolderName { get; set; } = string.Empty;
     public string FolderTint { get; set; } = string.Empty;
     public List<HomeTile> Members { get; } = new();
@@ -25,8 +27,15 @@ internal sealed class HomeTile : IGridTile
     public static HomeTile ForShortcut(ShortcutEntry shortcut) =>
         new() { Key = string.Concat("shortcut#", shortcut.Id.ToString("N")), Shortcut = shortcut };
 
-    public static HomeTile ForWidget(string key, IHomeWidget widget, WidgetSize size) =>
-        new() { Key = key, Widget = widget, Size = size };
+    public static HomeTile ForWidget(string instanceKey, IHomeWidget widget, WidgetSize size, string config) =>
+        new()
+        {
+            Key = string.Concat("widget#", instanceKey),
+            Widget = widget,
+            Size = size,
+            InstanceKey = instanceKey,
+            Config = config ?? string.Empty,
+        };
 
     public static HomeTile ForFolder(string key, string name, IReadOnlyList<HomeTile> members, string tint = "")
     {

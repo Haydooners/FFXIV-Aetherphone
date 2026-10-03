@@ -6953,5 +6953,14 @@
   "island.hosting": "Vous animez",
   "island.viewers.one": "{0} spectateur",
   "island.viewers.other": "{0} spectateurs",
-  "island.startsIn": "Commence dans {0}"
+  "island.startsIn": "Commence dans {0}",
+  "widgets.weatherDescription": "La météo d'Éorzéa là où vous êtes, et les prévisions.",
+  "widgets.clockDescription": "L'heure locale et l'heure d'Éorzéa en un coup d'œil.",
+  "widgets.calendarDescription": "La date du jour et vos prochains événements.",
+  "widgets.photosDescription": "Une sélection tournante de vos photos.",
+  "widgets.resetsDescription": "Les comptes à rebours des réinitialisations quotidienne, hebdomadaire et de la Grande Compagnie.",
+  "widgets.activityDescription": "Les anneaux de progression, d'aventure et de fortune du jour.",
+  "widgets.coinDescription": "Votre solde d'Aether Coin et ce que vous avez gagné aujourd'hui.",
+  "widgets.sampleEvent": "Soirée raid",
+  "widgets.sampleEventLater": "Cartes au trésor"
 }

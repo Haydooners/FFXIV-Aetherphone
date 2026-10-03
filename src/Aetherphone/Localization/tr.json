@@ -6953,5 +6953,14 @@
   "island.hosting": "Sunuyorsun",
   "island.viewers.one": "{0} kişi izliyor",
   "island.viewers.other": "{0} kişi izliyor",
-  "island.startsIn": "{0} sonra başlıyor"
+  "island.startsIn": "{0} sonra başlıyor",
+  "widgets.weatherDescription": "Bulunduğun yerdeki Eorzea havası ve önümüzdeki tahmin.",
+  "widgets.clockDescription": "Yerel saat ve Eorzea saati bir bakışta.",
+  "widgets.calendarDescription": "Bugünün tarihi ve sıradaki etkinliklerin.",
+  "widgets.photosDescription": "Fotoğraflarından dönüşümlü bir seçki.",
+  "widgets.resetsDescription": "Günlük, haftalık ve Büyük Birlik sıfırlamalarına geri sayım.",
+  "widgets.activityDescription": "Bugünün ilerleme, macera ve servet halkaları.",
+  "widgets.coinDescription": "Aether Coin bakiyen ve bugün kazandıkların.",
+  "widgets.sampleEvent": "Raid gecesi",
+  "widgets.sampleEventLater": "Hazine haritaları"
 }

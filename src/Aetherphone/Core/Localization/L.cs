@@ -8816,4 +8816,17 @@ internal static class L
         public static readonly LocString Visit               = new("rolladeck.visit",               "Visit");
         public static readonly LocString Discord             = new("rolladeck.discord",             "Discord");
     }
+
+    internal static class Widgets
+    {
+        public static readonly LocString WeatherDescription = new("widgets.weatherDescription", "Eorzea weather where you are, and the forecast ahead.");
+        public static readonly LocString ClockDescription = new("widgets.clockDescription", "Local and Eorzea time at a glance.");
+        public static readonly LocString CalendarDescription = new("widgets.calendarDescription", "Today's date and your next events.");
+        public static readonly LocString PhotosDescription = new("widgets.photosDescription", "A rotating selection of your photos.");
+        public static readonly LocString ResetsDescription = new("widgets.resetsDescription", "Countdowns to the daily, weekly and Grand Company resets.");
+        public static readonly LocString ActivityDescription = new("widgets.activityDescription", "Today's progress, adventure and fortune rings.");
+        public static readonly LocString CoinDescription = new("widgets.coinDescription", "Your Aether Coin balance and what you earned today.");
+        public static readonly LocString SampleEvent = new("widgets.sampleEvent", "Raid night");
+        public static readonly LocString SampleEventLater = new("widgets.sampleEventLater", "Treasure maps");
+    }
 }

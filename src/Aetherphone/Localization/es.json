@@ -6953,5 +6953,14 @@
   "island.hosting": "Anfitrión",
   "island.viewers.one": "{0} viendo",
   "island.viewers.other": "{0} viendo",
-  "island.startsIn": "Empieza en {0}"
+  "island.startsIn": "Empieza en {0}",
+  "widgets.weatherDescription": "El clima de Eorzea donde estás y el pronóstico.",
+  "widgets.clockDescription": "La hora local y la de Eorzea de un vistazo.",
+  "widgets.calendarDescription": "La fecha de hoy y tus próximos eventos.",
+  "widgets.photosDescription": "Una selección rotativa de tus fotos.",
+  "widgets.resetsDescription": "Cuentas atrás para los reinicios diario, semanal y de la Gran Compañía.",
+  "widgets.activityDescription": "Los anillos de progreso, aventura y fortuna de hoy.",
+  "widgets.coinDescription": "Tu saldo de Aether Coin y lo que has ganado hoy.",
+  "widgets.sampleEvent": "Noche de raid",
+  "widgets.sampleEventLater": "Mapas del tesoro"
 }

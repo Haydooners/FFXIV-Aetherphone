@@ -6953,5 +6953,14 @@
   "island.hosting": "ホスト中",
   "island.viewers.one": "{0}人が視聴中",
   "island.viewers.other": "{0}人が視聴中",
-  "island.startsIn": "{0}後に開始"
+  "island.startsIn": "{0}後に開始",
+  "widgets.weatherDescription": "現在地のエオルゼアの天気と、この先の予報。",
+  "widgets.clockDescription": "ローカル時刻とエオルゼア時刻をひと目で。",
+  "widgets.calendarDescription": "今日の日付と次の予定。",
+  "widgets.photosDescription": "写真がローテーションで表示されます。",
+  "widgets.resetsDescription": "デイリー、ウィークリー、グランドカンパニーのリセットまでのカウントダウン。",
+  "widgets.activityDescription": "今日の進捗、冒険、金策のリング。",
+  "widgets.coinDescription": "Aether Coinの残高と今日の獲得量。",
+  "widgets.sampleEvent": "レイドの夜",
+  "widgets.sampleEventLater": "宝の地図"
 }

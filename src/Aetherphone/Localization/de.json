@@ -6953,5 +6953,14 @@
   "island.hosting": "Du bist Host",
   "island.viewers.one": "{0} sieht zu",
   "island.viewers.other": "{0} sehen zu",
-  "island.startsIn": "Beginnt in {0}"
+  "island.startsIn": "Beginnt in {0}",
+  "widgets.weatherDescription": "Das Eorzea-Wetter an deinem Ort und die Vorhersage.",
+  "widgets.clockDescription": "Lokale Zeit und Eorzea-Zeit auf einen Blick.",
+  "widgets.calendarDescription": "Das heutige Datum und deine nächsten Termine.",
+  "widgets.photosDescription": "Eine wechselnde Auswahl deiner Fotos.",
+  "widgets.resetsDescription": "Countdowns bis zum täglichen, wöchentlichen und Staatliche-Gesellschaft-Reset.",
+  "widgets.activityDescription": "Die heutigen Ringe für Fortschritt, Abenteuer und Vermögen.",
+  "widgets.coinDescription": "Dein Aether-Coin-Guthaben und was du heute verdient hast.",
+  "widgets.sampleEvent": "Raid-Abend",
+  "widgets.sampleEventLater": "Schatzkarten"
 }

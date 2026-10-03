@@ -2,7 +2,9 @@ using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Shortcuts;
+using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
+using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Core.Shell.Home;
@@ -28,7 +30,7 @@ internal sealed class HomeInteractionController
     }
 
     private readonly HomeLayoutService layout;
-    private readonly WidgetRegistry widgets;
+    private readonly WidgetHost widgetHost;
     private readonly Pager pager;
     private readonly FolderOverlay folder;
     private readonly WidgetSizeMenu sizeMenu;
@@ -42,6 +44,8 @@ internal sealed class HomeInteractionController
     private float pressTime;
     private HomeTile? pressTile;
     private bool pressFromDock;
+    private bool pressOnControl;
+    private WidgetHit pressHit;
 
     private HomeTile? tapTile;
     private bool tapHolding;
@@ -73,12 +77,12 @@ internal sealed class HomeInteractionController
     private Spring settleX;
     private Spring settleY;
 
-    public HomeInteractionController(HomeLayoutService layout, WidgetRegistry widgets, Pager pager,
-        FolderOverlay folder, WidgetSizeMenu sizeMenu, WidgetGallery gallery,
-        Spotlight.SpotlightOverlay spotlight, TilePoseCache poses, ShortcutRunner runner)
+    public HomeInteractionController(HomeLayoutService layout, Pager pager, FolderOverlay folder,
+        WidgetSizeMenu sizeMenu, WidgetGallery gallery, Spotlight.SpotlightOverlay spotlight, TilePoseCache poses,
+        ShortcutRunner runner, WidgetHost widgetHost)
     {
         this.layout = layout;
-        this.widgets = widgets;
+        this.widgetHost = widgetHost;
         this.pager = pager;
         this.folder = folder;
         this.sizeMenu = sizeMenu;
@@ -122,7 +126,13 @@ internal sealed class HomeInteractionController
         }
     }
 
-    public void HandleInput(Rect content, in HomeMetrics metrics, INavigator navigation, float delta)
+    public bool WidgetsInteractive(in HomeMotion motion) =>
+        motion.Interactive && !editing && dragTile is null && settleTile is null && !folder.Active &&
+        !gallery.Active && !sizeMenu.Active && !spotlight.Active && !pager.Dragging &&
+        MathF.Abs(pager.Value - pager.Page) < 0.001f;
+
+    public void HandleInput(Rect content, in HomeMetrics metrics, INavigator navigation, PhoneTheme theme,
+        float delta)
     {
         if (gallery.Active || folder.Active || sizeMenu.Active || spotlight.Active)
         {
@@ -147,10 +157,11 @@ internal sealed class HomeInteractionController
             return;
         }
 
-        HandlePress(content, metrics, navigation, delta);
+        HandlePress(content, metrics, navigation, theme, delta);
     }
 
-    private void HandlePress(Rect content, in HomeMetrics metrics, INavigator navigation, float delta)
+    private void HandlePress(Rect content, in HomeMetrics metrics, INavigator navigation, PhoneTheme theme,
+        float delta)
     {
         var mouse = ImGui.GetMousePos();
         if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && UiInteract.Hover(content.Min, content.Max))
@@ -164,7 +175,12 @@ internal sealed class HomeInteractionController
             pressPos = mouse;
             pressTime = 0f;
             pressTile = TileAt(metrics, mouse, out pressFromDock);
-            if (pressTile is not null)
+            pressOnControl = !editing && pressTile is { IsWidget: true } && WidgetHits.TryFind(mouse, out pressHit);
+            if (pressOnControl)
+            {
+                WidgetHits.Press(pressHit.Id);
+            }
+            else if (pressTile is not null)
             {
                 BeginTap(pressTile);
             }
@@ -174,6 +190,11 @@ internal sealed class HomeInteractionController
         {
             pressTime += delta;
             var move = mouse - pressPos;
+            if (pressOnControl && move.Length() >= TapSlop * metrics.Scale)
+            {
+                CancelControl();
+            }
+
             var canSwipe = !pressFromDock && !(editing && pressTile is not null);
             if (canSwipe && MathF.Abs(move.X) > SwipeThreshold * metrics.Scale &&
                 MathF.Abs(move.X) > MathF.Abs(move.Y) * 1.2f)
@@ -221,9 +242,10 @@ internal sealed class HomeInteractionController
             var move = mouse - pressPos;
             if (move.Length() < TapSlop * metrics.Scale && pressTime < LongPressSeconds)
             {
-                HandleTap(metrics, navigation);
+                HandleTap(metrics, navigation, theme, mouse);
             }
 
+            CancelControl();
             pressActive = false;
         }
     }
@@ -250,7 +272,7 @@ internal sealed class HomeInteractionController
         return false;
     }
 
-    private void HandleTap(in HomeMetrics metrics, INavigator navigation)
+    private void HandleTap(in HomeMetrics metrics, INavigator navigation, PhoneTheme theme, Vector2 mouse)
     {
         if (pressTile is null)
         {
@@ -268,12 +290,16 @@ internal sealed class HomeInteractionController
             if (editing)
             {
                 sizeMenu.Open(pressTile);
-            }
-            else if (widgets.AppFor(pressTile.Widget!) is { } app)
-            {
-                navigation.OpenAppFrom(app, rect, LaunchOrigin.Surface);
+                return;
             }
 
+            if (pressOnControl)
+            {
+                ActivateControl(rect, mouse);
+                return;
+            }
+
+            widgetHost.OpenTarget(pressTile, rect, theme, metrics.Scale);
             return;
         }
 
@@ -297,6 +323,33 @@ internal sealed class HomeInteractionController
         {
             navigation.OpenAppFrom(pressTile.App!, DrawnRect(rect, pressTile, metrics), LaunchOrigin.Icon);
         }
+    }
+
+    private void ActivateControl(Rect tileRect, Vector2 mouse)
+    {
+        if (!pressHit.Rect.Contains(mouse))
+        {
+            return;
+        }
+
+        if (pressHit.Kind == WidgetHitKind.Link)
+        {
+            widgetHost.Actions.Open(pressHit.Route, tileRect);
+            return;
+        }
+
+        WidgetHits.Fire(pressHit.Id);
+    }
+
+    private void CancelControl()
+    {
+        if (!pressOnControl)
+        {
+            return;
+        }
+
+        pressOnControl = false;
+        WidgetHits.Cancel();
     }
 
     private Rect DrawnRect(Rect rect, HomeTile tile, in HomeMetrics metrics)
@@ -695,6 +748,7 @@ internal sealed class HomeInteractionController
 
     public void CancelTap()
     {
+        CancelControl();
         tapTile = null;
         tapHolding = false;
         tapSpring.SnapTo(0f);

@@ -1,28 +1,25 @@
 using Aetherphone.Apps.Calendar;
 using Aetherphone.Apps.Skywatcher;
-using Aetherphone.Core;
-using Aetherphone.Core.Apps;
 using Aetherphone.Core.Home;
-using Aetherphone.Core.Photos;
 
 namespace Aetherphone.Windows.Widgets;
 
 internal static class WidgetCatalog
 {
-    public static WidgetRegistry Build(PhoneServices services, PhotoLibrary photos, CalendarEvents calendarEvents,
-        IReadOnlyList<IPhoneApp> apps)
+    public static WidgetRegistry Build(WidgetServices services)
     {
+        var phone = services.Phone;
         var widgets = new List<IHomeWidget>
         {
-            new SkywatcherWidget(services.Weather),
+            new SkywatcherWidget(phone.Weather),
             new ClockWidget(),
-            new CalendarWidget(services.Configuration, calendarEvents),
-            new PhotosWidget(photos),
+            new CalendarWidget(phone.Configuration, services.CalendarEvents),
+            new PhotosWidget(services.Photos),
             new ResetsWidget(),
-            new ActivityRingsWidget(services.Activity, services.Configuration),
-            new CoinWidget(services.Coins, services.AethernetSession),
+            new ActivityRingsWidget(phone.Activity, phone.Configuration),
+            new CoinWidget(phone.Coins, phone.AethernetSession),
         };
 
-        return new WidgetRegistry(widgets, apps);
+        return new WidgetRegistry(widgets, services.Apps);
     }
 }

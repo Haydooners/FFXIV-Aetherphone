@@ -3,7 +3,6 @@ using Aetherphone.Core;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Media;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Theme;
 using Aetherphone.Core.Photos;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -36,32 +35,34 @@ internal sealed class PhotosWidget : IHomeWidget
 
     public string Id => "photos.shuffle";
     public string DisplayName => Loc.T(L.Apps.Photos);
+    public string Description => Loc.T(L.Widgets.PhotosDescription);
     public string AppId => "photos";
     public WidgetSizeSet Sizes => WidgetSizeSet.Small | WidgetSizeSet.Medium | WidgetSizeSet.Large;
 
     public void Draw(in WidgetContext context)
     {
         Advance(context.Delta);
-        WidgetChrome.Card(context.DrawList, context.Bounds, context.Scale, context.Opacity);
+        WidgetChrome.Container(context);
+        var ink = WidgetInk.From(context);
         if (paths.Length == 0)
         {
-            DrawEmpty(context);
+            DrawEmpty(context, ink);
             return;
         }
 
         var radius = WidgetChrome.Radius(context.Scale) * 0.95f;
         if (previousIndex >= 0 && fade < 1f && previousIndex < paths.Length)
         {
-            DrawPhoto(context, paths[previousIndex], radius, context.Opacity);
+            DrawPhoto(context, paths[previousIndex], radius, ink.ImageTint);
         }
 
         if (index < paths.Length)
         {
-            DrawPhoto(context, paths[index], radius, context.Opacity * (previousIndex >= 0 ? fade : 1f));
+            var tint = ink.ImageTint;
+            DrawPhoto(context, paths[index], radius, tint with { W = tint.W * (previousIndex >= 0 ? fade : 1f) });
         }
 
-        Material.EdgeSquircle(context.DrawList, context.Bounds.Min, context.Bounds.Max,
-            WidgetChrome.Radius(context.Scale), context.Scale, context.Opacity);
+        WidgetChrome.Edge(context);
     }
 
     private void Advance(float delta)
@@ -101,7 +102,7 @@ internal sealed class PhotosWidget : IHomeWidget
         EvictDistant();
     }
 
-    private void DrawPhoto(in WidgetContext context, string path, float radius, float alpha)
+    private void DrawPhoto(in WidgetContext context, string path, float radius, Vector4 tint)
     {
         if (Get(path) is not { } wrap)
         {
@@ -110,20 +111,18 @@ internal sealed class PhotosWidget : IHomeWidget
 
         var bounds = context.Bounds;
         var (uv0, uv1) = ImageFit.Cover(wrap.Width, wrap.Height, bounds.Width, bounds.Height);
-        var tint = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha));
-        context.DrawList.AddImageRounded(wrap.Handle, bounds.Min, bounds.Max, uv0, uv1, tint, radius,
+        context.DrawList.AddImageRounded(wrap.Handle, bounds.Min, bounds.Max, uv0, uv1, ImGui.GetColorU32(tint), radius,
             ImDrawFlags.RoundCornersAll);
     }
 
-    private void DrawEmpty(in WidgetContext context)
+    private static void DrawEmpty(in WidgetContext context, in WidgetInk ink)
     {
         var bounds = context.Bounds;
         var scale = context.Scale;
         AppIconTile.TryDrawGlyph(context.DrawList, "photos", bounds.Center - new Vector2(0f, 8f * scale),
-            34f * scale * AppIconTextures.GlyphFraction, context.Theme.TextMuted);
+            34f * scale * AppIconTextures.GlyphFraction, ink.Secondary);
         Typography.DrawCentered(context.DrawList, new Vector2(bounds.Center.X, bounds.Center.Y + 20f * scale),
-            Loc.T(L.Photos.NoPhotos), Palette.WithAlpha(context.Theme.TextMuted, context.Opacity),
-            TextStyles.Caption1);
+            Loc.T(L.Photos.NoPhotos), ink.Secondary, WidgetType.Caption);
     }
 
     private IDalamudTextureWrap? Get(string path)
