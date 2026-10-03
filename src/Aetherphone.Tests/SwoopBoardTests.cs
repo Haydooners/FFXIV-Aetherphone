@@ -216,6 +216,97 @@ public sealed class SwoopBoardTests
         Assert.True(board.Score >= board.Distance);
     }
 
+    [Fact]
+    public void SkilledTimingClearlyBeatsAlwaysHoldingAndNeverHolding()
+    {
+        var skilled = RunPolicy(Policy.Skilled, out var skilledIslands);
+        var always = RunPolicy(Policy.AlwaysHold, out _);
+        var never = RunPolicy(Policy.NeverHold, out _);
+        Assert.True(skilled > always * 1.4, $"skilled {skilled} vs always {always}");
+        Assert.True(skilled > never * 1.4, $"skilled {skilled} vs never {never}");
+        Assert.True(skilledIslands >= 2.0, $"skilled reached {skilledIslands} islands on average");
+    }
+
+    [Fact]
+    public void HoldingThroughACrestNeverLaunches()
+    {
+        var held = new SwoopBoard();
+        var released = new SwoopBoard();
+        held.Start(Seed);
+        released.Start(Seed);
+        FindDownslope(held.Terrain, out var crest, out _);
+        held.PlaceOnGround(crest - 6.0, 30f);
+        released.PlaceOnGround(crest - 6.0, 30f);
+        var heldLaunched = false;
+        var releasedLaunched = false;
+        for (var frame = 0; frame < 40; frame++)
+        {
+            held.Tick(FrameSeconds, true);
+            released.Tick(FrameSeconds, false);
+            heldLaunched |= held.LaunchedThisTick;
+            releasedLaunched |= released.LaunchedThisTick;
+        }
+
+        Assert.False(heldLaunched);
+        Assert.True(releasedLaunched);
+    }
+
+    [Fact]
+    public void HoldingIntoAHardUpturnThuds()
+    {
+        var board = new SwoopBoard();
+        board.Start(Seed);
+        FindDownslope(board.Terrain, out var crest, out var valley);
+        board.PlaceOnGround((crest + valley) * 0.5, 30f);
+        var thudded = false;
+        for (var frame = 0; frame < 240 && !thudded; frame++)
+        {
+            board.Tick(FrameSeconds, true);
+            thudded = board.ThudThisTick;
+        }
+
+        Assert.True(thudded);
+        Assert.True(board.Grounded);
+    }
+
+    private enum Policy
+    {
+        Skilled,
+        AlwaysHold,
+        NeverHold,
+    }
+
+    private static double RunPolicy(Policy policy, out double averageIslands)
+    {
+        const int seedCount = 10;
+        var totalDistance = 0.0;
+        var totalIslands = 0.0;
+        for (var seedIndex = 1; seedIndex <= seedCount; seedIndex++)
+        {
+            var board = new SwoopBoard();
+            board.Start((uint)seedIndex * 7919u);
+            var frames = 0;
+            while (!board.GameOver && frames < 60 * 600)
+            {
+                var holding = policy switch
+                {
+                    Policy.AlwaysHold => true,
+                    Policy.NeverHold => false,
+                    _ => board.Terrain.Slope(board.X) < 0.0,
+                };
+                board.Tick(FrameSeconds, holding);
+                frames++;
+            }
+
+            Assert.True(board.GameOver);
+            totalDistance += board.Distance;
+            totalIslands += board.IslandsReached;
+        }
+
+        averageIslands = totalIslands / seedCount;
+        return totalDistance / seedCount;
+    }
+
     private static void FindDownslope(SwoopTerrain terrain, out double crest, out double valley)
     {
         var start = terrain.IslandStart(0) + SwoopTerrain.ShoreLength + 20.0;
