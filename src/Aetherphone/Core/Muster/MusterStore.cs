@@ -180,7 +180,7 @@ internal sealed class MusterStore : IDisposable
 
     public void RefreshDirectory()
     {
-        if (!session.IsSignedIn || directoryLoading)
+        if (!session.IsSignedIn)
         {
             return;
         }
@@ -190,11 +190,12 @@ internal sealed class MusterStore : IDisposable
         CaptureScopeFilters();
         var dataCenterId = directoryDataCenterId;
         var regions = directoryRegions;
+        var categories = configuration.MusterCategoryFilter;
         var generation = Interlocked.Increment(ref directoryGeneration);
         work.Run("muster directory", async token =>
         {
-            var page = await client.DirectoryAsync(configuration.MusterCategoryFilter,
-                regions, dataCenterId, null, token).ConfigureAwait(false);
+            var page = await client.DirectoryAsync(categories, regions, dataCenterId, null, token)
+                .ConfigureAwait(false);
             if (generation != Volatile.Read(ref directoryGeneration))
             {
                 return;
@@ -211,7 +212,13 @@ internal sealed class MusterStore : IDisposable
             directoryHasMore = page.NextCursor is not null;
             directoryLoadedOnce = true;
             MergeKnown(page.Items);
-        }, () => directoryLoading = false);
+        }, () =>
+        {
+            if (generation == Volatile.Read(ref directoryGeneration))
+            {
+                directoryLoading = false;
+            }
+        });
     }
 
     public void LoadMoreDirectory()
