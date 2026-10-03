@@ -1,3 +1,4 @@
+using Aetherphone.Core;
 using Aetherphone.Core.Localization;
 
 namespace Aetherphone.Apps.Settings;
@@ -17,22 +18,22 @@ internal readonly struct PatreonPerk
 internal readonly struct PatreonTier
 {
     public readonly string Name;
-    public readonly string Price;
     public readonly Vector4 Accent;
     public readonly bool Popular;
     public readonly string FrameId;
     public readonly string[] BadgeIds;
+    public readonly string JoinUrl;
     public readonly PatreonPerk[] Perks;
 
-    public PatreonTier(string name, string price, Vector4 accent, bool popular, string frameId, string[] badgeIds,
-        PatreonPerk[] perks)
+    public PatreonTier(string name, Vector4 accent, bool popular, string frameId, string[] badgeIds,
+        string joinUrl, PatreonPerk[] perks)
     {
         Name = name;
-        Price = price;
         Accent = accent;
         Popular = popular;
         FrameId = frameId;
         BadgeIds = badgeIds;
+        JoinUrl = joinUrl;
         Perks = perks;
     }
 }
@@ -41,6 +42,7 @@ internal static class PatreonTiers
 {
     public const string MemberBadgeId = "legacy-patreon";
     public const string GildedBadgeId = "global-patreon-gilded";
+    private const string MembershipUrl = AepConstants.PatreonUrl + "/membership";
     private static readonly string[] MemberBadges = { MemberBadgeId };
     private static readonly string[] GildedBadges = { GildedBadgeId };
 
@@ -50,13 +52,13 @@ internal static class PatreonTiers
 
     public static readonly PatreonTier[] All =
     {
-        new("Shard", "$3", ShardTeal, false, "", MemberBadges, new[]
+        new("Shard", ShardTeal, false, "", MemberBadges, MembershipUrl, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkColoredName),
             new PatreonPerk(L.Settings.SupportPerkFrame),
         }),
-        new("Crystal", "$10", CrystalViolet, true, "", MemberBadges, new[]
+        new("Crystal", CrystalViolet, true, "", MemberBadges, MembershipUrl, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkDirectAccess),
@@ -64,7 +66,7 @@ internal static class PatreonTiers
             new PatreonPerk(L.Settings.SupportPerkColoredName),
             new PatreonPerk(L.Settings.SupportPerkFrame),
         }),
-        new("Cluster", "$20", ClusterGold, false, "", GildedBadges, new[]
+        new("Cluster", ClusterGold, false, "", GildedBadges, MembershipUrl, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkDirectAccess),

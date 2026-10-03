@@ -961,7 +961,7 @@
   "settings.supportMemberActive": "Активный участник, спасибо",
   "settings.supportMemberInactive": "Пока не участник",
   "settings.supportTiersTitle": "Уровни членства",
-  "settings.supportPerMonth": "{0} в месяц",
+  "settings.supportTierMembership": "Членство {0}",
   "settings.supportMostPopular": "Самый популярный",
   "settings.supportPerkDiscordRole": "Роль сторонника Patreon на сервере Discord",
   "settings.supportPerkColoredName": "Цветное имя пользователя со значком рядом",
