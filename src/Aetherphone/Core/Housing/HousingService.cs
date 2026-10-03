@@ -32,6 +32,7 @@ internal sealed class HousingService : IDisposable
     private readonly FrameworkTicker ticker;
     private IReadOnlyList<HousingWorld> worlds = Array.Empty<HousingWorld>();
     private volatile bool refreshing;
+    private volatile bool refreshQueued;
     private volatile bool worldsLoading;
     private DateTime lastRefreshAttemptUtc;
     private DateTime retryNotBeforeUtc;
@@ -285,6 +286,7 @@ internal sealed class HousingService : IDisposable
 
         if (refreshing)
         {
+            refreshQueued |= force;
             return;
         }
 
@@ -586,6 +588,12 @@ internal sealed class HousingService : IDisposable
         finally
         {
             refreshing = false;
+            if (refreshQueued && !cancellation.IsCancellationRequested)
+            {
+                refreshQueued = false;
+                RunOnFrameworkThread(() => Refresh(true));
+            }
+
             if (entered)
             {
                 try
