@@ -98,6 +98,8 @@ namespace Aetherphone.Core.Aethernet;
 [JsonSerializable(typeof(GramTypingDto))]
 [JsonSerializable(typeof(CreateFeedbackRequest))]
 [JsonSerializable(typeof(FeedbackDto))]
+[JsonSerializable(typeof(MyFeedbackDto))]
+[JsonSerializable(typeof(MyFeedbackPage))]
 [JsonSerializable(typeof(NotificationDto))]
 [JsonSerializable(typeof(NotificationPage))]
 [JsonSerializable(typeof(NotificationUnreadCountDto))]

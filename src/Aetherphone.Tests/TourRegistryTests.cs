@@ -32,7 +32,7 @@ public sealed class TourRegistryTests
         { "jobs", (2, 3) },
         { "announcements", (2, 2) },
         { "housing", (2, 4) },
-        { "feedback", (3, 3) },
+        { "feedback", (4, 4) },
         { "appstore", (2, 5) },
         { "health", (2, 5) },
         { "shortcuts", (2, 6) },

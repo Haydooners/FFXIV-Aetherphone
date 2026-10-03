@@ -58,9 +58,10 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.NewsLatestTitle, L.Onboarding.NewsLatestBody, "news.refresh",
                     GuideGesture.Tap),
             });
-        Add(tours, "feedback", 3,
+        Add(tours, "feedback", 4,
             new[]
             {
+                GuideStep.TryTap(L.Onboarding.FeedbackKindTitle, L.Onboarding.FeedbackKindBody, "feedback.kind"),
                 GuideStep.TryTap(L.Onboarding.FeedbackMessageTitle, L.Onboarding.FeedbackMessageBody,
                     "feedback.input"),
                 GuideStep.Point(L.Onboarding.FeedbackScreenshotsTitle, L.Onboarding.FeedbackScreenshotsBody,
