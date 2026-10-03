@@ -22,7 +22,7 @@ internal static unsafe class RetainerReader
         for (var index = 0u; index < count; index++)
         {
             var retainer = manager->GetRetainerBySortedIndex(index);
-            if (retainer is null)
+            if (retainer is null || !retainer->Available)
             {
                 continue;
             }
