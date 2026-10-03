@@ -50,7 +50,7 @@ public sealed class TourRegistryTests
         { "venues", (4, 6) },
         { "maps", (4, 5) },
         { "fishing", (4, 6) },
-        { "hunts", (6, 6) },
+        { "hunts", (7, 7) },
     };
 
     [Fact]

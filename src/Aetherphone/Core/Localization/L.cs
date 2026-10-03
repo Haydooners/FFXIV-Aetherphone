@@ -1482,16 +1482,10 @@ internal static class L
         public static readonly LocString NavigateToLocation =
             new("hunts.navigateToLocation", "Navigate to location");
         public static readonly LocString PlaceFlagOnMap = new("hunts.placeFlagOnMap", "Place flag on map");
-        public static readonly LocString NoSpawnLocationDetected =
-            new("hunts.noSpawnLocationDetected", "No spawn location detected");
         public static readonly LocString HistoryTab = new("hunts.historyTab", "History");
         public static readonly LocString HistoryRequiresLoginTooltip =
             new("hunts.historyRequiresLoginTooltip", "Log in to Faloop to see hunt history");
         public static readonly LocString HistoryEmpty = new("hunts.historyEmpty", "No recent hunts found");
-        public static readonly LocString ListTab = new("hunts.listTab", "List");
-        public static readonly LocString SettingsTab = new("hunts.settingsTab", "Settings");
-        public static readonly LocString NotificationsSectionHeader =
-            new("hunts.notificationSettingsTab", "Notifications");
         public static readonly LocString NotificationsSignInHint =
             new("hunts.notificationsSignInHint", "Log in to Faloop to receive these notifications");
         public static readonly LocString ResetToDefault = new("hunts.resetToDefault", "Reset to Default");
@@ -1516,31 +1510,19 @@ internal static class L
         public static readonly LocString NativeMapLegendFateActive = new("hunts.nativeMapLegendFateActive",
             "FATE active");
         public static readonly LocString NativeMapLegendToggle = new("hunts.nativeMapLegendToggle", "Legend");
-        public static readonly LocString NotifyModeDefault = new("hunts.notifyModeDefault", "Default");
-        public static readonly LocString NotifyModeEnabled = new("hunts.notifyModeEnabled", "Enabled");
-        public static readonly LocString NotifyModeEnabledOnWorldValue =
-            new("hunts.notifyModeEnabledOnWorldValue", "Enabled on {0}");
-        public static readonly LocString NotifyModeDisabled = new("hunts.notifyModeDisabled", "Disabled");
         public static readonly LocString MarkNotificationsTitle =
             new("hunts.markNotificationsTitle", "Specific Mark Notification");
-        public static readonly LocString MarkNotificationsCount =
-            new("hunts.markNotificationsCount", "{0} configured");
-        public static readonly LocString MarkNotificationsEmpty =
-            new("hunts.markNotificationsEmpty", "No specific mark notifications configured yet.");
         public static readonly LocString MarkNotificationsEmptyHint = new("hunts.markNotificationsEmptyHint",
             "You can configure mark-specific notifications on a mark's detail page.");
         public static readonly LocString Unknown = new("hunts.unknown", "Unknown");
         public static readonly LocString FiltersTitle = new("hunts.filtersTitle", "Filters");
         public static readonly LocString ClearFilters = new("hunts.clearFilters", "Clear filters");
-        public static readonly LocString Submit = new("hunts.submit", "Submit");
         public static readonly LocString DataCenterLabel = new("hunts.dataCenterLabel", "Data Center");
         public static readonly LocString ChooseDataCenter = new("hunts.chooseDataCenter", "Choose a data center");
         public static readonly LocString RanksLabel = new("hunts.ranksLabel", "Ranks");
         public static readonly LocString WorldsLabel = new("hunts.worldsLabel", "Worlds");
         public static readonly LocString StatusLabel = new("hunts.statusLabel", "Status");
         public static readonly LocString ExpansionsLabel = new("hunts.expansionsLabel", "Expansions");
-        public static readonly LocString AllWorlds = new("hunts.allWorlds", "All worlds");
-        public static readonly LocString WorldsSelected = new("hunts.worldsSelected", "{0} selected");
         public static readonly LocString SpawnConditionSection = new("hunts.spawnConditionSection", "Spawn Condition");
         public static readonly LocString DescriptionSection = new("hunts.descriptionSection", "Description");
         public static readonly LocString TipsSection = new("hunts.tipsSection", "Spawn Tips");
@@ -1552,23 +1534,17 @@ internal static class L
         public static readonly LocString SpawnInfoMaintenance = new("hunts.spawnInfoMaintenance", "Post-Maintenance");
         public static readonly LocString SpawnInfoLineFormat = new("hunts.spawnInfoLineFormat", "{0}: {1}");
         public static readonly LocString ReportedByLabel = new("hunts.reportedByLabel", "Reported by");
-        public static readonly LocString NoLoreAvailable =
-            new("hunts.noLoreAvailable", "No lore available for this mark yet.");
         public static readonly LocString LoreNotAvailableInLanguage =
             new("hunts.loreNotAvailableInLanguage", "This lore is not available in your current language.");
         public static readonly LocString NoSpecialSpawnCondition =
             new("hunts.noSpecialSpawnCondition", "No special condition.");
         public static readonly LocString SearchHint = new("hunts.searchHint", "Search marks");
-        public static readonly LocString AuthenticatedTooltip = new("hunts.authenticatedTooltip", "Authenticated");
-        public static readonly LocString NotAuthenticatedTooltip =
-            new("hunts.notAuthenticatedTooltip", "Not authenticated - Limited functionality mode");
         public static readonly LocString RealtimeReconnectingTooltip =
             new("hunts.realtimeReconnectingTooltip", "Realtime updates reconnecting");
         public static readonly LocString SpawnReleaseNotifyTitle =
             new("hunts.spawnReleaseNotifyTitle", "Hunt spawn released");
         public static readonly LocString SpawnReleaseNotifyBody =
             new("hunts.spawnReleaseNotifyBody", "{0} is up on {1}");
-        public static readonly LocString SignupTitle = new("hunts.signupTitle", "Sign Up");
         public static readonly LocString SignupIntro = new("hunts.signupIntro",
             "Aetherphone is an independent client for Faloop's hunt data, it is not affiliated with, endorsed by, or supported by Faloop in any way. A Faloop account is still required to receive live spawn data, if you don't have one, create it with the button below.");
         public static readonly LocString SignupCreateAccount =
@@ -1626,6 +1602,87 @@ internal static class L
         public static readonly LocString GuideGlossaryTitle = new("hunts.guideGlossaryTitle", "Glossary");
         public static readonly LocString GuideGlossaryBody = new("hunts.guideGlossaryBody",
             "Conductor: Person who leads a Hunt Train.\nET/EzT: Eorzean Time. Pulls are usually scheduled in Eorzean time rather than real-world time.\nLandmine: One of the spots where a mark can spawn.\nPT: Pull Time, the moment the mark will be attacked and killed.\nScouter: Person who locates an A-rank mark ahead of a Hunt Train.\nSniping: Killing a hunt mark without reporting it. Sniping is completely permitted, but is generally considered poor etiquette.\nSpawner/Reporter: Person who first reports a mark's spawn.\nTrain: An organized event where players kill every A-rank mark in an expansion, typically Shadowbringers or later.\ntyfs: Thank You For Spawn, a common way to thank whoever reported the mark.");
+        public static readonly LocString NowTab = new("hunts.nowTab", "Now");
+        public static readonly LocString TrainsTab = new("hunts.trainsTab", "Trains");
+        public static readonly LocString AlertsTab = new("hunts.alertsTab", "Alerts");
+        public static readonly LocString SpanHoursMinutes = new("hunts.spanHoursMinutes", "{0}h {1}m");
+        public static readonly LocString PlaceInstance = new("hunts.placeInstance", "{0} · Instance {1}");
+        public static readonly LocString PlaceInZone = new("hunts.placeInZone", "{0} · {1}");
+        public static readonly LocString PhaseOf = new("hunts.phaseOf", "Phase {0} of {1}");
+        public static readonly LocString StatusLive = new("hunts.statusLive", "Live");
+        public static readonly LocString StatusReconnecting = new("hunts.statusReconnecting", "Reconnecting");
+        public static readonly LocString StatusSignIn = new("hunts.statusSignIn", "Sign in for live reports");
+        public static readonly LocString StatusOnDataCenter = new("hunts.statusOnDataCenter", "{0} · {1}");
+        public static readonly LocString NoDataCenterTitle = new("hunts.noDataCenterTitle", "Pick a data center");
+        public static readonly LocString NoDataCenterHint =
+            new("hunts.noDataCenterHint", "Log in to a character or choose a data center to see its marks.");
+        public static readonly LocString FailedHint = new("hunts.failedHint", "Check your connection and try again.");
+        public static readonly LocString NoMatchTitle = new("hunts.noMatchTitle", "No matching marks");
+        public static readonly LocString NoMatchHint = new("hunts.noMatchHint", "Try a different name.");
+        public static readonly LocString EmptyHint =
+            new("hunts.emptyHint", "Spawn windows show up here once the tracker reports them.");
+        public static readonly LocString FilteredOutTitle = new("hunts.filteredOutTitle", "Everything is filtered out");
+        public static readonly LocString FilteredOutHint =
+            new("hunts.filteredOutHint", "Your filters hide every mark on this data center.");
+        public static readonly LocString SectionLive = new("hunts.sectionLive", "Live now");
+        public static readonly LocString SectionOpen = new("hunts.sectionOpen", "Open windows");
+        public static readonly LocString SectionSoon = new("hunts.sectionSoon", "Opening soon");
+        public static readonly LocString SectionWaiting = new("hunts.sectionWaiting", "Waiting on conditions");
+        public static readonly LocString UpFor = new("hunts.upFor", "Up for {0}");
+        public static readonly LocString StatusWithPhase = new("hunts.statusWithPhase", "{0} · {1}");
+        public static readonly LocString OpenedAgo = new("hunts.openedAgo", "Opened {0}");
+        public static readonly LocString OpensAt = new("hunts.opensAt", "Opens {0}");
+        public static readonly LocString Go = new("hunts.go", "Go");
+        public static readonly LocString NoWindowData = new("hunts.noWindowData", "No window yet");
+        public static readonly LocString NoWindowDataHint =
+            new("hunts.noWindowDataHint", "This mark has no reported window on this world.");
+        public static readonly LocString LiveHint = new("hunts.liveHint", "Reported live on this world.");
+        public static readonly LocString StatusDetail = new("hunts.statusDetail", "{0} · {1}");
+        public static readonly LocString CopyForChat = new("hunts.copyForChat", "Copy");
+        public static readonly LocString CopyLine = new("hunts.copyLine", "{0} is up: {1} ({2})");
+        public static readonly LocString CopyLineNoSpot = new("hunts.copyLineNoSpot", "{0} is up: {1}");
+        public static readonly LocString OtherWorldsSection = new("hunts.otherWorldsSection", "Other worlds");
+        public static readonly LocString MarkAlertsSection = new("hunts.markAlertsSection", "Alerts for this mark");
+        public static readonly LocString AlertModeDefault = new("hunts.alertModeDefault", "Default");
+        public static readonly LocString AlertModeOn = new("hunts.alertModeOn", "On");
+        public static readonly LocString AlertModeOff = new("hunts.alertModeOff", "Off");
+        public static readonly LocString AlertHintDefault =
+            new("hunts.alertHintDefault", "Follows your rank, expansion and world alerts.");
+        public static readonly LocString AlertHintOn =
+            new("hunts.alertHintOn", "You'll hear about this mark on every world.");
+        public static readonly LocString AlertHintWorld =
+            new("hunts.alertHintWorld", "You'll hear about this mark only on {0}.");
+        public static readonly LocString AlertHintOff = new("hunts.alertHintOff", "You won't hear about this mark.");
+        public static readonly LocString ShowMore = new("hunts.showMore", "Show more");
+        public static readonly LocString RewardAmount = new("hunts.rewardAmount", "x{0}");
+        public static readonly LocString TimingNormal = new("hunts.timingNormal", "Normal");
+        public static readonly LocString NoValue = new("hunts.noValue", "?");
+        public static readonly LocString TrainEmptyTitle = new("hunts.trainEmptyTitle", "No A-rank timers here");
+        public static readonly LocString TrainEmptyHint =
+            new("hunts.trainEmptyHint", "A-rank windows show up here when the tracker shares them with your account.");
+        public static readonly LocString HistorySignedOutTitle =
+            new("hunts.historySignedOutTitle", "Sign in to see history");
+        public static readonly LocString HistoryEmptyHint =
+            new("hunts.historyEmptyHint", "Kills reported on your data center show up here.");
+        public static readonly LocString HistoryFailed = new("hunts.historyFailed", "Failed");
+        public static readonly LocString HistoryLifetime = new("hunts.historyLifetime", "Lasted {0}");
+        public static readonly LocString AlertsSignInTitle = new("hunts.alertsSignInTitle", "Sign in for spawn alerts");
+        public static readonly LocString MarkOverridesHint =
+            new("hunts.markOverridesHint", "Tap a mark to change its alert.");
+        public static readonly LocString MapSection = new("hunts.mapSection", "Map");
+        public static readonly LocString MapMarkersHint =
+            new("hunts.mapMarkersHint", "Show spawn points on the in-game map while you're in a hunt zone.");
+        public static readonly LocString AccountTitle = new("hunts.accountTitle", "Account");
+        public static readonly LocString AccountHeroTitle = new("hunts.accountHeroTitle", "Live spawn reports");
+        public static readonly LocString AccountLiveBody =
+            new("hunts.accountLiveBody", "Live spawn reports are streaming to your phone.");
+        public static readonly LocString TourBoardBody =
+            new("hunts.tourBoardBody", "Live marks sit on top, then open windows and the ones opening soon. Each ring fills as a window opens.");
+        public static readonly LocString TourStatusBody =
+            new("hunts.tourStatusBody", "Your data center and connection live here. Tap it to sign in; the dot turns green once reports are streaming.");
+        public static readonly LocString TourTrainsTitle = new("hunts.tourTrainsTitle", "Plan a train");
+        public static readonly LocString TourTrainsBody =
+            new("hunts.tourTrainsBody", "See every A rank of an expansion on one world, zone by zone, with what's up right now.");
     }
 
     public static class HuntLore
@@ -8713,10 +8770,8 @@ internal static class L
         public static readonly LocString MapsTeleportBody = new("onboarding.mapsTeleportBody", "With the Lifestream plugin, Teleport takes you there. Without it, the button copies the command for chat.");
         public static readonly LocString MapsFavoriteBody = new("onboarding.mapsFavoriteBody", "Tap Favorite to keep this place in the row at the top of the sheet.");
         public static readonly LocString HuntsWindowsTitle = new("onboarding.huntsWindowsTitle", "Spawn windows");
-        public static readonly LocString HuntsWindowsBody = new("onboarding.huntsWindowsBody", "Each row is a mark on one world. The bar fills as its spawn window opens, and spawned marks rise to the top.");
         public static readonly LocString HuntsFilterTitle = new("onboarding.huntsFilterTitle", "Filter the list");
         public static readonly LocString HuntsFilterBody = new("onboarding.huntsFilterBody", "Narrow the marks by data center, world, rank, status or expansion.");
-        public static readonly LocString HuntsLiveBody = new("onboarding.huntsLiveBody", "Sign in here for live spawn reports from Faloop. The icon turns green once you're connected.");
         public static readonly LocString HuntsGuidesBody = new("onboarding.huntsGuidesBody", "New to hunts? This tab explains ranks, window statuses and how spawns work.");
         public static readonly LocString HuntsOpenTitle = new("onboarding.huntsOpenTitle", "Open a mark");
         public static readonly LocString HuntsOpenBody = new("onboarding.huntsOpenBody", "Tap a mark to see its spawn map and what makes it appear.");
