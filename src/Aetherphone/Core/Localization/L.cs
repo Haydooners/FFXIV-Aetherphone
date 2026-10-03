@@ -2472,6 +2472,54 @@ internal static class L
                 "Added a live maintenance countdown in your local time, with a banner on Topics while maintenance is running or coming up"),
         };
 
+        public static readonly LocString[] Release1042Photos =
+        {
+            new("changelog.r1042.124",
+                "Overhauled Photos with Library and Collections tabs, a Years, Months, Days and All switch, and a full screen viewer with a thumbnail strip, swipe between photos and a More menu"),
+            new("changelog.r1042.125",
+                "New Camera shots remember the zone they were taken in, so Collections now has Places and each day shows where you were"),
+        };
+
+        public static readonly LocString[] Release1042Camera =
+        {
+            new("changelog.r1042.126",
+                "Overhauled Camera with glass controls, a swipeable mode dial, a 3 or 10 second self-timer with a countdown, and a thumbnail that opens your newest photo"),
+        };
+
+        public static readonly LocString[] Release1042Muster =
+        {
+            new("changelog.r1042.127",
+                "Overhauled Muster: Discover shows musters as posters colored by activity, Plans keeps everything you are going to, and each muster has a page with a big I'm going button and status tiles"),
+            new("changelog.r1042.128",
+                "Creating a muster now shows a live preview of its poster, with an activity grid, one tap location and sliders for start time and length"),
+        };
+
+        public static readonly LocString[] Release1042Venues =
+        {
+            new("changelog.r1042.129",
+                "Overhauled Venues with venue pages showing Go there, Website, Discord and Copy address, the whole week's hours in your local time, and Favorites split into Open now and Coming up"),
+            new("changelog.r1042.130",
+                "Live venues now show the performer on their own line, apart from the venue's hours, and stream titles full of decorative symbols read cleanly"),
+            new("changelog.r1042.131",
+                "Dragging a venue carousel or rail now scrolls only that row instead of moving the whole phone, and the page dots are clickable"),
+        };
+
+        public static readonly LocString[] Release1042Coin =
+        {
+            new("changelog.r1042.132",
+                "Overhauled Aether Coin with Wallet, Shop, Items and History tabs, a Today card with your daily cap and a 7 day chart, and every way to earn in one list"),
+            new("changelog.r1042.133",
+                "Added product pages to the coin shop that preview the item on your own portrait or name, and Saving for, which keeps a goal and shows how many coins are left"),
+        };
+
+        public static readonly LocString[] Release1042Health =
+        {
+            new("changelog.r1042.134",
+                "Overhauled Health with a Summary of highlights and charts for each metric, a water glass that fills as you drink, and goal rings"),
+            new("changelog.r1042.135",
+                "Added a weight log for your character with charts over a week, month, 6 months or a year, and a single welcome page in place of the setup steps"),
+        };
+
         public static readonly LocString[] Release1042Games =
         {
             new("changelog.r1042.68",
