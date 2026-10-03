@@ -16,8 +16,7 @@ internal sealed class MinimizeMorphView
     private static readonly HardwareKey[] HardwareKeys =
     {
         HardwareKey.Action,
-        HardwareKey.VolumeUp,
-        HardwareKey.VolumeDown,
+        HardwareKey.LockPosition,
         HardwareKey.Side,
         HardwareKey.CameraControl,
     };

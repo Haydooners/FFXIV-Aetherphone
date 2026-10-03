@@ -6543,8 +6543,8 @@ internal static class L
         public static readonly LocString ResizeHint = new("plugin.resizeHint", "Drag to resize");
         public static readonly LocString DndEnableHint = new("plugin.dndEnableHint", "Turn on Do Not Disturb");
         public static readonly LocString DndDisableHint = new("plugin.dndDisableHint", "Turn off Do Not Disturb");
-        public static readonly LocString VolumeUpHint = new("plugin.volumeUpHint", "Volume up");
-        public static readonly LocString VolumeDownHint = new("plugin.volumeDownHint", "Volume down");
+        public static readonly LocString LockPositionHint = new("plugin.lockPositionHint", "Lock position");
+        public static readonly LocString UnlockPositionHint = new("plugin.unlockPositionHint", "Unlock position");
         public static readonly LocString CameraControlHint = new("plugin.cameraControlHint", "Open Camera");
         public static readonly LocString UpdateChip = new("plugin.updateChip", "Update to {0}");
 
@@ -7399,7 +7399,9 @@ internal static class L
         public static readonly LocString MinimizeTitle = new("onboarding.minimizeTitle", "Tuck it away");
         public static readonly LocString MinimizeBody = new("onboarding.minimizeBody", "This side button shrinks the phone into a small one in the corner that keeps showing the time, your music and new alerts. Tap it to bring the phone back.");
         public static readonly LocString ActionTitle = new("onboarding.actionTitle", "Quiet it down");
-        public static readonly LocString ActionTourBody = new("onboarding.actionTourBody", "This Action button turns Do Not Disturb on or off, and the two buttons below it set your music volume.");
+        public static readonly LocString LockTitle = new("onboarding.lockTitle", "Lock it in place");
+        public static readonly LocString ActionTourBody = new("onboarding.actionTourBody", "This Action button turns Do Not Disturb on or off.");
+        public static readonly LocString LockTourBody = new("onboarding.lockTourBody", "This button locks the phone's position on your screen so it stays put while you play.");
         public static readonly LocString MessagesTitle = new("onboarding.messagesTitle", "Messages");
         public static readonly LocString MessagesBody = new("onboarding.messagesBody", "Every /tell you get in game turns into a chat bubble here. Read and reply straight from your phone, and get a badge the moment someone new writes.");
         public static readonly LocString SkywatcherTitle = new("onboarding.skywatcherTitle", "Skywatcher");

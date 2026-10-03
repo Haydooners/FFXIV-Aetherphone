@@ -15,8 +15,7 @@ internal enum RailSide
 internal enum HardwareKey : byte
 {
     Action,
-    VolumeUp,
-    VolumeDown,
+    LockPosition,
     Side,
     CameraControl,
 }
