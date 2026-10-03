@@ -177,7 +177,8 @@ internal sealed partial class MarketApp
         Vector4 ink, Vector4 muted, float scale)
     {
         var headerHeight = SheetListHeader * scale;
-        Typography.Draw(drawList, new Vector2(left, top + headerHeight - Typography.LineHeight(TextStyles.FootnoteEmphasized)),
+        var headerTextTop = top + headerHeight - Typography.LineHeight(TextStyles.FootnoteEmphasized);
+        Typography.Draw(drawList, new Vector2(left, headerTextTop),
             Loc.T(L.Market.ExistingAlerts), muted, TextStyles.FootnoteEmphasized);
         var rowTop = top + headerHeight;
         var rowHeight = SheetRowHeight * scale;

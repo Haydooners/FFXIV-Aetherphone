@@ -11,7 +11,6 @@ internal sealed class MarketWatchSeries
     public bool Hq;
     public int Filled;
     public long Median;
-    public int UnitsSold;
 
     public MarketWatchSeries(uint itemId)
     {
@@ -32,7 +31,6 @@ internal sealed class MarketWatchlist
     private readonly Dictionary<uint, MarketWatchSeries> series = new();
     private long[] scratch = new long[256];
     private uint scopesWorld;
-    private int revision;
 
     public MarketWatchlist(MarketboardService market, Configuration configuration, GameData gameData)
     {
@@ -44,8 +42,6 @@ internal sealed class MarketWatchlist
     public IReadOnlyList<MarketScope> Scopes => scopes;
 
     public List<uint> Items => configuration.MarketFavorites;
-
-    public int Revision => revision;
 
     public int ScopeIndex => MarketScopes.IndexOfKind(scopes, configuration.MarketScope);
 
@@ -96,7 +92,6 @@ internal sealed class MarketWatchlist
             }
         }
 
-        revision++;
         configuration.Save();
         return added;
     }
@@ -165,7 +160,5 @@ internal sealed class MarketWatchlist
         entry.Hq = MarketTrend.DominantHq(trades, from);
         entry.Filled = MarketTrend.Bucket(trades, entry.Hq, from, now, entry.Points, entry.Volumes, scratch);
         entry.Median = MarketTrend.MedianPrice(trades, entry.Hq, from, scratch);
-        entry.UnitsSold = MarketTrend.UnitsSold(trades, entry.Hq, from);
-        revision++;
     }
 }

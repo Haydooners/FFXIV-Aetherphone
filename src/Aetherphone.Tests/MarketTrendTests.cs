@@ -116,14 +116,6 @@ public sealed class MarketTrendTests
     }
 
     [Fact]
-    public void UnitsSoldSumsQuantities()
-    {
-        var trades = new[] { Trade(1, 1, quantity: 99), Trade(5, 1, quantity: 3), Trade(6, 1, hq: true, quantity: 7) };
-        Assert.Equal(3, MarketTrend.UnitsSold(trades, false, 2));
-        Assert.Equal(7, MarketTrend.UnitsSold(trades, true, 0));
-    }
-
-    [Fact]
     public void DominantQualityFollowsTheMajorityOfSales()
     {
         var trades = new[] { Trade(1, 1, hq: true), Trade(2, 1, hq: true), Trade(3, 1) };

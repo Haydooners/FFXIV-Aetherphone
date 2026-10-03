@@ -213,10 +213,11 @@ internal sealed partial class MarketApp
     private void DrawHeroChange(ImDrawListPtr drawList, Vector2 origin, float width, float height, long cheapest,
         float scale)
     {
+        var lineTop = origin.Y + (height - Typography.LineHeight(TextStyles.Footnote)) * 0.5f;
         if (chartMedianWeek <= 0 || cheapest <= 0)
         {
             var waiting = chartLoading ? Loc.T(L.Common.Loading) : Loc.T(L.Market.NoRecentSales);
-            Typography.Draw(drawList, new Vector2(origin.X, origin.Y + (height - Typography.LineHeight(TextStyles.Footnote)) * 0.5f),
+            Typography.Draw(drawList, new Vector2(origin.X, lineTop),
                 Typography.FitText(waiting, width, TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
             return;
         }
@@ -229,7 +230,7 @@ internal sealed partial class MarketApp
             MarketArt.TrendInk(theme, change, ui.MutedInk), scale);
         var labelLeft = origin.X + pillWidth + Metrics.Space.Sm * scale;
         var label = MarketText.Format(L.Market.VersusMedian, chartMedianWeek);
-        Typography.Draw(drawList, new Vector2(labelLeft, origin.Y + (height - Typography.LineHeight(TextStyles.Footnote)) * 0.5f),
+        Typography.Draw(drawList, new Vector2(labelLeft, lineTop),
             Typography.FitText(label, MathF.Max(1f, origin.X + width - labelLeft), TextStyles.Footnote), ui.MutedInk,
             TextStyles.Footnote);
     }

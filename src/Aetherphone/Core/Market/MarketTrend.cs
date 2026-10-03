@@ -144,20 +144,6 @@ internal static class MarketTrend
         return Median(scratch[..gathered]);
     }
 
-    public static int UnitsSold(ReadOnlySpan<MarketTrade> trades, bool hq, long fromUnix)
-    {
-        var units = 0;
-        for (var index = FirstAtOrAfter(trades, fromUnix); index < trades.Length; index++)
-        {
-            if (trades[index].Hq == hq)
-            {
-                units += trades[index].Quantity;
-            }
-        }
-
-        return units;
-    }
-
     public static bool DominantHq(ReadOnlySpan<MarketTrade> trades, long fromUnix)
     {
         var hqCount = 0;
