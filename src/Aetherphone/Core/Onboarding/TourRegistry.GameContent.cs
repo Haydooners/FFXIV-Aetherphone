@@ -35,13 +35,15 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.MarketStarTitle, L.Onboarding.MarketStarBody, "market.favorite",
                     GuideGesture.Tap),
             });
-        Add(tours, "maps", 3,
+        Add(tours, "maps", 4,
             new[]
             {
+                GuideStep.Point(L.Onboarding.MapsMapTitle, L.Onboarding.MapsMapBody, "maps.map", GuideGesture.None),
                 GuideStep.TryTap(L.Onboarding.MapsExpandTitle, L.Onboarding.MapsExpandBody, "maps.expansion.first"),
-                GuideStep.Point(L.Onboarding.MapsTravelTitle, L.Onboarding.MapsTravelBody, "maps.destination.first",
-                    GuideGesture.Tap),
-                GuideStep.TryTap(L.Onboarding.MapsStarTitle, L.Onboarding.MapsPinBody, "maps.star.first"),
+                GuideStep.TryTap(L.Onboarding.MapsOpenTitle, L.Onboarding.MapsOpenBody, "maps.destination.first"),
+                GuideStep.Point(L.Onboarding.MapsTravelTitle, L.Onboarding.MapsTeleportBody, "maps.place.teleport",
+                    GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.MapsStarTitle, L.Onboarding.MapsFavoriteBody, "maps.place.favorite"),
             });
         Add(tours, "hunts", 6,
             new[]

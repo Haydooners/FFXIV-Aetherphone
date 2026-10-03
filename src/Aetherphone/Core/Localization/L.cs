@@ -1146,9 +1146,33 @@ internal static class L
         public static readonly LocString Search = new("maps.search", "Search places");
         public static readonly LocString Favorites = new("maps.favorites", "Favorites");
         public static readonly LocString CurrentLocation = new("maps.currentLocation", "Current Location");
-        public static readonly LocString Unknown = new("maps.unknown", "Unknown");
+        public static readonly LocString Somewhere = new("maps.somewhere", "Somewhere in Eorzea");
+        public static readonly LocString SomewhereHint = new("maps.somewhereHint", "This place has no name on the map");
+        public static readonly LocString OfflineHint = new("maps.offlineHint", "Log in to a character to see where you are");
+        public static readonly LocString WardLine = new("maps.wardLine", "{0}, Ward {1}");
+        public static readonly LocString PlotLine = new("maps.plotLine", "Plot {0}");
+        public static readonly LocString RoomLine = new("maps.roomLine", "Room {0}");
         public static readonly LocString NoZones = new("maps.noZones", "No places found");
-        public static readonly LocString NeedsLifestream = new("maps.needsLifestream", "Lifestream is not installed");
+        public static readonly LocString NoResultsHint = new("maps.noResultsHint", "Try an aetheryte, zone or region name");
+        public static readonly LocString NoMapHere = new("maps.noMapHere", "There is no map for this place");
+        public static readonly LocString Recents = new("maps.recents", "Recents");
+        public static readonly LocString Browse = new("maps.browse", "Browse");
+        public static readonly LocString AddFavorite = new("maps.addFavorite", "Add");
+        public static readonly LocString FavoritesHint = new("maps.favoritesHint", "Star a place to keep it one tap away");
+        public static readonly LocString Teleport = new("maps.teleport", "Teleport");
+        public static readonly LocString CopyCommand = new("maps.copyCommand", "Copy Teleport Command");
+        public static readonly LocString LifestreamHint = new("maps.lifestreamHint", "Install the Lifestream plugin to teleport in one tap");
+        public static readonly LocString Teleporting = new("maps.teleporting", "Teleporting to {0}");
+        public static readonly LocString TeleportCost = new("maps.teleportCost", "{0:N0} gil to teleport");
+        public static readonly LocString ShowOnMap = new("maps.showOnMap", "Show on Map");
+        public static readonly LocString GameMap = new("maps.gameMap", "Game Map");
+        public static readonly LocString CopyLocation = new("maps.copyLocation", "Copy Location");
+        public static readonly LocString Favorite = new("maps.favorite", "Favorite");
+        public static readonly LocString WholeZone = new("maps.wholeZone", "Whole Zone");
+        public static readonly LocString Zone = new("maps.zone", "Zone");
+        public static readonly LocString Region = new("maps.region", "Region");
+        public static readonly LocString Coordinates = new("maps.coordinates", "Coordinates");
+        public static readonly LocString Back = new("maps.back", "Back");
     }
 
     internal static class Housing
@@ -7553,8 +7577,12 @@ internal static class L
         public static readonly LocString MapsExpandTitle = new("onboarding.mapsExpandTitle", "Open an expansion");
         public static readonly LocString MapsExpandBody = new("onboarding.mapsExpandBody", "Tap an expansion to list its regions and every aetheryte in them.");
         public static readonly LocString MapsTravelTitle = new("onboarding.mapsTravelTitle", "Travel in one tap");
-        public static readonly LocString MapsTravelBody = new("onboarding.mapsTravelBody", "With the Lifestream plugin, tapping an aetheryte teleports you there.");
-        public static readonly LocString MapsPinBody = new("onboarding.mapsPinBody", "Tap the star to add this aetheryte to Favorites, listed above the expansions.");
+        public static readonly LocString MapsMapTitle = new("onboarding.mapsMapTitle", "Where you are");
+        public static readonly LocString MapsMapBody = new("onboarding.mapsMapBody", "Your zone's map follows you, and the arrow shows the way you face. Drag to look around and scroll to zoom.");
+        public static readonly LocString MapsOpenTitle = new("onboarding.mapsOpenTitle", "Open a place");
+        public static readonly LocString MapsOpenBody = new("onboarding.mapsOpenBody", "Tap an aetheryte to see it on a map, with its teleport and favorite actions.");
+        public static readonly LocString MapsTeleportBody = new("onboarding.mapsTeleportBody", "With the Lifestream plugin, Teleport takes you there. Without it, the button copies the command for chat.");
+        public static readonly LocString MapsFavoriteBody = new("onboarding.mapsFavoriteBody", "Tap Favorite to keep this place in the row at the top of the sheet.");
         public static readonly LocString HuntsWindowsTitle = new("onboarding.huntsWindowsTitle", "Spawn windows");
         public static readonly LocString HuntsWindowsBody = new("onboarding.huntsWindowsBody", "Each row is a mark on one world. The bar fills as its spawn window opens, and spawned marks rise to the top.");
         public static readonly LocString HuntsFilterTitle = new("onboarding.huntsFilterTitle", "Filter the list");
