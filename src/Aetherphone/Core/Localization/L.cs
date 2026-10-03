@@ -6571,6 +6571,33 @@ internal static class L
             "{0} notification waiting", "{0} notifications waiting");
 
         public static readonly LocString Oldest = new("notifications.oldest", "Oldest {0}");
+        public static readonly LocString Earlier = new("notifications.earlier", "Earlier");
+        public static readonly LocString AllApps = new("notifications.allApps", "All");
+        public static readonly LocString CaughtUpTitle = new("notifications.caughtUpTitle", "You're All Caught Up");
+        public static readonly LocString CaughtUpHint = new("notifications.caughtUpHint",
+            "Messages, likes, timers and reminders collect here as they arrive.");
+        public static readonly LocString DoNotDisturbHint = new("notifications.doNotDisturbHint",
+            "Banners and sounds are paused. Notifications still collect here.");
+        public static readonly LocString BusyHint = new("notifications.busyHint",
+            "Banners and sounds wait until you are out of combat, duties and cutscenes.");
+        public static readonly LocString TurnOff = new("notifications.turnOff", "Turn Off");
+        public static readonly LocString TurnOnFocus = new("notifications.turnOnFocus", "Turn on Do Not Disturb");
+        public static readonly LocString TurnOffFocus = new("notifications.turnOffFocus", "Turn off Do Not Disturb");
+        public static readonly LocString ClearTooltip = new("notifications.clearTooltip", "Clear notifications");
+        public static readonly LocString ClearAllTitle = new("notifications.clearAllTitle", "Clear All Notifications?");
+        public static readonly LocString ClearAppTitle = new("notifications.clearAppTitle", "Clear {0} Notifications?");
+
+        public static readonly LocPlural ClearBody = new("notifications.clearBody",
+            "This removes {0} notification from the list.", "This removes {0} notifications from the list.");
+
+        public static readonly LocPlural Count = new("notifications.count", "{0} notification", "{0} notifications");
+
+        public static readonly LocString MuteHour = new("notifications.muteHour", "Mute 1 Hour");
+        public static readonly LocString MuteToday = new("notifications.muteToday", "Mute Today");
+        public static readonly LocString Unmute = new("notifications.unmute", "Unmute");
+        public static readonly LocString MutedUntil = new("notifications.mutedUntil", "Muted until {0}");
+        public static readonly LocString AppSettings = new("notifications.appSettings", "Settings");
+        public static readonly LocString Settings = new("notifications.settings", "Notification Settings");
     }
 
     internal static class Timers
@@ -8552,6 +8579,8 @@ internal static class L
         public static readonly LocString NotificationsAlertsBody = new("onboarding.notificationsAlertsBody", "Alerts from all your apps stack up here. Tap a stack to fan it out, tap an alert to open it, or swipe left to dismiss it.");
         public static readonly LocString NotificationsAnywhereTitle = new("onboarding.notificationsAnywhereTitle", "From any app");
         public static readonly LocString NotificationsAnywhereBody = new("onboarding.notificationsAnywhereBody", "Swipe down from the top of the screen, or tap it, to open Control Center. Your notifications are there too.");
+        public static readonly LocString NotificationsFocusTitle = new("onboarding.notificationsFocusTitle", "Quiet time");
+        public static readonly LocString NotificationsFocusBody = new("onboarding.notificationsFocusBody", "The moon turns on Do Not Disturb. Banners and sounds pause, and every notification still collects here.");
         public static readonly LocString SkywatcherHoursBody = new("onboarding.skywatcherHoursBody", "Each upcoming weather window, with the real minutes until it starts.");
         public static readonly LocString SkywatcherControlTitle = new("onboarding.skywatcherControlTitle", "Set your own sky");
         public static readonly LocString SkywatcherControlBody = new("onboarding.skywatcherControlBody", "Tap Control to choose the time and weather you see.");

@@ -24,7 +24,7 @@ public sealed class TourRegistryTests
         { "notes", (3, 6) },
         { "dailies", (3, 4) },
         { "velvet", (5, 8) },
-        { "notifications", (3, 2) },
+        { "notifications", (4, 3) },
         { "message", (3, 6) },
         { "polls", (5, 2) },
         { "muster", (2, 4) },
