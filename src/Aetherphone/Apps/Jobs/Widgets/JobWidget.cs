@@ -207,9 +207,12 @@ internal sealed unsafe class JobWidget : IHomeWidget
                 continue;
             }
 
-            if (!GearsetActions.Equip(gearsetId))
+            var result = GearsetActions.Equip(gearsetId);
+            if (result != GearsetEquipResult.Sent)
             {
-                ShellToast.Show(Loc.T(L.WidgetsAdventure.EquipFailed));
+                ShellToast.Show(Loc.T(result == GearsetEquipResult.Busy
+                    ? L.Jobs.EquipBusy
+                    : L.WidgetsAdventure.EquipFailed));
                 continue;
             }
 

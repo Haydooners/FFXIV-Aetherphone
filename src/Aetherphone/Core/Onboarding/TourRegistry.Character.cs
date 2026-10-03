@@ -35,15 +35,19 @@ internal static partial class TourRegistry
                 GuideStep.TryUntil(L.Onboarding.InventoryOpenTitle, L.Onboarding.InventoryOpenBody,
                     "inventory.storage", GuideGesture.Tap, "inventory.source"),
             });
-        Add(tours, "jobs", 2,
+        Add(tours, "jobs", 3,
             new[]
             {
-                GuideStep.Point(L.Onboarding.JobsEquipTitle, L.Onboarding.JobsEquipBody, "jobs.row",
+                GuideStep.Point(L.Onboarding.JobsHeroTitle, L.Onboarding.JobsHeroBody, "jobs.hero",
+                    GuideGesture.None),
+                GuideStep.Point(L.Onboarding.JobsGroupsTitle, L.Onboarding.JobsGroupsBody, "jobs.categories",
                     GuideGesture.Tap),
-                GuideStep.Point(L.Onboarding.JobsSortTitle, L.Onboarding.JobsSortBody, "jobs.row.menu",
+                GuideStep.TryUntil(L.Onboarding.JobsOpenTitle, L.Onboarding.JobsOpenBody, "jobs.tile",
+                    GuideGesture.Tap, "jobs.detail"),
+                GuideStep.Point(L.Onboarding.JobsEquipTitle, L.Onboarding.JobsEquipBody, "jobs.gearset",
                     GuideGesture.Tap),
-                GuideStep.TryUntil(L.Onboarding.JobsGroupsTitle, L.Onboarding.JobsGroupsBody, "jobs.categories",
-                    GuideGesture.Tap, "jobs.categories.menu"),
+                GuideStep.Point(L.Onboarding.JobsSortTitle, L.Onboarding.JobsSortBody, "jobs.gearset.menu",
+                    GuideGesture.Tap),
             });
         Add(tours, "dailies", 4,
             new[]
