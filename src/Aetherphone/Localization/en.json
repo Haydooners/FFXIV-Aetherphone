@@ -880,7 +880,7 @@
   "settings.linkpearlContextMenu": "Linkpearl chat in menus",
   "settings.linkpearlContextMenuHint": "Shows \"Open a Linkpearl chat\" option in the in-game context menu when right-clicking on a player.",
   "settings.scrollWhileIdle": "Scroll While Idle",
-  "settings.scrollWhileIdleHint": "Your character scrolls through their phone (Tomescroll emote) while standing still and out of combat. Does nothing if you haven't unlocked the emote.",
+  "settings.scrollWhileIdleHint": "When you open your phone and stand still, your character scrolls through it (Tomescroll emote). Move or cancel the emote and it stays off until you open the phone again. Does nothing if you haven't unlocked the emote.",
   "settings.showInGpose": "Show in Group Pose",
   "settings.showInGposeHint": "Keep the phone available while you're in Group Pose, so you can open it during photo shoots. Turn it off to keep your screen clear for screenshots.",
   "settings.nativeFileDialog": "Windows file browser",

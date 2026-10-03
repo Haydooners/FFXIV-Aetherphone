@@ -880,7 +880,7 @@
   "settings.linkpearlContextMenu": "Linkpearl-Chat im Kontextmenü",
   "settings.linkpearlContextMenuHint": "Zeigt die Option \"Linkpearl-Chat öffnen\" im Kontextmenü an, wenn du im Spiel mit Rechtsklick auf einen Spieler klickst.",
   "settings.scrollWhileIdle": "Im Leerlauf scrollen",
-  "settings.scrollWhileIdleHint": "Dein Charakter scrollt durch sein Handy (Tomescroll-Emote), während er still steht und sich nicht im Kampf befindet. Ohne Wirkung, falls die Emote nicht freigeschaltet ist.",
+  "settings.scrollWhileIdleHint": "Wenn du dein Handy öffnest und still stehst, scrollt dein Charakter darauf (Tomescroll-Emote). Bewegst du dich oder brichst die Emote ab, bleibt sie aus, bis du das Handy erneut öffnest. Ohne Wirkung, falls die Emote nicht freigeschaltet ist.",
   "settings.showInGpose": "In Gruppenpose anzeigen",
   "settings.showInGposeHint": "Hält das Handy in der Gruppenpose verfügbar, damit du es während eines Fotoshootings öffnen kannst. Schalte es aus, um deinen Bildschirm für Screenshots frei zu halten.",
   "settings.nativeFileDialog": "Windows-Dateibrowser",
