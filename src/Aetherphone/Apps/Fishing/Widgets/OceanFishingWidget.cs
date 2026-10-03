@@ -1,6 +1,7 @@
 using System.Globalization;
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Fishing;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
@@ -46,7 +47,12 @@ internal sealed class OceanFishingWidget : IHomeWidget
     private readonly CachedText[] detailTexts = new CachedText[RouteCount];
     private readonly CachedText[] clockTexts = new CachedText[RouteCount * VoyageCount];
     private readonly CachedText[] relativeTexts = new CachedText[RouteCount * VoyageCount];
-    private readonly Dictionary<int, string> fishHints = new();
+    private readonly OceanVoyageText voyageText;
+
+    public OceanFishingWidget(FishingCatalog catalog)
+    {
+        voyageText = new OceanVoyageText(catalog);
+    }
 
     public string Id => "fishing.voyage";
     public string DisplayName => Loc.T(L.WidgetsAdventure.FishingName);
@@ -96,7 +102,7 @@ internal sealed class OceanFishingWidget : IHomeWidget
         var next = voyages[routeIndex][0];
         var headerBottom = WidgetChrome.Header(context, ink, AppId,
             next.BoardingNow ? L.Fishing.NowBoarding : L.Fishing.NextVoyage, FishingAccent);
-        var plan = OceanRoutes.Resolve(next.Destination, next.Time);
+        var plan = voyageText.For(next.Destination, next.Time);
         var remaining = next.BoardingNow ? next.BoardingUtc + BoardingWindow - utcNow : next.BoardingUtc - utcNow;
         var hero = Countdown(ref heroTexts[routeIndex], remaining);
         var heroStyle = WidgetText.FitStyle(hero, WidgetType.DisplayCompact, content.Width, true);
@@ -107,11 +113,11 @@ internal sealed class OceanFishingWidget : IHomeWidget
         var headlineHeight = WidgetText.LineHeight(WidgetType.Headline);
         var detailTop = content.Max.Y - captionHeight;
         var nameTop = detailTop - WidgetMetrics.RowGap * scale - headlineHeight;
-        WidgetText.Draw(drawList, new Vector2(content.Min.X, nameTop), plan.RouteName, ink.Primary,
+        WidgetText.Draw(drawList, new Vector2(content.Min.X, nameTop), plan.Destination, ink.Primary,
             WidgetType.Headline, content.Width);
         var glyph = GlyphUnits * scale;
         ProgressRing.CenterIcon(drawList, new Vector2(content.Min.X + glyph * 0.5f, detailTop + captionHeight * 0.5f),
-            FishingApp.TimeOfDayIcon(plan.TimeOfDay), ink.Accent(FishingApp.TimeOfDayTint(plan.TimeOfDay)), glyph);
+            FishingText.TimeOfDayIcon(plan.TimeOfDay), ink.Accent(FishingText.TimeOfDayTint(plan.TimeOfDay)), glyph);
         var detailLeft = content.Min.X + glyph + WidgetMetrics.RowGap * 2f * scale;
         WidgetText.Draw(drawList, new Vector2(detailLeft, detailTop), Detail(routeIndex, next, plan.TimeOfDay),
             ink.Secondary, WidgetType.Caption, MathF.Max(1f, content.Max.X - detailLeft));
@@ -150,10 +156,10 @@ internal sealed class OceanFishingWidget : IHomeWidget
         var drawList = context.DrawList;
         var scale = context.Scale;
         var gutter = WidgetMetrics.Gutter * scale;
-        var plan = OceanRoutes.Resolve(slot.Destination, slot.Time);
+        var plan = voyageText.For(slot.Destination, slot.Time);
         var badge = MathF.Min(BadgeUnits * scale, row.Height * 0.86f);
         AdventureWidgetArt.IconBadge(drawList, ink, new Vector2(row.Min.X + badge * 0.5f, row.Center.Y), badge,
-            FishingApp.TimeOfDayIcon(plan.TimeOfDay), FishingApp.TimeOfDayTint(plan.TimeOfDay));
+            FishingText.TimeOfDayIcon(plan.TimeOfDay), FishingText.TimeOfDayTint(plan.TimeOfDay));
 
         var cacheIndex = routeIndex * VoyageCount + slotIndex;
         var local = slot.BoardingUtc.ToLocalTime();
@@ -175,10 +181,10 @@ internal sealed class OceanFishingWidget : IHomeWidget
         var textLeft = row.Min.X + badge + gutter;
         var nameRight = row.Max.X - clockWidth - gutter;
         var hintRight = row.Max.X - relativeWidth - gutter;
-        WidgetText.Draw(drawList, new Vector2(textLeft, blockTop), plan.RouteName, ink.Primary, WidgetType.Headline,
+        WidgetText.Draw(drawList, new Vector2(textLeft, blockTop), plan.Destination, ink.Primary, WidgetType.Headline,
             MathF.Max(1f, nameRight - textLeft));
         var hasFish = plan.BlueFish.Length > 0;
-        WidgetText.Draw(drawList, new Vector2(textLeft, subTop), hasFish ? FishHint(plan) : Loc.T(L.Fishing.NoBlueFish),
+        WidgetText.Draw(drawList, new Vector2(textLeft, subTop), plan.BlueSummary,
             hasFish ? ink.Secondary : ink.Tertiary, WidgetType.Caption, MathF.Max(1f, hintRight - textLeft));
     }
 
@@ -214,22 +220,7 @@ internal sealed class OceanFishingWidget : IHomeWidget
         }
 
         return detailTexts[routeIndex].Store(key,
-            string.Concat(FishingApp.TimeOfDayLabel(timeOfDay), " · ", TimeText.Clock(slot.BoardingUtc.ToLocalTime())));
-    }
-
-    private string FishHint(in OceanRoutePlan plan)
-    {
-        var key = plan.Destination * 256 + plan.Time;
-        if (fishHints.TryGetValue(key, out var cached))
-        {
-            return cached;
-        }
-
-        var hint = plan.BlueFish.Length == 1
-            ? plan.BlueFish[0].Name
-            : string.Concat(plan.BlueFish[0].Name, " · ", plan.BlueFish[1].Name);
-        fishHints[key] = hint;
-        return hint;
+            string.Concat(FishingText.TimeOfDay(timeOfDay), " · ", TimeText.Clock(slot.BoardingUtc.ToLocalTime())));
     }
 
     private static string Countdown(ref CachedText cache, TimeSpan remaining)

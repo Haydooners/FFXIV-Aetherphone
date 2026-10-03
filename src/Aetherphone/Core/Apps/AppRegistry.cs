@@ -126,7 +126,7 @@ internal static class AppRegistry
             services.WallpaperImages));
         apps.Add(new TimersApp(services.Configuration, services.GameTimers));
         apps.Add(new DailiesApp(services.Configuration, services.GameData));
-        apps.Add(new FishingApp());
+        apps.Add(new FishingApp(services.Fishing, services.FishingAlerts, services.Textures));
         apps.Add(new GamesApp(services.GameStats, services.GameData, services.Textures, services.Coins,
             services.CoinSessions, services.GameRooms));
         apps.Add(new NotificationsApp(services.Notifications, services.SocialNotifications, services.LinkpearlLauncher, services.VelvetLauncher, services.DmLauncher, services.GramDmLauncher, services.SocialLauncher, services.MusterLauncher, services.YellowPagesLauncher, services.AnnouncementsLauncher, services.SafetyLauncher, services.EncryptionSetup, services.RadioLauncher, services.CasinoLauncher, services.AetherStreamLauncher, services.HuntsLauncher, services.JamLauncher, services.FeedbackLauncher));

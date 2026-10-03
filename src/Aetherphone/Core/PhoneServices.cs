@@ -7,6 +7,7 @@ using Aetherphone.Core.Collections;
 using Aetherphone.Core.Conduct;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Crypto;
+using Aetherphone.Core.Fishing;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Games;
@@ -60,6 +61,8 @@ internal sealed class PhoneServices : IDisposable
     public required MapData Maps { get; init; }
     public required HousingService Housing { get; init; }
     public required HousingReminderService HousingReminders { get; init; }
+    public required FishingCatalog Fishing { get; init; }
+    public required FishingAlerts FishingAlerts { get; init; }
     public required ITextureProvider Textures { get; init; }
     public required Windows.Components.ArtworkCache Artwork { get; init; }
     public required WeatherService Weather { get; init; }
@@ -357,6 +360,10 @@ internal sealed class PhoneServices : IDisposable
         var housingGameMaps = new HousingGameMaps(dataManager, textures);
         var housing = new HousingService(http, configuration, gameData, framework, housingGameMaps, visibility,
             housingCacheRoot, housingGate);
+        var fishing = new FishingCatalog(dataManager,
+            Plugin.PluginInterface.AssemblyLocation.DirectoryName ?? string.Empty);
+        var fishingAlerts = new FishingAlerts(configuration, fishing, notifications, clientState, framework,
+            installer.Gate(FishingCatalog.AppId));
         var housingReminders = new HousingReminderService(configuration, framework, notifications, housing.Watch,
             housingGate);
         var confirm = new ConfirmService();
@@ -433,6 +440,8 @@ internal sealed class PhoneServices : IDisposable
             Maps = maps,
             Housing = housing,
             HousingReminders = housingReminders,
+            Fishing = fishing,
+            FishingAlerts = fishingAlerts,
             Textures = textures,
             Artwork = new Windows.Components.ArtworkCache(textures),
             Weather = weather,
@@ -596,6 +605,7 @@ internal sealed class PhoneServices : IDisposable
         Health.Dispose();
         Activity.Dispose();
         HousingReminders.Dispose();
+        FishingAlerts.Dispose();
         Housing.Dispose();
         Venues.Dispose();
         Hunts.Dispose();

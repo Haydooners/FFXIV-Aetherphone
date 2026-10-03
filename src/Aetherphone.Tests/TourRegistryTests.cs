@@ -49,7 +49,7 @@ public sealed class TourRegistryTests
         { "strats", (2, 5) },
         { "venues", (4, 6) },
         { "maps", (4, 5) },
-        { "fishing", (3, 4) },
+        { "fishing", (4, 6) },
         { "hunts", (6, 6) },
     };
 

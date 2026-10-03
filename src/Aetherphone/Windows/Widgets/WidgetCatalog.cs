@@ -55,7 +55,7 @@ internal static class WidgetCatalog
             new WeatherWatchWidget(phone.Weather),
             new HydrationWidget(phone.Health),
             new DailiesWidget(phone.Configuration, phone.GameData),
-            new OceanFishingWidget(),
+            new OceanFishingWidget(phone.Fishing),
             new CurrenciesWidget(phone.GameData, phone.CharacterWatch, phone.Activity),
             new JobWidget(phone.GameData),
             new HuntsLiveWidget(phone.Hunts, phone.HuntMobCatalog, phone.Configuration),
