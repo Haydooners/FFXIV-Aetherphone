@@ -887,6 +887,9 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool ShouldShowNotificationBanner(string appId) =>
         !NotificationSettings.TryGetValue(appId, out var setting) || setting.ShowNotificationBanner;
 
+    public bool ShouldPlayNotificationSound(string appId) =>
+        !NotificationSettings.TryGetValue(appId, out var setting) || setting.PlaySound;
+
     public string? AppSoundOverride(string appId) =>
         NotificationSettings.TryGetValue(appId, out var setting) && !string.IsNullOrEmpty(setting.Sound)
             ? setting.Sound

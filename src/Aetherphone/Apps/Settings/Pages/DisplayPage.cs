@@ -12,10 +12,20 @@ namespace Aetherphone.Apps.Settings.Pages;
 
 internal sealed class DisplayPage : ISettingsPage
 {
+    private static readonly SettingsEntry[] Searchable =
+    {
+        new(L.Settings.PhoneSize),
+        new(L.Settings.TextSize),
+        new(L.Settings.LiveGlass),
+        new(L.ControlCenter.LockPosition),
+        new(L.Minimized.Title),
+    };
+
     public string Title => Loc.T(L.Settings.Display);
     public string Summary => string.Empty;
     public FontAwesomeIcon Icon => FontAwesomeIcon.Sun;
     public Vector4 Tint => new(0.13f, 0.56f, 0.96f, 1f);
+    public ReadOnlySpan<SettingsEntry> Entries => Searchable;
     private const float CardGap = Metrics.Space.Xl;
     private const float PercentScale = 100f;
 #if DEBUG

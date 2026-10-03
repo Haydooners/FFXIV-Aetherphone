@@ -48,6 +48,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
     private readonly PrivacyPage privacyPage;
     private readonly LinkedDevicesPage linkedDevicesPage;
     private readonly TagsMentionsPage tagsMentionsPage;
+    private readonly InstalledAppList installedApps;
     private readonly ThemeProvider themes;
     private readonly WallpaperLibrary wallpapers;
     private readonly WallpaperImageCache wallpaperImages;
@@ -84,7 +85,6 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         var general = new GeneralPage(configuration, services.Translation, confirm);
         var tutorials = new TutorialsPage(configuration);
         callsPage = new CallsPage(calls, configuration);
-        var appNotifications = new AppNotificationPage(configuration, sound);
         var notificationSoundPage = new SoundSettingsPage(sound, SoundKind.Notification, L.Settings.NotificationSound,
             FontAwesomeIcon.Bell, new Vector4(0.98f, 0.27f, 0.25f, 1f), "settings.notificationVolume",
             () => configuration.NotificationSound, token =>
@@ -96,7 +96,10 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
                 configuration.NotificationVolume = volume;
                 configuration.Save();
             });
-        notificationsPage = new NotificationsPage(configuration, this, appNotifications, services.Installer, apps);
+        installedApps = new InstalledAppList(services.Installer, apps);
+        var appSettingsPages = new AppSettingsPages(configuration, sound, services.Installer, confirm, this);
+        notificationsPage = new NotificationsPage(configuration, this, installedApps, appSettingsPages);
+        var appsPage = new AppsPage(installedApps, appSettingsPages, this, configuration);
         var ringtonePage = new SoundSettingsPage(sound, SoundKind.Ringtone, L.Settings.Ringtone, FontAwesomeIcon.Music,
             new Vector4(0.95f, 0.40f, 0.65f, 1f), "settings.ringtoneVolume",
             () => configuration.RingtoneSound, token =>
@@ -125,6 +128,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
             new ISettingsPage[] { general, appearance, display, sounds, notificationsPage, callsPage, language },
             new ISettingsPage[] { privacyPage, safetyPage, linkedDevicesPage },
             new ISettingsPage[] { tutorials, commands, changelogPage, about },
+            new ISettingsPage[] { appsPage },
         };
         var searchableCount = 0;
         for (var groupIndex = 0; groupIndex < groups.Length; groupIndex++)
@@ -145,7 +149,8 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         var profileCard = new ProfileCard(aethernetSession, gameData, services.CharacterWatch, remoteImages,
             lodestone);
         router = new ViewRouter<ISettingsPage>(
-            new RootSettingsPage(this, groups, configuration, accountPage, new SupportPage(), profileCard));
+            new RootSettingsPage(this, groups, configuration, accountPage, new SupportPage(), profileCard,
+                installedApps, appSettingsPages));
         drawPage = DrawPage;
         popBack = PopBack;
         assignWallpaper = AssignWallpaper;
@@ -313,5 +318,6 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         privacyPage.Dispose();
         tagsMentionsPage.Dispose();
         linkedDevicesPage.Dispose();
+        installedApps.Dispose();
     }
 }
