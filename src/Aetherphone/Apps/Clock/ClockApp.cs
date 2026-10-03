@@ -97,6 +97,14 @@ internal sealed partial class ClockApp : IPhoneApp
         {
             activeTab = TabAlarms;
         }
+        else if (GuideIntents.Consume("clock.tab.timer"))
+        {
+            activeTab = TabTimer;
+        }
+        else if (GuideIntents.Consume("clock.tab.world"))
+        {
+            activeTab = TabWorld;
+        }
 
         var context = new PhoneContext(content, theme, navigation);
         AppHeader.Draw(context, DisplayName);

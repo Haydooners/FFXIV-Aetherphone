@@ -8860,4 +8860,41 @@ internal static class L
         public static readonly LocString SmartRotateHint = new("widgetStacks.smartRotateHint",
             "Shows the most relevant widget at the right time.");
     }
+
+    internal static class WidgetsTime
+    {
+        public static readonly LocString ClockDescription = new("widgetsTime.clockDescription", "Local, Eorzea and your world clocks at a glance.");
+        public static readonly LocString AlarmDescription = new("widgetsTime.alarmDescription", "Your next alarm, with quick switches for the rest.");
+        public static readonly LocString TimerDescription = new("widgetsTime.timerDescription", "Start, follow and cancel a timer from the Home Screen.");
+        public static readonly LocString UpNext = new("widgetsTime.upNext", "Up Next");
+        public static readonly LocString UpNextDescription = new("widgetsTime.upNextDescription", "Today's date and what is coming up on your calendar.");
+        public static readonly LocString MonthDescription = new("widgetsTime.monthDescription", "This month at a glance, with today marked.");
+        public static readonly LocString Resets = new("widgetsTime.resets", "Resets");
+        public static readonly LocString ResetsDescription = new("widgetsTime.resetsDescription", "Countdowns to the daily, weekly and Grand Company resets, and more.");
+        public static readonly LocString Ventures = new("widgetsTime.ventures", "Ventures");
+        public static readonly LocString VenturesDescription = new("widgetsTime.venturesDescription", "Your retainers' ventures and when they come home.");
+        public static readonly LocString City = new("widgetsTime.city", "City");
+        public static readonly LocString DayOffset = new("widgetsTime.dayOffset", "{0}, {1}");
+        public static readonly LocString NoAlarms = new("widgetsTime.noAlarms", "No alarms");
+        public static readonly LocString AlarmsOff = new("widgetsTime.alarmsOff", "All alarms are off");
+        public static readonly LocString NoAlarmsHint = new("widgetsTime.noAlarmsHint", "Tap to set one");
+        public static readonly LocString Snoozed = new("widgetsTime.snoozed", "Snoozed");
+        public static readonly LocString SnoozedUntil = new("widgetsTime.snoozedUntil", "Snoozed until {0}");
+        public static readonly LocString Ringing = new("widgetsTime.ringing", "Ringing");
+        public static readonly LocString EndsAt = new("widgetsTime.endsAt", "Ends {0}");
+        public static readonly LocString PickMinutes = new("widgetsTime.pickMinutes", "Pick minutes to start");
+        public static readonly LocString NoMoreToday = new("widgetsTime.noMoreToday", "No more events today");
+        public static readonly LocString UntilMoment = new("widgetsTime.untilMoment", "Until {0}");
+        public static readonly LocString NextReset = new("widgetsTime.nextReset", "Next reset");
+        public static readonly LocString ReadyToCollect = new("widgetsTime.readyToCollect", "Ready to collect");
+        public static readonly LocString NextVenture = new("widgetsTime.nextVenture", "Next venture");
+        public static readonly LocString NoVentures = new("widgetsTime.noVentures", "No ventures out");
+        public static readonly LocString VenturesOut = new("widgetsTime.venturesOut", "{0} of {1} out");
+        public static readonly LocString VenturesReady = new("widgetsTime.venturesReady", "{0} ready");
+        public static readonly LocString VenturesUnavailable = new("widgetsTime.venturesUnavailable", "Visit a summoning bell to load your retainers.");
+        public static readonly LocString SampleAlarm = new("widgetsTime.sampleAlarm", "Wake up");
+        public static readonly LocString SampleAlarmMidday = new("widgetsTime.sampleAlarmMidday", "Retainer check");
+        public static readonly LocString SampleAlarmLater = new("widgetsTime.sampleAlarmLater", "Raid prep");
+        public static readonly LocString SampleEvent = new("widgetsTime.sampleEvent", "Hunt train");
+    }
 }
