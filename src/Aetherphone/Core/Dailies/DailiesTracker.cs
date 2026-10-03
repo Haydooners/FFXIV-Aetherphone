@@ -57,7 +57,7 @@ internal sealed class DailiesTracker : IDisposable
 
     public List<DailyCustomTask> CustomTasks => configuration.DailyCustomTasks;
 
-    public int Outstanding => Remaining(DailyCadence.Daily) + Remaining(DailyCadence.Weekly);
+    public int Outstanding => LoggedIn ? Remaining(DailyCadence.Daily) + Remaining(DailyCadence.Weekly) : 0;
 
     public bool RemindDaily => configuration.NotifyDailiesBeforeDailyReset;
 
@@ -98,6 +98,11 @@ internal sealed class DailiesTracker : IDisposable
 
     public void SetChecked(string itemId, DailyCadence cadence, bool value)
     {
+        if (!LoggedIn)
+        {
+            return;
+        }
+
         var utcNow = DateTime.UtcNow;
         var records = configuration.DailyChecks;
         var changed = DailyLedger.SetChecked(records, itemId, ContentId, DailyLedger.PeriodStartUnix(cadence, utcNow),
