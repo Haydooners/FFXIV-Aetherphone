@@ -18,12 +18,14 @@ internal readonly struct NavBarFrame
     public readonly Rect Content;
     public readonly Rect Body;
     public readonly float Scale;
+    public readonly float TitleBandTop;
 
-    internal NavBarFrame(Rect content, Rect body, float scale)
+    internal NavBarFrame(Rect content, Rect body, float scale, float titleBandTop)
     {
         Content = content;
         Body = body;
         Scale = scale;
+        TitleBandTop = titleBandTop;
     }
 }
 

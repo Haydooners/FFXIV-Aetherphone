@@ -120,14 +120,15 @@ internal static class AppHeader
         Marquee.DrawLeftAuto(id, title, titleX, titleY, maxWidth, titleStyle, color);
     }
 
-    public static NavBarFrame BeginLargeTitle(in PhoneContext context)
+    public static NavBarFrame BeginLargeTitle(in PhoneContext context, bool reserveInlineRow = true)
     {
         var scale = UiScale.Current;
         var content = context.Content;
-        var inset = NavBarMetrics.ExpandedHeight * scale;
+        var titleBandTop = reserveInlineRow ? NavBarMetrics.InlineHeight * scale : 0f;
+        var inset = titleBandTop + NavBarMetrics.BandHeight * scale;
         var body = new Rect(new Vector2(content.Min.X, content.Min.Y + inset), content.Max);
         AppSurface.ArmNavBar(body.Min.Y, inset);
-        return new NavBarFrame(content, body, scale);
+        return new NavBarFrame(content, body, scale, titleBandTop);
     }
 
     public static Rect LargeTitleButtonRect(in NavBarFrame frame, int index, int count)
@@ -150,8 +151,7 @@ internal static class AppHeader
         var progress = NavBarMetrics.Progress(scrollY, scale);
         var glass = NavBarMetrics.GlassOpacity(scrollY, scale);
         var inlineHeight = NavBarMetrics.InlineHeight * scale;
-        var band = new Rect(content.Min,
-            new Vector2(content.Max.X, content.Min.Y + NavBarMetrics.ExpandedHeight * scale));
+        var band = new Rect(content.Min, new Vector2(content.Max.X, frame.Body.Min.Y));
         var buttonCount = Math.Min(buttons.Length, NavBarMetrics.MaxButtons);
         var pressedButton = -1;
         var backPressed = false;
@@ -170,7 +170,8 @@ internal static class AppHeader
                     new Vector2(content.Max.X, content.Min.Y + inlineHeight)));
             }
 
-            DrawLargeTitle(drawList, content, title, style.Ink, scrollY, progress, scale);
+            DrawLargeTitle(drawList, content, frame.TitleBandTop, frame.Body.Min.Y, title, style.Ink, scrollY,
+                progress, scale);
             var leftReserve = onBack is null
                 ? 0f
                 : DrawBackControl(drawList, content, backTitle, style.Accent, inlineHeight, scale, out backPressed);
@@ -206,8 +207,8 @@ internal static class AppHeader
             clear);
     }
 
-    private static void DrawLargeTitle(ImDrawListPtr drawList, Rect content, string title, Vector4 ink,
-        float scrollY, float progress, float scale)
+    private static void DrawLargeTitle(ImDrawListPtr drawList, Rect content, float titleBandTop, float bandBottom,
+        string title, Vector4 ink, float scrollY, float progress, float scale)
     {
         var alpha = NavBarMetrics.LargeTitleAlpha(progress);
         if (alpha <= 0.001f)
@@ -215,8 +216,7 @@ internal static class AppHeader
             return;
         }
 
-        var bandTop = content.Min.Y + NavBarMetrics.InlineHeight * scale;
-        var bandBottom = content.Min.Y + NavBarMetrics.ExpandedHeight * scale;
+        var bandTop = content.Min.Y + titleBandTop;
         var maxWidth = MathF.Max(1f, content.Width - LargeTitleInset * 2f * scale);
         var fitted = Typography.FitText(title, maxWidth, TextStyles.LargeTitle);
         var size = Typography.Measure(fitted, TextStyles.LargeTitle);
