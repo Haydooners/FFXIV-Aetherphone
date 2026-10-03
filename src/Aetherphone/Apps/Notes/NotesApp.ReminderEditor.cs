@@ -382,7 +382,7 @@ internal sealed partial class NotesApp
         {
             var day = (DayOfWeek)((firstDay + column) % DaysPerWeek);
             Typography.DrawCentered(drawList, new Vector2(left + cell * (column + 0.5f), top + height * 0.5f),
-                format.GetShortestDayName(day), ui.MutedInk, TextStyles.Caption1);
+                format.GetShortestDayName(day), ui.MutedInk, TextStyles.FootnoteEmphasized);
         }
 
         return top + height;
