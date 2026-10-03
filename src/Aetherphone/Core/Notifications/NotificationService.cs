@@ -151,7 +151,7 @@ internal sealed class NotificationService : IDisposable
 
         UnreadCount++;
         Added?.Invoke(stamped);
-        if (Plugin.ClientState.IsLoggedIn && !configuration.DoNotDisturb &&
+        if (Plugin.ClientState.IsLoggedIn && !configuration.DoNotDisturb && !IsMuted(notification.AppId) &&
             !(configuration.QuietWhileBusy && PlayerBusy.Now))
         {
             if (configuration.ShowNotificationBanner &&
@@ -165,7 +165,7 @@ internal sealed class NotificationService : IDisposable
                 Vibration?.Invoke(stamped);
             }
 
-            if (configuration.ShouldPlayNotificationSound(notification.SettingsKey) &&
+            if (!notification.Muted && configuration.ShouldPlayNotificationSound(notification.SettingsKey) &&
                 ShouldPlaySound(stamped.StackKey))
             {
                 sound.PlayNotification(notification.SettingsKey);
@@ -208,6 +208,9 @@ internal sealed class NotificationService : IDisposable
             lastSoundAt.Remove(expired[index]);
         }
     }
+
+    public bool IsMuted(string appId) =>
+        NotificationMutes.IsMuted(configuration.NotificationSettings, appId, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
     public void MarkAllRead()
     {

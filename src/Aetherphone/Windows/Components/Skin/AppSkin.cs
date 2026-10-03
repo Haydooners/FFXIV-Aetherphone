@@ -302,8 +302,14 @@ internal sealed class AppSkin
 
     public bool AccentPill(Rect rect, string label, bool enabled, in TextStyle style)
     {
-        var drawList = ImGui.GetWindowDrawList();
         var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
+        PaintAccentPill(rect, label, enabled, hovered, style);
+        return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
+    }
+
+    public void PaintAccentPill(Rect rect, string label, bool enabled, bool hovered, in TextStyle style)
+    {
+        var drawList = ImGui.GetWindowDrawList();
         var fill = !enabled ? Core.Theme.Palette.WithAlpha(Accent, 0.35f) :
             hovered ? Core.Theme.Palette.Mix(Accent, new Vector4(0f, 0f, 0f, 1f), 0.12f) : Accent;
         Squircle.Fill(drawList, rect.Min, rect.Max, rect.Height * 0.5f, ImGui.GetColorU32(fill));
@@ -312,8 +318,6 @@ internal sealed class AppSkin
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
-
-        return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     public bool DangerPillButton(Rect rect, string label) => DangerPillButton(rect, label, Theme);

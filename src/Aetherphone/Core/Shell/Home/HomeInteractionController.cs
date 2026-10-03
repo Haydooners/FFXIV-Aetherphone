@@ -2,7 +2,9 @@ using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Shortcuts;
+using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
+using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Core.Shell.Home;
@@ -20,6 +22,10 @@ internal sealed class HomeInteractionController
     private const float TapPressDepth = 1f - Motion.PressScaleControl;
     private const float WidgetTapDepth = 1f - Motion.PressScaleCard;
     private const float PressDim = 0.14f;
+    private const float WidgetJiggle = 0.45f;
+    private const float StackHoldSeconds = 0.5f;
+    private const float StackZoneInset = 0.18f;
+    private static readonly WidgetSize[] ResizeSizes = { WidgetSize.Small, WidgetSize.Medium, WidgetSize.Large };
 
     private sealed class PointerEntry
     {
@@ -28,10 +34,10 @@ internal sealed class HomeInteractionController
     }
 
     private readonly HomeLayoutService layout;
-    private readonly WidgetRegistry widgets;
+    private readonly WidgetHost widgetHost;
     private readonly Pager pager;
     private readonly FolderOverlay folder;
-    private readonly WidgetSizeMenu sizeMenu;
+    private readonly WidgetContextMenu widgetMenu;
     private readonly WidgetGallery gallery;
     private readonly Spotlight.SpotlightOverlay spotlight;
     private readonly TilePoseCache poses;
@@ -42,6 +48,8 @@ internal sealed class HomeInteractionController
     private float pressTime;
     private HomeTile? pressTile;
     private bool pressFromDock;
+    private bool pressOnControl;
+    private WidgetHit pressHit;
 
     private HomeTile? tapTile;
     private bool tapHolding;
@@ -68,20 +76,27 @@ internal sealed class HomeInteractionController
     private bool dockAccepts;
     private int dockInsertIndex;
     private HomeTile? folderTarget;
+    private HomeTile? stackCandidate;
+    private float stackDwell;
+
+    private HomeTile? resizeTile;
+    private int resizePage;
+    private WidgetSize resizeSize;
+    private Rect resizeOutline;
 
     private HomeTile? settleTile;
     private Spring settleX;
     private Spring settleY;
 
-    public HomeInteractionController(HomeLayoutService layout, WidgetRegistry widgets, Pager pager,
-        FolderOverlay folder, WidgetSizeMenu sizeMenu, WidgetGallery gallery,
-        Spotlight.SpotlightOverlay spotlight, TilePoseCache poses, ShortcutRunner runner)
+    public HomeInteractionController(HomeLayoutService layout, Pager pager, FolderOverlay folder,
+        WidgetContextMenu widgetMenu, WidgetGallery gallery, Spotlight.SpotlightOverlay spotlight, TilePoseCache poses,
+        ShortcutRunner runner, WidgetHost widgetHost)
     {
         this.layout = layout;
-        this.widgets = widgets;
+        this.widgetHost = widgetHost;
         this.pager = pager;
         this.folder = folder;
-        this.sizeMenu = sizeMenu;
+        this.widgetMenu = widgetMenu;
         this.gallery = gallery;
         this.spotlight = spotlight;
         this.poses = poses;
@@ -92,7 +107,13 @@ internal sealed class HomeInteractionController
     public HomeTile? DragTile => dragTile;
     public int DragPage => dragPage;
     public GridCell DropCell => dropCell;
-    public bool DropTargetLive => dragTile is not null && dropValid && !overDock && folderTarget is null;
+    public bool DropTargetLive =>
+        dragTile is not null && dropValid && !overDock && folderTarget is null && stackCandidate is null;
+    public HomeTile? StackCandidate => stackCandidate;
+    public float StackProgress => stackCandidate is null ? 0f : Math.Clamp(stackDwell / StackHoldSeconds, 0f, 1f);
+    public HomeTile? ResizeTile => resizeTile;
+    public Rect ResizeOutline => resizeOutline;
+    public int ResizePage => resizePage;
     public HomeTile? SettleTile => settleTile;
     public HomeTile? FolderTarget => folderTarget;
     public bool OverDock => overDock;
@@ -115,6 +136,8 @@ internal sealed class HomeInteractionController
     {
         pressActive = false;
         editing = false;
+        resizeTile = null;
+        stackCandidate = null;
         CancelTap();
         if (dragTile is not null)
         {
@@ -122,11 +145,29 @@ internal sealed class HomeInteractionController
         }
     }
 
-    public void HandleInput(Rect content, in HomeMetrics metrics, INavigator navigation, float delta)
+    public bool WidgetsInteractive(in HomeMotion motion) =>
+        motion.Interactive && !editing && dragTile is null && settleTile is null && resizeTile is null &&
+        !folder.Active &&
+        !gallery.Active && !widgetMenu.Active && !spotlight.Active && !pager.Dragging &&
+        MathF.Abs(pager.Value - pager.Page) < 0.001f;
+
+    public void HandleInput(Rect content, in HomeMetrics metrics, INavigator navigation, PhoneTheme theme,
+        float delta)
     {
-        if (gallery.Active || folder.Active || sizeMenu.Active || spotlight.Active)
+        if (gallery.Active || folder.Active || widgetMenu.Active || spotlight.Active)
         {
-            pressActive = false;
+            if (pressActive)
+            {
+                pressActive = false;
+                CancelTap();
+            }
+
+            return;
+        }
+
+        if (resizeTile is not null)
+        {
+            HandleResize(metrics);
             return;
         }
 
@@ -147,10 +188,11 @@ internal sealed class HomeInteractionController
             return;
         }
 
-        HandlePress(content, metrics, navigation, delta);
+        HandlePress(content, metrics, navigation, theme, delta);
     }
 
-    private void HandlePress(Rect content, in HomeMetrics metrics, INavigator navigation, float delta)
+    private void HandlePress(Rect content, in HomeMetrics metrics, INavigator navigation, PhoneTheme theme,
+        float delta)
     {
         var mouse = ImGui.GetMousePos();
         if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && UiInteract.Hover(content.Min, content.Max))
@@ -160,11 +202,21 @@ internal sealed class HomeInteractionController
                 return;
             }
 
+            if (editing && TryBeginResize(metrics, mouse))
+            {
+                return;
+            }
+
             pressActive = true;
             pressPos = mouse;
             pressTime = 0f;
             pressTile = TileAt(metrics, mouse, out pressFromDock);
-            if (pressTile is not null)
+            pressOnControl = !editing && pressTile is { IsWidget: true } && WidgetHits.TryFind(mouse, out pressHit);
+            if (pressOnControl)
+            {
+                WidgetHits.Press(pressHit.Id);
+            }
+            else if (pressTile is not null)
             {
                 BeginTap(pressTile);
             }
@@ -174,6 +226,11 @@ internal sealed class HomeInteractionController
         {
             pressTime += delta;
             var move = mouse - pressPos;
+            if (pressOnControl && move.Length() >= TapSlop * metrics.Scale)
+            {
+                CancelControl();
+            }
+
             var canSwipe = !pressFromDock && !(editing && pressTile is not null);
             if (canSwipe && MathF.Abs(move.X) > SwipeThreshold * metrics.Scale &&
                 MathF.Abs(move.X) > MathF.Abs(move.Y) * 1.2f)
@@ -221,15 +278,16 @@ internal sealed class HomeInteractionController
             var move = mouse - pressPos;
             if (move.Length() < TapSlop * metrics.Scale && pressTime < LongPressSeconds)
             {
-                HandleTap(metrics, navigation);
+                HandleTap(metrics, navigation, theme, mouse);
             }
 
+            CancelControl();
             pressActive = false;
         }
     }
 
     public bool RemoveBadgesLive(in HomeMotion motion) =>
-        editing && motion.Interactive && !gallery.Active && !sizeMenu.Active && !folder.Active;
+        editing && motion.Interactive && !gallery.Active && !widgetMenu.Active && !folder.Active;
 
     private bool HandleEditChromeClick(Rect content, in HomeMetrics metrics, Vector2 mouse)
     {
@@ -250,7 +308,73 @@ internal sealed class HomeInteractionController
         return false;
     }
 
-    private void HandleTap(in HomeMetrics metrics, INavigator navigation)
+    private bool TryBeginResize(in HomeMetrics metrics, Vector2 mouse)
+    {
+        var page = pager.Page;
+        if (page < 0 || page >= layout.PageCount)
+        {
+            return false;
+        }
+
+        var tiles = layout.Page(page);
+        for (var index = 0; index < tiles.Count; index++)
+        {
+            var tile = tiles[index];
+            if (!tile.IsWidget || !WidgetResizeHandle.Resizable(tile) || CommittedRect(metrics, tile) is not { } rect ||
+                !WidgetResizeHandle.Hit(rect, mouse, metrics.Scale))
+            {
+                continue;
+            }
+
+            resizeTile = tile;
+            resizePage = page;
+            resizeSize = tile.Size;
+            resizeOutline = rect;
+            pressActive = false;
+            CancelTap();
+            return true;
+        }
+
+        return false;
+    }
+
+    private void HandleResize(in HomeMetrics metrics)
+    {
+        var tile = resizeTile!;
+        var mouse = ImGui.GetMousePos();
+        var bestDistance = float.MaxValue;
+        for (var index = 0; index < ResizeSizes.Length; index++)
+        {
+            var size = ResizeSizes[index];
+            var cell = tile.Cell;
+            if (size != tile.Size && !layout.TryFitSize(tile, size, out cell))
+            {
+                continue;
+            }
+
+            var rect = metrics.WidgetRect(resizePage, pager.Value, cell, WidgetSizes.ColumnSpan(size),
+                WidgetSizes.RowSpan(size));
+            var distance = Vector2.DistanceSquared(rect.Max, mouse);
+            if (distance >= bestDistance)
+            {
+                continue;
+            }
+
+            bestDistance = distance;
+            resizeSize = size;
+            resizeOutline = rect;
+        }
+
+        if (ImGui.IsMouseDown(ImGuiMouseButton.Left) && !ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+        {
+            return;
+        }
+
+        layout.TryResizeInPlace(tile, resizeSize);
+        resizeTile = null;
+    }
+
+    private void HandleTap(in HomeMetrics metrics, INavigator navigation, PhoneTheme theme, Vector2 mouse)
     {
         if (pressTile is null)
         {
@@ -267,13 +391,17 @@ internal sealed class HomeInteractionController
         {
             if (editing)
             {
-                sizeMenu.Open(pressTile);
-            }
-            else if (widgets.AppFor(pressTile.Widget!) is { } app)
-            {
-                navigation.OpenAppFrom(app, rect, LaunchOrigin.Surface);
+                widgetMenu.Open(pressTile);
+                return;
             }
 
+            if (pressOnControl)
+            {
+                ActivateControl(rect, mouse);
+                return;
+            }
+
+            widgetHost.OpenTarget(pressTile, rect, theme, metrics.Scale);
             return;
         }
 
@@ -297,6 +425,33 @@ internal sealed class HomeInteractionController
         {
             navigation.OpenAppFrom(pressTile.App!, DrawnRect(rect, pressTile, metrics), LaunchOrigin.Icon);
         }
+    }
+
+    private void ActivateControl(Rect tileRect, Vector2 mouse)
+    {
+        if (!pressHit.Rect.Contains(mouse))
+        {
+            return;
+        }
+
+        if (pressHit.Kind == WidgetHitKind.Link)
+        {
+            widgetHost.Actions.Open(pressHit.Route, tileRect);
+            return;
+        }
+
+        WidgetHits.Fire(pressHit.Id);
+    }
+
+    private void CancelControl()
+    {
+        if (!pressOnControl)
+        {
+            return;
+        }
+
+        pressOnControl = false;
+        WidgetHits.Cancel();
     }
 
     private Rect DrawnRect(Rect rect, HomeTile tile, in HomeMetrics metrics)
@@ -358,6 +513,8 @@ internal sealed class HomeInteractionController
         lift.SnapTo(1f);
         edgeDwell = 0f;
         folderTarget = null;
+        stackCandidate = null;
+        stackDwell = 0f;
         overDock = false;
         dropValid = false;
         pressActive = false;
@@ -383,6 +540,7 @@ internal sealed class HomeInteractionController
         if (overDock)
         {
             folderTarget = null;
+            stackCandidate = null;
             edgeDwell = 0f;
             var siblings = DockSiblingCount();
             dockAccepts = dragFromDock || layout.CanDock(dragTile);
@@ -448,13 +606,18 @@ internal sealed class HomeInteractionController
         folderTarget = null;
         if (dragPage >= layout.PageCount)
         {
+            stackCandidate = null;
             dropValid = layout.TryResolveDrop(dragPage, dragTile!, HoveredCell(metrics), out dropCell);
             return;
         }
 
         var tiles = layout.Page(dragPage);
         var cells = layout.Placements(dragPage);
-        if (!dragTile!.IsWidget)
+        if (dragTile!.IsWidget)
+        {
+            TrackStackCandidate(metrics, tiles, cells, mouse, delta);
+        }
+        else
         {
             var radius = metrics.IconSize * 0.42f;
             for (var index = 0; index < tiles.Count && index < cells.Count; index++)
@@ -478,6 +641,40 @@ internal sealed class HomeInteractionController
         dropValid = layout.TryResolveDrop(dragPage, dragTile, HoveredCell(metrics), out dropCell);
     }
 
+    private void TrackStackCandidate(in HomeMetrics metrics, IReadOnlyList<HomeTile> tiles,
+        IReadOnlyList<GridCell> cells, Vector2 mouse, float delta)
+    {
+        HomeTile? candidate = null;
+        for (var index = 0; index < tiles.Count && index < cells.Count; index++)
+        {
+            var tile = tiles[index];
+            if (!tile.IsWidget || !layout.CanStack(tile, dragTile!))
+            {
+                continue;
+            }
+
+            var rect = metrics.TileRect(dragPage, pager.Value, cells[index], tile);
+            var inset = MathF.Min(rect.Width, rect.Height) * StackZoneInset;
+            if (rect.Inset(inset).Contains(mouse))
+            {
+                candidate = tile;
+                break;
+            }
+        }
+
+        if (!ReferenceEquals(candidate, stackCandidate))
+        {
+            stackCandidate = candidate;
+            stackDwell = 0f;
+            return;
+        }
+
+        if (candidate is not null)
+        {
+            stackDwell += delta;
+        }
+    }
+
     private GridCell HoveredCell(in HomeMetrics metrics)
     {
         var anchor = dragPos - new Vector2(metrics.CellWidth * (dragTile!.ColumnSpan - 1) * 0.5f,
@@ -490,7 +687,11 @@ internal sealed class HomeInteractionController
     private void CommitDrag(in HomeMetrics metrics)
     {
         var tile = dragTile!;
-        if (folderTarget is not null)
+        if (stackCandidate is not null && StackProgress >= 1f)
+        {
+            BeginSettle(layout.MakeStack(stackCandidate, tile) ?? tile, metrics);
+        }
+        else if (folderTarget is not null)
         {
             layout.MakeFolder(folderTarget, tile);
         }
@@ -515,6 +716,8 @@ internal sealed class HomeInteractionController
 
         dragTile = null;
         folderTarget = null;
+        stackCandidate = null;
+        stackDwell = 0f;
         overDock = false;
         dropValid = false;
         pager.AnimateTo(pager.Page, layout.PageCount);
@@ -525,6 +728,19 @@ internal sealed class HomeInteractionController
         settleTile = tile;
         settleX.SnapTo(dragPos.X - metrics.Content.Min.X);
         settleY.SnapTo(dragPos.Y - metrics.Content.Min.Y);
+    }
+
+    public void SettleFrom(HomeTile tile, Vector2 center, float startScale, in HomeMetrics metrics)
+    {
+        settleTile = tile;
+        settleX.SnapTo(center.X - metrics.Content.Min.X);
+        settleY.SnapTo(center.Y - metrics.Content.Min.Y);
+        lift.SnapTo(startScale);
+        var (page, _) = layout.Locate(tile);
+        if (page >= 0)
+        {
+            pager.AnimateTo(page, layout.PageCount);
+        }
     }
 
     public bool StepSettle(in HomeMetrics metrics, float delta, out Vector2 position, out float liftScale)
@@ -590,7 +806,8 @@ internal sealed class HomeInteractionController
             return Vector2.Zero;
         }
 
-        return JiggleOffset(tile.Key.GetHashCode(), editClock, scale);
+        var offset = JiggleOffset(tile.Key.GetHashCode(), editClock, scale);
+        return tile.IsWidget ? offset * WidgetJiggle : offset;
     }
 
     public static Vector2 JiggleOffset(int seed, float clock, float scale)
@@ -605,7 +822,7 @@ internal sealed class HomeInteractionController
     {
         hoverPointer = ImGui.GetMousePos();
         var active = motion.Interactive && !editing && dragTile is null && settleTile is null &&
-                     !folder.Active && !gallery.Active && !sizeMenu.Active && !spotlight.Active &&
+                     !folder.Active && !gallery.Active && !widgetMenu.Active && !spotlight.Active &&
                      !pager.Dragging && UiInteract.Hover(content.Min, content.Max);
         hoverTile = active ? TileAt(metrics, hoverPointer, out _) : null;
         if (hoverTile is not null && FindPointer(hoverTile) is null)
@@ -695,6 +912,7 @@ internal sealed class HomeInteractionController
 
     public void CancelTap()
     {
+        CancelControl();
         tapTile = null;
         tapHolding = false;
         tapSpring.SnapTo(0f);

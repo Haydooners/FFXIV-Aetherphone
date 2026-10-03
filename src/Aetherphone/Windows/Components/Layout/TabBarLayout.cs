@@ -8,17 +8,13 @@ internal static class TabBarLayout
     public const float SideInset = 12f;
     public const float BottomInset = 10f;
     public const float ContentGap = 10f;
-    public const float IconSize = 22f;
+    public const float IconSize = 24f;
+    public const float AvatarRadius = 12f;
+    public const float AvatarRingGap = 2f;
     public const float ActionDiameter = 44f;
     public const float ActionGap = 8f;
     public const float CapsulePadding = 4f;
     public const float HighlightInset = 4f;
-    public const float IconCenterOffset = 17f;
-    public const float LabelCenterOffset = 37f;
-    public const float LabelSidePadding = 4f;
-    public const float CompactMinWidth = 72f;
-    public const float CompactMaxWidth = 140f;
-    public const float CompactLabelPadding = 20f;
 
     public static float ContentInset(float scale) => (Height + BottomInset + ContentGap) * scale;
 
@@ -50,19 +46,6 @@ internal static class TabBarLayout
             new Vector2(right, centerY + diameter * 0.5f));
     }
 
-    public static float CompactWidth(float labelWidth, float scale) =>
-        Math.Clamp(labelWidth + CompactLabelPadding * 2f * scale, CompactMinWidth * scale, CompactMaxWidth * scale);
-
-    public static Rect CompactCapsule(Rect full, float compactWidth, bool hasAction)
-    {
-        var width = MathF.Min(compactWidth, full.Width);
-        var left = hasAction ? full.Min.X : full.Center.X - width * 0.5f;
-        return new Rect(new Vector2(left, full.Min.Y), new Vector2(left + width, full.Max.Y));
-    }
-
-    public static Rect Capsule(Rect full, Rect compact, float amount) =>
-        new(Vector2.Lerp(full.Min, compact.Min, amount), Vector2.Lerp(full.Max, compact.Max, amount));
-
     public static Rect Cell(Rect capsule, int count, int index, float scale)
     {
         var padding = CapsulePadding * scale;
@@ -72,11 +55,7 @@ internal static class TabBarLayout
         return new Rect(new Vector2(left, capsule.Min.Y), new Vector2(left + width, capsule.Max.Y));
     }
 
-    public static Vector2 IconCenter(Rect cell, float scale) =>
-        new(cell.Center.X, cell.Min.Y + IconCenterOffset * scale);
-
-    public static Vector2 LabelCenter(Rect cell, float scale) =>
-        new(cell.Center.X, cell.Min.Y + LabelCenterOffset * scale);
+    public static Vector2 IconCenter(Rect cell) => cell.Center;
 
     public static Rect Highlight(Rect cell, float scale)
     {

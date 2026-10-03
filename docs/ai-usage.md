@@ -53,10 +53,10 @@ Nobody is judged for the level they declare. An undeclared one is the problem.
 | Emoji | 3,512 | [Twemoji](https://github.com/jdecked/twemoji) 15.1.0, unmodified |
 | Fonts | 6 | Inter and a Tabler Icons subset |
 | Phone cases | 58 | Drawn by ten artists, each credited in the app's Settings |
-| Interface sounds | 22 | The SND01 "sine" kit by Yasuhiro Tsuchiya, and CC0 clips from BigSoundBank and Kenney |
-| Game sounds | 45 | Kenney CC0 packs, plus four synthesized tones |
-| Wallpapers | 8 | Third-party, not AI-generated |
-| Ringtones and notification sounds | 13 | Third-party, not AI-generated |
+| Interface sounds | 38 | Original to Aetherphone, synthesized from code in tools/sound-generator, plus a CC0 shutter from BigSoundBank, one Material Design sound by Google and two Android Open Source Project alarm tones |
+| Game sounds | 50 | Original to Aetherphone, synthesized from code in tools/sound-generator, plus CC0 card and chip recordings from Kenney |
+| Wallpapers | 16 | Original to Aetherphone |
+| Ringtones and notification sounds | 20 | Material Design sounds by Google and the Android Open Source Project |
 
 Licenses and attributions are listed in [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md), which ships with every release.
 

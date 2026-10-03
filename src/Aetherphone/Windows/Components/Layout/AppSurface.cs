@@ -38,11 +38,6 @@ internal static class AppSurface
 
     public static Vector4? ScrollbarInk { get; set; }
 
-    public static float LastScrollY { get; private set; }
-
-    public static float ScrollOffsetThisFrame => lastScrollFrame == ImGui.GetFrameCount() ? LastScrollY : 0f;
-
-    private static int lastScrollFrame = -1;
     private static float ambientBottomInset;
 
     public static BottomInsetScope ReserveBottom(float inset) => new(inset);
@@ -113,7 +108,7 @@ internal static class AppSurface
         NavBarConsumed = true;
         NavBarScrollY = freshVisit ? 0f : ImGui.GetScrollY();
         var style = ImGui.GetStyle();
-        var reserve = MathF.Max(0f, navBarInset - style.WindowPadding.Y - style.ItemSpacing.Y);
+        var reserve = MathF.Max(0f, navBarInset - ImGui.GetCursorPosY() - style.ItemSpacing.Y);
         ImGui.Dummy(new Vector2(0f, reserve));
     }
 
@@ -246,8 +241,6 @@ internal static class AppSurface
                 ImGui.Dummy(new Vector2(0f, bottomInset));
             }
 
-            LastScrollY = ImGui.GetScrollY();
-            lastScrollFrame = ImGui.GetFrameCount();
             TrackIndicator();
             depth = Math.Max(0, depth - 1);
             child.Dispose();

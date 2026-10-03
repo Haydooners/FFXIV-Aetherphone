@@ -11,12 +11,13 @@ release archive alongside the components it covers.
 **No asset inside the phone is AI-generated.** The icons, sounds, and fonts in
 the device UI come from licensed sources credited in the sections below, and
 each phone case is the work of a named human artist. The built-in wallpapers
-and the ringtone and notification sounds are not AI-generated either; they are
-of third-party origin and are not yet credited in this file.
+are original to Aetherphone, and so are most interface and game sounds,
+which are synthesized from code in `tools/sound-generator`.
 
 Phone case art is drawn by community artists and each case credits its artist
 by name in Settings. App icons are derived from Phosphor Icons, in-app glyphs
-from Tabler Icons, emoji from Twemoji, audio from SND and CC0 sound packs. See
+from Tabler Icons, emoji from Twemoji, the remaining audio from Google's Material
+sounds, the Android Open Source Project and CC0 sound packs. See
 the sections below for the licenses covering each.
 
 The plugin's eight translated language catalogs are AI-assisted with human
@@ -77,43 +78,64 @@ search tags, shortcodes and skin-tone variants) is built from
 [emojibase-data](https://github.com/milesj/emojibase) by Miles Johnson,
 MIT License; full text reproduced in the MIT section below.
 
-## Interface sounds
+## Sounds
 
-The interface sound clips under `src/Aetherphone/Sounds/Ui/` come from two
-sources, re-encoded to 48 kHz PCM WAV and level-matched:
+Every bundled clip under `src/Aetherphone/Sounds/` is rebuilt by
+`tools/sound-generator/generate-sounds.py`, which downloads the sources below
+from pinned URLs, trims leading silence, fades the tail, resamples to 48 kHz
+and normalizes loudness. Those edits are the only changes made to third-party
+recordings.
 
-Most clips (taps, toggles, transitions, send, caution, blocked, success,
-keystrokes) are from the SND01 "sine" kit of [SND](https://snd.dev),
-designed by Yasuhiro Tsuchiya.
+### Original sounds
 
-- Copyright DENTSU INC. and STARRYWORKS inc.; audio copyright remains with
-  the credited sound designer
-- Source: https://github.com/snd-lib/snd-lib
-- License: free for commercial and non-commercial use per the SND terms
-  (https://snd.dev); credit requested, provided here
+Most interface clips (taps, keyboard clicks, toggles, app and sheet
+transitions, Dynamic Island, lock, message sent and received, success,
+caution, blocked, coin, call connect and end, voice note record cues,
+pull-to-refresh, outgoing ringback) and the synthesized mini-game clips (hits,
+wood knocks, glass breaks, pops, jumps, lasers, explosions, chimes, power-ups,
+line clears, error knocks and the four Simon tones) are original to
+Aetherphone. They are synthesized from code in `tools/sound-generator` and
+carry no third-party rights.
 
-The remaining clips are public domain:
+### Material Design sound resources
 
-- `shutter.wav`: "Trigger of camera 1" from
+`Ui/win.wav`, the Ringtone "Signal" and the Notification sounds "Chime",
+"Bloom", "Note", "Glint", "Beacon" and "Ping" are from the Material Design
+sound resources by Google, trimmed and level-matched as described above.
+
+- Copyright Google LLC
+- Source: originally published on material.io; archived at
+  https://archive.org/details/material-design-sound-resources
+- License: Creative Commons Attribution 4.0 International (CC-BY 4.0),
+  https://creativecommons.org/licenses/by/4.0/
+
+### Android Open Source Project
+
+The Ringtones "Cascade", "Horizon", "Lumen", "Orbit", "Prism", "Tide" and
+"Summit" (originally Atria, Dione, Ganymede, Luna, Phobos, Sedna and Umbriel)
+and the Notification sounds "Ripple", "Spark", "Drift", "Pulse", "Halo" and
+"Echo" (originally Carme, Rhea, Io, Europa, Tethys and Iapetus), and the
+Clock tones `Ui/alarm.wav` and `Ui/timer.wav` (originally the alarms Carbon
+and Timer) are from the Android Open Source Project, renamed, trimmed and
+level-matched as described above.
+
+- Copyright The Android Open Source Project
+- Source: https://android.googlesource.com/platform/frameworks/base/+/1cdfff555f4a21f71ccc978290e2e212e2f8b168/data/sounds/
+- License: Apache License, Version 2.0,
+  https://www.apache.org/licenses/LICENSE-2.0
+
+### Public domain recordings
+
+These clips are Creative Commons Zero (CC0):
+
+- `Ui/shutter.wav`: "Trigger of camera 1" from
   [BigSoundBank](https://bigsoundbank.com/trigger-of-camera-1-s2394.html),
-  by Joseph Sardin, CC0
-- `coin.wav`: "chips-stack-1" from
-  [Kenney Casino Audio](https://kenney.nl/assets/casino-audio), CC0
-
-The mini-game clips under `src/Aetherphone/Sounds/Games/` are Creative Commons
-Zero (CC0) by [Kenney](https://kenney.nl), re-encoded to mono 48 kHz PCM WAV
-and level-matched:
-
-- [Impact Sounds](https://kenney.nl/assets/impact-sounds): hits, breaks,
-  explosions
-- [Digital Audio](https://kenney.nl/assets/digital-audio): retro blips,
-  lasers, jumps, power-ups
-- [Casino Audio](https://kenney.nl/assets/casino-audio): card sounds
-- [Interface Sounds](https://kenney.nl/assets/interface-sounds): clicks,
-  ticks, errors
-
-The four `simon_*.wav` tones are sine waves synthesized for this plugin with
-ffmpeg (E3, A3, C#4, E4) and carry no third-party rights.
+  by Joseph Sardin
+- `Games/card_*.wav`, `Games/shuffle.wav`, `Games/deal_*.wav`,
+  `Games/piece_*.wav` and `Games/chips_*.wav`: from
+  [Kenney Casino Audio](https://kenney.nl/assets/casino-audio)
+- `Games/tick_*.wav`: from
+  [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds)
 
 ## mpv
 
@@ -257,6 +279,7 @@ once at the end of this section:
 | System.Security.Cryptography.ProtectedData | 10.0.11 | Microsoft Corporation (https://github.com/dotnet/runtime) |
 | NEbml | 1.1.0.5 | Oleg Zee (https://github.com/OlegZee/NEbml) |
 | NLayer / NLayer.NAudioSupport | 2.0.1 | Mark Heath, Andrew Ward (https://github.com/naudio/NLayer) |
+| FF14 Fish Tracker App fish data (derived) | 2026-10 | 2019 icykoneko (https://github.com/icykoneko/ff14-fish-tracker-app) |
 
 ```
 MIT License
@@ -287,6 +310,14 @@ karashiiro and Thibaut Renoncourt) is a fork of HtmlAgilityPack.CssSelectors
 pulled in by NetStone. The package declares no license metadata; the upstream
 HtmlAgilityPack.CssSelectors project is published under the MIT License
 (https://github.com/trenoncourt/HtmlAgilityPack.CssSelectors).
+
+## Timed fish data
+
+`src/Aetherphone/Fishing/TimedFish.txt` lists the catch conditions of timed and big
+fish (Eorzea hours, weather, previous weather, bait chain, Fisher's Intuition,
+hookset and tug) as game row ids. It is derived from the FF14 Fish Tracker App
+data under the MIT License listed above. Names, places, weather rates and map
+positions are read from the game's own data at runtime.
 
 ## Calendar event data
 

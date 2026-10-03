@@ -109,6 +109,16 @@ internal sealed class Sheet
 
     public bool IsOpen => open;
 
+    public void ReleasePress()
+    {
+        if (dragging)
+        {
+            return;
+        }
+
+        pressed = false;
+    }
+
     public bool IsDragging => dragging;
 
     public bool CapturesPointer => open || !shown.IsResting(0f, RestPositionEpsilon, RestVelocityEpsilon);
@@ -137,6 +147,16 @@ internal sealed class Sheet
         {
             UiFeedback.Play(UiSound.SheetDismiss);
         }
+    }
+
+    public void YieldPointer()
+    {
+        if (dragging)
+        {
+            return;
+        }
+
+        pressed = false;
     }
 
     public void CloseImmediately()
@@ -275,7 +295,7 @@ internal sealed class Sheet
         largeDetent = detents.Resizable && target >= detents.Large;
     }
 
-    private static void DrawGrabber(ImDrawListPtr drawList, Rect panel, Vector4 ink, float scale)
+    public static void DrawGrabber(ImDrawListPtr drawList, Rect panel, Vector4 ink, float scale)
     {
         var width = SheetMetrics.GrabberWidth * scale;
         var height = SheetMetrics.GrabberHeight * scale;

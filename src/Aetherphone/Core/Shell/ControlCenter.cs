@@ -80,7 +80,7 @@ internal sealed class ControlCenter
 
     public ControlCenter(Configuration configuration, ThemeProvider themes, PlaybackHub playback, CallHub calls,
         INavigator navigation, NotificationService notifications, NotificationRouter router,
-        Coins.CoinStore coins, Aethernet.AethernetSession session)
+        Coins.CoinStore coins, Aethernet.AethernetSession session, SystemMedia.PcMediaSource pcMedia)
     {
         this.themes = themes;
         this.playback = playback;
@@ -88,7 +88,8 @@ internal sealed class ControlCenter
         this.notifications = notifications;
         this.router = router;
         notificationCenter = new NotificationCenter(notifications, router, Dismiss);
-        registry = new ControlRegistry(configuration, themes, playback, calls, navigation, Dismiss, coins, session);
+        registry = new ControlRegistry(configuration, themes, playback, calls, navigation, Dismiss, coins, session,
+            pcMedia);
         layout = new ControlLayoutService(registry, configuration);
         gallery = new ControlGallery(layout);
     }

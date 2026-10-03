@@ -127,6 +127,15 @@ public sealed class SpotlightLayoutTests
         var layout = new SpotlightLayout(1f);
 
         Assert.Equal(50f, layout.RecentCellWidth(300f));
-        Assert.Equal(118f, layout.RecentsPanelHeight);
+        Assert.Equal(36f, layout.RecentTileSize(300f));
+        Assert.Equal(98f, layout.RecentsPanelHeight(300f));
+    }
+
+    [Fact]
+    public void Recent_Tile_Caps_At_Its_Rest_Size_On_Wide_Panels()
+    {
+        var layout = new SpotlightLayout(1f);
+
+        Assert.Equal(SpotlightLayout.RecentTileUnits, layout.RecentTileSize(600f));
     }
 }

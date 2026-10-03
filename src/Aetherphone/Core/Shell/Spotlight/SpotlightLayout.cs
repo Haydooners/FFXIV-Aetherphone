@@ -15,6 +15,7 @@ internal readonly struct SpotlightLayout
     public const float HeaderTextOffsetUnits = 6f;
     public const float RecentTileUnits = 56f;
     public const float RecentLabelBandUnits = 22f;
+    public const float RecentGutterUnits = 14f;
     public const float PillHeightUnits = 28f;
     public const float PillPadUnits = 12f;
     public const float PillGapUnits = 6f;
@@ -32,6 +33,7 @@ internal readonly struct SpotlightLayout
     public readonly float PanelRadius;
     public readonly float RecentTile;
     public readonly float RecentLabelBand;
+    public readonly float RecentGutter;
     public readonly float PillHeight;
     public readonly float PillPad;
     public readonly float PillGap;
@@ -50,12 +52,14 @@ internal readonly struct SpotlightLayout
         PanelRadius = PanelRadiusUnits * scale;
         RecentTile = RecentTileUnits * scale;
         RecentLabelBand = RecentLabelBandUnits * scale;
+        RecentGutter = RecentGutterUnits * scale;
         PillHeight = PillHeightUnits * scale;
         PillPad = PillPadUnits * scale;
         PillGap = PillGapUnits * scale;
     }
 
-    public float RecentsPanelHeight => PanelPad * 2f + HeaderHeight + RecentTile + RecentLabelBand;
+    public float RecentsPanelHeight(float innerWidth) =>
+        PanelPad * 2f + HeaderHeight + RecentTileSize(innerWidth) + RecentLabelBand;
 
     public static Rect RestRect(Rect content, float scale) =>
         new(content.Min, new Vector2(content.Max.X, content.Min.Y + FieldHeightUnits * scale));
@@ -146,4 +150,7 @@ internal readonly struct SpotlightLayout
     }
 
     public float RecentCellWidth(float innerWidth) => innerWidth / RecentColumns;
+
+    public float RecentTileSize(float innerWidth) =>
+        MathF.Max(0f, MathF.Min(RecentTile, RecentCellWidth(innerWidth) - RecentGutter));
 }

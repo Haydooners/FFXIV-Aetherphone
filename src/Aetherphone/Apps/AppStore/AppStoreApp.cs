@@ -2,7 +2,6 @@ using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -106,13 +105,6 @@ internal sealed partial class AppStoreApp : IPhoneApp, ISpotlightStoreApps
         frameNavigation = context.Navigation;
         ui.Theme = context.Theme;
         rowAnchorTaken = false;
-        if (GuideIntents.Consume("appstore.tab.apps"))
-        {
-            tab = StoreTab.Apps;
-            resetScroll = true;
-            router.Reset();
-        }
-
         if (pendingAppId.Length > 0)
         {
             tab = StoreTab.Apps;

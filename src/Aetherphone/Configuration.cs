@@ -8,6 +8,8 @@ using Aetherphone.Core.Notes;
 using Aetherphone.Core.Changelog;
 using Aetherphone.Core.ControlCenter;
 using Aetherphone.Core.Dailies;
+using Aetherphone.Core.Feedback;
+using Aetherphone.Core.Fishing;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Games;
 using Aetherphone.Core.Geography;
@@ -130,7 +132,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public MinimizedLayout? MinimizedLayout { get; set; }
     public MinimizedShape MinimizedShape { get; set; } = MinimizedShape.Phone;
     public int MinimizedMapZoom { get; set; } = MinimizedShapes.DefaultMapZoom;
-    public bool MinimizedWallpaper { get; set; }
+    public bool MinimizedWallpaper { get; set; } = true;
     public float MinimizedScale { get; set; } = 1f;
     public bool DoNotDisturb { get; set; }
     public bool QuietWhileBusy { get; set; } = true;
@@ -155,6 +157,13 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool NotifyWeeklyReset { get; set; }
     public bool NotifyGrandCompanyReset { get; set; }
     public bool NotifyRetainerVentures { get; set; }
+    public bool NotifyVoyages { get; set; }
+    public bool NotifyMapAllowance { get; set; }
+    public bool NotifyJumboCactpot { get; set; }
+    public bool NotifyFashionReport { get; set; }
+    public List<Core.Timers.TimerCharacterRecord> TimerCharacters { get; set; } = new();
+    public List<Core.Timers.TimerWorkshopRecord> TimerWorkshops { get; set; } = new();
+    public string TimerRegionCode { get; set; } = string.Empty;
     [JsonProperty("ShowWalletBadge")]
     public bool LegacyShowWalletBadge { get; set; } = true;
     [JsonProperty("ShowDailiesBadge")]
@@ -164,6 +173,10 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public Dictionary<string, bool> BadgeSettings { get; set; } = new();
     public bool BadgeSettingsMigrated { get; set; }
     public List<DailyCheckRecord> DailyChecks { get; set; } = new();
+    public List<DailyCustomTask> DailyCustomTasks { get; set; } = new();
+    public List<string> DailyHiddenItems { get; set; } = new();
+    public bool NotifyDailiesBeforeDailyReset { get; set; }
+    public bool NotifyDailiesBeforeWeeklyReset { get; set; }
     public float ActivityGoalLevels { get; set; } = 1f;
     public int ActivityGoalDuties { get; set; } = 3;
     public long ActivityGoalGil { get; set; } = 50000;
@@ -203,8 +216,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public string JobsAccentName { get; set; } = "Blue";
     public List<JobsCustomColor> JobsCustomColors { get; set; } = new();
     public Dictionary<ulong, List<JobsCategory>> JobsCategoriesByCharacter { get; set; } = new();
-    public string LightWallpaperId { get; set; } = "DuskLight";
-    public string DarkWallpaperId { get; set; } = "DuskDark";
+    public string LightWallpaperId { get; set; } = BuiltInWallpapers.DefaultLightId;
+    public string DarkWallpaperId { get; set; } = BuiltInWallpapers.DefaultDarkId;
     public List<CustomWallpaper> CustomWallpapers { get; set; } = new();
     public string RingtoneSound { get; set; } = SoundLibrary.BundledRingtoneToken;
     public string NotificationSound { get; set; } = SoundLibrary.BundledNotificationToken;
@@ -227,6 +240,13 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public float MusicVolume { get; set; } = 0.6f;
     public int MusicRepeat { get; set; }
     public bool MusicShuffle { get; set; }
+    public bool MusicAutoplay { get; set; } = true;
+    public float MusicCrossfadeSeconds { get; set; }
+    public bool MusicSoundCheck { get; set; } = true;
+    public bool ShowWindowsMedia { get; set; } = true;
+    public bool PublishToWindowsMedia { get; set; } = true;
+    public bool ShareListeningActivity { get; set; }
+    public bool ListeningPromptShown { get; set; }
     public float VideoVolume { get; set; } = 0.6f;
     public int VideoMaxQualityHeight { get; set; } = 720;
     public bool VideoHideNameplates { get; set; } = true;
@@ -357,6 +377,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public List<string> YellowPagesPinnedInquiries { get; set; } = new();
     public List<string> YellowPagesArchivedInquiries { get; set; } = new();
     public List<uint> MapFavorites { get; set; } = new();
+    public List<uint> MapRecents { get; set; } = new();
+    public List<uint> SkywatcherZones { get; set; } = new();
     public uint HousingWorldId { get; set; }
     public uint HousingDistrictId { get; set; } = 339u;
     public int HousingWard { get; set; } = HousingDefaults.DefaultWard;
@@ -481,6 +503,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool TimeZoneManual { get; set; }
     public int ManualUtcOffsetMinutes { get; set; }
     public long LastFeedbackSentUnix { get; set; }
+    public Dictionary<string, FeedbackUpdateMarks> FeedbackMarks { get; set; } = new();
     public List<CalendarCustomEvent> CalendarCustomEvents { get; set; } = new();
     public List<CalendarEventGroup> CalendarGroups { get; set; } = new();
     public bool CalendarGameEventsInApp { get; set; } = true;
@@ -491,6 +514,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public List<ReminderItem> Reminders { get; set; } = new();
     public List<WorldClockEntry> WorldClocks { get; set; } = new();
     public List<AlarmEntry> Alarms { get; set; } = new();
+    public List<uint> FishingAlarms { get; set; } = new();
+    public List<FishingVoyageReminder> FishingVoyageReminders { get; set; } = new();
     public DateTime? TimerEndsAtUtc { get; set; }
     public int TimerDurationSeconds { get; set; }
     public bool TimerNotified { get; set; }
@@ -635,6 +660,57 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
         Looks.Add(look);
         ActiveLookId = look.Id;
         Save();
+    }
+
+    public void MigrateRetiredSounds()
+    {
+        if (!ReplaceRetiredSounds())
+        {
+            return;
+        }
+
+        Save();
+    }
+
+    public bool ReplaceRetiredSounds()
+    {
+        var changed = false;
+        RingtoneSound = RetiredSounds.Replace(RingtoneSound, SoundKind.Ringtone, ref changed) ??
+            SoundLibrary.BundledRingtoneToken;
+        NotificationSound = RetiredSounds.Replace(NotificationSound, SoundKind.Notification, ref changed) ??
+            SoundLibrary.BundledNotificationToken;
+        foreach (var pair in NotificationSettings)
+        {
+            var setting = pair.Value;
+            setting.Sound = RetiredSounds.Replace(setting.Sound, SoundKind.Notification, ref changed);
+        }
+
+        return changed;
+    }
+
+    public void MigrateRetiredWallpapers()
+    {
+        if (!ReplaceRetiredWallpapers())
+        {
+            return;
+        }
+
+        Save();
+    }
+
+    public bool ReplaceRetiredWallpapers()
+    {
+        var changed = false;
+        LightWallpaperId = BuiltInWallpapers.Replace(LightWallpaperId, ref changed);
+        DarkWallpaperId = BuiltInWallpapers.Replace(DarkWallpaperId, ref changed);
+        for (var index = 0; index < Looks.Count; index++)
+        {
+            var look = Looks[index];
+            look.LightWallpaperId = BuiltInWallpapers.Replace(look.LightWallpaperId, ref changed);
+            look.DarkWallpaperId = BuiltInWallpapers.Replace(look.DarkWallpaperId, ref changed);
+        }
+
+        return changed;
     }
 
     public void MigrateEncryptionKeyStore()

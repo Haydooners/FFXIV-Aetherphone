@@ -33,25 +33,6 @@ internal sealed class RootSettingsPage : ISettingsPage
     private const float BlockGap = 18f;
     private const float CardGap = Metrics.Space.Xl;
     private const float EmptyStateTop = 40f;
-    private const float SupportRowHeight = 60f;
-    private const float SupportTileUnits = 32f;
-    private const float SupportLineGap = 2f;
-    private const float SupportWashTop = 0.20f;
-    private const float SupportWashBottom = 0.12f;
-    private const float SupportWashLift = 0.08f;
-    private const float SupportGlowBase = 0.30f;
-    private const float SupportGlowBeat = 0.45f;
-    private const float SupportHeartBase = 0.50f;
-    private const float SupportHeartBeat = 0.07f;
-    private const double SupportHeartbeatMs = 1400.0;
-    private const double SupportShimmerMs = 3800.0;
-    private const float SupportShimmerWidth = 1.2f;
-    private const float SupportShimmerSlant = 0.6f;
-    private const float SupportShimmerCornerGuard = 0.45f;
-    private const int SupportShimmerLayers = 3;
-    private const float SupportShimmerStep = 0.18f;
-    private const float SupportShimmerAlpha = 0.14f;
-    private static readonly Vector4 SupportViolet = new(0.60f, 0.40f, 0.98f, 1f);
     private static readonly Vector4 DiscordTint = new(0.345f, 0.396f, 0.949f, 1f);
     private static readonly Vector4 WebsiteTint = new(0.13f, 0.63f, 0.60f, 1f);
     private static readonly Vector4 DoNotDisturbTint = new(0.36f, 0.40f, 0.92f, 1f);
@@ -111,6 +92,7 @@ internal sealed class RootSettingsPage : ISettingsPage
         {
             ImGui.Dummy(new Vector2(0f, SearchTopGap * scale));
             SettingsSearchField.Draw("##settingsSearch", Loc.T(L.Settings.SearchHint), ref query, theme, scale);
+            UiAnchors.Report("settings.search", new Rect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax()));
             RefreshFilter();
             if (filteredQuery.Length > 0)
             {
@@ -128,7 +110,11 @@ internal sealed class RootSettingsPage : ISettingsPage
             }
 
             ImGui.Dummy(new Vector2(0f, BlockGap * scale));
-            DrawSupportRow(theme);
+            if (SupportRow.Draw(theme, supportPage.Title))
+            {
+                navigator.Open(supportPage);
+            }
+
             ImGui.Dummy(new Vector2(0f, BlockGap * scale));
             DrawQuickSwitches(theme);
             DrawGroups(theme, scale);
@@ -281,81 +267,6 @@ internal sealed class RootSettingsPage : ISettingsPage
         return count;
     }
 
-    private void DrawSupportRow(PhoneTheme theme)
-    {
-        var scale = UiScale.Current;
-        var card = GroupCard.Begin(theme, 1, SupportRowHeight);
-        var row = card.NextRow();
-        var drawList = ImGui.GetWindowDrawList();
-        var radius = Metrics.Radius.Grouped * scale;
-        var hovered = UiInteract.Hover(row.Min, row.Max);
-        var lift = HoverFx.Amount("##settings.supportRow", hovered);
-        Squircle.FillVerticalGradient(drawList, row.Min, row.Max, radius,
-            ImGui.GetColorU32(Palette.WithAlpha(SupportPage.PatreonCoral, SupportWashTop + SupportWashLift * lift)),
-            ImGui.GetColorU32(Palette.WithAlpha(SupportViolet, SupportWashBottom + SupportWashLift * lift)));
-        DrawSupportShimmer(drawList, row, radius, scale);
-        var tile = SupportTileUnits * scale;
-        var tileMin = new Vector2(row.Min.X + Metrics.Space.Md * scale, row.Center.Y - tile * 0.5f);
-        var tileMax = tileMin + new Vector2(tile, tile);
-        var tileCenter = (tileMin + tileMax) * 0.5f;
-        var beat = Pulse.Wave(SupportHeartbeatMs);
-        ProgressRing.Glow(tileCenter, tile * 0.55f, SupportPage.PatreonCoral, SupportGlowBase + SupportGlowBeat * beat);
-        Squircle.FillVerticalGradient(drawList, tileMin, tileMax, tile * Metrics.Radius.TileFactor,
-            ImGui.GetColorU32(Palette.Lighten(SupportPage.PatreonCoral, 0.12f)),
-            ImGui.GetColorU32(Palette.Darken(SupportPage.PatreonCoral, 0.16f)));
-        Material.EdgeSquircle(drawList, tileMin, tileMax, tile * Metrics.Radius.TileFactor, scale);
-        ProgressRing.CenterIcon(drawList, tileCenter, FontAwesomeIcon.Heart, Vector4.One,
-            tile * (SupportHeartBase + SupportHeartBeat * beat));
-        var textLeft = tileMax.X + Metrics.Space.Md * scale;
-        var chevronTip = new Vector2(row.Max.X, row.Center.Y);
-        var textRight = chevronTip.X - SettingsRow.ChevronReserve(scale);
-        var maxWidth = MathF.Max(1f, textRight - textLeft);
-        var title = Typography.FitText(supportPage.Title, maxWidth, TextStyles.BodyEmphasized);
-        var subtitle = Typography.FitText(Loc.T(L.Settings.SupportBecomeMember), maxWidth, TextStyles.Footnote);
-        var titleSize = Typography.Measure(title, TextStyles.BodyEmphasized);
-        var subtitleSize = Typography.Measure(subtitle, TextStyles.Footnote);
-        var stack = titleSize.Y + SupportLineGap * scale + subtitleSize.Y;
-        var top = row.Center.Y - stack * 0.5f;
-        Typography.Draw(drawList, new Vector2(textLeft, top), title, theme.TextStrong, TextStyles.BodyEmphasized);
-        Typography.Draw(drawList, new Vector2(textLeft, top + titleSize.Y + SupportLineGap * scale), subtitle,
-            Palette.Lighten(SupportPage.PatreonCoral, 0.18f), TextStyles.Footnote);
-        SettingsRow.DrawChevron(drawList, chevronTip, scale, Palette.WithAlpha(SupportPage.PatreonCoral, 0.9f));
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(row.Min, row.Max, hovered))
-        {
-            navigator.Open(supportPage);
-        }
-
-        card.End();
-    }
-
-    private static void DrawSupportShimmer(ImDrawListPtr drawList, Rect row, float radius, float scale)
-    {
-        var progress = Pulse.Phase(SupportShimmerMs);
-        var bandWidth = row.Height * SupportShimmerWidth;
-        var slant = row.Height * SupportShimmerSlant;
-        var travel = row.Width + bandWidth * 2f + slant;
-        var x = row.Min.X - bandWidth - slant + travel * progress;
-        var cornerGuard = radius * SupportShimmerCornerGuard;
-        drawList.PushClipRect(new Vector2(row.Min.X + cornerGuard, row.Min.Y),
-            new Vector2(row.Max.X - cornerGuard, row.Max.Y), true);
-        for (var layer = 0; layer < SupportShimmerLayers; layer++)
-        {
-            var inset = bandWidth * SupportShimmerStep * layer;
-            var alpha = SupportShimmerAlpha * (layer + 1) / SupportShimmerLayers;
-            var color = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha));
-            drawList.AddQuadFilled(new Vector2(x + inset, row.Max.Y), new Vector2(x + inset + slant, row.Min.Y),
-                new Vector2(x + bandWidth - inset + slant, row.Min.Y), new Vector2(x + bandWidth - inset, row.Max.Y),
-                color);
-        }
-
-        drawList.PopClipRect();
-    }
-
     private void DrawQuickSwitches(PhoneTheme theme)
     {
         var card = GroupCard.Begin(theme, 3);
@@ -414,7 +325,7 @@ internal sealed class RootSettingsPage : ISettingsPage
                 }
 
                 var row = card.NextRow();
-                if (page.GuideAnchor is { } anchorKey)
+                if (page.GuideAnchor is { } anchorKey && IsFullyVisible(row))
                 {
                     UiAnchors.Report(anchorKey, row);
                 }
@@ -429,6 +340,13 @@ internal sealed class RootSettingsPage : ISettingsPage
         }
 
         return drawn;
+    }
+
+    private static bool IsFullyVisible(Rect row)
+    {
+        var windowTop = ImGui.GetWindowPos().Y;
+        var windowBottom = windowTop + ImGui.GetWindowSize().Y;
+        return row.Min.Y >= windowTop && row.Max.Y <= windowBottom;
     }
 
     private static int VisibleCount(ISettingsPage[] pages, bool[] groupMatches)

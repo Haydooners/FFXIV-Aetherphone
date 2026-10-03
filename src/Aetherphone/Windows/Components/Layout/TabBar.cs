@@ -19,7 +19,17 @@ internal readonly record struct TabBarResult(int Tapped, bool ActionTapped)
     public static readonly TabBarResult None = new(-1, false);
 }
 
-internal readonly record struct TabItemPose(Vector2 IconCenter, float Scale, float Alpha);
+internal readonly record struct TabItemPose(Vector2 IconCenter, float Scale)
+{
+    public float AvatarRadius(float uiScale) => TabBarLayout.AvatarRadius * uiScale * Scale;
+
+    public float AvatarRingRadius(float uiScale) => AvatarRadius(uiScale) + TabBarLayout.AvatarRingGap * uiScale;
+}
+
+internal interface ITabIconDrawer
+{
+    void DrawTabIcon(ImDrawListPtr drawList, int index, TabItemPose pose, bool active);
+}
 
 internal sealed class TabBar
 {
@@ -33,9 +43,6 @@ internal sealed class TabBar
     private const float BadgeScale = 0.8f;
     private const float BadgeOffsetX = 10f;
     private const float BadgeOffsetY = 9f;
-    private const float CompactThreshold = 0.5f;
-    private const float HiddenAlpha = 0.02f;
-    private const float ClipCornerFraction = 0.5f;
     private static readonly Vector4 MutedOnDarkGlass = new(0.93f, 0.94f, 0.97f, 0.70f);
     private static readonly Vector4 StrongOnDarkGlass = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 HighlightRim = new(1f, 1f, 1f, 1f);
@@ -43,17 +50,13 @@ internal sealed class TabBar
     private Spring[] hover = Array.Empty<Spring>();
     private Spring[] press = Array.Empty<Spring>();
     private TabItemPose[] poses = Array.Empty<TabItemPose>();
-    private TabBarShrink shrink;
     private Spring highlightX;
     private Spring actionHover;
     private Spring actionPress;
     private bool highlightSettled;
     private int lastFrame = -2;
-    private int lastActive = -1;
 
     public Rect Bounds { get; private set; }
-
-    public float Shrink => shrink.Amount;
 
     public static float ContentInset(float scale) => TabBarLayout.ContentInset(scale);
 
@@ -72,11 +75,7 @@ internal sealed class TabBar
     public TabItemPose Pose(int index) => index >= 0 && index < poses.Length ? poses[index] : default;
 
     public TabBarResult Draw(Rect area, AppSkin ui, ReadOnlySpan<TabItem> items, int active,
-        TabBarAction? action = null) =>
-        Draw(area, ui, items, active, AppSurface.ScrollOffsetThisFrame, action);
-
-    public TabBarResult Draw(Rect area, AppSkin ui, ReadOnlySpan<TabItem> items, int active, float scrollOffset,
-        TabBarAction? action = null)
+        TabBarAction? action = null, ITabIconDrawer? icons = null)
     {
         if (items.Length == 0)
         {
@@ -85,18 +84,11 @@ internal sealed class TabBar
 
         EnsureCapacity(items.Length);
         var scale = UiScale.Current;
-        var frame = ImGui.GetFrameCount();
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, MaxFrameSeconds);
-        SyncVisit(frame, active);
-        shrink.Observe(scrollOffset, scale);
-        var amount = Math.Clamp(shrink.Step(delta), 0f, 1f);
+        SyncVisit(ImGui.GetFrameCount());
 
-        var hasAction = action.HasValue;
         var activeIndex = Math.Clamp(active, 0, items.Length - 1);
-        var full = TabBarLayout.FullCapsule(area, scale, hasAction);
-        var activeLabelWidth = Typography.Measure(items[activeIndex].Label, TextStyles.Caption2).X;
-        var compact = TabBarLayout.CompactCapsule(full, TabBarLayout.CompactWidth(activeLabelWidth, scale), hasAction);
-        var capsule = TabBarLayout.Capsule(full, compact, amount);
+        var capsule = TabBarLayout.FullCapsule(area, scale, action.HasValue);
         Bounds = capsule;
 
         var theme = ui.Theme;
@@ -110,86 +102,55 @@ internal sealed class TabBar
         var radius = capsule.Height * 0.5f;
         Material.ThemedGlass(drawList, capsule.Min, capsule.Max, radius, scale, backdrop, CurrentGlassOpacity);
 
-        var activeCell = TabBarLayout.Cell(full, items.Length, activeIndex, scale);
+        var activeCell = TabBarLayout.Cell(capsule, items.Length, activeIndex, scale);
         StepHighlight(activeCell.Center.X, delta);
-        DrawHighlight(drawList, activeCell, ui.Accent, 1f - amount, Math.Clamp(press[activeIndex].Value, 0f, 1f),
-            scale);
+        DrawHighlight(drawList, activeCell, ui.Accent, Math.Clamp(press[activeIndex].Value, 0f, 1f), scale);
 
-        var compactMode = amount > CompactThreshold;
-        var compactIconCenter = TabBarLayout.IconCenter(compact, scale);
-        var compactLabelCenter = TabBarLayout.LabelCenter(compact, scale);
         var inactiveInk = tone == GlassTone.Dark ? MutedOnDarkGlass : theme.TextMuted;
-        var labelPadding = TabBarLayout.LabelSidePadding * 2f * scale;
-        var cornerClip = radius * ClipCornerFraction;
         var result = TabBarResult.None;
-        drawList.PushClipRect(new Vector2(capsule.Min.X + cornerClip, capsule.Min.Y),
-            new Vector2(capsule.Max.X - cornerClip, capsule.Max.Y), true);
         for (var index = 0; index < items.Length; index++)
         {
             var item = items[index];
-            var cell = TabBarLayout.Cell(full, items.Length, index, scale);
+            var cell = TabBarLayout.Cell(capsule, items.Length, index, scale);
             var isActive = index == activeIndex;
-            var iconCenter = Vector2.Lerp(TabBarLayout.IconCenter(cell, scale), compactIconCenter, amount);
-            var labelCenter = Vector2.Lerp(TabBarLayout.LabelCenter(cell, scale), compactLabelCenter, amount);
-            var fade = 1f - amount;
-            var alpha = isActive ? 1f : fade * fade;
-            var hovered = !compactMode && BarHover(cell.Min, cell.Max);
+            var iconCenter = TabBarLayout.IconCenter(cell);
+            var hovered = BarHover(cell.Min, cell.Max);
             hover[index].Step(hovered ? 1f : 0f, Motion.HoverLift, delta);
             var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
             press[index].Step(pressed ? 1f : 0f, pressed ? Motion.PressIn : Motion.Release, delta);
             var itemScale = (1f - PressDepth * Math.Clamp(press[index].Value, 0f, 1f))
                             * (1f + Motion.HoverLiftIcon * Math.Clamp(hover[index].Value, 0f, 1f));
-            poses[index] = new TabItemPose(iconCenter, itemScale, alpha);
+            poses[index] = new TabItemPose(iconCenter, itemScale);
             if (item.AnchorKey is { } anchorKey)
             {
                 UiAnchors.Report(anchorKey, cell);
             }
 
-            if (alpha > HiddenAlpha)
+            if (item.CustomIcon && icons is not null)
             {
-                var baseInk = isActive ? ui.Accent : inactiveInk;
-                var ink = Palette.WithAlpha(baseInk, baseInk.W * alpha);
-                if (!item.CustomIcon)
-                {
-                    PhoneIcon.Draw(drawList, iconCenter, item.GlyphFor(isActive), ink,
-                        TabBarLayout.IconSize * scale * itemScale);
-                }
-
-                var labelLimit = isActive
-                    ? MathF.Max(1f, cell.Width + (compact.Width - cell.Width) * amount - labelPadding)
-                    : MathF.Max(1f, cell.Width - labelPadding);
-                var label = Typography.FitText(item.Label, labelLimit, TextStyles.Caption2);
-                Typography.DrawCentered(drawList, labelCenter, label, ink, TextStyles.Caption2);
-                if (item.Badge > 0 && alpha > CompactThreshold)
-                {
-                    AppBadge.Draw(iconCenter + new Vector2(BadgeOffsetX, -BadgeOffsetY) * scale, item.Badge, theme,
-                        scale * BadgeScale);
-                }
+                icons.DrawTabIcon(drawList, index, poses[index], isActive);
+            }
+            else
+            {
+                PhoneIcon.Draw(drawList, iconCenter, item.GlyphFor(isActive), isActive ? ui.Accent : inactiveInk,
+                    TabBarLayout.IconSize * scale * itemScale);
             }
 
+            if (item.Badge > 0)
+            {
+                AppBadge.Draw(iconCenter + new Vector2(BadgeOffsetX, -BadgeOffsetY) * scale, item.Badge, theme,
+                    scale * BadgeScale);
+            }
+
+            HoverTooltip.Enqueue(cell, item.Label, Math.Clamp(hover[index].Value, 0f, 1f), HoverLabelSide.Above);
             if (hovered)
             {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
             }
 
-            if (!compactMode && UiInteract.Click(cell.Min, cell.Max, hovered))
+            if (UiInteract.Click(cell.Min, cell.Max, hovered))
             {
                 result = new TabBarResult(index, false);
-            }
-        }
-
-        drawList.PopClipRect();
-        if (compactMode)
-        {
-            var capsuleHovered = BarHover(capsule.Min, capsule.Max);
-            if (capsuleHovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            if (UiInteract.Click(capsule.Min, capsule.Max, capsuleHovered))
-            {
-                shrink.Expand();
             }
         }
 
@@ -201,12 +162,10 @@ internal sealed class TabBar
         return result;
     }
 
-    private void SyncVisit(int frame, int active)
+    private void SyncVisit(int frame)
     {
-        var resumed = frame - lastFrame > 1;
-        if (resumed)
+        if (frame - lastFrame > 1)
         {
-            shrink.Reset();
             highlightSettled = false;
             actionHover.SnapTo(0f);
             actionPress.SnapTo(0f);
@@ -216,13 +175,8 @@ internal sealed class TabBar
                 press[index].SnapTo(0f);
             }
         }
-        else if (active != lastActive)
-        {
-            shrink.Reset();
-        }
 
         lastFrame = frame;
-        lastActive = active;
     }
 
     private void EnsureCapacity(int count)
@@ -249,22 +203,16 @@ internal sealed class TabBar
         highlightX.Step(targetX, Motion.TabBar, delta);
     }
 
-    private void DrawHighlight(ImDrawListPtr drawList, Rect activeCell, Vector4 accent, float alpha, float pressAmount,
-        float scale)
+    private void DrawHighlight(ImDrawListPtr drawList, Rect activeCell, Vector4 accent, float pressAmount, float scale)
     {
-        if (alpha <= HiddenAlpha)
-        {
-            return;
-        }
-
         var highlight = TabBarLayout.Highlight(activeCell, scale)
             .Translate(new Vector2(highlightX.Value - activeCell.Center.X, 0f));
         var half = highlight.Size * 0.5f * (1f - PressDepth * pressAmount);
         var min = highlight.Center - half;
         var max = highlight.Center + half;
-        Squircle.Fill(drawList, min, max, half.Y, ImGui.GetColorU32(Palette.WithAlpha(accent, HighlightTint * alpha)));
+        Squircle.Fill(drawList, min, max, half.Y, ImGui.GetColorU32(Palette.WithAlpha(accent, HighlightTint)));
         Squircle.Stroke(drawList, min, max, half.Y,
-            ImGui.GetColorU32(Palette.WithAlpha(HighlightRim, HighlightRimAlpha * alpha)), 1f * scale);
+            ImGui.GetColorU32(Palette.WithAlpha(HighlightRim, HighlightRimAlpha)), 1f * scale);
     }
 
     private bool DrawAction(ImDrawListPtr drawList, Rect area, AppSkin ui, in TabBarAction action, GlassTone tone,
@@ -294,7 +242,7 @@ internal sealed class TabBar
             UiAnchors.Report(anchorKey, circle);
         }
 
-        HoverTooltip.Show(circle, action.Label, HoverLabelSide.Above);
+        HoverTooltip.Enqueue(circle, action.Label, Math.Clamp(actionHover.Value, 0f, 1f), HoverLabelSide.Above);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);

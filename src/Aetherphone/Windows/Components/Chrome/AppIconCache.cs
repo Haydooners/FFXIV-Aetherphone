@@ -65,8 +65,6 @@ internal static class AppIconCache
     private static readonly ConcurrentQueue<Completion> Completions = new();
     private static int preparedFrame = -1;
     private static long lastSweepTicks;
-    private static bool appearanceKnown;
-    private static IconAppearance activeAppearance;
     private static uint tintStamp;
     private static Vector4 tintAccent;
     private static bool lightTheme;
@@ -104,18 +102,6 @@ internal static class AppIconCache
         preparedFrame = frame;
         DrainCompletions();
         var configuration = Plugin.Cfg;
-        var appearance = configuration.IconAppearance;
-        if (!appearanceKnown)
-        {
-            appearanceKnown = true;
-            activeAppearance = appearance;
-        }
-        else if (appearance != activeAppearance)
-        {
-            activeAppearance = appearance;
-            DropAppearancesExcept(appearance);
-        }
-
         tintAccent = ThemeCatalog.ResolveAccent(configuration.AccentName);
         lightTheme = IsLightTheme(configuration);
         var stamp = PackStamp(tintAccent, lightTheme);
@@ -310,17 +296,6 @@ internal static class AppIconCache
                 {
                     Drop(entry, slot, false);
                 }
-            }
-        }
-    }
-
-    private static void DropAppearancesExcept(IconAppearance keep)
-    {
-        for (var appearance = 0; appearance < AppearanceCount; appearance++)
-        {
-            if (appearance != (int)keep)
-            {
-                DropAppearance((IconAppearance)appearance);
             }
         }
     }

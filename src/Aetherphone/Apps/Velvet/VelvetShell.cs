@@ -31,7 +31,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 
 namespace Aetherphone.Apps.Velvet;
 
-internal sealed partial class VelvetShell : IResumableApp
+internal sealed partial class VelvetShell : IResumableApp, ITabIconDrawer
 {
     private const float HeartbeatSeconds = 45f;
     private const byte LalafellRaceId = 3;
@@ -515,24 +515,6 @@ internal sealed partial class VelvetShell : IResumableApp
         var headerHeight = VHeader.Height * scale;
         var headerRect = new Rect(area.Min, new Vector2(area.Max.X, area.Min.Y + headerHeight));
         var bodyRect = new Rect(new Vector2(area.Min.X, headerRect.Max.Y), area.Max);
-
-        if (GuideIntents.Consume("velvet.tab.feed"))
-        {
-            activeTab = VelvetPage.Feed;
-        }
-        else if (GuideIntents.Consume("velvet.tab.messages"))
-        {
-            activeTab = VelvetPage.Messages;
-        }
-        else if (GuideIntents.Consume("velvet.tab.me"))
-        {
-            activeTab = VelvetPage.Me;
-        }
-        else if (GuideIntents.Consume("velvet.tab.discover"))
-        {
-            activeTab = VelvetPage.Discover;
-        }
-
         DrawRootTopBar(headerRect);
 
         if (activeTab == VelvetPage.Feed)

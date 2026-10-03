@@ -71,6 +71,8 @@ internal static class WallpaperBackdrop
 
     public static bool Requested => ImGui.GetFrameCount() - requestedFrame <= FrameTolerance;
 
+    public static void Clear() => recordedFrame = -1;
+
     public static void RecordFlat(Vector4 color)
     {
         flatFrame = ImGui.GetFrameCount();

@@ -37,10 +37,15 @@ internal static class NotificationCard
 
     public static void DrawContent(ImDrawListPtr drawList, Rect rect, PhoneNotification notification,
         PhoneTheme theme, float scale, float opacity, GlassTone tone, bool singleLineBody, string titleMarquee,
+        string bodyMarquee) =>
+        DrawContent(drawList, rect, notification, Ink(tone, theme), MutedInk(tone, theme), scale, opacity,
+            singleLineBody, titleMarquee, bodyMarquee);
+
+    public static void DrawContent(ImDrawListPtr drawList, Rect rect, PhoneNotification notification,
+        Vector4 strongInk, Vector4 muted, float scale, float opacity, bool singleLineBody, string titleMarquee,
         string bodyMarquee)
     {
-        var ink = Palette.WithAlpha(Ink(tone, theme), opacity);
-        var muted = MutedInk(tone, theme);
+        var ink = Palette.WithAlpha(strongInk, opacity);
         var iconSize = IconSize * scale;
         var iconMin = new Vector2(rect.Min.X + IconInset * scale, rect.Center.Y - iconSize * 0.5f);
         DrawAppIcon(drawList, notification, iconMin, iconSize, opacity);

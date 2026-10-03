@@ -1,6 +1,7 @@
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Playback;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -8,13 +9,14 @@ using Dalamud.Interface;
 
 namespace Aetherphone.Core.ControlCenter.Modules;
 
-internal sealed class MediaModule : IControlModule
+internal sealed partial class MediaModule : IControlModule
 {
     private const string AppId = "music";
     private const float IdleArtAlpha = 0.55f;
     private const float DisabledTransportAlpha = 0.45f;
     private const float TransportSpread = 2.35f;
     private const float SideButtonFraction = 0.88f;
+    private const float ArtRadiusFraction = 0.22f;
     private static readonly ControlSpan[] SpanOptions = { ControlSpan.Large, ControlSpan.Bar };
     private static readonly MarqueeId LargeTitle = new("media.large.", "title");
     private static readonly MarqueeId LargeSubtitle = new("media.large.", "subtitle");
@@ -29,9 +31,10 @@ internal sealed class MediaModule : IControlModule
 
     private readonly PlaybackHub playback;
 
-    public MediaModule(PlaybackHub playback)
+    public MediaModule(PlaybackHub playback, PcMediaSource pcMedia)
     {
         this.playback = playback;
+        this.pcMedia = pcMedia;
     }
 
     public string Id => "media";
@@ -48,6 +51,11 @@ internal sealed class MediaModule : IControlModule
         var opacity = context.Opacity;
         var theme = context.Theme;
         ControlTile.Surface(drawList, rect, theme, opacity);
+        if (!playback.IsActive && DrawPcMedia(in context))
+        {
+            return;
+        }
+
         var active = playback.IsActive;
         var title = active ? playback.Title : Loc.T(L.ControlCenter.NotPlaying);
         var subtitle = active ? playback.Subtitle : string.Empty;
@@ -129,8 +137,15 @@ internal sealed class MediaModule : IControlModule
             opacity, active, interactive);
     }
 
-    private static void DrawArt(ImDrawListPtr drawList, Vector2 center, float size, bool active, float opacity)
+    private void DrawArt(ImDrawListPtr drawList, Vector2 center, float size, bool active, float opacity)
     {
+        var half = size * 0.5f;
+        if (active && NowPlayingArt.TryDrawSquircle(drawList, center - new Vector2(half, half), size,
+                size * ArtRadiusFraction, playback.ArtworkUrl, opacity))
+        {
+            return;
+        }
+
         var surface = IconTile.Surface(AppAccents.For(AppId));
         IconTile.DrawApp(drawList, AppId, center, size, surface, (active ? 1f : IdleArtAlpha) * opacity);
     }

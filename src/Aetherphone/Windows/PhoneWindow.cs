@@ -353,6 +353,33 @@ internal sealed class PhoneWindow : Window
             Math.Clamp(position.Y, viewport.Pos.Y, MathF.Max(viewport.Pos.Y, maxPosition.Y)));
     }
 
+    private static void PlayKeystrokeSound()
+    {
+        var io = ImGui.GetIO();
+        if (!io.WantTextInput || !ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows))
+        {
+            return;
+        }
+
+        if (ImGui.IsKeyPressed(ImGuiKey.Backspace) || ImGui.IsKeyPressed(ImGuiKey.Delete))
+        {
+            UiFeedback.Play(UiSound.KeystrokeDelete);
+            return;
+        }
+
+        if (ImGui.IsKeyPressed(ImGuiKey.Space) || ImGui.IsKeyPressed(ImGuiKey.Enter, false) ||
+            ImGui.IsKeyPressed(ImGuiKey.KeypadEnter, false))
+        {
+            UiFeedback.Play(UiSound.KeystrokeSpace);
+            return;
+        }
+
+        if (io.InputQueueCharacters.Size > 0)
+        {
+            UiFeedback.Play(UiSound.Keystroke);
+        }
+    }
+
     public override void Draw()
     {
         var device = DeviceRect();
@@ -361,12 +388,7 @@ internal sealed class PhoneWindow : Window
         Components.UiInteract.SetWindowHovered(ImGui.IsWindowHovered(
             ImGuiHoveredFlags.ChildWindows | ImGuiHoveredFlags.AllowWhenBlockedByActiveItem));
         Components.UiInteract.SetWindowFocused(ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows));
-        var io = ImGui.GetIO();
-        if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && io.WantTextInput &&
-            io.InputQueueCharacters.Size > 0)
-        {
-            UiFeedback.Play(UiSound.Keystroke);
-        }
+        PlayKeystrokeSound();
 
         Plugin.Updates.Poll();
         using (Plugin.Fonts.Push(1f))

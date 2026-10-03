@@ -49,6 +49,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
     private readonly LinkedDevicesPage linkedDevicesPage;
     private readonly TagsMentionsPage tagsMentionsPage;
     private readonly InstalledAppList installedApps;
+    private readonly AppSettingsPages appSettingsPages;
     private readonly ThemeProvider themes;
     private readonly WallpaperLibrary wallpapers;
     private readonly WallpaperImageCache wallpaperImages;
@@ -97,7 +98,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
                 configuration.Save();
             });
         installedApps = new InstalledAppList(services.Installer, apps);
-        var appSettingsPages = new AppSettingsPages(configuration, sound, services.Installer, confirm, this);
+        appSettingsPages = new AppSettingsPages(configuration, sound, services.Installer, confirm, this);
         notificationsPage = new NotificationsPage(configuration, this, installedApps, appSettingsPages);
         var appsPage = new AppsPage(installedApps, appSettingsPages, this, configuration);
         var ringtonePage = new SoundSettingsPage(sound, SoundKind.Ringtone, L.Settings.Ringtone, FontAwesomeIcon.Music,
@@ -150,7 +151,8 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
             lodestone);
         router = new ViewRouter<ISettingsPage>(
             new RootSettingsPage(this, groups, configuration, accountPage,
-                new SupportPage(this, accountPage, aethernetSession), profileCard, installedApps, appSettingsPages));
+                new SupportPage(this, accountPage, aethernetSession, services.RemoteImages, services.Lodestone,
+                    services.FrameCatalog), profileCard, installedApps, appSettingsPages));
         drawPage = DrawPage;
         popBack = PopBack;
         assignWallpaper = AssignWallpaper;
@@ -272,6 +274,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         {
             router.Reset();
             router.Push(PageFor(requestedPage));
+            PushAppNotifications(settingsLauncher.TryConsumeAppId());
         }
 
         frameTheme = context.Theme;
@@ -288,7 +291,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
             return;
         }
 
-        var navBar = AppHeader.BeginLargeTitle(context);
+        var navBar = AppHeader.BeginLargeTitle(context, depth > 1);
         page.Draw(context, navBar.Body);
         var backTitle = depth > 1 && router.TryGetView(depth - 2, out var previous) ? previous.Title : string.Empty;
         AppHeader.EndLargeTitle(in navBar, context, "settings.nav", page.Title, NavBarStyle.From(frameTheme),
@@ -302,6 +305,26 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         SettingsPageKind.Calls => callsPage,
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
+
+    private void PushAppNotifications(string? appId)
+    {
+        if (appId is null)
+        {
+            return;
+        }
+
+        var entries = installedApps.Entries;
+        for (var index = 0; index < entries.Length; index++)
+        {
+            if (!string.Equals(entries[index].AppId, appId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            router.Push(appSettingsPages.For(entries[index]));
+            return;
+        }
+    }
 
     private void PopBack()
     {

@@ -1,12 +1,15 @@
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Fishing;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Muster;
 using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Playback;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
+using Aetherphone.Core.Timers;
 using Aetherphone.Core.Video;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -15,7 +18,7 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Core.Shell;
 
-internal sealed class DynamicIsland
+internal sealed partial class DynamicIsland
 {
     private const ImGuiWindowFlags IslandFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
                                                  ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoInputs;
@@ -42,13 +45,19 @@ internal sealed class DynamicIsland
     private const float CompactRingAlpha = 0.16f;
     private const float ControlThreshold = 0.6f;
     private const float CallPulseSpeed = 3f;
+    private const float NoticeHoldSeconds = 1.8f;
+    private const float NoticeHalfWidth = 104f;
 
     private static readonly Vector4 MusicAccent = AppAccents.For("music");
     private static readonly Vector4 SessionAccent = AppAccents.For("aetherstream");
     private static readonly Vector4 MusterAccent = AppAccents.For("muster");
+    private static readonly Vector4 FishingAccent = AppAccents.For("fishing");
     private static readonly Vector4 CallAccent = new(0.20f, 0.78f, 0.35f, 1f);
     private static readonly Vector4 TimerAccent = new(1.00f, 0.62f, 0.18f, 1f);
+    private static readonly Vector4 GameTimerAccent = AppAccents.For("timers");
     private static readonly Vector4 Ink = new(0.98f, 0.98f, 0.99f, 1f);
+    private static readonly Vector4 FocusAccent = new(0.42f, 0.40f, 0.95f, 1f);
+    private static readonly Vector4 QuietInk = new(0.64f, 0.64f, 0.68f, 1f);
 
     private readonly PlaybackHub playback;
     private readonly CallHub calls;
@@ -56,17 +65,31 @@ internal sealed class DynamicIsland
     private readonly VideoSuite? video;
     private readonly MusterStore? musters;
     private readonly MusterLauncher? musterLauncher;
+    private readonly GameTimers? gameTimers;
+    private RunningTimer upcomingGameTimer;
+    private long gameTimerCachedSeconds = -1;
+    private string gameTimerCachedText = string.Empty;
+    private readonly FishingAlerts? fishing;
     private int timerCachedSeconds = -1;
     private string timerCachedText = string.Empty;
     private int musterCachedMinutes = -1;
     private string musterCachedCountdown = string.Empty;
     private string musterCachedStatus = string.Empty;
+    private long fishingCachedSeconds = -1;
+    private FishingIslandKind fishingCachedKind;
+    private bool fishingCachedOpen;
+    private string fishingCachedCountdown = string.Empty;
+    private string fishingCachedStatus = string.Empty;
     private int viewersCachedCount = -1;
     private string viewersCachedText = string.Empty;
     private Spring presence;
     private Spring split;
     private Spring expand;
     private Spring pulse;
+    private Spring noticeWidth;
+    private double noticeUntil = -1d;
+    private bool noticeEnabled;
+    private IslandNotice notice;
     private float clock;
     private float pulseUntil = -1f;
     private bool expanded;
@@ -79,14 +102,18 @@ internal sealed class DynamicIsland
     private bool lastBubbleVisible;
 
     public DynamicIsland(PlaybackHub playback, CallHub calls, Configuration configuration, VideoSuite? video,
-        MusterStore? musters, MusterLauncher? musterLauncher)
+        MusterStore? musters, MusterLauncher? musterLauncher, PcMediaSource? pcMedia,
+        GameTimers? gameTimers = null, FishingAlerts? fishing = null)
     {
+        this.gameTimers = gameTimers;
+        this.fishing = fishing;
         this.playback = playback;
         this.calls = calls;
         this.configuration = configuration;
         this.video = video;
         this.musters = musters;
         this.musterLauncher = musterLauncher;
+        this.pcMedia = pcMedia;
     }
 
     public void Pulse()
@@ -97,6 +124,14 @@ internal sealed class DynamicIsland
         }
 
         pulseUntil = clock + PulseHoldSeconds;
+    }
+
+    public void Announce(IslandNotice kind, bool enabled)
+    {
+        notice = kind;
+        noticeEnabled = enabled;
+        noticeUntil = ImGui.GetTime() + NoticeHoldSeconds;
+        expanded = false;
     }
 
     public bool CapturesPointer()
@@ -123,7 +158,10 @@ internal sealed class DynamicIsland
     {
         var view = calls.Snapshot();
         var signals = ReadSignals(view);
-        var primary = IslandActivities.Select(signals);
+        var selected = IslandActivities.Select(signals);
+        var primary = selected != IslandActivity.Call && ImGui.GetTime() < noticeUntil
+            ? IslandActivity.Notice
+            : selected;
         if (primary != IslandActivity.None)
         {
             shownKind = primary;
@@ -138,6 +176,7 @@ internal sealed class DynamicIsland
         presence.Step(primary == IslandActivity.None ? 0f : 1f, Motion.Appear, delta);
         split.Step(signals.Playback && primary != IslandActivity.Playback ? 1f : 0f, Motion.Island, delta);
         pulse.Step(clock < pulseUntil ? 1f : 0f, Motion.Appear, delta);
+        noticeWidth.Step(shownKind == IslandActivity.Notice ? 1f : 0f, Motion.Island, delta);
         var presenceValue = Math.Clamp(presence.Value, 0f, 1f);
         var pulseValue = Math.Clamp(pulse.Value, 0f, 1f);
         if (primary == IslandActivity.None && presenceValue < 0.02f && pulseValue < 0.01f)
@@ -163,8 +202,13 @@ internal sealed class DynamicIsland
         upcomingMuster = musters is { } store
             ? IslandActivities.SoonestMuster(store.GoingMusters, store.Mine, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             : null;
+        var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        upcomingGameTimer = gameTimers is { Enabled: true } timers
+            ? TimerBoard.Tally(timers.Characters, timers.Workshops, nowUnix).Soonest
+            : default;
         return new IslandSignals(call, session, playback.IsActive, TimerRemainingSeconds() > 0,
-            upcomingMuster is not null);
+            upcomingMuster is not null, ReadPcMedia(call || session || playback.IsActive),
+            TimerBoard.InIslandWindow(upcomingGameTimer, nowUnix), fishing is { Island.Kind: not FishingIslandKind.None });
     }
 
     private void DrawContent(Rect screen, PhoneTheme theme, INavigator navigation, in CallView view,
@@ -172,7 +216,8 @@ internal sealed class DynamicIsland
     {
         var scale = UiScale.Current;
         var rest = StatusBar.BaseIsland(screen);
-        var compact = CompactBounds(rest, scale);
+        var compact = LerpRect(CompactBounds(rest, scale), NoticeBounds(screen, rest, scale),
+            Math.Clamp(noticeWidth.Value, 0f, 1f));
         var card = ExpandedBounds(screen, rest, scale);
         var morphed = LerpRect(rest, compact, presenceValue);
         var suppress = shownKind != IslandActivity.Call &&
@@ -221,7 +266,7 @@ internal sealed class DynamicIsland
     {
         if (expandAmount < 0.5f)
         {
-            if (suppress || !hovered || presenceValue < ControlThreshold)
+            if (suppress || shownKind == IslandActivity.Notice || !hovered || presenceValue < ControlThreshold)
             {
                 return;
             }
@@ -291,6 +336,12 @@ internal sealed class DynamicIsland
                 return TimerAccent;
             case IslandActivity.Muster:
                 return MusterAccent;
+            case IslandActivity.GameTimer:
+                return GameTimerAccent;
+            case IslandActivity.Fishing:
+                return FishingAccent;
+            case IslandActivity.Notice:
+                return FocusAccent;
             default:
                 return MusicAccent;
         }
@@ -341,6 +392,46 @@ internal sealed class DynamicIsland
         }
 
         return compact ? musterCachedCountdown : musterCachedStatus;
+    }
+
+    private static FontAwesomeIcon GameTimerIcon(in RunningTimer timer)
+    {
+        if (!timer.Voyage)
+        {
+            return FontAwesomeIcon.Briefcase;
+        }
+
+        return timer.Airship ? FontAwesomeIcon.Plane : FontAwesomeIcon.Anchor;
+    }
+
+    private string GameTimerText(in RunningTimer timer)
+    {
+        var remaining = Math.Max(0L, timer.EndUnix - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        if (remaining != gameTimerCachedSeconds)
+        {
+            gameTimerCachedSeconds = remaining;
+            gameTimerCachedText = TimeText.MinutesSeconds((int)remaining);
+        }
+
+        return gameTimerCachedText;
+    }
+
+    private static FontAwesomeIcon FishingIcon(in FishingIslandStatus status) =>
+        status.Kind == FishingIslandKind.Voyage ? FontAwesomeIcon.Anchor : FontAwesomeIcon.Fish;
+
+    private string FishingCountdown(in FishingIslandStatus status, bool compact)
+    {
+        var remaining = Math.Max(0L, status.TargetUnix - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        if (remaining != fishingCachedSeconds || status.Kind != fishingCachedKind || status.Open != fishingCachedOpen)
+        {
+            fishingCachedSeconds = remaining;
+            fishingCachedKind = status.Kind;
+            fishingCachedOpen = status.Open;
+            fishingCachedCountdown = FishingClock.Countdown(remaining);
+            fishingCachedStatus = FishingClock.IslandStatus(status.Kind, status.Open, fishingCachedCountdown);
+        }
+
+        return compact ? fishingCachedCountdown : fishingCachedStatus;
     }
 
     private string ViewersText(int count)
@@ -400,9 +491,13 @@ internal sealed class DynamicIsland
                 DrawLiveLabel(drawList, trailingRight, bounds.Center.Y, trailingMaxWidth, scale, accent, alpha);
                 break;
             case IslandActivity.Playback:
-                ArtGradient.DrawDisc(drawList, bubbleCenter, bubbleRadius, ArtGradient.FromName(playback.Title), alpha);
+                NowPlayingArt.DrawDisc(drawList, bubbleCenter, bubbleRadius, playback.ArtworkUrl, playback.Title,
+                    alpha);
                 Equalizer.Draw(drawList, new Vector2(trailingRight - 3f * scale, bounds.Center.Y), scale,
                     bounds.Height * 0.44f, clock, accent, alpha, playback.IsPlaying);
+                break;
+            case IslandActivity.PcMedia:
+                DrawPcMediaCompact(drawList, bubbleCenter, bubbleRadius, trailingRight, bounds, scale, accent, alpha);
                 break;
             case IslandActivity.Timer:
                 var remaining = TimerRemainingSeconds();
@@ -421,7 +516,45 @@ internal sealed class DynamicIsland
                 DrawTrailingLabel(drawList, MusterCountdown(muster, true), trailingRight, bounds.Center.Y,
                     trailingMaxWidth, accent, alpha);
                 break;
+            case IslandActivity.Notice:
+                DrawNotice(drawList, bubbleCenter, bubbleRadius, trailingRight, bounds.Center.Y, scale, alpha);
+                break;
+            case IslandActivity.GameTimer:
+                DrawIconBubble(drawList, bubbleCenter, bubbleRadius, GameTimerIcon(upcomingGameTimer), accent, alpha);
+                DrawTrailingLabel(drawList, GameTimerText(upcomingGameTimer), trailingRight, bounds.Center.Y,
+                    trailingMaxWidth, accent, alpha);
+                break;
+
+            case IslandActivity.Fishing:
+                if (fishing is not { } alerts)
+                {
+                    break;
+                }
+
+                DrawIconBubble(drawList, bubbleCenter, bubbleRadius, FishingIcon(alerts.Island), accent, alpha);
+                DrawTrailingLabel(drawList, FishingCountdown(alerts.Island, true), trailingRight, bounds.Center.Y,
+                    trailingMaxWidth, accent, alpha);
+                break;
         }
+    }
+
+    private void DrawNotice(ImDrawListPtr drawList, Vector2 bubbleCenter, float bubbleRadius, float right,
+        float centerY, float scale, float alpha)
+    {
+        var tint = noticeEnabled ? FocusAccent : QuietInk;
+        DrawIconBubble(drawList, bubbleCenter, bubbleRadius, NoticeIcon(), tint, alpha);
+        var state = Loc.T(noticeEnabled ? L.Common.On : L.Common.Off);
+        var stateSize = Typography.Measure(state, TextStyles.FootnoteEmphasized);
+        Typography.Draw(drawList, new Vector2(right - stateSize.X, centerY - stateSize.Y * 0.5f), state,
+            Palette.WithAlpha(tint, alpha), TextStyles.FootnoteEmphasized);
+        var titleLeft = bubbleCenter.X + bubbleRadius + CompactTrailingGap * scale;
+        var titleWidth = MathF.Max(1f, right - stateSize.X - CompactTrailingGap * scale - titleLeft);
+        var title = Typography.FitText(Loc.T(notice == IslandNotice.LockPosition
+            ? L.ControlCenter.LockPosition
+            : L.Settings.DoNotDisturb), titleWidth, TextStyles.Footnote);
+        var titleSize = Typography.Measure(title, TextStyles.Footnote);
+        Typography.Draw(drawList, new Vector2(titleLeft, centerY - titleSize.Y * 0.5f), title,
+            Palette.WithAlpha(Ink, alpha), TextStyles.Footnote);
     }
 
     private void DrawCallBubble(ImDrawListPtr drawList, Vector2 center, float radius, float scale, float alpha)
@@ -534,7 +667,7 @@ internal sealed class DynamicIsland
             }
             case IslandActivity.Playback:
             {
-                ArtGradient.DrawDisc(drawList, iconCenter, iconRadius, ArtGradient.FromName(playback.Title), alpha);
+                NowPlayingArt.DrawDisc(drawList, iconCenter, iconRadius, playback.ArtworkUrl, playback.Title, alpha);
                 DrawLines(drawList, playback.Title, TextStyles.Headline, Ink, playback.Subtitle,
                     TextStyles.Subheadline, accent, textLeft, textWidth, centerY, scale, alpha, true);
                 drawList.AddCircleFilled(controlCenter, controlRadius,
@@ -548,6 +681,9 @@ internal sealed class DynamicIsland
 
                 break;
             }
+            case IslandActivity.PcMedia:
+                overControl = DrawPcMediaExpanded(drawList, bounds, scale, accent, alpha, active);
+                break;
             case IslandActivity.Timer:
             {
                 var remaining = TimerRemainingSeconds();
@@ -576,6 +712,40 @@ internal sealed class DynamicIsland
                 DrawLines(drawList, MusterText.HostLabel(muster), TextStyles.Headline, Ink,
                     MusterCountdown(muster, false), TextStyles.Subheadline, accent, textLeft, textWidth, centerY,
                     scale, alpha, false);
+                if (RoundButton(drawList, controlCenter, controlRadius, FontAwesomeIcon.ArrowRight, controlFill, Ink,
+                        alpha, active))
+                {
+                    OpenOwner(navigation);
+                }
+
+                break;
+            }
+            case IslandActivity.GameTimer:
+            {
+                DrawIconBubble(drawList, iconCenter, iconRadius, GameTimerIcon(upcomingGameTimer), accent, alpha);
+                DrawLines(drawList, upcomingGameTimer.Name, TextStyles.Headline, Ink,
+                    GameTimerText(upcomingGameTimer), TextStyles.Subheadline, accent, textLeft, textWidth, centerY,
+                    scale, alpha, true);
+                if (RoundButton(drawList, controlCenter, controlRadius, FontAwesomeIcon.ArrowRight, controlFill, Ink,
+                        alpha, active))
+                {
+                    OpenOwner(navigation);
+                }
+
+                break;
+            }
+
+            case IslandActivity.Fishing:
+            {
+                if (fishing is not { } alerts)
+                {
+                    break;
+                }
+
+                var status = alerts.Island;
+                DrawIconBubble(drawList, iconCenter, iconRadius, FishingIcon(status), accent, alpha);
+                DrawLines(drawList, status.Title, TextStyles.Headline, Ink, FishingCountdown(status, false),
+                    TextStyles.Subheadline, accent, textLeft, textWidth, centerY, scale, alpha, true);
                 if (RoundButton(drawList, controlCenter, controlRadius, FontAwesomeIcon.ArrowRight, controlFill, Ink,
                         alpha, active))
                 {
@@ -678,6 +848,25 @@ internal sealed class DynamicIsland
         var padY = MathF.Max(0f, (CompactHeight * scale - rest.Height) * 0.5f);
         var pad = new Vector2(CompactPadX * scale, padY);
         return new Rect(rest.Min - pad, rest.Max + pad);
+    }
+
+    private FontAwesomeIcon NoticeIcon()
+    {
+        if (notice == IslandNotice.LockPosition)
+        {
+            return noticeEnabled ? FontAwesomeIcon.Lock : FontAwesomeIcon.LockOpen;
+        }
+
+        return FontAwesomeIcon.Moon;
+    }
+
+    private static Rect NoticeBounds(Rect screen, Rect rest, float scale)
+    {
+        var compact = CompactBounds(rest, scale);
+        var halfWidth = MathF.Min(screen.Width * 0.5f - ExpandedSideInset * scale, NoticeHalfWidth * scale);
+        var centerX = rest.Center.X;
+        return new Rect(new Vector2(MathF.Min(compact.Min.X, centerX - halfWidth), compact.Min.Y),
+            new Vector2(MathF.Max(compact.Max.X, centerX + halfWidth), compact.Max.Y));
     }
 
     private static Rect ExpandedBounds(Rect screen, Rect rest, float scale)

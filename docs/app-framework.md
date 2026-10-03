@@ -372,7 +372,7 @@ internal struct RefreshCadence
 }
 ```
 
-`Advance` accumulates frame time and returns true once the interval has elapsed; you then do the work and call `Reset`. `FishingApp` refreshes its voyage table every 5 seconds this way, and `TimersApp` and `ActivityApp` use the same pattern. Keep it for cheap local recomputation; network polling belongs in stores with their own cadence (see [Networking](networking.md)).
+`Advance` accumulates frame time and returns true once the interval has elapsed; you then do the work and call `Reset`. `FishingApp` refreshes its voyage table every 5 seconds this way, and `TimersApp` uses the same pattern. Keep it for cheap local recomputation; network polling belongs in stores with their own cadence (see [Networking](networking.md)).
 
 ## Gotchas
 

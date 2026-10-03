@@ -101,6 +101,7 @@ public sealed class Plugin : IDalamudPlugin
             Cfg = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             Cfg.NormalizeAethernetBaseUrl();
             Cfg.MigrateSoundSettings();
+            Cfg.MigrateRetiredSounds();
             Cfg.MigrateUiSoundDefaults(freshInstall);
             Cfg.MigrateChangelogSeen();
             Cfg.MigrateBadgeSettings();
@@ -115,6 +116,7 @@ public sealed class Plugin : IDalamudPlugin
             Cfg.MigrateEncryptionKeyStore();
             Cfg.MigrateHousingRefreshFloor();
             Cfg.MigrateHomeLooks();
+            Cfg.MigrateRetiredWallpapers();
             InitializeLocalization();
             InstallSource.Initialize(PluginInterface);
             Device = new DeviceStatus(ClientState, ObjectTable, DataManager);
@@ -181,15 +183,17 @@ public sealed class Plugin : IDalamudPlugin
                     : default);
             phoneEmote = new PhoneEmoteController(Cfg, Framework, ObjectTable, Condition, DataManager,
                 () => services.Visibility.IsVisible);
-            timerNotifier = new TimerNotifier(Cfg, Framework, services.Notifications, services.Installer.Gate("timers"));
+            timerNotifier = new TimerNotifier(Cfg, Framework, services.Notifications, services.GameTimers,
+                services.Installer.Gate("timers"));
             calendarReminders = new CalendarReminderService(Cfg, Framework, services.Notifications,
                 services.Installer.Gate("calendar"));
-            clockAlarms = new ClockAlarmService(Cfg, Framework, services.Notifications,
+            clockAlarms = new ClockAlarmService(Cfg, Framework, services.Notifications, services.AlarmRinger,
                 services.Installer.Gate("clock"));
             reminders = new ReminderService(Cfg, Framework, services.Notifications, services.Installer.Gate("notes"));
             services.CharacterSwitcher.Start();
             services.CharacterWatch.Start();
-            services.Calls.IncomingCallPresented += OnIncomingCall;
+            services.Calls.IncomingCallPresented += BringPhoneForward;
+            services.AlarmRinger.Presented += BringPhoneForward;
             services.Calls.Start();
             serverBar = new ServerBarEntry(DtrBar, Cfg, services.Notifications, phoneWindow.ToggleShell);
             services.MarketIndex.EnsureBuilt();
@@ -257,7 +261,8 @@ public sealed class Plugin : IDalamudPlugin
         CommandManager.RemoveHandler(AepConstants.AliasCommand);
         if (services is not null)
         {
-            services.Calls.IncomingCallPresented -= OnIncomingCall;
+            services.Calls.IncomingCallPresented -= BringPhoneForward;
+            services.AlarmRinger.Presented -= BringPhoneForward;
         }
 
         serverBar?.Dispose();
@@ -277,6 +282,8 @@ public sealed class Plugin : IDalamudPlugin
         services?.Dispose();
         Device?.Dispose();
         Windows.Components.AppIconCache.Dispose();
+        Windows.Components.BrandMark.Dispose();
+        Apps.Skywatcher.Sky.SkyTextures.Dispose();
         Fonts?.Dispose();
     }
 
@@ -393,7 +400,8 @@ public sealed class Plugin : IDalamudPlugin
         Framework.Update -= OnAutoOpenTick;
         Framework.Update -= OnVideoFrameworkUpdate;
         Framework.Update -= OnLinkpearlPresenceTick;
-        services.Calls.IncomingCallPresented -= OnIncomingCall;
+        services.Calls.IncomingCallPresented -= BringPhoneForward;
+        services.AlarmRinger.Presented -= BringPhoneForward;
         ContextMenu.OnMenuOpened -= OnMenuOpened;
         serverBar.Dispose();
         phoneWindow.PersistPositions();
@@ -415,6 +423,8 @@ public sealed class Plugin : IDalamudPlugin
         services.Dispose();
         Device.Dispose();
         Windows.Components.AppIconCache.Dispose();
+        Windows.Components.BrandMark.Dispose();
+        Apps.Skywatcher.Sky.SkyTextures.Dispose();
         Fonts.Dispose();
         CommandManager.RemoveHandler(AepConstants.PrimaryCommand);
         CommandManager.RemoveHandler(AepConstants.AliasCommand);
@@ -542,7 +552,7 @@ public sealed class Plugin : IDalamudPlugin
         services.ShortcutRunner.Run(shortcut);
     }
 
-    private void OnIncomingCall()
+    private void BringPhoneForward()
     {
         phoneWindow.Maximize();
         phoneWindow.IsOpen = true;

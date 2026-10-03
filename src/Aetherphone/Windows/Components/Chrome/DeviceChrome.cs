@@ -7,12 +7,21 @@ namespace Aetherphone.Windows.Components;
 
 internal static class DeviceChrome
 {
-    private const float SideButtonStartFraction = 0.250f;
-    private const float SideButtonLengthFraction = 0.108f;
-    private const float MuteButtonStartFraction = 0.205f;
-    private const float LockButtonStartFraction = 0.315f;
-    private const float ShortButtonLengthFraction = 0.082f;
     private const float ChamferFraction = 0.4f;
+    private const float AntennaNearFraction = 0.085f;
+    private const float AntennaFarFraction = 0.915f;
+    private const float AntennaEndNearFraction = 0.24f;
+    private const float AntennaEndFarFraction = 0.76f;
+    private const float AntennaThickness = 2.6f;
+    private const float AntennaShade = 0.30f;
+
+    private static readonly KeyPlacement[] Placements =
+    {
+        new(0.157f, 0.046f, false),
+        new(0.241f, 0.090f, false),
+        new(0.243f, 0.113f, true),
+        new(0.590f, 0.050f, true),
+    };
 
     private const float MaskGrow = 0.5f;
 
@@ -22,55 +31,26 @@ internal static class DeviceChrome
     public static ChassisGeometry Chassis(Rect window, PhoneTheme theme) =>
         ChassisGeometry.Device(window, theme, UiScale.Current);
 
-    public static Rect SideButtonRect(Rect window, in ChassisGeometry chassis, out RailSide side)
+    public static Rect KeyRect(Rect window, in ChassisGeometry chassis, HardwareKey key, out RailSide side)
     {
+        var placement = Placements[(int)key];
         var device = chassis.Body;
         if (device.IsLandscape())
         {
-            side = RailSide.Top;
-            var left = device.Min.X + device.Width * SideButtonStartFraction;
-            var width = device.Width * SideButtonLengthFraction;
-            return new Rect(new Vector2(left, window.Min.Y), new Vector2(left + width, device.Min.Y));
+            side = placement.RightRail ? RailSide.Top : RailSide.Bottom;
+            var left = device.Min.X + device.Width * placement.Start;
+            var right = left + device.Width * placement.Length;
+            return placement.RightRail
+                ? new Rect(new Vector2(left, window.Min.Y), new Vector2(right, device.Min.Y))
+                : new Rect(new Vector2(left, device.Max.Y), new Vector2(right, window.Max.Y));
         }
 
-        side = RailSide.Right;
-        var top = device.Min.Y + device.Height * SideButtonStartFraction;
-        var height = device.Height * SideButtonLengthFraction;
-        return new Rect(new Vector2(device.Max.X, top), new Vector2(window.Max.X, top + height));
-    }
-
-    public static Rect MuteButtonRect(Rect window, in ChassisGeometry chassis, out RailSide side)
-    {
-        var device = chassis.Body;
-        if (device.IsLandscape())
-        {
-            side = RailSide.Bottom;
-            var left = device.Min.X + device.Width * MuteButtonStartFraction;
-            var width = device.Width * ShortButtonLengthFraction;
-            return new Rect(new Vector2(left, device.Max.Y), new Vector2(left + width, window.Max.Y));
-        }
-
-        side = RailSide.Left;
-        var top = device.Min.Y + device.Height * MuteButtonStartFraction;
-        var height = device.Height * ShortButtonLengthFraction;
-        return new Rect(new Vector2(window.Min.X, top), new Vector2(device.Min.X, top + height));
-    }
-
-    public static Rect LockButtonRect(Rect window, in ChassisGeometry chassis, out RailSide side)
-    {
-        var device = chassis.Body;
-        if (device.IsLandscape())
-        {
-            side = RailSide.Bottom;
-            var left = device.Min.X + device.Width * LockButtonStartFraction;
-            var width = device.Width * ShortButtonLengthFraction;
-            return new Rect(new Vector2(left, device.Max.Y), new Vector2(left + width, window.Max.Y));
-        }
-
-        side = RailSide.Left;
-        var top = device.Min.Y + device.Height * LockButtonStartFraction;
-        var height = device.Height * ShortButtonLengthFraction;
-        return new Rect(new Vector2(window.Min.X, top), new Vector2(device.Min.X, top + height));
+        side = placement.RightRail ? RailSide.Right : RailSide.Left;
+        var top = device.Min.Y + device.Height * placement.Start;
+        var bottom = top + device.Height * placement.Length;
+        return placement.RightRail
+            ? new Rect(new Vector2(device.Max.X, top), new Vector2(window.Max.X, bottom))
+            : new Rect(new Vector2(window.Min.X, top), new Vector2(device.Min.X, bottom));
     }
 
     public static Rect DrawBody(in ChassisGeometry chassis, PhoneTheme theme, Rect? transparentBand = null)
@@ -238,6 +218,7 @@ internal static class DeviceChrome
 
     internal static void RailFinish(ImDrawListPtr dl, in ChassisGeometry chassis, float scale, in CaseFinish finish)
     {
+        AntennaLines(dl, chassis, scale, finish);
         Chamfer(dl, chassis, scale, finish);
         GlassStep(dl, chassis, scale);
         ScreenRecess(dl, chassis, scale);
@@ -261,6 +242,92 @@ internal static class DeviceChrome
         }
 
         WallpaperBackdrop.Restore(snapshot);
+    }
+
+    private static void AntennaLines(ImDrawListPtr drawList, in ChassisGeometry chassis, float scale,
+        in CaseFinish finish)
+    {
+        var body = chassis.Body;
+        var metal = chassis.Glass.Min.X - body.Min.X;
+        if (metal < 1f)
+        {
+            return;
+        }
+
+        var color = ImGui.GetColorU32(Palette.Mix(finish.Frame with { W = 1f }, finish.Glass, AntennaShade));
+        var thickness = AntennaThickness * scale;
+        var radius = chassis.BodyRadius;
+        if (body.IsLandscape())
+        {
+            AcrossTopAndBottom(drawList, chassis, body.Min.X + body.Width * AntennaNearFraction, radius, thickness,
+                color);
+            AcrossTopAndBottom(drawList, chassis, body.Min.X + body.Width * AntennaFarFraction, radius, thickness,
+                color);
+            AcrossRight(drawList, chassis, body.Min.Y + body.Height * AntennaEndNearFraction, radius, thickness,
+                color);
+            AcrossRight(drawList, chassis, body.Min.Y + body.Height * AntennaEndFarFraction, radius, thickness,
+                color);
+            return;
+        }
+
+        AcrossSides(drawList, chassis, body.Min.Y + body.Height * AntennaNearFraction, radius, thickness, color);
+        AcrossSides(drawList, chassis, body.Min.Y + body.Height * AntennaFarFraction, radius, thickness, color);
+        AcrossBottom(drawList, chassis, body.Min.X + body.Width * AntennaEndNearFraction, radius, thickness, color);
+        AcrossBottom(drawList, chassis, body.Min.X + body.Width * AntennaEndFarFraction, radius, thickness, color);
+    }
+
+    private static void AcrossSides(ImDrawListPtr drawList, in ChassisGeometry chassis, float y, float radius,
+        float thickness, uint color)
+    {
+        var body = chassis.Body;
+        if (y - thickness < body.Min.Y + radius || y + thickness > body.Max.Y - radius)
+        {
+            return;
+        }
+
+        var half = thickness * 0.5f;
+        drawList.AddRectFilled(new Vector2(body.Min.X, y - half), new Vector2(chassis.Glass.Min.X, y + half), color);
+        drawList.AddRectFilled(new Vector2(chassis.Glass.Max.X, y - half), new Vector2(body.Max.X, y + half), color);
+    }
+
+    private static void AcrossTopAndBottom(ImDrawListPtr drawList, in ChassisGeometry chassis, float x, float radius,
+        float thickness, uint color)
+    {
+        var body = chassis.Body;
+        if (x - thickness < body.Min.X + radius || x + thickness > body.Max.X - radius)
+        {
+            return;
+        }
+
+        var half = thickness * 0.5f;
+        drawList.AddRectFilled(new Vector2(x - half, body.Min.Y), new Vector2(x + half, chassis.Glass.Min.Y), color);
+        drawList.AddRectFilled(new Vector2(x - half, chassis.Glass.Max.Y), new Vector2(x + half, body.Max.Y), color);
+    }
+
+    private static void AcrossBottom(ImDrawListPtr drawList, in ChassisGeometry chassis, float x, float radius,
+        float thickness, uint color)
+    {
+        var body = chassis.Body;
+        if (x - thickness < body.Min.X + radius || x + thickness > body.Max.X - radius)
+        {
+            return;
+        }
+
+        var half = thickness * 0.5f;
+        drawList.AddRectFilled(new Vector2(x - half, chassis.Glass.Max.Y), new Vector2(x + half, body.Max.Y), color);
+    }
+
+    private static void AcrossRight(ImDrawListPtr drawList, in ChassisGeometry chassis, float y, float radius,
+        float thickness, uint color)
+    {
+        var body = chassis.Body;
+        if (y - thickness < body.Min.Y + radius || y + thickness > body.Max.Y - radius)
+        {
+            return;
+        }
+
+        var half = thickness * 0.5f;
+        drawList.AddRectFilled(new Vector2(chassis.Glass.Max.X, y - half), new Vector2(body.Max.X, y + half), color);
     }
 
     private static void GlassStep(ImDrawListPtr drawList, in ChassisGeometry chassis, float scale)
@@ -386,3 +453,5 @@ internal static class DeviceChrome
             island.Height * 0.5f);
     }
 }
+
+internal readonly record struct KeyPlacement(float Start, float Length, bool RightRail);
