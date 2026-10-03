@@ -75,7 +75,7 @@ internal sealed class GameRulesSheet
     public void Draw(Rect screen, AppSkin ui)
     {
         skin = ui;
-        sheet.Draw(screen, ui.Theme, Loc.T(CasinoRules.TitleOf(gameId)), PanelHeightShare, drawSheetBody);
+        sheet.Draw(screen, CasinoArt.Sheet(ui), Loc.T(CasinoRules.TitleOf(gameId)), PanelHeightShare, drawSheetBody);
     }
 
     private void DrawSheetBody(Rect content)
@@ -91,7 +91,8 @@ internal sealed class GameRulesSheet
         }
 
         var pillRect = new Rect(new Vector2(content.Min.X, pillTop), new Vector2(content.Max.X, content.Max.Y));
-        if (!AppSkin.PillButton(pillRect, Loc.T(L.Casino.RulesPlay), true, sheet.IsOpen, skin.Theme, overlay: true))
+        if (!CasinoArt.Capsule(ImGui.GetWindowDrawList(), skin, ImGui.GetID("casino.rules.play"), pillRect,
+                Loc.T(L.Casino.RulesPlay), CasinoCapsuleTone.Filled, sheet.IsOpen, TextStyles.Headline, true))
         {
             return;
         }
@@ -128,7 +129,7 @@ internal sealed class GameRulesSheet
                 stepOrigin.Y + BulletRadius * scale - 1f * scale);
             drawList.AddCircleFilled(bulletCenter, BulletRadius * scale,
                 ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.18f)), 24);
-            Typography.DrawCentered(drawList, bulletCenter, (index + 1).ToString(Loc.Culture), ui.Accent,
+            Typography.DrawCentered(drawList, bulletCenter, Games.Framework.GameNumber.Label(index + 1), ui.Accent,
                 TextStyles.Caption1);
             Typography.DrawWrappedLeft(new Vector2(stepOrigin.X + textLeft, stepOrigin.Y), stepText, ui.BodyInk,
                 TextStyles.Footnote, stepWidth);

@@ -1,305 +1,453 @@
+using Aetherphone.Apps.Coin;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Casino;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Casino;
 
 internal sealed partial class CasinoApp
 {
-    private const float HistoryRowHeight = 56f;
-    private const float DetailRowHeight = 44f;
-    private const float ActionPillHeight = 44f;
+    private const float HistoryRowHeight = 62f;
+    private const float HistoryTile = 36f;
+    private const float FactRowHeight = 46f;
+    private const float ReferencePad = 16f;
+    private const float ReferenceGap = 10f;
+    private const float StepBadge = 28f;
+    private const float StepPad = 16f;
+    private const float ActionHeight = 44f;
     private const int FairnessRecentRoundLimit = 8;
 
-    private void DrawHistory(Rect body)
+    private readonly struct HistoryRowText
     {
-        var scale = UiScale.Current;
-        using var surface = AppSurface.Begin(body);
-        history.EnsureFresh();
-        if (history.TakeLoadFailure())
+        public readonly string GameId;
+        public readonly string Clock;
+        public readonly string Outcome;
+        public readonly string Stake;
+        public readonly sbyte Sign;
+        public readonly bool Settled;
+
+        public HistoryRowText(string gameId, string clock, string outcome, string stake, sbyte sign, bool settled)
         {
-            historyLoadFailed = true;
+            GameId = gameId;
+            Clock = clock;
+            Outcome = outcome;
+            Stake = stake;
+            Sign = sign;
+            Settled = settled;
         }
+    }
 
+    private static readonly Func<long, long, bool> SameDay = TimeText.SameLocalDay;
+
+    private readonly List<HistoryRowText> historyRows = new();
+    private readonly List<HistoryDay> historyDays = new();
+    private readonly List<string> historyDayLabels = new();
+    private readonly List<string> historyDayNets = new();
+    private CasinoRoundHistoryDto[]? historySource;
+    private bool historySourceHasMore;
+    private LanguageInfo? historyLanguage;
+    private int historyTimeFormat = -1;
+    private DateTime historyDay;
+    private string detailRoundId = string.Empty;
+    private string detailPlayed = string.Empty;
+    private string detailSettled = string.Empty;
+    private CasinoRoundHistoryDto? detailSource;
+    private LanguageInfo? detailLanguage;
+    private int detailTimeFormat = -1;
+
+    private void SyncHistoryText()
+    {
         var rounds = history.Rounds;
-        if (rounds.Length == 0)
+        var today = DateTime.Now.Date;
+        if (ReferenceEquals(rounds, historySource) && historySourceHasMore == history.HasMore
+            && ReferenceEquals(historyLanguage, Loc.Current) && historyTimeFormat == TimeText.FormatVersion
+            && historyDay == today)
         {
-            if (history.Loading || (!historyLoadFailed && !history.Loaded))
-            {
-                LoadingPulse.Draw(body.Center, 16f * scale, ui.Palette.Accent, ui.MutedInk,
-                    LoadingPulse.SafeLabel());
-                return;
-            }
-
-            if (historyLoadFailed)
-            {
-                if (EmptyState.Draw(body, ui, FontAwesomeIcon.CloudShowersHeavy,
-                        Loc.T(L.Casino.HistoryEmptyTitle), Loc.T(CasinoReasons.MessageFor(CasinoReasons.Unreachable)),
-                        Loc.T(L.Common.Retry)))
-                {
-                    historyLoadFailed = false;
-                    history.Invalidate();
-                }
-
-                return;
-            }
-
-            EmptyState.Draw(body, ui, FontAwesomeIcon.Receipt, Loc.T(L.Casino.HistoryEmptyTitle),
-                Loc.T(L.Casino.HistoryEmptyHint));
             return;
         }
 
-        var index = 0;
-        while (index < rounds.Length)
+        historySource = rounds;
+        historySourceHasMore = history.HasMore;
+        historyLanguage = Loc.Current;
+        historyTimeFormat = TimeText.FormatVersion;
+        historyDay = today;
+        historyRows.Clear();
+        for (var index = 0; index < rounds.Length; index++)
         {
-            var dayStart = index;
-            var probe = dayStart;
-            while (probe < rounds.Length
-                && TimeText.SameLocalDay(rounds[dayStart].CreatedAtUnix, rounds[probe].CreatedAtUnix))
-            {
-                probe++;
-            }
-
-            ui.SectionHeading(TimeText.DayLabel(rounds[dayStart].CreatedAtUnix), 8f);
-            var card = GroupCard.Begin(theme, probe - dayStart, HistoryRowHeight);
-            for (var entryIndex = dayStart; entryIndex < probe; entryIndex++)
-            {
-                DrawHistoryRow(card.NextRow(), rounds[entryIndex], scale);
-            }
-
-            card.End();
-            index = probe;
+            historyRows.Add(RowTextOf(rounds[index]));
         }
 
-        if (history.HasMore && !history.Loading && InfiniteScroll.ReachedBottom())
+        CasinoHistoryDays.Group(rounds, history.HasMore, SameDay, historyDays);
+        historyDayLabels.Clear();
+        historyDayNets.Clear();
+        for (var dayIndex = 0; dayIndex < historyDays.Count; dayIndex++)
         {
-            history.LoadMore();
+            var day = historyDays[dayIndex];
+            historyDayLabels.Add(TimeText.DayLabel(rounds[day.Start].CreatedAtUnix));
+            historyDayNets.Add(day.Complete && day.Settled ? CasinoTextCache.SignedText(day.Net) : string.Empty);
         }
-
-        if (history.Loading)
-        {
-            InfiniteScroll.DrawLoadingRow(body.Center.X, ui.MutedInk);
-        }
-
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
     }
 
-    private void DrawHistoryRow(Rect row, CasinoRoundHistoryDto round, float scale)
+    private static HistoryRowText RowTextOf(CasinoRoundHistoryDto round)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var hovered = UiInteract.Hover(row.Min, row.Max);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
         var gameId = ClientGameId(round.GameKind);
-        var glyphCenter = new Vector2(row.Min.X + 16f * scale, row.Center.Y);
-        var glyphRadius = 15f * scale;
-        drawList.AddCircleFilled(glyphCenter, glyphRadius, ImGui.GetColorU32(ui.FieldSurface), 32);
-        CasinoGlyphs.Draw(drawList, gameId, glyphCenter, 8f * scale, ImGui.GetColorU32(ui.TitleInk),
-            ImGui.GetColorU32(ui.FieldSurface));
-
-        var outcome = OutcomeText(round, out var outcomeInk, out var outcomeStyle);
-        var outcomeSize = Typography.Measure(outcome, outcomeStyle);
-        var stakeLine = Loc.T(L.Casino.HistoryStakeLine, NumberText.Group(round.Stake));
-        var stakeSize = Typography.Measure(stakeLine, TextStyles.Caption1);
-        var rightEdge = row.Max.X - 4f * scale;
-        Typography.Draw(drawList, new Vector2(rightEdge - outcomeSize.X, row.Center.Y - outcomeSize.Y + 2f * scale),
-            outcome, outcomeInk, outcomeStyle);
-        Typography.Draw(drawList, new Vector2(rightEdge - stakeSize.X, row.Center.Y + 4f * scale), stakeLine,
-            ui.MutedInk, TextStyles.Caption1);
-
-        var textLeft = row.Min.X + 40f * scale;
-        var textWidth = rightEdge - MathF.Max(outcomeSize.X, stakeSize.X) - 10f * scale - textLeft;
-        var title = Typography.FitText(Loc.T(GameName(gameId)), textWidth, TextStyles.SubheadlineEmphasized);
-        Typography.Draw(drawList, new Vector2(textLeft, row.Center.Y - 18f * scale), title, ui.TitleInk,
-            TextStyles.SubheadlineEmphasized);
-        var subtitle = Typography.FitText(TimeText.Clock(round.CreatedAtUnix), textWidth, TextStyles.Caption1);
-        Typography.Draw(drawList, new Vector2(textLeft, row.Center.Y + 2f * scale), subtitle, ui.MutedInk,
-            TextStyles.Caption1);
-
-        if (UiInteract.Click(row.Min, row.Max, hovered))
-        {
-            router.Push(new CasinoRoute(CasinoScreen.RoundDetail, gameId, round.RoundId));
-        }
-    }
-
-    private string OutcomeText(CasinoRoundHistoryDto round, out Vector4 ink, out TextStyle style)
-    {
+        var clock = TimeText.Clock(round.CreatedAtUnix);
+        var stake = Loc.T(L.Casino.HistoryStakeLine, NumberText.Group(round.Stake));
         if (round.State == CasinoRoundStates.Open)
         {
-            ink = ui.MutedInk;
-            style = TextStyles.Footnote;
-            return Loc.T(L.Casino.StateOpen);
+            return new HistoryRowText(gameId, clock, Loc.T(L.Casino.StateOpen), stake, 0, false);
         }
 
         if (round.State == CasinoRoundStates.Voided)
         {
-            ink = ui.MutedInk;
-            style = TextStyles.Footnote;
-            return Loc.T(L.Casino.StateVoided);
+            return new HistoryRowText(gameId, clock, Loc.T(L.Casino.StateVoided), stake, 0, false);
         }
 
         var net = round.Payout - round.Stake;
-        if (net > 0)
+        return new HistoryRowText(gameId, clock, CasinoTextCache.SignedText(net), stake, (sbyte)Math.Sign(net), true);
+    }
+
+    private void DrawHistory(Rect body)
+    {
+        var scale = UiScale.Current;
+        using (ImRaii.PushId("casino.history"))
+        using (AppSurface.Begin(body))
         {
-            ink = ui.Accent;
-            style = TextStyles.SubheadlineEmphasized;
-            return "+" + NumberText.Group(net);
+            history.EnsureFresh();
+            if (history.TakeLoadFailure())
+            {
+                historyLoadFailed = true;
+            }
+
+            var drawList = ImGui.GetWindowDrawList();
+            var rounds = history.Rounds;
+            if (rounds.Length == 0)
+            {
+                DrawHistoryEmpty(drawList, body, scale);
+                return;
+            }
+
+            SyncHistoryText();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            var cursorY = origin.Y;
+            var rowHeight = HistoryRowHeight * scale;
+            for (var dayIndex = 0; dayIndex < historyDays.Count; dayIndex++)
+            {
+                var day = historyDays[dayIndex];
+                var headerTop = dayIndex == 0 ? cursorY : cursorY + CoinArt.SectionGap * scale;
+                cursorY = headerTop + DrawDayHeader(drawList, new Vector2(origin.X, headerTop), width, dayIndex,
+                    scale) + CoinArt.HeaderGap * scale;
+                var min = new Vector2(origin.X, cursorY);
+                var max = new Vector2(origin.X + width, cursorY + rowHeight * (day.End - day.Start));
+                CoinArt.Card(drawList, ui, min, max, scale);
+                for (var entryIndex = day.Start; entryIndex < day.End; entryIndex++)
+                {
+                    using (ImRaii.PushId(entryIndex))
+                    {
+                        DrawHistoryRow(drawList, RowAt(min, max.X, rowHeight, entryIndex - day.Start), entryIndex,
+                            entryIndex > day.Start, scale);
+                    }
+                }
+
+                cursorY = max.Y;
+            }
+
+            CoinArt.Reserve(origin, width, cursorY + Metrics.Space.Lg * scale);
+            if (history.HasMore && !history.Loading && InfiniteScroll.ReachedBottom())
+            {
+                history.LoadMore();
+            }
+
+            if (history.Loading)
+            {
+                InfiniteScroll.DrawLoadingRow(body.Center.X, ui.MutedInk);
+            }
+
+            ImGui.Dummy(new Vector2(0f, CoinArt.BottomPad * scale));
+        }
+    }
+
+    private void DrawHistoryEmpty(ImDrawListPtr drawList, Rect body, float scale)
+    {
+        if (history.Loading || (!historyLoadFailed && !history.Loaded))
+        {
+            LoadingPulse.Draw(body.Center, 16f * scale, ui.Palette.Accent, ui.MutedInk, LoadingPulse.SafeLabel());
+            return;
         }
 
-        if (net < 0)
+        if (historyLoadFailed)
         {
-            ink = ui.MutedInk;
-            style = TextStyles.Subheadline;
-            return NumberText.Group(net);
+            if (CoinArt.StateScreen(drawList, ui, body, FontAwesomeIcon.CloudShowersHeavy,
+                    Loc.T(L.Casino.HistoryEmptyTitle), Loc.T(CasinoReasons.MessageFor(CasinoReasons.Unreachable)),
+                    Loc.T(L.Common.Retry), ImGui.GetID("retry"), scale))
+            {
+                historyLoadFailed = false;
+                history.Invalidate();
+            }
+
+            return;
         }
 
-        ink = ui.BodyInk;
-        style = TextStyles.Subheadline;
-        return "0";
+        CoinArt.StateScreen(drawList, ui, body, FontAwesomeIcon.Receipt, Loc.T(L.Casino.HistoryEmptyTitle),
+            Loc.T(L.Casino.HistoryEmptyHint), string.Empty, 0, scale);
+    }
+
+    private float DrawDayHeader(ImDrawListPtr drawList, Vector2 origin, float width, int dayIndex, float scale)
+    {
+        var net = historyDayNets[dayIndex];
+        var reserve = 0f;
+        var height = CoinArt.SectionHeaderHeight * scale;
+        if (net.Length > 0)
+        {
+            var netSize = CurrencyGlyph.MeasureAmount(net, TextStyles.Headline);
+            reserve = netSize.X + CoinArt.ValueGap * scale;
+            var sign = historyDays[dayIndex].Net;
+            var ink = sign > 0 ? CoinArt.GainInk : sign < 0 ? ui.BodyInk : ui.MutedInk;
+            CurrencyGlyph.DrawAmount(drawList, new Vector2(origin.X + width - netSize.X,
+                origin.Y + (height - netSize.Y) * 0.5f), net, CurrencyKind.Chips, ink, TextStyles.Headline);
+        }
+
+        return CoinArt.SectionHeader(drawList, origin, width, historyDayLabels[dayIndex], ui.TitleInk, reserve, scale);
+    }
+
+    private void DrawHistoryRow(ImDrawListPtr drawList, Rect row, int roundIndex, bool hairline, float scale)
+    {
+        var text = historyRows[roundIndex];
+        var pad = Metrics.Space.Lg * scale;
+        var tile = HistoryTile * scale;
+        if (hairline)
+        {
+            CoinArt.Hairline(drawList, ui, row.Min.X + pad + tile + CoinArt.TextGap * scale, row.Max.X, row.Min.Y);
+        }
+
+        var hovered = CoinArt.RowInteraction(drawList, ui, row, scale);
+        var tileCenter = new Vector2(row.Min.X + pad + tile * 0.5f, row.Center.Y);
+        CasinoArt.GameTile(drawList, text.GameId, tileCenter, tile);
+
+        var outcomeStyle = text.Settled ? TextStyles.Headline : TextStyles.Subheadline;
+        var outcomeInk = text.Sign > 0 ? CoinArt.GainInk : text.Settled ? ui.TitleInk : ui.MutedInk;
+        var outcomeSize = Typography.Measure(text.Outcome, outcomeStyle);
+        var stakeSize = Typography.Measure(text.Stake, TextStyles.Footnote);
+        var right = row.Max.X - pad;
+        var blockHeight = outcomeSize.Y + stakeSize.Y;
+        var blockTop = row.Center.Y - blockHeight * 0.5f;
+        Typography.Draw(drawList, new Vector2(right - outcomeSize.X, blockTop), text.Outcome, outcomeInk,
+            outcomeStyle);
+        Typography.Draw(drawList, new Vector2(right - stakeSize.X, blockTop + outcomeSize.Y), text.Stake, ui.MutedInk,
+            TextStyles.Footnote);
+
+        var textLeft = tileCenter.X + tile * 0.5f + CoinArt.TextGap * scale;
+        var textRight = right - MathF.Max(outcomeSize.X, stakeSize.X) - CoinArt.ValueGap * scale;
+        CoinArt.Labels(drawList, textLeft, textRight, row.Center.Y, Loc.T(GameName(text.GameId)), text.Clock,
+            ui.TitleInk, ui.MutedInk, scale);
+        if (UiInteract.Click(row.Min, row.Max, hovered))
+        {
+            router.Push(new CasinoRoute(CasinoScreen.RoundDetail, text.GameId, history.Rounds[roundIndex].RoundId));
+        }
     }
 
     private void DrawFairness(Rect body)
     {
         var scale = UiScale.Current;
-        using var surface = AppSurface.Begin(body);
-        history.EnsureFresh();
-        var width = ScrollLayout.StableContentWidth();
+        using (ImRaii.PushId("casino.fairness"))
+        using (AppSurface.Begin(body))
+        {
+            history.EnsureFresh();
+            SyncHistoryText();
+            var drawList = ImGui.GetWindowDrawList();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            var cursorY = origin.Y;
+            cursorY += Typography.DrawWrappedLeft(new Vector2(origin.X, cursorY), Loc.T(L.Casino.FairnessIntro),
+                ui.BodyInk, TextStyles.Subheadline, width) + CardGap * scale;
+            var stepTop = cursorY;
+            var stepsMax = DrawFairnessSteps(drawList, new Vector2(origin.X, stepTop), width, scale);
+            cursorY = stepsMax + CardGap * scale;
+            cursorY += Typography.DrawWrappedLeft(new Vector2(origin.X + Metrics.Space.Lg * scale, cursorY),
+                Loc.T(L.Casino.FairnessChainNote), ui.MutedInk, TextStyles.Footnote,
+                width - Metrics.Space.Lg * 2f * scale);
 
-        DrawWrappedParagraph(Loc.T(L.Casino.FairnessIntro), width, scale);
-        DrawFairnessStep(Loc.T(L.Casino.FairnessLockTitle), Loc.T(L.Casino.FairnessLockBody), scale);
-        DrawFairnessStep(Loc.T(L.Casino.FairnessRevealTitle), Loc.T(L.Casino.FairnessRevealBody), scale);
-        DrawFairnessStep(Loc.T(L.Casino.FairnessReplayTitle), Loc.T(L.Casino.FairnessReplayBody), scale);
-        DrawWrappedParagraph(Loc.T(L.Casino.FairnessChainNote), width, scale);
+            var listTop = SectionTitle(drawList, new Vector2(origin.X, cursorY), width,
+                Loc.T(L.Casino.FairnessRecentHeading), scale);
+            cursorY = DrawFairnessRounds(drawList, new Vector2(origin.X, listTop), width, scale);
+            CoinArt.Reserve(origin, width, cursorY + CoinArt.BottomPad * scale);
+        }
+    }
 
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
-        ui.SectionHeading(Loc.T(L.Casino.FairnessRecentHeading), 4f);
+    private float DrawFairnessSteps(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
+    {
+        var pad = StepPad * scale;
+        var badge = StepBadge * scale;
+        var textLeft = origin.X + pad + badge + CoinArt.TextGap * scale;
+        var textWidth = MathF.Max(1f, origin.X + width - pad - textLeft);
+        var lockHeight = StepHeight(L.Casino.FairnessLockTitle, L.Casino.FairnessLockBody, textWidth, badge);
+        var revealHeight = StepHeight(L.Casino.FairnessRevealTitle, L.Casino.FairnessRevealBody, textWidth, badge);
+        var replayHeight = StepHeight(L.Casino.FairnessReplayTitle, L.Casino.FairnessReplayBody, textWidth, badge);
+        var total = pad * 4f + lockHeight + revealHeight + replayHeight;
+        var max = new Vector2(origin.X + width, origin.Y + total);
+        CoinArt.Card(drawList, ui, origin, max, scale);
+        var top = origin.Y + pad;
+        top = DrawFairnessStep(drawList, origin.X + pad, top, textLeft, textWidth, 1, L.Casino.FairnessLockTitle,
+            L.Casino.FairnessLockBody, lockHeight, scale) + pad;
+        top = DrawFairnessStep(drawList, origin.X + pad, top, textLeft, textWidth, 2, L.Casino.FairnessRevealTitle,
+            L.Casino.FairnessRevealBody, revealHeight, scale) + pad;
+        DrawFairnessStep(drawList, origin.X + pad, top, textLeft, textWidth, 3, L.Casino.FairnessReplayTitle,
+            L.Casino.FairnessReplayBody, replayHeight, scale);
+        return max.Y;
+    }
+
+    private static float StepHeight(LocString title, LocString body, float textWidth, float badge)
+    {
+        var titleHeight = Typography.MeasureWrappedBlock(Loc.T(title), TextStyles.Headline, textWidth).Y;
+        var bodyHeight = Typography.MeasureWrappedBlock(Loc.T(body), TextStyles.Subheadline, textWidth).Y;
+        return MathF.Max(badge, titleHeight + bodyHeight);
+    }
+
+    private float DrawFairnessStep(ImDrawListPtr drawList, float badgeLeft, float top, float textLeft,
+        float textWidth, int number, LocString title, LocString body, float height, float scale)
+    {
+        var badge = StepBadge * scale;
+        var badgeCenter = new Vector2(badgeLeft + badge * 0.5f, top + badge * 0.5f);
+        drawList.AddCircleFilled(badgeCenter, badge * 0.5f, ImGui.GetColorU32(ui.Accent), 28);
+        Typography.DrawCentered(drawList, badgeCenter, Games.Framework.GameNumber.Label(number), CasinoArt.White,
+            TextStyles.SubheadlineEmphasized);
+        var titleHeight = Typography.DrawWrappedLeft(new Vector2(textLeft, top), Loc.T(title), ui.TitleInk,
+            TextStyles.Headline, textWidth);
+        Typography.DrawWrappedLeft(new Vector2(textLeft, top + titleHeight), Loc.T(body), ui.MutedInk,
+            TextStyles.Subheadline, textWidth);
+        return top + height;
+    }
+
+    private float DrawFairnessRounds(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
+    {
         var rounds = history.Rounds;
-        var checkableCount = 0;
-        for (var roundIndex = 0; roundIndex < rounds.Length && checkableCount < FairnessRecentRoundLimit;
-             roundIndex++)
+        var count = 0;
+        for (var index = 0; index < rounds.Length && count < FairnessRecentRoundLimit; index++)
         {
-            if (rounds[roundIndex].State != CasinoRoundStates.Open)
+            if (rounds[index].State != CasinoRoundStates.Open)
             {
-                checkableCount++;
+                count++;
             }
         }
 
-        if (checkableCount == 0)
+        if (count == 0)
         {
-            DrawWrappedParagraph(Loc.T(L.Casino.FairnessNoRounds), width, scale);
+            return CoinArt.DrawPanel(ui, origin, width, FontAwesomeIcon.ShieldAlt, AccentRing.Green,
+                Loc.T(L.Casino.FairnessRecentHeading), Loc.T(L.Casino.FairnessNoRounds), scale);
         }
-        else
-        {
-            var card = GroupCard.Begin(theme, checkableCount, HistoryRowHeight);
-            var drawn = 0;
-            for (var roundIndex = 0; roundIndex < rounds.Length && drawn < checkableCount; roundIndex++)
-            {
-                if (rounds[roundIndex].State == CasinoRoundStates.Open)
-                {
-                    continue;
-                }
 
-                DrawHistoryRow(card.NextRow(), rounds[roundIndex], scale);
-                drawn++;
+        var rowHeight = HistoryRowHeight * scale;
+        var max = new Vector2(origin.X + width, origin.Y + rowHeight * count);
+        CoinArt.Card(drawList, ui, origin, max, scale);
+        var drawn = 0;
+        for (var index = 0; index < rounds.Length && drawn < count; index++)
+        {
+            if (rounds[index].State == CasinoRoundStates.Open)
+            {
+                continue;
             }
 
-            card.End();
+            using (ImRaii.PushId(index))
+            {
+                DrawHistoryRow(drawList, RowAt(origin, max.X, rowHeight, drawn), index, drawn > 0, scale);
+            }
+
+            drawn++;
         }
 
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
-    }
-
-    private void DrawWrappedParagraph(string text, float width, float scale)
-    {
-        var origin = ImGui.GetCursorScreenPos();
-        var block = Typography.MeasureWrappedBlock(text, TextStyles.Footnote, width);
-        Typography.DrawWrappedLeft(origin, text, ui.MutedInk, TextStyles.Footnote, width);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, block.Y + Metrics.Space.Sm * scale));
-    }
-
-    private void DrawFairnessStep(string title, string bodyText, float scale)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var inset = 14f * scale;
-        var titleSize = Typography.Measure(title, TextStyles.FootnoteEmphasized);
-        var bodyBlock = Typography.MeasureWrappedBlock(bodyText, TextStyles.Footnote, width - inset * 2f);
-        var height = titleSize.Y + bodyBlock.Y + 26f * scale;
-        var min = origin;
-        var max = new Vector2(origin.X + width, origin.Y + height);
-        var rounding = 16f * scale;
-        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.Palette.CardFill));
-        Material.EdgeSquircle(drawList, min, max, rounding, scale);
-        Typography.Draw(drawList, new Vector2(min.X + inset, min.Y + 10f * scale), title, ui.Accent,
-            TextStyles.FootnoteEmphasized);
-        Typography.DrawWrappedLeft(new Vector2(min.X + inset, min.Y + titleSize.Y + 16f * scale), bodyText,
-            ui.MutedInk, TextStyles.Footnote, width - inset * 2f);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + 8f * scale));
+        return max.Y;
     }
 
     private void DrawRoundDetail(Rect body, string roundId)
     {
         var scale = UiScale.Current;
-        using var surface = AppSurface.Begin(body);
-        if (history.TakeVerifyFailure())
+        using (ImRaii.PushId("casino.round"))
+        using (AppSurface.Begin(body))
         {
-            confirm.Alert(null, Loc.T(CasinoReasons.MessageFor(CasinoReasons.Unreachable)), Loc.T(L.Common.Close));
-        }
-
-        var round = FindHistoryRound(roundId);
-        var hasVerified = history.TryGetVerified(roundId, out var verifiedRound);
-        if (hasVerified)
-        {
-            DrawVerdictCard(verifiedRound.Verdict, scale);
-        }
-
-        if (round is not null)
-        {
-            DrawRoundFacts(round, scale);
-        }
-
-        DrawRoundReference(roundId, round, hasVerified ? verifiedRound : null, scale);
-
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var verifyRect = new Rect(origin, new Vector2(origin.X + width, origin.Y + ActionPillHeight * scale));
-        var canVerify = !history.Verifying
-            && (!hasVerified || verifiedRound.Verdict == CasinoRoundVerdict.Unrevealed);
-        if (AppSkin.PillButton(verifyRect, Loc.T(L.Casino.VerifyAction), true, canVerify, theme))
-        {
-            history.RequestVerify(roundId);
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, ActionPillHeight * scale + 10f * scale));
-
-        if (hasVerified)
-        {
-            var copyOrigin = ImGui.GetCursorScreenPos();
-            var copyRect = new Rect(copyOrigin,
-                new Vector2(copyOrigin.X + width, copyOrigin.Y + ActionPillHeight * scale));
-            if (AppSkin.PillButton(copyRect, Loc.T(L.Casino.CopyDetails), false, true, theme))
+            if (history.TakeVerifyFailure())
             {
-                ImGui.SetClipboardText(BuildRoundDetailsBlob(verifiedRound));
-                ShellToast.Show();
+                UiFeedback.Play(UiSound.Blocked);
+                confirm.Alert(null, Loc.T(CasinoReasons.MessageFor(CasinoReasons.Unreachable)), Loc.T(L.Common.Close));
             }
 
-            ImGui.SetCursorScreenPos(copyOrigin);
-            ImGui.Dummy(new Vector2(width, ActionPillHeight * scale + 10f * scale));
+            var drawList = ImGui.GetWindowDrawList();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            var round = FindHistoryRound(roundId);
+            SyncDetailText(roundId, round);
+            var hasVerified = history.TryGetVerified(roundId, out var verifiedRound);
+            var cursorY = origin.Y;
+            if (hasVerified)
+            {
+                cursorY = DrawVerdict(new Vector2(origin.X, cursorY), width, verifiedRound.Verdict, scale) +
+                          CardGap * scale;
+            }
+
+            if (round is not null)
+            {
+                cursorY = DrawRoundFacts(drawList, new Vector2(origin.X, cursorY), width, round, scale) +
+                          CardGap * scale;
+            }
+
+            cursorY = DrawRoundReference(drawList, new Vector2(origin.X, cursorY), width, roundId, round,
+                hasVerified ? verifiedRound : null, scale) + CoinArt.SectionGap * scale;
+
+            var actionHeight = ActionHeight * scale;
+            var verifyRect = new Rect(new Vector2(origin.X, cursorY), new Vector2(origin.X + width, cursorY + actionHeight));
+            var canVerify = !history.Verifying
+                && (!hasVerified || verifiedRound.Verdict == CasinoRoundVerdict.Unrevealed);
+            if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("verify"), verifyRect, Loc.T(L.Casino.VerifyAction),
+                    CasinoCapsuleTone.Filled, canVerify, TextStyles.Headline))
+            {
+                history.RequestVerify(roundId);
+            }
+
+            cursorY = verifyRect.Max.Y;
+            if (hasVerified)
+            {
+                cursorY += CardGap * scale;
+                var copyRect = new Rect(new Vector2(origin.X, cursorY),
+                    new Vector2(origin.X + width, cursorY + actionHeight));
+                if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("copy"), copyRect, Loc.T(L.Casino.CopyDetails),
+                        CasinoCapsuleTone.Tinted, true, TextStyles.Headline))
+                {
+                    ImGui.SetClipboardText(BuildRoundDetailsBlob(verifiedRound));
+                    ShellToast.Show();
+                }
+
+                cursorY = copyRect.Max.Y;
+            }
+
+            CoinArt.Reserve(origin, width, cursorY + CoinArt.BottomPad * scale);
+        }
+    }
+
+    private void SyncDetailText(string roundId, CasinoRoundHistoryDto? round)
+    {
+        if (string.Equals(roundId, detailRoundId, StringComparison.Ordinal) && ReferenceEquals(round, detailSource)
+            && ReferenceEquals(detailLanguage, Loc.Current) && detailTimeFormat == TimeText.FormatVersion)
+        {
+            return;
         }
 
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
+        detailRoundId = roundId;
+        detailSource = round;
+        detailLanguage = Loc.Current;
+        detailTimeFormat = TimeText.FormatVersion;
+        detailPlayed = round is not null && round.CreatedAtUnix > 0
+            ? TimeText.DayLabel(round.CreatedAtUnix) + " " + TimeText.Clock(round.CreatedAtUnix)
+            : string.Empty;
+        detailSettled = round?.SettledAtUnix is long settledAtUnix
+            ? TimeText.DayLabel(settledAtUnix) + " " + TimeText.Clock(settledAtUnix)
+            : string.Empty;
     }
 
     private CasinoRoundHistoryDto? FindHistoryRound(string roundId)
@@ -316,7 +464,7 @@ internal sealed partial class CasinoApp
         return null;
     }
 
-    private void DrawVerdictCard(CasinoRoundVerdict verdict, float scale)
+    private float DrawVerdict(Vector2 origin, float width, CasinoRoundVerdict verdict, float scale)
     {
         var title = verdict switch
         {
@@ -330,69 +478,77 @@ internal sealed partial class CasinoApp
             CasinoRoundVerdict.Mismatch => Loc.T(L.Casino.VerdictMismatchHint),
             _ => Loc.T(L.Casino.VerdictUnrevealedHint),
         };
-        var accent = verdict switch
+        var icon = verdict switch
         {
-            CasinoRoundVerdict.Match => ui.Accent,
-            CasinoRoundVerdict.Mismatch => theme.Danger,
-            _ => ui.MutedInk,
+            CasinoRoundVerdict.Match => FontAwesomeIcon.CheckCircle,
+            CasinoRoundVerdict.Mismatch => FontAwesomeIcon.ExclamationTriangle,
+            _ => FontAwesomeIcon.Hourglass,
         };
-
-        var drawList = ImGui.GetWindowDrawList();
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var inset = 14f * scale;
-        var titleSize = Typography.Measure(title, TextStyles.SubheadlineEmphasized);
-        var hintBlock = Typography.MeasureWrappedBlock(hint, TextStyles.Footnote, width - inset * 2f);
-        var height = titleSize.Y + hintBlock.Y + 28f * scale;
-        var min = origin;
-        var max = new Vector2(origin.X + width, origin.Y + height);
-        var rounding = 16f * scale;
-        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(Palette.WithAlpha(accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, rounding, ImGui.GetColorU32(Palette.WithAlpha(accent, 0.40f)),
-            1f * scale);
-        Typography.Draw(drawList, new Vector2(min.X + inset, min.Y + 10f * scale), title, accent,
-            TextStyles.SubheadlineEmphasized);
-        Typography.DrawWrappedLeft(new Vector2(min.X + inset, min.Y + titleSize.Y + 16f * scale), hint,
-            ui.BodyInk, TextStyles.Footnote, width - inset * 2f);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + 10f * scale));
+        var tint = verdict switch
+        {
+            CasinoRoundVerdict.Match => AccentRing.Green,
+            CasinoRoundVerdict.Mismatch => AccentRing.Red,
+            _ => AccentRing.Slate,
+        };
+        return CoinArt.DrawPanel(ui, origin, width, icon, tint, title, hint, scale);
     }
 
-    private void DrawRoundFacts(CasinoRoundHistoryDto round, float scale)
+    private float DrawRoundFacts(ImDrawListPtr drawList, Vector2 origin, float width, CasinoRoundHistoryDto round,
+        float scale)
     {
-        var rowCount = round.SettledAtUnix is not null ? 5 : 4;
-        var card = GroupCard.Begin(theme, rowCount, DetailRowHeight);
-        DrawFactRow(card.NextRow(), Loc.T(L.Casino.RoundGame), Loc.T(GameName(ClientGameId(round.GameKind))),
-            ui.TitleInk, scale);
-        DrawFactRow(card.NextRow(), Loc.T(L.Casino.RoundState), StateText(round.State), ui.TitleInk, scale);
-        DrawFactRow(card.NextRow(), Loc.T(L.Casino.RoundStake), NumberText.Group(round.Stake),
-            ui.TitleInk, scale);
+        var settled = detailSettled.Length > 0;
+        var rows = settled ? 5 : 4;
+        var rowHeight = FactRowHeight * scale;
+        var max = new Vector2(origin.X + width, origin.Y + rowHeight * rows);
+        CoinArt.Card(drawList, ui, origin, max, scale);
+        DrawFactRow(drawList, RowAt(origin, max.X, rowHeight, 0), Loc.T(L.Casino.RoundGame),
+            Loc.T(GameName(ClientGameId(round.GameKind))), ui.TitleInk, false, CurrencyKind.Chips, false, scale);
+        DrawFactRow(drawList, RowAt(origin, max.X, rowHeight, 1), Loc.T(L.Casino.RoundState), StateText(round.State),
+            ui.TitleInk, true, CurrencyKind.Chips, false, scale);
+        DrawFactRow(drawList, RowAt(origin, max.X, rowHeight, 2), Loc.T(L.Casino.RoundStake),
+            NumberText.Group(round.Stake), ui.TitleInk, true, CurrencyKind.Chips, true, scale);
         var payoutInk = round.State == CasinoRoundStates.Settled && round.Payout > round.Stake
-            ? ui.Accent
+            ? CoinArt.GainInk
             : ui.TitleInk;
-        DrawFactRow(card.NextRow(), Loc.T(L.Casino.RoundPayout), NumberText.Group(round.Payout),
-            payoutInk, scale);
-        if (round.SettledAtUnix is long settledAtUnix)
+        DrawFactRow(drawList, RowAt(origin, max.X, rowHeight, 3), Loc.T(L.Casino.RoundPayout),
+            NumberText.Group(round.Payout), payoutInk, true, CurrencyKind.Chips, true, scale);
+        if (settled)
         {
-            DrawFactRow(card.NextRow(), Loc.T(L.Casino.RoundSettledAt),
-                TimeText.DayLabel(settledAtUnix) + " " + TimeText.Clock(settledAtUnix), ui.TitleInk, scale);
+            DrawFactRow(drawList, RowAt(origin, max.X, rowHeight, 4), Loc.T(L.Casino.RoundSettledAt), detailSettled,
+                ui.TitleInk, true, CurrencyKind.Chips, false, scale);
         }
 
-        card.End();
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
+        return max.Y;
     }
 
-    private void DrawFactRow(Rect row, string label, string value, Vector4 valueInk, float scale)
+    private void DrawFactRow(ImDrawListPtr drawList, Rect row, string label, string value, Vector4 valueInk,
+        bool hairline, CurrencyKind kind, bool withGlyph, float scale)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        Typography.Draw(drawList, new Vector2(row.Min.X, row.Center.Y - 9f * scale), label, ui.BodyInk,
-            TextStyles.Subheadline);
-        var labelWidth = Typography.Measure(label, TextStyles.Subheadline).X;
-        var fitted = Typography.FitText(value, row.Width - labelWidth - 12f * scale,
-            TextStyles.SubheadlineEmphasized);
-        var valueSize = Typography.Measure(fitted, TextStyles.SubheadlineEmphasized);
-        Typography.Draw(drawList, new Vector2(row.Max.X - valueSize.X, row.Center.Y - 9f * scale), fitted,
-            valueInk, TextStyles.SubheadlineEmphasized);
+        var pad = Metrics.Space.Lg * scale;
+        if (hairline)
+        {
+            CoinArt.Hairline(drawList, ui, row.Min.X + pad, row.Max.X, row.Min.Y);
+        }
+
+        var lineHeight = Typography.LineHeight(TextStyles.Body);
+        var labelWidth = Typography.Measure(label, TextStyles.Body).X;
+        Typography.Draw(drawList, new Vector2(row.Min.X + pad, row.Center.Y - lineHeight * 0.5f), label, ui.BodyInk,
+            TextStyles.Body);
+        var available = MathF.Max(1f, row.Width - pad * 2f - labelWidth - CoinArt.ValueGap * scale);
+        if (withGlyph)
+        {
+            var fitted = Typography.FitText(value, MathF.Max(1f, available - CurrencyGlyph.Reserve(lineHeight)),
+                TextStyles.BodyEmphasized);
+            var size = CurrencyGlyph.MeasureAmount(fitted, TextStyles.BodyEmphasized);
+            CurrencyGlyph.DrawAmount(drawList, new Vector2(row.Max.X - pad - size.X, row.Center.Y - size.Y * 0.5f),
+                fitted, kind, valueInk, TextStyles.BodyEmphasized);
+            return;
+        }
+
+        var text = Typography.FitText(value, available, TextStyles.BodyEmphasized);
+        var textWidth = Typography.Measure(text, TextStyles.BodyEmphasized).X;
+        Typography.Draw(drawList, new Vector2(row.Max.X - pad - textWidth, row.Center.Y - lineHeight * 0.5f), text,
+            valueInk, TextStyles.BodyEmphasized);
     }
 
     private string StateText(int state) => state switch
@@ -402,75 +558,49 @@ internal sealed partial class CasinoApp
         _ => Loc.T(L.Casino.StateSettled),
     };
 
-    private void DrawRoundReference(string roundId, CasinoRoundHistoryDto? round,
-        VerifiedCasinoRound? verifiedRound, float scale)
+    private float DrawRoundReference(ImDrawListPtr drawList, Vector2 origin, float width, string roundId,
+        CasinoRoundHistoryDto? round, VerifiedCasinoRound? verifiedRound, float scale)
     {
         var commit = verifiedRound?.Round.SeedCommitHash ?? round?.SeedCommitHash ?? string.Empty;
-        var playedAtUnix = round?.CreatedAtUnix ?? 0;
-        var drawList = ImGui.GetWindowDrawList();
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var inset = 14f * scale;
-        var innerWidth = width - inset * 2f;
-
-        var idLabel = Loc.T(L.Casino.RoundIdLabel);
-        var idLabelSize = Typography.Measure(idLabel, TextStyles.Caption1);
-        var idBlock = Typography.MeasureWrappedBlock(roundId, TextStyles.Caption1, innerWidth);
-        var height = 10f * scale + idLabelSize.Y + 4f * scale + idBlock.Y;
-        var commitLabel = Loc.T(L.Casino.RoundCommit);
-        var commitLabelSize = Vector2.Zero;
-        var commitBlock = Vector2.Zero;
+        var pad = ReferencePad * scale;
+        var gap = ReferenceGap * scale;
+        var inner = width - pad * 2f;
+        var caption = Typography.LineHeight(TextStyles.Caption1);
+        var height = pad * 2f + caption + Typography.MeasureWrappedBlock(roundId, TextStyles.Footnote, inner).Y;
         if (commit.Length > 0)
         {
-            commitLabelSize = Typography.Measure(commitLabel, TextStyles.Caption1);
-            commitBlock = Typography.MeasureWrappedBlock(commit, TextStyles.Caption1, innerWidth);
-            height += 10f * scale + commitLabelSize.Y + 4f * scale + commitBlock.Y;
+            height += gap + caption + Typography.MeasureWrappedBlock(commit, TextStyles.Footnote, inner).Y;
         }
 
-        var playedLine = playedAtUnix > 0
-            ? Loc.T(L.Casino.RoundPlayed) + ": " + TimeText.DayLabel(playedAtUnix) + " "
-                + TimeText.Clock(playedAtUnix)
-            : string.Empty;
-        var playedSize = Vector2.Zero;
-        if (playedLine.Length > 0)
+        if (detailPlayed.Length > 0)
         {
-            playedSize = Typography.Measure(playedLine, TextStyles.Caption1);
-            height += 10f * scale + playedSize.Y;
+            height += gap + caption + Typography.LineHeight(TextStyles.Footnote);
         }
 
-        height += 12f * scale;
-        var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        var rounding = 16f * scale;
-        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.Palette.CardFill));
-        Material.EdgeSquircle(drawList, min, max, rounding, scale);
-
-        var cursorY = min.Y + 10f * scale;
-        Typography.Draw(drawList, new Vector2(min.X + inset, cursorY), idLabel, ui.MutedInk, TextStyles.Caption1);
-        cursorY += idLabelSize.Y + 4f * scale;
-        Typography.DrawWrappedLeft(new Vector2(min.X + inset, cursorY), roundId, ui.BodyInk, TextStyles.Caption1,
-            innerWidth);
-        cursorY += idBlock.Y;
+        CoinArt.Card(drawList, ui, origin, max, scale);
+        var left = origin.X + pad;
+        var top = origin.Y + pad;
+        top = DrawReferenceField(drawList, left, top, inner, Loc.T(L.Casino.RoundIdLabel), roundId);
         if (commit.Length > 0)
         {
-            cursorY += 10f * scale;
-            Typography.Draw(drawList, new Vector2(min.X + inset, cursorY), commitLabel, ui.MutedInk,
-                TextStyles.Caption1);
-            cursorY += commitLabelSize.Y + 4f * scale;
-            Typography.DrawWrappedLeft(new Vector2(min.X + inset, cursorY), commit, ui.BodyInk,
-                TextStyles.Caption1, innerWidth);
-            cursorY += commitBlock.Y;
+            top = DrawReferenceField(drawList, left, top + gap, inner, Loc.T(L.Casino.RoundCommit), commit);
         }
 
-        if (playedLine.Length > 0)
+        if (detailPlayed.Length > 0)
         {
-            cursorY += 10f * scale;
-            Typography.Draw(drawList, new Vector2(min.X + inset, cursorY), playedLine, ui.MutedInk,
-                TextStyles.Caption1);
+            DrawReferenceField(drawList, left, top + gap, inner, Loc.T(L.Casino.RoundPlayed), detailPlayed);
         }
 
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + 10f * scale));
+        return max.Y;
+    }
+
+    private float DrawReferenceField(ImDrawListPtr drawList, float left, float top, float width, string label,
+        string value)
+    {
+        Typography.Draw(drawList, new Vector2(left, top), Loc.Upper(label), ui.MutedInk, TextStyles.Caption1);
+        top += Typography.LineHeight(TextStyles.Caption1);
+        return top + Typography.DrawWrappedLeft(new Vector2(left, top), value, ui.BodyInk, TextStyles.Footnote, width);
     }
 
     internal static string BuildRoundDetailsBlob(VerifiedCasinoRound verifiedRound)

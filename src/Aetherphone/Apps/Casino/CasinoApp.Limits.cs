@@ -1,9 +1,14 @@
+using Aetherphone.Apps.Coin;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Casino;
+using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
+using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
@@ -12,21 +17,35 @@ namespace Aetherphone.Apps.Casino;
 
 internal sealed partial class CasinoApp
 {
-    private const float LimitFieldHeight = 40f;
-    private const float LimitPillHeight = 44f;
     private const long SavedFlashMilliseconds = 3000;
+    private const float GaugePad = 18f;
+    private const float GaugeRadius = 50f;
+    private const float GaugeThickness = 10f;
+    private const float GaugeTrackAlpha = 0.10f;
+    private const float GaugeTextGap = 18f;
+    private const float GaugeInnerFraction = 0.72f;
+    private const float PickerPad = 18f;
+    private const float StepperSize = 44f;
+    private const float StepperAlpha = 0.10f;
+    private const float StepperHoverAlpha = 0.18f;
+    private const float SliderRowHeight = 36f;
+    private const float PickerButtonHeight = 44f;
+    private const float PickerLineGap = 10f;
+    private const string LimitSliderId = "casino.limit.slider";
 
-    private string limitsBuffer = string.Empty;
+    private long? limitChoice;
     private bool limitsSeeded;
     private string limitsSeededAccount = string.Empty;
     private long limitsSavedAtTick;
+    private Spring gaugeFill;
 
     private void ResetLimitsEditor()
     {
-        limitsBuffer = string.Empty;
+        limitChoice = null;
         limitsSeeded = false;
         limitsSeededAccount = string.Empty;
         limitsSavedAtTick = 0;
+        gaugeFill.SnapTo(0f);
         casino.TakeLimitsResult();
         casino.TakeLimitsFailure();
     }
@@ -34,38 +53,55 @@ internal sealed partial class CasinoApp
     private void DrawLimits(Rect body)
     {
         var scale = UiScale.Current;
-        using var surface = AppSurface.Begin(body);
-        ConsumeLimitsResult();
-        var state = casino.State;
-        if (state is null)
+        using (ImRaii.PushId("casino.limits"))
+        using (AppSurface.Begin(body))
         {
-            LoadingPulse.Draw(body.Center, 16f * scale, ui.Palette.Accent, ui.MutedInk, LoadingPulse.SafeLabel());
-            return;
-        }
+            ConsumeLimitsResult();
+            var state = casino.State;
+            if (state is null)
+            {
+                LoadingPulse.Draw(body.Center, 16f * scale, ui.Palette.Accent, ui.MutedInk, LoadingPulse.SafeLabel());
+                return;
+            }
 
-        SeedLimitsBuffer(state);
+            SeedLimitChoice(state);
+            var drawList = ImGui.GetWindowDrawList();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            var tonight = CasinoTonight.From(state);
+            var cursorY = DrawLimitGauge(drawList, origin, width, state, tonight, scale);
+            if (tonight.Reached)
+            {
+                cursorY = DrawLimitReached(drawList, new Vector2(origin.X, cursorY + CardGap * scale), width, scale);
+            }
 
-        if (state.LossLimit > 0 && state.LossHeadroom <= 0)
-        {
-            DrawLimitReachedCard(scale);
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-        }
-        else
-        {
-            DrawTonightCard(state, scale);
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-        }
+            if (HouseLimitActive(state))
+            {
+                cursorY = CoinArt.DrawPanel(ui, new Vector2(origin.X, cursorY + CardGap * scale), width,
+                    FontAwesomeIcon.ShieldAlt, AccentRing.Indigo, Loc.T(L.Casino.HouseLimitTitle),
+                    texts.Number(L.Casino.HouseLimitLine, state.LossLimit), scale);
+            }
 
-        DrawHouseLimitCard(scale);
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-        DrawSelfLimitEditor(state, scale);
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
+            var pickerTop = SectionTitle(drawList, new Vector2(origin.X, cursorY), width,
+                Loc.T(L.Casino.SelfLimitHeading), scale);
+            cursorY = DrawLimitPicker(drawList, new Vector2(origin.X, pickerTop), width, state, scale);
+            var ceiling = CasinoLimitPicker.CeilingFor(state.DailyBuyInCap);
+            var hint = texts.Numbers(L.Casino.SelfLimitHint, CasinoLimitPicker.Floor, ceiling);
+            var hintTop = cursorY + Metrics.Space.Sm * scale;
+            var hintHeight = Typography.DrawWrappedLeft(new Vector2(origin.X + Metrics.Space.Lg * scale, hintTop),
+                hint, ui.MutedInk, TextStyles.Footnote, width - Metrics.Space.Lg * 2f * scale);
+            CoinArt.Reserve(origin, width, hintTop + hintHeight + CoinArt.BottomPad * scale);
+        }
     }
+
+    private static bool HouseLimitActive(CasinoStateDto state) =>
+        state.LossLimit > 0 && (state.SelfLossLimit is null || state.LossLimit < state.SelfLossLimit.Value);
 
     private void ConsumeLimitsResult()
     {
         if (casino.TakeLimitsFailure())
         {
+            UiFeedback.Play(UiSound.Blocked);
             confirm.Alert(null, Loc.T(CasinoReasons.MessageFor(CasinoReasons.Unreachable)), Loc.T(L.Common.Close));
         }
 
@@ -75,11 +111,12 @@ internal sealed partial class CasinoApp
             return;
         }
 
+        UiFeedback.Play(UiSound.Success);
         limitsSeeded = false;
         limitsSavedAtTick = Environment.TickCount64;
     }
 
-    private void SeedLimitsBuffer(CasinoStateDto state)
+    private void SeedLimitChoice(CasinoStateDto state)
     {
         var account = session.CurrentUser?.Id ?? string.Empty;
         if (limitsSeeded && string.Equals(account, limitsSeededAccount, StringComparison.Ordinal))
@@ -92,181 +129,292 @@ internal sealed partial class CasinoApp
             limitsSavedAtTick = 0;
         }
 
-        var current = state.SelfLossLimit ?? CasinoLimits.HouseDailyLossLimit;
-        limitsBuffer = current.ToString(Loc.Culture);
+        limitChoice = state.SelfLossLimit;
         limitsSeeded = true;
         limitsSeededAccount = account;
     }
 
-    private void DrawLimitReachedCard(float scale)
+    private float DrawLimitGauge(ImDrawListPtr drawList, Vector2 origin, float width, CasinoStateDto state,
+        in CasinoTonight tonight, float scale)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var inset = 16f * scale;
-        var title = Loc.T(L.Casino.LimitReachedTitle);
-        var resetsAtUnix = coins.Wallet?.ResetsAtUnix ?? 0;
-        var bodyText = resetsAtUnix > 0
-            ? Loc.T(L.Casino.LimitReachedBody, TimeText.FutureMoment(resetsAtUnix))
-            : Loc.T(L.Casino.LimitReachedBodySoon);
-        var titleSize = Typography.Measure(title, TextStyles.Headline);
-        var bodyBlock = Typography.MeasureWrappedBlock(bodyText, TextStyles.Subheadline, width - inset * 2f);
-        var iconArea = 44f * scale;
-        var height = iconArea + titleSize.Y + bodyBlock.Y + 46f * scale;
+        var pad = GaugePad * scale;
+        var radius = GaugeRadius * scale;
+        var height = pad * 2f + radius * 2f;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        var rounding = Metrics.Radius.Card * scale;
-        ui.Card(drawList, min, max, rounding, true);
-        Squircle.Stroke(drawList, min, max, rounding,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.4f)), 1f * scale);
+        CoinArt.Card(drawList, ui, min, max, scale);
 
-        var iconCenter = new Vector2(min.X + width * 0.5f, min.Y + 16f * scale + iconArea * 0.5f);
-        drawList.AddCircleFilled(iconCenter, 20f * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.16f)), 40);
-        AppSkin.Icon(drawList, iconCenter, IconGlyph.Of(FontAwesomeIcon.HandHoldingHeart), ui.Accent, 1.1f);
+        var center = new Vector2(min.X + pad + radius, min.Y + pad + radius);
+        var thickness = GaugeThickness * scale;
+        var ringRadius = radius - thickness * 0.5f;
+        ProgressRing.Track(drawList, center, ringRadius, thickness, Palette.WithAlpha(ui.TitleInk, GaugeTrackAlpha));
+        var shown = gaugeFill.Step(tonight.Fraction, Motion.PageSettle,
+            MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds));
+        ProgressRing.Fill(drawList, center, ringRadius, thickness, shown, ToneInk(tonight.Tone));
+        if (tonight.HasLimit && !tonight.Reached)
+        {
+            var inner = (ringRadius - thickness) * 2f * GaugeInnerFraction;
+            var room = NumberText.Group(tonight.Headroom);
+            var roomStyle = WidgetText.FitStyle(room, TextStyles.Title2, inner, true);
+            var roomHeight = Typography.LineHeight(roomStyle);
+            var captionHeight = Typography.LineHeight(TextStyles.Caption1);
+            var blockTop = center.Y - (roomHeight + captionHeight) * 0.5f;
+            WidgetText.TabularCentered(drawList, new Vector2(center.X, blockTop + roomHeight * 0.5f), room,
+                ui.TitleInk, roomStyle, inner);
+            Typography.DrawCentered(drawList, new Vector2(center.X, blockTop + roomHeight + captionHeight * 0.5f),
+                Typography.FitText(Loc.T(L.Casino.LimitLeftCaption), inner, TextStyles.Caption1), ui.MutedInk,
+                TextStyles.Caption1);
+        }
+        else
+        {
+            ProgressRing.CenterIcon(drawList, center, FontAwesomeIcon.HandHoldingHeart,
+                tonight.Reached ? theme.Danger : ui.MutedInk, radius * 0.62f);
+        }
 
-        Typography.DrawCentered(drawList, new Vector2(min.X + width * 0.5f,
-            min.Y + 22f * scale + iconArea + titleSize.Y * 0.5f), title, ui.TitleInk, TextStyles.Headline);
-        Typography.DrawWrappedLeft(new Vector2(min.X + inset, min.Y + 30f * scale + iconArea + titleSize.Y),
-            bodyText, ui.MutedInk, TextStyles.Subheadline, width - inset * 2f);
+        var textLeft = center.X + radius + GaugeTextGap * scale;
+        var textWidth = MathF.Max(1f, max.X - pad - textLeft);
+        var headline = Typography.LineHeight(TextStyles.Headline);
+        var title3 = Typography.LineHeight(TextStyles.Title3);
+        var footnote = Typography.LineHeight(TextStyles.Footnote);
+        var pending = PendingLine(state);
+        var lines = headline + title3 + footnote + (pending.Length > 0 ? footnote : 0f);
+        var top = center.Y - lines * 0.5f;
+        Typography.Draw(drawList, new Vector2(textLeft, top),
+            Typography.FitText(Loc.T(L.Casino.NetHeading), textWidth, TextStyles.Headline), ui.TitleInk,
+            TextStyles.Headline);
+        top += headline;
+        var result = TonightResult(tonight.NetLoss, out var resultInk);
+        if (tonight.NetLoss != 0)
+        {
+            CurrencyGlyph.DrawAmount(drawList, new Vector2(textLeft, top),
+                Typography.FitText(result, MathF.Max(1f, textWidth - CurrencyGlyph.Reserve(title3)), TextStyles.Title3),
+                CurrencyKind.Chips, resultInk, TextStyles.Title3);
+        }
+        else
+        {
+            Typography.Draw(drawList, new Vector2(textLeft, top),
+                Typography.FitText(result, textWidth, TextStyles.Title3), resultInk, TextStyles.Title3);
+        }
 
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
+        top += title3;
+        var limitLine = tonight.HasLimit
+            ? texts.Number(L.Casino.SelfLimitCurrent, tonight.Limit)
+            : Loc.T(L.Casino.TonightNoLimit);
+        Typography.Draw(drawList, new Vector2(textLeft, top),
+            Typography.FitText(limitLine, textWidth, TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
+        if (pending.Length > 0)
+        {
+            Typography.Draw(drawList, new Vector2(textLeft, top + footnote),
+                Typography.FitText(pending, textWidth, TextStyles.Footnote), ui.Accent, TextStyles.Footnote);
+        }
+
+        return max.Y;
     }
 
-    private void DrawTonightCard(CasinoStateDto state, float scale)
+    private string PendingLine(CasinoStateDto state)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var inset = 14f * scale;
-        var heading = Loc.T(L.Casino.NetHeading);
-        var tonight = state.NetLossToday switch
+        if (state.PendingRaiseAtUnix is null)
         {
-            > 0 => Loc.T(L.Casino.TonightDown, NumberText.Group(state.NetLossToday)),
-            < 0 => Loc.T(L.Casino.TonightUp, NumberText.Group(-state.NetLossToday)),
-            _ => Loc.T(L.Casino.TonightEven),
-        };
-        var room = Loc.T(L.Casino.RoomLeft, NumberText.Group(Math.Max(0, state.LossHeadroom)));
-        var headingSize = Typography.Measure(heading, TextStyles.FootnoteEmphasized);
-        var tonightSize = Typography.Measure(tonight, TextStyles.SubheadlineEmphasized);
-        var roomSize = Typography.Measure(room, TextStyles.Footnote);
-        var height = headingSize.Y + tonightSize.Y + roomSize.Y + 34f * scale;
+            return string.Empty;
+        }
+
+        return state.PendingRaiseLimit is long raise
+            ? texts.Number(L.Casino.PendingRaise, raise)
+            : Loc.T(L.Casino.PendingRemove);
+    }
+
+    private float DrawLimitPicker(ImDrawListPtr drawList, Vector2 origin, float width, CasinoStateDto state,
+        float scale)
+    {
+        if (limitChoice is not long chosen)
+        {
+            return DrawLimitOff(drawList, origin, width, state, scale);
+        }
+
+        var pad = PickerPad * scale;
+        var stepper = StepperSize * scale;
+        var valueStyle = TextStyles.WidgetDisplayCompact;
+        var valueHeight = Typography.LineHeight(valueStyle);
+        var footnote = Typography.LineHeight(TextStyles.Footnote);
+        var lineGap = PickerLineGap * scale;
+        var sliderHeight = SliderRowHeight * scale;
+        var buttonHeight = PickerButtonHeight * scale;
+        var hasSelf = state.SelfLossLimit is not null;
+        var flash = Environment.TickCount64 - limitsSavedAtTick < SavedFlashMilliseconds;
+        var height = pad * 2f + MathF.Max(stepper, valueHeight) + footnote + lineGap + sliderHeight + footnote +
+                     lineGap + footnote + lineGap + buttonHeight;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        var rounding = 16f * scale;
-        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.Palette.CardFill));
-        Material.EdgeSquircle(drawList, min, max, rounding, scale);
-        Typography.Draw(drawList, new Vector2(min.X + inset, min.Y + 10f * scale), heading, ui.MutedInk,
-            TextStyles.FootnoteEmphasized);
-        Typography.Draw(drawList, new Vector2(min.X + inset, min.Y + headingSize.Y + 14f * scale), tonight,
-            ui.TitleInk, TextStyles.SubheadlineEmphasized);
-        Typography.Draw(drawList,
-            new Vector2(min.X + inset, min.Y + headingSize.Y + tonightSize.Y + 20f * scale), room, ui.MutedInk,
+        CoinArt.Card(drawList, ui, min, max, scale);
+
+        var ceiling = CasinoLimitPicker.CeilingFor(state.DailyBuyInCap);
+        var left = min.X + pad;
+        var right = max.X - pad;
+        var rowCenterY = min.Y + pad + MathF.Max(stepper, valueHeight) * 0.5f;
+        if (DrawStepper(drawList, new Vector2(left + stepper * 0.5f, rowCenterY), FontAwesomeIcon.Minus,
+                chosen > CasinoLimitPicker.Floor, "minus"))
+        {
+            chosen = CasinoLimitPicker.Nudge(chosen, -1, ceiling);
+        }
+
+        if (DrawStepper(drawList, new Vector2(right - stepper * 0.5f, rowCenterY), FontAwesomeIcon.Plus,
+                chosen < ceiling, "plus"))
+        {
+            chosen = CasinoLimitPicker.Nudge(chosen, 1, ceiling);
+        }
+
+        var valueText = NumberText.Group(chosen);
+        var valueWidthLimit = right - left - stepper * 2f - Metrics.Space.Md * scale * 2f;
+        var fittedStyle = WidgetText.FitStyle(valueText, valueStyle,
+            MathF.Max(1f, valueWidthLimit - CurrencyGlyph.Reserve(valueHeight)), true);
+        var fittedHeight = Typography.LineHeight(fittedStyle);
+        var glyphReserve = CurrencyGlyph.Reserve(fittedHeight);
+        var valueWidth = glyphReserve + WidgetText.TabularWidth(valueText, fittedStyle);
+        var valueLeft = (left + right - valueWidth) * 0.5f;
+        CurrencyGlyph.Draw(drawList, CurrencyKind.Chips,
+            new Vector2(valueLeft + fittedHeight * CurrencyGlyph.GlyphFraction * 0.5f, rowCenterY),
+            fittedHeight * CurrencyGlyph.GlyphFraction);
+        WidgetText.Tabular(drawList, new Vector2(valueLeft + glyphReserve, rowCenterY - fittedHeight * 0.5f),
+            valueText, ui.TitleInk, fittedStyle);
+        var top = min.Y + pad + MathF.Max(stepper, valueHeight);
+        Typography.DrawCentered(drawList, new Vector2((left + right) * 0.5f, top + footnote * 0.5f),
+            texts.Number(L.Casino.LimitCoinEquivalent, CasinoChipLots.CoinsFor(chosen)), ui.MutedInk,
             TextStyles.Footnote);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + 8f * scale));
+        top += footnote + lineGap;
+
+        var sliderRow = new Rect(new Vector2(left, top), new Vector2(right, top + sliderHeight));
+        var slider = Slider.Draw(LimitSliderId, sliderRow, CasinoLimitPicker.FractionOf(chosen, ceiling), theme,
+            Metrics.Space.Sm * scale, Metrics.Space.Sm * scale);
+        if (slider.Dragging || slider.Released)
+        {
+            chosen = CasinoLimitPicker.FromFraction(slider.Value, ceiling);
+        }
+
+        top += sliderHeight;
+        Typography.Draw(drawList, new Vector2(left, top), NumberText.Group(CasinoLimitPicker.Floor), ui.MutedInk,
+            TextStyles.Footnote);
+        var ceilingText = NumberText.Group(ceiling);
+        Typography.Draw(drawList, new Vector2(right - Typography.Measure(ceilingText, TextStyles.Footnote).X, top),
+            ceilingText, ui.MutedInk, TextStyles.Footnote);
+        top += footnote + lineGap;
+
+        limitChoice = chosen;
+        var change = CasinoLimitPicker.ChangeOf(chosen, state.SelfLossLimit, state.PendingRaiseAtUnix is not null,
+            state.PendingRaiseLimit);
+        var changeText = ChangeLine(change, flash, out var changeInk);
+        Typography.DrawCentered(drawList, new Vector2((left + right) * 0.5f, top + footnote * 0.5f),
+            Typography.FitText(changeText, right - left, TextStyles.Footnote), changeInk, TextStyles.Footnote);
+        top += footnote + lineGap;
+
+        var gap = CardGap * scale;
+        var secondaryLabel = hasSelf ? Loc.T(L.Casino.LimitRemove) : Loc.T(L.Common.Cancel);
+        var secondaryWidth = CasinoArt.CapsuleWidth(secondaryLabel, buttonHeight, TextStyles.Headline);
+        var saveRect = new Rect(new Vector2(left, top), new Vector2(right - secondaryWidth - gap, top + buttonHeight));
+        var canSave = change != LimitChange.None && !casino.SavingLimits;
+        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("save"), saveRect, Loc.T(L.Casino.SelfLimitSave),
+                CasinoCapsuleTone.Filled, canSave, TextStyles.Headline))
+        {
+            casino.SetLimits(chosen);
+        }
+
+        var secondaryRect = new Rect(new Vector2(right - secondaryWidth, top), new Vector2(right, top + buttonHeight));
+        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("secondary"), secondaryRect, secondaryLabel,
+                CasinoCapsuleTone.Quiet, !casino.SavingLimits, TextStyles.Headline))
+        {
+            if (hasSelf)
+            {
+                AskRemoveLimit();
+            }
+            else
+            {
+                limitChoice = null;
+            }
+        }
+
+        return max.Y;
     }
 
-    private void DrawHouseLimitCard(float scale)
+    private string ChangeLine(LimitChange change, bool flash, out Vector4 ink)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var inset = 14f * scale;
-        var title = Loc.T(L.Casino.HouseLimitTitle);
-        var line = Loc.T(L.Casino.HouseLimitLine,
-            NumberText.Group(CasinoLimits.HouseDailyLossLimit));
-        var titleSize = Typography.Measure(title, TextStyles.FootnoteEmphasized);
-        var lineBlock = Typography.MeasureWrappedBlock(line, TextStyles.Footnote, width - inset * 2f);
-        var height = titleSize.Y + lineBlock.Y + 26f * scale;
-        var min = origin;
+        if (flash && change == LimitChange.None)
+        {
+            ink = ui.Accent;
+            return Loc.T(L.Casino.SelfLimitSaved);
+        }
+
+        switch (change)
+        {
+            case LimitChange.StartsNow:
+                ink = ui.Accent;
+                return Loc.T(L.Casino.LimitStartsNow);
+            case LimitChange.NextDay:
+                ink = AccentRing.Orange;
+                return Loc.T(L.Casino.LimitNextDay);
+            default:
+                ink = ui.MutedInk;
+                return Loc.T(L.Casino.LimitUnchanged);
+        }
+    }
+
+    private float DrawLimitOff(ImDrawListPtr drawList, Vector2 origin, float width, CasinoStateDto state,
+        float scale)
+    {
+        var pad = PickerPad * scale;
+        var buttonHeight = PickerButtonHeight * scale;
+        var pending = PendingLine(state);
+        var body = pending.Length > 0 ? pending : Loc.T(L.Casino.LimitOffBody);
+        var title = Loc.T(L.Casino.LimitOffTitle);
+        var panelHeight = CoinArt.PanelHeight(title, body, width, scale);
+        var height = panelHeight + buttonHeight + pad;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        var rounding = 16f * scale;
-        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.Palette.CardFill));
-        Material.EdgeSquircle(drawList, min, max, rounding, scale);
-        Typography.Draw(drawList, new Vector2(min.X + inset, min.Y + 10f * scale), title, ui.Accent,
-            TextStyles.FootnoteEmphasized);
-        Typography.DrawWrappedLeft(new Vector2(min.X + inset, min.Y + titleSize.Y + 16f * scale), line,
-            ui.MutedInk, TextStyles.Footnote, width - inset * 2f);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + 8f * scale));
+        CoinArt.Panel(drawList, ui, origin, width, height, FontAwesomeIcon.HandHoldingHeart, AccentRing.Rose,
+            title, body, scale);
+        var buttonTop = origin.Y + panelHeight;
+        var rect = new Rect(new Vector2(origin.X + pad, buttonTop), new Vector2(max.X - pad, buttonTop + buttonHeight));
+        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("set"), rect, Loc.T(L.Casino.LimitSetAction),
+                CasinoCapsuleTone.Tinted, !casino.SavingLimits, TextStyles.Headline))
+        {
+            limitChoice = CasinoLimitPicker.Snap(CasinoLimits.SuggestedLimit,
+                CasinoLimitPicker.CeilingFor(state.DailyBuyInCap));
+        }
+
+        return max.Y;
     }
 
-    private void DrawSelfLimitEditor(CasinoStateDto state, float scale)
+    private bool DrawStepper(ImDrawListPtr drawList, Vector2 center, FontAwesomeIcon icon, bool enabled, string id)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var width = ScrollLayout.StableContentWidth();
-        ui.SectionHeading(Loc.T(L.Casino.SelfLimitHeading), 4f);
-
-        var effective = state.LossLimit > 0 ? state.LossLimit : CasinoLimits.HouseDailyLossLimit;
-        var currentLine = Loc.T(L.Casino.SelfLimitCurrent, NumberText.Group(effective));
-        var currentSize = Typography.Measure(currentLine, TextStyles.Subheadline);
-        var currentOrigin = ImGui.GetCursorScreenPos();
-        Typography.Draw(drawList, currentOrigin, currentLine, ui.TitleInk, TextStyles.Subheadline);
-        ImGui.Dummy(new Vector2(width, currentSize.Y + 6f * scale));
-
-        var pendingRaise = state.PendingRaiseAtUnix is not null
-            ? state.PendingRaiseLimit ?? CasinoLimits.HouseDailyLossLimit
-            : 0;
-        if (pendingRaise > 0)
+        var size = StepperSize * UiScale.Current;
+        var half = new Vector2(size * 0.5f, size * 0.5f);
+        var hovered = enabled && UiInteract.Hover(center - half, center + half);
+        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var factor = PressFx.Scale(ImGui.GetID(id), pressed, Motion.PressScaleControl);
+        var alpha = hovered ? StepperHoverAlpha : StepperAlpha;
+        drawList.AddCircleFilled(center, size * 0.5f * factor,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, enabled ? alpha : alpha * 0.5f)), 32);
+        AppSkin.Icon(drawList, center, IconGlyph.Of(icon), enabled ? ui.TitleInk : ui.MutedInk, 0.8f);
+        if (hovered)
         {
-            var pending = Loc.T(L.Casino.PendingRaise, NumberText.Group(pendingRaise));
-            var pendingOrigin = ImGui.GetCursorScreenPos();
-            var pendingSize = Typography.Measure(pending, TextStyles.Footnote);
-            Typography.Draw(drawList, pendingOrigin, pending, ui.Accent, TextStyles.Footnote);
-            ImGui.Dummy(new Vector2(width, pendingSize.Y + 6f * scale));
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        var fieldOrigin = ImGui.GetCursorScreenPos();
-        var fieldWidth = width * 0.42f;
-        var fieldMin = fieldOrigin;
-        var fieldMax = new Vector2(fieldOrigin.X + fieldWidth, fieldOrigin.Y + LimitFieldHeight * scale);
-        Squircle.Fill(drawList, fieldMin, fieldMax, Metrics.Radius.Sm * scale, ImGui.GetColorU32(ui.FieldSurface));
-        ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + 10f * scale,
-            (fieldMin.Y + fieldMax.Y) * 0.5f - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(fieldWidth - 20f * scale);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
-        using (ImRaii.PushColor(ImGuiCol.Text, ui.TitleInk))
+        return UiInteract.Click(center - half, center + half, hovered);
+    }
+
+    private void AskRemoveLimit()
+    {
+        confirm.Ask(new ConfirmRequest
         {
-            ImGui.InputText("##casinoLimit", ref limitsBuffer, 5,
-                ImGuiInputTextFlags.CharsDecimal | ImGuiInputTextFlags.AutoSelectAll);
-        }
+            Title = Loc.T(L.Casino.LimitRemoveTitle),
+            Message = Loc.T(L.Casino.LimitRemoveBody),
+            ConfirmLabel = Loc.T(L.Casino.LimitRemove),
+            CancelLabel = Loc.T(L.Common.Cancel),
+            Danger = true,
+            Confirm = RemoveLimit,
+        });
+    }
 
-        var typed = long.TryParse(limitsBuffer, System.Globalization.NumberStyles.Integer, Loc.Culture,
-            out var value)
-            ? value
-            : 0;
-        var currentSelf = state.SelfLossLimit ?? CasinoLimits.HouseDailyLossLimit;
-        var valid = typed >= CasinoLimits.SelfLimitFloor && typed <= CasinoLimits.HouseDailyLossLimit;
-        var changed = typed != currentSelf && typed != pendingRaise;
-        var saveRect = new Rect(
-            new Vector2(fieldMax.X + 10f * scale, fieldOrigin.Y + (LimitFieldHeight - LimitPillHeight) * 0.5f * scale),
-            new Vector2(fieldOrigin.X + width, fieldOrigin.Y + (LimitFieldHeight + LimitPillHeight) * 0.5f * scale));
-        var canSave = valid && changed && !casino.SavingLimits;
-        if (AppSkin.PillButton(saveRect, Loc.T(L.Casino.SelfLimitSave), true, canSave, theme))
-        {
-            casino.SetLimits(typed == CasinoLimits.HouseDailyLossLimit ? null : typed);
-        }
-
-        ImGui.SetCursorScreenPos(fieldOrigin);
-        ImGui.Dummy(new Vector2(width, LimitFieldHeight * scale + 8f * scale));
-
-        var hint = Loc.T(L.Casino.SelfLimitHint,
-            NumberText.Group(CasinoLimits.SelfLimitFloor),
-            NumberText.Group(CasinoLimits.HouseDailyLossLimit));
-        var hintOrigin = ImGui.GetCursorScreenPos();
-        var hintBlock = Typography.MeasureWrappedBlock(hint, TextStyles.Footnote, width);
-        Typography.DrawWrappedLeft(hintOrigin, hint, ui.MutedInk, TextStyles.Footnote, width);
-        ImGui.Dummy(new Vector2(width, hintBlock.Y + 6f * scale));
-
-        if (Environment.TickCount64 - limitsSavedAtTick < SavedFlashMilliseconds)
-        {
-            var saved = Loc.T(L.Casino.SelfLimitSaved);
-            var savedOrigin = ImGui.GetCursorScreenPos();
-            var savedSize = Typography.Measure(saved, TextStyles.FootnoteEmphasized);
-            Typography.Draw(drawList, savedOrigin, saved, ui.Accent, TextStyles.FootnoteEmphasized);
-            ImGui.Dummy(new Vector2(width, savedSize.Y + 4f * scale));
-        }
+    private void RemoveLimit()
+    {
+        casino.SetLimits(null);
     }
 }

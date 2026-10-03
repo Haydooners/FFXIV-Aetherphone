@@ -10,11 +10,14 @@ using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Casino;
 
 internal sealed partial class CasinoApp : IPhoneApp
 {
+    private const int RulesButton = 0;
+
     public string Id => "casino";
     public string DisplayName => Loc.T(L.Apps.Casino);
     public string Glyph => "Sa";
@@ -45,11 +48,15 @@ internal sealed partial class CasinoApp : IPhoneApp
     private readonly GameRulesSheet rulesSheet = new();
     private readonly TabBar bottomNav = new();
     private readonly TabItem[] navTabs = new TabItem[4];
+    private readonly NavBarButton[] navButtons = new NavBarButton[1];
+    private readonly PullToRefresh lobbyRefresh = new();
+    private readonly CasinoTextCache texts = new();
     private readonly AppSkin ui = new(AppPalettes.Casino);
     private readonly ViewRouter<CasinoRoute> router;
     private readonly RouterDraw<CasinoRoute> drawView;
     private readonly Action popRoute;
     private readonly Action openLimits;
+    private readonly Action refreshFloor;
     private readonly Action<string> openTable;
     private readonly Action<string> openDoorFromRow;
 
@@ -96,6 +103,7 @@ internal sealed partial class CasinoApp : IPhoneApp
         drawView = DrawView;
         popRoute = PopRoute;
         openLimits = OpenLimits;
+        refreshFloor = RefreshFloor;
     }
 
     public void OnOpened()
@@ -115,14 +123,10 @@ internal sealed partial class CasinoApp : IPhoneApp
         tab = CasinoTab.Lobby;
         rulesSheet.Close();
         ResetLimitsEditor();
+        ResetLobby();
         jackpotRail.Snap(Core.Casino.CasinoChipLots.CoinsFor(casino.Jackpot));
         historyLoadFailed = false;
-        history.Invalidate();
-        coins.RefreshNow();
-        casino.RefreshNow();
-        casinoRooms.RefreshNow();
-        casinoTables.RefreshNow();
-        casinoSpin.RefreshNow();
+        RefreshFloor();
         casinoPlay.RecoverPendingRound();
         ConsumeLaunch();
     }
@@ -143,6 +147,17 @@ internal sealed partial class CasinoApp : IPhoneApp
         pendingTableId = string.Empty;
         rulesSheet.Close();
         ResetLimitsEditor();
+    }
+
+    private void RefreshFloor()
+    {
+        lobbyHistoryFailed = false;
+        history.Invalidate();
+        coins.RefreshNow();
+        casino.RefreshNow();
+        casinoRooms.RefreshNow();
+        casinoTables.RefreshNow();
+        casinoSpin.RefreshNow();
     }
 
     private void ConsumeLaunch()
@@ -177,16 +192,19 @@ internal sealed partial class CasinoApp : IPhoneApp
         if (!session.IsSignedIn)
         {
             TourHolds.Hold(Id);
-            ui.Body(context.Content);
-            AppHeader.Draw(context, DisplayName, navigation.Back);
-            var top = context.Content.Min.Y + AppHeader.Height * scale;
-            var body = new Rect(new Vector2(context.Content.Min.X, top), context.Content.Max);
-            EmptyState.Draw(body, ui, FontAwesomeIcon.UserLock, Loc.T(L.Casino.SignInTitle),
-                Loc.T(L.Casino.SignInHint));
+            DrawSignedOut(context);
             return;
         }
 
-        TourHolds.Release(Id);
+        if (casino.State is null)
+        {
+            TourHolds.Hold(Id);
+        }
+        else
+        {
+            TourHolds.Release(Id);
+        }
+
         coins.EnsureFresh();
         casino.EnsureFresh();
         casinoRooms.EnsureFresh();
@@ -208,6 +226,16 @@ internal sealed partial class CasinoApp : IPhoneApp
         {
             OpenGame(rulesSheet.GameId);
         }
+    }
+
+    private void DrawSignedOut(in PhoneContext context)
+    {
+        ui.Body(context.Content);
+        var navBar = AppHeader.BeginLargeTitle(context, false);
+        Coin.CoinArt.StateScreen(ImGui.GetWindowDrawList(), ui, navBar.Body, FontAwesomeIcon.UserLock,
+            Loc.T(L.Casino.SignInTitle), Loc.T(L.Casino.SignInHint), string.Empty, 0, UiScale.Current);
+        AppHeader.EndLargeTitle(in navBar, context, "casino.signedout.nav", DisplayName, NavBarStyle.From(ui),
+            ReadOnlySpan<NavBarButton>.Empty);
     }
 
     private void DrawView(CasinoRoute route, Rect area, int depth)
@@ -238,14 +266,6 @@ internal sealed partial class CasinoApp : IPhoneApp
                 AppHeader.Draw(context, Loc.T(L.Casino.GameBingo), popRoute);
                 bingo.Draw(body, ui);
                 break;
-            case CasinoScreen.Tables:
-                AppHeader.Draw(context, Loc.T(L.Casino.TablesTitle), popRoute);
-                browser.Draw(body, ui);
-                break;
-            case CasinoScreen.TableDoor:
-                AppHeader.Draw(context, Loc.T(L.Casino.DoorTitle), popRoute);
-                tableDoor.Draw(body, ui);
-                break;
             case CasinoScreen.Table:
                 AppHeader.Draw(context, Loc.T(L.Casino.GameBlackjack), popRoute);
                 blackjack.Draw(body, ui);
@@ -256,50 +276,107 @@ internal sealed partial class CasinoApp : IPhoneApp
                 break;
             case CasinoScreen.Cabinet:
                 AppHeader.Draw(context, Loc.T(GameName(route.GameId)), popRoute);
-                DrawPlaceholder(body, FontAwesomeIcon.Hammer);
+                EmptyState.Draw(body, ui, FontAwesomeIcon.Hammer, Loc.T(L.Casino.CabinetSoonTitle),
+                    Loc.T(L.Casino.CabinetSoonHint));
                 break;
-            case CasinoScreen.Limits:
-                AppHeader.Draw(context, Loc.T(L.Casino.LimitsRow), popRoute);
-                DrawLimits(body);
-                break;
-            case CasinoScreen.History:
-                AppHeader.Draw(context, Loc.T(L.Casino.HistoryRow), popRoute);
-                DrawHistory(body);
-                break;
-            case CasinoScreen.Fairness:
-                AppHeader.Draw(context, Loc.T(L.Casino.FairnessRow), popRoute);
-                DrawFairness(body);
-                break;
-            case CasinoScreen.RoundDetail:
-                AppHeader.Draw(context, Loc.T(L.Casino.RoundDetailTitle), popRoute);
-                DrawRoundDetail(body, route.RoundId);
+            case CasinoScreen.Floor:
+                DrawRoot(context, area);
                 break;
             default:
-                DrawFloorHeader(context, area);
-                DrawFloor(body);
+                DrawPushedPage(context, route, depth);
                 break;
         }
     }
 
-    private void DrawFloorHeader(in PhoneContext context, Rect area)
+    private void DrawPushedPage(in PhoneContext context, CasinoRoute route, int depth)
     {
-        var scale = UiScale.Current;
-        AppHeader.Draw(context, "casino.header", TabTitle(), 44f * scale, navigation.Back);
-        var rulesCenter = new Vector2(area.Max.X - 22f * scale, area.Min.Y + AppHeader.Height * scale * 0.5f);
-        if (ui.IconButton(rulesCenter, 14f * scale, IconGlyph.Of(FontAwesomeIcon.QuestionCircle), ui.MutedInk,
-                AppSkin.Transparent, 0.9f, Loc.T(L.Conduct.Eyebrow), HoverLabelSide.Below))
+        var navBar = AppHeader.BeginLargeTitle(context);
+        switch (route.Screen)
         {
-            conduct.ShowRules(Id);
+            case CasinoScreen.Tables:
+                browser.Draw(navBar.Body, ui);
+                break;
+            case CasinoScreen.TableDoor:
+                tableDoor.Draw(navBar.Body, ui);
+                break;
+            case CasinoScreen.Limits:
+                DrawLimits(navBar.Body);
+                break;
+            case CasinoScreen.History:
+                DrawHistory(navBar.Body);
+                break;
+            case CasinoScreen.Fairness:
+                DrawFairness(navBar.Body);
+                break;
+            case CasinoScreen.RoundDetail:
+                DrawRoundDetail(navBar.Body, route.RoundId);
+                break;
         }
+
+        AppHeader.EndLargeTitle(in navBar, context, "casino.page.nav", RouteTitle(route), NavBarStyle.From(ui),
+            ReadOnlySpan<NavBarButton>.Empty, BackTitle(depth), popRoute);
     }
 
-    private string TabTitle() => tab switch
+    private void DrawRoot(in PhoneContext context, Rect area)
+    {
+        var scale = UiScale.Current;
+        using (TabBar.ReserveContent(scale))
+        {
+            var navBar = AppHeader.BeginLargeTitle(context, false);
+            switch (tab)
+            {
+                case CasinoTab.Games:
+                    DrawGamesTab(navBar.Body);
+                    break;
+                case CasinoTab.Live:
+                    DrawLiveTab(navBar.Body);
+                    break;
+                case CasinoTab.Cashier:
+                    DrawCashierTab(navBar.Body);
+                    break;
+                default:
+                    DrawLobbyTab(navBar.Body);
+                    break;
+            }
+
+            navButtons[RulesButton] = new NavBarButton(PhoneIcons.ShieldCheck, Loc.T(L.Conduct.Eyebrow));
+            var pressed = AppHeader.EndLargeTitle(in navBar, context, "casino.root.nav", TabTitle(tab),
+                NavBarStyle.From(ui), navButtons);
+            if (pressed == RulesButton)
+            {
+                conduct.ShowRules(Id);
+            }
+        }
+
+        DrawFloorTabBar(area);
+    }
+
+    private string TabTitle(CasinoTab target) => target switch
     {
         CasinoTab.Games => Loc.T(L.Casino.GamesHeading),
         CasinoTab.Live => Loc.T(L.Casino.TabLive),
         CasinoTab.Cashier => Loc.T(L.Casino.Cashier),
         _ => DisplayName,
     };
+
+    private string RouteTitle(CasinoRoute route) => route.Screen switch
+    {
+        CasinoScreen.Tables => Loc.T(L.Casino.TablesTitle),
+        CasinoScreen.TableDoor => Loc.T(L.Casino.DoorTitle),
+        CasinoScreen.Table => Loc.T(L.Casino.GameBlackjack),
+        CasinoScreen.Limits => Loc.T(L.Casino.LimitsRow),
+        CasinoScreen.History => Loc.T(L.Casino.HistoryRow),
+        CasinoScreen.Fairness => Loc.T(L.Casino.FairnessRow),
+        CasinoScreen.RoundDetail => Loc.T(L.Casino.RoundDetailTitle),
+        CasinoScreen.DailySpin => Loc.T(L.Casino.GameDailySpin),
+        CasinoScreen.Cabinet => Loc.T(GameName(route.GameId)),
+        _ => TabTitle(tab),
+    };
+
+    private string BackTitle(int depth)
+    {
+        return router.TryGetView(depth - 2, out var previous) ? RouteTitle(previous) : TabTitle(tab);
+    }
 
     private void DrawSlotsHeader(in PhoneContext context, Rect area)
     {
@@ -336,9 +413,16 @@ internal sealed partial class CasinoApp : IPhoneApp
         }
     }
 
-    private void DrawPlaceholder(Rect body, FontAwesomeIcon icon)
+    private void OpenHistory()
     {
-        EmptyState.Draw(body, ui, icon, Loc.T(L.Casino.CabinetSoonTitle), Loc.T(L.Casino.CabinetSoonHint));
+        historyLoadFailed = false;
+        history.Invalidate();
+        router.Push(new CasinoRoute(CasinoScreen.History));
+    }
+
+    private void OpenFairness()
+    {
+        router.Push(new CasinoRoute(CasinoScreen.Fairness));
     }
 
     private void PopRoute()

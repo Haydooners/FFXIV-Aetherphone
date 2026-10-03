@@ -1,164 +1,200 @@
+using Aetherphone.Apps.Coin;
 using Aetherphone.Core;
+using Aetherphone.Core.Apps;
 using Aetherphone.Core.Coins;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Casino;
 
 internal sealed partial class CasinoApp
 {
-    private const float ConvertRowHeight = 66f;
-    private const float EarnRowsShown = 4;
+    private const string CoinAppId = "coin";
+    private const int EarnRowsShown = 4;
+    private const float ExchangePad = 18f;
+    private const float ExchangeDisc = 40f;
+    private const float ExchangeArrow = 30f;
+    private const float ExchangeButtonHeight = 40f;
+    private const float ExchangeRowGap = 14f;
+    private const float ExchangeArrowAlpha = 0.10f;
 
     private void DrawCashierTab(Rect body)
     {
         var scale = UiScale.Current;
-        using var surface = AppSurface.Begin(body);
-
-        var wallet = coins.Wallet;
-        if (wallet is not null)
+        using (ImRaii.PushId("casino.cashier"))
+        using (AppSurface.Begin(body))
         {
-            CoinHero.Draw(wallet, ui.Palette);
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
-        }
-
-        DrawStakeNotice(scale);
-
-        ui.SectionHeading(Loc.T(L.Casino.ConvertHeading), 4f);
-        DrawConvertRow(true, scale);
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        DrawConvertRow(false, scale);
-
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
-        DrawRateEquation(scale);
-
-        if (wallet is not null)
-        {
-            ui.SectionHeading(Loc.T(L.Coin.EarnHeader), 4f);
-            DrawEarnPreview(wallet, scale);
-            if (DrawNavRow(FontAwesomeIcon.Coins, L.Casino.OpenWalletRow, L.Casino.OpenWalletRowHint, scale))
+            var drawList = ImGui.GetWindowDrawList();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            var cursorY = DrawStakeNotice(origin, width, scale);
+            cursorY = DrawExchange(drawList, new Vector2(origin.X, cursorY), width, scale);
+            var state = casino.State;
+            if (state is not null)
             {
-                navigation.Open("coin");
+                var tonight = CasinoTonight.From(state);
+                cursorY = tonight.Reached
+                    ? DrawLimitReached(drawList, new Vector2(origin.X, cursorY + CardGap * scale), width, scale)
+                    : DrawTonight(drawList, new Vector2(origin.X, cursorY + CardGap * scale), width, tonight, scale);
             }
 
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
+            var wallet = coins.Wallet;
+            if (wallet is { Rules.Length: > 0 })
+            {
+                var earnTop = SectionTitle(drawList, new Vector2(origin.X, cursorY), width,
+                    Loc.T(L.Coin.EarnHeader), scale);
+                CoinArt.Reserve(origin, width, earnTop);
+                DrawEarnPreview(wallet);
+                cursorY = ImGui.GetCursorScreenPos().Y;
+            }
+
+            if (navigation.IsAvailable(CoinAppId))
+            {
+                cursorY = DrawWalletLink(drawList, new Vector2(origin.X, cursorY + CardGap * scale), width, scale);
+            }
+
+            cursorY = DrawRecordsCard(drawList, new Vector2(origin.X, cursorY), width, scale);
+            CoinArt.Reserve(origin, width, cursorY + CoinArt.BottomPad * scale);
         }
-
-        DrawRecordsRows(scale);
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
     }
 
-    private void DrawRateEquation(float scale)
+    private float DrawExchange(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        var chipsText = NumberText.Group(Core.Casino.CasinoChipLots.ChipPerCoin);
-        var coinsText = NumberText.Group(1L);
-        var equalsText = " = ";
-        var chipsSize = CurrencyGlyph.MeasureAmount(chipsText, TextStyles.Caption1);
-        var equalsSize = Typography.Measure(equalsText, TextStyles.Caption1);
-        var coinsSize = CurrencyGlyph.MeasureAmount(coinsText, TextStyles.Caption1);
-        var x = origin.X + (width - chipsSize.X - equalsSize.X - coinsSize.X) * 0.5f;
-        x += CurrencyGlyph.DrawAmount(drawList, new Vector2(x, origin.Y), chipsText, CurrencyKind.Chips,
-            ui.MutedInk, TextStyles.Caption1).X;
-        Typography.Draw(drawList, new Vector2(x, origin.Y), equalsText, ui.MutedInk, TextStyles.Caption1);
-        x += equalsSize.X;
-        CurrencyGlyph.DrawAmount(drawList, new Vector2(x, origin.Y), coinsText, CurrencyKind.Coins, ui.MutedInk,
-            TextStyles.Caption1);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, chipsSize.Y + Metrics.Space.Md * scale));
-    }
-
-    private void DrawConvertRow(bool buying, float scale)
-    {
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        var height = ConvertRowHeight * scale;
-        var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var rounding = Metrics.Radius.Card * scale;
-        ui.Card(drawList, row.Min, row.Max, rounding);
+        var pad = ExchangePad * scale;
+        var disc = ExchangeDisc * scale;
+        var caption = Typography.LineHeight(TextStyles.Footnote);
+        var value = Typography.LineHeight(TextStyles.Title3);
+        var buttonHeight = ExchangeButtonHeight * scale;
+        var rowGap = ExchangeRowGap * scale;
+        var height = pad * 2f + disc + rowGap * 0.5f + caption + value + rowGap + caption + rowGap + buttonHeight;
+        var min = origin;
+        var max = new Vector2(origin.X + width, origin.Y + height);
+        CoinArt.Card(drawList, ui, min, max, scale);
 
         var stack = casino.State?.Sitting?.Stack ?? 0;
-        var seated = stack > 0;
-        var inset = 14f * scale;
-        var icon = buying ? FontAwesomeIcon.ArrowRight : FontAwesomeIcon.ArrowLeft;
-        var iconCenter = new Vector2(row.Min.X + inset + 15f * scale, row.Center.Y);
-        drawList.AddCircleFilled(iconCenter, 15f * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.16f)), 32);
-        AppSkin.Icon(drawList, iconCenter, IconGlyph.Of(icon), ui.Accent, 0.8f);
+        var balance = coins.Wallet?.Balance ?? 0;
+        var columnWidth = (width - pad * 2f - ExchangeArrow * scale) * 0.5f;
+        var leftCenter = min.X + pad + columnWidth * 0.5f;
+        var rightCenter = max.X - pad - columnWidth * 0.5f;
+        var discY = min.Y + pad + disc * 0.5f;
+        DrawExchangeColumn(drawList, CurrencyKind.Coins, new Vector2(leftCenter, discY), columnWidth,
+            Loc.T(L.Casino.WalletRow), NumberText.Group(balance), ui.TitleInk, scale);
+        DrawExchangeColumn(drawList, CurrencyKind.Chips, new Vector2(rightCenter, discY), columnWidth,
+            Loc.T(L.Casino.ChipsRow), NumberText.Group(stack), stack > 0 ? ui.Accent : ui.MutedInk, scale);
 
-        var pillHeight = 34f * scale;
-        var pillMax = new Vector2(row.Max.X - inset, row.Center.Y + pillHeight * 0.5f);
-        var pillMin = new Vector2(pillMax.X - 96f * scale, row.Center.Y - pillHeight * 0.5f);
-        var textLeft = row.Min.X + inset + 40f * scale;
-        var textWidth = pillMin.X - 10f * scale - textLeft;
+        var arrowCenter = new Vector2(min.X + width * 0.5f, discY);
+        var arrowRadius = ExchangeArrow * scale * 0.5f;
+        drawList.AddCircleFilled(arrowCenter, arrowRadius,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, ExchangeArrowAlpha)), 28);
+        AppSkin.Icon(drawList, arrowCenter, IconGlyph.Of(FontAwesomeIcon.ExchangeAlt), ui.BodyInk, 0.7f);
 
-        var title = buying ? Loc.T(L.Casino.ConvertToChips) : Loc.T(L.Casino.ConvertToCoins);
-        Typography.Draw(drawList, new Vector2(textLeft, row.Min.Y + 14f * scale),
-            Typography.FitText(title, textWidth, TextStyles.SubheadlineEmphasized), ui.TitleInk,
-            TextStyles.SubheadlineEmphasized);
+        var rateTop = discY + disc * 0.5f + rowGap * 0.5f + caption + value + rowGap;
+        DrawRateEquation(drawList, new Vector2(min.X + width * 0.5f, rateTop));
 
-        var hint = buying
-            ? Loc.T(L.Casino.ConvertToChipsHint)
-            : (seated
-                ? Loc.T(L.Casino.ConvertToCoinsHint, NumberText.Group(stack))
-                : Loc.T(L.Casino.ConvertNoChips));
-        Typography.Draw(drawList, new Vector2(textLeft, row.Min.Y + 36f * scale),
-            Typography.FitText(hint, textWidth, TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
-
-        var label = buying ? Loc.T(L.Casino.BuyIn) : Loc.T(L.Casino.CashOut);
-        var enabled = !casino.MovingMoney && (buying || seated);
-        if (AppSkin.PillButton(new Rect(pillMin, pillMax), label, buying, enabled, theme))
+        var buttonTop = rateTop + caption + rowGap;
+        var seated = stack > 0 && casino.State?.Sitting is not null;
+        var busy = casino.MovingMoney;
+        var gap = CardGap * scale;
+        var buttonWidth = (width - pad * 2f - gap) * 0.5f;
+        var buyRect = new Rect(new Vector2(min.X + pad, buttonTop),
+            new Vector2(min.X + pad + buttonWidth, buttonTop + buttonHeight));
+        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("buy"), buyRect,
+                seated ? Loc.T(L.Casino.TopUp) : Loc.T(L.Casino.BuyIn), CasinoCapsuleTone.Filled, !busy,
+                TextStyles.Headline))
         {
-            if (buying)
-            {
-                cashier.Open();
-            }
-            else
-            {
-                AskCashOut(casino.State!.Sitting!);
-            }
+            cashier.Open();
         }
 
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
+        var cashRect = new Rect(new Vector2(max.X - pad - buttonWidth, buttonTop),
+            new Vector2(max.X - pad, buttonTop + buttonHeight));
+        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("cash"), cashRect, Loc.T(L.Casino.CashOut),
+                CasinoCapsuleTone.Tinted, seated && !busy, TextStyles.Headline))
+        {
+            AskCashOut(casino.State!.Sitting!);
+        }
+
+        return max.Y;
     }
 
-    private void DrawEarnPreview(Core.Aethernet.Contracts.CoinWalletDto wallet, float scale)
+    private void DrawExchangeColumn(ImDrawListPtr drawList, CurrencyKind kind, Vector2 discCenter, float width,
+        string label, string amount, Vector4 ink, float scale)
     {
-        var rules = wallet.Rules;
-        if (rules is null || rules.Length == 0)
-        {
-            return;
-        }
+        var disc = ExchangeDisc * scale;
+        CurrencyGlyph.Draw(drawList, kind, discCenter, disc);
+        var captionTop = discCenter.Y + disc * 0.5f + ExchangeRowGap * 0.5f * scale;
+        Typography.DrawCentered(drawList,
+            new Vector2(discCenter.X, captionTop + Typography.LineHeight(TextStyles.Footnote) * 0.5f),
+            Typography.FitText(label, width, TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
+        var fitted = Typography.FitText(amount, width, TextStyles.Title3);
+        var size = Typography.Measure(fitted, TextStyles.Title3);
+        Typography.Draw(drawList,
+            new Vector2(discCenter.X - size.X * 0.5f, captionTop + Typography.LineHeight(TextStyles.Footnote)), fitted,
+            ink, TextStyles.Title3);
+    }
 
+    private void DrawRateEquation(ImDrawListPtr drawList, Vector2 topCenter)
+    {
+        var chipsText = NumberText.Group(Core.Casino.CasinoChipLots.ChipPerCoin);
+        var coinsText = NumberText.Group(1L);
+        const string equalsText = " = ";
+        var chipsSize = CurrencyGlyph.MeasureAmount(chipsText, TextStyles.Footnote);
+        var equalsSize = Typography.Measure(equalsText, TextStyles.Footnote);
+        var coinsSize = CurrencyGlyph.MeasureAmount(coinsText, TextStyles.Footnote);
+        var x = topCenter.X - (chipsSize.X + equalsSize.X + coinsSize.X) * 0.5f;
+        x += CurrencyGlyph.DrawAmount(drawList, new Vector2(x, topCenter.Y), chipsText, CurrencyKind.Chips,
+            ui.MutedInk, TextStyles.Footnote).X;
+        Typography.Draw(drawList, new Vector2(x, topCenter.Y), equalsText, ui.MutedInk, TextStyles.Footnote);
+        x += equalsSize.X;
+        CurrencyGlyph.DrawAmount(drawList, new Vector2(x, topCenter.Y), coinsText, CurrencyKind.Coins, ui.MutedInk,
+            TextStyles.Footnote);
+    }
+
+    private void DrawEarnPreview(Core.Aethernet.Contracts.CoinWalletDto wallet)
+    {
+        var rules = wallet.Rules!;
         var shown = 0;
         for (var index = 0; index < rules.Length && shown < EarnRowsShown; index++)
         {
-            var rule = rules[index];
-            if (CoinGoals.IsComplete(rule))
+            if (CoinGoals.IsComplete(rules[index]))
             {
                 continue;
             }
 
-            CoinEarnRow.Draw(rule, ui.Palette);
+            CoinEarnRow.Draw(rules[index], ui.Palette);
             shown++;
         }
 
-        if (shown == 0)
+        for (var index = 0; index < rules.Length && shown == 0 && index < EarnRowsShown; index++)
         {
-            for (var index = 0; index < rules.Length && shown < EarnRowsShown; index++)
-            {
-                CoinEarnRow.Draw(rules[index], ui.Palette);
-                shown++;
-            }
+            CoinEarnRow.Draw(rules[index], ui.Palette);
+        }
+    }
+
+    private float DrawWalletLink(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
+    {
+        var rowHeight = RecordRowHeight * scale;
+        var max = new Vector2(origin.X + width, origin.Y + rowHeight);
+        var row = new Rect(origin, max);
+        CoinArt.Card(drawList, ui, origin, max, scale);
+        var hovered = CoinArt.RowInteraction(drawList, ui, row, scale);
+        var pad = Metrics.Space.Lg * scale;
+        var tile = RecordTile * scale;
+        var tileCenter = new Vector2(origin.X + pad + tile * 0.5f, row.Center.Y);
+        IconTile.DrawApp(drawList, CoinAppId, tileCenter, tile, IconTile.Surface(AppAccents.For(CoinAppId)));
+        var chevronCenter = new Vector2(max.X - pad - 4f * scale, row.Center.Y);
+        CasinoArt.Chevron(drawList, chevronCenter, ui.MutedInk);
+        CoinArt.Labels(drawList, tileCenter.X + tile * 0.5f + CoinArt.TextGap * scale,
+            chevronCenter.X - CoinArt.ValueGap * scale, row.Center.Y, Loc.T(L.Casino.OpenWalletRow),
+            Loc.T(L.Casino.OpenWalletRowHint), ui.TitleInk, ui.MutedInk, scale);
+        if (UiInteract.Click(origin, max, hovered))
+        {
+            navigation.Open(CoinAppId);
         }
 
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
+        return max.Y;
     }
 }
