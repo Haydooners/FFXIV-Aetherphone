@@ -252,7 +252,7 @@ internal sealed partial class CalendarApp
         editGroupIsNew = false;
         editGroupId = group.Id;
         editGroupName = group.Name;
-        editGroupColor = Math.Max(0, group.ColorIndex);
+        editGroupColor = group.ColorIndex;
         editGroupInApp = group.ShowInApp;
         editGroupInWidget = group.ShowInWidget;
         Push(CalendarScreen.EditGroup);
