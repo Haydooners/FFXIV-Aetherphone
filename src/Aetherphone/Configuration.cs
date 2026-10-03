@@ -509,6 +509,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool CalendarGameEventsInApp { get; set; } = true;
     public bool CalendarGameEventsInWidget { get; set; } = true;
     public List<PhoneNote> Notes { get; set; } = new();
+    public List<PhoneNote> RecentlyDeletedNotes { get; set; } = new();
     public List<ShortcutEntry> Shortcuts { get; set; } = new();
     public List<string> CustomShortcutIconIds { get; set; } = new();
     public List<ReminderItem> Reminders { get; set; } = new();
