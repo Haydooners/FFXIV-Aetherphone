@@ -53,6 +53,7 @@ internal sealed partial class MarketApp
         alertCheapest = snapshot?.Min(alertHq) ?? 0;
         var start = alertCheapest > 0 ? alertCheapest : chartMedianWeek;
         alertPrice = start > 0 ? start.ToString(CultureInfo.InvariantCulture) : string.Empty;
+        alertExplain.Reset();
         alertSheet.Open();
     }
 

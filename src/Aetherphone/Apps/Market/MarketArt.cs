@@ -232,21 +232,28 @@ internal static class MarketArt
 
         var topColor = ImGui.GetColorU32(top);
         var bottomColor = ImGui.GetColorU32(bottom);
-        var uv = ImGui.GetFontTexUvWhitePixel();
-        var segments = points.Length - 1;
-        drawList.PrimReserve(segments * 6, segments * 6);
-        for (var index = 0; index < segments; index++)
+        var firstVertex = drawList.VtxBuffer.Size;
+        var flags = drawList.Flags;
+        drawList.Flags = flags & ~ImDrawListFlags.AntiAliasedFill;
+        for (var index = 0; index < points.Length - 1; index++)
         {
             var left = points[index];
             var right = points[index + 1];
-            var leftBase = new Vector2(left.X, baseY);
-            var rightBase = new Vector2(right.X, baseY);
-            drawList.PrimVtx(left, uv, topColor);
-            drawList.PrimVtx(right, uv, topColor);
-            drawList.PrimVtx(rightBase, uv, bottomColor);
-            drawList.PrimVtx(left, uv, topColor);
-            drawList.PrimVtx(rightBase, uv, bottomColor);
-            drawList.PrimVtx(leftBase, uv, bottomColor);
+            drawList.PathLineTo(left);
+            drawList.PathLineTo(right);
+            drawList.PathLineTo(new Vector2(right.X, baseY));
+            drawList.PathLineTo(new Vector2(left.X, baseY));
+            drawList.PathFillConvex(topColor);
+        }
+
+        drawList.Flags = flags;
+        var vertices = drawList.VtxBuffer.AsSpan();
+        for (var index = firstVertex; index < vertices.Length; index++)
+        {
+            if (vertices[index].Pos.Y >= baseY)
+            {
+                vertices[index].Col = bottomColor;
+            }
         }
     }
 
@@ -255,9 +262,9 @@ internal static class MarketArt
         var color = ImGui.GetColorU32(ink);
         var dash = BaselineDash * scale;
         var gap = BaselineGap * scale;
-        for (var x = left; x < right; x += dash + gap)
+        for (var dashStart = left; dashStart < right; dashStart += dash + gap)
         {
-            drawList.AddLine(new Vector2(x, y), new Vector2(MathF.Min(right, x + dash), y), color,
+            drawList.AddLine(new Vector2(dashStart, y), new Vector2(MathF.Min(right, dashStart + dash), y), color,
                 Metrics.Stroke.Hairline);
         }
     }
