@@ -62,7 +62,8 @@ internal sealed partial class AetherStreamApp
             Gap(idle ? Metrics.Space.Lg : FabClearance);
         }
 
-        if (!idle && ComposeFab.Draw(body, "##aetherstreamAddFab", ui.Accent, PhoneIcons.Plus,
+        if (!idle && ComposeFab.Draw(TabBar.ContentArea(body, scale), "##aetherstreamAddFab", ui.Accent,
+                PhoneIcons.Plus,
                 Loc.T(L.AetherStream.AddVideoTitle), "aetherstream.composer", phoneGlyph: true))
         {
             OpenAddSheet();
