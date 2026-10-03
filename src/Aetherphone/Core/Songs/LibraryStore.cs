@@ -13,6 +13,7 @@ internal sealed class LibraryStore : IDisposable
 
     private readonly string path;
     private readonly object gate = new();
+    private readonly object writeGate = new();
     private readonly HashSet<string> libraryIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> lovedIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> downloadIds = new(StringComparer.Ordinal);
@@ -556,30 +557,33 @@ internal sealed class LibraryStore : IDisposable
 
     public void Flush()
     {
-        string json;
-        lock (gate)
+        lock (writeGate)
         {
-            if (!dirty)
-            {
-                return;
-            }
-
-            dirty = false;
-            json = JsonConvert.SerializeObject(data);
-        }
-
-        try
-        {
-            var temp = path + ".tmp";
-            File.WriteAllText(temp, json);
-            File.Move(temp, path, true);
-        }
-        catch (Exception exception)
-        {
-            AepLog.Warning(exception, "Music library write failed");
+            string json;
             lock (gate)
             {
-                dirty = true;
+                if (!dirty)
+                {
+                    return;
+                }
+
+                dirty = false;
+                json = JsonConvert.SerializeObject(data);
+            }
+
+            try
+            {
+                var temp = path + ".tmp";
+                File.WriteAllText(temp, json);
+                File.Move(temp, path, true);
+            }
+            catch (Exception exception)
+            {
+                AepLog.Warning(exception, "Music library write failed");
+                lock (gate)
+                {
+                    dirty = true;
+                }
             }
         }
     }
