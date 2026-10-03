@@ -220,6 +220,37 @@ internal static class MinimizedPhoneRenderer
         return new MinimizedControlResult(action, muteHovered || hangupHovered);
     }
 
+    private static void DrawCardTile(ImDrawListPtr dl, PhoneNotification notification, Vector2 tileMin,
+        Vector2 tileMax, Vector2 tileCenter, float tile, float alpha)
+    {
+        var surface = IconTile.Surface(notification.Accent);
+        Squircle.Fill(dl, tileMin, tileMax, tile * Metrics.Radius.TileFactor,
+            ImGui.GetColorU32(Palette.WithAlpha(surface, alpha)));
+        var ink = Palette.WithAlpha(AccentRing.Ink, alpha);
+        if (AppIconArt.TryDraw(dl, notification.AppId, tileCenter, tile, ink, Palette.WithAlpha(surface, alpha)))
+        {
+            return;
+        }
+
+        var initial = notification.Title.Length > 0 ? notification.Title.Substring(0, 1) : "?";
+        Typography.DrawCentered(dl, tileCenter, initial, ink, Text(0.95f), FontWeight.SemiBold);
+    }
+
+    private static void DrawBadgeTile(ImDrawListPtr dl, Vector2 center, string appId, Vector4 accent, Vector2 tileMin,
+        Vector2 tileMax, float tile, float alpha)
+    {
+        var surface = IconTile.Surface(accent);
+        Squircle.Fill(dl, tileMin, tileMax, tile * Metrics.Radius.TileFactor,
+            ImGui.GetColorU32(Palette.WithAlpha(surface, alpha)));
+        var ink = Palette.WithAlpha(AccentRing.Ink, alpha);
+        if (AppIconArt.TryDraw(dl, appId, center, tile, ink, Palette.WithAlpha(surface, alpha)))
+        {
+            return;
+        }
+
+        ProgressRing.CenterIcon(dl, center, FontAwesomeIcon.Bell, ink, tile * 0.5f);
+    }
+
     public static void DrawCardSection(ImDrawListPtr dl, Rect rect, PhoneNotification notification, PhoneTheme theme,
         float alpha, float scale)
     {
@@ -228,14 +259,10 @@ internal static class MinimizedPhoneRenderer
         var tileMin = new Vector2(centerX - tile * 0.5f, rect.Min.Y);
         var tileMax = new Vector2(centerX + tile * 0.5f, rect.Min.Y + tile);
         var tileCenter = (tileMin + tileMax) * 0.5f;
-        var surface = IconTile.Surface(notification.Accent);
-        Squircle.Fill(dl, tileMin, tileMax, tile * Metrics.Radius.TileFactor,
-            ImGui.GetColorU32(Palette.WithAlpha(surface, alpha)));
-        var ink = Palette.WithAlpha(AccentRing.Ink, alpha);
-        if (!AppIconArt.TryDraw(dl, notification.AppId, tileCenter, tile, ink, Palette.WithAlpha(surface, alpha)))
+        if (!AppIconTile.TryDraw(dl, notification.AppId, notification.Accent, tileMin, tileMax,
+                tile * Metrics.Radius.TileFactor, alpha, false, scale))
         {
-            var initial = notification.Title.Length > 0 ? notification.Title.Substring(0, 1) : "?";
-            Typography.DrawCentered(dl, tileCenter, initial, ink, Text(0.95f), FontWeight.SemiBold);
+            DrawCardTile(dl, notification, tileMin, tileMax, tileCenter, tile, alpha);
         }
 
         var titleStyle = new TextStyle(Text(0.75f), FontWeight.SemiBold);
@@ -262,13 +289,10 @@ internal static class MinimizedPhoneRenderer
         var tile = BadgeTile * scale;
         var tileMin = center - new Vector2(tile * 0.5f, tile * 0.5f);
         var tileMax = center + new Vector2(tile * 0.5f, tile * 0.5f);
-        var surface = IconTile.Surface(accent);
-        Squircle.Fill(dl, tileMin, tileMax, tile * Metrics.Radius.TileFactor,
-            ImGui.GetColorU32(Palette.WithAlpha(surface, alpha)));
-        var ink = Palette.WithAlpha(AccentRing.Ink, alpha);
-        if (!AppIconArt.TryDraw(dl, appId, center, tile, ink, Palette.WithAlpha(surface, alpha)))
+        if (!AppIconTile.TryDraw(dl, appId, accent, tileMin, tileMax, tile * Metrics.Radius.TileFactor, alpha, false,
+                scale))
         {
-            ProgressRing.CenterIcon(dl, center, FontAwesomeIcon.Bell, ink, tile * 0.5f);
+            DrawBadgeTile(dl, center, appId, accent, tileMin, tileMax, tile, alpha);
         }
 
         var countScale = Text(0.6f);

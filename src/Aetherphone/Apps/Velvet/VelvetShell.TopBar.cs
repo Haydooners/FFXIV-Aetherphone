@@ -41,7 +41,7 @@ internal sealed partial class VelvetShell
         var rowCenterY = area.Min.Y + VHeader.Height * scale * 0.5f;
         var logoSize = LogoSize * scale;
         var logoCenter = new Vector2(area.Min.X + SocialChrome.CellPadX * scale + logoSize * 0.5f, rowCenterY);
-        if (!AppIconTextures.TryDrawArtwork(drawList, Id, logoCenter, logoSize, VelvetTheme.RoseInk))
+        if (!AppIconTile.TryDrawGlyph(drawList, Id, logoCenter, logoSize, VelvetTheme.RoseInk))
         {
             PhoneIcon.Draw(drawList, logoCenter, PhoneIcons.Moon, VelvetTheme.RoseInk, logoSize);
         }

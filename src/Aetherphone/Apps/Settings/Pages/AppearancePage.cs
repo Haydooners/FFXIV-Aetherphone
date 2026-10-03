@@ -194,7 +194,7 @@ internal sealed class AppearancePage : ISettingsPage
     private void DrawHomeSection(PhoneTheme theme)
     {
         SettingsSection.Header(Loc.T(L.Home.HomeScreen), theme);
-        var card = GroupCard.Begin(theme, 4);
+        var card = GroupCard.Begin(theme, 4 + IconAppearancePicker.RowSpan);
         if (SettingsRow.Disclosure(card.NextRow(), Loc.T(L.Home.Looks), LooksPage.NameOf(looks.Active), theme))
         {
             navigator.Open(new LooksPage(looks, wallpapers, navigator, confirm));
@@ -217,6 +217,14 @@ internal sealed class AppearancePage : ISettingsPage
             configuration.Save();
         }
 
+        var iconAppearance = IconAppearancePicker.Draw(card.NextRow(IconAppearancePicker.RowSpan),
+            configuration.IconAppearance, theme);
+        if (iconAppearance != configuration.IconAppearance)
+        {
+            configuration.IconAppearance = iconAppearance;
+            configuration.Save();
+        }
+
         if (SettingsRow.Disclosure(card.NextRow(), Loc.T(L.Home.ResetLayout), string.Empty, theme))
         {
             confirm.Ask(new ConfirmRequest
@@ -231,6 +239,7 @@ internal sealed class AppearancePage : ISettingsPage
         }
 
         card.End();
+        SettingsSection.Hint(Loc.T(L.Settings.IconAppearanceHint), theme);
     }
 
     private void ResetHomeLayout()

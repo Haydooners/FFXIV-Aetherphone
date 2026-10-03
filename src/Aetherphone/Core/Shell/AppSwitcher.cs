@@ -672,6 +672,22 @@ internal sealed class AppSwitcher
         pressCard = null;
     }
 
+    private static void DrawLabelTile(ImDrawListPtr drawList, IPhoneApp app, Vector2 tileCenter, Vector2 tileHalf,
+        float tileSize, float alpha)
+    {
+        var surface = IconTile.Surface(app.Accent);
+        Squircle.Fill(drawList, tileCenter - tileHalf, tileCenter + tileHalf, tileSize * Metrics.Radius.TileFactor,
+            ImGui.GetColorU32(Palette.WithAlpha(surface, alpha)));
+        var ink = AppAccents.InkFor(app.Id);
+        if (AppIconArt.TryDraw(drawList, app.Id, tileCenter, tileSize * 0.9f, Palette.WithAlpha(ink, alpha),
+                Palette.WithAlpha(Palette.Mix(surface, ink, 0.28f), alpha)))
+        {
+            return;
+        }
+
+        drawList.AddCircleFilled(tileCenter, tileSize * 0.16f, ImGui.GetColorU32(Palette.WithAlpha(ink, alpha)), 12);
+    }
+
     private static void DrawCardLabel(ImDrawListPtr drawList, IPhoneApp app, Rect bounds, float scale, float alpha)
     {
         if (alpha <= 0.004f)
@@ -687,15 +703,10 @@ internal sealed class AppSwitcher
         var centerY = bounds.Min.Y - LabelLiftUnits * scale;
         var tileCenter = new Vector2(groupLeft + tileSize * 0.5f, centerY);
         var tileHalf = new Vector2(tileSize, tileSize) * 0.5f;
-        var surface = IconTile.Surface(app.Accent);
-        Squircle.Fill(drawList, tileCenter - tileHalf, tileCenter + tileHalf, tileSize * Metrics.Radius.TileFactor,
-            ImGui.GetColorU32(Palette.WithAlpha(surface, alpha)));
-        var ink = AppAccents.InkFor(app.Id);
-        if (!AppIconArt.TryDraw(drawList, app.Id, tileCenter, tileSize * 0.9f, Palette.WithAlpha(ink, alpha),
-                Palette.WithAlpha(Palette.Mix(surface, ink, 0.28f), alpha)))
+        if (!AppIconTile.TryDraw(drawList, app.Id, app.Accent, tileCenter - tileHalf, tileCenter + tileHalf,
+                tileSize * Metrics.Radius.TileFactor, alpha, false, scale))
         {
-            drawList.AddCircleFilled(tileCenter, tileSize * 0.16f, ImGui.GetColorU32(Palette.WithAlpha(ink, alpha)),
-                12);
+            DrawLabelTile(drawList, app, tileCenter, tileHalf, tileSize, alpha);
         }
 
         Typography.Draw(drawList, new Vector2(groupLeft + tileSize + gap, centerY - nameSize.Y * 0.5f), name,

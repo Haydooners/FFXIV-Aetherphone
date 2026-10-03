@@ -118,7 +118,7 @@ internal sealed partial class HousingApp
 
     private void DrawAppEmblem(ImDrawListPtr drawList, Vector2 center, float size)
     {
-        if (AppIconTextures.TryDraw(drawList, Id, center, size, ui.Accent))
+        if (AppIconTile.TryDrawGlyph(drawList, Id, center, size * AppIconTextures.GlyphFraction, ui.Accent))
         {
             return;
         }

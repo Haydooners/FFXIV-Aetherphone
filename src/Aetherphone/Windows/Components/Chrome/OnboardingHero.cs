@@ -99,6 +99,11 @@ internal static class OnboardingHero
         var min = new Vector2(center.X - half, center.Y - half);
         var max = new Vector2(center.X + half, center.Y + half);
         var radius = size * 0.26f;
+        if (AppIconTile.TryDraw(drawList, id, AppAccents.For(id), min, max, radius, alpha, true, scale))
+        {
+            return;
+        }
+
         var surface = IconTile.Surface(AppAccents.For(id));
         Elevation.IconRest(drawList, min, max, radius, scale, alpha);
         IconTile.FillShaded(drawList, min, max, radius, surface, alpha);

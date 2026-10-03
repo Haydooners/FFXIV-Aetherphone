@@ -328,6 +328,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public Dictionary<string, bool> AppFlags { get; set; } = new();
     public int HomeGridRows { get; set; } = 6;
     public bool ShowAppNames { get; set; } = true;
+    public IconAppearance IconAppearance { get; set; } = IconAppearance.Default;
     public List<HomeLook> Looks { get; set; } = new();
     public Dictionary<ulong, Guid> LookByCharacter { get; set; } = new();
     public Guid ActiveLookId { get; set; }

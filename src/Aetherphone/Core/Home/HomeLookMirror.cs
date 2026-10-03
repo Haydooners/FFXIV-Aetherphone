@@ -38,6 +38,7 @@ internal static class HomeLookMirror
         target.Dock = home?.Dock is null ? null : new List<string>(home.Dock);
         target.GridRows = configuration.HomeGridRows;
         target.ShowAppNames = configuration.ShowAppNames;
+        target.IconAppearance = configuration.IconAppearance;
         target.ThemeMode = configuration.ThemeMode;
         target.AccentName = configuration.AccentName;
         target.AccentCustomHex = configuration.AccentCustomHex;
@@ -62,6 +63,7 @@ internal static class HomeLookMirror
 
         configuration.HomeGridRows = source.GridRows;
         configuration.ShowAppNames = source.ShowAppNames;
+        configuration.IconAppearance = source.IconAppearance;
         configuration.ThemeMode = source.ThemeMode;
         configuration.AccentName = source.AccentName;
         configuration.AccentCustomHex = source.AccentCustomHex;
