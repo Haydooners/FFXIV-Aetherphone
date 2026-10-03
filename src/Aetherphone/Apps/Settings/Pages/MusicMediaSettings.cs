@@ -8,8 +8,15 @@ internal static class MusicMediaSettings
 {
     public const string AppId = "music";
     private const int RowCount = 2;
+    private const int FriendsRowCount = 1;
 
     public static void Draw(Configuration configuration, PhoneTheme theme)
+    {
+        DrawWindowsMedia(configuration, theme);
+        DrawFriends(configuration, theme);
+    }
+
+    private static void DrawWindowsMedia(Configuration configuration, PhoneTheme theme)
     {
         SettingsSection.Header(Loc.T(L.Music.PcMedia.SettingsHeader), theme);
         var card = GroupCard.Begin(theme, RowCount);
@@ -26,6 +33,24 @@ internal static class MusicMediaSettings
 
         configuration.ShowWindowsMedia = show;
         configuration.PublishToWindowsMedia = publish;
+        configuration.Save();
+    }
+
+    private static void DrawFriends(Configuration configuration, PhoneTheme theme)
+    {
+        SettingsSection.Header(Loc.T(L.Music.Friends.SettingsHeader), theme);
+        var card = GroupCard.Begin(theme, FriendsRowCount);
+        var share = SettingsRow.Bool(card.NextRow(), Loc.T(L.Music.Friends.ShareToggle),
+            configuration.ShareListeningActivity, theme, "settings.music.shareListening");
+        card.End();
+        SettingsSection.Hint(Loc.T(L.Music.Friends.SettingsHint), theme);
+        if (share == configuration.ShareListeningActivity)
+        {
+            return;
+        }
+
+        configuration.ShareListeningActivity = share;
+        configuration.ListeningPromptShown = true;
         configuration.Save();
     }
 }

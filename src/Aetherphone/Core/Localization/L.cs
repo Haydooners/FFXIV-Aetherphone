@@ -4944,6 +4944,22 @@ internal static class L
             public static readonly LocString ShelfEmpty = new("music.home.shelfEmpty", "Nothing here right now. Check back soon.");
         }
 
+        internal static class Friends
+        {
+            public static readonly LocString ShelfTitle = new("music.friends.shelfTitle", "Friends listening");
+            public static readonly LocString ListeningNow = new("music.friends.listeningNow", "Listening now");
+            public static readonly LocString Paused = new("music.friends.paused", "Paused");
+            public static readonly LocString MinutesAgo = new("music.friends.minutesAgo", "{0} min ago");
+            public static readonly LocString JoinJam = new("music.friends.joinJam", "Join their Jam");
+            public static readonly LocString PromptTitle = new("music.friends.promptTitle", "Share what you listen to with friends?");
+            public static readonly LocString PromptBody = new("music.friends.promptBody", "Your mutual contacts see the song playing on your phone. Radio is never shared, and you can turn this off in Settings.");
+            public static readonly LocString Share = new("music.friends.share", "Share");
+            public static readonly LocString NotNow = new("music.friends.notNow", "Not now");
+            public static readonly LocString SettingsHeader = new("music.friends.settingsHeader", "Friends");
+            public static readonly LocString ShareToggle = new("music.friends.shareToggle", "Share what I listen to");
+            public static readonly LocString SettingsHint = new("music.friends.settingsHint", "Your mutual contacts see the song playing on your phone, and can join your Jam when you host one. Radio and Windows media are never shared.");
+        }
+
         internal static class New
         {
             public static readonly LocString Featured = new("music.new.featured", "Featured playlist");
