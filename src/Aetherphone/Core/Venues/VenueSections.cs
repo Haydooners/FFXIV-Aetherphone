@@ -292,7 +292,7 @@ internal sealed class VenueSections
             }
             else
             {
-                var byStart = (left!.StartUtc ?? DateTime.MaxValue).CompareTo(right!.StartUtc ?? DateTime.MaxValue);
+                var byStart = StartKey(left!).CompareTo(StartKey(right!));
                 if (byStart != 0)
                 {
                     return byStart;
@@ -301,6 +301,9 @@ internal sealed class VenueSections
 
             return string.Compare(left!.Title, right!.Title, StringComparison.OrdinalIgnoreCase);
         }
+
+        private DateTime StartKey(VenueEvent venue) =>
+            venue.StartUtc is { } start && (mode == OrderMode.Start || start > Now) ? start : DateTime.MaxValue;
 
         private int CompareEvents(VenueEvent left, VenueEvent right)
         {

@@ -72,6 +72,21 @@ public sealed class VenueSectionsTests
     }
 
     [Fact]
+    public void Saved_SinksAnOpeningThatAlreadyEndedBelowUpcomingOnes()
+    {
+        var ended = Venue("ended", start: Now.AddHours(-5), end: Now.AddHours(-1));
+        var upcoming = Venue("upcoming", start: Now.AddHours(2), end: Now.AddHours(5));
+        var open = Venue("open", start: Now.AddHours(-1), end: Now.AddHours(2));
+
+        var sections = Build([ended, upcoming, open], ["ended", "upcoming", "open"], []);
+
+        Assert.Equal(3, sections.Saved.Count);
+        Assert.Same(open, sections.Saved[0]);
+        Assert.Same(upcoming, sections.Saved[1]);
+        Assert.Same(ended, sections.Saved[2]);
+    }
+
+    [Fact]
     public void CategoryCover_PrefersAnOpenVenueWithABanner()
     {
         var closed = Venue("closed", tags: ["Bar"], banner: "https://example.com/closed.png");
