@@ -1,5 +1,7 @@
 using Aetherphone.Core;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 
@@ -14,17 +16,14 @@ internal sealed partial class PhotosApp
         Trash,
     }
 
-    private enum TileHit : byte
-    {
-        None,
-        Open,
-        Menu,
-    }
+    private const float ToolbarGlyph = 22f;
+    private const float ToolbarHitRadius = 20f;
+    private const float DisabledToolbarAlpha = 0.35f;
 
-    private const float SelectToolbarIconSize = 26f;
-    private const float SelectToolbarHitRadius = 20f;
-    private const float SelectCancelPadX = 14f;
-    private const float SelectCancelHeight = 30f;
+    private readonly HashSet<string> selection = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<string> selectionOrder = new();
+    private bool selecting;
+    private SelectionScope selectionScope;
 
     private void BeginSelect(SelectionScope scope)
     {
@@ -54,6 +53,9 @@ internal sealed partial class PhotosApp
     }
 
     private string[] SelectionArray() => selectionOrder.ToArray();
+
+    private string SelectionTitle() =>
+        selection.Count > 0 ? SelectedLabel(selection.Count) : Loc.T(L.Photos.SelectPhotos);
 
     private bool AllSelectedFavorites()
     {
@@ -93,67 +95,27 @@ internal sealed partial class PhotosApp
         ApplyFilter();
     }
 
-    private bool DrawSelectHeaderIcon(Rect area, int slot)
+    private void DrawSelectToolbar(Rect content)
     {
         var scale = UiScale.Current;
-        return SocialChrome.DrawHeaderIcon(ImGui.GetWindowDrawList(), SocialChrome.HeaderSlot(area, slot),
-            SocialChrome.HeaderIconRadius * scale, PhoneIcons.CircleCheck, HeaderIconSize, Loc.T(L.Photos.Select),
-            Ink, Ink.TitleInk);
-    }
-
-    private void DrawSelectHeader(Rect area)
-    {
-        var scale = UiScale.Current;
+        var capsule = TabBarLayout.FullCapsule(content, scale, false);
+        var zone = TabBar.Zone(content, scale);
+        using var layer = ScreenLayer.Begin("photos.toolbar", zone, false);
+        UiInteract.HoverOverlay(zone);
         var drawList = ImGui.GetWindowDrawList();
-        var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
-        var cancelLabel = Loc.T(L.Common.Cancel);
-        var pillWidth = Typography.Measure(cancelLabel, DonePillStyle).X + SelectCancelPadX * 2f * scale;
-        var pillHeight = SelectCancelHeight * scale;
-        var pillRight = area.Max.X - CellPadX * scale;
-        var pill = new Rect(new Vector2(pillRight - pillWidth, rowCenterY - pillHeight * 0.5f),
-            new Vector2(pillRight, rowCenterY + pillHeight * 0.5f));
-        var title = selection.Count > 0
-            ? Loc.Plural(L.Photos.Selected, selection.Count)
-            : Loc.T(L.Photos.SelectPhotos);
-        var titleLeft = area.Min.X + CellPadX * scale;
-        var fitted = Typography.FitText(title, MathF.Max(1f, pill.Min.X - Metrics.Space.Sm * scale - titleLeft),
-            ScreenTitleStyle);
-        Typography.Draw(drawList, new Vector2(titleLeft, rowCenterY - Typography.LineHeight(ScreenTitleStyle) * 0.5f),
-            fitted, Ink.TitleInk, ScreenTitleStyle);
-        if (SocialPill.Flat(drawList, pill, cancelLabel, Ink.ButtonFill, Ink.ButtonHover, default, Ink.TitleInk,
-                DonePillStyle, pillHeight * 0.5f))
-        {
-            EndSelect();
-        }
-    }
-
-    private Rect ToolbarRect(Rect area) =>
-        new(new Vector2(area.Min.X, area.Max.Y - BottomTabBar.Height * UiScale.Current), area.Max);
-
-    private void DrawSelectToolbarIfActive(Rect area)
-    {
-        if (selecting)
-        {
-            DrawSelectToolbar(ToolbarRect(area));
-        }
-    }
-
-    private void DrawSelectToolbar(Rect bar)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        SocialChrome.PaintBarBackdrop(ui, drawList, bar, frameScreen);
-        FeedCell.Hairline(drawList, bar.Min.X, bar.Max.X, bar.Min.Y + 1f, Ink.Hairline);
+        Material.ThemedGlass(drawList, capsule.Min, capsule.Max, capsule.Height * 0.5f, scale, ui.BackdropColor,
+            TabBar.GlassOpacity);
         var enabled = selection.Count > 0;
         if (selectionScope == SelectionScope.Trash)
         {
-            if (ToolbarAction(drawList, ToolbarSlot(bar, 0, 2), PhoneIcons.ArrowBackUp, Loc.T(L.Photos.Recover),
-                    Ink.TitleInk, enabled))
+            if (ToolbarAction(drawList, ToolbarSlot(capsule, 0, 2), "photos.select.recover", PhoneIcons.ArrowBackUp,
+                    Loc.T(L.Photos.Recover), ui.Accent, enabled, scale))
             {
                 RecoverPhotos(SelectionArray());
             }
 
-            if (ToolbarAction(drawList, ToolbarSlot(bar, 1, 2), PhoneIcons.Trash, Loc.T(L.Photos.DeletePermanently),
-                    Ink.Danger, enabled))
+            if (ToolbarAction(drawList, ToolbarSlot(capsule, 1, 2), "photos.select.purge", PhoneIcons.Trash,
+                    Loc.T(L.Photos.DeletePermanently), frameTheme.Danger, enabled, scale))
             {
                 AskDeleteForever(SelectionArray());
             }
@@ -162,20 +124,21 @@ internal sealed partial class PhotosApp
         }
 
         var allFavorites = AllSelectedFavorites();
-        if (ToolbarAction(drawList, ToolbarSlot(bar, 0, 3), allFavorites ? PhoneIcons.HeartFilled : PhoneIcons.Heart,
-                Loc.T(allFavorites ? L.Photos.Unfavorite : L.Photos.Favorite), Ink.TitleInk, enabled))
+        if (ToolbarAction(drawList, ToolbarSlot(capsule, 0, 3), "photos.select.favorite",
+                allFavorites ? PhoneIcons.HeartFilled : PhoneIcons.Heart,
+                Loc.T(allFavorites ? L.Photos.Unfavorite : L.Photos.Favorite), ui.Accent, enabled, scale))
         {
             FavoriteSelection();
         }
 
-        if (ToolbarAction(drawList, ToolbarSlot(bar, 1, 3), PhoneIcons.SquareRoundedPlus, Loc.T(L.Photos.AddToAlbum),
-                Ink.TitleInk, enabled))
+        if (ToolbarAction(drawList, ToolbarSlot(capsule, 1, 3), "photos.select.album", PhoneIcons.SquareRoundedPlus,
+                Loc.T(L.Photos.AddToAlbum), ui.Accent, enabled, scale))
         {
             OpenAddToAlbum(SelectionArray());
         }
 
-        if (ToolbarAction(drawList, ToolbarSlot(bar, 2, 3), PhoneIcons.Trash, Loc.T(L.Photos.Delete), Ink.Danger,
-                enabled))
+        if (ToolbarAction(drawList, ToolbarSlot(capsule, 2, 3), "photos.select.delete", PhoneIcons.Trash,
+                Loc.T(L.Photos.Delete), frameTheme.Danger, enabled, scale))
         {
             AskDeletePhotos(SelectionArray());
         }
@@ -184,78 +147,27 @@ internal sealed partial class PhotosApp
     private static Vector2 ToolbarSlot(Rect bar, int index, int count) =>
         new(bar.Min.X + bar.Width / count * (index + 0.5f), bar.Center.Y);
 
-    private bool ToolbarAction(ImDrawListPtr drawList, Vector2 center, string glyph, string tooltip, Vector4 ink,
-        bool enabled)
+    private static bool ToolbarAction(ImDrawListPtr drawList, Vector2 center, string id, string glyph, string tooltip,
+        Vector4 ink, bool enabled, float scale)
     {
-        var scale = UiScale.Current;
+        var radius = ToolbarHitRadius * scale;
+        var extent = new Vector2(radius, radius);
+        var hovered = enabled && !UiInteract.InputBlocked && UiInteract.HoverWindowOnly(center - extent, center + extent);
+        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var grow = PressFx.Scale(ImGui.GetID(id), down, PressFx.IconPressedScale);
+        var color = enabled ? ink : Palette.WithAlpha(ink, DisabledToolbarAlpha);
+        PhoneIcon.Draw(drawList, center, glyph, color, ToolbarGlyph * scale * grow);
         if (!enabled)
         {
-            PhoneIcon.Draw(drawList, center, glyph, Ink.FaintInk, SelectToolbarIconSize * scale);
             return false;
         }
 
-        return SocialChrome.DrawHeaderIcon(drawList, center, SelectToolbarHitRadius * scale, glyph,
-            SelectToolbarIconSize, tooltip, Ink, ink, side: HoverLabelSide.Above);
-    }
-
-    private void OpenTrashViewer(int index)
-    {
-        viewerPaths = trashPaths;
-        viewerIndex = Math.Clamp(index, 0, trashPaths.Length - 1);
-        viewerInTrash = true;
-        zoomView.Reset();
-        router.Push(PhotoView.Viewer());
-    }
-
-    private TileHit DrawTile(ImDrawListPtr drawList, Vector2 min, Vector2 max, string path, bool withMenu, float scale)
-    {
-        var hovered = UiInteract.Hover(min, max);
-        PhotosChrome.Thumbnail(drawList, GetThumbnail(path), min, max, hovered && !selecting, Ink.ThumbFill,
-            configuration.PhotosAspectGrid);
-        if (favorites.Contains(path))
-        {
-            PhotosChrome.FavoriteBadge(drawList, min, max, Ink, scale);
-        }
-
-        if (selecting)
-        {
-            PhotosChrome.SelectionMark(drawList, min, max, selection.Contains(path), Ink, scale);
-            if (hovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            if (UiInteract.Click(min, max, hovered))
-            {
-                ToggleSelected(path);
-            }
-
-            return TileHit.None;
-        }
-
-        var overBadge = false;
-        if (withMenu && hovered)
-        {
-            var badgeOffset = (PhotosChrome.BadgeRadius + TileBadgeInset) * scale;
-            var badgeCenter = new Vector2(max.X - badgeOffset, min.Y + badgeOffset);
-            var extent = new Vector2(PhotosChrome.BadgeRadius * scale, PhotosChrome.BadgeRadius * scale);
-            overBadge = UiInteract.Hover(badgeCenter - extent, badgeCenter + extent);
-            if (PhotosChrome.CoverBadge(drawList, badgeCenter, Loc.T(L.Photos.RemoveFromAlbum), Ink, scale))
-            {
-                return TileHit.Menu;
-            }
-
-            if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
-            {
-                return TileHit.Menu;
-            }
-        }
-
-        if (hovered && !overBadge)
+        HoverTooltip.Show(new Rect(center - extent, center + extent), tooltip, HoverLabelSide.Above);
+        if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        return UiInteract.Click(min, max, hovered && !overBadge) ? TileHit.Open : TileHit.None;
+        return UiInteract.Click(center - extent, center + extent, hovered);
     }
 }

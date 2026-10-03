@@ -1,5 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Notifications;
+using Aetherphone.Core.Photos;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -8,13 +10,12 @@ namespace Aetherphone.Apps.Photos;
 
 internal sealed partial class PhotosApp
 {
-    private const float EditorTopBarHeight = 44f;
-    private const float EditorRowCenter = 22f;
-    private const float EditorEdgeInset = 12f;
-    private const float EditorNoticeOffset = 44f;
+    private const float EditorTopBarHeight = 52f;
+    private const float EditorNoticeOffset = 58f;
     private const float EditorResetLift = 18f;
-    private const float EditorTopScrimExtra = 52f;
+    private const float EditorTopScrim = 110f;
     private const float EditorSavingRadius = 13f;
+    private const float SavePadX = 18f;
     private const float DisabledSaveAlpha = 0.4f;
 
     private readonly PhotoEditSession editSession = new();
@@ -36,50 +37,54 @@ internal sealed partial class PhotosApp
         var scale = UiScale.Current;
         if (!editSession.IsOpen)
         {
-            router.Pop(false);
+            if (router.Current.Route == PhotoRoute.Editor)
+            {
+                router.Pop(false);
+            }
+
             return;
         }
 
         var safe = ContentWithin(screen);
         var drawList = ImGui.GetWindowDrawList();
         drawList.AddRectFilled(screen.Min, screen.Max, ImGui.GetColorU32(ViewerBackdrop));
-        var panelTop = safe.Max.Y - (PhotoEditPanel.Height * scale);
+        var panelTop = safe.Max.Y - PhotoEditPanel.Height * scale;
         var panel = new Rect(new Vector2(screen.Min.X, panelTop), screen.Max);
-        var stage = new Rect(new Vector2(screen.Min.X, safe.Min.Y + (EditorTopBarHeight * scale)),
+        var stage = new Rect(new Vector2(screen.Min.X, safe.Min.Y + EditorTopBarHeight * scale),
             new Vector2(screen.Max.X, panelTop));
         var style = PhotoEditPanelStyle.Dark(ui.Accent);
         PhotoEditPanel.DrawStage(editSession, stage, style, scale, ImGui.GetTime());
         PhotoEditPanel.DrawTools(editSession, panel, safe.Max.Y, ui, style, scale);
-        DrawEditorTopBar(screen, safe, scale);
+        DrawEditorTopBar(drawList, screen, safe, scale);
         if (editSession.IsDirty && !editSession.Saving)
         {
-            var resetCenter = new Vector2(screen.Center.X, panelTop - (EditorResetLift * scale));
+            var resetCenter = new Vector2(screen.Center.X, panelTop - EditorResetLift * scale);
             if (TextButton.Draw(resetCenter, Loc.T(L.Photos.Reset), WhiteMuted, scale))
             {
                 editSession.Reset();
+                UiFeedback.Play(UiSound.Refresh);
             }
         }
 
-        if (editSession.Saving)
+        if (!editSession.Saving)
         {
-            Material.Veil(drawList, stage.Min, stage.Max, 0.45f, 0f);
-            LoadingPulse.Draw(stage.Center, EditorSavingRadius * scale, ui.Accent, WhiteMuted,
-                Loc.T(L.Photos.Save));
+            return;
         }
+
+        Material.Veil(drawList, stage.Min, stage.Max, 0.45f, 0f);
+        LoadingPulse.Draw(stage.Center, EditorSavingRadius * scale, ui.Accent, WhiteMuted, Loc.T(L.Account.Saving));
     }
 
-    private void DrawEditorTopBar(Rect screen, Rect safe, float scale)
+    private void DrawEditorTopBar(ImDrawListPtr drawList, Rect screen, Rect safe, float scale)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        PhotosChrome.TopScrim(drawList, screen.Min, screen.Max, (frameTheme.TopZoneHeight + EditorTopScrimExtra) * scale);
-        var rowCenterY = safe.Min.Y + (EditorRowCenter * scale);
+        PhotosChrome.TopScrim(drawList, screen.Min, screen.Max, EditorTopScrim * scale, 1f);
+        var rowCenterY = safe.Min.Y + EditorTopBarHeight * scale * 0.5f;
         Typography.DrawCentered(drawList, new Vector2(screen.Center.X, rowCenterY), Loc.T(L.Photos.Edit), White,
             TextStyles.Headline);
-
-        var cancelLabel = Loc.T(L.Common.Cancel);
-        var cancelWidth = TextButton.Width(cancelLabel, scale);
-        var cancelCenter = new Vector2(safe.Min.X + (EditorEdgeInset * scale) + (cancelWidth * 0.5f), rowCenterY);
-        if (TextButton.Draw(cancelCenter, cancelLabel, White, scale) && !editSession.Saving)
+        var radius = ViewerControlRadius * scale;
+        var cancelCenter = new Vector2(screen.Min.X + ViewerEdgeInset * scale + radius, rowCenterY);
+        if (ViewerControl(drawList, "photos.editor.cancel", cancelCenter, PhoneIcons.X, Loc.T(L.Common.Cancel), White,
+                1f, !editSession.Saving, HoverLabelSide.Below, scale))
         {
             CloseEditor();
             return;
@@ -87,17 +92,30 @@ internal sealed partial class PhotosApp
 
         var canSave = editSession.Preview.Ready && editSession.IsDirty && !editSession.Saving;
         var saveLabel = Loc.T(L.Photos.Save);
-        var saveWidth = TextButton.Width(saveLabel, scale);
-        var saveCenter = new Vector2(safe.Max.X - (EditorEdgeInset * scale) - (saveWidth * 0.5f), rowCenterY);
-        var saveColor = canSave ? ui.Accent : Palette.WithAlpha(White, DisabledSaveAlpha);
-        if (TextButton.Draw(saveCenter, saveLabel, saveColor, scale) && canSave)
+        var saveWidth = Typography.Measure(saveLabel, TextStyles.Headline).X + SavePadX * 2f * scale;
+        var right = screen.Max.X - ViewerEdgeInset * scale;
+        var save = new Rect(new Vector2(right - saveWidth, rowCenterY - radius), new Vector2(right, rowCenterY + radius));
+        var hovered = canSave && UiInteract.Hover(save.Min, save.Max);
+        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var grow = PressFx.Scale(ImGui.GetID("photos.editor.save"), down, PressFx.ControlPressedScale);
+        var half = save.Size * 0.5f * grow;
+        Material.AccentGlass(drawList, save.Center - half, save.Center + half, half.Y, scale, ui.Accent,
+            canSave ? 1f : DisabledSaveAlpha);
+        Typography.DrawCentered(drawList, save.Center, saveLabel,
+            canSave ? White : Palette.WithAlpha(White, DisabledSaveAlpha), TextStyles.Headline);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        if (canSave && UiInteract.Click(save.Min, save.Max, hovered))
         {
             SaveEdit();
         }
 
         if (editSession.Notice.Length > 0)
         {
-            Typography.DrawCentered(drawList, new Vector2(screen.Center.X, safe.Min.Y + (EditorNoticeOffset * scale)),
+            Typography.DrawCentered(drawList, new Vector2(screen.Center.X, safe.Min.Y + EditorNoticeOffset * scale),
                 editSession.Notice, frameTheme.Danger, TextStyles.Footnote);
         }
     }
@@ -123,18 +141,35 @@ internal sealed partial class PhotosApp
             AepLog.Warning(exception, $"[Photos] saving the edit of {Path.GetFileName(request.Path)} failed");
         }
 
-        await Plugin.Framework.RunOnFrameworkThread(() => FinishSave(saved)).ConfigureAwait(false);
+        await Plugin.Framework.RunOnFrameworkThread(() => FinishSave(request.Path, saved)).ConfigureAwait(false);
     }
 
-    private void FinishSave(string? saved)
+    private void FinishSave(string source, string? saved)
     {
         editSession.Saving = false;
+        if (router.Current.Route != PhotoRoute.Editor)
+        {
+            if (saved is not null && PhotoPlaces.CopyStamp(configuration.PhotoPlaces, source, saved))
+            {
+                configuration.Save();
+            }
+
+            return;
+        }
+
         if (saved is null)
         {
+            UiFeedback.Play(UiSound.Caution);
             editSession.Notice = Loc.T(L.Photos.EditFailed);
             return;
         }
 
+        if (PhotoPlaces.CopyStamp(configuration.PhotoPlaces, source, saved))
+        {
+            configuration.Save();
+        }
+
+        UiFeedback.Play(UiSound.Success);
         Refresh();
         var insertAt = Math.Clamp(viewerIndex, 0, viewerPaths.Length);
         var expanded = new string[viewerPaths.Length + 1];
@@ -151,7 +186,8 @@ internal sealed partial class PhotosApp
 
         viewerPaths = expanded;
         viewerIndex = insertAt;
-        zoomView.Reset();
+        viewerTitlePath = string.Empty;
+        ResetViewerMotion();
         CloseEditor();
     }
 }

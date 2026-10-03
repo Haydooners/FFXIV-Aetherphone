@@ -19,26 +19,31 @@ internal static partial class TourRegistry
                     "music.library.playlists", GuideGesture.Tap),
                 GuideStep.TryTap(L.Onboarding.MusicJamTitle, L.Onboarding.MusicJamBody, "music.tab.home"),
             });
-        Add(tours, "photos", 3,
+        Add(tours, "photos", 4,
             new[]
             {
                 GuideStep.TryTap(L.Onboarding.PhotosLibraryTitle, L.Onboarding.PhotosLibraryBody,
                     "photos.tab.library"),
                 GuideStep.Point(L.Onboarding.PhotosOpenTitle, L.Onboarding.PhotosOpenBody, "photos.grid",
                     GuideGesture.None),
-                GuideStep.TryTap(L.Onboarding.PhotosAlbumsTitle, L.Onboarding.PhotosAlbumsBody, "photos.tab.albums"),
+                GuideStep.TryTap(L.Onboarding.PhotosLevelsTitle, L.Onboarding.PhotosLevelsBody,
+                    "photos.level.months"),
+                GuideStep.TryTap(L.Onboarding.PhotosCollectionsTitle, L.Onboarding.PhotosCollectionsBody,
+                    "photos.tab.albums"),
                 GuideStep.Point(L.Onboarding.PhotosNewAlbumTitle, L.Onboarding.PhotosNewAlbumBody, "photos.albums.new",
                     GuideGesture.Tap),
                 GuideStep.Point(L.Onboarding.PhotosTrashTitle, L.Onboarding.PhotosTrashBody, "photos.albums.trash",
                     GuideGesture.None),
             });
-        Add(tours, "camera", 4,
+        Add(tours, "camera", 5,
             new[]
             {
                 GuideStep.Point(L.Onboarding.CameraFrameTitle, L.Onboarding.CameraFrameBody, "camera.viewfinder",
                     GuideGesture.None),
                 GuideStep.TryTap(L.Onboarding.CameraSquareTitle, L.Onboarding.CameraSquareBody, "camera.mode.square"),
                 GuideStep.Point(L.Onboarding.CameraShootTitle, L.Onboarding.CameraShootBody, "camera.shutter",
+                    GuideGesture.Tap),
+                GuideStep.Point(L.Onboarding.CameraTimerTitle, L.Onboarding.CameraTimerBody, "camera.timer",
                     GuideGesture.Tap),
                 GuideStep.Point(L.Onboarding.CameraShowUiTitle, L.Onboarding.CameraHudBody, "camera.showUi",
                     GuideGesture.Tap),

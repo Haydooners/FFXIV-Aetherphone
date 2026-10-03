@@ -1,14 +1,22 @@
+using Aetherphone.Core.Apps;
+using Aetherphone.Core.Media;
+
 namespace Aetherphone.Core.Photos;
 
 internal sealed class PhotoLibrary
 {
     public const int TrashRetentionDays = 30;
+    public const int ThumbnailMaxDimension = 256;
 
     private const int FreeNameAttempts = 100;
 
     private static readonly string[] Extensions = { ".png", ".jpg", ".jpeg", ".gif" };
     private readonly string directory;
     private readonly string trashDirectory;
+    private readonly LaunchIntent openRequest = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> pendingWrites =
+        new(StringComparer.OrdinalIgnoreCase);
+    private int version;
 
     public PhotoLibrary(DirectoryInfo configDirectory)
     {
@@ -19,15 +27,87 @@ internal sealed class PhotoLibrary
 
     public string DirectoryPath => directory;
 
-    public void Save(byte[] pixels, int width, int height)
+    public int Version => Volatile.Read(ref version);
+
+    public void RequestOpen(string path) => openRequest.Request(path);
+
+    public bool TryConsumeOpen(out string path) => openRequest.TryConsume(out path);
+
+    public string? Save(byte[] pixels, int width, int height)
     {
         var path = FreePath(DateTime.Now, ".png");
         if (path is null)
         {
-            return;
+            return null;
         }
 
-        Task.Run(() => Write(path, pixels, width, height));
+        pendingWrites[Path.GetFileName(path)] = 0;
+        _ = Task.Run(() => WriteAndAnnounce(path, pixels, width, height));
+        return path;
+    }
+
+    public void AddPendingNames(HashSet<string> names)
+    {
+        foreach (var name in pendingWrites.Keys)
+        {
+            names.Add(name);
+        }
+    }
+
+    private void WriteAndAnnounce(string path, byte[] pixels, int width, int height)
+    {
+        try
+        {
+            if (!Write(path, pixels, width, height))
+            {
+                TryDelete(path);
+            }
+        }
+        finally
+        {
+            pendingWrites.TryRemove(Path.GetFileName(path), out _);
+            MarkChanged();
+        }
+    }
+
+    public void MarkChanged() => Interlocked.Increment(ref version);
+
+    public async Task<byte[]> ThumbnailBytesAsync(string path, CancellationToken token)
+    {
+        var thumbnailPath = ThumbnailPathFor(path);
+        if (File.Exists(thumbnailPath) && File.GetLastWriteTimeUtc(thumbnailPath) >= File.GetLastWriteTimeUtc(path))
+        {
+            return await File.ReadAllBytesAsync(thumbnailPath, token).ConfigureAwait(false);
+        }
+
+        var bytes = await Task.Run(() => ImageProcessor.BakeJpeg(path, ThumbnailMaxDimension).Bytes, token)
+            .ConfigureAwait(false);
+        Directory.CreateDirectory(Path.GetDirectoryName(thumbnailPath)!);
+        var temp = string.Concat(thumbnailPath, ".", Guid.NewGuid().ToString("N"), ".tmp");
+        await File.WriteAllBytesAsync(temp, bytes, token).ConfigureAwait(false);
+        try
+        {
+            File.Move(temp, thumbnailPath, true);
+        }
+        catch (IOException exception)
+        {
+            AepLog.Debug(exception, $"[Photos] thumbnail for {Path.GetFileName(path)} was written elsewhere first");
+            TryDelete(temp);
+        }
+
+        return bytes;
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, $"[Photos] could not clean up {Path.GetFileName(path)}");
+        }
     }
 
     public string? SaveEdited(byte[] pixels, int width, int height)
@@ -113,6 +193,7 @@ internal sealed class PhotoLibrary
             try
             {
                 File.Copy(sourcePath, target);
+                MarkChanged();
                 return target;
             }
             catch (IOException) when (File.Exists(target))
