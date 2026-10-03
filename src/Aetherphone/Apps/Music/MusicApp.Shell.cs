@@ -93,6 +93,7 @@ internal sealed partial class MusicApp
         using (InputShield.Engage(sheetsCapture || NowPlayingCapturesPointer))
         {
             using (AppSurface.ReserveBottom(bottomChrome))
+            using (TabBar.Host())
             {
                 ImGui.PushID(TabIds[(int)tab]);
                 Router.Draw(content, AppSkin.Transparent, delta, drawView);

@@ -19,13 +19,15 @@ internal readonly struct NavBarFrame
     public readonly Rect Body;
     public readonly float Scale;
     public readonly float TitleBandTop;
+    public readonly bool Untitled;
 
-    internal NavBarFrame(Rect content, Rect body, float scale, float titleBandTop)
+    internal NavBarFrame(Rect content, Rect body, float scale, float titleBandTop, bool untitled = false)
     {
         Content = content;
         Body = body;
         Scale = scale;
         TitleBandTop = titleBandTop;
+        Untitled = untitled;
     }
 }
 
@@ -37,6 +39,7 @@ internal static class NavBarMetrics
     public const float GlassFadeDistance = 20f;
     public const float EdgeFadeHeight = 14f;
     public const float TitleGap = 10f;
+    public const float UntitledTopGap = 6f;
     public const float BarInsetY = 2f;
     public const float ChevronSize = 10f;
     public const float BackHitHeight = 44f;

@@ -24,6 +24,8 @@ internal static class AppHeader
     private const float ChevronThickness = 2.2f;
     private const float EdgeFillAlpha = 0.94f;
     private const float InlineTitleMargin = 8f;
+    private const string UntitledRowId = "##appheader.untitled.row";
+    private static readonly Dictionary<uint, bool> UntitledButtonRows = new();
 
     public static void Draw(in PhoneContext context, string title, Action? onBack = null)
     {
@@ -126,11 +128,22 @@ internal static class AppHeader
     {
         var scale = UiScale.Current;
         var content = context.Content;
+        var untitled = !reserveInlineRow && TabBar.Hosting;
         var titleBandTop = reserveInlineRow ? NavBarMetrics.InlineHeight * scale : 0f;
-        var inset = titleBandTop + (NavBarMetrics.BandHeight + NavBarMetrics.TitleGap) * scale;
+        var inset = untitled
+            ? UntitledInset(scale)
+            : titleBandTop + (NavBarMetrics.BandHeight + NavBarMetrics.TitleGap) * scale;
         var body = new Rect(new Vector2(content.Min.X, content.Min.Y + inset), content.Max);
         AppSurface.ArmNavBar(body.Min.Y, inset);
-        return new NavBarFrame(content, body, scale, titleBandTop);
+        return new NavBarFrame(content, body, scale, titleBandTop, untitled);
+    }
+
+    private static float UntitledInset(float scale)
+    {
+        var hasButtons = UntitledButtonRows.TryGetValue(ImGui.GetID(UntitledRowId), out var remembered) &&
+                         remembered;
+        var row = hasButtons ? NavBarMetrics.InlineHeight : 0f;
+        return (row + NavBarMetrics.UntitledTopGap) * scale;
     }
 
     public static Rect LargeTitleButtonRect(in NavBarFrame frame, int index, int count)
@@ -153,26 +166,22 @@ internal static class AppHeader
         var progress = NavBarMetrics.Progress(scrollY, scale);
         var glass = NavBarMetrics.GlassOpacity(scrollY, scale);
         var inlineHeight = NavBarMetrics.InlineHeight * scale;
+        var buttonCount = Math.Min(buttons.Length, NavBarMetrics.MaxButtons);
+        if (frame.Untitled)
+        {
+            UntitledButtonRows[ImGui.GetID(UntitledRowId)] = buttonCount > 0;
+            return DrawUntitledRow(in frame, id, buttons, buttonCount, style, theme, glass);
+        }
+
         var chromeBottom = content.Min.Y + inlineHeight + NavBarMetrics.EdgeFadeHeight * scale;
         var band = new Rect(content.Min, new Vector2(content.Max.X, MathF.Max(frame.Body.Min.Y, chromeBottom)));
-        var buttonCount = Math.Min(buttons.Length, NavBarMetrics.MaxButtons);
         var pressedButton = -1;
         var backPressed = false;
         using (ScreenLayer.BeginPassive(id, band))
         {
             var drawList = ImGui.GetWindowDrawList();
             DrawScrollEdge(drawList, content, inlineHeight, style.Background, glass, scale);
-            var barMin = new Vector2(content.Min.X + Metrics.Space.GlassInset * scale,
-                content.Min.Y + NavBarMetrics.BarInsetY * scale);
-            var barMax = new Vector2(content.Max.X - Metrics.Space.GlassInset * scale,
-                content.Min.Y + inlineHeight - NavBarMetrics.BarInsetY * scale);
-            Material.ThemedGlass(drawList, barMin, barMax, (barMax.Y - barMin.Y) * 0.5f, scale, theme, glass);
-            if (glass > GlassReserveThreshold)
-            {
-                UiInteract.HoverOverlay(new Rect(new Vector2(content.Min.X, content.Min.Y),
-                    new Vector2(content.Max.X, content.Min.Y + inlineHeight)));
-            }
-
+            ReserveScrolledRow(content, inlineHeight, glass);
             var titleReserve = frame.TitleBandTop > 0f
                 ? 0f
                 : NavBarMetrics.ButtonsWidth(buttonCount, scale) + Metrics.Space.GlassInset * scale;
@@ -195,6 +204,39 @@ internal static class AppHeader
         }
 
         return pressedButton;
+    }
+
+    private static int DrawUntitledRow(in NavBarFrame frame, string id, ReadOnlySpan<NavBarButton> buttons,
+        int buttonCount, in NavBarStyle style, PhoneTheme theme, float glass)
+    {
+        var scale = frame.Scale;
+        var content = frame.Content;
+        var edgeHeight = frame.Body.Min.Y - content.Min.Y;
+        var band = new Rect(content.Min,
+            new Vector2(content.Max.X, frame.Body.Min.Y + NavBarMetrics.EdgeFadeHeight * scale));
+        using (ScreenLayer.BeginPassive(id, band))
+        {
+            var drawList = ImGui.GetWindowDrawList();
+            DrawScrollEdge(drawList, content, edgeHeight, style.Background, glass, scale);
+            if (buttonCount == 0)
+            {
+                return -1;
+            }
+
+            var inlineHeight = NavBarMetrics.InlineHeight * scale;
+            ReserveScrolledRow(content, inlineHeight, glass);
+            return DrawButtons(drawList, id, content, buttons, buttonCount, style.Ink, theme, inlineHeight, scale);
+        }
+    }
+
+    private static void ReserveScrolledRow(Rect content, float inlineHeight, float glass)
+    {
+        if (glass <= GlassReserveThreshold)
+        {
+            return;
+        }
+
+        UiInteract.HoverOverlay(new Rect(content.Min, new Vector2(content.Max.X, content.Min.Y + inlineHeight)));
     }
 
     private static void DrawScrollEdge(ImDrawListPtr drawList, Rect content, float inlineHeight, Vector4 background,

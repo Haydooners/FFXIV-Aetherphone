@@ -100,13 +100,16 @@ internal sealed partial class PhotosApp
 
     private void DrawRoot(in PhoneContext context, Rect area)
     {
-        if (activeTab == PhotosTab.Collections && !selecting)
+        using (TabBar.Host(!selecting))
         {
-            DrawCollections(context, area);
-        }
-        else
-        {
-            DrawLibrary(context, area);
+            if (activeTab == PhotosTab.Collections && !selecting)
+            {
+                DrawCollections(context, area);
+            }
+            else
+            {
+                DrawLibrary(context, area);
+            }
         }
 
         if (selecting)

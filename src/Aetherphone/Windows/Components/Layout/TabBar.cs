@@ -47,6 +47,8 @@ internal sealed class TabBar
     private static readonly Vector4 StrongOnDarkGlass = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 HighlightRim = new(1f, 1f, 1f, 1f);
 
+    private static int hostDepth;
+
     private Spring[] hover = Array.Empty<Spring>();
     private Spring[] press = Array.Empty<Spring>();
     private TabItemPose[] poses = Array.Empty<TabItemPose>();
@@ -69,8 +71,12 @@ internal sealed class TabBar
 
     public static Rect Zone(Rect area, float scale) => TabBarLayout.Zone(area, scale);
 
-    public static AppSurface.BottomInsetScope ReserveContent(float scale) =>
-        AppSurface.ReserveBottom(ContentInset(scale));
+    public static bool Hosting => hostDepth > 0;
+
+    public static HostScope ReserveContent(float scale, float extraInset = 0f) =>
+        new(true, true, ContentInset(scale) + extraInset);
+
+    public static HostScope Host(bool active = true) => new(active, false, 0f);
 
     public TabItemPose Pose(int index) => index >= 0 && index < poses.Length ? poses[index] : default;
 
@@ -249,5 +255,36 @@ internal sealed class TabBar
         }
 
         return UiInteract.Click(circle.Min, circle.Max, hovered);
+    }
+
+    public ref struct HostScope
+    {
+        private readonly bool active;
+        private readonly bool reservesInset;
+        private readonly AppSurface.BottomInsetScope inset;
+
+        internal HostScope(bool active, bool reservesInset, float bottomInset)
+        {
+            this.active = active;
+            this.reservesInset = reservesInset;
+            inset = reservesInset ? AppSurface.ReserveBottom(bottomInset) : default;
+            if (active)
+            {
+                hostDepth++;
+            }
+        }
+
+        public void Dispose()
+        {
+            if (reservesInset)
+            {
+                inset.Dispose();
+            }
+
+            if (active)
+            {
+                hostDepth--;
+            }
+        }
     }
 }
