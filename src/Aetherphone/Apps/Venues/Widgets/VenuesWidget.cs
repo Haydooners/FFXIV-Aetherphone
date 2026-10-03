@@ -262,8 +262,9 @@ internal sealed class VenuesWidget : IHomeWidget
             return nextText.Value;
         }
 
-        return nextText.Store(key,
-            Loc.T(L.WidgetsUtility.NextOpening, nextOpening.Title, TimeText.Clock(start.ToLocalTime())));
+        var title = VenueDisplayText.Clean(nextOpening.Title);
+        return nextText.Store(key, Loc.T(L.WidgetsUtility.NextOpening, title.Length > 0 ? title : nextOpening.Title,
+            TimeText.Clock(start.ToLocalTime())));
     }
 
     private string Subtitle(ref CachedText cache, VenueEvent venue)
