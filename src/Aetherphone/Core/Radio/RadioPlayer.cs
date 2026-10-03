@@ -224,13 +224,13 @@ internal sealed class RadioPlayer : IDisposable
         var attempt = 0;
         while (!token.IsCancellationRequested)
         {
-            var stable = StreamOnce(station.StreamUrl, station.Codec, token, workerSession);
-            if (token.IsCancellationRequested || !station.IsCommunity)
+            var outcome = StreamOnce(station.StreamUrl, station.Codec, token, workerSession);
+            if (token.IsCancellationRequested || !ShouldReconnect(station.IsCommunity, outcome.Stalled))
             {
                 return;
             }
 
-            if (stable)
+            if (outcome.Stable)
             {
                 attempt = 0;
             }
@@ -251,6 +251,10 @@ internal sealed class RadioPlayer : IDisposable
         }
     }
 
+    internal static bool ShouldReconnect(bool isCommunity, bool stalled) => isCommunity || stalled;
+
+    private readonly record struct StreamOutcome(bool Stable, bool Stalled);
+
     private void PublishTitle(int workerSession, string title)
     {
         lock (gate)
@@ -262,7 +266,7 @@ internal sealed class RadioPlayer : IDisposable
         }
     }
 
-    private bool StreamOnce(string url, string declaredCodec, CancellationToken token, int workerSession)
+    private StreamOutcome StreamOnce(string url, string declaredCodec, CancellationToken token, int workerSession)
     {
         IWavePlayer? output = null;
         VolumeSampleProvider? volumeProvider = null;
@@ -278,7 +282,7 @@ internal sealed class RadioPlayer : IDisposable
                 response => TryPublishResponse(response, workerSession), onTitle, token);
             if (connection is null)
             {
-                return false;
+                return default;
             }
 
             decoder = StreamDecoders.Create(connection.Codec, connection.Audio, onTitle);
@@ -338,11 +342,17 @@ internal sealed class RadioPlayer : IDisposable
 
             if (!token.IsCancellationRequested)
             {
-                TrySetState(workerSession, RadioPlaybackState.Stopped);
+                TrySetState(workerSession,
+                    connection.Stalled ? RadioPlaybackState.Reconnecting : RadioPlaybackState.Stopped);
             }
         }
         catch (Exception) when (token.IsCancellationRequested)
         {
+        }
+        catch (Exception exception) when (exception is RadioStallException || connection?.Stalled == true)
+        {
+            TrySetState(workerSession, RadioPlaybackState.Reconnecting);
+            AepLog.Info(exception, "Radio stream went silent, reconnecting");
         }
         catch (Exception exception)
         {
@@ -365,7 +375,8 @@ internal sealed class RadioPlayer : IDisposable
             connection?.Dispose();
         }
 
-        return playingSinceTick != 0L && Environment.TickCount64 - playingSinceTick >= StableSessionMilliseconds;
+        var stable = playingSinceTick != 0L && Environment.TickCount64 - playingSinceTick >= StableSessionMilliseconds;
+        return new StreamOutcome(stable, connection?.Stalled ?? false);
     }
 
     public void Dispose()
