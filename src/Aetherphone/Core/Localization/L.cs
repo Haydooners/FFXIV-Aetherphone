@@ -6666,6 +6666,21 @@ internal static class L
         public static readonly LocString OnlineTapToSkip = new("games.onlineTapToSkip", "Tap to skip");
     }
 
+    internal static class Coil
+    {
+        public static readonly LocString Title = new("coil.title", "Coil");
+    }
+
+    internal static class Updraft
+    {
+        public static readonly LocString Title = new("updraft.title", "Updraft");
+    }
+
+    internal static class Swoop
+    {
+        public static readonly LocString Title = new("swoop.title", "Swoop");
+    }
+
     internal static class Minimized
     {
         public static readonly LocString Title = new("minimized.title", "Minimized phone");

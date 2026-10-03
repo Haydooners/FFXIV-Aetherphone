@@ -1,3 +1,6 @@
+using Aetherphone.Apps.Games.Coil;
+using Aetherphone.Apps.Games.Swoop;
+using Aetherphone.Apps.Games.Updraft;
 using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Windows.Components;
@@ -111,6 +114,15 @@ internal static class AppIconArt
                 return true;
             case "wordrun":
                 DrawWordRun(dl, center, extent, inkColor, holeColor);
+                return true;
+            case "coil":
+                CoilIcon.Draw(dl, center, extent, inkColor, holeColor);
+                return true;
+            case "updraft":
+                UpdraftIcon.Draw(dl, center, extent, inkColor, holeColor);
+                return true;
+            case "swoop":
+                SwoopIcon.Draw(dl, center, extent, inkColor, holeColor);
                 return true;
             default:
                 return false;
