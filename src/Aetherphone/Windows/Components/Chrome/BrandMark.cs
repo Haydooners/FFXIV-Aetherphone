@@ -32,7 +32,6 @@ internal static class BrandMark
     private static readonly Vector4 DayFlat = new(0.95f, 0.94f, 0.99f, 1f);
     private static readonly Vector4 DayScrimTop = new(1f, 1f, 1f, 0.45f);
     private static readonly Vector4 DayScrimBottom = new(0.98f, 0.97f, 1f, 0.70f);
-    private static readonly Vector2 RimLight = new(-0.55f, -1f);
     private const int ShockwaveRings = 3;
     private const float ShockwaveReach = 1.35f;
     private const double SheenPeriodMs = 6400.0;
@@ -48,7 +47,7 @@ internal static class BrandMark
     private const float MoteSwayUnits = 9f;
     private static readonly Vector4[] MoteSeeds = BuildMoteSeeds();
 
-    private static readonly MarkSource Tile = new("Icon.png");
+    private static readonly MarkSource Icon = new("Icon.png");
     private static readonly MarkSource Emblem = new("Emblem.png");
     private static IDalamudTextureWrap? ambient;
     private static int ambientLoading;
@@ -56,38 +55,7 @@ internal static class BrandMark
     private static int sheenLoading;
     private static int generation;
 
-    public static bool TryDraw(ImDrawListPtr drawList, Vector2 center, float size, float alpha, float scale) =>
-        TryDraw(drawList, center, size, alpha, scale, AutoSheen());
-
-    public static bool TryDraw(ImDrawListPtr drawList, Vector2 center, float size, float alpha, float scale,
-        float sheen)
-    {
-        if (alpha <= 0.001f || size <= 1f)
-        {
-            return true;
-        }
-
-        if (!TryResolve(Tile, TextureSizes.LevelFor(size), out var texture))
-        {
-            return false;
-        }
-
-        var half = size * 0.5f;
-        var min = new Vector2(center.X - half, center.Y - half);
-        var max = new Vector2(center.X + half, center.Y + half);
-        var radius = size * CornerFraction;
-        Glow(drawList, center, size, alpha);
-        Elevation.Draw(drawList, min, max, radius, 1f, size * 0.10f, size * 0.07f, 0.42f, alpha);
-        Squircle.FillImage(drawList, min, max, radius, texture, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha)));
-        Sheen(drawList, min, max, radius, sheen, alpha);
-        Squircle.Stroke(drawList, min, max, radius, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.10f * alpha)),
-            1f * scale);
-        Squircle.StrokeDirectional(drawList, min, max, radius,
-            ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.42f * alpha)), 1.3f * scale, RimLight, 2.2f);
-        return true;
-    }
-
-    public static bool TryDrawEmblem(ImDrawListPtr drawList, Vector2 center, float size, float alpha)
+    public static bool TryDraw(ImDrawListPtr drawList, Vector2 center, float size, float alpha)
     {
         if (alpha <= 0.001f || size <= 1f)
         {
@@ -193,12 +161,6 @@ internal static class BrandMark
         }
     }
 
-    public static float AutoSheen()
-    {
-        var phase = Pulse.Phase(SheenPeriodMs);
-        return phase < SheenSweepFraction ? phase / SheenSweepFraction : -1f;
-    }
-
     public static void Sheen(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float progress,
         float alpha)
     {
@@ -250,7 +212,7 @@ internal static class BrandMark
     public static void Dispose()
     {
         Interlocked.Increment(ref generation);
-        Tile.Dispose();
+        Icon.Dispose();
         Emblem.Dispose();
         Interlocked.Exchange(ref ambient, null)?.Dispose();
         Interlocked.Exchange(ref ambientLoading, 0);
@@ -320,10 +282,10 @@ internal static class BrandMark
             return true;
         }
 
-        if (!Tile.Failed && Interlocked.CompareExchange(ref ambientLoading, 1, 0) == 0)
+        if (!Icon.Failed && Interlocked.CompareExchange(ref ambientLoading, 1, 0) == 0)
         {
             var stamp = generation;
-            _ = Task.Run(() => BuildAsync(Tile, 0, stamp, AmbientWidth, true));
+            _ = Task.Run(() => BuildAsync(Icon, 0, stamp, AmbientWidth, true));
         }
 
         return false;

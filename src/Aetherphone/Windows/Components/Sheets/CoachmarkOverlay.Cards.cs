@@ -88,8 +88,7 @@ internal sealed partial class CoachmarkOverlay
         BrandMark.Shockwave(drawList, center, size, burst, alpha, scale);
         DrawBurst(drawList, center, size, burst, alpha, scale);
         var bob = MathF.Sin(Pulse.Phase(6200.0) * MathF.PI * 2f) * 3f * scale * reveal;
-        BrandMark.TryDraw(drawList, center + new Vector2(0f, bob), size * (0.7f + 0.3f * reveal), alpha * reveal,
-            scale);
+        BrandMark.TryDraw(drawList, center + new Vector2(0f, bob), size * (0.7f + 0.3f * reveal), alpha * reveal);
     }
 
     private void DrawAppHero(ImDrawListPtr drawList, Vector2 center, string appId, float reveal, float alpha,
@@ -119,7 +118,7 @@ internal sealed partial class CoachmarkOverlay
             return;
         }
 
-        BrandMark.TryDraw(drawList, iconCenter, size, alpha * reveal, scale);
+        BrandMark.TryDraw(drawList, iconCenter, size, alpha * reveal);
     }
 
     private static void DrawBurst(ImDrawListPtr drawList, Vector2 center, float size, float progress, float alpha,
