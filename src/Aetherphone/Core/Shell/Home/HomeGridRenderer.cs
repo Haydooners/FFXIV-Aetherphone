@@ -15,6 +15,9 @@ namespace Aetherphone.Core.Shell.Home;
 
 internal sealed class HomeGridRenderer
 {
+    private const float StackTargetGrowUnits = 4f;
+    private const float StackTargetFillAlpha = 0.14f;
+
     private readonly HomeLayoutService layout;
     private readonly Pager pager;
     private readonly TilePoseCache poses;
@@ -24,6 +27,7 @@ internal sealed class HomeGridRenderer
     private readonly ConfirmService confirm;
     private readonly Configuration configuration;
     private readonly WidgetHost widgetHost;
+    private readonly StackPresenter stacks;
     private bool widgetAnchorReported;
     private bool widgetsInteractive;
 
@@ -32,6 +36,7 @@ internal sealed class HomeGridRenderer
         Configuration configuration, WidgetHost widgetHost)
     {
         this.widgetHost = widgetHost;
+        stacks = new StackPresenter(layout, widgetHost);
         this.layout = layout;
         this.pager = pager;
         this.poses = poses;
@@ -88,6 +93,60 @@ internal sealed class HomeGridRenderer
             DrawTile(metrics, theme, tile, rect, labelAlpha, showLabels, delta, motion,
                 ReferenceEquals(tile, interaction.FolderTarget), widgetsInteractive && page == pager.Page);
         }
+
+        DrawStackTarget(metrics, theme, page, cells, tiles, labelAlpha);
+        DrawResizeOutline(metrics, theme, page);
+    }
+
+    private void DrawStackTarget(in HomeMetrics metrics, PhoneTheme theme, int page, IReadOnlyList<GridCell> cells,
+        IReadOnlyList<HomeTile> tiles, float labelAlpha)
+    {
+        if (interaction.StackCandidate is not { } candidate || interaction.DragPage != page)
+        {
+            return;
+        }
+
+        var index = IndexOf(tiles, candidate);
+        if (index < 0 || index >= cells.Count)
+        {
+            return;
+        }
+
+        var progress = interaction.StackProgress;
+        var rect = metrics.TileRect(page, pager.Value, cells[index], candidate);
+        var grow = StackTargetGrowUnits * metrics.Scale * progress;
+        var min = rect.Min - new Vector2(grow, grow);
+        var max = rect.Max + new Vector2(grow, grow);
+        var radius = WidgetChrome.Radius(metrics.Scale) + grow;
+        var drawList = ImGui.GetWindowDrawList();
+        Squircle.Fill(drawList, min, max, radius,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, StackTargetFillAlpha * progress * labelAlpha)));
+        Squircle.Stroke(drawList, min, max, radius,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, (0.35f + 0.6f * progress) * labelAlpha)),
+            (1.5f + progress) * metrics.Scale);
+    }
+
+    private void DrawResizeOutline(in HomeMetrics metrics, PhoneTheme theme, int page)
+    {
+        if (interaction.ResizeTile is null || interaction.ResizePage != page)
+        {
+            return;
+        }
+
+        WidgetResizeHandle.Outline(ImGui.GetWindowDrawList(), interaction.ResizeOutline, theme, metrics.Scale);
+    }
+
+    private static int IndexOf(IReadOnlyList<HomeTile> tiles, HomeTile tile)
+    {
+        for (var index = 0; index < tiles.Count; index++)
+        {
+            if (ReferenceEquals(tiles[index], tile))
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     private void DrawDropTarget(in HomeMetrics metrics, PhoneTheme theme, int page, float labelAlpha)
@@ -131,11 +190,30 @@ internal sealed class HomeGridRenderer
         {
             var pressScale = pointer.Scale;
             var drawRect = pressScale == 1f ? rect : ScaleRect(rect, pressScale);
-            tile.Widget!.Draw(widgetHost.Tile(ImGui.GetWindowDrawList(), drawRect, theme, tile, scale, delta,
-                Math.Clamp(labelAlpha + 0.35f, 0f, 1f), interactive));
+            var widgetOpacity = Math.Clamp(labelAlpha + 0.35f, 0f, 1f);
+            var drawList = ImGui.GetWindowDrawList();
+            if (tile.IsStack)
+            {
+                stacks.Draw(drawList, drawRect, theme, tile, scale, delta, widgetOpacity, interactive, interactive);
+            }
+            else
+            {
+                tile.Widget!.Draw(widgetHost.Tile(drawList, drawRect, theme, tile, scale, delta, widgetOpacity,
+                    interactive));
+            }
+
             ReportWidgetAnchor(rect, motion);
-            if (interaction.RemoveBadgesLive(motion) &&
-                HomeTileView.RemoveBadge(new Vector2(rect.Min.X + 4f * scale, rect.Min.Y + 4f * scale), scale, theme))
+            if (!interaction.RemoveBadgesLive(motion))
+            {
+                return;
+            }
+
+            if (WidgetResizeHandle.Resizable(tile) && !ReferenceEquals(tile, interaction.ResizeTile))
+            {
+                WidgetResizeHandle.Draw(drawList, rect, scale, WidgetResizeHandle.Hovered(rect, scale));
+            }
+
+            if (HomeTileView.RemoveBadge(new Vector2(rect.Min.X + 4f * scale, rect.Min.Y + 4f * scale), scale, theme))
             {
                 layout.RemoveTile(tile);
                 interaction.ConsumeEditGesture();
@@ -305,6 +383,12 @@ internal sealed class HomeGridRenderer
             var half = size * 0.5f * scale;
             var rect = new Rect(position - half, position + half);
             Elevation.Floating(drawList, rect.Min, rect.Max, WidgetChrome.Radius(metrics.Scale), metrics.Scale);
+            if (tile.IsStack)
+            {
+                stacks.DrawGhost(drawList, rect, theme, tile, metrics.Scale, delta);
+                return;
+            }
+
             tile.Widget!.Draw(widgetHost.Tile(drawList, rect, theme, tile, metrics.Scale, delta, 1f, false));
             return;
         }

@@ -8849,4 +8849,15 @@ internal static class L
         public static readonly LocString SampleEvent = new("widgets.sampleEvent", "Raid night");
         public static readonly LocString SampleEventLater = new("widgets.sampleEventLater", "Treasure maps");
     }
+
+    internal static class WidgetStacks
+    {
+        public static readonly LocString EditWidget = new("widgetStacks.editWidget", "Edit Widget");
+        public static readonly LocString EditStack = new("widgetStacks.editStack", "Edit Stack");
+        public static readonly LocString RemoveWidget = new("widgetStacks.removeWidget", "Remove Widget");
+        public static readonly LocString RemoveStack = new("widgetStacks.removeStack", "Remove Stack");
+        public static readonly LocString SmartRotate = new("widgetStacks.smartRotate", "Smart Rotate");
+        public static readonly LocString SmartRotateHint = new("widgetStacks.smartRotateHint",
+            "Shows the most relevant widget at the right time.");
+    }
 }

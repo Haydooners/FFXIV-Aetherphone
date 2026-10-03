@@ -212,7 +212,7 @@ internal sealed partial class WidgetGallery
             return;
         }
 
-        layout.AddWidget(suggestions[0], size, page);
+        layout.AddStack(suggestions, size, page);
     }
 
     private void SnapshotTiles()

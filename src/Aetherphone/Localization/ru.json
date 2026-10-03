@@ -6976,5 +6976,11 @@
   "widgets.activityDescription": "Сегодняшние кольца прогресса, приключений и богатства.",
   "widgets.coinDescription": "Ваш баланс Aether Coin и заработанное за сегодня.",
   "widgets.sampleEvent": "Вечер рейда",
-  "widgets.sampleEventLater": "Карты сокровищ"
+  "widgets.sampleEventLater": "Карты сокровищ",
+  "widgetStacks.editWidget": "Изменить виджет",
+  "widgetStacks.editStack": "Изменить стопку",
+  "widgetStacks.removeWidget": "Удалить виджет",
+  "widgetStacks.removeStack": "Удалить стопку",
+  "widgetStacks.smartRotate": "Умная смена",
+  "widgetStacks.smartRotateHint": "Показывает самый актуальный виджет в нужный момент."
 }

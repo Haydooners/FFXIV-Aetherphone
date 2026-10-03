@@ -6976,5 +6976,11 @@
   "widgets.activityDescription": "Os anéis de progresso, aventura e fortuna de hoje.",
   "widgets.coinDescription": "Seu saldo de Aether Coin e o que você ganhou hoje.",
   "widgets.sampleEvent": "Noite de raid",
-  "widgets.sampleEventLater": "Mapas do tesouro"
+  "widgets.sampleEventLater": "Mapas do tesouro",
+  "widgetStacks.editWidget": "Editar widget",
+  "widgetStacks.editStack": "Editar pilha",
+  "widgetStacks.removeWidget": "Remover widget",
+  "widgetStacks.removeStack": "Remover pilha",
+  "widgetStacks.smartRotate": "Rotação inteligente",
+  "widgetStacks.smartRotateHint": "Mostra o widget mais relevante no momento certo."
 }

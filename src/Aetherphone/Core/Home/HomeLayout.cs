@@ -30,5 +30,7 @@ internal sealed class HomeItem
     public string WidgetSize { get; set; } = string.Empty;
     public string WidgetKey { get; set; } = string.Empty;
     public string WidgetConfig { get; set; } = string.Empty;
+    public int StackIndex { get; set; }
+    public bool SmartRotate { get; set; } = true;
     public string ShortcutId { get; set; } = string.Empty;
 }

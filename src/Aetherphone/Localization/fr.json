@@ -6976,5 +6976,11 @@
   "widgets.activityDescription": "Les anneaux de progression, d'aventure et de fortune du jour.",
   "widgets.coinDescription": "Votre solde d'Aether Coin et ce que vous avez gagné aujourd'hui.",
   "widgets.sampleEvent": "Soirée raid",
-  "widgets.sampleEventLater": "Cartes au trésor"
+  "widgets.sampleEventLater": "Cartes au trésor",
+  "widgetStacks.editWidget": "Modifier le widget",
+  "widgetStacks.editStack": "Modifier la pile",
+  "widgetStacks.removeWidget": "Supprimer le widget",
+  "widgetStacks.removeStack": "Supprimer la pile",
+  "widgetStacks.smartRotate": "Rotation intelligente",
+  "widgetStacks.smartRotateHint": "Affiche le widget le plus pertinent au bon moment."
 }
