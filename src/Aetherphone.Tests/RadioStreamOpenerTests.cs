@@ -105,6 +105,76 @@ public sealed class RadioStreamOpenerTests
         Assert.Throws<InvalidDataException>(() => Open(handler, "http://radio.example/loop.m3u", string.Empty));
     }
 
+    [Fact]
+    public void AnOversizedHlsResourceIsRefusedBeforeItIsBuffered()
+    {
+        var handler = new FakeRadioHandler();
+        handler.Add("https://radio.example/hls/huge.ts", "video/mp2t", new byte[32 * 1024 * 1024]);
+
+        Assert.Throws<InvalidDataException>(() => RadioStreamOpener.Fetch(new HttpClient(handler),
+            new Uri("https://radio.example/hls/huge.ts"), CancellationToken.None));
+    }
+
+    [Fact]
+    public void AnEndlessHlsSegmentStopsAtTheCapInsteadOfFillingMemory()
+    {
+        var handler = new EndlessBodyHandler();
+
+        Assert.Throws<InvalidDataException>(() => RadioStreamOpener.Fetch(new HttpClient(handler),
+            new Uri("https://radio.example/hls/endless.ts"), CancellationToken.None));
+        Assert.True(handler.Body.Served < 64L * 1024 * 1024);
+    }
+
+    private sealed class EndlessBodyHandler : HttpMessageHandler
+    {
+        public readonly EndlessStream Body = new();
+
+        protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                RequestMessage = request, Content = new StreamContent(Body),
+            };
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Send(request, cancellationToken));
+        }
+    }
+
+    private sealed class EndlessStream : Stream
+    {
+        public long Served { get; private set; }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => Served;
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            Array.Clear(buffer, offset, count);
+            Served += count;
+            return count;
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
     private static RadioConnection Open(FakeRadioHandler handler, string url, string declaredCodec)
     {
         return RadioStreamOpener.Open(new HttpClient(handler), url, declaredCodec, _ => true, _ => { },
