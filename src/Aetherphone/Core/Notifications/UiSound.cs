@@ -42,6 +42,10 @@ internal enum UiSound
     SimonTone2,
     SimonTone3,
     SimonTone4,
+    IslandExpand,
+    IslandCollapse,
+    SheetPresent,
+    SheetDismiss,
 }
 
 internal enum UiSoundChannel
@@ -194,6 +198,10 @@ internal static class UiSoundCatalog
         new(Simon2, 0.55f, 1, UiSoundChannel.Game),
         new(Simon3, 0.55f, 1, UiSoundChannel.Game),
         new(Simon4, 0.55f, 1, UiSoundChannel.Game),
+        new(TransitionUp, 0.3f, 90, UiSoundChannel.Transition),
+        new(TransitionDown, 0.3f, 90, UiSoundChannel.Transition),
+        new(TransitionUp, 0.45f, 90, UiSoundChannel.Transition),
+        new(TransitionDown, 0.45f, 90, UiSoundChannel.Transition),
     };
 
     public static IReadOnlyList<string> Files()

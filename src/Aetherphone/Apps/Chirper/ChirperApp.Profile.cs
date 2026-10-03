@@ -27,7 +27,6 @@ internal sealed partial class ChirperApp
     private const float ProfileTabHeight = 44f;
     private const float ProfileTabUnderline = 3f;
     private const float ProfileActionHeight = 36f;
-    private const float ProfileTabSmoothTime = 0.08f;
     private const int MediaGridColumns = 3;
     private const float MediaGridCellGap = 2f;
 
@@ -408,7 +407,7 @@ internal sealed partial class ChirperApp
         }
 
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        profileTabSlide.Step((int)profileTab, ProfileTabSmoothTime, delta);
+        profileTabSlide.Step((int)profileTab, Motion.Release, delta);
         var centerY = origin.Y + height * 0.5f;
         var activeLabel = profileTab switch
         {

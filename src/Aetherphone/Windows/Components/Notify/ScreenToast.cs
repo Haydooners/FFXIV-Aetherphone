@@ -25,7 +25,6 @@ internal readonly record struct ScreenToastStyle(Vector4 Panel, Vector4 Stroke, 
 internal sealed class ScreenToast
 {
     private const float LifetimeSeconds = 1.7f;
-    private const float PopSeconds = 0.28f;
     private const float FadeSeconds = 0.22f;
     private const float BottomOffset = 96f;
     private const float RiseDistance = 14f;
@@ -39,6 +38,7 @@ internal sealed class ScreenToast
 
     private string label = string.Empty;
     private float elapsed = LifetimeSeconds;
+    private Spring popSpring;
 
     public void Show(string text)
     {
@@ -49,6 +49,7 @@ internal sealed class ScreenToast
 
         label = text;
         elapsed = 0f;
+        popSpring.SnapTo(0f);
     }
 
     public void Draw(Rect screen, in ScreenToastStyle style)
@@ -58,8 +59,9 @@ internal sealed class ScreenToast
             return;
         }
 
-        elapsed += MathF.Min(ImGui.GetIO().DeltaTime, MaxFrameSeconds);
-        var pop = Easing.EaseOutQuint(Math.Clamp(elapsed / PopSeconds, 0f, 1f));
+        var delta = MathF.Min(ImGui.GetIO().DeltaTime, MaxFrameSeconds);
+        elapsed += delta;
+        var pop = Math.Clamp(popSpring.Step(1f, Motion.Appear, delta), 0f, 1f);
         var fadeStart = LifetimeSeconds - FadeSeconds;
         var fade = elapsed > fadeStart ? 1f - Math.Clamp((elapsed - fadeStart) / FadeSeconds, 0f, 1f) : 1f;
         var alpha = pop * fade;

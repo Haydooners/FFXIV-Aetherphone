@@ -1,5 +1,6 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Animation;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
 
@@ -53,7 +54,7 @@ internal static class SheetMetrics
     public const float FlingVelocity = 900f;
     public const float HomeVeil = 0.35f;
     public const float AppVeil = 0.45f;
-    public const float PresentSmoothTime = 0.22f;
+    public const float PresentSmoothTime = Motion.Sheet;
     private const float MinimumScale = 0.0001f;
 
     public static float VeilFor(bool insideApp) => insideApp ? AppVeil : HomeVeil;
@@ -123,18 +124,26 @@ internal sealed class Sheet
         launchPending = true;
         largeDetent = false;
         openedFrame = ImGui.GetFrameCount();
+        UiFeedback.Play(UiSound.SheetPresent);
     }
 
     public void Close()
     {
+        var wasOpen = open;
         open = false;
         pressed = false;
         dragging = false;
+        if (wasOpen)
+        {
+            UiFeedback.Play(UiSound.SheetDismiss);
+        }
     }
 
     public void CloseImmediately()
     {
-        Close();
+        open = false;
+        pressed = false;
+        dragging = false;
         shown.SnapTo(0f);
     }
 

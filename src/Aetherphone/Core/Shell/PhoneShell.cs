@@ -439,7 +439,8 @@ internal sealed class PhoneShell : IDisposable
         {
             DeviceChrome.MaskScreenCorners(ImGui.GetWindowDrawList(), chassis, theme, UiScale.Current);
             var ink = painter.SurfaceTheme(theme);
-            StatusBar.Draw(screen, ink, screen.IsLandscape());
+            var statusAlpha = navigation.IsTransitioning && !appSwitcher.Overtakes ? transition.StatusBarAlpha : 1f;
+            StatusBar.Draw(screen, ink, screen.IsLandscape(), statusAlpha);
             DrawHomeIndicator(screen, ink);
             if (turn.Turning)
             {

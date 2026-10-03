@@ -12,7 +12,6 @@ namespace Aetherphone.Core.Shell.Home;
 
 internal sealed class FolderOverlay
 {
-    private const float OpenSmoothTime = 0.20f;
     private const float VeilDim = 0.35f;
     private const float PanelRadiusUnits = 22f;
     private const float PanelWidthFraction = 0.84f;
@@ -88,7 +87,7 @@ internal sealed class FolderOverlay
             return;
         }
 
-        anim.Step(closing ? 0f : 1f, OpenSmoothTime, delta);
+        anim.Step(closing ? 0f : 1f, Motion.Sheet, delta);
         if (closing && anim.Value < 0.02f)
         {
             folder = null;

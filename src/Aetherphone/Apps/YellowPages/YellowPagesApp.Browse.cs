@@ -320,7 +320,7 @@ internal sealed partial class YellowPagesApp
         var restMax = max;
         var hovered = UiInteract.Hover(min, max);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale("yellowpages.rail." + ad.Id, pressed, 0.97f);
+        var press = PressFx.Scale("yellowpages.rail." + ad.Id, pressed, PressFx.CardPressedScale);
         var center = (min + max) * 0.5f;
         var half = (max - min) * 0.5f * press;
         min = center - half;
@@ -439,7 +439,7 @@ internal sealed partial class YellowPagesApp
         var restMax = max;
         var hovered = UiInteract.Hover(min, max);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale("yellowpages.intent." + intent, pressed, 0.96f);
+        var press = PressFx.Scale("yellowpages.intent." + intent, pressed, PressFx.ControlPressedScale);
         var center = (min + max) * 0.5f;
         var half = (max - min) * 0.5f * press;
         min = center - half;

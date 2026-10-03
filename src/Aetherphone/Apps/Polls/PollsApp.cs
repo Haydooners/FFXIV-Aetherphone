@@ -18,7 +18,6 @@ internal sealed class PollsApp : IPhoneApp
 {
     private const float RefreshSeconds = 60f;
     private const float FillSmoothTime = 0.26f;
-    private const float CheckSmoothTime = 0.16f;
     private const float RevealSmoothTime = 0.28f;
     private const float OptionFontScale = 0.98f;
     private const float CountFontScale = 0.92f;
@@ -245,7 +244,7 @@ internal sealed class PollsApp : IPhoneApp
 
         var radioRadius = RadioRadius * scale;
         var radioCenter = new Vector2(left + radioRadius, firstLineCenterY);
-        var check = motion.Checks[optionIndex].Step(selected ? 1f : 0f, CheckSmoothTime, deltaSeconds);
+        var check = motion.Checks[optionIndex].Step(selected ? 1f : 0f, Motion.Release, deltaSeconds);
 
         drawList.AddCircle(radioCenter, radioRadius,
             ImGui.GetColorU32(Palette.WithAlpha(selected ? ui.Accent : ui.MutedInk, inkAlpha)), 32, 1.6f * scale);

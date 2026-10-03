@@ -13,7 +13,6 @@ namespace Aetherphone.Apps.AetherStream;
 internal sealed partial class AetherStreamApp
 {
     private const float TheaterAspect = (float)VideoEngine.ScreenWidth / VideoEngine.ScreenHeight;
-    private const float TheaterFadeTime = 0.14f;
     private const float TheaterScrimHeight = 78f;
     private const float TheaterHeaderY = 50f;
     private const float TheaterProgressY = 40f;
@@ -57,7 +56,7 @@ internal sealed partial class AetherStreamApp
         }
 
         var hovered = UiInteract.Hover(area.Min, area.Max);
-        var eased = Math.Clamp(theaterFade.Step(hovered ? 1f : 0f, TheaterFadeTime, delta), 0f, 1f);
+        var eased = Math.Clamp(theaterFade.Step(hovered ? 1f : 0f, Motion.Appear, delta), 0f, 1f);
         if (eased <= 0.01f)
         {
             return;

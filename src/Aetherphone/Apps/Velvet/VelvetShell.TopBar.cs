@@ -23,14 +23,13 @@ internal sealed partial class VelvetShell
     private const float HeaderAnchorHalf = 18f;
     private const float FeedTabRowHeight = 44f;
     private const float FeedTabUnderline = 2f;
-    private const float FeedTabSmoothTime = 0.09f;
 
     private static readonly TextStyle WordmarkStyle = new(1.4f, FontWeight.Bold);
     private static readonly TextStyle FeedTabStyle = new(1.07f, FontWeight.SemiBold);
     private static readonly TextStyle FeedTabIdleStyle = new(1.07f, FontWeight.Medium);
     private static readonly UnderlineTabStyle FeedTabsStyle = new(FeedTabStyle, FeedTabIdleStyle,
         VelvetTheme.TitleInk, VelvetTheme.MutedInk, VelvetTheme.Rose, FeedTabUnderline, SocialChrome.CellPadX,
-        FeedTabSmoothTime);
+        Motion.Release);
 
     private Spring feedTabSlide;
 

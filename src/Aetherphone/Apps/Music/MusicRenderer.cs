@@ -9,8 +9,6 @@ namespace Aetherphone.Apps.Music;
 
 internal static class MusicRenderer
 {
-    private const float PressSmoothTime = 0.09f;
-    private const float KnobSmoothTime = 0.10f;
 
     private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
     private static readonly Dictionary<string, Spring> Springs = new(StringComparer.Ordinal);
@@ -57,8 +55,8 @@ internal static class MusicRenderer
         var hovered = alpha > 0.6f && UiInteract.Hover(center - hit, center + hit);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var spring = Springs.TryGetValue(id, out var stored) ? stored : new Spring(1f);
-        var grow = spring.Step(pressed ? 0.90f : hovered ? 1.05f : 1f, PressSmoothTime,
-            MathF.Min(ImGui.GetIO().DeltaTime, 0.1f));
+        var grow = spring.Step(pressed ? Motion.PressScaleControl : hovered ? 1f + Motion.HoverLiftIcon : 1f,
+            pressed ? Motion.PressIn : Motion.Release, MathF.Min(ImGui.GetIO().DeltaTime, 0.1f));
         Springs[id] = spring;
         var drawnRadius = radius * grow;
         drawList.AddCircleFilled(center + new Vector2(0f, 1.5f * UiScale.Current), drawnRadius,
@@ -119,7 +117,7 @@ internal static class MusicRenderer
         var value = dragging || released ? dragFraction : Math.Clamp(fraction, 0f, 1f);
         var engaged = hovered || dragging;
         var knobSpring = Springs.TryGetValue(id, out var stored) ? stored : new Spring(0f);
-        var knob = knobSpring.Step(engaged ? 1f : 0f, KnobSmoothTime, MathF.Min(ImGui.GetIO().DeltaTime, 0.1f));
+        var knob = knobSpring.Step(engaged ? 1f : 0f, Motion.HoverLift, MathF.Min(ImGui.GetIO().DeltaTime, 0.1f));
         Springs[id] = knobSpring;
         var thickness = track.Height;
         var railMin = new Vector2(left, midY - thickness * 0.5f);
@@ -148,7 +146,8 @@ internal static class MusicRenderer
         var hovered = UiInteract.Hover(center - hit, center + hit);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var spring = Springs.TryGetValue(id, out var stored) ? stored : new Spring(1f);
-        var grow = spring.Step(pressed ? 0.82f : 1f, PressSmoothTime, MathF.Min(ImGui.GetIO().DeltaTime, 0.1f));
+        var grow = spring.Step(pressed ? Motion.PressScaleControl : 1f, pressed ? Motion.PressIn : Motion.Release,
+            MathF.Min(ImGui.GetIO().DeltaTime, 0.1f));
         Springs[id] = spring;
         var drawList = ImGui.GetWindowDrawList();
         var reach = radius * 0.62f * grow;

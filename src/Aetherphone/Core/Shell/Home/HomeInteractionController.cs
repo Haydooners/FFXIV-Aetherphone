@@ -13,20 +13,13 @@ internal sealed class HomeInteractionController
     private const float TapSlop = 6f;
     private const float SwipeThreshold = 12f;
     private const float DragThreshold = 7f;
-    private const float LiftSmoothTime = 0.13f;
-    private const float SettleSmoothTime = 0.19f;
     private const float EdgeZone = 0.09f;
     private const float EdgeFlipSeconds = 0.45f;
     private const float IconLift = 1.16f;
     private const float WidgetLift = 1.045f;
-    private const float TapPressDepth = 0.07f;
-    private const float WidgetTapDepth = 0.02f;
-    private const float PressSmoothTime = 0.07f;
-    private const float ReleaseSmoothTime = 0.16f;
+    private const float TapPressDepth = 1f - Motion.PressScaleControl;
+    private const float WidgetTapDepth = 1f - Motion.PressScaleCard;
     private const float PressDim = 0.14f;
-    private const float HoverSmoothTime = 0.12f;
-    private const float HoverLift = 0.05f;
-    private const float WidgetHoverLift = 0.012f;
 
     private sealed class PointerEntry
     {
@@ -385,7 +378,7 @@ internal sealed class HomeInteractionController
     {
         var mouse = ImGui.GetMousePos();
         dragPos = mouse - grabOffset;
-        lift.Step(dragTile!.IsWidget ? WidgetLift : IconLift, LiftSmoothTime, delta);
+        lift.Step(dragTile!.IsWidget ? WidgetLift : IconLift, Motion.HoverLift, delta);
         overDock = dragTile.App is not null && Expand(metrics.DockBar, 8f * metrics.Scale).Contains(mouse);
         if (overDock)
         {
@@ -550,9 +543,9 @@ internal sealed class HomeInteractionController
             return false;
         }
 
-        settleX.Step(rect.Center.X - metrics.Content.Min.X, SettleSmoothTime, delta);
-        settleY.Step(rect.Center.Y - metrics.Content.Min.Y, SettleSmoothTime, delta);
-        lift.Step(1f, SettleSmoothTime, delta);
+        settleX.Step(rect.Center.X - metrics.Content.Min.X, Motion.PageSettle, delta);
+        settleY.Step(rect.Center.Y - metrics.Content.Min.Y, Motion.PageSettle, delta);
+        lift.Step(1f, Motion.PageSettle, delta);
         position = metrics.Content.Min + new Vector2(settleX.Value, settleY.Value);
         if (Vector2.Distance(position, rect.Center) < 0.8f && MathF.Abs(lift.Value - 1f) < 0.01f)
         {
@@ -627,7 +620,7 @@ internal sealed class HomeInteractionController
         {
             var entry = pointerEntries[index];
             var target = ReferenceEquals(entry.Tile, hoverTile) ? 1f : 0f;
-            entry.Spring.Step(target, HoverSmoothTime, delta);
+            entry.Spring.Step(target, Motion.HoverLift, delta);
             if (target > 0f || entry.Spring.Value > 0.005f)
             {
                 continue;
@@ -665,7 +658,7 @@ internal sealed class HomeInteractionController
         var half = MathF.Max(size * 0.5f, 1f);
         var tilt = (hoverPointer - center) / half;
         tilt = new Vector2(Math.Clamp(tilt.X, -1f, 1f), Math.Clamp(tilt.Y, -1f, 1f)) * lift;
-        var gain = tile.IsWidget ? WidgetHoverLift : HoverLift;
+        var gain = tile.IsWidget ? Motion.HoverLiftCard : Motion.HoverLiftIcon;
         return new PointerState(tap * (1f + gain * lift), lift, tilt, dim);
     }
 
@@ -727,7 +720,7 @@ internal sealed class HomeInteractionController
             return;
         }
 
-        tapSpring.Step(tapHolding ? 1f : 0f, tapHolding ? PressSmoothTime : ReleaseSmoothTime, delta);
+        tapSpring.Step(tapHolding ? 1f : 0f, tapHolding ? Motion.PressIn : Motion.Release, delta);
         if (!tapHolding && tapSpring.Value < 0.01f)
         {
             tapTile = null;

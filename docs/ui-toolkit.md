@@ -281,7 +281,7 @@ You rarely call these directly. `RichText.Build` (src/Aetherphone/Windows/Compon
 
 ## Motion
 
-Animated components (the `Toggle` knob, `ConfirmOverlay` reveal) use `Spring` (src/Aetherphone/Core/Animation/Spring.cs), a critically damped smoother that clamps on target crossing, so motion settles without bouncing. Follow that: no overshoot or bounce in phone UI. `Easing` (src/Aetherphone/Core/Animation) provides curves like `EaseOutQuint` for reveals.
+Animated components (the `Toggle` knob, `ConfirmOverlay` reveal) use `Spring` (src/Aetherphone/Core/Animation/Spring.cs), a critically damped smoother that clamps on target crossing, so motion settles without bouncing. Follow that: no overshoot or bounce in phone UI. Smooth times and press scales come from `Motion` (src/Aetherphone/Core/Animation/Motion.cs): `PressIn`, `Release`, `HoverLift`, `PageSettle`, `Sheet`, `Island`, `SwitcherReveal`, `TabBar`, `Appear`, plus `PressScaleControl`, `PressScaleCard`, `HoverLiftIcon` and `HoverLiftCard`. Draw with the raw spring value; do not layer an `Easing` curve over it. `Easing.Lerp`, `Clamp01` and `Segment` are linear helpers and stay; the curves belong to games and the boot sequence.
 
 A spring started from rest spends its first frames barely moving, which reads as input lag. For anything the user just triggered (a screen push, an app launch), start it with `Spring.Launch(value, TransitionTiming.LaunchVelocity(smoothTime))`: the kick is half the spring's natural frequency, so the motion begins immediately and decelerates into place without ever overshooting (see `SpringLaunchTests`). Step transitions with a delta clamped to `TransitionTiming.MotionFrameSeconds`, not `MaxFrameSeconds`, so a dropped frame slows the motion instead of skipping a third of it.
 

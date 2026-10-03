@@ -59,7 +59,7 @@ internal sealed class MinimizeMorphView
         DrawRailButtons(shell, geometry, theme, scale, eased);
         RevealMorphContent(DeviceChrome.Chassis(device, theme), theme, geometry, eased, device.IsLandscape());
 
-        var faceAlpha = Easing.SmoothStep(Easing.Segment(eased, FaceFadeStart, FaceFadeEnd));
+        var faceAlpha = Easing.Segment(eased, FaceFadeStart, FaceFadeEnd);
         minimizedPhone.DrawFace(ImGui.GetForegroundDrawList(), geometry, theme, delta, false, faceAlpha);
     }
 

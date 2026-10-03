@@ -17,7 +17,6 @@ namespace Aetherphone.Core.Shell;
 
 internal sealed class ControlCenter
 {
-    private const float SmoothTime = 0.19f;
     private const float OpenFraction = 0.55f;
     private const float CommitFraction = 0.30f;
     private const float FlingVelocity = 900f;
@@ -26,9 +25,6 @@ internal sealed class ControlCenter
     private const float DismissBandHeight = 48f;
     private const float LongPressSeconds = 0.40f;
     private const float DragThreshold = 7f;
-    private const float ReflowSmoothTime = 0.16f;
-    private const float LiftSmoothTime = 0.13f;
-    private const float ExpandSmoothTime = 0.20f;
     private const float PanelVeil = 0.55f;
     private const float DetailVeil = 0.35f;
     private const float HeaderButtonRadius = 18f;
@@ -269,7 +265,7 @@ internal sealed class ControlCenter
 
     private void StepPoses(IReadOnlyList<ControlSlot> slots, IReadOnlyList<GridCell> placements, float delta)
     {
-        lift.Step(draggingSlot is not null ? 1f : 0f, LiftSmoothTime, delta);
+        lift.Step(draggingSlot is not null ? 1f : 0f, Motion.HoverLift, delta);
         var gridOrigin = metrics.Grid.Min;
         var mouse = ImGui.GetMousePos();
         for (var index = 0; index < slots.Count; index++)
@@ -302,12 +298,12 @@ internal sealed class ControlCenter
             }
             else
             {
-                pose.X.Step(targetMin.X, ReflowSmoothTime, delta);
-                pose.Y.Step(targetMin.Y, ReflowSmoothTime, delta);
+                pose.X.Step(targetMin.X, Motion.Release, delta);
+                pose.Y.Step(targetMin.Y, Motion.Release, delta);
             }
 
-            pose.W.Step(targetRect.Width, ReflowSmoothTime, delta);
-            pose.H.Step(targetRect.Height, ReflowSmoothTime, delta);
+            pose.W.Step(targetRect.Width, Motion.Release, delta);
+            pose.H.Step(targetRect.Height, Motion.Release, delta);
             var posedMin = gridOrigin + new Vector2(pose.X.Value, pose.Y.Value);
             pose.Current = new Rect(posedMin, posedMin + new Vector2(pose.W.Value, pose.H.Value));
         }
@@ -320,7 +316,7 @@ internal sealed class ControlCenter
             return;
         }
 
-        expand.Step(collapsing ? 0f : 1f, ExpandSmoothTime, delta);
+        expand.Step(collapsing ? 0f : 1f, Motion.Island, delta);
         if (collapsing && expand.Value < 0.01f)
         {
             expandedSlot = null;
@@ -798,7 +794,7 @@ internal sealed class ControlCenter
 
         if (!drag.Active)
         {
-            offset.Step(target, SmoothTime, delta);
+            offset.Step(target, Motion.SwitcherReveal, delta);
             if (offset.IsResting(target, TransitionTiming.RestPositionEpsilon, TransitionTiming.RestVelocityEpsilon))
             {
                 offset.SnapTo(target);

@@ -8,7 +8,6 @@ namespace Aetherphone.Windows.Components;
 internal static class SegmentStrip
 {
     private const float TrackHeight = 30f;
-    private const float ThumbSmoothTime = 0.13f;
     private static readonly Vector4 FrostTrack = new(1f, 1f, 1f, 0.08f);
     private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
     private static readonly Dictionary<string, Spring> Thumbs = new(StringComparer.Ordinal);
@@ -105,7 +104,7 @@ internal static class SegmentStrip
         }
 
         var deltaSeconds = MathF.Min(ImGui.GetIO().DeltaTime, 0.1f);
-        var position = spring.Step(selected, ThumbSmoothTime, deltaSeconds);
+        var position = spring.Step(selected, Motion.Release, deltaSeconds);
         Thumbs[id] = spring;
         return position;
     }
