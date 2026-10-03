@@ -326,7 +326,7 @@ internal sealed partial class NotesApp
         }
 
         var today = DateTime.Today;
-        var stampKey = note.UpdatedAt.Ticks / TimeSpan.TicksPerMinute ^ today.Ticks;
+        var stampKey = note.UpdatedAt.Ticks / TimeSpan.TicksPerMinute ^ today.Ticks ^ (long)TimeText.FormatVersion << 56;
         if (text.StampKey != stampKey)
         {
             text.StampKey = stampKey;

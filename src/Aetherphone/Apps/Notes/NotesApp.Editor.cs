@@ -194,7 +194,7 @@ internal sealed partial class NotesApp
 
     private string EditorStamp(DateTime updatedAt)
     {
-        var key = updatedAt.Ticks / TimeSpan.TicksPerMinute;
+        var key = updatedAt.Ticks / TimeSpan.TicksPerMinute ^ (long)TimeText.FormatVersion << 56;
         if (key == stampKey && stampText.Length > 0)
         {
             return stampText;
