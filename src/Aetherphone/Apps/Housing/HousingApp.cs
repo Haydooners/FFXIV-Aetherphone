@@ -481,6 +481,16 @@ internal sealed partial class HousingApp : IPhoneApp
         ImGui.Dummy(new Vector2(width, MathF.Max(0f, bottom - origin.Y)));
     }
 
+    private static string NoLongerReportedText(ref CachedText cache, HousingWatchRecord record, DateTime now)
+    {
+        var lastSeen = FromUnix(record.LastSeenUnix);
+        var ageMinutes = lastSeen == default ? -1L : (long)Math.Max(0d, (now - lastSeen).TotalMinutes);
+        var key = ((long)record.Key.GetHashCode() << 32) ^ ageMinutes;
+        return cache.IsCurrent(key)
+            ? cache.Value
+            : cache.Store(key, Loc.T(L.Housing.NoLongerReported, HousingFormat.ScanAgeShort(lastSeen, now)));
+    }
+
     private static DateTime FromUnix(long unixSeconds) =>
         unixSeconds <= 0L ? default : DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
 

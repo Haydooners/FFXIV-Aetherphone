@@ -26,6 +26,7 @@ internal sealed partial class HousingApp
 
     private readonly NavBarButton[] watchButtons = new NavBarButton[1];
     private CachedText[] watchCardCountdowns = Array.Empty<CachedText>();
+    private CachedText[] watchCardAges = Array.Empty<CachedText>();
     private CachedText[] watchCardTitles = Array.Empty<CachedText>();
     private CachedText[] watchCardPlaces = Array.Empty<CachedText>();
     private CachedText[] watchCardFacts = Array.Empty<CachedText>();
@@ -92,6 +93,7 @@ internal sealed partial class HousingApp
 
         var size = Math.Max(count, watchCardTitles.Length * 2);
         Array.Resize(ref watchCardCountdowns, size);
+        Array.Resize(ref watchCardAges, size);
         Array.Resize(ref watchCardTitles, size);
         Array.Resize(ref watchCardPlaces, size);
         Array.Resize(ref watchCardFacts, size);
@@ -130,7 +132,7 @@ internal sealed partial class HousingApp
         var hasReminder = reminder is { Notified: false };
         var pillRect = WatchPillRect(record, reminder, left, max.Y - pad, scale, index);
         var overChild = UiInteract.Hover(unwatchCenter - unwatchHit, unwatchCenter + unwatchHit) ||
-                        live is not null && UiInteract.Hover(pillRect.Min, pillRect.Max);
+                        live?.PhaseEndsUtc is not null && UiInteract.Hover(pillRect.Min, pillRect.Max);
         var hovered = !overChild && UiInteract.Hover(min, max);
         var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var press = PressFx.Scale(unchecked(ImGui.GetID("housing.watch.card") + (uint)index), down,
@@ -173,7 +175,7 @@ internal sealed partial class HousingApp
         var hue = record.StillReported ? HousingMarkers.PhaseColor(phase, ui.Accent) : AppPalettes.HousingResults;
         var phaseLabel = record.StillReported
             ? HousingFormat.PhaseLabel(phase)
-            : Loc.T(L.Housing.NoLongerReported, HousingFormat.ScanAgeShort(FromUnix(record.LastSeenUnix), now));
+            : NoLongerReportedText(ref watchCardAges[index], record, now);
         var countdown = record.StillReported
             ? HousingText.Countdown(ref watchCardCountdowns[index], phaseEnd, now)
             : string.Empty;

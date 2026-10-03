@@ -45,6 +45,7 @@ internal sealed partial class HousingApp
     private Vector2 panTarget;
     private Vector2 lastViewportCenter;
     private Vector2 lastViewportSize;
+    private bool centerPending;
     private Vector2 lastMapSpan;
     private bool dragging;
     private float dragTravel;
@@ -52,6 +53,7 @@ internal sealed partial class HousingApp
     private bool legendOpen;
     private CachedText placeLine;
     private CachedText statusText;
+    private CachedText noOpeningsText;
     private Rect statusRect;
 
     private void StepMap(float delta)
@@ -104,10 +106,15 @@ internal sealed partial class HousingApp
         var cardRect = PlotCardRect(area, bottom, scale);
         var place = PlaceRect(area, scale);
         var legend = LegendRect(stackRect, scale);
+        if (legendOpen)
+        {
+            UiInteract.HoverOverlay(legend);
+        }
+
         var overControls = UiInteract.Hover(stackRect.Min, stackRect.Max) || UiInteract.Hover(place.Min, place.Max) ||
                            DivisionRect(area, scale) is { } division && UiInteract.Hover(division.Min, division.Max) ||
                            plotCardShown.Value > 0.02f && UiInteract.Hover(cardRect.Min, cardRect.Max) ||
-                           legendOpen && UiInteract.Hover(legend.Min, legend.Max) ||
+                           legendOpen && UiInteract.HoverWindowOnly(legend.Min, legend.Max) ||
                            statusRect.Width > 0f && UiInteract.Hover(statusRect.Min, statusRect.Max);
         var blocked = overControls || ModalOpen || menu.Open;
         var mapSize = MapSize(area);
@@ -425,6 +432,11 @@ internal sealed partial class HousingApp
         panTarget = new Vector2(Math.Clamp(panTarget.X, -span.X, span.X), Math.Clamp(panTarget.Y, -span.Y, span.Y));
     }
 
+    private string NoOpeningsText() =>
+        noOpeningsText.IsCurrent(housing.Ward)
+            ? noOpeningsText.Value
+            : noOpeningsText.Store(housing.Ward, Loc.T(L.Housing.NoOpenings, housing.Ward));
+
     private void CenterOnSelected()
     {
         if (!selectedPlot.IsValid)
@@ -436,6 +448,12 @@ internal sealed partial class HousingApp
         if (zoomTarget < LabelZoom)
         {
             zoomTarget = LabelZoom;
+        }
+
+        if (lastViewportSize.X <= 0f || lastViewportSize.Y <= 0f)
+        {
+            centerPending = true;
+            return;
         }
 
         var mapSize = MathF.Min(lastViewportSize.X, lastViewportSize.Y) * MapFill * zoomTarget;
@@ -451,6 +469,12 @@ internal sealed partial class HousingApp
         lastViewportCenter = viewport.Center;
         lastViewportSize = viewport.Size;
         lastMapSpan = new Vector2(MathF.Max(0f, mapSize * 0.5f), MathF.Max(0f, mapSize * 0.5f));
+        if (centerPending)
+        {
+            centerPending = false;
+            CenterOnSelected();
+        }
+
         var cursor = ImGui.GetCursorScreenPos();
         ImGui.SetCursorScreenPos(viewport.Min);
         ImGui.InvisibleButton("##housingMap", viewport.Size, ImGuiButtonFlags.MouseButtonLeft);
@@ -657,7 +681,7 @@ internal sealed partial class HousingApp
 
         var hint = housing.Snapshot.Plots.Count == 0 ? Loc.T(L.Housing.NoScansHint) : string.Empty;
         if (HousingArt.StateScreen(drawList, ui, viewport, FontAwesomeIcon.Home,
-                Loc.T(L.Housing.NoOpenings, housing.Ward), hint, Loc.T(L.Housing.ChooseWard), scale))
+                NoOpeningsText(), hint, Loc.T(L.Housing.ChooseWard), scale))
         {
             OpenLocationSheet();
         }

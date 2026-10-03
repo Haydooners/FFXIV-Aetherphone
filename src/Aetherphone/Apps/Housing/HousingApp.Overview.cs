@@ -443,11 +443,9 @@ internal sealed partial class HousingApp
             var title = watchTitles[index].IsCurrent(key)
                 ? watchTitles[index].Value
                 : watchTitles[index].Store(key, Loc.T(L.Housing.PlotAndWard, record.Plot, record.Ward));
-            var place = watchPlaces[index].IsCurrent(key ^ (record.StillReported ? 1 : 0))
-                ? watchPlaces[index].Value
-                : watchPlaces[index].Store(key ^ (record.StillReported ? 1 : 0), record.StillReported
-                    ? HousingDistricts.DisplayName(record.DistrictId)
-                    : Loc.T(L.Housing.NoLongerReported, HousingFormat.ScanAgeShort(FromUnix(record.LastSeenUnix), now)));
+            var place = record.StillReported
+                ? HousingDistricts.DisplayName(record.DistrictId)
+                : NoLongerReportedText(ref watchPlaces[index], record, now);
             HousingArt.Labels(drawList, textLeft, row.Max.X - pad - trailingWidth - HousingArt.TextGap * scale,
                 row.Center.Y, title, place, ui.TitleInk, record.StillReported ? ui.MutedInk : AppPalettes.HousingResults,
                 scale);
@@ -464,7 +462,7 @@ internal sealed partial class HousingApp
     {
         if (record.StillReported && FindPlot(record.Key) is not null && record.WorldId == housing.WorldId)
         {
-            OpenOnMap(record.Key);
+            OpenPlot(record.Key);
             return;
         }
 
