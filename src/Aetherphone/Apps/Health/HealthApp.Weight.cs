@@ -311,8 +311,8 @@ internal sealed partial class HealthApp
     }
 
     private (double Min, double Max) DisplayRange() =>
-        (WeightHistory.Snap(HealthFormat.WeightFromKg(WeightHistory.MinKilograms, Units), 1d),
-            WeightHistory.Snap(HealthFormat.WeightFromKg(WeightHistory.MaxKilograms, Units), 1d));
+        (Math.Ceiling(HealthFormat.WeightFromKg(WeightHistory.MinKilograms, Units)),
+            Math.Floor(HealthFormat.WeightFromKg(WeightHistory.MaxKilograms, Units)));
 
     private void DrawRuler(ImDrawListPtr drawList, Rect ruler, Vector4 ink, (double Min, double Max) range,
         bool interactive, float scale)
