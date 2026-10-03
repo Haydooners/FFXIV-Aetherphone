@@ -7092,15 +7092,35 @@ internal static class L
 
     internal static class Wallet
     {
-        public static readonly LocString LogInToView = new("wallet.logInToView", "Log in to view your wallet");
-        public static readonly LocString GilBalance = new("wallet.gilBalance", "GIL BALANCE");
-        public static readonly LocString SectionCurrency = new("wallet.sectionCurrency", "Currency");
-        public static readonly LocString SectionHunt = new("wallet.sectionHunt", "Hunt");
+        public static readonly LocString SignedOutTitle = new("wallet.signedOutTitle", "Your wallet is waiting");
+        public static readonly LocString SignedOutBody = new("wallet.signedOutBody", "Log in to a character to see your gil, tomestones, scrips and seals.");
         public static readonly LocString SectionTomestones = new("wallet.sectionTomestones", "Tomestones");
-        public static readonly LocString SectionPvp = new("wallet.sectionPvp", "PvP");
         public static readonly LocString SectionCrafting = new("wallet.sectionCrafting", "Crafting & Gathering");
+        public static readonly LocString SectionHunt = new("wallet.sectionHunt", "Hunt");
+        public static readonly LocString SectionGrandCompany = new("wallet.sectionGrandCompany", "Grand Company");
+        public static readonly LocString SectionPvp = new("wallet.sectionPvp", "PvP");
         public static readonly LocString SectionOther = new("wallet.sectionOther", "Other");
         public static readonly LocString WeeklyCap = new("wallet.weeklyCap", "This week: {0} / {1}");
+        public static readonly LocString Today = new("wallet.today", "Today {0}");
+        public static readonly LocString ThisWeek = new("wallet.thisWeek", "This week {0}");
+        public static readonly LocString NoChangeThisWeek = new("wallet.noChangeThisWeek", "No change this week");
+        public static readonly LocString WeeklyLimit = new("wallet.weeklyLimit", "Weekly limit");
+        public static readonly LocString WeeklyLeft = new("wallet.weeklyLeft", "{0} left, resets {1}");
+        public static readonly LocString WeeklyDone = new("wallet.weeklyDone", "Limit reached, resets {0}");
+        public static readonly LocString NearCapTitle = new("wallet.nearCapTitle", "Near cap");
+        public static readonly LocString NearCapHint = new("wallet.nearCapHint", "Spend these soon: anything earned past the cap is lost.");
+        public static readonly LocString Full = new("wallet.full", "Full");
+        public static readonly LocString OfCap = new("wallet.ofCap", "of {0}");
+        public static readonly LocString LeftToCap = new("wallet.leftToCap", "{0} left");
+        public static readonly LocString UntilFull = new("wallet.untilFull", "{0} until full");
+        public static readonly LocString RecentTitle = new("wallet.recentTitle", "Latest activity");
+        public static readonly LocString SeeAll = new("wallet.seeAll", "See all");
+        public static readonly LocString RecentEmptyTitle = new("wallet.recentEmptyTitle", "No activity yet");
+        public static readonly LocString RecentEmptyBody = new("wallet.recentEmptyBody", "Every change to your currencies lands here as you earn and spend.");
+        public static readonly LocString ActivityTitle = new("wallet.activityTitle", "Activity");
+        public static readonly LocString ChartLastMonth = new("wallet.chartLastMonth", "Last 30 days");
+        public static readonly LocString ChartSince = new("wallet.chartSince", "Since {0}");
+        public static readonly LocString ChartEmpty = new("wallet.chartEmpty", "The balance chart fills in as you play on more days.");
     }
 
     internal static class Jobs
@@ -8786,9 +8806,11 @@ internal static class L
         public static readonly LocString HousingTrackTitle = new("onboarding.housingTrackTitle", "Keep track");
         public static readonly LocString HousingTrackBody = new("onboarding.housingTrackBody", "Watch adds the plot to your watchlist. Remind Me notifies you before its phase ends.");
         public static readonly LocString WalletBalanceTitle = new("onboarding.walletBalanceTitle", "Your gil");
-        public static readonly LocString WalletBalanceBody = new("onboarding.walletBalanceBody", "Your balance, updated as you earn and spend while the app is open.");
+        public static readonly LocString WalletCardBody = new("onboarding.walletCardBody", "Your gil, with what changed today and this week. Tap the card to see its history.");
         public static readonly LocString WalletCapTitle = new("onboarding.walletCapTitle", "Know your caps");
-        public static readonly LocString WalletCapBody = new("onboarding.walletCapBody", "The bar fills toward the cap and turns gold once you reach it, so you know when to spend.");
+        public static readonly LocString WalletCapRingBody = new("onboarding.walletCapRingBody", "Each ring fills toward the cap and turns gold as you get close, so you know when to spend.");
+        public static readonly LocString WalletActivityTitle = new("onboarding.walletActivityTitle", "Every change, kept");
+        public static readonly LocString WalletActivityBody = new("onboarding.walletActivityBody", "Gains and spends land here with the place they happened, so you can see where your currency went.");
         public static readonly LocString ChirperFeedsTitle = new("onboarding.chirperFeedsTitle", "Pick your feed");
         public static readonly LocString ChirperFeedsBody = new("onboarding.chirperFeedsBody", "For You shows chirps you have not seen yet, ranked for you. Latest puts the newest first. Tap one to switch.");
         public static readonly LocString ChirperJoinTitle = new("onboarding.chirperJoinTitle", "Join the conversation");

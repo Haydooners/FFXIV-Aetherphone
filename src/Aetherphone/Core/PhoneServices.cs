@@ -47,6 +47,7 @@ using Aetherphone.Core.YellowPages;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
 using YoutubeExplode;
+using WalletService = Aetherphone.Core.Wallet.WalletService;
 
 namespace Aetherphone.Core;
 
@@ -205,6 +206,7 @@ internal sealed class PhoneServices : IDisposable
     public required Hunts.HuntsService Hunts { get; init; }
     public required Timers.GameTimers GameTimers { get; init; }
     public required Dailies.DailiesTracker Dailies { get; init; }
+    public required WalletService Wallet { get; init; }
     public required Hunts.HuntMobCatalog HuntMobCatalog { get; init; }
     public required Hunts.HuntZoneCatalog HuntZoneCatalog { get; init; }
     public required Maps.ZoneMapTextures ZoneMapTextures { get; init; }
@@ -428,6 +430,8 @@ internal sealed class PhoneServices : IDisposable
             installer.Gate("timers"));
         var dailies = new Dailies.DailiesTracker(configuration, framework, gameData, characterWatch, notifications,
             installer.Gate("dailies"));
+        var wallet = new WalletService(framework, gameData, characterWatch, clientState, configDirectory,
+            installer.Gate(WalletService.AppId));
         var huntCandidateCache = new HuntCandidateCache(huntMobCatalog, huntZoneCatalog, hunts);
         var huntsMapMarkers = new Maps.HuntsMapMarkers(configuration, hunts, huntMobCatalog, huntZoneCatalog,
             huntCandidateCache);
@@ -576,6 +580,7 @@ internal sealed class PhoneServices : IDisposable
             Hunts = hunts,
             GameTimers = gameTimers,
             Dailies = dailies,
+            Wallet = wallet,
             HuntMobCatalog = huntMobCatalog,
             HuntZoneCatalog = huntZoneCatalog,
             ZoneMapTextures = zoneMapTextures,
@@ -620,6 +625,7 @@ internal sealed class PhoneServices : IDisposable
         Hunts.Dispose();
         GameTimers.Dispose();
         Dailies.Dispose();
+        Wallet.Dispose();
         StratsManifest.Dispose();
         StratsGuides.Dispose();
         Musters.Dispose();

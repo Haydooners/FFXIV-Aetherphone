@@ -16,7 +16,6 @@ namespace Aetherphone.Apps.Wallet.Widgets;
 
 internal sealed class CurrenciesWidget : IHomeWidget
 {
-    private const int RefreshMilliseconds = 1500;
     private const int TomestoneSlots = 2;
     private const int GridColumns = 2;
     private const float IconUnits = 22f;
@@ -31,27 +30,23 @@ internal sealed class CurrenciesWidget : IHomeWidget
 
     private static readonly Vector4 WalletAccent = AppAccents.For("wallet");
 
-    private readonly GameData gameData;
-    private readonly CharacterWatch characterWatch;
+    private readonly WalletService wallet;
     private readonly ActivityTracker activity;
     private readonly WalletEntry?[] tomestones = new WalletEntry?[TomestoneSlots];
     private readonly WidgetStates<Purse> purses = new();
     private readonly CachedText[] tomestoneAmounts = new CachedText[TomestoneSlots];
     private readonly CachedText[] tomestoneCaptions = new CachedText[TomestoneSlots];
-    private WalletEntry? gil;
-    private WalletSection[] sections = Array.Empty<WalletSection>();
     private WalletEntry[] entries = Array.Empty<WalletEntry>();
     private CachedText[] entryAmounts = Array.Empty<CachedText>();
-    private ulong builtFor = ulong.MaxValue;
-    private WidgetRefresh refresh;
     private CachedText earnedText;
 
-    public CurrenciesWidget(GameData gameData, CharacterWatch characterWatch, ActivityTracker activity)
+    public CurrenciesWidget(WalletService wallet, ActivityTracker activity)
     {
-        this.gameData = gameData;
-        this.characterWatch = characterWatch;
+        this.wallet = wallet;
         this.activity = activity;
     }
+
+    private WalletEntry? Gil => wallet.Gil;
 
     public string Id => "wallet.currencies";
     public string DisplayName => Loc.T(L.WidgetsAdventure.CurrenciesName);
@@ -66,14 +61,9 @@ internal sealed class CurrenciesWidget : IHomeWidget
             return 0f;
         }
 
-        EnsureBuilt(true);
-        if (refresh.Due(RefreshMilliseconds) && gil is not null)
-        {
-            WalletReader.RefreshAmounts(gil, sections);
-        }
-
+        EnsureBuilt();
         var limited = tomestones[0];
-        if (gil is null || limited is null || !limited.HasWeeklyCap || limited.WeeklyAmount >= limited.WeeklyCap)
+        if (Gil is null || limited is null || !limited.HasWeeklyCap || limited.WeeklyAmount >= limited.WeeklyCap)
         {
             return 0f;
         }
@@ -96,11 +86,7 @@ internal sealed class CurrenciesWidget : IHomeWidget
             return;
         }
 
-        EnsureBuilt(loggedIn);
-        if (loggedIn && refresh.Due(RefreshMilliseconds) && gil is not null)
-        {
-            WalletReader.RefreshAmounts(gil, sections);
-        }
+        EnsureBuilt();
 
         switch (context.Size)
         {
@@ -116,41 +102,22 @@ internal sealed class CurrenciesWidget : IHomeWidget
         }
     }
 
-    private void EnsureBuilt(bool loggedIn)
+    private void EnsureBuilt()
     {
-        var owner = loggedIn ? characterWatch.CurrentContentId : 0UL;
-        if (gil is not null && owner == builtFor)
+        var current = wallet.Entries;
+        if (ReferenceEquals(current, entries))
         {
             return;
         }
 
-        builtFor = owner;
-        gil = WalletReader.BuildGil(gameData);
-        sections = WalletReader.BuildSections(gameData);
-        var total = 0;
-        for (var sectionIndex = 0; sectionIndex < sections.Length; sectionIndex++)
-        {
-            total += sections[sectionIndex].Entries.Length;
-        }
-
-        entries = new WalletEntry[total];
-        entryAmounts = new CachedText[total];
+        entries = current;
+        entryAmounts = new CachedText[current.Length];
         tomestones[0] = null;
         tomestones[1] = null;
-        var cursor = 0;
-        for (var sectionIndex = 0; sectionIndex < sections.Length; sectionIndex++)
+        for (var index = 0; index < current.Length; index++)
         {
-            var sectionEntries = sections[sectionIndex].Entries;
-            for (var entryIndex = 0; entryIndex < sectionEntries.Length; entryIndex++)
-            {
-                var entry = sectionEntries[entryIndex];
-                entries[cursor] = entry;
-                cursor++;
-                PlaceTomestone(entry);
-            }
+            PlaceTomestone(current[index]);
         }
-
-        refresh.Expire();
     }
 
     private void PlaceTomestone(WalletEntry entry)
@@ -235,7 +202,7 @@ internal sealed class CurrenciesWidget : IHomeWidget
     private float DrawGilHero(in WidgetContext context, in WidgetInk ink, bool sample, Vector2 topLeft,
         float maxWidth, in TextStyle style)
     {
-        var target = sample ? WidgetSamples.Gil : gil?.Amount ?? 0;
+        var target = sample ? WidgetSamples.Gil : Gil?.Amount ?? 0;
         var clamped = (int)Math.Clamp(target, 0, int.MaxValue);
         var purse = purses.For(context);
         purse.Gil.Update(clamped, purse.GilFrame.Delta(context.Delta));
@@ -250,7 +217,7 @@ internal sealed class CurrenciesWidget : IHomeWidget
         var scale = context.Scale;
         var icon = IconUnits * scale;
         var bottom = column.Max.Y;
-        var drawn = AdventureWidgetArt.GameIcon(context.DrawList, gil?.IconId ?? 0,
+        var drawn = AdventureWidgetArt.GameIcon(context.DrawList, Gil?.IconId ?? 0,
             new Vector2(column.Min.X, bottom - icon), new Vector2(column.Min.X + icon, bottom), 0f, ink);
         var earned = EarnedText(sample);
         if (earned.Length == 0)
@@ -302,7 +269,7 @@ internal sealed class CurrenciesWidget : IHomeWidget
         var barTop = top + headlineHeight + WidgetMetrics.RowGap * 2f * scale;
         WidgetChrome.Bar(drawList, new Rect(new Vector2(row.Min.X, barTop), new Vector2(row.Max.X, barTop + bar)),
             purses.For(context).TomestoneBars[slot].Fraction(fraction, context.Delta, !context.Preview), ink.Fill,
-            ink.Accent(WalletAccent));
+            ink.Accent(BarTint(fraction)));
         var caption = Caption(slot, weekly, weeklyAmount, weeklyCap, amount, entry.Cap);
         WidgetText.Draw(drawList, new Vector2(row.Min.X, barTop + bar + WidgetMetrics.RowGap * scale), caption,
             ink.Secondary, WidgetType.Caption, row.Width);
@@ -356,7 +323,7 @@ internal sealed class CurrenciesWidget : IHomeWidget
             var barTop = textTop + bodyHeight + WidgetMetrics.RowGap * scale;
             WidgetChrome.Bar(drawList,
                 new Rect(new Vector2(textLeft, barTop), new Vector2(textRight, barTop + bar)),
-                bars[index].Fraction(fraction, context.Delta, !context.Preview), ink.Fill, ink.Accent(WalletAccent));
+                bars[index].Fraction(fraction, context.Delta, !context.Preview), ink.Fill, ink.Accent(BarTint(fraction)));
         }
     }
 
@@ -391,7 +358,10 @@ internal sealed class CurrenciesWidget : IHomeWidget
             : earnedText.Store(earned, Loc.T(L.WidgetsAdventure.Today, NumberText.Group(earned)));
     }
 
-    private string GilName() => gil?.Name ?? string.Empty;
+    private static Vector4 BarTint(float fraction) =>
+        fraction >= WalletMath.NearFraction ? WalletArt.GoldInk : WalletAccent;
+
+    private string GilName() => Gil?.Name ?? string.Empty;
 
     public void Dispose()
     {

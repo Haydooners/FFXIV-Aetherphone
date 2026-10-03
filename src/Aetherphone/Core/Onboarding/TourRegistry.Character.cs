@@ -70,12 +70,14 @@ internal static partial class TourRegistry
                 GuideStep.Span(L.Onboarding.HousingTrackTitle, L.Onboarding.HousingTrackBody, "housing.sheet.watch",
                     "housing.sheet.remind"),
             });
-        Add(tours, "wallet", 3,
+        Add(tours, "wallet", 4,
             new[]
             {
-                GuideStep.Point(L.Onboarding.WalletBalanceTitle, L.Onboarding.WalletBalanceBody, "wallet.gil",
+                GuideStep.Point(L.Onboarding.WalletBalanceTitle, L.Onboarding.WalletCardBody, "wallet.gil",
                     GuideGesture.None),
-                GuideStep.Point(L.Onboarding.WalletCapTitle, L.Onboarding.WalletCapBody, "wallet.capped",
+                GuideStep.Point(L.Onboarding.WalletCapTitle, L.Onboarding.WalletCapRingBody, "wallet.capped",
+                    GuideGesture.None),
+                GuideStep.Point(L.Onboarding.WalletActivityTitle, L.Onboarding.WalletActivityBody, "wallet.recent",
                     GuideGesture.None),
             });
     }

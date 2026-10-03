@@ -15,7 +15,7 @@ public sealed class TourRegistryTests
         { "chirper", (3, 6) },
         { "aethergram", (3, 6) },
         { "collections", (3, 3) },
-        { "wallet", (3, 2) },
+        { "wallet", (4, 3) },
         { "inventory", (4, 3) },
         { "settings", (3, 5) },
         { "camera", (4, 6) },
