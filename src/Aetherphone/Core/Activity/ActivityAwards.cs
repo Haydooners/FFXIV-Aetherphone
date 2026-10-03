@@ -18,11 +18,14 @@ internal static class ActivityAwards
     public const int WeekStreakDays = 7;
     public const int MonthStreakDays = 30;
 
-    public static bool Earned(ActivityRecords records, ActivityAward award) => award switch
+    public static bool Earned(ActivityRecords records, ActivityAward award) =>
+        Earned(records, award, records.BestStreak);
+
+    public static bool Earned(ActivityRecords records, ActivityAward award, int bestStreak) => award switch
     {
         ActivityAward.PerfectDay => records.PerfectDays > 0,
-        ActivityAward.PerfectWeek => records.BestStreak >= WeekStreakDays,
-        ActivityAward.PerfectMonth => records.BestStreak >= MonthStreakDays,
+        ActivityAward.PerfectWeek => Math.Max(records.BestStreak, bestStreak) >= WeekStreakDays,
+        ActivityAward.PerfectMonth => Math.Max(records.BestStreak, bestStreak) >= MonthStreakDays,
         ActivityAward.ExperienceRecord => records.BestExp > 0,
         ActivityAward.DutyRecord => records.BestDuties > 0,
         ActivityAward.FortuneRecord => records.BestGil > 0,

@@ -104,6 +104,16 @@ public sealed class ActivityLogicTests
     }
 
     [Fact]
+    public void StreakAwardsFollowTheDisplayedBestStreak()
+    {
+        var records = new ActivityRecords { BestStreak = 3 };
+        Assert.False(ActivityAwards.Earned(records, ActivityAward.PerfectWeek, 6));
+        Assert.True(ActivityAwards.Earned(records, ActivityAward.PerfectWeek, 7));
+        Assert.False(ActivityAwards.Earned(records, ActivityAward.PerfectMonth, 7));
+        Assert.True(ActivityAwards.Earned(new ActivityRecords { BestStreak = 30 }, ActivityAward.PerfectMonth, 0));
+    }
+
+    [Fact]
     public void CountFlaggedCountsOnlyMarkedDays()
     {
         var days = new List<ActivityDay> { Day(2), Day(1), Day(0) };

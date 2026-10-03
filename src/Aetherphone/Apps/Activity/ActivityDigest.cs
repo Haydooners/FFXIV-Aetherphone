@@ -194,7 +194,7 @@ internal sealed class ActivityDigest
         for (var index = 0; index < ActivityAwards.Count; index++)
         {
             var award = (ActivityAward)index;
-            var earned = ActivityAwards.Earned(records, award);
+            var earned = ActivityAwards.Earned(records, award, bestStreak);
             AwardEarned[index] = earned;
             AwardSubs[index] = award switch
             {
