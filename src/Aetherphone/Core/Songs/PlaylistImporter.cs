@@ -393,9 +393,9 @@ internal sealed class PlaylistImporter : IDisposable
         return string.Empty;
     }
 
-    internal static bool IsVideoId(string value)
+    internal static bool IsVideoId(string? value)
     {
-        return value.Length == VideoIdLength && IsIdCharacters(value);
+        return value is { Length: VideoIdLength } && IsIdCharacters(value);
     }
 
     private static bool IsListId(string value)
