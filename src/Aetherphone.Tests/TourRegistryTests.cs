@@ -47,7 +47,7 @@ public sealed class TourRegistryTests
         { "skywatcher", (4, 6) },
         { "strats", (3, 7) },
         { "market", (4, 7) },
-        { "venues", (4, 6) },
+        { "venues", (5, 6) },
         { "maps", (4, 5) },
         { "fishing", (4, 6) },
         { "hunts", (7, 7) },

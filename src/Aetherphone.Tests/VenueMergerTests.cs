@@ -241,7 +241,7 @@ public sealed class VenueMergerTests
         var sections = new VenueSections();
         var key = new VenueSectionsKey(1, VenueFilter.SourceAll, null, string.Empty, "Shiva", 0, 0, 0);
 
-        sections.Update(key, [live, later, party], ["ffxiv:b"], [], Now);
+        sections.Update(key, [live, later, party], ["ffxiv:b"], [], [], Now);
 
         Assert.Equal(["Alpha"], Titles(sections.Live));
         Assert.True(sections.FeaturedIsLive);
@@ -370,7 +370,7 @@ public sealed class VenueMergerTests
 
         var sections = new VenueSections();
         sections.Update(new VenueSectionsKey(1, VenueFilter.SourceAll, null, string.Empty, string.Empty, 0, 0, 0),
-            [venue], [], [], Now);
+            [venue], [], [], [], Now);
 
         Assert.Equal(["Club Glo"], Titles(sections.Events));
     }

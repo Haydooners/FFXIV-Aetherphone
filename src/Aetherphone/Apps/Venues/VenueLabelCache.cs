@@ -4,7 +4,7 @@ using Aetherphone.Core.Venues;
 namespace Aetherphone.Apps.Venues;
 
 internal readonly record struct VenueCardText(VenueStatus Status, string Meta, string Stat, string Initial,
-    string PressId);
+    string PressId, string Title, string Performer, string Playing);
 
 internal sealed class VenueTextList(string pressPrefix, bool eventTimes = false)
 {
@@ -47,9 +47,16 @@ internal sealed class VenueLabelCache
         return true;
     }
 
-    public static VenueCardText Build(VenueEvent venue, DateTime nowUtc, string pressPrefix, bool eventTimes = false) =>
-        new(eventTimes ? VenueFormat.EventStatus(venue, nowUtc) : VenueFormat.Status(venue, nowUtc),
-            VenueFormat.Meta(venue), StatOf(venue, nowUtc), InitialOf(venue.Title), pressPrefix + venue.Id);
+    public static VenueCardText Build(VenueEvent venue, DateTime nowUtc, string pressPrefix, bool eventTimes = false)
+    {
+        var title = VenueDisplayText.Clean(venue.Title);
+        var confirmed = venue.IsConfirmedLive(nowUtc);
+        return new VenueCardText(
+            eventTimes ? VenueFormat.EventStatus(venue, nowUtc) : VenueFormat.Status(venue, nowUtc),
+            VenueFormat.Meta(venue), StatOf(venue, nowUtc), InitialOf(title), pressPrefix + venue.Id,
+            title.Length > 0 ? title : venue.Title, VenueFormat.Performer(venue, nowUtc),
+            confirmed ? VenueDisplayText.Clean(venue.LiveTitle) : string.Empty);
+    }
 
     public static string InitialOf(string title)
     {

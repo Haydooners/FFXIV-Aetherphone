@@ -365,6 +365,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool VenueHideAdult { get; set; }
     public bool VenueNotifyNewEvents { get; set; } = true;
     public List<string> VenueFavorites { get; set; } = new();
+    public List<string> VenueRecents { get; set; } = new();
     public int MusterCategoryFilter { get; set; }
     public int MusterScope { get; set; }
     public int MusterDataCenterId { get; set; }

@@ -21,12 +21,14 @@ internal sealed partial class VenuesApp
     private readonly List<VenueDj> detailDjs = new();
     private readonly List<string> detailDjMeta = new();
     private readonly List<string> detailDjInitials = new();
+    private readonly List<string> detailDjNames = new();
 
     private void CollectDetailDjs(string venueId)
     {
         detailDjs.Clear();
         detailDjMeta.Clear();
         detailDjInitials.Clear();
+        detailDjNames.Clear();
         var djs = venues.Djs;
         for (var index = 0; index < djs.Count; index++)
         {
@@ -37,9 +39,11 @@ internal sealed partial class VenuesApp
             }
 
             var viewers = DjViewers(dj);
+            var name = VenueDisplayText.Clean(dj.Name);
             detailDjs.Add(dj);
-            detailDjMeta.Add(dj.Genres.Count > 0 ? $"{dj.Genres[0]} · {viewers}" : viewers);
-            detailDjInitials.Add(VenueLabelCache.InitialOf(dj.Name));
+            detailDjMeta.Add(dj.Genres.Count > 0 ? $"{VenueDisplayText.Clean(dj.Genres[0])} · {viewers}" : viewers);
+            detailDjInitials.Add(VenueLabelCache.InitialOf(name));
+            detailDjNames.Add(name.Length > 0 ? name : dj.Name);
         }
 
         if (detailDjs.Count == 1)
@@ -59,7 +63,7 @@ internal sealed partial class VenuesApp
         var hovered = hasTwitch && UiInteract.Hover(rowMin, rowMax);
         if (hovered)
         {
-            drawList.AddRectFilled(rowMin, rowMax, ImGui.GetColorU32(Ink.HoverTint), 8f * scale);
+            drawList.AddRectFilled(rowMin, rowMax, ImGui.GetColorU32(ui.HoverTint), 8f * scale);
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
@@ -81,8 +85,7 @@ internal sealed partial class VenuesApp
         else
         {
             Squircle.FillImage(drawList, min, max, radius, artwork.HandleForName(dj.Name), 0xFFFFFFFFu);
-            Typography.DrawCentered(drawList, center, detailDjInitials[index], DjInitialInk, radius / (22f * scale),
-                FontWeight.Bold);
+            Typography.DrawCentered(drawList, center, detailDjInitials[index], DjInitialInk, TextStyles.Headline);
         }
 
         var textLeft = center.X + ringRadius + 12f * scale;
@@ -92,18 +95,18 @@ internal sealed partial class VenuesApp
         var metaHeight = Typography.LineHeight(CaptionStyle);
         var textTop = centerY - (nameHeight + 2f * scale + metaHeight) * 0.5f;
         Typography.Draw(drawList, new Vector2(textLeft, textTop),
-            Typography.FitText(dj.Name, textWidth, InfoValueStyle), Ink.TitleInk, InfoValueStyle);
+            Typography.FitText(detailDjNames[index], textWidth, InfoValueStyle), ui.TitleInk, InfoValueStyle);
         Typography.Draw(drawList, new Vector2(textLeft, textTop + nameHeight + 2f * scale),
-            Typography.FitText(detailDjMeta[index], textWidth, CaptionStyle), Ink.MutedInk, CaptionStyle);
+            Typography.FitText(detailDjMeta[index], textWidth, CaptionStyle), ui.MutedInk, CaptionStyle);
         if (hasTwitch)
         {
             PhoneIcon.Draw(drawList, new Vector2(rowMax.X - inset - 8f * scale, centerY), PhoneIcons.ExternalLink,
-                Ink.AccentLink, 16f * scale);
+                Palette.Lighten(ui.Accent, 0.18f), 16f * scale);
         }
 
         if (index < detailDjs.Count - 1)
         {
-            FeedCell.Hairline(drawList, textLeft, rowMax.X - inset, rowMax.Y, Ink.Hairline);
+            VenuesArt.Hairline(drawList, ui, textLeft, rowMax.X - inset, rowMax.Y);
         }
 
         if (hasTwitch && UiInteract.Click(rowMin, rowMax, hovered))

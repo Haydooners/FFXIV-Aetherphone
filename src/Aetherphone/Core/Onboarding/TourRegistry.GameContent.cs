@@ -78,7 +78,7 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.FishingFishTitle, L.Onboarding.FishingFishBody, "fishing.fish.first",
                     GuideGesture.Tap),
             });
-        Add(tours, "venues", 4,
+        Add(tours, "venues", 5,
             new[]
             {
                 GuideStep.Point(L.Onboarding.VenuesScopeTitle, L.Onboarding.VenuesScopeBody, "venues.scope",
