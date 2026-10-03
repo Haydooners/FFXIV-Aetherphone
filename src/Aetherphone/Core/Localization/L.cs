@@ -2090,10 +2090,20 @@ internal static class L
                 "Added what Spotify, foobar2000 or your browser is playing on your PC to Music, the Dynamic Island and Control Center, with pause and skip"),
             new("changelog.r1042.65",
                 "Your keyboard media keys now pause and skip the phone's music"),
+            new("changelog.r1042.77",
+                "Added chat to Jam, and Nearby Jams you can join with a tap when a host lets people nearby find theirs"),
+            new("changelog.r1042.78",
+                "Added Friends listening on Home: see what your friends are playing, play it yourself or join their Jam. Sharing stays off until you turn it on"),
+            new("changelog.r1042.79",
+                "Added Replay: minutes listened, top songs and top artists for the week, month, year or all time"),
+            new("changelog.r1042.80",
+                "Added Sound Check, which keeps every song at the same volume"),
             new("changelog.r1042.66",
                 "Your playlists, recently played songs and favorite stations carry over to the new Music automatically"),
             new("changelog.r1042.67",
                 "Fixed some Community Radio station pages opening blank"),
+            new("changelog.r1042.81",
+                "Fixed radio stations that went silent after connecting; they now reconnect on their own"),
         };
 
         public static readonly LocString[] Release1042Widgets =
