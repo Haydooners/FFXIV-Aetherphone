@@ -85,7 +85,7 @@ internal static class WidgetCatalog
         widgets.Add(new MusterWidget(phone.Musters));
         widgets.Add(new VenuesWidget(phone.Venues, phone.Configuration, phone.GameData, phone.RemoteImages,
             phone.Artwork));
-        widgets.Add(new MarketWatchWidget(phone.MarketAlerts, phone.Textures));
+        widgets.Add(new MarketWatchWidget(phone.MarketAlerts, phone.MarketWatchlist, phone.MarketIndex, phone.Textures));
         widgets.Add(new DailyGameWidget(phone.GameStats));
         widgets.Add(new DailySpinWidget(phone.CasinoSpin, phone.AethernetSession));
         widgets.Add(new LodestoneWidget(phone.News, phone.GameData, phone.RemoteImages));

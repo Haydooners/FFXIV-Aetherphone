@@ -7324,45 +7324,105 @@ internal static class L
 
     internal static class Market
     {
-        public static readonly LocString LoadingItemList = new("market.loadingItemList", "Loading item list…");
         public static readonly LocString NoMatchingItems = new("market.noMatchingItems", "No matching items");
-        public static readonly LocString SearchHint = new("market.searchHint", "Search for an item, or right-click any item in-game.");
         public static readonly LocString HoveredInGame = new("market.hoveredInGame", "Hovered in-game");
-        public static readonly LocString Favorites = new("market.favorites", "Favorites");
         public static readonly LocString Recent = new("market.recent", "Recent");
-        public static readonly LocString LogInToViewPrices = new("market.logInToViewPrices", "Log in to view market prices");
         public static readonly LocString CouldntReach = new("market.couldntReach", "Couldn't reach Universalis");
-        public static readonly LocString CheapestHq = new("market.cheapestHq", "Cheapest HQ");
-        public static readonly LocString Cheapest = new("market.cheapest", "Cheapest");
-        public static readonly LocString Prices = new("market.prices", "Prices");
         public static readonly LocString Average = new("market.average", "Average");
         public static readonly LocString Highest = new("market.highest", "Highest");
         public static readonly LocString SalesPerDay = new("market.salesPerDay", "Sales / day");
-        public static readonly LocString UpSold = new("market.upSold", "Up / sold");
-        public static readonly LocString Updated = new("market.updated", "Updated");
         public static readonly LocString VendorNpc = new("market.vendorNpc", "Vendor (NPC)");
-        public static readonly LocString Cheaper = new("market.cheaper", "cheaper");
         public static readonly LocString CheaperOn = new("market.cheaperOn", "Cheaper on {0}");
-        public static readonly LocString AfterTax = new("market.afterTax", "You keep after {0}% tax ({1})");
         public static readonly LocString PriceAlert = new("market.priceAlert", "Price alert");
-        public static readonly LocString AddAnotherAlert = new("market.addAnotherAlert", "Add another alert");
-        public static readonly LocString SetPriceAlert = new("market.setPriceAlert", "Set a price alert");
         public static readonly LocString CreateAlert = new("market.createAlert", "Create alert");
         public static readonly LocString AtOrBelow = new("market.atOrBelow", "At or below");
         public static readonly LocString AtOrAbove = new("market.atOrAbove", "At or above");
-        public static readonly LocString Trend = new("market.trend", "Trend");
         public static readonly LocString Listings = new("market.listings", "Listings");
-        public static readonly LocString ListingsCount = new("market.listingsCount", "Listings · {0}");
         public static readonly LocString NoHqListings = new("market.noHqListings", "No HQ listings");
         public static readonly LocString NoListings = new("market.noListings", "No listings");
         public static readonly LocString RecentSales = new("market.recentSales", "Recent sales");
-        public static readonly LocString RecentSalesCount = new("market.recentSalesCount", "Recent sales · {0}");
         public static readonly LocString NoHqSales = new("market.noHqSales", "No HQ sales");
         public static readonly LocString NoRecentSales = new("market.noRecentSales", "No recent sales");
         public static readonly LocString SearchItems = new("market.searchItems", "Search items");
         public static readonly LocString Quantity = new("market.quantity", "Qty {0}");
         public static readonly LocString PerDay = new("market.perDay", "{0}/day");
         public static readonly LocString AlertBody = new("market.alertBody", "{0} {1} is now {2} on {3}");
+        public static readonly LocString WatchlistTitle = new("market.watchlistTitle", "Watchlist");
+        public static readonly LocString WatchlistEmptyTitle =
+            new("market.watchlistEmptyTitle", "Build your watchlist");
+        public static readonly LocString WatchlistEmptyBody =
+            new("market.watchlistEmptyBody", "Open any item and tap + to watch it. Its price, a 7 day trend and how today compares show up here.");
+        public static readonly LocString Watch = new("market.watch", "Add to Watchlist");
+        public static readonly LocString Unwatch = new("market.unwatch", "Remove from Watchlist");
+        public static readonly LocString SeeAll = new("market.seeAll", "See All");
+        public static readonly LocString SourceNote =
+            new("market.sourceNote", "Prices come from Universalis, shared by players who use the market board. They can lag a few minutes behind the game.");
+        public static readonly LocString SignedOutTitle = new("market.signedOutTitle", "Log in to see prices");
+        public static readonly LocString SignedOutBody =
+            new("market.signedOutBody", "Prices follow the world you are on. Log in to a character and they appear here.");
+        public static readonly LocString NoMatchingHint =
+            new("market.noMatchingHint", "Check the spelling, or search for part of the name.");
+        public static readonly LocString AlertsTitle = new("market.alertsTitle", "Price Alerts");
+        public static readonly LocString AlertsEmptyTitle = new("market.alertsEmptyTitle", "No price alerts");
+        public static readonly LocString AlertsEmptyBody =
+            new("market.alertsEmptyBody", "Open any item and tap the bell to hear when its price crosses a line you pick.");
+        public static readonly LocString AlertsNote =
+            new("market.alertsNote", "Alerts check prices every few minutes while the game is running and notify you each time a price crosses your line.");
+        public static readonly LocString AlertHitTitle = new("market.alertHitTitle", "Triggered Alerts");
+        public static readonly LocString AlertHitNow = new("market.alertHitNow", "{0} · now {1}");
+        public static readonly LocString RemoveAlert = new("market.removeAlert", "Remove alert");
+        public static readonly LocString NewAlert = new("market.newAlert", "New Price Alert");
+        public static readonly LocString GilPrice = new("market.gilPrice", "Price in gil");
+        public static readonly LocString Lower = new("market.lower", "Lower");
+        public static readonly LocString Higher = new("market.higher", "Raise");
+        public static readonly LocString ExistingAlerts = new("market.existingAlerts", "Alerts for this item");
+        public static readonly LocString AlertExplainBelow =
+            new("market.alertExplainBelow", "Notifies you when the cheapest listing on {0} drops to {1} gil or less.");
+        public static readonly LocString AlertExplainBelowHq =
+            new("market.alertExplainBelowHq", "Notifies you when the cheapest HQ listing on {0} drops to {1} gil or less.");
+        public static readonly LocString AlertExplainAbove =
+            new("market.alertExplainAbove", "Notifies you when the cheapest listing on {0} reaches {1} gil or more.");
+        public static readonly LocString AlertExplainAboveHq =
+            new("market.alertExplainAboveHq", "Notifies you when the cheapest HQ listing on {0} reaches {1} gil or more.");
+        public static readonly LocString CheapestNow = new("market.cheapestNow", "Cheapest right now: {0}.");
+        public static readonly LocString CheapestIn = new("market.cheapestIn", "Cheapest on {0}");
+        public static readonly LocString CheapestHqIn = new("market.cheapestHqIn", "Cheapest HQ on {0}");
+        public static readonly LocString VersusMedian = new("market.versusMedian", "vs 7 day median {0}");
+        public static readonly LocString OnWorld = new("market.onWorld", "On {0} · {1}");
+        public static readonly LocString UpdatedAgo = new("market.updatedAgo", "Updated {0}");
+        public static readonly LocString CouldntReachBody =
+            new("market.couldntReachBody", "Check your connection. Market tries again on its own in a moment.");
+        public static readonly LocString ChartTitle = new("market.chartTitle", "Sale price");
+        public static readonly LocString ChartChange = new("market.chartChange", "{0} over {1}");
+        public static readonly LocString ScrubSold = new("market.scrubSold", "{0} · {1} sold");
+        public static readonly LocString RangeDay = new("market.rangeDay", "1D");
+        public static readonly LocString RangeWeek = new("market.rangeWeek", "7D");
+        public static readonly LocString RangeMonth = new("market.rangeMonth", "30D");
+        public static readonly LocString Now = new("market.now", "Now");
+        public static readonly LocString NotEnoughSales =
+            new("market.notEnoughSales", "Not enough sales in this range to draw a trend.");
+        public static readonly LocString HistoryUnavailable =
+            new("market.historyUnavailable", "Sale history is unavailable right now.");
+        public static readonly LocString StatMedian = new("market.statMedian", "Median sale ({0})");
+        public static readonly LocString StatSold = new("market.statSold", "Sold ({0})");
+        public static readonly LocString UnitsListed = new("market.unitsListed", "Units listed");
+        public static readonly LocString VendorCheaper = new("market.vendorCheaper", "Cheaper than the market board");
+        public static readonly LocString AfterTaxTitle = new("market.afterTaxTitle", "You keep after {0}% tax");
+        public static readonly LocString TaxCity = new("market.taxCity", "Lowest rate: {0}");
+        public static readonly LocString AcrossScope = new("market.acrossScope", "Across {0}");
+        public static readonly LocString WorldsNote =
+            new("market.worldsNote", "Cheapest listing on each world, taken from the cheapest listings on {0}.");
+        public static readonly LocString NoListingsBody =
+            new("market.noListingsBody", "Nobody is selling it on {0} right now.");
+        public static readonly LocString NoSalesBody =
+            new("market.noSalesBody", "No sales have been recorded recently.");
+        public static readonly LocString WidgetDescription =
+            new("market.widgetDescription", "Your watchlist and price alerts, with 7 day trends.");
+        public static readonly LocString WidgetEmptyTitle = new("market.widgetEmptyTitle", "Nothing watched yet");
+        public static readonly LocString WidgetEmptyHint = new("market.widgetEmptyHint", "Tap + on any item in Market");
+        public static readonly LocString TourWatchTitle = new("market.tourWatchTitle", "Watch it");
+        public static readonly LocString TourWatchBody =
+            new("market.tourWatchBody", "Tap + to add the item to your watchlist. Its price and 7 day trend then sit on the Market home and in the Market Watch widget.");
     }
 
     internal static class Games
@@ -8758,8 +8818,6 @@ internal static class L
         public static readonly LocString MarketCompareBody = new("onboarding.marketCompareBody", "Your world, its data center, then the whole region. Tap one to compare prices.");
         public static readonly LocString MarketAlertTitle = new("onboarding.marketAlertTitle", "Price alerts");
         public static readonly LocString MarketAlertBody = new("onboarding.marketAlertBody", "Set a price and get a notification when this item drops below it or rises above it.");
-        public static readonly LocString MarketStarTitle = new("onboarding.marketStarTitle", "Keep it handy");
-        public static readonly LocString MarketStarBody = new("onboarding.marketStarBody", "Star the item to pin it to Favorites on the Market home, with its latest price.");
         public static readonly LocString MapsExpandTitle = new("onboarding.mapsExpandTitle", "Open an expansion");
         public static readonly LocString MapsExpandBody = new("onboarding.mapsExpandBody", "Tap an expansion to list its regions and every aetheryte in them.");
         public static readonly LocString MapsTravelTitle = new("onboarding.mapsTravelTitle", "Travel in one tap");
@@ -10378,9 +10436,6 @@ internal static class L
         public static readonly LocString NoLiveVenues = new("widgetsUtility.noLiveVenues", "No venues open right now");
         public static readonly LocString NextOpening = new("widgetsUtility.nextOpening", "Next: {0} at {1}");
         public static readonly LocString MarketName = new("widgetsUtility.marketName", "Market Watch");
-        public static readonly LocString MarketDescription = new("widgetsUtility.marketDescription", "Your price alerts with the latest prices.");
-        public static readonly LocString NoAlerts = new("widgetsUtility.noAlerts", "No price alerts");
-        public static readonly LocString NoAlertsHint = new("widgetsUtility.noAlertsHint", "Add one from any item in Market");
         public static readonly LocString Triggered = new("widgetsUtility.triggered", "{0} triggered");
         public static readonly LocString Checking = new("widgetsUtility.checking", "Checking");
         public static readonly LocString DailyGameName = new("widgetsUtility.dailyGameName", "Daily Game");
