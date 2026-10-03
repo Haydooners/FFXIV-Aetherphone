@@ -9,7 +9,7 @@ public sealed class TourRegistryTests
     // was split across six partial files, so this table is the pre split behaviour.
     private static readonly Dictionary<string, (int Version, int StepCount)> Expected = new()
     {
-        { "messages", (3, 7) },
+        { "messages", (4, 6) },
         { "skywatcher", (2, 3) },
         { "market", (2, 4) },
         { "strats", (1, 4) },
@@ -34,8 +34,8 @@ public sealed class TourRegistryTests
         { "timers", (2, 3) },
         { "dailies", (2, 2) },
         { "fishing", (2, 4) },
-        { "notifications", (2, 2) },
-        { "message", (2, 7) },
+        { "notifications", (3, 2) },
+        { "message", (3, 6) },
         { "velvet", (4, 7) },
         { "feedback", (2, 4) },
         { "polls", (2, 3) },

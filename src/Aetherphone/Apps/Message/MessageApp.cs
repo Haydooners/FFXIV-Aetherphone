@@ -426,14 +426,13 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
 
     private void DrawRoot(Rect area)
     {
-        if (GuideIntents.Consume("message.tab.calls"))
+        if (session.IsSignedIn)
         {
-            SelectTab(MessageTab.Calls);
+            TourHolds.Release(Id);
         }
-
-        if (GuideIntents.Consume("message.tab.contacts"))
+        else
         {
-            SelectTab(MessageTab.Contacts);
+            TourHolds.Hold(Id);
         }
 
         var scale = UiScale.Current;
@@ -506,8 +505,9 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
                     break;
                 }
 
-                if (DrawHeaderIcon(drawList, SocialChrome.HeaderSlot(area, 0), PhoneIcons.MessagePlus,
-                        Loc.T(L.Message.NewChat)))
+                var newChatCenter = SocialChrome.HeaderSlot(area, 0);
+                UiAnchors.Report("message.newchat", ChatListChrome.HeaderHit(newChatCenter));
+                if (DrawHeaderIcon(drawList, newChatCenter, PhoneIcons.MessagePlus, Loc.T(L.Message.NewChat)))
                 {
                     OpenNewChat();
                 }
