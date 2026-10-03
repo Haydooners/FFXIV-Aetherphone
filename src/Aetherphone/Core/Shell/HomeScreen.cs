@@ -33,7 +33,7 @@ internal sealed class HomeScreen
         folder = new FolderOverlay(layout, shortcuts, runner, configuration);
         sizeMenu = new WidgetSizeMenu(layout);
         gallery = new WidgetGallery(layout, widgets);
-        spotlight = new SpotlightOverlay(spotlightIndex);
+        spotlight = new SpotlightOverlay(spotlightIndex, configuration);
         interaction = new HomeInteractionController(layout, widgets, pager, folder, sizeMenu, gallery, spotlight,
             poses, runner);
         renderer = new HomeGridRenderer(layout, pager, poses, interaction, shortcuts, confirm, configuration);
@@ -90,7 +90,7 @@ internal sealed class HomeScreen
         folder.Draw(content, metrics, theme, navigation, interaction.Editing, pager.Page, delta);
         DrawSizeMenu(content, metrics, theme, delta);
         gallery.Draw(screen, theme, delta, metrics.Scale);
-        spotlight.Draw(screen, theme, navigation, delta, metrics.Scale);
+        spotlight.Draw(screen, content, theme, navigation, delta, metrics.Scale);
         if (!motion.Interactive)
         {
             spotlight.Close();

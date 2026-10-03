@@ -21,6 +21,7 @@ internal static class Metrics
         public const float Card = 16f;
         public const float Lg = 18f;
         public const float TileFactor = 0.28f;
+        public const float HomeTileFactor = 0.26f;
     }
 
     internal static class Size

@@ -20,7 +20,7 @@ internal static class HomeTileView
         var drawHalf = size * 0.5f * drawScale;
         var drawMin = new Vector2(center.X - drawHalf, center.Y - drawHalf);
         var drawMax = new Vector2(center.X + drawHalf, center.Y + drawHalf);
-        var radius = size * 0.26f * drawScale;
+        var radius = size * Metrics.Radius.HomeTileFactor * drawScale;
         var surface = IconTile.Surface(app.Accent);
         var ink = AppAccents.InkFor(app.Id);
         var firstVertex = dl.VtxBuffer.Size;
@@ -85,7 +85,7 @@ internal static class HomeTileView
         var drawHalf = size * 0.5f * drawScale;
         var min = new Vector2(center.X - drawHalf, center.Y - drawHalf);
         var max = new Vector2(center.X + drawHalf, center.Y + drawHalf);
-        var radius = size * 0.26f * drawScale;
+        var radius = size * Metrics.Radius.HomeTileFactor * drawScale;
         var firstVertex = dl.VtxBuffer.Size;
         Material.PointerHalo(dl, min, max, radius, pointer.Lift, scale);
         ShortcutArt.DrawSurface(dl, center, size * drawScale, shortcut, icon, scale);
@@ -103,7 +103,7 @@ internal static class HomeTileView
         var drawHalf = size * 0.5f * drawScale;
         var min = new Vector2(center.X - drawHalf, center.Y - drawHalf);
         var max = new Vector2(center.X + drawHalf, center.Y + drawHalf);
-        var radius = size * 0.26f * drawScale;
+        var radius = size * Metrics.Radius.HomeTileFactor * drawScale;
         var firstVertex = dl.VtxBuffer.Size;
         Material.PointerHalo(dl, min, max, radius, pointer.Lift, scale);
         Elevation.IconRest(dl, min, max, radius, scale);
@@ -114,37 +114,7 @@ internal static class HomeTileView
                 ImGui.GetColorU32(Palette.WithAlpha(ThemeCatalog.ResolveAccent(folder.FolderTint), 0.34f)));
         }
 
-        var pad = drawHalf * 0.28f;
-        var inner = drawHalf * 2f - pad * 2f;
-        var cell = inner / 3f;
-        var mini = cell * 0.78f;
-        var count = Math.Min(9, folder.Members.Count);
-        for (var index = 0; index < count; index++)
-        {
-            var col = index % 3;
-            var row = index / 3;
-            var cellCenter = new Vector2(min.X + pad + (col + 0.5f) * cell, min.Y + pad + (row + 0.5f) * cell);
-            var miniMin = new Vector2(cellCenter.X - mini * 0.5f, cellCenter.Y - mini * 0.5f);
-            var miniMax = new Vector2(cellCenter.X + mini * 0.5f, cellCenter.Y + mini * 0.5f);
-            var member = folder.Members[index];
-            if (member.IsShortcut)
-            {
-                ShortcutArt.DrawSurface(dl, cellCenter, mini, member.Shortcut!, shortcutIcon(member.Shortcut!), scale);
-                continue;
-            }
-
-            var appItem = member.App!;
-            if (AppIconTile.TryDraw(dl, appItem.Id, appItem.Accent, miniMin, miniMax, mini * 0.3f, 1f, false, scale))
-            {
-                continue;
-            }
-
-            var surface = IconTile.Surface(appItem.Accent);
-            var memberInk = AppAccents.InkFor(appItem.Id);
-            Squircle.Fill(dl, miniMin, miniMax, mini * 0.3f, ImGui.GetColorU32(surface));
-            AppIconArt.TryDraw(appItem.Id, cellCenter, mini, memberInk, Palette.Mix(surface, memberInk, 0.28f));
-        }
-
+        DrawFolderMiniGrid(dl, min, max, folder, shortcutIcon, scale);
         FinishPointer(dl, firstVertex, center, min, max, radius, drawHalf, pointer, scale);
         var name = string.IsNullOrEmpty(folder.FolderName) ? fallbackName : folder.FolderName;
         DrawLabel(center, size, name, theme, scale, labelAlpha, showLabels, labelWidth, zoom);
@@ -176,6 +146,46 @@ internal static class HomeTileView
         {
             DrawBadge(center, size, 1, true, theme, scale);
         }
+    }
+
+    public static void DrawFolderMiniGrid(ImDrawListPtr dl, Vector2 min, Vector2 max, HomeTile folder,
+        Func<ShortcutEntry, IDalamudTextureWrap?> shortcutIcon, float scale)
+    {
+        var side = MathF.Min(max.X - min.X, max.Y - min.Y);
+        var pad = side * 0.14f;
+        var cell = (side - pad * 2f) / 3f;
+        var mini = cell * 0.78f;
+        var count = Math.Min(9, folder.Members.Count);
+        for (var index = 0; index < count; index++)
+        {
+            var col = index % 3;
+            var row = index / 3;
+            var cellCenter = new Vector2(min.X + pad + (col + 0.5f) * cell, min.Y + pad + (row + 0.5f) * cell);
+            var member = folder.Members[index];
+            if (member.IsShortcut)
+            {
+                ShortcutArt.DrawSurface(dl, cellCenter, mini, member.Shortcut!, shortcutIcon(member.Shortcut!), scale);
+                continue;
+            }
+
+            DrawMiniApp(dl, cellCenter, mini, member.App!);
+        }
+    }
+
+    private static void DrawMiniApp(ImDrawListPtr dl, Vector2 center, float size, IPhoneApp app)
+    {
+        var half = size * 0.5f;
+        var miniMin = new Vector2(center.X - half, center.Y - half);
+        var miniMax = new Vector2(center.X + half, center.Y + half);
+        if (AppIconTile.TryDraw(dl, app.Id, app.Accent, miniMin, miniMax, size * 0.3f, 1f, false))
+        {
+            return;
+        }
+
+        var surface = IconTile.Surface(app.Accent);
+        var ink = AppAccents.InkFor(app.Id);
+        Squircle.Fill(dl, miniMin, miniMax, size * 0.3f, ImGui.GetColorU32(surface));
+        AppIconArt.TryDraw(dl, app.Id, center, size, ink, Palette.Mix(surface, ink, 0.28f));
     }
 
     private static void DrawBadge(Vector2 center, float size, int count, bool asDot, PhoneTheme theme, float scale)
