@@ -28,7 +28,8 @@ internal static partial class TourRegistry
                 "chrome.battery"),
             GuideStep.Point(L.Onboarding.MinimizeTitle, L.Onboarding.MinimizeBody, "chrome.minimize",
                 GuideGesture.None),
-            GuideStep.Point(L.Onboarding.LockTitle, L.Onboarding.LockTourBody, "chrome.lock", GuideGesture.None),
+            GuideStep.Point(L.Onboarding.ActionTitle, L.Onboarding.ActionTourBody, "chrome.action",
+                GuideGesture.None),
             GuideStep.Page(L.Onboarding.FinaleTitle, L.Onboarding.FinaleBody, L.Onboarding.StartExploring,
                 HeroMotif.Finale),
         });

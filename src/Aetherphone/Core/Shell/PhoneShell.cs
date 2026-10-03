@@ -46,6 +46,8 @@ internal sealed class PhoneShell : IDisposable
     private readonly MinimizeTransition minimize = new();
     private readonly OrientationTurn turn = new();
     private readonly SideButton sideButton = new();
+    private readonly VolumeRocker volumeRocker;
+    private readonly DynamicIsland island;
     private readonly ResizeGrip resizeGrip = new();
     private readonly CallHub calls;
     private readonly OnboardingDirector director;
@@ -92,8 +94,9 @@ internal sealed class PhoneShell : IDisposable
         AdChatBridge.Bind(services.YellowPages, services.YellowPagesLauncher, navigation);
         banner = new NotificationBanner(notifications, VisibleAppId, PhoneVisible, router);
         notifications.Vibration += OnVibration;
-        var island = new DynamicIsland(services.Playback, calls, configuration, bundle.Video, services.Musters,
+        island = new DynamicIsland(services.Playback, calls, configuration, bundle.Video, services.Musters,
             services.MusterLauncher);
+        volumeRocker = new VolumeRocker(services.Playback);
         var rateLimitPill = new RateLimitPill(services.Http, services.AethernetSession);
         shortcutPill = new ShortcutRunPill(services.ShortcutRunner);
         coinPill = new CoinEarnPill(services.Coins, configuration);
@@ -127,7 +130,7 @@ internal sealed class PhoneShell : IDisposable
         painter = new ShellScreenPainter(themes, navigation, home);
         appSwitcher = new AppSwitcher(navigation, painter);
         transition = new ShellTransitionRenderer(themes, navigation, home, painter);
-        morph = new MinimizeMorphView(themes, minimize, minimizedPhone, painter, configuration);
+        morph = new MinimizeMorphView(themes, minimize, minimizedPhone, painter);
         overlays = new ShellOverlayCoordinator(configuration, loading, navigation, controlCenter, appSwitcher, banner,
             island, rateLimitPill, shortcutPill, coinPill, coinFloats, incomingOverlay, banOverlay, confirmOverlay,
             reportOverlay, shareSheet, conductOverlay, encryptionHelpOverlay, director, setup);
@@ -289,9 +292,12 @@ internal sealed class PhoneShell : IDisposable
         var theme = themes.Chrome;
         var chassis = DeviceChrome.Chassis(device, theme);
         var screen = chassis.Screen;
-        var sideButtonRect = DeviceChrome.SideButtonRect(device, chassis, out var sideButtonSide);
-        var muteButtonRect = DeviceChrome.MuteButtonRect(device, chassis, out var muteButtonSide);
-        var lockButtonRect = DeviceChrome.LockButtonRect(device, chassis, out var lockButtonSide);
+        var sideButtonRect = DeviceChrome.KeyRect(device, chassis, HardwareKey.Side, out var sideButtonSide);
+        var actionButtonRect = DeviceChrome.KeyRect(device, chassis, HardwareKey.Action, out var actionButtonSide);
+        var volumeUpRect = DeviceChrome.KeyRect(device, chassis, HardwareKey.VolumeUp, out var volumeSide);
+        var volumeDownRect = DeviceChrome.KeyRect(device, chassis, HardwareKey.VolumeDown, out _);
+        var cameraControlRect =
+            DeviceChrome.KeyRect(device, chassis, HardwareKey.CameraControl, out var cameraControlSide);
         DeviceChrome.DrawBody(chassis, theme, turn.Turning ? null : TransparentBand(screen));
         loading.Advance(delta);
         navigation.Advance(delta);
@@ -325,18 +331,19 @@ internal sealed class PhoneShell : IDisposable
                 minimize.BeginCollapse();
             }
 
-            if (SideToggle.Update(muteButtonRect, muteButtonSide, theme, configuration.DoNotDisturb,
-                    Loc.T(configuration.DoNotDisturb ? L.Plugin.DndDisableHint : L.Plugin.DndEnableHint)))
+            if (RailKey.Update(actionButtonRect, actionButtonSide, theme, HardwareKey.Action,
+                    Loc.T(configuration.DoNotDisturb ? L.Plugin.DndDisableHint : L.Plugin.DndEnableHint)).Clicked)
             {
                 configuration.DoNotDisturb = !configuration.DoNotDisturb;
                 configuration.Save();
+                island.AnnounceDoNotDisturb(configuration.DoNotDisturb);
             }
 
-            if (SideToggle.Update(lockButtonRect, lockButtonSide, theme, configuration.LockPosition,
-                    Loc.T(configuration.LockPosition ? L.Plugin.UnlockPositionHint : L.Plugin.LockPositionHint)))
+            volumeRocker.Update(volumeUpRect, volumeDownRect, volumeSide, theme, delta);
+            if (RailKey.Update(cameraControlRect, cameraControlSide, theme, HardwareKey.CameraControl,
+                    Loc.T(L.Plugin.CameraControlHint)).Clicked)
             {
-                configuration.LockPosition = !configuration.LockPosition;
-                configuration.Save();
+                OpenApp("camera");
             }
 
             var landscape = chassis.Body.IsLandscape();
@@ -354,12 +361,16 @@ internal sealed class PhoneShell : IDisposable
                 configuration.Save();
             }
         }
+        else
+        {
+            volumeRocker.Settle(delta);
+        }
 
         SyncCallNavigation();
         var state = overlays.Assess(screen);
         director.Advance(delta, state.Busy, navigation.AtHome, navigation.Current?.Id);
         UiAnchors.BeginFrame(director.WantsAnchors);
-        UiAnchors.Report("chrome.lock", lockButtonRect);
+        UiAnchors.Report("chrome.action", actionButtonRect);
         UiAnchors.Report("chrome.minimize", sideButtonRect);
         UiAnchors.Report("chrome.controlcenter",
             new Rect(screen.Min, new Vector2(screen.Max.X, screen.Min.Y + 44f * UiScale.Current)));
@@ -369,6 +380,7 @@ internal sealed class PhoneShell : IDisposable
             DrawChrome(chassis, theme);
         }
 
+        volumeRocker.DrawHud(screen, volumeUpRect, volumeDownRect, volumeSide);
         overlays.DrawOverlays(chassis, theme, delta, state, !turn.Turning);
         if (!turn.Turning)
         {

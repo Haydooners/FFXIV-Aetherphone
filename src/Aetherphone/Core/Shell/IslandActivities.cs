@@ -10,6 +10,7 @@ internal enum IslandActivity : byte
     Playback,
     Timer,
     Muster,
+    Notice,
 }
 
 internal readonly record struct IslandSignals(bool Call, bool Session, bool Playback, bool Timer, bool Muster);
