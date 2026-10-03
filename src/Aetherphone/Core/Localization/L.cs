@@ -4424,6 +4424,103 @@ internal static class L
         public static readonly LocString LiveDjsEmpty     = new("music.liveDjsEmpty",     "No DJs are live right now. Check out Community Radio or Radio Stations.");
         public static readonly LocString PoweredByRolladeck = new("music.poweredByRolladeck", "Powered by XIV Rolladeck");
 
+        internal static class Live
+        {
+            public static readonly LocString TabChat = new("music.live.tabChat", "Chat");
+            public static readonly LocString TabRequests = new("music.live.tabRequests", "Requests");
+            public static readonly LocString TabAbout = new("music.live.tabAbout", "About");
+            public static readonly LocString TabHost = new("music.live.tabHost", "Host");
+            public static readonly LocString ChatHint = new("music.live.chatHint", "Say something to the room");
+            public static readonly LocString ChatEmptyTitle = new("music.live.chatEmptyTitle", "Start the conversation");
+            public static readonly LocString ChatEmptySub = new("music.live.chatEmptySub",
+                "Everyone tuned in to this station sees what you write here");
+            public static readonly LocString LockSuspended = new("music.live.lockSuspended",
+                "Chat is locked while your account is suspended");
+            public static readonly LocString LockSignedOut = new("music.live.lockSignedOut", "Sign in to join the chat");
+            public static readonly LocString LockConnecting = new("music.live.lockConnecting", "Connecting to chat…");
+            public static readonly LocString LockUnavailable = new("music.live.lockUnavailable",
+                "Chat is unavailable for this station");
+            public static readonly LocString LockMuted = new("music.live.lockMuted", "You are muted for {0}");
+            public static readonly LocString DurationSeconds = new("music.live.durationSeconds", "{0}s");
+            public static readonly LocPlural NewMessages =
+                new("music.live.newMessages", "{0} new message", "{0} new messages");
+            public static readonly LocString PinnedByHost = new("music.live.pinnedByHost", "Pinned by the host");
+            public static readonly LocString DjBadge = new("music.live.djBadge", "DJ");
+            public static readonly LocString ModBadge = new("music.live.modBadge", "MOD");
+            public static readonly LocString React = new("music.live.react", "React");
+            public static readonly LocString Send = new("music.live.send", "Send");
+            public static readonly LocString MessageOptions = new("music.live.messageOptions", "Message options");
+            public static readonly LocString ReportMessage = new("music.live.reportMessage", "Report message");
+            public static readonly LocString ReportTitle = new("music.live.reportTitle", "Report this message");
+            public static readonly LocString HideUser = new("music.live.hideUser", "Hide this person");
+            public static readonly LocString HiddenToast = new("music.live.hiddenToast", "You will not see them here again");
+            public static readonly LocString BlockUser = new("music.live.blockUser", "Block");
+            public static readonly LocString BlockConfirm = new("music.live.blockConfirm",
+                "Block {0}? They disappear from this chat and can no longer reach you on Aethernet.");
+            public static readonly LocString BlockAction = new("music.live.blockAction", "Block");
+            public static readonly LocString BlockFailed = new("music.live.blockFailed", "Could not block this person");
+            public static readonly LocString MuteShort = new("music.live.muteShort", "Mute for 10 minutes");
+            public static readonly LocString MuteHour = new("music.live.muteHour", "Mute for 1 hour");
+            public static readonly LocString MuteDay = new("music.live.muteDay", "Mute for 24 hours");
+            public static readonly LocString Unmute = new("music.live.unmute", "Unmute");
+            public static readonly LocString RefusedCooldown = new("music.live.refusedCooldown", "Slow down a little");
+            public static readonly LocString RefusedNotInRoom = new("music.live.refusedNotInRoom",
+                "You left the chat, reconnecting");
+            public static readonly LocString RefusedForbidden = new("music.live.refusedForbidden", "You cannot do that here");
+            public static readonly LocString RefusedBanned = new("music.live.refusedBanned",
+                "Your account cannot use live chat right now");
+            public static readonly LocString RefusedMuted = new("music.live.refusedMuted", "You are muted in this chat");
+            public static readonly LocString RefusedEmpty = new("music.live.refusedEmpty", "Type something first");
+            public static readonly LocString RefusedTooLong = new("music.live.refusedTooLong", "That is too long");
+            public static readonly LocString RefusedRequestsClosed = new("music.live.refusedRequestsClosed",
+                "Requests are closed right now");
+            public static readonly LocString RefusedRequestOpen = new("music.live.refusedRequestOpen",
+                "You already have a request in the queue");
+            public static readonly LocString RefusedQueueFull = new("music.live.refusedQueueFull", "The request queue is full");
+            public static readonly LocString RefusedNotFound = new("music.live.refusedNotFound", "That is no longer there");
+            public static readonly LocString RefusedInvalid = new("music.live.refusedInvalid", "That did not look right");
+            public static readonly LocString RefusedUnavailable = new("music.live.refusedUnavailable",
+                "Live chat is unavailable right now");
+            public static readonly LocString RefusedUnknown = new("music.live.refusedUnknown", "That did not go through");
+            public static readonly LocString RequestHint = new("music.live.requestHint", "Song title or link");
+            public static readonly LocString RequestSend = new("music.live.requestSend", "Request");
+            public static readonly LocString RequestsClosedTitle = new("music.live.requestsClosedTitle", "Requests are closed");
+            public static readonly LocString RequestsClosedSub = new("music.live.requestsClosedSub",
+                "The host is not taking requests right now");
+            public static readonly LocString RequestYours = new("music.live.requestYours", "Your request is in the queue");
+            public static readonly LocString RequestAcceptedYours = new("music.live.requestAcceptedYours",
+                "The host accepted your request");
+            public static readonly LocString RequestWithdraw = new("music.live.requestWithdraw", "Withdraw");
+            public static readonly LocString RequestsEmpty = new("music.live.requestsEmpty", "No requests yet");
+            public static readonly LocString RequestsEmptySub = new("music.live.requestsEmptySub",
+                "Song requests from listeners show up here");
+            public static readonly LocString RequestAccept = new("music.live.requestAccept", "Accept");
+            public static readonly LocString RequestSkip = new("music.live.requestSkip", "Skip");
+            public static readonly LocString RequestPlayed = new("music.live.requestPlayed", "Played");
+            public static readonly LocString RequestsToggle = new("music.live.requestsToggle", "Take song requests");
+            public static readonly LocString AcceptedSection = new("music.live.acceptedSection", "Up soon");
+            public static readonly LocString PendingSection = new("music.live.pendingSection", "Waiting");
+            public static readonly LocString RequestedBy = new("music.live.requestedBy", "Requested by {0}");
+            public static readonly LocString InRoomCount = new("music.live.inRoomCount", "{0} in the room");
+            public static readonly LocString PinnedNotice = new("music.live.pinnedNotice", "Pinned notice");
+            public static readonly LocString PinHint = new("music.live.pinHint", "Tell listeners what is happening");
+            public static readonly LocString Pin = new("music.live.pin", "Pin");
+            public static readonly LocString Unpin = new("music.live.unpin", "Unpin");
+            public static readonly LocString NothingPinned = new("music.live.nothingPinned", "Nothing pinned right now");
+            public static readonly LocString TemplateBreak = new("music.live.templateBreak", "Taking a short break, stay tuned");
+            public static readonly LocString TemplateBack = new("music.live.templateBack", "Back in 10 minutes");
+            public static readonly LocString TemplateReturned = new("music.live.templateReturned", "We are back on air");
+            public static readonly LocString TemplateNext = new("music.live.templateNext", "Next up: ");
+            public static readonly LocString TemplateRequests = new("music.live.templateRequests",
+                "Requests are open, send yours in");
+            public static readonly LocString OffAirTitle = new("music.live.offAirTitle", "You are off air");
+            public static readonly LocString OffAirSub = new("music.live.offAirSub",
+                "Start your broadcast software to go live. Followers get a notification when you do.");
+            public static readonly LocString BroadcastSettings = new("music.live.broadcastSettings", "Broadcast settings");
+            public static readonly LocString OnAirTitle = new("music.live.onAirTitle", "You are on air");
+            public static readonly LocString LiveChat = new("music.live.liveChat", "Live chat");
+        }
+
         internal static class Jam
         {
             public static readonly LocString Title = new("music.jam", "Jam");
