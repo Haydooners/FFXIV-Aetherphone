@@ -50,8 +50,8 @@ internal struct GroupCard
         var height = totalHeight * scale;
         var cardMax = new Vector2(right, origin.Y + height);
         var dl = ImGui.GetWindowDrawList();
-        Squircle.Fill(dl, origin, cardMax, Metrics.Radius.Md * scale, ImGui.GetColorU32(cardColor));
-        Material.EdgeSquircle(dl, origin, cardMax, Metrics.Radius.Md * scale, scale);
+        Squircle.Fill(dl, origin, cardMax, Metrics.Radius.Grouped * scale, ImGui.GetColorU32(cardColor));
+        Material.EdgeSquircle(dl, origin, cardMax, Metrics.Radius.Grouped * scale, scale);
         return new GroupCard(separator, scale, rowHeight, origin.X, right, origin.Y, totalHeight);
     }
 
@@ -62,7 +62,7 @@ internal struct GroupCard
         var right = origin.X + ImGui.GetContentRegionAvail().X;
         var height = totalHeight * scale;
         var cardMax = new Vector2(right, origin.Y + height);
-        ui.Card(ImGui.GetWindowDrawList(), origin, cardMax, Metrics.Radius.Md * scale);
+        ui.Card(ImGui.GetWindowDrawList(), origin, cardMax, Metrics.Radius.Grouped * scale);
         return new GroupCard(ui.Hairline, scale, rowHeight, origin.X, right, origin.Y, totalHeight);
     }
 
