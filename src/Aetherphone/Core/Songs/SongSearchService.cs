@@ -49,7 +49,7 @@ internal sealed class SongSearchService : IDisposable
                     }
 
                     var song = new Song(video.Id.Value, video.Title, video.Author.ChannelTitle,
-                        PickThumbnail(video.Thumbnails), seconds);
+                        PickThumbnail(video.Thumbnails), seconds, video.Author.ChannelId.Value);
                     results.Add(song);
                     if (results.Count >= MaxResults)
                     {
@@ -95,7 +95,7 @@ internal sealed class SongSearchService : IDisposable
             }
 
             results.Add(new Song(entry.VideoId, entry.Title, entry.Author, entry.ThumbnailUrl,
-                entry.DurationSeconds));
+                entry.DurationSeconds, entry.ChannelId));
         }
 
         return results.ToArray();

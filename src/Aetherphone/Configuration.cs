@@ -227,6 +227,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public float MusicVolume { get; set; } = 0.6f;
     public int MusicRepeat { get; set; }
     public bool MusicShuffle { get; set; }
+    public bool MusicAutoplay { get; set; } = true;
+    public float MusicCrossfadeSeconds { get; set; }
     public float VideoVolume { get; set; } = 0.6f;
     public int VideoMaxQualityHeight { get; set; } = 720;
     public bool VideoHideNameplates { get; set; } = true;

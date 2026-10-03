@@ -154,6 +154,7 @@ internal sealed class PhoneServices : IDisposable
     public required SongHistory SongHistory { get; init; }
     public required PlaylistStore Playlists { get; init; }
     public required PlaybackHub Playback { get; init; }
+    public required LibraryStore MusicLibrary { get; init; }
     public required GameStatsStore GameStats { get; init; }
     public required VenuesService Venues { get; init; }
     public required RolladeckService Rolladeck { get; init; }
@@ -304,9 +305,11 @@ internal sealed class PhoneServices : IDisposable
         var songSearch = new SongSearchService(youtube, songResolver);
         var videoMetadata = new VideoUrlResolver(youtube);
         var songPlayer = new SongPlayer(youtube, audioCache, songResolver);
-        var songHistory = new SongHistory(configuration);
-        var playlists = new PlaylistStore(configuration);
-        var playback = new PlaybackHub(radioPlayer, songPlayer, configuration);
+        var musicLibrary = new LibraryStore(new DirectoryInfo(Path.Combine(configDirectory.FullName, "Music")),
+            configuration);
+        var songHistory = new SongHistory(musicLibrary);
+        var playlists = new PlaylistStore(musicLibrary);
+        var playback = new PlaybackHub(radioPlayer, songPlayer, musicLibrary, songResolver, configuration, framework);
         var gameStats = new GameStatsStore(configuration);
         var rolladeck = new RolladeckService(http);
         var venues = new VenuesService(http, notifications, configuration, gameData, rolladeck);
@@ -486,6 +489,7 @@ internal sealed class PhoneServices : IDisposable
             SongHistory = songHistory,
             Playlists = playlists,
             Playback = playback,
+            MusicLibrary = musicLibrary,
             GameStats = gameStats,
             Venues = venues,
             Rolladeck = rolladeck,
@@ -558,7 +562,9 @@ internal sealed class PhoneServices : IDisposable
         Musters.Dispose();
         YellowPages.Dispose();
         AdInquiries.Dispose();
+        Playback.Dispose();
         SongPlayer.Dispose();
+        MusicLibrary.Dispose();
         SongSearch.Dispose();
         VideoMetadata.Dispose();
         RadioPlayer.Dispose();

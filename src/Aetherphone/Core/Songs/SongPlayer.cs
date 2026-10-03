@@ -21,247 +21,238 @@ internal enum SongPlaybackState : byte
 
 internal enum SongRepeatMode : byte
 {
-    Off,
-    One,
+    Off = 0,
+    One = 1,
+    All = 2,
 }
 
 internal sealed class SongPlayer : IDisposable
 {
+    public const float PrefetchLeadSeconds = 25f;
+    public const float MaximumCrossfadeSeconds = 12f;
     private const int StreamedThresholdSeconds = 600;
-    private const int StreamedAttempts = 2;
+    private const int PlaybackAttempts = 2;
+    private const int MonitorIntervalMilliseconds = 40;
+    private const float DeclickSeconds = 0.04f;
+    private const int DrainTimeoutMilliseconds = 1500;
     private static readonly TimeSpan CacheMaxAge = TimeSpan.FromDays(14);
+
     private readonly YoutubeClient youtube;
     private readonly DiskCache cache;
     private readonly SongLinkResolver linkResolver;
     private readonly object gate = new();
+    private readonly MixingSampleProvider mixer;
+    private readonly VolumeSampleProvider master;
+    private readonly HashSet<string> prefetching = new(StringComparer.Ordinal);
+    private IWavePlayer? output;
     private CancellationTokenSource? cancellation;
-    private Thread? worker;
+    private TrackVoice? currentVoice;
     private int session;
+    private int liveVoices;
     private volatile SongPlaybackState state = SongPlaybackState.Stopped;
     private volatile bool paused;
-    private volatile string currentVideoId = string.Empty;
-    private volatile string currentTitle = string.Empty;
-    private volatile string currentAuthor = string.Empty;
-    private volatile string currentThumbnail = string.Empty;
-    private volatile SongRepeatMode repeat = SongRepeatMode.Off;
-    private float volume = 0.6f;
+    private Song currentSong;
     private float positionSeconds;
     private float durationSeconds;
-    private int pendingSeekMs = -1;
-    private Song[] queue = Array.Empty<Song>();
-    private int queueIndex = -1;
-    private volatile bool shuffled;
-    private int[] shuffleOrder = Array.Empty<int>();
-    private int shufflePosition = -1;
+    private float crossfadeSeconds;
+    private float rate = 1f;
 
     public SongPlayer(YoutubeClient youtube, DiskCache cache, SongLinkResolver linkResolver)
     {
         this.youtube = youtube;
         this.cache = cache;
         this.linkResolver = linkResolver;
+        mixer = new MixingSampleProvider(
+            WaveFormat.CreateIeeeFloatWaveFormat(TrackVoice.OutputSampleRate, TrackVoice.OutputChannels))
+        {
+            ReadFully = true,
+        };
+        master = new VolumeSampleProvider(mixer) { Volume = 0.6f };
         MediaFoundationApi.Startup();
     }
 
+    public event Action? TrackCompleted;
+    public event Action? TrackNearEnd;
+    public event Action? CrossfadePoint;
+
     public SongPlaybackState State => state;
     public bool IsPaused => paused;
-    public string CurrentVideoId => currentVideoId;
-    public string CurrentTitle => currentTitle;
-    public string CurrentAuthor => currentAuthor;
-    public string CurrentThumbnail => currentThumbnail;
-    public bool HasQueue => queue.Length > 1;
-    public float Position => positionSeconds;
-    public float Duration => durationSeconds;
+    public Song CurrentSong => currentSong;
+    public string CurrentVideoId => currentSong.VideoId ?? string.Empty;
+    public string CurrentTitle => currentSong.Title ?? string.Empty;
+    public string CurrentAuthor => currentSong.Author ?? string.Empty;
+    public string CurrentThumbnail => currentSong.ThumbnailUrl ?? string.Empty;
 
-    public SongRepeatMode Repeat
+    public float Position
     {
-        get => repeat;
-        set => repeat = value;
+        get
+        {
+            var voice = currentVoice;
+            return voice is null ? positionSeconds : (float)voice.PositionSeconds;
+        }
     }
 
-    public bool Shuffled
+    public float Duration => durationSeconds;
+
+    public float Volume
     {
-        get => shuffled;
+        get => master.Volume;
+        set => master.Volume = Math.Clamp(value, 0f, 1f);
+    }
+
+    public float CrossfadeSeconds
+    {
+        get => crossfadeSeconds;
+        set => crossfadeSeconds = Math.Clamp(value, 0f, MaximumCrossfadeSeconds);
+    }
+
+    public float Rate
+    {
+        get => rate;
         set
         {
-            lock (gate)
+            rate = Math.Clamp(value, TrackVoice.MinimumRate, TrackVoice.MaximumRate);
+            var voice = currentVoice;
+            if (voice is not null)
             {
-                if (shuffled == value)
-                {
-                    return;
-                }
-
-                shuffled = value;
-                if (shuffled && queue.Length > 0)
-                {
-                    RebuildShuffleOrder(queueIndex);
-                }
+                voice.Rate = rate;
             }
         }
     }
 
-    public float Volume
+    public void Play(in Song song, double startSeconds = 0, bool crossfade = false)
     {
-        get => volume;
-        set => volume = Math.Clamp(value, 0f, 1f);
-    }
-
-    public void Play(Song[] songs, int index)
-    {
-        if (songs is null || songs.Length == 0)
+        if (song.IsEmpty)
         {
             return;
         }
 
-        var start = Math.Clamp(index, 0, songs.Length - 1);
+        var fade = crossfade ? crossfadeSeconds : 0f;
         lock (gate)
         {
-            queue = songs;
-            queueIndex = start;
-            if (shuffled)
+            DetachCurrent(fade > 0f ? fade : DeclickSeconds, cancelWorker: fade <= 0f);
+            session++;
+            currentSong = song;
+            positionSeconds = (float)Math.Max(0, startSeconds);
+            durationSeconds = song.DurationSeconds;
+            paused = false;
+            state = SongPlaybackState.Resolving;
+            cancellation = new CancellationTokenSource();
+            var token = cancellation.Token;
+            var workerSession = session;
+            var target = song;
+            var thread = new Thread(() => Run(target, startSeconds, fade, token, workerSession))
             {
-                RebuildShuffleOrder(start);
-            }
+                IsBackground = true,
+                Name = "Aetherphone.Song",
+            };
+            thread.Start();
         }
 
-        StartSong(songs[start]);
-    }
-
-    public void Next() => Skip(1);
-    public void Previous() => Skip(-1);
-
-    private void Skip(int direction)
-    {
-        Song song;
-        lock (gate)
-        {
-            if (queue.Length == 0)
-            {
-                return;
-            }
-
-            if (shuffled && shuffleOrder.Length == queue.Length)
-            {
-                shufflePosition = ((shufflePosition + direction) % shuffleOrder.Length + shuffleOrder.Length) %
-                                  shuffleOrder.Length;
-                queueIndex = shuffleOrder[shufflePosition];
-            }
-            else
-            {
-                queueIndex = ((queueIndex + direction) % queue.Length + queue.Length) % queue.Length;
-            }
-
-            song = queue[queueIndex];
-        }
-
-        StartSong(song);
-    }
-
-    private void RebuildShuffleOrder(int startIndex)
-    {
-        var count = queue.Length;
-        if (shuffleOrder.Length != count)
-        {
-            shuffleOrder = new int[count];
-        }
-
-        for (var index = 0; index < count; index++)
-        {
-            shuffleOrder[index] = index;
-        }
-
-        for (var index = count - 1; index > 0; index--)
-        {
-            var swapIndex = Random.Shared.Next(index + 1);
-            (shuffleOrder[index], shuffleOrder[swapIndex]) = (shuffleOrder[swapIndex], shuffleOrder[index]);
-        }
-
-        for (var index = 0; index < count; index++)
-        {
-            if (shuffleOrder[index] == startIndex)
-            {
-                (shuffleOrder[0], shuffleOrder[index]) = (shuffleOrder[index], shuffleOrder[0]);
-                break;
-            }
-        }
-
-        shufflePosition = 0;
+        ResumeOutput();
     }
 
     public void Seek(float seconds)
     {
-        var milliseconds = (int)(Math.Max(0f, seconds) * 1000f);
-        Interlocked.Exchange(ref pendingSeekMs, milliseconds);
+        positionSeconds = Math.Max(0f, seconds);
+        currentVoice?.Seek(positionSeconds);
     }
 
-    public void Pause() => paused = true;
-
-    public void Resume() => paused = false;
-
-    private void StartSong(Song song)
+    public void Pause()
     {
-        CancelWorker();
+        paused = true;
         lock (gate)
         {
-            currentVideoId = song.VideoId;
-            currentTitle = song.Title;
-            currentAuthor = song.Author;
-            currentThumbnail = song.ThumbnailUrl;
-            positionSeconds = 0f;
-            durationSeconds = song.DurationSeconds;
-            paused = false;
-            Interlocked.Exchange(ref pendingSeekMs, -1);
-            state = SongPlaybackState.Resolving;
-            cancellation = new CancellationTokenSource();
-            var token = cancellation.Token;
-            var videoId = song.VideoId;
-            var knownDurationSeconds = song.DurationSeconds;
-            var workerSession = session;
-            worker = new Thread(() => Run(videoId, knownDurationSeconds, token, workerSession))
-            {
-                IsBackground = true, Name = "Aetherphone.Song",
-            };
-            worker.Start();
+            output?.Pause();
         }
+    }
+
+    public void Resume()
+    {
+        paused = false;
+        ResumeOutput();
     }
 
     public void Stop()
     {
-        CancelWorker();
-        paused = false;
-        ResetTrackState();
+        lock (gate)
+        {
+            DetachCurrent(DeclickSeconds, cancelWorker: true);
+            session++;
+            paused = false;
+            ResetTrackState();
+            ReleaseOutputIfIdle();
+        }
+    }
+
+    public void Prefetch(in Song song)
+    {
+        if (song.IsEmpty || song.DurationSeconds > StreamedThresholdSeconds || !linkResolver.IsInstalled)
+        {
+            return;
+        }
+
+        var videoId = song.VideoId;
+        if (cache.Get(OpusCacheKey(videoId), CacheMaxAge) is not null || cache.Get(videoId, CacheMaxAge) is not null)
+        {
+            return;
+        }
+
+        lock (prefetching)
+        {
+            if (!prefetching.Add(videoId))
+            {
+                return;
+            }
+        }
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                FillCacheThroughResolver(videoId, CancellationToken.None);
+            }
+            catch (Exception exception)
+            {
+                AepLog.Debug(exception, "Song prefetch failed");
+            }
+            finally
+            {
+                lock (prefetching)
+                {
+                    prefetching.Remove(videoId);
+                }
+            }
+        });
+    }
+
+    private void DetachCurrent(float fadeSeconds, bool cancelWorker)
+    {
+        currentVoice?.FadeOut(fadeSeconds);
+        currentVoice = null;
+        if (!cancelWorker)
+        {
+            cancellation = null;
+            return;
+        }
+
+        var toCancel = cancellation;
+        cancellation = null;
+        if (toCancel is null)
+        {
+            return;
+        }
+
+        toCancel.Cancel();
+        toCancel.Dispose();
     }
 
     private void ResetTrackState()
     {
         state = SongPlaybackState.Stopped;
-        currentVideoId = string.Empty;
-        currentTitle = string.Empty;
-        currentAuthor = string.Empty;
-        currentThumbnail = string.Empty;
+        currentSong = default;
         positionSeconds = 0f;
         durationSeconds = 0f;
-    }
-
-    private Thread? CancelWorker()
-    {
-        Thread? stopped;
-        CancellationTokenSource? toCancel;
-        lock (gate)
-        {
-            session++;
-            stopped = worker;
-            toCancel = cancellation;
-            worker = null;
-            cancellation = null;
-        }
-
-        if (toCancel is not null)
-        {
-            toCancel.Cancel();
-            toCancel.Dispose();
-        }
-
-        return stopped;
     }
 
     private bool IsCurrent(int workerSession)
@@ -283,25 +274,38 @@ internal sealed class SongPlayer : IDisposable
         }
     }
 
-    private void Run(string videoId, int knownDurationSeconds, CancellationToken token, int workerSession)
+    private void Run(Song song, double startSeconds, float fadeInSeconds, CancellationToken token, int workerSession)
     {
-        var resumeSeconds = -1f;
+        var resumeSeconds = startSeconds;
         var resolverUsed = false;
-        var firstAttempt = true;
-        var attemptsRemaining = StreamedAttempts;
-        while (attemptsRemaining > 0)
+        var attemptsRemaining = PlaybackAttempts;
+        while (attemptsRemaining > 0 && !token.IsCancellationRequested)
         {
             attemptsRemaining--;
-            var allowStreaming = firstAttempt || knownDurationSeconds > StreamedThresholdSeconds;
-            firstAttempt = false;
+            var allowStreaming = attemptsRemaining == PlaybackAttempts - 1 ||
+                                 song.DurationSeconds > StreamedThresholdSeconds;
             try
             {
-                if (PlayOnce(videoId, knownDurationSeconds, allowStreaming, resumeSeconds, token, workerSession))
+                var outcome = PlayOnce(song, resumeSeconds, fadeInSeconds, allowStreaming, token, workerSession);
+                if (outcome == VoiceOutcome.Completed && IsCurrent(workerSession))
                 {
-                    AdvanceAfterCompletion(workerSession);
+                    TrackCompleted?.Invoke();
                 }
 
-                return;
+                if (outcome != VoiceOutcome.Faulted)
+                {
+                    return;
+                }
+
+                resumeSeconds = positionSeconds;
+                fadeInSeconds = DeclickSeconds;
+                if (attemptsRemaining == 0)
+                {
+                    TrySetState(workerSession, SongPlaybackState.Failed);
+                    return;
+                }
+
+                TrySetState(workerSession, SongPlaybackState.Buffering);
             }
             catch (OperationCanceledException)
             {
@@ -317,14 +321,14 @@ internal sealed class SongPlayer : IDisposable
                 resumeSeconds = positionSeconds;
                 TrySetState(workerSession, SongPlaybackState.Buffering);
                 AepLog.Warning(exception, "Song stream refused by the source, fetching through the link resolver");
-                if (!FillCacheThroughResolver(videoId, token))
+                if (!FillCacheThroughResolver(song.VideoId, token))
                 {
                     TrySetState(workerSession, SongPlaybackState.Failed);
                     AepLog.Warning("Song playback failed: the link resolver could not fetch the audio");
                     return;
                 }
 
-                attemptsRemaining = StreamedAttempts;
+                attemptsRemaining = PlaybackAttempts;
             }
             catch (Exception exception)
             {
@@ -342,6 +346,250 @@ internal sealed class SongPlayer : IDisposable
         }
     }
 
+    private enum VoiceOutcome : byte
+    {
+        Completed,
+        Detached,
+        Faulted,
+        Unavailable,
+    }
+
+    private VoiceOutcome PlayOnce(in Song song, double startSeconds, float fadeInSeconds, bool allowStreaming,
+        CancellationToken token, int workerSession)
+    {
+        var reader = OpenReader(song, allowStreaming, token, workerSession);
+        if (reader is null)
+        {
+            if (!token.IsCancellationRequested)
+            {
+                TrySetState(workerSession, SongPlaybackState.Failed);
+            }
+
+            return VoiceOutcome.Unavailable;
+        }
+
+        var voice = new TrackVoice(reader, startSeconds, fadeInSeconds) { Rate = rate };
+        lock (gate)
+        {
+            if (workerSession != session || token.IsCancellationRequested)
+            {
+                reader.Dispose();
+                return VoiceOutcome.Detached;
+            }
+
+            currentVoice = voice;
+            durationSeconds = (float)voice.DurationSeconds;
+            EnsureOutput();
+            Interlocked.Increment(ref liveVoices);
+            mixer.AddMixerInput(voice);
+            state = SongPlaybackState.Playing;
+        }
+
+        try
+        {
+            return Monitor(voice, token, workerSession);
+        }
+        finally
+        {
+            mixer.RemoveMixerInput(voice);
+            voice.DisposeReader();
+            Interlocked.Decrement(ref liveVoices);
+            ReleaseOutputIfIdle();
+        }
+    }
+
+    private VoiceOutcome Monitor(TrackVoice voice, CancellationToken token, int workerSession)
+    {
+        var nearEndRaised = false;
+        var crossfadeRaised = false;
+        var drainDeadline = long.MaxValue;
+        while (!voice.Finished)
+        {
+            if (token.IsCancellationRequested && drainDeadline == long.MaxValue)
+            {
+                voice.FadeOut(DeclickSeconds);
+                drainDeadline = Environment.TickCount64 + DrainTimeoutMilliseconds;
+            }
+
+            if (Environment.TickCount64 > drainDeadline)
+            {
+                return VoiceOutcome.Detached;
+            }
+
+            if (voice.Faulted)
+            {
+                return IsCurrent(workerSession) ? VoiceOutcome.Faulted : VoiceOutcome.Detached;
+            }
+
+            if (IsCurrent(workerSession))
+            {
+                var position = (float)voice.PositionSeconds;
+                positionSeconds = position;
+                var duration = durationSeconds;
+                if (duration > 0f && !paused)
+                {
+                    var remaining = duration - position;
+                    if (!nearEndRaised && remaining <= PrefetchLeadSeconds)
+                    {
+                        nearEndRaised = true;
+                        TrackNearEnd?.Invoke();
+                    }
+
+                    var fade = crossfadeSeconds;
+                    if (!crossfadeRaised && fade > 0f && remaining <= fade && duration > fade * 2f)
+                    {
+                        crossfadeRaised = true;
+                        CrossfadePoint?.Invoke();
+                    }
+                }
+            }
+
+            Thread.Sleep(MonitorIntervalMilliseconds);
+        }
+
+        if (voice.Faulted)
+        {
+            return IsCurrent(workerSession) ? VoiceOutcome.Faulted : VoiceOutcome.Detached;
+        }
+
+        return voice.SourceEnded && !voice.FadingOut ? VoiceOutcome.Completed : VoiceOutcome.Detached;
+    }
+
+    private void EnsureOutput()
+    {
+        if (output is not null)
+        {
+            return;
+        }
+
+        var created = AudioOutputFactory.Create();
+        created.Init(master, true);
+        created.PlaybackStopped += OnOutputStopped;
+        output = created;
+        if (!paused)
+        {
+            created.Play();
+        }
+    }
+
+    private void ResumeOutput()
+    {
+        lock (gate)
+        {
+            if (output is not null && !paused && output.PlaybackState != PlaybackState.Playing)
+            {
+                output.Play();
+            }
+        }
+    }
+
+    private void OnOutputStopped(object? sender, StoppedEventArgs arguments)
+    {
+        if (arguments.Exception is not null)
+        {
+            AepLog.Warning(arguments.Exception, "Song output device stopped");
+        }
+
+        lock (gate)
+        {
+            if (!ReferenceEquals(sender, output))
+            {
+                return;
+            }
+
+            output.PlaybackStopped -= OnOutputStopped;
+            output.Dispose();
+            output = null;
+        }
+    }
+
+    private void ReleaseOutputIfIdle()
+    {
+        lock (gate)
+        {
+            if (output is null || Volatile.Read(ref liveVoices) > 0 || state != SongPlaybackState.Stopped)
+            {
+                return;
+            }
+
+            output.PlaybackStopped -= OnOutputStopped;
+            output.Dispose();
+            output = null;
+        }
+    }
+
+    private ISongAudioReader? OpenReader(in Song song, bool allowStreaming, CancellationToken token,
+        int workerSession)
+    {
+        var videoId = song.VideoId;
+        var bytes = cache.Get(OpusCacheKey(videoId), CacheMaxAge);
+        var bytesAreOpus = bytes is not null;
+        bytes ??= cache.Get(videoId, CacheMaxAge);
+        if (bytes is null && linkResolver.IsInstalled && !token.IsCancellationRequested)
+        {
+            TrySetState(workerSession, SongPlaybackState.Buffering);
+            try
+            {
+                if (song.DurationSeconds > StreamedThresholdSeconds)
+                {
+                    var streamed = OpenResolverStreamedReader(videoId, token);
+                    if (streamed is not null)
+                    {
+                        return streamed;
+                    }
+                }
+                else if (linkResolver.Fetch(videoId, token) is { Bytes.Length: > 0 } fetched)
+                {
+                    cache.Set(fetched.IsOpus ? OpusCacheKey(videoId) : videoId, fetched.Bytes);
+                    bytes = fetched.Bytes;
+                    bytesAreOpus = fetched.IsOpus;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception) when (!token.IsCancellationRequested)
+            {
+                AepLog.Warning(exception, "Song link resolver failed, using the built-in resolver");
+            }
+        }
+
+        if (bytes is null && !allowStreaming)
+        {
+            var downloaded = Download(videoId, token);
+            bytes = downloaded?.Bytes;
+            bytesAreOpus = downloaded?.IsOpus ?? false;
+        }
+
+        if (token.IsCancellationRequested)
+        {
+            return null;
+        }
+
+        if (bytes is { Length: > 0 })
+        {
+            TrySetState(workerSession, SongPlaybackState.Buffering);
+            var captured = bytes;
+            return bytesAreOpus
+                ? new OpusWebmSampleProvider(() => new MemoryStream(captured, false))
+                : new MediaFoundationSongReader(new StreamMediaFoundationReader(new MemoryStream(captured, false)));
+        }
+
+        if (!allowStreaming)
+        {
+            return null;
+        }
+
+        var reader = OpenStreamedReader(videoId, token);
+        if (reader is not null && song.DurationSeconds is > 0 and <= StreamedThresholdSeconds)
+        {
+            BeginCacheFill(videoId, token);
+        }
+
+        return reader;
+    }
+
     private bool FillCacheThroughResolver(string videoId, CancellationToken token)
     {
         if (linkResolver.Fetch(videoId, token) is not { Bytes.Length: > 0 } audio)
@@ -353,164 +601,9 @@ internal sealed class SongPlayer : IDisposable
         return true;
     }
 
-    private bool PlayOnce(string videoId, int knownDurationSeconds, bool allowStreaming, float resumeSeconds,
-        CancellationToken token, int workerSession)
-    {
-        MemoryStream? audio = null;
-        ISongAudioReader? reader = null;
-        IWavePlayer? output = null;
-        try
-        {
-            var bytes = cache.Get(OpusCacheKey(videoId), CacheMaxAge);
-            var bytesAreOpus = bytes is not null;
-            if (bytes is null)
-            {
-                bytes = cache.Get(videoId, CacheMaxAge);
-            }
-
-            if (bytes is null && linkResolver.IsInstalled && !token.IsCancellationRequested)
-            {
-                TrySetState(workerSession, SongPlaybackState.Buffering);
-                try
-                {
-                    if (knownDurationSeconds > StreamedThresholdSeconds)
-                    {
-                        reader = OpenResolverStreamedReader(videoId, token, workerSession);
-                    }
-                    else if (linkResolver.Fetch(videoId, token) is { Bytes.Length: > 0 } fetched)
-                    {
-                        cache.Set(fetched.IsOpus ? OpusCacheKey(videoId) : videoId, fetched.Bytes);
-                        bytes = fetched.Bytes;
-                        bytesAreOpus = fetched.IsOpus;
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception exception) when (!token.IsCancellationRequested)
-                {
-                    AepLog.Warning(exception, "Song link resolver failed, using the built-in resolver");
-                    reader = null;
-                }
-            }
-
-            if (bytes is null && reader is null && !allowStreaming)
-            {
-                var downloaded = Download(videoId, token);
-                bytes = downloaded?.Bytes;
-                bytesAreOpus = downloaded?.IsOpus ?? false;
-            }
-
-            if (reader is null)
-            {
-                if (bytes is not null && bytes.Length > 0)
-                {
-                    TrySetState(workerSession, SongPlaybackState.Buffering);
-                    if (bytesAreOpus)
-                    {
-                        reader = new OpusWebmSampleProvider(() => new MemoryStream(bytes, false));
-                    }
-                    else
-                    {
-                        audio = new MemoryStream(bytes, false);
-                        reader = new MediaFoundationSongReader(new StreamMediaFoundationReader(audio));
-                    }
-                }
-                else if (allowStreaming)
-                {
-                    reader = OpenStreamedReader(videoId, token, workerSession);
-                    if (reader is not null && knownDurationSeconds > 0 &&
-                        knownDurationSeconds <= StreamedThresholdSeconds)
-                    {
-                        BeginCacheFill(videoId, token);
-                    }
-                }
-            }
-
-            if (token.IsCancellationRequested)
-            {
-                return false;
-            }
-
-            if (reader is null)
-            {
-                TrySetState(workerSession, SongPlaybackState.Failed);
-                return false;
-            }
-
-            if (IsCurrent(workerSession))
-            {
-                durationSeconds = (float)reader.TotalTime.TotalSeconds;
-            }
-
-            if (resumeSeconds > 0f)
-            {
-                var clampedResume = Math.Min(resumeSeconds, (float)reader.TotalTime.TotalSeconds);
-                reader.CurrentTime = TimeSpan.FromSeconds(clampedResume);
-            }
-
-            var volumeProvider = new VolumeSampleProvider(reader.ToSampleProvider()) { Volume = volume };
-            output = AudioOutputFactory.Create();
-            output.Init(volumeProvider, true);
-            output.Play();
-            TrySetState(workerSession, SongPlaybackState.Playing);
-            while (!token.IsCancellationRequested)
-            {
-                if (output.PlaybackState == NAudio.Wave.PlaybackState.Stopped)
-                {
-                    break;
-                }
-
-                var seek = Interlocked.Exchange(ref pendingSeekMs, -1);
-                if (seek >= 0)
-                {
-                    var clamped = Math.Min(seek, reader.TotalTime.TotalMilliseconds);
-                    output.Pause();
-                    reader.CurrentTime = TimeSpan.FromMilliseconds(clamped);
-                    if (!paused)
-                    {
-                        output.Play();
-                    }
-                }
-
-                if (paused && output.PlaybackState == NAudio.Wave.PlaybackState.Playing)
-                {
-                    output.Pause();
-                }
-                else if (!paused && output.PlaybackState == NAudio.Wave.PlaybackState.Paused)
-                {
-                    output.Play();
-                }
-
-                if (IsCurrent(workerSession))
-                {
-                    positionSeconds = (float)reader.CurrentTime.TotalSeconds;
-                }
-
-                volumeProvider.Volume = volume;
-                Thread.Sleep(80);
-            }
-
-            if (token.IsCancellationRequested)
-            {
-                return false;
-            }
-
-            output.Stop();
-            return true;
-        }
-        finally
-        {
-            output?.Dispose();
-            reader?.Dispose();
-            audio?.Dispose();
-        }
-    }
-
     private void BeginCacheFill(string videoId, CancellationToken token)
     {
-        Task.Run(() =>
+        _ = Task.Run(() =>
         {
             try
             {
@@ -529,14 +622,13 @@ internal sealed class SongPlayer : IDisposable
         }, CancellationToken.None);
     }
 
-    private ISongAudioReader? OpenResolverStreamedReader(string videoId, CancellationToken token, int workerSession)
+    private ISongAudioReader? OpenResolverStreamedReader(string videoId, CancellationToken token)
     {
         if (linkResolver.ResolveStreamUrl(videoId, token) is not { } resolved || token.IsCancellationRequested)
         {
             return null;
         }
 
-        TrySetState(workerSession, SongPlaybackState.Buffering);
         if (resolved.IsOpus)
         {
             var streamUrl = resolved.Url;
@@ -547,7 +639,7 @@ internal sealed class SongPlayer : IDisposable
         return new MediaFoundationSongReader(new MediaFoundationReader(resolved.Url));
     }
 
-    private ISongAudioReader? OpenStreamedReader(string videoId, CancellationToken token, int workerSession)
+    private ISongAudioReader? OpenStreamedReader(string videoId, CancellationToken token)
     {
         var manifest = youtube.Videos.Streams.GetManifestAsync(videoId, token).AsTask().GetAwaiter().GetResult();
         var best = SelectAudioStream(manifest);
@@ -556,11 +648,11 @@ internal sealed class SongPlayer : IDisposable
             return null;
         }
 
-        TrySetState(workerSession, SongPlaybackState.Buffering);
         if (IsOpus(best))
         {
             return new OpusWebmSampleProvider(() =>
-                new ForwardSeekableStream(youtube.Videos.Streams.GetAsync(best, token).AsTask().GetAwaiter().GetResult()));
+                new ForwardSeekableStream(youtube.Videos.Streams.GetAsync(best, token).AsTask().GetAwaiter()
+                    .GetResult()));
         }
 
         return new MediaFoundationSongReader(new MediaFoundationReader(best.Url));
@@ -586,7 +678,7 @@ internal sealed class SongPlayer : IDisposable
         return new DownloadedAudio(bytes, isOpus);
     }
 
-    private static string OpusCacheKey(string videoId) => videoId + ".opus";
+    internal static string OpusCacheKey(string videoId) => videoId + ".opus";
 
     private static bool IsOpus(AudioOnlyStreamInfo stream) =>
         string.Equals(stream.AudioCodec, "opus", StringComparison.OrdinalIgnoreCase);
@@ -618,62 +710,26 @@ internal sealed class SongPlayer : IDisposable
         return bestOpus ?? bestMp4;
     }
 
-    private void AdvanceAfterCompletion(int workerSession)
-    {
-        Song next;
-        lock (gate)
-        {
-            if (workerSession != session)
-            {
-                return;
-            }
-
-            if (queue.Length == 0)
-            {
-                ResetTrackState();
-                return;
-            }
-
-            if (repeat == SongRepeatMode.One)
-            {
-                next = queue[queueIndex];
-            }
-            else if (shuffled && shuffleOrder.Length == queue.Length)
-            {
-                if (shufflePosition + 1 >= shuffleOrder.Length)
-                {
-                    ResetTrackState();
-                    return;
-                }
-
-                shufflePosition++;
-                queueIndex = shuffleOrder[shufflePosition];
-                next = queue[queueIndex];
-            }
-            else if (queueIndex + 1 < queue.Length)
-            {
-                queueIndex++;
-                next = queue[queueIndex];
-            }
-            else
-            {
-                ResetTrackState();
-                return;
-            }
-        }
-
-        StartSong(next);
-    }
-
     public void Dispose()
     {
-        var stopped = CancelWorker();
-        if (stopped is not null && stopped.IsAlive)
+        Stop();
+        var deadline = Environment.TickCount64 + 2000;
+        while (Volatile.Read(ref liveVoices) > 0 && Environment.TickCount64 < deadline)
         {
-            stopped.Join(TimeSpan.FromSeconds(2));
+            Thread.Sleep(20);
         }
 
-        if (stopped is not null && stopped.IsAlive)
+        lock (gate)
+        {
+            if (output is not null)
+            {
+                output.PlaybackStopped -= OnOutputStopped;
+                output.Dispose();
+                output = null;
+            }
+        }
+
+        if (Volatile.Read(ref liveVoices) > 0)
         {
             AepLog.Warning("Song worker did not exit in time; skipping MediaFoundation shutdown.");
             return;
