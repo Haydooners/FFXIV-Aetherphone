@@ -138,7 +138,6 @@ internal sealed partial class AetherStreamApp
             + Metrics.Space.Xl * scale + fieldHeight + linkHeight + pad;
 
         var card = BeginBlock(height);
-        UiAnchors.Report("aetherstream.hero", card);
         var drawList = ImGui.GetWindowDrawList();
         ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Card * scale, true);
 
@@ -442,7 +441,6 @@ internal sealed partial class AetherStreamApp
     {
         var width = ScrollLayout.StableContentWidth() - PadX * 2f * scale;
         var hero = BeginBlock(width * HeroAspect);
-        UiAnchors.Report("aetherstream.hero", hero);
         var rounding = Metrics.Radius.Card * scale;
         var drawList = ImGui.GetWindowDrawList();
         var current = CurrentEntry;
@@ -709,7 +707,6 @@ internal sealed partial class AetherStreamApp
     private void DrawTransport(float scale)
     {
         var row = BeginBlock(64f * scale);
-        UiAnchors.Report("aetherstream.transport", row);
         var drawList = ImGui.GetWindowDrawList();
         var delta = ImGui.GetIO().DeltaTime;
         var progress = video.Progress;

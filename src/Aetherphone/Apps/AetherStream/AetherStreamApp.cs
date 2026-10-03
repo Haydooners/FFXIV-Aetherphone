@@ -268,8 +268,8 @@ internal sealed partial class AetherStreamApp : IPhoneApp
             WordmarkStyle);
 
         var delta = ImGui.GetIO().DeltaTime;
-        UiAnchors.Report("aetherstream.settings",
-            new Rect(screenCenter - new Vector2(radius, radius), settingsCenter + new Vector2(radius, radius)));
+        UiAnchors.Report("aetherstream.screen",
+            new Rect(screenCenter - new Vector2(radius, radius), screenCenter + new Vector2(radius, radius)));
         if (HoverButton.Circle(drawList, "aetherstream.header.settings", settingsCenter, radius * 0.82f,
                 FontAwesomeIcon.Cog, AppSkin.Transparent, Ink.TitleInk, delta, 1f, true,
                 Loc.T(L.AetherStream.SettingsTitle)))
@@ -289,11 +289,11 @@ internal sealed partial class AetherStreamApp : IPhoneApp
     {
         tabs[0] = new TabItem(Loc.T(L.AetherStream.TabWatch), IconGlyph.Of(FontAwesomeIcon.Play));
         tabs[1] = new TabItem(Loc.T(L.AetherStream.Party), IconGlyph.Of(FontAwesomeIcon.UserFriends),
-            Badge: watchAlong.PendingRequests.Count);
+            Badge: watchAlong.PendingRequests.Count, AnchorKey: "aetherstream.tab.party");
         tabs[2] = new TabItem(Loc.T(L.AetherStream.Library), IconGlyph.Of(FontAwesomeIcon.ListUl),
-            Badge: watchAlong.IsHosting ? watchAlong.PendingQueueSuggestions.Count : 0);
+            Badge: watchAlong.IsHosting ? watchAlong.PendingQueueSuggestions.Count : 0,
+            AnchorKey: "aetherstream.tab.library");
         var result = tabBar.Draw(area, ui, tabs, (int)activeTab);
-        UiAnchors.Report("aetherstream.actions", tabBar.Bounds);
         if (result.Tapped < 0)
         {
             return;
