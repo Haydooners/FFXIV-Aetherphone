@@ -523,6 +523,11 @@ NOTIFICATIONS = {
     "Echo": ("aosp", "notifications/material/ogg", "Iapetus"),
 }
 
+ALARM_TONES = {
+    "alarm": ("aosp", "alarms/material/ogg", "Carbon"),
+    "timer": ("aosp", "alarms/material/ogg", "Timer"),
+}
+
 RINGTONES = {
     "Signal": ("material", "alert", "ringtone_minimal"),
     "Cascade": ("aosp", "ringtones/material/ogg", "Atria"),
@@ -548,6 +553,8 @@ def main():
             seed += 1
             write_wav(os.path.join(output, folder, name + ".wav"), master(clip, category), seed)
     write_wav(os.path.join(output, "Ui", "ringback.wav"), master(ringback(), "loop", keep_tail=True), 999)
+    for index, (name, source) in enumerate(ALARM_TONES.items()):
+        write_wav(os.path.join(output, "Ui", name + ".wav"), mono(master_ringtone(load_source(source))), 2000 + index)
     for name, source in NOTIFICATIONS.items():
         seed += 1
         write_mp3(os.path.join(output, "Notifications", name + ".mp3"), master(load_source(source), "notification", stereo=True), seed)

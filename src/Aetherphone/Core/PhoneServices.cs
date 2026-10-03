@@ -2,6 +2,7 @@ using Aetherphone.Core.Activity;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Announcements;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Clock;
 using Aetherphone.Core.Collections;
 using Aetherphone.Core.Conduct;
 using Aetherphone.Core.Confirm;
@@ -71,6 +72,7 @@ internal sealed class PhoneServices : IDisposable
     public required SafetyLauncher SafetyLauncher { get; init; }
     public required SettingsLauncher SettingsLauncher { get; init; }
     public required SoundService Sound { get; init; }
+    public required AlarmRinger AlarmRinger { get; init; }
     public required UiSoundService UiSound { get; init; }
     public required FrameworkTicker UiSoundTicker { get; init; }
     public required LinkpearlLauncher LinkpearlLauncher { get; init; }
@@ -220,7 +222,8 @@ internal sealed class PhoneServices : IDisposable
         var notificationLibrary = new SoundLibrary(new DirectoryInfo(Path.Combine(soundBundledRoot, "Notifications")),
             new DirectoryInfo(Path.Combine(soundUserRoot, "Notifications")));
         var sound = new SoundService(configuration, ringtoneLibrary, notificationLibrary, new SoundEffectPlayer(),
-            Path.Combine(soundBundledRoot, SoundService.RingbackFile));
+            new SoundEffectPlayer(), Path.Combine(soundBundledRoot, "Ui"));
+        var alarmRinger = new AlarmRinger(sound.StartAlarmTone, sound.StopAlarmTone);
         var uiSound = new UiSoundService(configuration, new UiSoundPlayer(new DirectoryInfo(soundBundledRoot)));
         var uiSoundTicker = new FrameworkTicker(framework, 1000, uiSound.Maintain);
         UiFeedback.Bind(uiSound);
@@ -413,6 +416,7 @@ internal sealed class PhoneServices : IDisposable
             SafetyLauncher = safetyLauncher,
             SettingsLauncher = new SettingsLauncher(),
             Sound = sound,
+            AlarmRinger = alarmRinger,
             UiSound = uiSound,
             UiSoundTicker = uiSoundTicker,
             LinkpearlLauncher = linkpearlLauncher,

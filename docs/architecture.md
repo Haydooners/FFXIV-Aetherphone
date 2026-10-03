@@ -141,7 +141,7 @@ Other things `PhoneWindow` handles:
 
 ## The shell layer (Core/Shell)
 
-`PhoneShell.Draw(Rect device)` is the per-frame orchestrator. In order it: advances the minimize morph (and short-circuits into `MinimizeMorphView` when the phone is minimized), applies the notification shake offset, steps day/night wallpaper blending, computes the chassis, draws the phone body, advances `LoadingScreen`/`NavigationStack`/banner/calls, handles the five hardware keys laid out like an iPhone 17 Pro (Side button for minimize/close, Action button for do-not-disturb with a Dynamic Island notice, volume up/down for music volume with a slim on-screen level, Camera Control to open Camera), asks `ShellOverlayCoordinator.Assess` who owns the pointer, draws the screen content, then the chrome, then the overlays.
+`PhoneShell.Draw(Rect device)` is the per-frame orchestrator. In order it: advances the minimize morph (and short-circuits into `MinimizeMorphView` when the phone is minimized), applies the notification shake offset, steps day/night wallpaper blending, computes the chassis, draws the phone body, advances `LoadingScreen`/`NavigationStack`/banner/calls, handles the four hardware keys laid out like an iPhone 17 Pro (Side button for minimize/close, Action button for do-not-disturb and a Lock Position key where the volume rocker sits, both confirmed by a Dynamic Island notice, Camera Control to open Camera), asks `ShellOverlayCoordinator.Assess` who owns the pointer, draws the screen content, then the chrome, then the overlays.
 
 The shell's cast, all in `src/Aetherphone/Core/Shell/`:
 

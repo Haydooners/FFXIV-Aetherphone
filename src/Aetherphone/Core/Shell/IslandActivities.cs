@@ -13,6 +13,12 @@ internal enum IslandActivity : byte
     Notice,
 }
 
+internal enum IslandNotice : byte
+{
+    DoNotDisturb,
+    LockPosition,
+}
+
 internal readonly record struct IslandSignals(bool Call, bool Session, bool Playback, bool Timer, bool Muster);
 
 internal static class IslandActivities

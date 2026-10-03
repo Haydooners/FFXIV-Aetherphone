@@ -165,7 +165,7 @@ internal sealed class NotificationService : IDisposable
                 Vibration?.Invoke(stamped);
             }
 
-            if (configuration.ShouldPlayNotificationSound(notification.SettingsKey) &&
+            if (!notification.Muted && configuration.ShouldPlayNotificationSound(notification.SettingsKey) &&
                 ShouldPlaySound(stamped.StackKey))
             {
                 sound.PlayNotification(notification.SettingsKey);

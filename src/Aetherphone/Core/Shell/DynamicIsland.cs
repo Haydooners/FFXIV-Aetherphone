@@ -74,6 +74,7 @@ internal sealed class DynamicIsland
     private Spring noticeWidth;
     private double noticeUntil = -1d;
     private bool noticeEnabled;
+    private IslandNotice notice;
     private float clock;
     private float pulseUntil = -1f;
     private bool expanded;
@@ -106,8 +107,9 @@ internal sealed class DynamicIsland
         pulseUntil = clock + PulseHoldSeconds;
     }
 
-    public void AnnounceDoNotDisturb(bool enabled)
+    public void Announce(IslandNotice kind, bool enabled)
     {
+        notice = kind;
         noticeEnabled = enabled;
         noticeUntil = ImGui.GetTime() + NoticeHoldSeconds;
         expanded = false;
@@ -452,14 +454,16 @@ internal sealed class DynamicIsland
         float centerY, float scale, float alpha)
     {
         var tint = noticeEnabled ? FocusAccent : QuietInk;
-        DrawIconBubble(drawList, bubbleCenter, bubbleRadius, FontAwesomeIcon.Moon, tint, alpha);
+        DrawIconBubble(drawList, bubbleCenter, bubbleRadius, NoticeIcon(), tint, alpha);
         var state = Loc.T(noticeEnabled ? L.Common.On : L.Common.Off);
         var stateSize = Typography.Measure(state, TextStyles.FootnoteEmphasized);
         Typography.Draw(drawList, new Vector2(right - stateSize.X, centerY - stateSize.Y * 0.5f), state,
             Palette.WithAlpha(tint, alpha), TextStyles.FootnoteEmphasized);
         var titleLeft = bubbleCenter.X + bubbleRadius + CompactTrailingGap * scale;
         var titleWidth = MathF.Max(1f, right - stateSize.X - CompactTrailingGap * scale - titleLeft);
-        var title = Typography.FitText(Loc.T(L.Settings.DoNotDisturb), titleWidth, TextStyles.Footnote);
+        var title = Typography.FitText(Loc.T(notice == IslandNotice.LockPosition
+            ? L.ControlCenter.LockPosition
+            : L.Settings.DoNotDisturb), titleWidth, TextStyles.Footnote);
         var titleSize = Typography.Measure(title, TextStyles.Footnote);
         Typography.Draw(drawList, new Vector2(titleLeft, centerY - titleSize.Y * 0.5f), title,
             Palette.WithAlpha(Ink, alpha), TextStyles.Footnote);
@@ -719,6 +723,16 @@ internal sealed class DynamicIsland
         var padY = MathF.Max(0f, (CompactHeight * scale - rest.Height) * 0.5f);
         var pad = new Vector2(CompactPadX * scale, padY);
         return new Rect(rest.Min - pad, rest.Max + pad);
+    }
+
+    private FontAwesomeIcon NoticeIcon()
+    {
+        if (notice == IslandNotice.LockPosition)
+        {
+            return noticeEnabled ? FontAwesomeIcon.Lock : FontAwesomeIcon.LockOpen;
+        }
+
+        return FontAwesomeIcon.Moon;
     }
 
     private static Rect NoticeBounds(Rect screen, Rect rest, float scale)
