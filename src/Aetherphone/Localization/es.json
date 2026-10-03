@@ -6008,7 +6008,7 @@
   "health.steadyInRange": "Estable en este periodo",
   "health.changeInRange": "{0} en este periodo",
   "health.dateAtTime": "{0}, {1}",
-  "health.weightEmptyTitle": "Aún no has registrado tu peso",
+  "health.weightEmptyTitle": "Aún no hay peso registrado",
   "health.weightEmptyBody": "Registra el peso de tu personaje de vez en cuando para ver cómo cambia a lo largo de semanas y meses.",
   "health.logWeight": "Registrar peso",
   "health.weightNote": "El registro de peso de tu personaje se guarda solo en este PC, junto a los ajustes del plugin. La estimación opcional de energía usa la entrada más reciente.",
