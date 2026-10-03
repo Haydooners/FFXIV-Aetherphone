@@ -19,6 +19,7 @@ internal sealed class NewsEntry
     public volatile NewsState State = NewsState.Idle;
     public LodestoneNewsItem[] Items = Array.Empty<LodestoneNewsItem>();
     public DateTime FetchedUtc;
+    public DateTime LastSuccessUtc;
 }
 
 internal sealed class NewsService : IDisposable
@@ -29,7 +30,7 @@ internal sealed class NewsService : IDisposable
     private readonly HttpService http;
     private readonly AethernetSession session;
     private readonly CancellationTokenSource cancellation = new();
-    private readonly ConcurrentDictionary<string, NewsEntry> entries = new();
+    private readonly ConcurrentDictionary<(NewsCategory Category, string Locale), NewsEntry> entries = new();
 
     public NewsService(HttpService http, AethernetSession session)
     {
@@ -39,8 +40,7 @@ internal sealed class NewsService : IDisposable
 
     public NewsEntry Request(NewsCategory category, string locale, bool forceRefresh)
     {
-        var key = string.Concat(NewsCategories.Path(category), ":", locale);
-        var entry = entries.GetOrAdd(key, static _ => new NewsEntry());
+        var entry = entries.GetOrAdd((category, locale), static _ => new NewsEntry());
         if (entry.State == NewsState.Loading)
         {
             return entry;
@@ -71,8 +71,10 @@ internal sealed class NewsService : IDisposable
                 return;
             }
 
+            var now = DateTime.UtcNow;
             entry.Items = items;
-            entry.FetchedUtc = DateTime.UtcNow;
+            entry.FetchedUtc = now;
+            entry.LastSuccessUtc = now;
             entry.State = items.Length == 0 ? NewsState.Empty : NewsState.Ready;
         }
         catch (OperationCanceledException)

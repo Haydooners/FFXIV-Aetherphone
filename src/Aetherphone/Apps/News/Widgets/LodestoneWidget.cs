@@ -29,11 +29,8 @@ internal sealed class LodestoneWidget : IHomeWidget
     private static readonly WidgetChoice[] CategoryChoices =
     {
         new("topics", L.News.Topics), new("notices", L.News.Notices), new("maintenance", L.News.Maintenance),
-        new("updates", L.News.Updates),
+        new("updates", L.News.Updates), new("status", L.News.Status),
     };
-
-    private static readonly LocString[] CategoryLabels =
-        { L.News.Topics, L.News.Notices, L.News.Maintenance, L.News.Updates };
 
     private readonly NewsService news;
     private readonly GameData gameData;
@@ -90,7 +87,7 @@ internal sealed class LodestoneWidget : IHomeWidget
         var content = WidgetMetrics.Content(context);
         var accent = AppAccents.For(AppKey);
         var top = WidgetChrome.Header(context, ink, AppKey, Loc.T(L.WidgetsUtility.LodestoneName), accent,
-            Loc.T(CategoryLabels[slot]), ink.Secondary);
+            Loc.T(NewsCategories.Label(category)), ink.Secondary);
         var body = new Rect(new Vector2(content.Min.X, top + WidgetMetrics.RowGap * scale), content.Max);
         var entry = entries[slot];
         var items = entry?.Items ?? Array.Empty<LodestoneNewsItem>();
@@ -109,7 +106,7 @@ internal sealed class LodestoneWidget : IHomeWidget
         {
             var heroHeight = body.Height * HeroShare;
             var hero = new Rect(body.Min, new Vector2(body.Max.X, body.Min.Y + heroHeight));
-            DrawHero(context, ink, hero, items[0], texture);
+            DrawHero(context, ink, hero, items[0], texture, category);
             rowArea = new Rect(new Vector2(body.Min.X, hero.Max.Y + WidgetMetrics.Gutter * scale), body.Max);
             first = 1;
         }
@@ -117,7 +114,7 @@ internal sealed class LodestoneWidget : IHomeWidget
         var capacity = Math.Clamp((int)(rowArea.Height / (RowUnits * scale)), 1, MaxRows);
         var rowHeight = rowArea.Height / capacity;
         var rows = Math.Min(capacity, total - first);
-        var route = WidgetRoute.App(AppKey);
+        var route = WidgetRoute.Tab(AppKey, NewsCategories.Path(category));
         for (var index = 0; index < rows; index++)
         {
             var rowRect = new Rect(new Vector2(rowArea.Min.X, rowArea.Min.Y + index * rowHeight),
@@ -151,13 +148,13 @@ internal sealed class LodestoneWidget : IHomeWidget
         }
     }
 
-    private void DrawHero(in WidgetContext context, in WidgetInk ink, Rect hero, LodestoneNewsItem item,
-        IDalamudTextureWrap texture)
+    private static void DrawHero(in WidgetContext context, in WidgetInk ink, Rect hero, LodestoneNewsItem item,
+        IDalamudTextureWrap texture, NewsCategory category)
     {
         var drawList = context.DrawList;
         var scale = context.Scale;
         var radius = WidgetMetrics.InnerRadius(context);
-        WidgetControls.Link(context, ink, 0, hero, WidgetRoute.App(AppKey));
+        WidgetControls.Link(context, ink, 0, hero, WidgetRoute.Tab(AppKey, NewsCategories.Path(category)));
         var (uv0, uv1) = ImageFit.Cover(texture.Size.X, texture.Size.Y, hero.Width, hero.Height);
         Squircle.FillImage(drawList, hero.Min, hero.Max, radius, texture.Handle, ImGui.GetColorU32(ink.ImageTint),
             uv0, uv1);

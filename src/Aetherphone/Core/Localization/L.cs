@@ -7268,6 +7268,25 @@ internal static class L
         public static readonly LocString RegionGermany = new("news.regionGermany", "Germany");
         public static readonly LocString RegionJapan = new("news.regionJapan", "Japan");
         public static readonly LocString RegionChina = new("news.regionChina", "China");
+        public static readonly LocString Status = new("news.status", "Status");
+        public static readonly LocString Refresh = new("news.refresh", "Refresh");
+        public static readonly LocString CouldntReachHint = new("news.couldntReachHint", "Check your connection, then try again.");
+        public static readonly LocString NoNewsHint = new("news.noNewsHint", "New posts from the Lodestone show up here.");
+        public static readonly LocString Checking = new("news.checking", "Checking for news…");
+        public static readonly LocString UpdatedAgo = new("news.updatedAgo", "Updated {0}");
+        public static readonly LocString OfflineNotice = new("news.offlineNotice", "Can't refresh. Showing saved news.");
+        public static readonly LocString MoreIn = new("news.moreIn", "More in {0}");
+        public static readonly LocString EndsIn = new("news.endsIn", "Ends in");
+        public static readonly LocString StartsIn = new("news.startsIn", "Starts in");
+        public static readonly LocString BannerActive = new("news.bannerActive", "Maintenance in progress");
+        public static readonly LocString BannerUpcoming = new("news.bannerUpcoming", "Maintenance coming up");
+        public static readonly LocString AllClear = new("news.allClear", "No maintenance scheduled");
+        public static readonly LocString LastMaintenance = new("news.lastMaintenance", "Last maintenance: {0}");
+        public static readonly LocString StoryGone = new("news.storyGone", "This story has left the feed");
+        public static readonly LocString StoryGoneHint = new("news.storyGoneHint", "Go back to see the latest posts.");
+        public static readonly LocString FullPostHint = new("news.fullPostHint", "The full post is on the Lodestone.");
+        public static readonly LocString CopyLink = new("news.copyLink", "Copy Link");
+        public static readonly LocString ReadOnLodestone = new("news.readOnLodestone", "Read on the Lodestone");
     }
 
     internal static class Wallet
@@ -9143,8 +9162,8 @@ internal static class L
         public static readonly LocString ShortcutsPluginRowBody = new("onboarding.shortcutsPluginRowBody", "Tap a plugin to open it, add it to your Home Screen or turn one of its commands into a shortcut.");
         public static readonly LocString NewsMaintenanceTitle = new("onboarding.newsMaintenanceTitle", "Check maintenance");
         public static readonly LocString NewsMaintenanceBody = new("onboarding.newsMaintenanceBody", "Tap Maintenance to see when the servers go down.");
-        public static readonly LocString NewsWindowTitle = new("onboarding.newsWindowTitle", "Maintenance windows");
-        public static readonly LocString NewsWindowBody = new("onboarding.newsWindowBody", "Each entry shows its window in your local time and whether it is upcoming, in progress or completed. Tap one to read it in your browser.");
+        public static readonly LocString NewsWindowTitle = new("onboarding.newsWindowTitle", "Maintenance at a glance");
+        public static readonly LocString NewsWindowBody = new("onboarding.newsWindowBody", "This card counts down to the next maintenance, or to the end of the one in progress, in your local time. Tap it for the details.");
         public static readonly LocString NewsLatestTitle = new("onboarding.newsLatestTitle", "Get the latest");
         public static readonly LocString NewsLatestBody = new("onboarding.newsLatestBody", "News refreshes on its own every few minutes. Tap here to fetch the newest posts now.");
         public static readonly LocString FeedbackKindTitle = new("onboarding.feedbackKindTitle", "Pick what it is");
