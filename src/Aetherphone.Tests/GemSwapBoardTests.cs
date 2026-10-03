@@ -43,6 +43,25 @@ public sealed class GemSwapBoardTests
     }
 
     [Fact]
+    public void ALineGemThatFormsANewLineStillFiresBeforeItIsReplaced()
+    {
+        var board = PatternBoard();
+        board.SetCell(Cell(0, 3), FreeColor, GemSpecial.None);
+        board.SetCell(Cell(1, 3), FreeColor, GemSpecial.None);
+        board.SetCell(Cell(3, 3), FreeColor, GemSpecial.None);
+        board.SetCell(Cell(2, 4), FreeColor, GemSpecial.LineVertical);
+        board.Swap(Cell(2, 4), Cell(2, 3));
+        var cleared = board.ResolveMatches(1);
+        Assert.Equal(3 + GemSwapBoard.Rows - 1, cleared);
+        Assert.Equal(1, board.ActivatedCount);
+        Assert.Equal(GemSpecial.LineVertical, board.ActivatedKind(0));
+        Assert.Equal(GemSpecial.LineHorizontal, board.Special(Cell(2, 3)));
+        Assert.False(board.Matched(Cell(2, 3)));
+        Assert.True(board.Matched(Cell(2, 0)));
+        Assert.True(board.Matched(Cell(2, 6)));
+    }
+
+    [Fact]
     public void LAndTShapesLeaveABurstGemOnTheCorner()
     {
         var lShape = PatternBoard();

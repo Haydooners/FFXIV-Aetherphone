@@ -176,10 +176,17 @@ internal sealed class GemSwapBoard
         RegisterSpecials();
         for (var index = 0; index < CellCount; index++)
         {
-            if (pendingSpecial[index] != GemSpecial.None)
+            if (pendingSpecial[index] == GemSpecial.None)
             {
-                matched[index] = false;
+                continue;
             }
+
+            if (matched[index] && specials[index] != GemSpecial.None)
+            {
+                worklist[worklistCount++] = index;
+            }
+
+            matched[index] = false;
         }
 
         for (var index = 0; index < CellCount; index++)
