@@ -22,7 +22,21 @@ internal sealed class AppearancePage : ISettingsPage
     public string? GuideAnchor => "settings.row.appearance";
     private const float SizeReadoutColumn = 46f;
     private const float LabelColumnShare = 0.42f;
+    private const int DisplayBaseRows = 4;
+#if DEBUG
+    private const int LiveGlassDetailRows = 2;
+#else
+    private const int LiveGlassDetailRows = 1;
+#endif
     private static readonly ThemeMode[] ModeOrder = { ThemeMode.Light, ThemeMode.Dark, ThemeMode.Auto };
+    private static readonly LiveGlassSource[] SourceOrder = { LiveGlassSource.World, LiveGlassSource.Composite };
+    private string[]? sourceLabels;
+    private LanguageInfo? sourceLabelsLanguage;
+#if DEBUG
+    private string liveGlassReadout = string.Empty;
+    private int liveGlassReadoutTenths = -1;
+    private Vector2 liveGlassReadoutSize;
+#endif
     private readonly Configuration configuration;
     private readonly ThemeProvider themes;
     private readonly ISettingsNavigator navigator;
@@ -99,7 +113,8 @@ internal sealed class AppearancePage : ISettingsPage
 
             card.End();
             SettingsSection.Header(Loc.T(L.Settings.Display), theme);
-            var displayCard = GroupCard.Begin(theme, 4);
+            var liveGlassOn = configuration.LiveGlass;
+            var displayCard = GroupCard.Begin(theme, DisplayBaseRows + LiveGlassRowCount(liveGlassOn));
             DrawTextSizeSlider(displayCard.NextRow(), Loc.T(L.Settings.TextSize), theme);
             DrawPhoneSizeSlider(displayCard.NextRow(), Loc.T(L.Settings.PhoneSize), theme);
             var use24Hour = SettingsRow.Bool(displayCard.NextRow(), Loc.T(L.Settings.Use24HourClock),
@@ -109,6 +124,7 @@ internal sealed class AppearancePage : ISettingsPage
                 navigator.Open(new MinimizedPhonePage(minimizedLayout, configuration));
             }
 
+            DrawLiveGlassRows(ref displayCard, theme, liveGlassOn);
             displayCard.End();
             if (use24Hour != TimeText.Use24Hour)
             {
@@ -120,6 +136,79 @@ internal sealed class AppearancePage : ISettingsPage
             DrawHomeSection(theme);
         }
     }
+
+    private static int LiveGlassRowCount(bool liveGlassOn) => liveGlassOn ? 1 + LiveGlassDetailRows : 1;
+
+    private void DrawLiveGlassRows(ref GroupCard card, PhoneTheme theme, bool liveGlassOn)
+    {
+        var liveGlass = SettingsRow.Bool(card.NextRow(), Loc.T(L.Settings.LiveGlass), configuration.LiveGlass, theme,
+            null, Loc.T(L.Settings.LiveGlassHint));
+        if (liveGlass != configuration.LiveGlass)
+        {
+            configuration.LiveGlass = liveGlass;
+            configuration.Save();
+        }
+
+        if (!liveGlassOn)
+        {
+            return;
+        }
+
+        var sourceIndex = SegmentStrip.Draw("settings.liveGlassSource", card.NextRow(), SourceLabels(),
+            SourceIndex(configuration.LiveGlassSource), theme);
+        var source = SourceOrder[sourceIndex];
+        if (source != configuration.LiveGlassSource)
+        {
+            configuration.LiveGlassSource = source;
+            configuration.Save();
+        }
+
+#if DEBUG
+        SettingsRow.Info(card.NextRow(), Loc.T(L.Settings.LiveGlassReadout), LiveGlassReadout(), theme);
+#endif
+    }
+
+    private string[] SourceLabels()
+    {
+        if (sourceLabels is not null && ReferenceEquals(sourceLabelsLanguage, Loc.Current))
+        {
+            return sourceLabels;
+        }
+
+        sourceLabelsLanguage = Loc.Current;
+        sourceLabels = new[] { Loc.T(L.Settings.LiveGlassSourceWorld), Loc.T(L.Settings.LiveGlassSourceComposite), };
+        return sourceLabels;
+    }
+
+    private static int SourceIndex(LiveGlassSource source)
+    {
+        for (var index = 0; index < SourceOrder.Length; index++)
+        {
+            if (SourceOrder[index] == source)
+            {
+                return index;
+            }
+        }
+
+        return 0;
+    }
+
+#if DEBUG
+    private string LiveGlassReadout()
+    {
+        var tenths = (int)MathF.Round((float)LiveBackdrop.LastPassMilliseconds * 10f);
+        var size = LiveBackdrop.LastCaptureSize;
+        if (tenths == liveGlassReadoutTenths && size == liveGlassReadoutSize && liveGlassReadout.Length > 0)
+        {
+            return liveGlassReadout;
+        }
+
+        liveGlassReadoutTenths = tenths;
+        liveGlassReadoutSize = size;
+        liveGlassReadout = $"{tenths / 10f:0.0} ms, {(int)size.X}x{(int)size.Y}";
+        return liveGlassReadout;
+    }
+#endif
 
     private void DrawPhoneSizeSlider(Rect row, string label, PhoneTheme theme)
     {

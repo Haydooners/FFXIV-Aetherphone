@@ -77,6 +77,7 @@ internal sealed class ShellScreenPainter
             WallpaperBackdrop.RecordFlat(content.AppBackground);
         }
 
+        Plugin.LiveBackdrop.Record(screen, content.AppBackground);
         var contentRect = ContentRect(screen, theme);
         try
         {

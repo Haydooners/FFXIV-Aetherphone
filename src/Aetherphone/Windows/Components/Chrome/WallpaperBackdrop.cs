@@ -24,11 +24,14 @@ internal static class WallpaperBackdrop
     private static float darkness;
     private static int flatFrame = -1;
     private static Vector4 flatColor;
+    private static int requestedFrame = -1;
 
     public static bool Available => ImGui.GetFrameCount() - recordedFrame <= FrameTolerance && quad.Width > 0f &&
                                     quad.Height > 0f;
 
     public static bool FlatAvailable => ImGui.GetFrameCount() - flatFrame <= FrameTolerance;
+
+    public static bool Requested => ImGui.GetFrameCount() - requestedFrame <= FrameTolerance;
 
     public static void RecordFlat(Vector4 color)
     {
@@ -67,6 +70,7 @@ internal static class WallpaperBackdrop
             return false;
         }
 
+        requestedFrame = ImGui.GetFrameCount();
         if (!Available)
         {
             if (!FlatAvailable)
@@ -108,7 +112,7 @@ internal static class WallpaperBackdrop
 
         if (lightGrid is null)
         {
-            return -1f;
+            return FlatAvailable ? Core.Theme.Palette.Luminance(flatColor) : -1f;
         }
 
         var (lightMin, lightMax) = Map(min, max, lightUv0, lightUv1);

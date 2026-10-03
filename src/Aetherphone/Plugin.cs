@@ -60,6 +60,7 @@ public sealed class Plugin : IDalamudPlugin
     internal static Configuration Cfg { get; private set; } = null!;
     internal static FontService Fonts { get; private set; } = null!;
     internal static WallpaperLibrary Wallpapers { get; private set; } = null!;
+    internal static LiveBackdrop LiveBackdrop { get; private set; } = null!;
     internal static DeviceStatus Device { get; private set; } = null!;
     internal static UpdateCheckService Updates { get; private set; } = null!;
     internal static PhotoWindow PhotoWindow { get; private set; } = null!;
@@ -125,6 +126,7 @@ public sealed class Plugin : IDalamudPlugin
                 PhoneSizeCatalog.ZoomFor(Cfg.PhoneWidth));
             EmojiCatalog.Load();
             Wallpapers = services.Wallpapers;
+            LiveBackdrop = services.LiveBackdrop;
             videoSuite = new VideoSuite(services, Cfg, ChatGui);
             services.SongResolver.Attach(videoSuite.Screen.Engine.Dependencies);
             Framework.Update += OnVideoFrameworkUpdate;
