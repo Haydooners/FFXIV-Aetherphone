@@ -32,6 +32,8 @@ internal sealed class MapsApp : IPhoneApp
     private readonly HashSet<byte> expandedExpansions = new();
     private string search = string.Empty;
     private bool lifestreamAvailable;
+    private bool expansionAnchorTaken;
+    private bool destinationAnchorTaken;
     private PhoneTheme frameTheme = PhoneTheme.Default;
     private INavigator frameNavigation = null!;
 
@@ -80,9 +82,10 @@ internal sealed class MapsApp : IPhoneApp
         var top = area.Min.Y + AppHeader.Height * scale;
         var searchBar = new Rect(new Vector2(area.Min.X + pad, top),
             new Vector2(area.Max.X - pad, top + SearchHeight * scale));
-        UiAnchors.Report("maps.search", searchBar);
         SearchField.Draw(searchBar, "##mapsSearch", Loc.T(L.Maps.Search), ref search, frameTheme, 60);
         var body = new Rect(new Vector2(area.Min.X, searchBar.Max.Y), area.Max);
+        expansionAnchorTaken = false;
+        destinationAnchorTaken = false;
         using (AppSurface.Begin(body))
         {
             if (search.Length > 0)
@@ -109,7 +112,6 @@ internal sealed class MapsApp : IPhoneApp
         SettingsSection.Header(Loc.T(L.Maps.CurrentLocation), frameTheme);
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
-        UiAnchors.Report("maps.location", new Rect(origin, origin + new Vector2(width, LocationCardHeight * scale)));
         var card = GroupCard.Begin(frameTheme, 1, LocationCardHeight);
         var row = card.NextRow();
         var drawList = ImGui.GetWindowDrawList();
@@ -212,7 +214,14 @@ internal sealed class MapsApp : IPhoneApp
         var card = GroupCard.Begin(frameTheme, destinations.Count, DestinationRowHeight);
         for (var index = 0; index < destinations.Count; index++)
         {
-            DrawDestinationRow(card.NextRow(), destinations[index]);
+            var row = card.NextRow();
+            if (!destinationAnchorTaken)
+            {
+                destinationAnchorTaken = true;
+                ReportDestinationAnchors(row);
+            }
+
+            DrawDestinationRow(row, destinations[index]);
         }
 
         card.End();
@@ -264,6 +273,12 @@ internal sealed class MapsApp : IPhoneApp
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
         var hovered = UiInteract.Hover(min, max);
+        if (!expanded && !expansionAnchorTaken)
+        {
+            expansionAnchorTaken = true;
+            UiAnchors.Report("maps.expansion.first", new Rect(min, max));
+        }
+
         var drawList = ImGui.GetWindowDrawList();
         if (hovered)
         {
@@ -289,14 +304,27 @@ internal sealed class MapsApp : IPhoneApp
         return UiInteract.Click(min, max, hovered);
     }
 
+    private static void ReportDestinationAnchors(Rect row)
+    {
+        UiAnchors.Report("maps.destination.first", row);
+        UiAnchors.Report("maps.star.first", StarHitArea(row, UiScale.Current));
+    }
+
+    private static Rect StarHitArea(Rect row, float scale)
+    {
+        var starRadius = 9f * scale;
+        return new Rect(row.Min, new Vector2(row.Min.X + starRadius * 2f + 6f * scale, row.Max.Y));
+    }
+
     private void DrawDestinationRow(Rect row, MapAetheryte aetheryte)
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         var starRadius = 9f * scale;
         var starCenter = new Vector2(row.Min.X + starRadius, row.Center.Y);
-        var starMin = new Vector2(row.Min.X, row.Min.Y);
-        var starMax = new Vector2(starCenter.X + starRadius + 6f * scale, row.Max.Y);
+        var starArea = StarHitArea(row, scale);
+        var starMin = starArea.Min;
+        var starMax = starArea.Max;
         var starHovered = UiInteract.Hover(starMin, starMax);
         var rowHovered = UiInteract.Hover(row.Min, row.Max);
         var actionHovered = rowHovered && !starHovered;

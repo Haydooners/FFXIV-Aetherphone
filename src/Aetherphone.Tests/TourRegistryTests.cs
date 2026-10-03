@@ -10,10 +10,10 @@ public sealed class TourRegistryTests
     private static readonly Dictionary<string, (int Version, int StepCount)> Expected = new()
     {
         { "messages", (3, 7) },
-        { "skywatcher", (2, 3) },
-        { "market", (2, 4) },
-        { "strats", (1, 4) },
-        { "venues", (3, 5) },
+        { "skywatcher", (3, 5) },
+        { "market", (3, 7) },
+        { "strats", (2, 5) },
+        { "venues", (4, 6) },
         { "music", (2, 4) },
         { "games", (2, 3) },
         { "camera", (3, 5) },
@@ -22,7 +22,7 @@ public sealed class TourRegistryTests
         { "character", (2, 3) },
         { "chirper", (2, 6) },
         { "aethergram", (2, 7) },
-        { "maps", (2, 4) },
+        { "maps", (3, 3) },
         { "news", (2, 4) },
         { "collections", (2, 4) },
         { "wallet", (2, 3) },
@@ -33,7 +33,7 @@ public sealed class TourRegistryTests
         { "calculator", (2, 2) },
         { "timers", (2, 3) },
         { "dailies", (2, 2) },
-        { "fishing", (2, 4) },
+        { "fishing", (3, 4) },
         { "notifications", (2, 2) },
         { "message", (2, 7) },
         { "velvet", (4, 7) },
@@ -50,7 +50,7 @@ public sealed class TourRegistryTests
         { "housing", (1, 7) },
         { "casino", (1, 8) },
         { "aetherstream", (2, 6) },
-        { "hunts", (5, 5) },
+        { "hunts", (6, 6) },
     };
 
     [Fact]

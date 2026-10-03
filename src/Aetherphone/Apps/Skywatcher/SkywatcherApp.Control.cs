@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -42,6 +43,7 @@ internal sealed partial class SkywatcherApp
         var origin = ImGui.GetCursorScreenPos();
         var height = 132f * scale;
         var card = new Rect(origin, origin + new Vector2(width, height));
+        UiAnchors.Report("skywatcher.control.time", card);
         DrawGlass(card, palette, scale);
         var inner = card.Inset(14f * scale);
         var custom = control.HasTimeOverride;
@@ -122,6 +124,7 @@ internal sealed partial class SkywatcherApp
         var rows = (count + WeatherColumns - 1) / WeatherColumns;
         var height = rows * cellHeight + 12f * scale;
         var card = new Rect(origin, origin + new Vector2(width, height));
+        UiAnchors.Report("skywatcher.control.weather", card);
         DrawGlass(card, palette, scale);
         var inner = card.Inset(6f * scale);
         var cellWidth = inner.Width / WeatherColumns;
