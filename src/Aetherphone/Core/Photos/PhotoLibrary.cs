@@ -118,7 +118,13 @@ internal sealed class PhotoLibrary
             return null;
         }
 
-        return Write(path, pixels, width, height) ? path : null;
+        if (!Write(path, pixels, width, height))
+        {
+            return null;
+        }
+
+        MarkChanged();
+        return path;
     }
 
     private string? FreePath(DateTime stamp, string extension)
