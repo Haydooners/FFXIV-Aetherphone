@@ -580,6 +580,19 @@ internal sealed class HomeInteractionController
         settleY.SnapTo(dragPos.Y - metrics.Content.Min.Y);
     }
 
+    public void SettleFrom(HomeTile tile, Vector2 center, float startScale, in HomeMetrics metrics)
+    {
+        settleTile = tile;
+        settleX.SnapTo(center.X - metrics.Content.Min.X);
+        settleY.SnapTo(center.Y - metrics.Content.Min.Y);
+        lift.SnapTo(startScale);
+        var (page, _) = layout.Locate(tile);
+        if (page >= 0)
+        {
+            pager.AnimateTo(page, layout.PageCount);
+        }
+    }
+
     public bool StepSettle(in HomeMetrics metrics, float delta, out Vector2 position, out float liftScale)
     {
         position = default;

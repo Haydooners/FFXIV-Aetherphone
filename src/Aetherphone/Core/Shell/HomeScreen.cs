@@ -87,12 +87,19 @@ internal sealed class HomeScreen
 
         var ghostDrawList = ImGui.GetWindowDrawList();
         ghostDrawList.PushClipRect(screen.Min, screen.Max, true);
-        renderer.DrawSettleGhost(metrics, theme, delta);
         renderer.DrawDragGhost(metrics, theme, delta);
         ghostDrawList.PopClipRect();
         folder.Draw(screen, content, metrics, theme, navigation, interaction.Editing, pager.Page, delta);
         DrawSizeMenu(content, metrics, theme, delta);
-        gallery.Draw(screen, theme, delta, metrics.Scale);
+        gallery.Draw(screen, theme, delta, metrics);
+        if (gallery.TryTakePlacement(out var placed, out var placedCenter, out var placedScale))
+        {
+            interaction.SettleFrom(placed, placedCenter, placedScale, metrics);
+        }
+
+        ghostDrawList.PushClipRect(screen.Min, screen.Max, true);
+        renderer.DrawSettleGhost(metrics, theme, delta);
+        ghostDrawList.PopClipRect();
         spotlight.Draw(screen, content, theme, navigation, delta, metrics.Scale);
         if (!motion.Interactive)
         {

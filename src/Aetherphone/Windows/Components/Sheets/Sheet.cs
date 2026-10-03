@@ -139,6 +139,16 @@ internal sealed class Sheet
         }
     }
 
+    public void YieldPointer()
+    {
+        if (dragging)
+        {
+            return;
+        }
+
+        pressed = false;
+    }
+
     public void CloseImmediately()
     {
         open = false;
