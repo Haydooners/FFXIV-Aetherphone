@@ -1,6 +1,8 @@
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
+using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Settings.Pages;
 
@@ -10,10 +12,19 @@ internal static class MusicMediaSettings
     private const int RowCount = 2;
     private const int FriendsRowCount = 1;
 
-    public static void Draw(Configuration configuration, PhoneTheme theme)
+    private static readonly string[] SourceIds = new string[PcMediaView.SourceCapacity];
+    private static readonly string[] SourceLabels = new string[PcMediaView.SourceCapacity];
+    private static readonly FontAwesomeIcon[] SourceGlyphs = new FontAwesomeIcon[PcMediaView.SourceCapacity];
+
+    public static void Draw(Configuration configuration, PcMediaSource pcMedia, PhoneTheme theme)
     {
         DrawPlayback(configuration, theme);
         DrawWindowsMedia(configuration, theme);
+        if (configuration.ShowWindowsMedia)
+        {
+            DrawSource(pcMedia, theme);
+        }
+
         DrawFriends(configuration, theme);
     }
 
@@ -35,6 +46,30 @@ internal static class MusicMediaSettings
         configuration.ShowWindowsMedia = show;
         configuration.PublishToWindowsMedia = publish;
         configuration.Save();
+    }
+
+    private static void DrawSource(PcMediaSource pcMedia, PhoneTheme theme)
+    {
+        SettingsSection.Header(Loc.T(L.Music.PcMedia.SourceHeader), theme);
+        var count = PcMediaView.SourceOptions(pcMedia, SourceIds, SourceLabels, SourceGlyphs,
+            out var selected);
+        var card = GroupCard.Begin(theme, count);
+        var picked = -1;
+        for (var index = 0; index < count; index++)
+        {
+            if (SettingsRow.Selectable(card.NextRow(), SourceLabels[index], index == selected, theme,
+                    SourceIds[index].Length > 0 ? SourceIds[index] : "settings.music.source.automatic"))
+            {
+                picked = index;
+            }
+        }
+
+        card.End();
+        SettingsSection.Hint(Loc.T(L.Music.PcMedia.SourceHint), theme);
+        if (picked >= 0)
+        {
+            pcMedia.Pin(SourceIds[picked]);
+        }
     }
 
     private static void DrawFriends(Configuration configuration, PhoneTheme theme)

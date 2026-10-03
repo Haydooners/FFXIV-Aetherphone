@@ -10,4 +10,6 @@ internal enum MediaSessionControls : byte
     Next = 1 << 3,
     Previous = 1 << 4,
     Seek = 1 << 5,
+    Shuffle = 1 << 6,
+    Repeat = 1 << 7,
 }

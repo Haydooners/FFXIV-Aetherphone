@@ -4,6 +4,7 @@ using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Notifications;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -40,11 +41,12 @@ internal sealed class AppSettingsPage : ISettingsPage
     private readonly AppInstaller installer;
     private readonly ConfirmService confirm;
     private readonly ISettingsNavigator navigator;
+    private readonly PcMediaSource pcMedia;
     private readonly Action<string?> selectSound;
     private readonly Action removeApp;
 
     public AppSettingsPage(in AppSettingsEntry entry, Configuration configuration, SoundService sound,
-        AppInstaller installer, ConfirmService confirm, ISettingsNavigator navigator)
+        AppInstaller installer, ConfirmService confirm, ISettingsNavigator navigator, PcMediaSource pcMedia)
     {
         app = entry.App;
         hasChannel = entry.HasChannel;
@@ -55,6 +57,7 @@ internal sealed class AppSettingsPage : ISettingsPage
         this.installer = installer;
         this.confirm = confirm;
         this.navigator = navigator;
+        this.pcMedia = pcMedia;
         selectSound = SelectSound;
         removeApp = RemoveApp;
     }
@@ -74,7 +77,7 @@ internal sealed class AppSettingsPage : ISettingsPage
 
             if (string.Equals(app.Id, MusicMediaSettings.AppId, StringComparison.Ordinal))
             {
-                MusicMediaSettings.Draw(configuration, theme);
+                MusicMediaSettings.Draw(configuration, pcMedia, theme);
             }
 
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Xl * scale));

@@ -90,7 +90,10 @@ internal sealed partial class MusicApp
         var left = min.X + padding;
         var right = max.X - padding;
         var top = min.Y + padding;
-        DrawPcSource(drawList, snapshot, left, top, right - left, captionHeight, ui.MutedInk, 1f);
+        var sourceLeft = DrawPcSourceButton(drawList, right, top, captionHeight, ui.TitleInk, 1f, true,
+            out var overSource);
+        DrawPcSource(drawList, snapshot, left, top, sourceLeft - PcTextGap * scale - left, captionHeight, ui.MutedInk,
+            1f);
         var artMin = new Vector2(left, top + captionHeight + PcCaptionGap * scale);
         PcMediaView.DrawArt(drawList, artMin, artSide, artSide * ArtworkTile.TileRadiusFraction,
             pcMedia.Artwork(snapshot, artSide), snapshot, ui.Accent, 1f);
@@ -107,9 +110,10 @@ internal sealed partial class MusicApp
         }
 
         var transportCenter = new Vector2((min.X + max.X) * 0.5f, cursorY + playRadius);
+        var sideRadius = PcTransportRadius * scale;
         var overTransport = DrawPcTransport(drawList, snapshot, transportCenter, PcTransportStride * scale,
-            PcTransportRadius * scale, playRadius, ui.TitleInk, 1f, true);
-        var hovered = !overTransport && UiInteract.Hover(min, max);
+            sideRadius, playRadius, ui.TitleInk, 1f, true, left + sideRadius, right - sideRadius);
+        var hovered = !overTransport && !overSource && UiInteract.Hover(min, max);
         if (!hovered)
         {
             return;
@@ -171,12 +175,15 @@ internal sealed partial class MusicApp
     }
 
     private bool DrawPcTransport(ImDrawListPtr drawList, in MediaSessionSnapshot snapshot, Vector2 center,
-        float stride, float sideRadius, float playRadius, Vector4 ink, float alpha, bool interactive)
+        float stride, float sideRadius, float playRadius, Vector4 ink, float alpha, bool interactive, float shuffleX,
+        float repeatX)
     {
         var previousCenter = center - new Vector2(stride, 0f);
         var nextCenter = center + new Vector2(stride, 0f);
         var reach = new Vector2(stride + sideRadius, playRadius);
         var overTransport = UiInteract.Hover(center - reach, center + reach);
+        overTransport |= DrawPcModes(drawList, snapshot, center.Y, shuffleX, repeatX, sideRadius, ink, alpha,
+            interactive);
         var canPrevious = snapshot.CanPrevious;
         if (TransportButton.Draw(previousCenter, sideRadius, TransportAction.Previous, ui.Accent, ink,
                 canPrevious ? alpha : alpha * PcDisabledAlpha, interactive && canPrevious, drawList))
@@ -222,7 +229,8 @@ internal sealed partial class MusicApp
 
         var inset = Metrics.Space.Xl * scale;
         var artSide = MathF.Min(screen.Width - inset * 2f, screen.Height * PcSheetArtFraction);
-        var sheetHeight = SheetMetrics.GrabberZone * scale + PcSheetContentHeight(artSide, inset, scale);
+        var sheetHeight = SheetMetrics.GrabberZone * scale +
+                          PcSheetContentHeight(artSide, inset, scale, pcSheetSnapshot.HasVolume);
         var detent = MathF.Min(sheetHeight, screen.Height * SheetMetrics.LargeFraction);
         using var layer = ScreenLayer.Begin("music.pcMedia", screen, false);
         var frame = pcMediaSheet.Begin(ImGui.GetWindowDrawList(), screen, theme, SheetDetents.Fitted(detent),
@@ -236,12 +244,14 @@ internal sealed partial class MusicApp
         pcMediaSheet.End(in frame);
     }
 
-    private static float PcSheetContentHeight(float artSide, float inset, float scale)
+    private static float PcSheetContentHeight(float artSide, float inset, float scale, bool hasVolume)
     {
+        var volumeBlock = hasVolume ? inset * 0.5f + PcVolumeRowHeight * scale : 0f;
         return inset * 0.5f + Typography.LineHeight(TextStyles.Footnote) + inset * 0.75f + artSide + inset +
                Typography.LineHeight(TextStyles.Title3) + PcLineGap * scale + Typography.LineHeight(TextStyles.Body) +
                inset + PcScrubThickness * scale + Metrics.Space.Sm * scale +
-               Typography.LineHeight(TextStyles.Footnote) + inset + PcSheetPlayRadius * scale * 2f + inset;
+               Typography.LineHeight(TextStyles.Footnote) + inset + PcSheetPlayRadius * scale * 2f + volumeBlock +
+               inset;
     }
 
     private void DrawPcSheetContent(in SheetFrame frame, in MediaSessionSnapshot snapshot, float artSide, float inset,
@@ -255,7 +265,9 @@ internal sealed partial class MusicApp
         var width = content.Width - inset * 2f;
         var top = content.Min.Y + inset * 0.5f;
         var captionHeight = Typography.LineHeight(TextStyles.Footnote);
-        DrawPcSource(drawList, snapshot, left, top, width, captionHeight, ink, 0.6f);
+        var sourceLeft = DrawPcSourceButton(drawList, left + width, top, captionHeight, ink, 1f, frame.Interactive,
+            out _);
+        DrawPcSource(drawList, snapshot, left, top, sourceLeft - PcTextGap * scale - left, captionHeight, ink, 0.6f);
         top += captionHeight + inset * 0.75f;
         var artMin = new Vector2(content.Center.X - artSide * 0.5f, top);
         PcMediaView.DrawArt(drawList, artMin, artSide, artSide * ArtworkTile.HeroRadiusFraction,
@@ -273,8 +285,18 @@ internal sealed partial class MusicApp
         DrawPcScrubber(drawList, snapshot, track, ink, muted, frame.Interactive, frame.Opacity);
         top += thickness + Metrics.Space.Sm * scale + captionHeight + inset;
         var playRadius = PcSheetPlayRadius * scale;
+        var sideRadius = PcSheetTransportRadius * scale;
         DrawPcTransport(drawList, snapshot, new Vector2(content.Center.X, top + playRadius),
-            PcSheetTransportStride * scale, PcSheetTransportRadius * scale, playRadius, ink, 1f, frame.Interactive);
+            PcSheetTransportStride * scale, sideRadius, playRadius, ink, 1f, frame.Interactive, left + sideRadius,
+            left + width - sideRadius);
+        if (!snapshot.HasVolume)
+        {
+            return;
+        }
+
+        top += playRadius * 2f + inset * 0.5f;
+        DrawPcVolume(drawList, snapshot, left, left + width, top + PcVolumeRowHeight * scale * 0.5f, ink, muted,
+            frame.Interactive, scale);
     }
 
     private void DrawPcScrubber(ImDrawListPtr drawList, in MediaSessionSnapshot snapshot, Rect track, Vector4 ink,

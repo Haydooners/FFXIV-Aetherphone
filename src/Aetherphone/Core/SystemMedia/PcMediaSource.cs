@@ -51,6 +51,35 @@ internal sealed class PcMediaSource : IDisposable
         sessions.Play();
     }
 
+    public MediaSourceOption[] Sources => sessions.Sources;
+
+    public string PinnedAppId => configuration.WindowsMediaSource;
+
+    public void Pin(string appId)
+    {
+        if (string.Equals(configuration.WindowsMediaSource, appId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        configuration.WindowsMediaSource = appId;
+        configuration.Save();
+        sessions.Refresh();
+    }
+
+    public void ToggleShuffle(in MediaSessionSnapshot snapshot) => sessions.SetShuffle(!snapshot.ShuffleActive);
+
+    public void CycleRepeat(in MediaSessionSnapshot snapshot) => sessions.SetRepeat(NextRepeat(snapshot.Repeat));
+
+    public void SetVolume(float volume) => sessions.SetVolume(volume);
+
+    public static MediaSessionRepeat NextRepeat(MediaSessionRepeat repeat) => repeat switch
+    {
+        MediaSessionRepeat.None => MediaSessionRepeat.List,
+        MediaSessionRepeat.List => MediaSessionRepeat.Track,
+        _ => MediaSessionRepeat.None,
+    };
+
     public void Next() => sessions.Next();
 
     public void Previous() => sessions.Previous();

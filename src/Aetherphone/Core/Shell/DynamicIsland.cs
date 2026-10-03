@@ -491,8 +491,7 @@ internal sealed partial class DynamicIsland
                 DrawLiveLabel(drawList, trailingRight, bounds.Center.Y, trailingMaxWidth, scale, accent, alpha);
                 break;
             case IslandActivity.Playback:
-                NowPlayingArt.DrawDisc(drawList, bubbleCenter, bubbleRadius, playback.ArtworkUrl, playback.Title,
-                    alpha);
+                DrawPlaybackArt(drawList, bubbleCenter, bubbleRadius, alpha);
                 Equalizer.Draw(drawList, new Vector2(trailingRight - 3f * scale, bounds.Center.Y), scale,
                     bounds.Height * 0.44f, clock, accent, alpha, playback.IsPlaying);
                 break;
@@ -564,6 +563,13 @@ internal sealed partial class DynamicIsland
         var pulseValue = 0.5f + 0.5f * MathF.Sin(clock * CallPulseSpeed);
         drawList.AddCircleFilled(center, (3.4f + 1.2f * pulseValue) * scale,
             ImGui.GetColorU32(Palette.WithAlpha(CallAccent, alpha)), 16);
+    }
+
+    private void DrawPlaybackArt(ImDrawListPtr drawList, Vector2 center, float radius, float alpha)
+    {
+        var side = radius * 2f;
+        NowPlayingArt.DrawSquircle(drawList, center - new Vector2(radius, radius), side, side * ArtRadiusFraction,
+            playback.ArtworkUrl, playback.Title, alpha);
     }
 
     private static void DrawIconBubble(ImDrawListPtr drawList, Vector2 center, float radius, FontAwesomeIcon icon,
@@ -667,7 +673,7 @@ internal sealed partial class DynamicIsland
             }
             case IslandActivity.Playback:
             {
-                NowPlayingArt.DrawDisc(drawList, iconCenter, iconRadius, playback.ArtworkUrl, playback.Title, alpha);
+                DrawPlaybackArt(drawList, iconCenter, iconRadius, alpha);
                 DrawLines(drawList, playback.Title, TextStyles.Headline, Ink, playback.Subtitle,
                     TextStyles.Subheadline, accent, textLeft, textWidth, centerY, scale, alpha, true);
                 drawList.AddCircleFilled(controlCenter, controlRadius,

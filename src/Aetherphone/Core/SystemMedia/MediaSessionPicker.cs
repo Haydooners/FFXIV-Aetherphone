@@ -1,11 +1,21 @@
 namespace Aetherphone.Core.SystemMedia;
 
-internal readonly record struct MediaSessionCandidate(bool IsOwnProcess, bool IsCurrent, bool IsPlaying,
+internal readonly record struct MediaSessionCandidate(bool IsEligible, bool IsCurrent, bool IsPlaying,
     bool WasSelected);
 
 internal static class MediaSessionPicker
 {
     public const int None = -1;
+
+    public static bool IsEligible(bool isOwnProcess, bool isRecent, string appId, string pinnedAppId)
+    {
+        if (isOwnProcess || !isRecent)
+        {
+            return false;
+        }
+
+        return pinnedAppId.Length == 0 || string.Equals(appId, pinnedAppId, StringComparison.OrdinalIgnoreCase);
+    }
 
     public static int Pick(ReadOnlySpan<MediaSessionCandidate> candidates)
     {
@@ -16,7 +26,7 @@ internal static class MediaSessionPicker
         for (var index = 0; index < candidates.Length; index++)
         {
             var candidate = candidates[index];
-            if (candidate.IsOwnProcess)
+            if (!candidate.IsEligible)
             {
                 continue;
             }
