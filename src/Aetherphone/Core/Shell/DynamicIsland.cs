@@ -425,7 +425,8 @@ internal sealed partial class DynamicIsland
                 DrawLiveLabel(drawList, trailingRight, bounds.Center.Y, trailingMaxWidth, scale, accent, alpha);
                 break;
             case IslandActivity.Playback:
-                ArtGradient.DrawDisc(drawList, bubbleCenter, bubbleRadius, ArtGradient.FromName(playback.Title), alpha);
+                NowPlayingArt.DrawDisc(drawList, bubbleCenter, bubbleRadius, playback.ArtworkUrl, playback.Title,
+                    alpha);
                 Equalizer.Draw(drawList, new Vector2(trailingRight - 3f * scale, bounds.Center.Y), scale,
                     bounds.Height * 0.44f, clock, accent, alpha, playback.IsPlaying);
                 break;
@@ -584,7 +585,7 @@ internal sealed partial class DynamicIsland
             }
             case IslandActivity.Playback:
             {
-                ArtGradient.DrawDisc(drawList, iconCenter, iconRadius, ArtGradient.FromName(playback.Title), alpha);
+                NowPlayingArt.DrawDisc(drawList, iconCenter, iconRadius, playback.ArtworkUrl, playback.Title, alpha);
                 DrawLines(drawList, playback.Title, TextStyles.Headline, Ink, playback.Subtitle,
                     TextStyles.Subheadline, accent, textLeft, textWidth, centerY, scale, alpha, true);
                 drawList.AddCircleFilled(controlCenter, controlRadius,

@@ -14,9 +14,23 @@ internal static class MusicUi
 
     private static readonly Dictionary<int, string> SongCounts = new();
     private static readonly Dictionary<int, string> LongDurations = new();
+    private static readonly Dictionary<int, string> Remainders = new();
     private static string cacheLanguage = string.Empty;
 
     public static string Duration(int seconds) => TimeText.Duration(seconds);
+
+    public static string Remaining(int seconds)
+    {
+        var clamped = Math.Max(0, seconds);
+        if (Remainders.TryGetValue(clamped, out var cached))
+        {
+            return cached;
+        }
+
+        var text = string.Concat("-", TimeText.Duration(clamped));
+        Remember(Remainders, clamped, text);
+        return text;
+    }
 
     public static string SongCount(int count)
     {

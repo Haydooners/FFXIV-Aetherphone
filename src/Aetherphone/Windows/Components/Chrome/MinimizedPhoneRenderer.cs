@@ -120,7 +120,7 @@ internal static partial class MinimizedPhoneRenderer
         var centerX = rect.Center.X;
         var radius = DiscRadius * scale;
         var discCenter = new Vector2(centerX, rect.Min.Y + radius);
-        ArtGradient.DrawDisc(dl, discCenter, radius, ArtGradient.FromName(playback.Title), alpha);
+        NowPlayingArt.DrawDisc(dl, discCenter, radius, playback.ArtworkUrl, playback.Title, alpha);
         var style = new TextStyle(Text(0.78f), FontWeight.SemiBold);
         var titleTop = discCenter.Y + radius + TitleGap * scale;
         var titleHeight = Typography.Measure(playback.Title, style).Y;

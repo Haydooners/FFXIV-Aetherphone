@@ -145,6 +145,7 @@ internal sealed partial class MusicApp
 
         if (outcome == SongMenuOutcome.GoToArtist)
         {
+            CloseNowPlaying();
             Push(MusicRoute.Artist(song.ChannelId, song.Author));
         }
     }

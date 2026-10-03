@@ -16,6 +16,7 @@ internal sealed partial class MediaModule : IControlModule
     private const float DisabledTransportAlpha = 0.45f;
     private const float TransportSpread = 2.35f;
     private const float SideButtonFraction = 0.88f;
+    private const float ArtRadiusFraction = 0.22f;
     private static readonly ControlSpan[] SpanOptions = { ControlSpan.Large, ControlSpan.Bar };
     private static readonly MarqueeId LargeTitle = new("media.large.", "title");
     private static readonly MarqueeId LargeSubtitle = new("media.large.", "subtitle");
@@ -136,8 +137,15 @@ internal sealed partial class MediaModule : IControlModule
             opacity, active, interactive);
     }
 
-    private static void DrawArt(ImDrawListPtr drawList, Vector2 center, float size, bool active, float opacity)
+    private void DrawArt(ImDrawListPtr drawList, Vector2 center, float size, bool active, float opacity)
     {
+        var half = size * 0.5f;
+        if (active && NowPlayingArt.TryDrawSquircle(drawList, center - new Vector2(half, half), size,
+                size * ArtRadiusFraction, playback.ArtworkUrl, opacity))
+        {
+            return;
+        }
+
         var surface = IconTile.Surface(AppAccents.For(AppId));
         IconTile.DrawApp(drawList, AppId, center, size, surface, (active ? 1f : IdleArtAlpha) * opacity);
     }

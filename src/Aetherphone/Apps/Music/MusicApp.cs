@@ -7,6 +7,7 @@ using Aetherphone.Core.Game;
 using Aetherphone.Core.Jam;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Lodestone;
+using Aetherphone.Core.Lyrics;
 using Aetherphone.Core.Media;
 using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Onboarding;
@@ -57,6 +58,8 @@ internal sealed partial class MusicApp : IResumableApp
     private readonly RemoteImageCache images;
     private readonly LodestoneService lodestone;
     private readonly GameData gameData;
+    private readonly LyricsService lyrics;
+    private readonly WindowsMediaSessions windowsMedia;
     private readonly AppSkin ui = new(AppPalettes.Music);
     private readonly MusicKit kit;
     private readonly MusicSongMenu songMenu = new();
@@ -73,7 +76,8 @@ internal sealed partial class MusicApp : IResumableApp
         RemoteImageCache images, LodestoneService lodestone, GameData gameData, RadioLauncher launcher,
         SocialNotificationService socialNotifications, RolladeckService rolladeck, PcMediaSource pcMedia,
         JamSession jam, JamLauncher jamLauncher, ContactBook contacts,
-        RadioRoomSession room, DownloadStore downloads)
+        RadioRoomSession room, DownloadStore downloads,
+        LyricsService lyrics, WindowsMediaSessions windowsMedia)
     {
         this.radio = radio;
         this.songSearch = songSearch;
@@ -101,6 +105,8 @@ internal sealed partial class MusicApp : IResumableApp
         this.room = room;
         this.session = session;
         this.downloads = downloads;
+        this.lyrics = lyrics;
+        this.windowsMedia = windowsMedia;
         community = new CommunityRadioService(aethernet, session);
         kit = new MusicKit(ui, images, playback, library) { Downloads = downloads };
         routers = CreateRouters();
@@ -165,6 +171,7 @@ internal sealed partial class MusicApp : IResumableApp
 
     public void Dispose()
     {
+        DisposeNowPlaying();
         DisposeWorldRadio();
         DisposeSearch();
         DisposeLibrary();
