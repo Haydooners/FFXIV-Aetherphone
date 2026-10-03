@@ -32,7 +32,6 @@ internal sealed partial class CoinApp
         using (ImRaii.PushId("coin.product"))
         using (AppSurface.Begin(navBar.Body))
         {
-            ConsumePurchaseResult();
             var scale = UiScale.Current;
             if (sku is not null)
             {
@@ -45,6 +44,7 @@ internal sealed partial class CoinApp
             }
             else
             {
+                ClearGoalFor(route.ItemId);
                 CoinArt.StateScreen(ImGui.GetWindowDrawList(), ui, navBar.Body, FontAwesomeIcon.Store,
                     Loc.T(L.Coin.Unavailable), Loc.T(L.Coin.ProductGoneHint), string.Empty, 0u, scale);
             }

@@ -127,6 +127,7 @@ internal sealed partial class CoinApp : IPhoneApp, ITabRouteTarget
 
         TourHolds.Release(Id);
         store.EnsureFresh();
+        ConsumePurchaseResult();
         ConsumePendingTab();
         router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
     }

@@ -56,7 +56,6 @@ internal sealed partial class CoinApp
         {
             catalog.EnsureFresh();
             shopRefresh.Draw(navBar.Body, surface.Pull, surface.Dragging, catalog.Fetching, ui.MutedInk, RefreshShop);
-            ConsumePurchaseResult();
             DrawShopBody(navBar.Body);
         }
 
@@ -242,7 +241,6 @@ internal sealed partial class CoinApp
         {
             browseRefresh.Draw(navBar.Body, surface.Pull, surface.Dragging, catalog.Fetching, ui.MutedInk,
                 RefreshShop);
-            ConsumePurchaseResult();
             DrawBrowseBody(navBar.Body, route);
         }
 
