@@ -10,6 +10,7 @@ using Aetherphone.Core.Theme;
 using Aetherphone.Core.Wallpapers;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Shortcuts;
 
@@ -157,6 +158,7 @@ internal sealed partial class ShortcutsApp : IPhoneApp
     {
         var scale = UiScale.Current;
         using (TabBar.ReserveContent(scale))
+        using (ImRaii.PushId((int)activeTab))
         {
             switch (activeTab)
             {
