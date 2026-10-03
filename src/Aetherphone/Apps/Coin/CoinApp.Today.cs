@@ -205,6 +205,8 @@ internal sealed partial class CoinApp
     {
         if (!store.LoadedOnce)
         {
+            weekSource = null;
+            weekCovered = false;
             return;
         }
 
