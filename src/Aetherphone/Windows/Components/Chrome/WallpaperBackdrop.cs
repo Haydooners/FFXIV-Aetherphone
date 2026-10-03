@@ -22,9 +22,19 @@ internal static class WallpaperBackdrop
     private static Vector2 darkUv1;
     private static float[]? darkGrid;
     private static float darkness;
+    private static int flatFrame = -1;
+    private static Vector4 flatColor;
 
     public static bool Available => ImGui.GetFrameCount() - recordedFrame <= FrameTolerance && quad.Width > 0f &&
                                     quad.Height > 0f;
+
+    public static bool FlatAvailable => ImGui.GetFrameCount() - flatFrame <= FrameTolerance;
+
+    public static void RecordFlat(Vector4 color)
+    {
+        flatFrame = ImGui.GetFrameCount();
+        flatColor = color with { W = 1f };
+    }
 
     public static void Record(Rect drawnQuad, ImTextureID light, Vector2 lightMinUv, Vector2 lightMaxUv,
         float[]? grid)
@@ -52,9 +62,20 @@ internal static class WallpaperBackdrop
     public static bool Fill(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float opacity, float lens,
         float band, float refraction)
     {
-        if (!Available || opacity <= 0f)
+        if (opacity <= 0f)
         {
             return false;
+        }
+
+        if (!Available)
+        {
+            if (!FlatAvailable)
+            {
+                return false;
+            }
+
+            Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(flatColor with { W = opacity }));
+            return true;
         }
 
         var center = (min + max) * 0.5f;
@@ -80,7 +101,12 @@ internal static class WallpaperBackdrop
 
     public static float Brightness(Vector2 min, Vector2 max)
     {
-        if (!Available || lightGrid is null)
+        if (!Available)
+        {
+            return FlatAvailable ? Core.Theme.Palette.Luminance(flatColor) : -1f;
+        }
+
+        if (lightGrid is null)
         {
             return -1f;
         }
