@@ -41,6 +41,7 @@ using Aetherphone.Apps.Wallet;
 using Aetherphone.Apps.YellowPages;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Home;
+using Aetherphone.Core.Inventory;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Video;
@@ -112,7 +113,7 @@ internal static class AppRegistry
         apps.Add(new CollectionsApp(services.Collections, services.Lodestone, services.Media, services.Http, services.GameData));
         apps.Add(new MarketApp(services.Market, services.MarketIndex, services.MarketAlerts, services.MarketLauncher, services.GameData, services.Textures, services.Configuration));
         apps.Add(new WalletApp(services.GameData, services.Textures, Plugin.Framework));
-        apps.Add(new InventoryApp(services.InventoryCapture, services.GameData, services.Textures));
+        apps.Add(new InventoryApp(services.InventoryCapture, services.GameData, services.Textures, new InventoryItemSheet(Plugin.DataManager), services.Market, services.MarketLauncher, services.Configuration));
         apps.Add(new JobsApp(services.GameData, services.Textures, services.Configuration, services.Confirm, services.CharacterWatch));
         apps.Add(new MusicApp(services.Radio, services.SongSearch, services.SongResolver, services.Playback, services.SongHistory, services.Playlists, services.Media, services.Http, services.Artwork, services.Aethernet, services.AethernetSession, services.Report, photoLibrary, services.WallpaperImages, services.Confirm, services.Configuration, services.RemoteImages, services.Lodestone, services.GameData, services.RadioLauncher, services.SocialNotifications, services.Rolladeck));
         apps.Add(new ClockApp(services.Configuration, services.Confirm));
