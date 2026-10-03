@@ -6,10 +6,12 @@ using Aetherphone.Core.Media;
 using Aetherphone.Core.Net;
 using Aetherphone.Core.Playback;
 using Aetherphone.Core.Songs;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Windows.Components;
 using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Textures.TextureWraps;
 
 namespace Aetherphone.Apps.Music.Widgets;
 
@@ -32,6 +34,7 @@ internal sealed class NowPlayingWidget : IHomeWidget
     private const int PreviousControlId = 2;
     private const int NextControlId = 3;
     private const int RecentLinkBase = 10;
+    private const string PcArtworkPrefix = "pcmedia/";
 
     private static readonly Vector4 SampleWash = new(0.55f, 0.24f, 0.62f, 1f);
     private static readonly Vector4 SampleArtTop = new(0.93f, 0.42f, 0.55f, 1f);
@@ -45,19 +48,23 @@ internal sealed class NowPlayingWidget : IHomeWidget
         public readonly string Subtitle;
         public readonly string ArtworkUrl;
         public readonly Func<CancellationToken, Task<byte[]?>>? Source;
+        public readonly byte[]? Bytes;
 
-        public Track(string title, string subtitle, string artworkUrl, Func<CancellationToken, Task<byte[]?>>? source)
+        public Track(string title, string subtitle, string artworkUrl, Func<CancellationToken, Task<byte[]?>>? source,
+            byte[]? bytes = null)
         {
             Title = title;
             Subtitle = subtitle;
             ArtworkUrl = artworkUrl;
             Source = source;
+            Bytes = bytes;
         }
 
         public bool IsEmpty => Title.Length == 0 && ArtworkUrl.Length == 0;
     }
 
     private readonly PlaybackHub playback;
+    private readonly PcMediaSource pcMedia;
     private readonly LibraryStore library;
     private readonly MediaCache media;
     private readonly HttpService http;
@@ -74,10 +81,17 @@ internal sealed class NowPlayingWidget : IHomeWidget
     private float washBlend = 1f;
     private float sinceRecents = RecentsRefreshSeconds;
     private WidgetFrame frame;
+    private bool phoneActive;
+    private bool pcActive;
+    private MediaSessionSnapshot pc = MediaSessionSnapshot.Empty;
+    private int pcArtworkRevision = -1;
+    private string pcArtworkKey = string.Empty;
 
-    public NowPlayingWidget(PlaybackHub playback, LibraryStore library, MediaCache media, HttpService http)
+    public NowPlayingWidget(PlaybackHub playback, PcMediaSource pcMedia, LibraryStore library, MediaCache media,
+        HttpService http)
     {
         this.playback = playback;
+        this.pcMedia = pcMedia;
         this.library = library;
         this.media = media;
         this.http = http;
@@ -93,7 +107,26 @@ internal sealed class NowPlayingWidget : IHomeWidget
     public string AppId => MusicAppId;
     public WidgetSizeSet Sizes => WidgetSizeSet.Small | WidgetSizeSet.Medium | WidgetSizeSet.Large;
 
-    public float Relevance(string config) => playback.IsPlaying ? 0.9f : playback.IsActive ? 0.4f : 0f;
+    public float Relevance(string config)
+    {
+        if (playback.IsPlaying)
+        {
+            return 0.9f;
+        }
+
+        if (playback.IsActive)
+        {
+            return 0.4f;
+        }
+
+        ref readonly var snapshot = ref pcMedia.Current;
+        if (!PcMediaSource.IsLive(snapshot))
+        {
+            return 0f;
+        }
+
+        return snapshot.IsPlaying ? 0.9f : 0.4f;
+    }
 
     public void Draw(in WidgetContext context)
     {
@@ -102,7 +135,7 @@ internal sealed class NowPlayingWidget : IHomeWidget
             Sync(context.Delta);
         }
 
-        var active = playback.IsActive;
+        var active = phoneActive || pcActive;
         var sample = context.Preview && !active;
         var idle = !active && !sample && recents.Length > 0;
         var washColor = sample ? SampleWash : Vector4.Lerp(washFrom, washTo, washBlend);
@@ -145,21 +178,33 @@ internal sealed class NowPlayingWidget : IHomeWidget
             RefreshRecents();
         }
 
-        var active = playback.IsActive;
+        phoneActive = playback.IsActive;
+        pc = phoneActive ? MediaSessionSnapshot.Empty : pcMedia.Current;
+        pcActive = PcMediaSource.IsLive(pc);
+        var active = phoneActive;
         var title = (active ? playback.Title : recents.Length > 0 ? recents[0].Title : null) ?? string.Empty;
         var artwork = (active ? ArtworkUrl() : recents.Length > 0 ? recents[0].ArtworkUrl : null) ?? string.Empty;
         var subtitle = (active ? playback.Subtitle : recents.Length > 0 ? recents[0].Subtitle : null) ?? string.Empty;
+        if (pcActive)
+        {
+            title = PcMediaView.Title(pc);
+            subtitle = PcMediaView.Subtitle(pc);
+            artwork = PcArtworkKey();
+        }
+
         if (!string.Equals(title, current.Title, StringComparison.Ordinal)
             || !string.Equals(artwork, current.ArtworkUrl, StringComparison.Ordinal))
         {
             previous = current;
-            current = new Track(title, subtitle, artwork, SourceFor(artwork));
+            current = pcActive
+                ? new Track(title, subtitle, artwork, null, pc.Artwork)
+                : new Track(title, subtitle, artwork, SourceFor(artwork));
             swap = previous.IsEmpty ? 1f : 0f;
             washResolved = false;
         }
         else if (!ReferenceEquals(subtitle, current.Subtitle))
         {
-            current = new Track(current.Title, subtitle, current.ArtworkUrl, current.Source);
+            current = new Track(current.Title, subtitle, current.ArtworkUrl, current.Source, current.Bytes);
         }
 
         swap = PeopleWidgetChrome.Step(swap, delta);
@@ -175,13 +220,16 @@ internal sealed class NowPlayingWidget : IHomeWidget
         }
 
         var url = current.ArtworkUrl;
-        if (url.Length == 0 || current.Source is null || wash.Failed(url))
+        if (url.Length == 0 || current.Source is null && current.Bytes is null || wash.Failed(url))
         {
             Retarget(defaultWash);
             return;
         }
 
-        if (wash.TryGet(url, current.Source, out var color))
+        var resolved = current.Bytes is not null
+            ? wash.TryGet(url, current.Bytes, out var color)
+            : wash.TryGet(url, current.Source!, out color);
+        if (resolved)
         {
             Retarget(color);
         }
@@ -193,6 +241,23 @@ internal sealed class NowPlayingWidget : IHomeWidget
         washFrom = Vector4.Lerp(washFrom, washTo, washBlend);
         washTo = color;
         washBlend = 0f;
+    }
+
+    private string PcArtworkKey()
+    {
+        if (pc.Artwork is null)
+        {
+            return string.Empty;
+        }
+
+        if (pc.ArtworkRevision == pcArtworkRevision)
+        {
+            return pcArtworkKey;
+        }
+
+        pcArtworkRevision = pc.ArtworkRevision;
+        pcArtworkKey = PcArtworkPrefix + pc.ArtworkRevision;
+        return pcArtworkKey;
     }
 
     private string ArtworkUrl() =>
@@ -286,7 +351,8 @@ internal sealed class NowPlayingWidget : IHomeWidget
 
         var controlCenterY = area.Min.Y + side - PlayControl * 0.5f * scale;
         var controlsTop = controlCenterY - PlayControl * 0.5f * scale;
-        var live = !sample && playback.RadioActive && !playback.SongActive;
+        var live = !sample &&
+                   (pcActive ? pc.Duration <= TimeSpan.Zero : playback.RadioActive && !playback.SongActive);
         if (!idle && !live)
         {
             var barBottom = controlsTop - WidgetMetrics.Gutter * scale;
@@ -305,17 +371,39 @@ internal sealed class NowPlayingWidget : IHomeWidget
         var canSkip = sample || playback.HasQueue;
         if (WidgetControls.Button(context, ink, PreviousControlId,
                 new Vector2(column.Min.X + pitch * 0.5f, controlCenterY), SkipControl, FontAwesomeIcon.Backward,
-                default, canSkip))
+                default, pcActive ? pc.CanPrevious : canSkip))
         {
-            playback.Previous();
+            Previous();
         }
 
         if (WidgetControls.Button(context, ink, NextControlId,
                 new Vector2(column.Min.X + pitch * 2.5f, controlCenterY), SkipControl, FontAwesomeIcon.Forward,
-                default, canSkip))
+                default, pcActive ? pc.CanNext : canSkip))
         {
-            playback.Next();
+            Next();
         }
+    }
+
+    private void Previous()
+    {
+        if (pcActive)
+        {
+            pcMedia.Previous();
+            return;
+        }
+
+        playback.Previous();
+    }
+
+    private void Next()
+    {
+        if (pcActive)
+        {
+            pcMedia.Next();
+            return;
+        }
+
+        playback.Next();
     }
 
     private static void DrawHeroText(in WidgetContext context, in WidgetInk ink, Rect column, string eyebrow,
@@ -467,9 +555,7 @@ internal sealed class NowPlayingWidget : IHomeWidget
         }
 
         var drawList = context.DrawList;
-        var texture = track.ArtworkUrl.Length > 0 && track.Source is not null
-            ? media.GetOrRequest(track.ArtworkUrl, track.Source, rect.Width).Texture
-            : null;
+        var texture = Texture(track, rect.Width);
         if (texture is not null)
         {
             var (uv0, uv1) = ImageFit.CoverSquare(texture.Size);
@@ -481,6 +567,18 @@ internal sealed class NowPlayingWidget : IHomeWidget
         Squircle.Fill(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(Faded(ink.Fill, alpha)));
         PhoneIcon.Draw(drawList, rect.Center, PhoneIcons.Music, Faded(ink.Secondary, alpha),
             rect.Height * PlaceholderGlyphFraction);
+    }
+
+    private IDalamudTextureWrap? Texture(in Track track, float drawnPixels)
+    {
+        if (track.Bytes is not null)
+        {
+            return pcActive && ReferenceEquals(track.Bytes, pc.Artwork) ? pcMedia.Artwork(pc, drawnPixels) : null;
+        }
+
+        return track.ArtworkUrl.Length > 0 && track.Source is not null
+            ? media.GetOrRequest(track.ArtworkUrl, track.Source, drawnPixels).Texture
+            : null;
     }
 
     private static void DrawSampleArtwork(in WidgetContext context, in WidgetInk ink, Rect rect, float radius,
@@ -497,7 +595,7 @@ internal sealed class NowPlayingWidget : IHomeWidget
     private void DrawPlayButton(in WidgetContext context, in WidgetInk ink, Vector2 center, float diameter,
         bool idle)
     {
-        var playing = playback.IsPlaying || context.Preview && !playback.IsActive;
+        var playing = pcActive ? pc.IsPlaying : playback.IsPlaying || context.Preview && !playback.IsActive;
         var icon = playing && !idle ? FontAwesomeIcon.Pause : FontAwesomeIcon.Play;
         if (!WidgetControls.Button(context, ink, PlayControlId, center, diameter, icon))
         {
@@ -514,11 +612,22 @@ internal sealed class NowPlayingWidget : IHomeWidget
             return;
         }
 
+        if (pcActive)
+        {
+            pcMedia.TogglePlayPause(pc);
+            return;
+        }
+
         playback.TogglePlayPause();
     }
 
     private float Progress()
     {
+        if (pcActive)
+        {
+            return PcMediaView.Progress(pc);
+        }
+
         var songs = playback.Songs;
         if (!playback.SongActive || songs.Duration <= 0f)
         {
@@ -538,6 +647,11 @@ internal sealed class NowPlayingWidget : IHomeWidget
         if (idle)
         {
             return Loc.T(L.WidgetsPeople.NotPlaying);
+        }
+
+        if (pcActive)
+        {
+            return PcMediaView.Source(pc);
         }
 
         return playback.RadioActive && !playback.SongActive

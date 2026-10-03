@@ -132,7 +132,7 @@ internal static class PcMediaView
                 Palette.WithAlpha(GlyphInk, alpha), side * GlyphFraction);
         }
 
-        Squircle.Stroke(drawList, min, max, radius, ImGui.GetColorU32(Palette.WithAlpha(Rim, alpha)), 1f);
+        Squircle.Stroke(drawList, min, max, radius, ImGui.GetColorU32(Palette.WithAlpha(Rim, RimAlpha * alpha)), 1f);
     }
 
     public static void DrawDisc(ImDrawListPtr drawList, Vector2 center, float radius, IDalamudTextureWrap? texture,

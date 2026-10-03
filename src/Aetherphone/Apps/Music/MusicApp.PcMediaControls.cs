@@ -15,7 +15,7 @@ internal sealed partial class MusicApp
     private const string PcSourceMenuId = "music.pc.source";
     private const string PcRepeatOneLabel = "1";
     private const float PcSourceGlyphFraction = 0.8f;
-    private const float PcModeGlyphFraction = 0.52f;
+    private const float PcModeGlyphFraction = 0.34f;
     private const float PcModeIdleAlpha = 0.7f;
     private const float PcModeDotRadius = 2f;
     private const float PcModeDotGap = 5f;

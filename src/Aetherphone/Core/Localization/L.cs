@@ -2266,6 +2266,8 @@ internal static class L
                 "An app on your PC that stays paused for 15 minutes now hides until it plays again"),
             new("changelog.r1042.138",
                 "Album art in the Dynamic Island is now a rounded square that matches the Island's shape"),
+            new("changelog.r1042.139",
+                "The Now Playing widget now shows and controls what is playing on your PC when the phone is not playing music"),
             new("changelog.r1042.66",
                 "Your playlists, recently played songs and favorite stations carry over to the new Music automatically"),
             new("changelog.r1042.67",
