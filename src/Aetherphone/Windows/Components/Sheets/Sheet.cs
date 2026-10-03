@@ -109,6 +109,16 @@ internal sealed class Sheet
 
     public bool IsOpen => open;
 
+    public void ReleasePress()
+    {
+        if (dragging)
+        {
+            return;
+        }
+
+        pressed = false;
+    }
+
     public bool IsDragging => dragging;
 
     public bool CapturesPointer => open || !shown.IsResting(0f, RestPositionEpsilon, RestVelocityEpsilon);

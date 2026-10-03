@@ -306,10 +306,11 @@ internal sealed partial class MusicApp
         }
 
         var updated = Scrubber.Draw(track, fraction, ink, Palette.WithAlpha(ink, PcRailAlpha), alpha);
-        if (Scrubber.IsHovered(track) && ImGui.IsMouseDown(ImGuiMouseButton.Left))
+        if ((pcScrubbing || Scrubber.IsHovered(track)) && ImGui.IsMouseDown(ImGuiMouseButton.Left))
         {
             pcScrubbing = true;
             pcScrubValue = updated;
+            pcMediaSheet.ReleasePress();
         }
         else if (pcScrubbing)
         {
