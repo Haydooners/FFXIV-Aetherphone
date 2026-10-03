@@ -26,6 +26,7 @@ internal sealed class CoinStore : IDisposable
     private CoinPurchaseResult? purchaseResult;
     private long walletLoadedAtTick;
     private long walletAttemptedAtTick;
+    private long ledgerPageRetryAtTick;
     private int fetchingWallet;
     private int fetchingLedger;
     private string? lastAccountId;
@@ -161,6 +162,11 @@ internal sealed class CoinStore : IDisposable
             return;
         }
 
+        if (Environment.TickCount64 < Interlocked.Read(ref ledgerPageRetryAtTick))
+        {
+            return;
+        }
+
         if (Interlocked.Exchange(ref fetchingLedger, 1) != 0)
         {
             return;
@@ -168,6 +174,7 @@ internal sealed class CoinStore : IDisposable
 
         loadingMore = true;
         var requestCursor = cursor;
+        Interlocked.Exchange(ref ledgerPageRetryAtTick, Environment.TickCount64 + RetryAfterAttemptMilliseconds);
         work.Run("ledger page", async token =>
         {
             var page = await coins.LedgerAsync(requestCursor, token).ConfigureAwait(false);
@@ -182,7 +189,8 @@ internal sealed class CoinStore : IDisposable
             page.Items.CopyTo(merged, current.Length);
             entries = merged;
             cursor = page.NextCursor;
-            endReached = page.NextCursor is null;
+            endReached = page.NextCursor is null || page.Items.Length == 0;
+            Interlocked.Exchange(ref ledgerPageRetryAtTick, 0);
         }, () =>
         {
             loadingMore = false;
@@ -201,6 +209,7 @@ internal sealed class CoinStore : IDisposable
             cursor = null;
             loadedOnce = false;
             endReached = false;
+            Interlocked.Exchange(ref ledgerPageRetryAtTick, 0);
             Interlocked.Exchange(ref checkInResult, null);
             Interlocked.Exchange(ref purchaseResult, null);
             Interlocked.Exchange(ref walletLoadedAtTick, 0);
@@ -355,6 +364,7 @@ internal sealed class CoinStore : IDisposable
             cursor = page.NextCursor;
             endReached = page.NextCursor is null;
             loadedOnce = true;
+            Interlocked.Exchange(ref ledgerPageRetryAtTick, 0);
         }, () => Interlocked.Exchange(ref fetchingLedger, 0));
     }
 
