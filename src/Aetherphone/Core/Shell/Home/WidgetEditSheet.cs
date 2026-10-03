@@ -68,6 +68,19 @@ internal sealed class WidgetEditSheet
         }
 
         var current = member;
+        if (sheet.IsOpen)
+        {
+            if (layout.FindWidget(current.InstanceKey) is { } fresh)
+            {
+                member = fresh;
+                current = fresh;
+            }
+            else
+            {
+                sheet.Close();
+            }
+        }
+
         var widget = current.Widget!;
         var options = widget.Options;
         var scale = UiScale.Current;

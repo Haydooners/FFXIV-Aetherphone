@@ -29,7 +29,7 @@ internal readonly struct WidgetHit
 
 internal static class WidgetHits
 {
-    private const int Capacity = 64;
+    private const int Capacity = 256;
     private const float PressDepth = 1f - Motion.PressScaleControl;
 
     private static readonly WidgetHit[] Hits = new WidgetHit[Capacity];

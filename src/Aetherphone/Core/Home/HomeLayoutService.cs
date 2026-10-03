@@ -153,6 +153,38 @@ internal sealed class HomeLayoutService
         return (-1, -1);
     }
 
+    public HomeTile? FindWidget(string instanceKey)
+    {
+        for (var page = 0; page < pages.Count; page++)
+        {
+            var tiles = pages[page];
+            for (var index = 0; index < tiles.Count; index++)
+            {
+                var tile = tiles[index];
+                if (!tile.IsStack)
+                {
+                    if (tile.IsWidget && string.Equals(tile.InstanceKey, instanceKey, StringComparison.Ordinal))
+                    {
+                        return tile;
+                    }
+
+                    continue;
+                }
+
+                var members = tile.Stack;
+                for (var memberIndex = 0; memberIndex < members.Count; memberIndex++)
+                {
+                    if (string.Equals(members[memberIndex].InstanceKey, instanceKey, StringComparison.Ordinal))
+                    {
+                        return members[memberIndex];
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
     public int DockIndexOf(HomeTile tile) => dock.IndexOf(tile);
 
     public bool CanDock(HomeTile tile) => tile.App is not null && dock.Count < DockCapacity && !dock.Contains(tile);
@@ -1053,6 +1085,12 @@ internal sealed class HomeLayoutService
     private HomeTile? BuildStack(HomeItem item)
     {
         var size = WidgetSizes.Parse(item.WidgetSize);
+        var shared = SharedSizes(item);
+        if (shared != WidgetSizeSet.None && !WidgetSizes.Contains(shared, size))
+        {
+            size = WidgetSizes.Smallest(shared);
+        }
+
         var members = new List<HomeTile>(item.Members.Count);
         var visibleIndex = 0;
         for (var index = 0; index < item.Members.Count && members.Count < HomeTile.StackCapacity; index++)
@@ -1076,6 +1114,24 @@ internal sealed class HomeLayoutService
         }
 
         return HomeTile.ForStack(NextStackKey(), members, visibleIndex, item.SmartRotate);
+    }
+
+    private WidgetSizeSet SharedSizes(HomeItem item)
+    {
+        var shared = WidgetSizeSet.Small | WidgetSizeSet.Medium | WidgetSizeSet.Large;
+        var any = false;
+        for (var index = 0; index < item.Members.Count; index++)
+        {
+            if (!widgets.TryGet(item.Members[index].WidgetId, out var widget) || !widgets.IsAvailable(widget))
+            {
+                continue;
+            }
+
+            shared &= widget.Sizes;
+            any = true;
+        }
+
+        return any ? shared : WidgetSizeSet.None;
     }
 
     private void SeedDefaultLayout(HashSet<string> placed)

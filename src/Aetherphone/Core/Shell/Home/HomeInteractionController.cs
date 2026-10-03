@@ -156,7 +156,12 @@ internal sealed class HomeInteractionController
     {
         if (gallery.Active || folder.Active || widgetMenu.Active || spotlight.Active)
         {
-            pressActive = false;
+            if (pressActive)
+            {
+                pressActive = false;
+                CancelTap();
+            }
+
             return;
         }
 
