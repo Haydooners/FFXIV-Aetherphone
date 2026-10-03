@@ -57,7 +57,7 @@ internal sealed partial class ClockApp
     private void DrawCityList(float width, float scale)
     {
         var catalog = WorldClockCatalog.All;
-        var query = cityQuery.Trim();
+        var query = cityQuery.AsSpan().Trim();
         var matches = 0;
         for (var index = 0; index < catalog.Count; index++)
         {
@@ -104,8 +104,8 @@ internal sealed partial class ClockApp
         ClockArt.Advance(origin, width, max.Y - origin.Y, 0f, scale);
     }
 
-    private static bool Matches(in WorldCity city, string query) =>
-        query.Length == 0 || city.City.Contains(query, StringComparison.OrdinalIgnoreCase);
+    private static bool Matches(in WorldCity city, ReadOnlySpan<char> query) =>
+        query.Length == 0 || city.City.AsSpan().Contains(query, StringComparison.OrdinalIgnoreCase);
 
     private void DrawCityOption(ImDrawListPtr drawList, Rect row, int index, in WorldCity city, DateTime utcNow,
         float scale)
