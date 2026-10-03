@@ -151,6 +151,7 @@ internal sealed class PhoneServices : IDisposable
     public required TranslationService Translation { get; init; }
     public required MarketLauncher MarketLauncher { get; init; }
     public required MarketAlertService MarketAlerts { get; init; }
+    public required MarketWatchlist MarketWatchlist { get; init; }
     public required NewsService News { get; init; }
     public required RadioService Radio { get; init; }
     public required RadioPlayer RadioPlayer { get; init; }
@@ -316,6 +317,7 @@ internal sealed class PhoneServices : IDisposable
         var market = new MarketboardService(http);
         var marketLauncher = new MarketLauncher();
         var marketAlerts = new MarketAlertService(market, notifications, configuration, installer.Gate("market"));
+        var marketWatchlist = new MarketWatchlist(market, configuration, gameData);
         var news = new NewsService(http, aethernetSession);
         var radio = new RadioService(http);
         var radioPlayer = new RadioPlayer();
@@ -526,6 +528,7 @@ internal sealed class PhoneServices : IDisposable
             Translation = translation,
             MarketLauncher = marketLauncher,
             MarketAlerts = marketAlerts,
+            MarketWatchlist = marketWatchlist,
             News = news,
             Radio = radio,
             RadioPlayer = radioPlayer,

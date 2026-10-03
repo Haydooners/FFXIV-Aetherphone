@@ -22,7 +22,7 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.SkywatcherWeatherTitle, L.Onboarding.SkywatcherWeatherBody,
                     "skywatcher.control.weather", GuideGesture.None),
             });
-        Add(tours, "market", 3,
+        Add(tours, "market", 4,
             new[]
             {
                 GuideStep.Intro(L.Apps.Market, L.Onboarding.MarketIntroBody),
@@ -34,7 +34,7 @@ internal static partial class TourRegistry
                 GuideStep.TryTap(L.Onboarding.MarketScopeTitle, L.Onboarding.MarketCompareBody, "market.scope"),
                 GuideStep.Point(L.Onboarding.MarketAlertTitle, L.Onboarding.MarketAlertBody, "market.alert",
                     GuideGesture.Tap),
-                GuideStep.Point(L.Onboarding.MarketStarTitle, L.Onboarding.MarketStarBody, "market.favorite",
+                GuideStep.Point(L.Market.TourWatchTitle, L.Market.TourWatchBody, "market.favorite",
                     GuideGesture.Tap),
             });
         Add(tours, "maps", 4,
