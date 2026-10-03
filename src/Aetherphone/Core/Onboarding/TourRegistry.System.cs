@@ -33,7 +33,7 @@ internal static partial class TourRegistry
                 GuideStep.TryTap(L.Onboarding.AppStoreFindTitle, L.Onboarding.AppStoreFindBody,
                     "appstore.tab.search"),
             });
-        Add(tours, "shortcuts", 2,
+        Add(tours, "shortcuts", 3,
             new[]
             {
                 GuideStep.TryTap(L.Onboarding.ShortcutsStartTitle, L.Onboarding.ShortcutsStartBody, "shortcuts.new"),

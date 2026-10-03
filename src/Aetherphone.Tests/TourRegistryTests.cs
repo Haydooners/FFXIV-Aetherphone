@@ -35,7 +35,7 @@ public sealed class TourRegistryTests
         { "feedback", (4, 4) },
         { "appstore", (2, 5) },
         { "health", (2, 5) },
-        { "shortcuts", (2, 6) },
+        { "shortcuts", (3, 6) },
         { "aetherstream", (3, 6) },
         { "games", (3, 4) },
         { "clock", (3, 5) },

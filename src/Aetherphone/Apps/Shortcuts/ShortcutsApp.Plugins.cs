@@ -1,10 +1,12 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Shortcuts;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
+using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 
@@ -12,56 +14,78 @@ namespace Aetherphone.Apps.Shortcuts;
 
 internal sealed partial class ShortcutsApp
 {
-    private const float PluginRowHeight = 60f;
-    private const float CommandRowHeight = 54f;
-
-    private string detailPlugin = string.Empty;
-    private bool pickingIcon;
-
-    private void DrawPluginsTab(Rect content, float bodyTop, float scale)
+    private enum PickerPurpose : byte
     {
-        var margin = Metrics.Space.Lg * scale;
-        var searchRow = new Rect(new Vector2(content.Min.X + margin, bodyTop),
-            new Vector2(content.Max.X - margin, bodyTop + 36f * scale));
-        SearchField.Draw(searchRow, "##shortcuts.pluginSearch", Loc.T(L.Shortcuts.SearchPlugins), ref pluginQuery,
-            ui.Palette);
-
-        var body = new Rect(new Vector2(content.Min.X, searchRow.Max.Y + Metrics.Space.Sm * scale), content.Max);
-        using (AppSurface.Begin(body))
-        {
-            DrawPluginList(body, scale, openPluginDetail);
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
-        }
+        AddStep,
+        ReplaceStep,
+        Icon,
     }
 
-    private void OpenPluginPicker(bool forIcon)
+    private const float HeroTile = 64f;
+    private const float HeroPad = 16f;
+    private const float HeroLineGap = 2f;
+    private const float CommandRowHeight = 56f;
+    private const float PlusRadius = 14f;
+    private const float PlusGlyph = 12f;
+    private const float ChevronGlyph = 11f;
+
+    private readonly Action<PluginEntry> openPluginDetail;
+    private readonly Action<PluginEntry> pickStepPlugin;
+    private readonly Action<PluginEntry> pickIconPlugin;
+    private string pluginQuery = string.Empty;
+    private string detailPlugin = string.Empty;
+    private PickerPurpose pickerPurpose;
+    private int pickerStepIndex = -1;
+    private readonly Dictionary<int, string> commandCountLabels = new();
+    private CachedText authorLabel;
+
+    private void DrawPluginsTab(in PhoneContext context)
+    {
+        var navBar = AppHeader.BeginLargeTitle(context, false);
+        DrawPluginBrowser(navBar.Body, openPluginDetail);
+        AppHeader.EndLargeTitle(in navBar, context, "shortcuts.nav.plugins", Loc.T(L.Shortcuts.TabPlugins),
+            NavBarStyle.From(ui), ReadOnlySpan<NavBarButton>.Empty);
+    }
+
+    private void OpenPluginPicker(PickerPurpose purpose, int stepIndex)
     {
         pluginQuery = string.Empty;
-        pickingIcon = forIcon;
-        router.Push(ShortcutsScreen.PluginPicker);
+        pickerPurpose = purpose;
+        pickerStepIndex = stepIndex;
+        Push(ShortcutsRoute.PluginPicker, router.Current.Route == ShortcutsRoute.Appearance
+            ? Loc.T(L.Shortcuts.Appearance)
+            : EditorTitle());
     }
 
-    private void DrawPluginPicker(Rect content, float scale)
+    private void DrawPluginPicker(in PhoneContext context, ShortcutsView view)
     {
-        var context = new PhoneContext(content, theme, navigation);
-        AppHeader.Draw(context, Loc.T(pickingIcon ? L.Shortcuts.ChooseIcon : L.Shortcuts.ChoosePlugin), back);
+        var navBar = AppHeader.BeginLargeTitle(context);
+        DrawPluginBrowser(navBar.Body, pickerPurpose == PickerPurpose.Icon ? pickIconPlugin : pickStepPlugin);
+        AppHeader.EndLargeTitle(in navBar, context, "shortcuts.nav.picker",
+            Loc.T(pickerPurpose == PickerPurpose.Icon ? L.Shortcuts.ChooseIcon : L.Shortcuts.ChoosePlugin),
+            NavBarStyle.From(ui), ReadOnlySpan<NavBarButton>.Empty, view.BackTitle, back);
+    }
 
-        var margin = Metrics.Space.Lg * scale;
-        var searchTop = content.Min.Y + AppHeader.Height * scale + Metrics.Space.Xs * scale;
-        var searchRow = new Rect(new Vector2(content.Min.X + margin, searchTop),
-            new Vector2(content.Max.X - margin, searchTop + 36f * scale));
-        SearchField.Draw(searchRow, "##shortcuts.pickerSearch", Loc.T(L.Shortcuts.SearchPlugins), ref pluginQuery,
-            ui.Palette);
-
-        var body = new Rect(new Vector2(content.Min.X, searchRow.Max.Y + Metrics.Space.Sm * scale), content.Max);
+    private void DrawPluginBrowser(Rect body, Action<PluginEntry> onPick)
+    {
+        var scale = UiScale.Current;
         using (AppSurface.Begin(body))
         {
-            DrawPluginList(body, scale, pickingIcon ? pickIconPlugin : pickStepPlugin);
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
+            var drawList = ImGui.GetWindowDrawList();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
+            Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+            GlassField.Search(drawList, field, "##shortcutsPluginSearch", Loc.T(L.Shortcuts.SearchPlugins),
+                ref pluginQuery, theme, scale, SearchMaxLength, false);
+            var cursorY = DrawPluginList(drawList, new Vector2(origin.X, field.Max.Y + SearchGap * scale), width,
+                onPick, scale);
+            ShortcutsArt.ReserveTo(origin, width, cursorY + ShortcutsArt.BottomPad * scale);
         }
     }
 
-    private void DrawPluginList(Rect body, float scale, Action<PluginEntry> onPick)
+    private float DrawPluginList(ImDrawListPtr drawList, Vector2 origin, float width, Action<PluginEntry> onPick,
+        float scale)
     {
         var entries = catalog.Entries;
         var matches = 0;
@@ -75,13 +99,18 @@ internal sealed partial class ShortcutsApp
 
         if (matches == 0)
         {
-            Typography.DrawCentered(new Vector2(body.Center.X, body.Min.Y + 60f * scale),
-                Loc.T(L.Shortcuts.NoPluginsFound), ui.MutedInk, TextStyles.Subheadline);
-            return;
+            return ShortcutsArt.State(drawList, ui, origin, width, FontAwesomeIcon.PuzzlePiece,
+                Loc.T(L.Shortcuts.NoResults), Loc.T(L.Shortcuts.NoPluginsFound), string.Empty, string.Empty, out _,
+                out _, scale);
         }
 
-        var card = GroupCard.Begin(theme, matches, PluginRowHeight);
-        var anchorReported = false;
+        var rowHeight = ShortcutsArt.RowHeight * scale;
+        var max = new Vector2(origin.X + width, origin.Y + matches * rowHeight);
+        ShortcutsArt.Card(drawList, ui, origin, max, scale);
+        var pad = Metrics.Space.Lg * scale;
+        var iconSize = ShortcutsArt.IconSize * scale;
+        var row = 0;
+        PluginEntry? picked = null;
         for (var index = 0; index < entries.Count; index++)
         {
             var entry = entries[index];
@@ -90,37 +119,51 @@ internal sealed partial class ShortcutsApp
                 continue;
             }
 
-            var row = card.NextRow();
-            if (!anchorReported)
+            var top = origin.Y + row * rowHeight;
+            var rect = new Rect(new Vector2(origin.X, top), new Vector2(max.X, top + rowHeight));
+            if (row == 0)
             {
-                anchorReported = true;
-                UiAnchors.Report("shortcuts.plugin.row", row);
+                UiAnchors.Report("shortcuts.plugin.row", rect);
+            }
+            else
+            {
+                ShortcutsArt.Hairline(drawList, ui, origin.X + pad + iconSize + ShortcutsArt.TextGap * scale,
+                    max.X - pad, top);
             }
 
-            DrawPluginRow(row, entry, scale, onPick);
+            row++;
+            if (ImGui.IsRectVisible(rect.Min, rect.Max) && DrawPluginRow(drawList, rect, entry, scale))
+            {
+                picked = entry;
+            }
         }
 
-        card.End();
+        if (picked is not null)
+        {
+            onPick(picked);
+        }
+
+        return max.Y;
     }
 
     private static bool Matches(PluginEntry entry, string query)
     {
-        var trimmed = query.Trim();
+        var trimmed = query.AsSpan().Trim();
         if (trimmed.Length == 0)
         {
             return true;
         }
 
-        if (entry.Name.Contains(trimmed, StringComparison.OrdinalIgnoreCase) ||
-            entry.InternalName.Contains(trimmed, StringComparison.OrdinalIgnoreCase) ||
-            entry.Punchline.Contains(trimmed, StringComparison.OrdinalIgnoreCase))
+        if (entry.Name.AsSpan().Contains(trimmed, StringComparison.OrdinalIgnoreCase) ||
+            entry.InternalName.AsSpan().Contains(trimmed, StringComparison.OrdinalIgnoreCase) ||
+            entry.Punchline.AsSpan().Contains(trimmed, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
         for (var index = 0; index < entry.Commands.Count; index++)
         {
-            if (entry.Commands[index].Command.Contains(trimmed, StringComparison.OrdinalIgnoreCase))
+            if (entry.Commands[index].Command.AsSpan().Contains(trimmed, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -129,30 +172,43 @@ internal sealed partial class ShortcutsApp
         return false;
     }
 
-    private void DrawPluginRow(Rect row, PluginEntry entry, float scale, Action<PluginEntry> onPick)
+    private bool DrawPluginRow(ImDrawListPtr drawList, Rect row, PluginEntry entry, float scale)
     {
-        var tile = 36f * scale;
-        var tileCenter = new Vector2(row.Min.X + tile * 0.5f, row.Center.Y);
-        DrawPluginTile(tileCenter, tile, entry, scale);
-
-        var chevronX = row.Max.X - 10f * scale;
-        var textLeft = row.Min.X + tile + Metrics.Space.Md * scale;
-        var textWidth = MathF.Max(1f, chevronX - 14f * scale - textLeft);
-        var ink = entry.Loaded ? ui.TitleInk : ui.MutedInk;
-        Marquee.DrawLeftAuto(new MarqueeId("shortcuts.plugin.", entry.InternalName), entry.Name, textLeft,
-            row.Center.Y - 15f * scale, textWidth, TextStyles.Headline, ink);
-        Marquee.DrawLeftAuto(new MarqueeId("shortcuts.plugin.sub.", entry.InternalName), Subtitle(entry), textLeft,
-            row.Center.Y + 4f * scale, textWidth, TextStyles.Footnote, ui.MutedInk);
-
-        AppSkin.Icon(new Vector2(chevronX, row.Center.Y), IconGlyph.Of(FontAwesomeIcon.ChevronRight),
-            Palette.WithAlpha(ui.MutedInk, 0.7f), 0.6f);
-        if (UiInteract.HoverClick(row.Min, row.Max))
-        {
-            onPick(entry);
-        }
+        var hovered = ShortcutsArt.RowInteraction(drawList, ui, row, scale);
+        var pad = Metrics.Space.Lg * scale;
+        var iconSize = ShortcutsArt.IconSize * scale;
+        DrawPluginTile(drawList, new Vector2(row.Min.X + pad + iconSize * 0.5f, row.Center.Y), iconSize, entry, scale);
+        var chevronX = row.Max.X - pad - ChevronGlyph * scale * 0.5f;
+        ProgressRing.CenterIcon(drawList, new Vector2(chevronX, row.Center.Y), FontAwesomeIcon.ChevronRight,
+            Palette.WithAlpha(ui.MutedInk, 0.7f), ChevronGlyph * scale);
+        var textLeft = row.Min.X + pad + iconSize + ShortcutsArt.TextGap * scale;
+        Labels(drawList, textLeft, chevronX - ShortcutsArt.TextGap * scale, row.Center.Y, entry.Name,
+            PluginSubtitle(entry), entry.Loaded ? ui.TitleInk : ui.MutedInk, ui.MutedInk, scale);
+        return UiInteract.Click(row.Min, row.Max, hovered);
     }
 
-    private string Subtitle(PluginEntry entry)
+    private static void Labels(ImDrawListPtr drawList, float left, float right, float centerY, string title,
+        string subtitle, Vector4 titleInk, Vector4 subtitleInk, float scale)
+    {
+        var width = MathF.Max(1f, right - left);
+        var fittedTitle = Typography.FitText(title, width, TextStyles.Headline);
+        var titleHeight = Typography.LineHeight(TextStyles.Headline);
+        if (subtitle.Length == 0)
+        {
+            Typography.Draw(drawList, new Vector2(left, centerY - titleHeight * 0.5f), fittedTitle, titleInk,
+                TextStyles.Headline);
+            return;
+        }
+
+        var fittedSubtitle = Typography.FitText(subtitle, width, TextStyles.Footnote);
+        var subtitleHeight = Typography.LineHeight(TextStyles.Footnote);
+        var top = centerY - (titleHeight + HeroLineGap * scale + subtitleHeight) * 0.5f;
+        Typography.Draw(drawList, new Vector2(left, top), fittedTitle, titleInk, TextStyles.Headline);
+        Typography.Draw(drawList, new Vector2(left, top + titleHeight + HeroLineGap * scale), fittedSubtitle,
+            subtitleInk, TextStyles.Footnote);
+    }
+
+    private string PluginSubtitle(PluginEntry entry)
     {
         if (!entry.Loaded)
         {
@@ -161,29 +217,44 @@ internal sealed partial class ShortcutsApp
 
         if (entry.Commands.Count > 0)
         {
-            return Loc.T(L.Shortcuts.PluginCommandCount, entry.Commands.Count);
+            return CommandCountLabel(entry.Commands.Count);
         }
 
         return entry.Punchline.Length > 0 ? entry.Punchline : entry.InternalName;
     }
 
-    private void DrawPluginTile(Vector2 center, float size, PluginEntry entry, float scale)
+    private string CommandCountLabel(int count)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var half = size * 0.5f;
-        var min = new Vector2(center.X - half, center.Y - half);
-        var max = new Vector2(center.X + half, center.Y + half);
-        var radius = size * 0.26f;
+        if (!commandCountLabels.TryGetValue(count, out var label))
+        {
+            label = Loc.T(L.Shortcuts.PluginCommandCount, count);
+            commandCountLabels[count] = label;
+        }
+
+        return label;
+    }
+
+    private string AuthorLabel(string author)
+    {
+        var key = (long)author.GetHashCode();
+        return authorLabel.IsCurrent(key) ? authorLabel.Value : authorLabel.Store(key, Loc.T(L.Shortcuts.PluginBy, author));
+    }
+
+    private void DrawPluginTile(ImDrawListPtr drawList, Vector2 center, float size, PluginEntry entry, float scale)
+    {
+        var half = new Vector2(size * 0.5f);
+        var min = center - half;
+        var max = center + half;
+        var radius = size * Metrics.Radius.TileFactor;
         var icon = catalog.Icon(entry.InternalName);
         if (icon is not null)
         {
-            Squircle.FillImage(drawList, min, max, radius, icon.Handle,
-                entry.Loaded ? 0xFFFFFFFFu : 0x80FFFFFFu);
+            Squircle.FillImage(drawList, min, max, radius, icon.Handle, entry.Loaded ? 0xFFFFFFFFu : 0x80FFFFFFu);
             return;
         }
 
-        var surface = IconTile.Surface(AccentFor(entry.InternalName));
-        IconTile.FillShaded(drawList, min, max, radius, surface, entry.Loaded ? 1f : 0.55f);
+        IconTile.FillShaded(drawList, min, max, radius, IconTile.Surface(AccentFor(entry.InternalName)),
+            entry.Loaded ? 1f : 0.55f);
         Material.EdgeSquircle(drawList, min, max, radius, scale);
         var monogram = ShortcutStore.Monogram(entry.Name);
         var measured = Typography.Measure(monogram, TextStyles.Title2);
@@ -206,139 +277,172 @@ internal sealed partial class ShortcutsApp
     private void OpenPluginDetail(PluginEntry entry)
     {
         detailPlugin = entry.InternalName;
-        router.Push(ShortcutsScreen.Plugin);
+        Push(ShortcutsRoute.Plugin, Loc.T(L.Shortcuts.TabPlugins));
     }
 
-    private void DrawPluginDetail(Rect content, float scale)
+    private void DrawPluginDetail(in PhoneContext context, ShortcutsView view)
     {
         var entry = catalog.Find(detailPlugin);
-        var context = new PhoneContext(content, theme, navigation);
-        AppHeader.Draw(context, entry?.Name ?? Loc.T(L.Shortcuts.TabPlugins), back);
-        if (entry is null)
+        var navBar = AppHeader.BeginLargeTitle(context);
+        var scale = UiScale.Current;
+        if (entry is not null)
         {
-            return;
+            using (AppSurface.Begin(navBar.Body))
+            {
+                var drawList = ImGui.GetWindowDrawList();
+                var origin = ImGui.GetCursorScreenPos();
+                var width = ScrollLayout.StableContentWidth();
+                var cursorY = DrawPluginHero(drawList, origin, width, entry, scale);
+                cursorY = DrawPluginActions(drawList, new Vector2(origin.X, cursorY + ShortcutsArt.TileGap * scale),
+                    width, entry, scale);
+                cursorY = DrawPluginCommands(drawList, new Vector2(origin.X, cursorY), width, entry, scale);
+                ShortcutsArt.ReserveTo(origin, width, cursorY + ShortcutsArt.BottomPad * scale);
+            }
         }
 
-        var body = new Rect(new Vector2(content.Min.X, content.Min.Y + AppHeader.Height * scale), content.Max);
-        using (AppSurface.Begin(body))
-        {
-            DrawPluginHero(entry, scale);
-            DrawPluginActions(entry, scale);
-            DrawPluginCommands(body, entry, scale);
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
-        }
+        AppHeader.EndLargeTitle(in navBar, context, "shortcuts.nav.plugin",
+            entry?.Name ?? Loc.T(L.Shortcuts.TabPlugins), NavBarStyle.From(ui), ReadOnlySpan<NavBarButton>.Empty,
+            view.BackTitle, back);
     }
 
-    private void DrawPluginHero(PluginEntry entry, float scale)
+    private float DrawPluginHero(ImDrawListPtr drawList, Vector2 origin, float width, PluginEntry entry, float scale)
     {
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var tile = 62f * scale;
-        var height = tile + Metrics.Space.Md * scale;
-        DrawPluginTile(new Vector2(origin.X + tile * 0.5f, origin.Y + tile * 0.5f), tile, entry, scale);
-
-        var textLeft = origin.X + tile + Metrics.Space.Md * scale;
-        var textWidth = MathF.Max(1f, origin.X + width - textLeft);
-        Marquee.DrawLeftAuto("shortcuts.detail.name", entry.Name, textLeft, origin.Y + 6f * scale, textWidth,
-            TextStyles.Title3, ui.TitleInk);
-        if (entry.Author.Length > 0)
+        var pad = HeroPad * scale;
+        var tile = HeroTile * scale;
+        var textLeft = origin.X + pad + tile + ShortcutsArt.TextGap * scale;
+        var textWidth = MathF.Max(1f, origin.X + width - pad - textLeft);
+        var nameHeight = Typography.LineHeight(TextStyles.Title3);
+        var bylineHeight = entry.Author.Length > 0 ? Typography.LineHeight(TextStyles.Footnote) : 0f;
+        var punchLines = entry.Punchline.Length > 0
+            ? WidgetText.Clamp(entry.Punchline, TextStyles.Subheadline, textWidth, 3)
+            : WidgetText.NoLines;
+        var punchLine = Typography.LineHeight(TextStyles.Subheadline);
+        var textHeight = nameHeight + bylineHeight + (punchLines.Length > 0 ? HeroLineGap * 3f * scale : 0f) +
+                         punchLines.Length * punchLine;
+        var height = MathF.Max(tile, textHeight) + pad * 2f;
+        var max = new Vector2(origin.X + width, origin.Y + height);
+        ShortcutsArt.Card(drawList, ui, origin, max, scale);
+        DrawPluginTile(drawList, new Vector2(origin.X + pad + tile * 0.5f, origin.Y + pad + tile * 0.5f), tile, entry,
+            scale);
+        var top = origin.Y + pad;
+        Typography.Draw(drawList, new Vector2(textLeft, top), Typography.FitText(entry.Name, textWidth, TextStyles.Title3),
+            ui.TitleInk, TextStyles.Title3);
+        top += nameHeight;
+        if (bylineHeight > 0f)
         {
-            Marquee.DrawLeftAuto("shortcuts.detail.author", Loc.T(L.Shortcuts.PluginBy, entry.Author), textLeft,
-                origin.Y + 27f * scale, textWidth, TextStyles.Footnote, ui.MutedInk);
+            Typography.Draw(drawList, new Vector2(textLeft, top),
+                Typography.FitText(AuthorLabel(entry.Author), textWidth, TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
+            top += bylineHeight;
         }
 
-        if (entry.Punchline.Length > 0)
+        if (punchLines.Length > 0)
         {
-            Marquee.DrawLeftAuto("shortcuts.detail.punch", entry.Punchline, textLeft, origin.Y + 45f * scale,
-                textWidth, TextStyles.Footnote, ui.BodyInk);
+            WidgetText.Lines(drawList, punchLines, new Vector2(textLeft, top + HeroLineGap * 3f * scale),
+                ui.BodyInk, TextStyles.Subheadline, punchLine);
         }
 
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
+        return max.Y;
     }
 
-    private void DrawPluginActions(PluginEntry entry, float scale)
+    private float DrawPluginActions(ImDrawListPtr drawList, Vector2 origin, float width, PluginEntry entry,
+        float scale)
     {
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var height = 36f * scale;
-        var gap = Metrics.Space.Sm * scale;
         var canOpen = entry.Loaded && entry.HasMainUi;
         var canConfigure = entry.Loaded && entry.HasConfigUi;
-        var buttons = 1 + (canOpen ? 1 : 0) + (canConfigure ? 1 : 0);
-        var buttonWidth = (width - gap * (buttons - 1)) / buttons;
-        var cursorX = origin.X;
-
-        var addRect = new Rect(new Vector2(cursorX, origin.Y), new Vector2(cursorX + buttonWidth, origin.Y + height));
-        if (ui.PillButton(addRect, Loc.T(L.Shortcuts.AddToHome), true))
+        var count = 1 + (canOpen ? 1 : 0) + (canConfigure ? 1 : 0);
+        var gap = ShortcutsArt.ActionTileGap * scale;
+        var tileWidth = (width - gap * (count - 1)) / count;
+        var height = ShortcutsArt.ActionTileHeight * scale;
+        var left = origin.X;
+        var rect = new Rect(new Vector2(left, origin.Y), new Vector2(left + tileWidth, origin.Y + height));
+        if (ShortcutsArt.ActionTile(drawList, ui, rect, "##pluginAddHome", FontAwesomeIcon.Home,
+                Loc.T(L.Shortcuts.AddToHome), ui.Accent, scale))
         {
             CreateLauncherShortcut(entry);
         }
 
-        cursorX += buttonWidth + gap;
+        left += tileWidth + gap;
         if (canOpen)
         {
-            var openRect = new Rect(new Vector2(cursorX, origin.Y),
-                new Vector2(cursorX + buttonWidth, origin.Y + height));
-            if (ui.PillButton(openRect, Loc.T(L.Shortcuts.OpenPlugin), false))
+            rect = new Rect(new Vector2(left, origin.Y), new Vector2(left + tileWidth, origin.Y + height));
+            if (ShortcutsArt.ActionTile(drawList, ui, rect, "##pluginOpen", FontAwesomeIcon.ExternalLinkAlt,
+                    Loc.T(L.Shortcuts.OpenPlugin), ShortcutsArt.PluginTint, scale))
             {
                 PluginCatalog.TryOpenMainUi(entry.InternalName);
             }
 
-            cursorX += buttonWidth + gap;
+            left += tileWidth + gap;
         }
 
         if (canConfigure)
         {
-            var configRect = new Rect(new Vector2(cursorX, origin.Y),
-                new Vector2(cursorX + buttonWidth, origin.Y + height));
-            if (ui.PillButton(configRect, Loc.T(L.Shortcuts.PluginSettings), false))
+            rect = new Rect(new Vector2(left, origin.Y), new Vector2(left + tileWidth, origin.Y + height));
+            if (ShortcutsArt.ActionTile(drawList, ui, rect, "##pluginSettings", FontAwesomeIcon.Cog,
+                    Loc.T(L.Shortcuts.PluginSettings), ShortcutsArt.WaitTint, scale))
             {
                 PluginCatalog.TryOpenConfigUi(entry.InternalName);
             }
         }
 
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Lg * scale));
+        return origin.Y + height;
     }
 
-    private void DrawPluginCommands(Rect body, PluginEntry entry, float scale)
+    private float DrawPluginCommands(ImDrawListPtr drawList, Vector2 origin, float width, PluginEntry entry,
+        float scale)
     {
-        ui.SectionLabel(Loc.T(L.Shortcuts.Commands), TextStyles.FootnoteEmphasized, 6f);
+        var top = origin.Y + ShortcutsArt.SectionGap * scale * 0.5f;
+        top += ShortcutsArt.SectionHeader(drawList, new Vector2(origin.X, top), width, Loc.T(L.Shortcuts.Commands),
+            ui.TitleInk, scale) + ShortcutsArt.HeaderGap * scale;
         if (entry.Commands.Count == 0)
         {
-            ui.HelpText(Loc.T(L.Shortcuts.NoCommands));
-            return;
+            return top + Typography.DrawWrappedLeft(new Vector2(origin.X, top), Loc.T(L.Shortcuts.NoCommands),
+                ui.MutedInk, TextStyles.Subheadline, width);
         }
 
-        ui.HelpText(Loc.T(L.Shortcuts.CommandsHint));
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
-        var card = GroupCard.Begin(theme, entry.Commands.Count, CommandRowHeight);
+        var rowHeight = CommandRowHeight * scale;
+        var max = new Vector2(origin.X + width, top + entry.Commands.Count * rowHeight);
+        ShortcutsArt.Card(drawList, ui, new Vector2(origin.X, top), max, scale);
+        var pad = Metrics.Space.Lg * scale;
         for (var index = 0; index < entry.Commands.Count; index++)
         {
-            DrawCommandRow(card.NextRow(), entry.Commands[index], scale);
+            var rowTop = top + index * rowHeight;
+            if (index > 0)
+            {
+                ShortcutsArt.Hairline(drawList, ui, origin.X + pad, max.X - pad, rowTop);
+            }
+
+            var row = new Rect(new Vector2(origin.X, rowTop), new Vector2(max.X, rowTop + rowHeight));
+            if (ImGui.IsRectVisible(row.Min, row.Max))
+            {
+                DrawCommandRow(drawList, row, entry.Commands[index], scale);
+            }
         }
 
-        card.End();
+        var bottom = max.Y + Metrics.Space.Sm * scale;
+        return bottom + Typography.DrawWrappedLeft(new Vector2(origin.X, bottom), Loc.T(L.Shortcuts.CommandsHint),
+            ui.MutedInk, TextStyles.Footnote, width);
     }
 
-    private void DrawCommandRow(Rect row, PluginCommand command, float scale)
+    private void DrawCommandRow(ImDrawListPtr drawList, Rect row, PluginCommand command, float scale)
     {
-        var plusRadius = 14f * scale;
-        var plusCenter = new Vector2(row.Max.X - plusRadius, row.Center.Y);
-        var textWidth = MathF.Max(1f, plusCenter.X - plusRadius - 8f * scale - row.Min.X);
-        var hasHelp = command.Help.Length > 0;
-        var titleY = hasHelp ? row.Center.Y - 15f * scale : row.Center.Y - 9f * scale;
-        Marquee.DrawLeftAuto(new MarqueeId("shortcuts.cmd.", command.Command), command.Command, row.Min.X, titleY, textWidth,
-            TextStyles.BodyEmphasized, ui.TitleInk);
-        if (hasHelp)
+        var pad = Metrics.Space.Lg * scale;
+        var radius = PlusRadius * scale;
+        var plusCenter = new Vector2(row.Max.X - pad - radius, row.Center.Y);
+        var hit = new Vector2(radius + 6f * scale);
+        var hovered = UiInteract.Hover(plusCenter - hit, plusCenter + hit);
+        drawList.AddCircleFilled(plusCenter, radius,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, hovered ? 0.3f : 0.16f)), 24);
+        ProgressRing.CenterIcon(drawList, plusCenter, FontAwesomeIcon.Plus, ui.Accent, PlusGlyph * scale);
+        Labels(drawList, row.Min.X + pad, plusCenter.X - radius - ShortcutsArt.TextGap * scale, row.Center.Y,
+            command.Command, command.Help, ui.TitleInk, ui.MutedInk, scale);
+        if (hovered)
         {
-            Marquee.DrawLeftAuto(new MarqueeId("shortcuts.cmd.help.", command.Command), command.Help, row.Min.X,
-                row.Center.Y + 4f * scale, textWidth, TextStyles.Footnote, ui.MutedInk);
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        if (ui.IconButton(plusCenter, plusRadius, IconGlyph.Of(FontAwesomeIcon.Plus), ui.Accent,
-                Palette.WithAlpha(ui.Accent, 0.16f), 0.58f, Loc.T(L.Shortcuts.NewFromCommand)))
+        HoverTooltip.Show(new Rect(plusCenter - hit, plusCenter + hit), Loc.T(L.Shortcuts.NewFromCommand),
+            HoverLabelSide.Above);
+        if (UiInteract.Click(plusCenter - hit, plusCenter + hit, hovered))
         {
             CreateCommandShortcut(command);
         }
@@ -351,16 +455,16 @@ internal sealed partial class ShortcutsApp
             return;
         }
 
-        draft = new ShortcutEntry
+        var launcher = new ShortcutEntry
         {
-            Name = entry.Name,
+            Name = entry.Name.Length <= ShortcutStore.NameMaxLength
+                ? entry.Name
+                : entry.Name.Substring(0, ShortcutStore.NameMaxLength),
             IconPlugin = entry.InternalName,
             Tint = HexColor.ToDigits(AccentFor(entry.InternalName)),
         };
-        draft.Steps.Add(new ShortcutStep { Kind = ShortcutStepKind.OpenPlugin, Text = entry.InternalName });
-        draftId = Guid.Empty;
-        draftPinned = true;
-        router.Push(ShortcutsScreen.Editor);
+        launcher.Steps.Add(new ShortcutStep { Kind = ShortcutStepKind.OpenPlugin, Text = entry.InternalName });
+        BeginDraft(launcher, Guid.Empty, true);
     }
 
     private void CreateCommandShortcut(PluginCommand command)
@@ -370,22 +474,32 @@ internal sealed partial class ShortcutsApp
             return;
         }
 
-        draft = new ShortcutEntry { Name = command.Command.TrimStart('/') };
-        draft.Steps.Add(new ShortcutStep { Kind = ShortcutStepKind.Command, Text = command.Command });
-        draftId = Guid.Empty;
-        draftPinned = false;
-        router.Push(ShortcutsScreen.Editor);
+        var name = command.Command.TrimStart('/');
+        var entry = new ShortcutEntry
+        {
+            Name = name.Length <= ShortcutStore.NameMaxLength ? name : name.Substring(0, ShortcutStore.NameMaxLength),
+            Tint = HexColor.ToDigits(ShortcutPalette.Wheel[0]),
+        };
+        entry.Steps.Add(new ShortcutStep { Kind = ShortcutStepKind.Command, Text = command.Command });
+        BeginDraft(entry, Guid.Empty, false);
     }
 
-    private void AddOpenPluginStep(PluginEntry entry)
+    private void PickStepPlugin(PluginEntry entry)
     {
-        if (draft is null || draft.Steps.Count >= ShortcutStore.MaxSteps)
+        if (draft is not null)
         {
-            router.Pop();
-            return;
+            if (pickerPurpose == PickerPurpose.ReplaceStep && pickerStepIndex >= 0 &&
+                pickerStepIndex < draft.Steps.Count && draft.Steps[pickerStepIndex].Kind == ShortcutStepKind.OpenPlugin)
+            {
+                draft.Steps[pickerStepIndex].Text = entry.InternalName;
+            }
+            else if (draft.Steps.Count < ShortcutStore.MaxSteps)
+            {
+                draft.Steps.Add(new ShortcutStep { Kind = ShortcutStepKind.OpenPlugin, Text = entry.InternalName });
+                ResetBlockSprings();
+            }
         }
 
-        draft.Steps.Add(new ShortcutStep { Kind = ShortcutStepKind.OpenPlugin, Text = entry.InternalName });
         router.Pop();
     }
 

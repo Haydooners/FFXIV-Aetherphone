@@ -18,14 +18,13 @@ internal sealed partial class ShortcutsApp
     {
         iconFailed = false;
         iconPicker.Open();
-        router.Push(ShortcutsScreen.CustomIcon);
+        Push(ShortcutsRoute.CustomIcon, Loc.T(L.Shortcuts.Appearance));
     }
 
     private void DrawCustomIconPicker(Rect content)
     {
         if (draft is null)
         {
-            router.Reset();
             return;
         }
 
@@ -96,7 +95,7 @@ internal sealed partial class ShortcutsApp
             store.ReleaseIcon(previousUnsaved);
         }
 
-        if (router.Current == ShortcutsScreen.CustomIcon)
+        if (router.Current.Route == ShortcutsRoute.CustomIcon)
         {
             router.Pop();
         }
@@ -110,10 +109,13 @@ internal sealed partial class ShortcutsApp
         }
 
         var unsaved = UnsavedIconOf(draft);
-        if (unsaved.Length > 0)
+        if (unsaved.Length == 0)
         {
-            store.ReleaseIcon(unsaved);
+            return;
         }
+
+        store.ReleaseIcon(unsaved);
+        draft.IconImage = string.Empty;
     }
 
     private string UnsavedIconOf(ShortcutEntry entry)
