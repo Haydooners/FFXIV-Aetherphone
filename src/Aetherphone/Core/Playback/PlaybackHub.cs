@@ -514,7 +514,6 @@ internal sealed class PlaybackHub : IDisposable
     {
         songs.Stop();
         queue.Clear();
-        autoplayResult = null;
         TrackVersion++;
     }
 
