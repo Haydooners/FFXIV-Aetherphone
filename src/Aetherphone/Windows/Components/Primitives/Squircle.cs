@@ -4,7 +4,7 @@ namespace Aetherphone.Windows.Components;
 
 internal static class Squircle
 {
-    private const float Exponent = 4.2f;
+    public const float Exponent = 4.2f;
     private const int MinCornerSegments = 6;
     private const int MaxCornerSegments = 24;
     private const float SegmentError = 0.25f;

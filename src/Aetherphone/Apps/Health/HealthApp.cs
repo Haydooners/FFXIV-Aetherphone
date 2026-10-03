@@ -1,3 +1,4 @@
+using Aetherphone.Apps.Health.Widgets;
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
@@ -11,8 +12,12 @@ using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Health;
 
-internal sealed partial class HealthApp : IPhoneApp
+internal sealed partial class HealthApp : IPhoneApp, ITabRouteTarget
 {
+    private PendingTab pendingTab;
+
+    public void OpenTab(string tab) => pendingTab.Request(tab);
+
     private const float RowHeight = 56f;
     private const float CompactRowHeight = 44f;
     private const float CardPadding = 8f;
@@ -96,6 +101,16 @@ internal sealed partial class HealthApp : IPhoneApp
         }
 
         TourHolds.Release(Id);
+        if (pendingTab.Take("health.tab.goals"))
+        {
+            screenIndex = GoalsTabIndex;
+        }
+
+        if (pendingTab.Take(HydrationWidget.HydrationIntent))
+        {
+            screenIndex = WaterTabIndex;
+        }
+
         DrawTabs(body, scale);
         var tabbed = new Rect(new Vector2(body.Min.X, body.Min.Y + 40f * scale), body.Max);
         using (AppSurface.Begin(tabbed))

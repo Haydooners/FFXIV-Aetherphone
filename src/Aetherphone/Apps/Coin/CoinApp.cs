@@ -13,8 +13,12 @@ using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Coin;
 
-internal sealed partial class CoinApp : IPhoneApp
+internal sealed partial class CoinApp : IPhoneApp, ITabRouteTarget
 {
+    private PendingTab pendingTab;
+
+    public void OpenTab(string tab) => pendingTab.Request(tab);
+
     private const int TabWallet = 0;
     private const int TabShop = 1;
     private const int TabInventory = 2;
@@ -120,6 +124,11 @@ internal sealed partial class CoinApp : IPhoneApp
         {
             DrawShopBrowse(route, area);
             return;
+        }
+
+        if (pendingTab.Take("coin.tab.shop"))
+        {
+            EnterTab(TabShop);
         }
 
         var scale = UiScale.Current;

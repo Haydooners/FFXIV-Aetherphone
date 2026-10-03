@@ -14,8 +14,12 @@ using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Hunts;
 
-internal sealed partial class HuntsApp : IPhoneApp
+internal sealed partial class HuntsApp : IPhoneApp, ITabRouteTarget
 {
+    private PendingTab pendingTab;
+
+    public void OpenTab(string tab) => pendingTab.Request(tab);
+
     private enum HuntsRoute : byte
     {
         List,
@@ -123,6 +127,11 @@ internal sealed partial class HuntsApp : IPhoneApp
 
     public void Draw(in PhoneContext context)
     {
+        if (pendingTab.Take("hunts.tab.settings"))
+        {
+            router.Replace(new HuntsView(HuntsRoute.Settings));
+        }
+
         frameTheme = context.Theme;
         ui.Theme = context.Theme;
         navigation = context.Navigation;

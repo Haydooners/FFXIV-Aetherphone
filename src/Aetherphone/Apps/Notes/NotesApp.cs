@@ -12,8 +12,12 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Notes;
 
-internal sealed class NotesApp : IResumableApp, ISpotlightNotes
+internal sealed class NotesApp : IResumableApp, ISpotlightNotes, ITabRouteTarget
 {
+    private PendingTab pendingTab;
+
+    public void OpenTab(string tab) => pendingTab.Request(tab);
+
     private enum NotesScreen : byte
     {
         List,
@@ -147,6 +151,11 @@ internal sealed class NotesApp : IResumableApp, ISpotlightNotes
 
     private void DrawList(Rect content, float scale)
     {
+        if (pendingTab.Take("notes.tab.reminders"))
+        {
+            activeTab = 1;
+        }
+
         var context = new PhoneContext(content, theme, navigation);
         var navBar = AppHeader.BeginLargeTitle(context);
         var body = navBar.Body;

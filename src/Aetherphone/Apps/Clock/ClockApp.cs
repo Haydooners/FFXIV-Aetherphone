@@ -10,8 +10,12 @@ using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Clock;
 
-internal sealed partial class ClockApp : IPhoneApp
+internal sealed partial class ClockApp : IPhoneApp, ITabRouteTarget
 {
+    private PendingTab pendingTab;
+
+    public void OpenTab(string tab) => pendingTab.Request(tab);
+
     private enum ClockScreen : byte
     {
         Root,
@@ -93,6 +97,19 @@ internal sealed partial class ClockApp : IPhoneApp
 
     private void DrawRoot(Rect content, float scale)
     {
+        if (pendingTab.Take("clock.tab.alarms"))
+        {
+            activeTab = TabAlarms;
+        }
+        else if (pendingTab.Take("clock.tab.timer"))
+        {
+            activeTab = TabTimer;
+        }
+        else if (pendingTab.Take("clock.tab.world"))
+        {
+            activeTab = TabWorld;
+        }
+
         var context = new PhoneContext(content, theme, navigation);
         AppHeader.Draw(context, DisplayName);
         DrawRootAction(content, scale);

@@ -40,6 +40,7 @@ using Aetherphone.Apps.Venues;
 using Aetherphone.Apps.Wallet;
 using Aetherphone.Apps.YellowPages;
 using Aetherphone.Core.Aethernet;
+using Aetherphone.Core.Home;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Video;
@@ -144,10 +145,20 @@ internal static class AppRegistry
             services.Configuration, services.Confirm, services.HuntsLauncher, services.HuntsMapMarkers));
         apps.Add(new SettingsApp(services, photoLibrary, apps));
 
+        var widgetServices = new WidgetServices
+        {
+            Phone = services,
+            Photos = photoLibrary,
+            CalendarEvents = calendarEvents,
+            Messages = messageStore,
+            Video = videoSuite,
+            Apps = apps,
+        };
         return new AppBundle
         {
             Apps = apps,
-            Widgets = WidgetCatalog.Build(services, photoLibrary, calendarEvents, apps),
+            Widgets = WidgetCatalog.Build(widgetServices),
+            WidgetActions = new WidgetActions(widgetServices),
             Photos = photoLibrary,
             Contacts = contactBook,
             MessagePopouts = messagePopouts,

@@ -35,6 +35,10 @@ internal sealed class AlarmRinger
 
     public bool IsSnoozed => snoozeEndsUtc is not null;
 
+    public DateTime? SnoozeEndsUtc => snoozeEndsUtc;
+
+    public string SnoozedLabel => snoozedLabel;
+
     public void Ring(AlarmRingKind kind, string label, DateTime utcNow)
     {
         if (IsRinging)

@@ -5940,6 +5940,22 @@ internal static class L
         public static readonly LocString LookDeleteConfirm = new("home.lookDeleteConfirm", "Delete");
     }
 
+    internal static class WidgetGallery
+    {
+        public static readonly LocString SearchHint = new("widgetGallery.searchHint", "Search Widgets");
+        public static readonly LocString Featured = new("widgetGallery.featured", "Featured");
+        public static readonly LocString AllWidgets = new("widgetGallery.allWidgets", "All Widgets");
+        public static readonly LocPlural WidgetCount =
+            new("widgetGallery.widgetCount", "{0} widget", "{0} widgets");
+        public static readonly LocString SmartStack = new("widgetGallery.smartStack", "Smart Stack");
+        public static readonly LocString SmartStackCaption = new("widgetGallery.smartStackCaption", "Suggested for you");
+        public static readonly LocString SmartStackDescription = new("widgetGallery.smartStackDescription",
+            "A stack of suggested widgets that brings the right one to the top.");
+        public static readonly LocString NoResults = new("widgetGallery.noResults", "No Widgets Found");
+        public static readonly LocString NoResultsHint =
+            new("widgetGallery.noResultsHint", "Try another widget name, app or keyword.");
+    }
+
     internal static class Photos
     {
         public static readonly LocString NoPhotos = new("photos.noPhotos", "No Photos");
@@ -8854,5 +8870,264 @@ internal static class L
         public static readonly LocString Website             = new("rolladeck.website",             "Website");
         public static readonly LocString Visit               = new("rolladeck.visit",               "Visit");
         public static readonly LocString Discord             = new("rolladeck.discord",             "Discord");
+    }
+
+    internal static class WidgetsLife
+    {
+        public static readonly LocString WeatherName = new("widgetsLife.weatherName", "Weather");
+        public static readonly LocString EorzeaShort = new("widgetsLife.eorzeaShort", "ET");
+        public static readonly LocString ChangeIn = new("widgetsLife.changeIn", "{0} in {1}");
+        public static readonly LocString SteadyForNow = new("widgetsLife.steadyForNow", "Steady for a while");
+        public static readonly LocString WeatherUnavailable = new("widgetsLife.weatherUnavailable", "Log in to see the weather");
+        public static readonly LocString WeatherUnavailableDetail = new("widgetsLife.weatherUnavailableDetail", "The forecast follows the zone you are in.");
+        public static readonly LocString ZonesName = new("widgetsLife.zonesName", "Weather Watch");
+        public static readonly LocString ZonesDescription = new("widgetsLife.zonesDescription", "Current weather in three zones you choose.");
+        public static readonly LocString ZoneFirst = new("widgetsLife.zoneFirst", "First zone");
+        public static readonly LocString ZoneSecond = new("widgetsLife.zoneSecond", "Second zone");
+        public static readonly LocString ZoneThird = new("widgetsLife.zoneThird", "Third zone");
+        public static readonly LocString CurrentLocation = new("widgetsLife.currentLocation", "Current Location");
+        public static readonly LocString NotInWorld = new("widgetsLife.notInWorld", "Not in the world");
+        public static readonly LocString FeaturedName = new("widgetsLife.featuredName", "Featured Photo");
+        public static readonly LocString FeaturedDescription = new("widgetsLife.featuredDescription", "One of your photos, slowly drifting by.");
+        public static readonly LocString ActivityUnavailable = new("widgetsLife.activityUnavailable", "Log in to a character to fill your rings");
+        public static readonly LocString ThisWeek = new("widgetsLife.thisWeek", "This week");
+        public static readonly LocString LevelsOf = new("widgetsLife.levelsOf", "{0}/{1} Lv");
+        public static readonly LocString DutiesOf = new("widgetsLife.dutiesOf", "{0}/{1} duties");
+        public static readonly LocString GilOf = new("widgetsLife.gilOf", "{0}/{1} gil");
+        public static readonly LocString CoinDescription = new("widgetsLife.coinDescription", "Your balance, today's earnings and a quick check-in.");
+        public static readonly LocString CheckInReady = new("widgetsLife.checkInReady", "Check-in ready");
+        public static readonly LocString HydrationDescription = new("widgetsLife.hydrationDescription", "Log water in one tap and keep up with today's goal.");
+        public static readonly LocString HydrationUnavailable = new("widgetsLife.hydrationUnavailable", "Log in to a character to track water");
+        public static readonly LocString GoalReached = new("widgetsLife.goalReached", "Goal reached");
+        public static readonly LocString DrinksOf = new("widgetsLife.drinksOf", "{0} of {1} drinks");
+    }
+
+    internal static class Widgets
+    {
+        public static readonly LocString WeatherDescription = new("widgets.weatherDescription", "Eorzea weather where you are, and the forecast ahead.");
+        public static readonly LocString ClockDescription = new("widgets.clockDescription", "Local and Eorzea time at a glance.");
+        public static readonly LocString CalendarDescription = new("widgets.calendarDescription", "Today's date and your next events.");
+        public static readonly LocString PhotosDescription = new("widgets.photosDescription", "A rotating selection of your photos.");
+        public static readonly LocString ResetsDescription = new("widgets.resetsDescription", "Countdowns to the daily, weekly and Grand Company resets.");
+        public static readonly LocString ActivityDescription = new("widgets.activityDescription", "Today's progress, adventure and fortune rings.");
+        public static readonly LocString CoinDescription = new("widgets.coinDescription", "Your Aether Coin balance and what you earned today.");
+        public static readonly LocString SampleEvent = new("widgets.sampleEvent", "Raid night");
+        public static readonly LocString SampleEventLater = new("widgets.sampleEventLater", "Treasure maps");
+    }
+
+    internal static class WidgetStacks
+    {
+        public static readonly LocString EditWidget = new("widgetStacks.editWidget", "Edit Widget");
+        public static readonly LocString EditStack = new("widgetStacks.editStack", "Edit Stack");
+        public static readonly LocString RemoveWidget = new("widgetStacks.removeWidget", "Remove Widget");
+        public static readonly LocString RemoveStack = new("widgetStacks.removeStack", "Remove Stack");
+        public static readonly LocString SmartRotate = new("widgetStacks.smartRotate", "Smart Rotate");
+        public static readonly LocString SmartRotateHint = new("widgetStacks.smartRotateHint",
+            "Shows the most relevant widget at the right time.");
+    }
+
+    internal static class WidgetsTime
+    {
+        public static readonly LocString ClockDescription = new("widgetsTime.clockDescription", "Local, Eorzea and your world clocks at a glance.");
+        public static readonly LocString AlarmDescription = new("widgetsTime.alarmDescription", "Your next alarm, with quick switches for the rest.");
+        public static readonly LocString TimerDescription = new("widgetsTime.timerDescription", "Start, follow and cancel a timer from the Home Screen.");
+        public static readonly LocString UpNext = new("widgetsTime.upNext", "Up Next");
+        public static readonly LocString UpNextDescription = new("widgetsTime.upNextDescription", "Today's date and what is coming up on your calendar.");
+        public static readonly LocString MonthDescription = new("widgetsTime.monthDescription", "This month at a glance, with today marked.");
+        public static readonly LocString Resets = new("widgetsTime.resets", "Resets");
+        public static readonly LocString ResetsDescription = new("widgetsTime.resetsDescription", "Countdowns to the daily, weekly and Grand Company resets, and more.");
+        public static readonly LocString Ventures = new("widgetsTime.ventures", "Ventures");
+        public static readonly LocString VenturesDescription = new("widgetsTime.venturesDescription", "Your retainers' ventures and when they come home.");
+        public static readonly LocString City = new("widgetsTime.city", "City");
+        public static readonly LocString DayOffset = new("widgetsTime.dayOffset", "{0}, {1}");
+        public static readonly LocString NoAlarms = new("widgetsTime.noAlarms", "No alarms");
+        public static readonly LocString AlarmsOff = new("widgetsTime.alarmsOff", "All alarms are off");
+        public static readonly LocString NoAlarmsHint = new("widgetsTime.noAlarmsHint", "Tap to set one");
+        public static readonly LocString Snoozed = new("widgetsTime.snoozed", "Snoozed");
+        public static readonly LocString SnoozedUntil = new("widgetsTime.snoozedUntil", "Snoozed until {0}");
+        public static readonly LocString Ringing = new("widgetsTime.ringing", "Ringing");
+        public static readonly LocString EndsAt = new("widgetsTime.endsAt", "Ends {0}");
+        public static readonly LocString PickMinutes = new("widgetsTime.pickMinutes", "Pick minutes to start");
+        public static readonly LocString NoMoreToday = new("widgetsTime.noMoreToday", "No more events today");
+        public static readonly LocString UntilMoment = new("widgetsTime.untilMoment", "Until {0}");
+        public static readonly LocString NextReset = new("widgetsTime.nextReset", "Next reset");
+        public static readonly LocString ReadyToCollect = new("widgetsTime.readyToCollect", "Ready to collect");
+        public static readonly LocString NextVenture = new("widgetsTime.nextVenture", "Next venture");
+        public static readonly LocString NoVentures = new("widgetsTime.noVentures", "No ventures out");
+        public static readonly LocString VenturesOut = new("widgetsTime.venturesOut", "{0} of {1} out");
+        public static readonly LocString VenturesReady = new("widgetsTime.venturesReady", "{0} ready");
+        public static readonly LocString VenturesUnavailable = new("widgetsTime.venturesUnavailable", "Visit a summoning bell to load your retainers.");
+        public static readonly LocString SampleAlarm = new("widgetsTime.sampleAlarm", "Wake up");
+        public static readonly LocString SampleAlarmMidday = new("widgetsTime.sampleAlarmMidday", "Retainer check");
+        public static readonly LocString SampleAlarmLater = new("widgetsTime.sampleAlarmLater", "Raid prep");
+        public static readonly LocString SampleEvent = new("widgetsTime.sampleEvent", "Hunt train");
+    }
+
+    internal static class WidgetsAdventure
+    {
+        public static readonly LocString FishingName = new("widgetsAdventure.fishingName", "Ocean Fishing");
+        public static readonly LocString CurrenciesName = new("widgetsAdventure.currenciesName", "Currencies");
+        public static readonly LocString JobName = new("widgetsAdventure.jobName", "Job");
+        public static readonly LocString TeleportName = new("widgetsAdventure.teleportName", "Teleport");
+        public static readonly LocString DailiesDescription = new("widgetsAdventure.dailiesDescription", "Your daily and weekly checklist, with a tap to tick off what the game cannot track.");
+        public static readonly LocString FishingDescription = new("widgetsAdventure.fishingDescription", "The next ocean fishing voyage and the blue fish worth chasing.");
+        public static readonly LocString CurrenciesDescription = new("widgetsAdventure.currenciesDescription", "Your gil and tomestones, with this week's cap.");
+        public static readonly LocString JobDescription = new("widgetsAdventure.jobDescription", "Your current job, level and experience, with quick gear set switching.");
+        public static readonly LocString HuntsDescription = new("widgetsAdventure.huntsDescription", "S ranks that are up right now on your data center.");
+        public static readonly LocString HousingDescription = new("widgetsAdventure.housingDescription", "The housing lottery phase, its countdown and the plots you watch.");
+        public static readonly LocString TeleportDescription = new("widgetsAdventure.teleportDescription", "Teleport to your favorite aetherytes in one tap.");
+        public static readonly LocString LogIn = new("widgetsAdventure.logIn", "Log in to a character");
+        public static readonly LocString ToDo = new("widgetsAdventure.toDo", "{0} to do");
+        public static readonly LocString OptionList = new("widgetsAdventure.optionList", "List");
+        public static readonly LocString OptionRoute = new("widgetsAdventure.optionRoute", "Route");
+        public static readonly LocString ClosesIn = new("widgetsAdventure.closesIn", "Closes in {0}");
+        public static readonly LocString Today = new("widgetsAdventure.today", "+{0} today");
+        public static readonly LocString Level = new("widgetsAdventure.level", "Level {0}");
+        public static readonly LocString MaxLevel = new("widgetsAdventure.maxLevel", "Max level");
+        public static readonly LocString ItemLevel = new("widgetsAdventure.itemLevel", "Item level {0}");
+        public static readonly LocString Experience = new("widgetsAdventure.experience", "{0}% EXP");
+        public static readonly LocString SlotFirst = new("widgetsAdventure.slotFirst", "First button");
+        public static readonly LocString SlotSecond = new("widgetsAdventure.slotSecond", "Second button");
+        public static readonly LocString SlotThird = new("widgetsAdventure.slotThird", "Third button");
+        public static readonly LocString SlotFourth = new("widgetsAdventure.slotFourth", "Fourth button");
+        public static readonly LocString Automatic = new("widgetsAdventure.automatic", "Automatic");
+        public static readonly LocString EquipFailed = new("widgetsAdventure.equipFailed", "You can't change gear sets right now");
+        public static readonly LocString LiveOn = new("widgetsAdventure.liveOn", "Live on {0}");
+        public static readonly LocString NoneLive = new("widgetsAdventure.noneLive", "No S ranks up right now");
+        public static readonly LocString WindowsOpen = new("widgetsAdventure.windowsOpen", "Open windows: {0}");
+        public static readonly LocString HuntsSetUp = new("widgetsAdventure.huntsSetUp", "Open Hunts to pick your data center");
+        public static readonly LocString HuntsFailed = new("widgetsAdventure.huntsFailed", "Hunt data is unavailable right now");
+        public static readonly LocString PlotsOpen = new("widgetsAdventure.plotsOpen", "Open plots: {0}");
+        public static readonly LocString Watching = new("widgetsAdventure.watching", "Watching");
+        public static readonly LocString NoWatched = new("widgetsAdventure.noWatched", "Watch plots in Housing to see them here");
+        public static readonly LocString NoLottery = new("widgetsAdventure.noLottery", "Open Housing to load the lottery");
+        public static readonly LocString NeedsLifestream = new("widgetsAdventure.needsLifestream", "Install Lifestream to teleport");
+        public static readonly LocString NoFavorites = new("widgetsAdventure.noFavorites", "Star aetherytes in Maps to add them here");
+    }
+
+    internal static class WidgetsUtility
+    {
+        public static readonly LocString NoteName = new("widgetsUtility.noteName", "Note");
+        public static readonly LocString NoteDescription = new("widgetsUtility.noteDescription", "Keep a note in view, or always your latest one.");
+        public static readonly LocString NoteOption = new("widgetsUtility.noteOption", "Note");
+        public static readonly LocString MostRecent = new("widgetsUtility.mostRecent", "Most Recent");
+        public static readonly LocString NoNotes = new("widgetsUtility.noNotes", "No notes yet");
+        public static readonly LocString NoNotesHint = new("widgetsUtility.noNotesHint", "Tap to start one");
+        public static readonly LocString RemindersName = new("widgetsUtility.remindersName", "Reminders");
+        public static readonly LocString RemindersDescription = new("widgetsUtility.remindersDescription", "Check off what is left without opening Notes.");
+        public static readonly LocString AllDone = new("widgetsUtility.allDone", "All done");
+        public static readonly LocString AllDoneHint = new("widgetsUtility.allDoneHint", "Nothing left on your list");
+        public static readonly LocString DueToday = new("widgetsUtility.dueToday", "{0} due today");
+        public static readonly LocString Overdue = new("widgetsUtility.overdue", "{0} overdue");
+        public static readonly LocString ShortcutsDescription = new("widgetsUtility.shortcutsDescription", "Run your favourite shortcuts with one tap.");
+        public static readonly LocString ShortcutSlot1 = new("widgetsUtility.shortcutSlot1", "Shortcut 1");
+        public static readonly LocString ShortcutSlot2 = new("widgetsUtility.shortcutSlot2", "Shortcut 2");
+        public static readonly LocString ShortcutSlot3 = new("widgetsUtility.shortcutSlot3", "Shortcut 3");
+        public static readonly LocString ShortcutSlot4 = new("widgetsUtility.shortcutSlot4", "Shortcut 4");
+        public static readonly LocString ShortcutSlot5 = new("widgetsUtility.shortcutSlot5", "Shortcut 5");
+        public static readonly LocString ShortcutSlot6 = new("widgetsUtility.shortcutSlot6", "Shortcut 6");
+        public static readonly LocString ShortcutSlot7 = new("widgetsUtility.shortcutSlot7", "Shortcut 7");
+        public static readonly LocString ShortcutSlot8 = new("widgetsUtility.shortcutSlot8", "Shortcut 8");
+        public static readonly LocString Automatic = new("widgetsUtility.automatic", "Automatic");
+        public static readonly LocString NoShortcuts = new("widgetsUtility.noShortcuts", "No shortcuts yet");
+        public static readonly LocString NoShortcutsHint = new("widgetsUtility.noShortcutsHint", "Make one in Shortcuts");
+        public static readonly LocString QuickTogglesName = new("widgetsUtility.quickTogglesName", "Quick Toggles");
+        public static readonly LocString QuickTogglesDescription = new("widgetsUtility.quickTogglesDescription", "Do Not Disturb, Silent, Calls, Lock Position and Dark Mode at hand.");
+        public static readonly LocString DarkMode = new("widgetsUtility.darkMode", "Dark Mode");
+        public static readonly LocString MusterDescription = new("widgetsUtility.musterDescription", "Your next meetup, with a countdown and a quick RSVP.");
+        public static readonly LocString MusterSignIn = new("widgetsUtility.musterSignIn", "Sign in to see meetups");
+        public static readonly LocString NoMeetups = new("widgetsUtility.noMeetups", "No meetups coming up");
+        public static readonly LocString NoMeetupsHint = new("widgetsUtility.noMeetupsHint", "Find or host one in Muster");
+        public static readonly LocString Join = new("widgetsUtility.join", "Join");
+        public static readonly LocString Going = new("widgetsUtility.going", "Going");
+        public static readonly LocString StartsAt = new("widgetsUtility.startsAt", "Starts {0}");
+        public static readonly LocString EndsAt = new("widgetsUtility.endsAt", "Ends {0}");
+        public static readonly LocString HappeningNow = new("widgetsUtility.happeningNow", "Happening now");
+        public static readonly LocString VenuesDescription = new("widgetsUtility.venuesDescription", "Venues open right now on your data center.");
+        public static readonly LocString NoLiveVenues = new("widgetsUtility.noLiveVenues", "No venues open right now");
+        public static readonly LocString NextOpening = new("widgetsUtility.nextOpening", "Next: {0} at {1}");
+        public static readonly LocString MarketName = new("widgetsUtility.marketName", "Market Watch");
+        public static readonly LocString MarketDescription = new("widgetsUtility.marketDescription", "Your price alerts with the latest prices.");
+        public static readonly LocString NoAlerts = new("widgetsUtility.noAlerts", "No price alerts");
+        public static readonly LocString NoAlertsHint = new("widgetsUtility.noAlertsHint", "Add one from any item in Market");
+        public static readonly LocString Triggered = new("widgetsUtility.triggered", "{0} triggered");
+        public static readonly LocString Checking = new("widgetsUtility.checking", "Checking");
+        public static readonly LocString DailyGameName = new("widgetsUtility.dailyGameName", "Daily Game");
+        public static readonly LocString DailyGameDescription = new("widgetsUtility.dailyGameDescription", "Today's featured game and your streak.");
+        public static readonly LocString TodaysGame = new("widgetsUtility.todaysGame", "Today's game");
+        public static readonly LocString Streak = new("widgetsUtility.streak", "{0} day streak");
+        public static readonly LocString PlayedToday = new("widgetsUtility.playedToday", "Played today");
+        public static readonly LocString StartStreak = new("widgetsUtility.startStreak", "Play to start a streak");
+        public static readonly LocString DailySpinName = new("widgetsUtility.dailySpinName", "Daily Spin");
+        public static readonly LocString DailySpinDescription = new("widgetsUtility.dailySpinDescription", "Your free daily spin, ready to claim.");
+        public static readonly LocString CasinoSignIn = new("widgetsUtility.casinoSignIn", "Sign in to spin");
+        public static readonly LocString SpinReady = new("widgetsUtility.spinReady", "Ready to spin");
+        public static readonly LocString Spin = new("widgetsUtility.spin", "Spin");
+        public static readonly LocString Spinning = new("widgetsUtility.spinning", "Spinning");
+        public static readonly LocString NextSpin = new("widgetsUtility.nextSpin", "Next spin");
+        public static readonly LocString CoinsWon = new("widgetsUtility.coinsWon", "{0} coins");
+        public static readonly LocString SpinUnavailable = new("widgetsUtility.spinUnavailable", "Not available right now");
+        public static readonly LocString LodestoneName = new("widgetsUtility.lodestoneName", "Lodestone");
+        public static readonly LocString NewsDescription = new("widgetsUtility.newsDescription", "The latest headlines from the Lodestone.");
+        public static readonly LocString NewsCategoryOption = new("widgetsUtility.newsCategoryOption", "Category");
+        public static readonly LocString NewsFailed = new("widgetsUtility.newsFailed", "Couldn't reach the Lodestone");
+        public static readonly LocString NewsEmpty = new("widgetsUtility.newsEmpty", "No headlines right now");
+        public static readonly LocString SampleNoteTitle = new("widgetsUtility.sampleNoteTitle", "Raid night prep");
+        public static readonly LocString SampleNoteBody = new("widgetsUtility.sampleNoteBody", "Food and potions for everyone. Review the phase two strat, then meet at the aetheryte by 20:00.");
+        public static readonly LocString SampleReminderSupplies = new("widgetsUtility.sampleReminderSupplies", "Turn in Grand Company supplies");
+        public static readonly LocString SampleReminderTinctures = new("widgetsUtility.sampleReminderTinctures", "Buy tinctures for raid");
+        public static readonly LocString SampleReminderCactpot = new("widgetsUtility.sampleReminderCactpot", "Jumbo Cactpot tickets");
+        public static readonly LocString SampleShortcutRaid = new("widgetsUtility.sampleShortcutRaid", "Raid Prep");
+        public static readonly LocString SampleShortcutHome = new("widgetsUtility.sampleShortcutHome", "Go Home");
+        public static readonly LocString SampleShortcutGlamour = new("widgetsUtility.sampleShortcutGlamour", "Glamour");
+        public static readonly LocString SampleShortcutPartyFinder = new("widgetsUtility.sampleShortcutPartyFinder", "Party Finder");
+        public static readonly LocString SampleShortcutRetainers = new("widgetsUtility.sampleShortcutRetainers", "Retainers");
+        public static readonly LocString SampleShortcutSaucer = new("widgetsUtility.sampleShortcutSaucer", "Gold Saucer");
+        public static readonly LocString SampleShortcutHunt = new("widgetsUtility.sampleShortcutHunt", "Hunt Train");
+        public static readonly LocString SampleShortcutCrafting = new("widgetsUtility.sampleShortcutCrafting", "Crafting");
+        public static readonly LocString SampleMusterMaps = new("widgetsUtility.sampleMusterMaps", "Treasure maps, all welcome");
+        public static readonly LocString SampleMusterTour = new("widgetsUtility.sampleMusterTour", "Housing tour");
+        public static readonly LocString SampleHeadlinePatch = new("widgetsUtility.sampleHeadlinePatch", "Patch notes for the latest update");
+        public static readonly LocString SampleHeadlineMaintenance = new("widgetsUtility.sampleHeadlineMaintenance", "All worlds maintenance");
+        public static readonly LocString SampleHeadlineEvent = new("widgetsUtility.sampleHeadlineEvent", "Seasonal event begins");
+        public static readonly LocString SampleHeadlineFestival = new("widgetsUtility.sampleHeadlineFestival", "Fan Festival details announced");
+    }
+
+    internal static class WidgetsPeople
+    {
+        public static readonly LocString NowPlaying = new("widgetsPeople.nowPlaying", "Now Playing");
+        public static readonly LocString NowPlayingDescription = new("widgetsPeople.nowPlayingDescription", "What is playing in Music, with play, pause and skip at hand.");
+        public static readonly LocString NotPlaying = new("widgetsPeople.notPlaying", "Not Playing");
+        public static readonly LocString RecentlyPlayed = new("widgetsPeople.recentlyPlayed", "Recently Played");
+        public static readonly LocString MusicEmptyHint = new("widgetsPeople.musicEmptyHint", "Play a song or a radio station to see it here.");
+        public static readonly LocString Live = new("widgetsPeople.live", "Live");
+        public static readonly LocString NowWatching = new("widgetsPeople.nowWatching", "Now Watching");
+        public static readonly LocString NowWatchingDescription = new("widgetsPeople.nowWatchingDescription", "Your current video, how far in you are, and a pause button.");
+        public static readonly LocString UpNext = new("widgetsPeople.upNext", "Up Next");
+        public static readonly LocString NothingPlaying = new("widgetsPeople.nothingPlaying", "Nothing Playing");
+        public static readonly LocString WatchEmptyHint = new("widgetsPeople.watchEmptyHint", "Add a video to your queue to start watching.");
+        public static readonly LocString SampleVideoTitle = new("widgetsPeople.sampleVideoTitle", "Moogle cooking stream");
+        public static readonly LocString SampleVideoSource = new("widgetsPeople.sampleVideoSource", "Gold Saucer TV");
+        public static readonly LocString People = new("widgetsPeople.people", "People");
+        public static readonly LocString PeopleDescription = new("widgetsPeople.peopleDescription", "Your favourite people, one tap away from a conversation.");
+        public static readonly LocString PersonOption = new("widgetsPeople.personOption", "Person");
+        public static readonly LocString NoPeople = new("widgetsPeople.noPeople", "No people yet");
+        public static readonly LocString NoPeopleHint = new("widgetsPeople.noPeopleHint", "Favourite a contact or pin a chat to keep them here.");
+        public static readonly LocString Chats = new("widgetsPeople.chats", "Chats");
+        public static readonly LocString ChatsDescription = new("widgetsPeople.chatsDescription", "Your latest conversations and what you missed.");
+        public static readonly LocString NoChats = new("widgetsPeople.noChats", "No conversations yet");
+        public static readonly LocString NoChatsHint = new("widgetsPeople.noChatsHint", "Start a chat and it shows up here.");
+        public static readonly LocString TellsDescription = new("widgetsPeople.tellsDescription", "Your latest tells and chat channels.");
+        public static readonly LocString NoTells = new("widgetsPeople.noTells", "No tells yet");
+        public static readonly LocString NoTellsHint = new("widgetsPeople.noTellsHint", "Tells and channel messages show up here.");
+        public static readonly LocString NotificationsDescription = new("widgetsPeople.notificationsDescription", "Your latest notifications at a glance.");
+        public static readonly LocString NoNotifications = new("widgetsPeople.noNotifications", "No Notifications");
+        public static readonly LocString CaughtUp = new("widgetsPeople.caughtUp", "You're all caught up.");
+        public static readonly LocString SignInHint = new("widgetsPeople.signInHint", "Sign in to Aethernet to see this.");
+        public static readonly LocString SampleMessage = new("widgetsPeople.sampleMessage", "See you at the Gold Saucer tonight?");
+        public static readonly LocString SampleMessageRaid = new("widgetsPeople.sampleMessageRaid", "Raid starts at nine, bring food.");
+        public static readonly LocString SampleMessageThanks = new("widgetsPeople.sampleMessageThanks", "Thanks for the help earlier!");
+        public static readonly LocString SampleNotificationLike = new("widgetsPeople.sampleNotificationLike", "Liked your photo.");
+        public static readonly LocString SampleNotificationMuster = new("widgetsPeople.sampleNotificationMuster", "Your meetup starts in 15 minutes.");
     }
 }
