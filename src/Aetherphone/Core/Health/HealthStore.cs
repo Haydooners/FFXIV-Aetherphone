@@ -26,7 +26,16 @@ internal sealed class HealthStore
         try
         {
             var loaded = JsonConvert.DeserializeObject<HealthProfile>(File.ReadAllText(path));
-            return loaded is null ? new HealthProfile() : Sanitize(loaded);
+            if (loaded is null)
+            {
+                return new HealthProfile();
+            }
+
+            var profile = Sanitize(loaded);
+            var savedUnix = new DateTimeOffset(File.GetLastWriteTimeUtc(path)).ToUnixTimeSeconds();
+            WeightHistory.Adopt(profile.WeightLog, profile.WeightKg, savedUnix);
+            profile.WeightKg = WeightHistory.Latest(profile.WeightLog) ?? profile.WeightKg;
+            return profile;
         }
         catch (Exception exception)
         {
@@ -115,6 +124,17 @@ internal sealed class HealthStore
             day.Drinks ??= new List<HydrationEntry>();
             day.Drinks.RemoveAll(drink => drink is null || !double.IsFinite(drink.Millilitres) ||
                                           drink.Millilitres <= 0);
+        }
+
+        profile.WeightLog ??= new List<WeightEntry>();
+        WeightHistory.Normalize(profile.WeightLog);
+        profile.ServingMillilitres = double.IsFinite(profile.ServingMillilitres)
+            ? Math.Clamp(profile.ServingMillilitres, HealthFormat.MinServingMillilitres,
+                HealthFormat.MaxServingMillilitres)
+            : HealthFormat.GlassMillilitres;
+        if (Array.IndexOf(DrinkKeys.All, profile.ServingKind) < 0)
+        {
+            profile.ServingKind = DrinkKeys.Water;
         }
 
         profile.Goals.RemoveAll(goal => goal is null || goal.Target <= 0);

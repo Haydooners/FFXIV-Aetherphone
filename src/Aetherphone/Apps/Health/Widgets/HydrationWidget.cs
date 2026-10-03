@@ -219,7 +219,7 @@ internal sealed class HydrationWidget : IHomeWidget
             return;
         }
 
-        health.LogDrink(DrinkKeys.Water, string.Empty, GlassMillilitres);
+        health.LogDrink(health.Profile.ServingKind, string.Empty, health.Profile.ServingMillilitres);
     }
 
     private HealthDay? Today()

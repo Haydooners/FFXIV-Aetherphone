@@ -69,19 +69,16 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.FeedbackSubmitTitle, L.Onboarding.FeedbackSubmitBody, "feedback.send",
                     GuideGesture.Tap),
             });
-        Add(tours, "health", 2,
+        Add(tours, "health", 3,
             new[]
             {
-                GuideStep.Point(L.Onboarding.HealthStepsTitle, L.Onboarding.HealthStepsBody, "health.today",
-                    GuideGesture.None),
-                GuideStep.TryTap(L.Onboarding.HealthWaterTabTitle, L.Onboarding.HealthWaterTabBody,
-                    "health.tab.water"),
-                GuideStep.Point(L.Onboarding.HealthDrinksTitle, L.Onboarding.HealthDrinksBody, "health.water.drinks",
+                GuideStep.Point(L.Onboarding.HealthTodayTitle, L.Onboarding.HealthTodayBody, "health.today",
                     GuideGesture.Tap),
-                GuideStep.TryTap(L.Onboarding.HealthGoalsTabTitle, L.Onboarding.HealthGoalsTabBody,
-                    "health.tab.goals"),
-                GuideStep.Point(L.Onboarding.HealthGoalTitle, L.Onboarding.HealthGoalBody, "health.goal",
+                GuideStep.Point(L.Onboarding.HealthMetricsTitle, L.Onboarding.HealthMetricsBody, "health.metrics",
                     GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.HealthGoalsTabTitle, L.Onboarding.HealthGoalsTabBody, "health.goals"),
+                GuideStep.Point(L.Onboarding.HealthGoalTitle, L.Onboarding.HealthGoalCardBody, "health.goal",
+                    GuideGesture.Tap),
             });
     }
 }

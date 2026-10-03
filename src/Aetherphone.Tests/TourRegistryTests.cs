@@ -34,7 +34,7 @@ public sealed class TourRegistryTests
         { "housing", (3, 6) },
         { "feedback", (4, 4) },
         { "appstore", (2, 5) },
-        { "health", (2, 5) },
+        { "health", (3, 4) },
         { "shortcuts", (3, 6) },
         { "aetherstream", (3, 6) },
         { "games", (3, 4) },

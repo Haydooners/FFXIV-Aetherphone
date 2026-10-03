@@ -68,6 +68,8 @@ internal sealed class HealthTracker : IDisposable
     private string cachedDateKey = string.Empty;
     private long cachedDateKeyMs;
     private string pausedReason = string.Empty;
+    private string weekCutoffKey = string.Empty;
+    private DateTime weekCutoffDate;
 
     public HealthTracker(IFramework framework, CharacterWatch watch, NotificationService notifications,
         DirectoryInfo configDirectory)
@@ -110,10 +112,6 @@ internal sealed class HealthTracker : IDisposable
 
     public double SessionOnFootYalms => sWalk + sRun;
     public double SessionSwimYalms => sSwim + sDive;
-    public double SessionSwimmingYalms => sSwim;
-    public double SessionDivingYalms => sDive;
-    public double SessionActiveSeconds => sActive;
-    public double SessionCalories => sKcal;
     public int SessionTeleports => sTeleports;
 
     public void Dispose()
@@ -132,10 +130,17 @@ internal sealed class HealthTracker : IDisposable
 
         store.Save(contentId, profile);
         dirty = false;
+        Revision++;
         lastSaveMs = Environment.TickCount64;
     }
 
-    public void MarkDirty() => dirty = true;
+    public int Revision { get; private set; }
+
+    public void MarkDirty()
+    {
+        dirty = true;
+        Revision++;
+    }
 
     public void LogDrink(string kindKey, string customName, double millilitres)
     {
@@ -161,7 +166,7 @@ internal sealed class HealthTracker : IDisposable
         SaveNow();
     }
 
-    public void UndoLastDrink()
+    public void RemoveDrink(HydrationEntry entry)
     {
         if (!IsTracking)
         {
@@ -169,25 +174,50 @@ internal sealed class HealthTracker : IDisposable
         }
 
         var day = Today();
-        if (day.Drinks.Count == 0)
+        if (!day.Drinks.Remove(entry))
         {
             return;
         }
 
-        var removed = day.Drinks[day.Drinks.Count - 1];
-        day.Drinks.RemoveAt(day.Drinks.Count - 1);
         if (profile.AllDrinks > 0)
         {
             profile.AllDrinks--;
-            profile.AllDrinkMillilitres = Math.Max(0, profile.AllDrinkMillilitres - removed.Millilitres);
+            profile.AllDrinkMillilitres = Math.Max(0, profile.AllDrinkMillilitres - entry.Millilitres);
         }
 
         if (sDrinks > 0)
         {
             sDrinks--;
-            sDrinkMl = Math.Max(0, sDrinkMl - removed.Millilitres);
+            sDrinkMl = Math.Max(0, sDrinkMl - entry.Millilitres);
         }
 
+        SaveNow();
+    }
+
+    public void LogWeight(double kilograms)
+    {
+        if (!IsTracking || !WeightHistory.IsValid(kilograms))
+        {
+            return;
+        }
+
+        WeightHistory.Insert(profile.WeightLog, new WeightEntry
+        {
+            Unix = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            Kilograms = kilograms,
+        });
+        profile.WeightKg = WeightHistory.Latest(profile.WeightLog);
+        SaveNow();
+    }
+
+    public void RemoveWeight(WeightEntry entry)
+    {
+        if (!IsTracking || !profile.WeightLog.Remove(entry))
+        {
+            return;
+        }
+
+        profile.WeightKg = WeightHistory.Latest(profile.WeightLog);
         SaveNow();
     }
 
@@ -307,6 +337,7 @@ internal sealed class HealthTracker : IDisposable
             ResetSession();
             hasBaseline = false;
             pendingTeleport = false;
+            Revision++;
             ResolveHeight();
         }
 
@@ -742,7 +773,7 @@ internal sealed class HealthTracker : IDisposable
 
         lastReminderMs = now;
         notifications.Notify(new PhoneNotification("health", Loc.T(L.Health.NotifyHydrationTitle),
-            Loc.T(L.Health.NotifyHydrationBody), DateTime.Now, Accent, "health.hydration"));
+            Loc.T(L.Health.NotifyWaterBody), DateTime.Now, Accent, "health.hydration"));
     }
 
     private bool InQuietHours(DateTime now)
@@ -851,7 +882,7 @@ internal sealed class HealthTracker : IDisposable
 
     private double WeekSum(Func<HealthDay, double> perDay)
     {
-        var cutoff = DateTime.Now.Date.AddDays(-6).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var cutoff = WeekCutoffKey();
         var sum = 0d;
         for (var index = profile.Days.Count - 1; index >= 0; index--)
         {
@@ -865,6 +896,18 @@ internal sealed class HealthTracker : IDisposable
         }
 
         return sum;
+    }
+
+    private string WeekCutoffKey()
+    {
+        var today = DateTime.Today;
+        if (today != weekCutoffDate || weekCutoffKey.Length == 0)
+        {
+            weekCutoffDate = today;
+            weekCutoffKey = today.AddDays(-6).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+
+        return weekCutoffKey;
     }
 
     private void OnLogout(int type, int code)

@@ -59,7 +59,7 @@ internal static class AppPalettes
 
     private static AppPalette For(string id) => Tinted(AppAccents.For(id));
 
-    public static readonly AppPalette Health = For("health");
+    public static readonly AppPalette Health = Neutral(AppAccents.For("health"));
     public static readonly AppPalette Chirper = For("chirper");
     public static readonly AppPalette Market = For("market");
     public static readonly AppPalette Aethergram = For("aethergram");
