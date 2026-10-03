@@ -2405,6 +2405,46 @@ internal static class L
                 "Strats now remembers where you stopped in each fight and keeps each fight's scroll position"),
         };
 
+        public static readonly LocString[] Release1042Calendar =
+        {
+            new("changelog.r1042.114",
+                "Overhauled Calendar: a month grid that slides between months with colored event dots, an Upcoming list that counts down in-game events, and a details page for every event"),
+            new("changelog.r1042.115",
+                "Added events that repeat every day, week, two weeks or month, event length and notes, and a color for each group that carries into the widgets"),
+        };
+
+        public static readonly LocString[] Release1042Notes =
+        {
+            new("changelog.r1042.116",
+                "Overhauled Notes with pinned notes, date sections, search and a full page editor, and Recently Deleted keeps deleted notes for 30 days"),
+            new("changelog.r1042.117",
+                "Reminders now have Today, Scheduled, All and Completed lists, overdue dates in red, and one tap dates like Tomorrow or Next Week"),
+        };
+
+        public static readonly LocString[] Release1042Calculator =
+        {
+            new("changelog.r1042.118",
+                "Overhauled Calculator with a new keypad, digits that shrink to fit, and a history of your sums grouped by day"),
+            new("changelog.r1042.119",
+                "Added typing on your keyboard while the pointer is over the phone, copy and paste, and swiping across the display to delete a digit"),
+        };
+
+        public static readonly LocString[] Release1042Shortcuts =
+        {
+            new("changelog.r1042.120",
+                "Overhauled Shortcuts with a library of colored tiles you tap to run, and an editor where each step is a block you drag into order"),
+            new("changelog.r1042.121",
+                "Added a Gallery of starter shortcuts for everyday use, your party and getting around Eorzea"),
+        };
+
+        public static readonly LocString[] Release1042News =
+        {
+            new("changelog.r1042.122",
+                "Overhauled News with a top story, day sections, story pages and a Status tab"),
+            new("changelog.r1042.123",
+                "Added a live maintenance countdown in your local time, with a banner on Topics while maintenance is running or coming up"),
+        };
+
         public static readonly LocString[] Release1042Games =
         {
             new("changelog.r1042.68",
@@ -2423,6 +2463,10 @@ internal static class L
 
         public static readonly LocString[] Release1042Clock =
         {
+            new("changelog.r1042.112",
+                "Overhauled Clock: an Eorzea time card painted with the sky of the current bell, world clocks with day and night dials, and 75 cities to pick from"),
+            new("changelog.r1042.113",
+                "Added alarms that ring at an Eorzean time, a wheel time picker, a snooze length for each alarm, best and worst laps on the stopwatch, and recent timers you can start in one tap"),
             new("changelog.r1042.48",
                 "Alarms and timers now ring until you stop or snooze them, and open the phone with a full-screen alarm"),
         };
