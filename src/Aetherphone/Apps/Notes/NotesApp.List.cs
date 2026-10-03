@@ -29,6 +29,7 @@ internal sealed partial class NotesApp
     private const float RowWashAlpha = 0.06f;
     private const float RowPressAlpha = 0.11f;
     private const float LongPressSeconds = 0.45f;
+    private const float LongPressSlop = 6f;
     private const int RecentDayWindow = 7;
 
     private sealed class NoteRowText
@@ -276,8 +277,10 @@ internal sealed partial class NotesApp
             return true;
         }
 
-        if (longPressFired || !ImGui.IsMouseDown(ImGuiMouseButton.Left) ||
-            ImGui.GetIO().MouseDownDuration[0] < LongPressSeconds)
+        var io = ImGui.GetIO();
+        var slop = LongPressSlop * UiScale.Current;
+        if (longPressFired || !ImGui.IsMouseDown(ImGuiMouseButton.Left) || io.MouseDownDuration[0] < LongPressSeconds ||
+            io.MouseDragMaxDistanceSqr[0] > slop * slop)
         {
             return false;
         }
