@@ -134,14 +134,15 @@ internal sealed partial class ShortcutsApp
         var inputLeft = dotCenter.X + dot * 0.5f + Metrics.Space.Sm * scale;
         ImGui.SetCursorScreenPos(new Vector2(inputLeft, field.Center.Y - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(field.Max.X - Metrics.Space.Md * scale - inputLeft);
+        var edited = false;
         using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
         using (ImRaii.PushColor(ImGuiCol.Text, ui.TitleInk))
         {
-            ImGui.InputTextWithHint("##shortcutHex", Loc.T(L.Shortcuts.CustomColor), ref hexBuffer, 7,
+            edited = ImGui.InputTextWithHint("##shortcutHex", Loc.T(L.Shortcuts.CustomColor), ref hexBuffer, 7,
                 ImGuiInputTextFlags.CharsNoBlank);
         }
 
-        if (HexColor.TryParse(hexBuffer, out var custom))
+        if (edited && HexColor.TryParse(hexBuffer, out var custom))
         {
             draft.Tint = HexColor.ToDigits(custom);
         }
