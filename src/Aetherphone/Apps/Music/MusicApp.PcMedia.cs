@@ -178,6 +178,11 @@ internal sealed partial class MusicApp
         float stride, float sideRadius, float playRadius, Vector4 ink, float alpha, bool interactive, float shuffleX,
         float repeatX)
     {
+        if (snapshot.CanShuffle || snapshot.CanRepeat)
+        {
+            stride = MathF.Min(stride, (repeatX - shuffleX) * 0.25f);
+        }
+
         var previousCenter = center - new Vector2(stride, 0f);
         var nextCenter = center + new Vector2(stride, 0f);
         var reach = new Vector2(stride + sideRadius, playRadius);
