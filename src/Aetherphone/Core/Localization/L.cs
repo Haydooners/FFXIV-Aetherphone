@@ -4432,6 +4432,97 @@ internal static class L
             public static readonly LocString InviteBodyTitled = new("music.jam.inviteBodyTitled", "{0} invited you to {1}");
             public static readonly LocString SomeoneName = new("music.jam.someoneName", "Someone");
         }
+
+        internal static class Home
+        {
+            public static readonly LocString TopPicks = new("music.home.topPicks", "Top picks for you");
+            public static readonly LocString YourStation = new("music.home.yourStation", "Your station");
+            public static readonly LocString YourStationSub = new("music.home.yourStationSub", "Based on what you play most");
+            public static readonly LocString LovedMix = new("music.home.lovedMix", "Loved mix");
+            public static readonly LocString LovedMixSub = new("music.home.lovedMixSub", "Shuffle the songs you love");
+            public static readonly LocString BecauseYouPlayed = new("music.home.becauseYouPlayed", "Because you played {0}");
+            public static readonly LocString BecauseSub = new("music.home.becauseSub", "A mix built around it");
+            public static readonly LocString FavouritesMix = new("music.home.favouritesMix", "Favourites mix");
+            public static readonly LocString FavouritesMixSub = new("music.home.favouritesMixSub", "Your most played and loved songs");
+            public static readonly LocString DiscoveryMix = new("music.home.discoveryMix", "Discovery mix");
+            public static readonly LocString DiscoveryMixSub = new("music.home.discoveryMixSub", "New finds based on what you love");
+            public static readonly LocString ChillMix = new("music.home.chillMix", "Chill mix");
+            public static readonly LocString ChillMixSub = new("music.home.chillMixSub", "Easy listening for quiet moments");
+            public static readonly LocString StationKicker = new("music.home.stationKicker", "Station");
+            public static readonly LocString MixKicker = new("music.home.mixKicker", "Mix");
+            public static readonly LocString LiveNow = new("music.home.liveNow", "Live now");
+            public static readonly LocString Rediscover = new("music.home.rediscover", "Rediscover");
+            public static readonly LocString WelcomeTitle = new("music.home.welcomeTitle", "Start your soundtrack");
+            public static readonly LocString WelcomeSub = new("music.home.welcomeSub", "Play a few songs and Home fills up with picks made for you. Here is some music from Eorzea to begin with.");
+            public static readonly LocString StarterEssentials = new("music.home.starterEssentials", "FFXIV essentials");
+            public static readonly LocString StarterBattles = new("music.home.starterBattles", "Boss battles");
+            public static readonly LocString StarterCalm = new("music.home.starterCalm", "Calm in Eorzea");
+            public static readonly LocString Play = new("music.home.play", "Play");
+            public static readonly LocString ShelfEmpty = new("music.home.shelfEmpty", "Nothing here right now. Check back soon.");
+        }
+
+        internal static class New
+        {
+            public static readonly LocString Featured = new("music.new.featured", "Featured playlist");
+            public static readonly LocString HeroOrchestraTitle = new("music.new.heroOrchestraTitle", "Songs of Eorzea");
+            public static readonly LocString HeroOrchestraSub = new("music.new.heroOrchestraSub", "Orchestral themes from FINAL FANTASY XIV");
+            public static readonly LocString HeroLofiTitle = new("music.new.heroLofiTitle", "Lofi for the long grind");
+            public static readonly LocString HeroLofiSub = new("music.new.heroLofiSub", "Calm beats for crafting and gathering");
+            public static readonly LocString HeroAnimeTitle = new("music.new.heroAnimeTitle", "Anime anthems");
+            public static readonly LocString HeroAnimeSub = new("music.new.heroAnimeSub", "Openings and endings worth replaying");
+            public static readonly LocString HeroPixelTitle = new("music.new.heroPixelTitle", "Pixel perfect");
+            public static readonly LocString HeroPixelSub = new("music.new.heroPixelSub", "Chiptune and 8-bit adventures");
+            public static readonly LocString HeroJrpgTitle = new("music.new.heroJrpgTitle", "JRPG legends");
+            public static readonly LocString HeroJrpgSub = new("music.new.heroJrpgSub", "Battle themes from the classics");
+            public static readonly LocString Releases = new("music.new.releases", "New releases");
+            public static readonly LocString Trending = new("music.new.trending", "Trending now");
+            public static readonly LocString Chart = new("music.new.chart", "Top songs this week");
+            public static readonly LocString Ffxiv = new("music.new.ffxiv", "FINAL FANTASY XIV");
+            public static readonly LocString Games = new("music.new.games", "Game soundtracks");
+            public static readonly LocString Lofi = new("music.new.lofi", "Lofi beats");
+            public static readonly LocString Jpop = new("music.new.jpop", "J-Pop");
+            public static readonly LocString Anime = new("music.new.anime", "Anime");
+            public static readonly LocString Chiptune = new("music.new.chiptune", "Chiptune");
+            public static readonly LocString Genres = new("music.new.genres", "Browse by genre");
+            public static readonly LocString GenrePop = new("music.new.genrePop", "Pop");
+            public static readonly LocString GenreHipHop = new("music.new.genreHipHop", "Hip-hop");
+            public static readonly LocString GenreRock = new("music.new.genreRock", "Rock");
+            public static readonly LocString GenreElectronic = new("music.new.genreElectronic", "Electronic");
+            public static readonly LocString GenreLofi = new("music.new.genreLofi", "Lofi");
+            public static readonly LocString GenreJazz = new("music.new.genreJazz", "Jazz");
+            public static readonly LocString GenreClassical = new("music.new.genreClassical", "Classical");
+            public static readonly LocString GenreGame = new("music.new.genreGame", "Game music");
+            public static readonly LocString GenreAnime = new("music.new.genreAnime", "Anime");
+            public static readonly LocString GenreJpop = new("music.new.genreJpop", "J-Pop");
+            public static readonly LocString GenreKpop = new("music.new.genreKpop", "K-Pop");
+            public static readonly LocString GenreMetal = new("music.new.genreMetal", "Metal");
+            public static readonly LocString GenreRnb = new("music.new.genreRnb", "R&B");
+            public static readonly LocString GenreChiptune = new("music.new.genreChiptune", "Chiptune");
+            public static readonly LocString ShelfHits = new("music.new.shelfHits", "Hits");
+            public static readonly LocString ShelfFresh = new("music.new.shelfFresh", "Fresh finds");
+            public static readonly LocString ShelfEssentials = new("music.new.shelfEssentials", "Essentials");
+        }
+
+        internal static class Search
+        {
+            public static readonly LocString FieldHint = new("music.search.fieldHint", "Artists, songs, playlists and stations");
+            public static readonly LocString ScopeTop = new("music.search.scopeTop", "Top");
+            public static readonly LocString ScopeSongs = new("music.search.scopeSongs", "Songs");
+            public static readonly LocString ScopePlaylists = new("music.search.scopePlaylists", "Playlists");
+            public static readonly LocString ScopeArtists = new("music.search.scopeArtists", "Artists");
+            public static readonly LocString ScopeRadio = new("music.search.scopeRadio", "Radio");
+            public static readonly LocString ScopeLibrary = new("music.search.scopeLibrary", "Library");
+            public static readonly LocString Recent = new("music.search.recent", "Recent searches");
+            public static readonly LocString Clear = new("music.search.clear", "Clear");
+            public static readonly LocString Browse = new("music.search.browse", "Browse categories");
+            public static readonly LocString TopResult = new("music.search.topResult", "Top result");
+            public static readonly LocString KindArtist = new("music.search.kindArtist", "Artist");
+            public static readonly LocString KindSong = new("music.search.kindSong", "Song");
+            public static readonly LocString FromLibrary = new("music.search.fromLibrary", "In your library");
+            public static readonly LocString Stations = new("music.search.stations", "Stations");
+            public static readonly LocString PressEnter = new("music.search.pressEnter", "Press Enter to search");
+        }
+
         public static readonly LocString TabNew = new("music.tabNew", "New");
         public static readonly LocString WorldRadio = new("music.worldRadio", "World radio");
         public static readonly LocString YourStations = new("music.yourStations", "Your stations");
