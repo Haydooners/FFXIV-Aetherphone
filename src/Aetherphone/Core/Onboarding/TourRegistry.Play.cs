@@ -78,14 +78,14 @@ internal static partial class TourRegistry
                 GuideStep.TryTap(L.Onboarding.CalculatorReuseTitle, L.Onboarding.CalculatorReuseBody,
                     "calculator.tape"),
             });
-        Add(tours, "timers", 3,
+        Add(tours, "timers", 4,
             new[]
             {
-                GuideStep.Point(L.Onboarding.TimersCountdownTitle, L.Onboarding.TimersCountdownBody, "timers.resets",
+                GuideStep.Point(L.Onboarding.TimersNextUpTitle, L.Onboarding.TimersNextUpBody, "timers.hero",
                     GuideGesture.None),
-                GuideStep.TryUntil(L.Onboarding.TimersScrollTitle, L.Onboarding.TimersScrollBody,
-                    "timers.activities", GuideGesture.SwipeUp, "timers.reminders"),
-                GuideStep.Point(L.Onboarding.TimersNotifyTitle, L.Onboarding.TimersNotifyBody, "timers.reminders",
+                GuideStep.Point(L.Onboarding.TimersCharactersTitle, L.Onboarding.TimersCharactersBody,
+                    "timers.retainers", GuideGesture.None),
+                GuideStep.Point(L.Onboarding.TimersBellTitle, L.Onboarding.TimersBellBody, "timers.bell",
                     GuideGesture.Tap),
             });
     }

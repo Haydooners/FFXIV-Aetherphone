@@ -156,6 +156,13 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool NotifyWeeklyReset { get; set; }
     public bool NotifyGrandCompanyReset { get; set; }
     public bool NotifyRetainerVentures { get; set; }
+    public bool NotifyVoyages { get; set; }
+    public bool NotifyMapAllowance { get; set; }
+    public bool NotifyJumboCactpot { get; set; }
+    public bool NotifyFashionReport { get; set; }
+    public List<Core.Timers.TimerCharacterRecord> TimerCharacters { get; set; } = new();
+    public List<Core.Timers.TimerWorkshopRecord> TimerWorkshops { get; set; } = new();
+    public string TimerRegionCode { get; set; } = string.Empty;
     [JsonProperty("ShowWalletBadge")]
     public bool LegacyShowWalletBadge { get; set; } = true;
     [JsonProperty("ShowDailiesBadge")]

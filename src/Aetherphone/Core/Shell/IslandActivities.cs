@@ -12,6 +12,7 @@ internal enum IslandActivity : byte
     Timer,
     Muster,
     Notice,
+    GameTimer,
 }
 
 internal enum IslandNotice : byte
@@ -21,7 +22,7 @@ internal enum IslandNotice : byte
 }
 
 internal readonly record struct IslandSignals(bool Call, bool Session, bool Playback, bool Timer, bool Muster,
-    bool PcMedia = false);
+    bool PcMedia = false, bool GameTimer = false);
 
 internal static class IslandActivities
 {
@@ -55,7 +56,12 @@ internal static class IslandActivities
             return IslandActivity.Timer;
         }
 
-        return signals.Muster ? IslandActivity.Muster : IslandActivity.None;
+        if (signals.Muster)
+        {
+            return IslandActivity.Muster;
+        }
+
+        return signals.GameTimer ? IslandActivity.GameTimer : IslandActivity.None;
     }
 
     public static string OwnerAppId(IslandActivity activity)
@@ -73,6 +79,8 @@ internal static class IslandActivities
                 return "clock";
             case IslandActivity.Muster:
                 return "muster";
+            case IslandActivity.GameTimer:
+                return "timers";
             default:
                 return string.Empty;
         }

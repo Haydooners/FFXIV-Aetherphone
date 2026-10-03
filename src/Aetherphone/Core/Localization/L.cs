@@ -6433,7 +6433,6 @@ internal static class L
         public static readonly LocString ServerResets = new("timers.serverResets", "Server Resets");
         public static readonly LocString Activities = new("timers.activities", "Activities");
         public static readonly LocString Retainers = new("timers.retainers", "Retainers");
-        public static readonly LocString Reminders = new("timers.reminders", "Reminders");
         public static readonly LocString DailyReset = new("timers.dailyReset", "Daily Reset");
         public static readonly LocString WeeklyReset = new("timers.weeklyReset", "Weekly Reset");
         public static readonly LocString GrandCompanyReset = new("timers.grandCompanyReset", "Grand Company");
@@ -6445,8 +6444,6 @@ internal static class L
         public static readonly LocString BoardingNow = new("timers.boardingNow", "Boarding now");
         public static readonly LocString Ready = new("timers.ready", "Ready!");
         public static readonly LocString NoVenture = new("timers.noVenture", "No venture");
-        public static readonly LocString NotifyVentures = new("timers.notifyVentures", "Notify when ventures finish");
-        public static readonly LocString OpenBellOnce = new("timers.openBellOnce", "Open your retainer bell once to load venture timers.");
         public static readonly LocString OceanDay = new("timers.oceanDay", "Day");
         public static readonly LocString OceanSunset = new("timers.oceanSunset", "Sunset");
         public static readonly LocString OceanNight = new("timers.oceanNight", "Night");
@@ -6454,6 +6451,30 @@ internal static class L
         public static readonly LocString InDaysHours = new("timers.inDaysHours", "in {0}d {1}h");
         public static readonly LocString ResetNotice = new("timers.resetNotice", "Server reset is here");
         public static readonly LocString VentureComplete = new("timers.ventureComplete", "Venture complete");
+        public static readonly LocString VoyageComplete = new("timers.voyageComplete", "Voyage complete");
+        public static readonly LocString NextUp = new("timers.nextUp", "Next up");
+        public static readonly LocString ReadyToCollect = new("timers.readyToCollect", "Ready to collect");
+        public static readonly LocPlural ReadyVentures = new("timers.readyVentures", "{0} venture", "{0} ventures");
+        public static readonly LocPlural ReadyVoyages = new("timers.readyVoyages", "{0} voyage", "{0} voyages");
+        public static readonly LocString At = new("timers.at", "at {0}");
+        public static readonly LocString SeenAgo = new("timers.seenAgo", "Seen {0}");
+        public static readonly LocString Voyages = new("timers.voyages", "Voyages");
+        public static readonly LocString Venture = new("timers.venture", "Venture");
+        public static readonly LocString Voyage = new("timers.voyage", "Voyage");
+        public static readonly LocString Docked = new("timers.docked", "Docked");
+        public static readonly LocString RetainersEmptyTitle = new("timers.retainersEmptyTitle", "No retainers seen yet");
+        public static readonly LocString RetainersEmptyBody = new("timers.retainersEmptyBody", "Open a summoning bell once on each character. Their ventures stay here after you log out.");
+        public static readonly LocString VoyagesEmptyTitle = new("timers.voyagesEmptyTitle", "No voyages seen yet");
+        public static readonly LocString VoyagesEmptyBody = new("timers.voyagesEmptyBody", "Step into your company workshop once and every submersible and airship return stays here.");
+        public static readonly LocString TreasureMap = new("timers.treasureMap", "Treasure Map");
+        public static readonly LocString MapNotSeen = new("timers.mapNotSeen", "Not seen yet");
+        public static readonly LocString MapNotice = new("timers.mapNotice", "{0} can gather a treasure map again");
+        public static readonly LocString JudgingUntil = new("timers.judgingUntil", "Judging until {0}");
+        public static readonly LocString OpensAt = new("timers.opensAt", "Opens {0}");
+        public static readonly LocString FashionNotice = new("timers.fashionNotice", "Judging is open for this week");
+        public static readonly LocString CactpotNotice = new("timers.cactpotNotice", "The drawing is starting");
+        public static readonly LocString NotifyOn = new("timers.notifyOn", "Notifications on");
+        public static readonly LocString NotifyOff = new("timers.notifyOff", "Notifications off");
     }
 
     internal static class Fishing
@@ -8570,12 +8591,12 @@ internal static class L
         public static readonly LocString CalculatorSumBody = new("onboarding.calculatorSumBody", "Tap in a sum, then press = for the answer.");
         public static readonly LocString CalculatorReuseTitle = new("onboarding.calculatorReuseTitle", "Reuse an answer");
         public static readonly LocString CalculatorReuseBody = new("onboarding.calculatorReuseBody", "Every answer lands on this tape. Tap one to carry it into your next sum.");
-        public static readonly LocString TimersCountdownTitle = new("onboarding.timersCountdownTitle", "Reset countdowns");
-        public static readonly LocString TimersCountdownBody = new("onboarding.timersCountdownBody", "Daily, Grand Company and weekly resets count down live, each with the local time it lands.");
-        public static readonly LocString TimersScrollTitle = new("onboarding.timersScrollTitle", "Scroll to Reminders");
-        public static readonly LocString TimersScrollBody = new("onboarding.timersScrollBody", "Fashion Report, the Jumbo Cactpot and ocean fishing come next. Scroll down past them to reach Reminders.");
-        public static readonly LocString TimersNotifyTitle = new("onboarding.timersNotifyTitle", "Get notified");
-        public static readonly LocString TimersNotifyBody = new("onboarding.timersNotifyBody", "Switch on a reset or retainer ventures and the phone notifies you when it happens.");
+        public static readonly LocString TimersNextUpTitle = new("onboarding.timersNextUpTitle", "What comes next");
+        public static readonly LocString TimersNextUpBody = new("onboarding.timersNextUpBody", "The top card shows what finishes soonest, or what is ready to collect right now.");
+        public static readonly LocString TimersCharactersTitle = new("onboarding.timersCharactersTitle", "Every character");
+        public static readonly LocString TimersCharactersBody = new("onboarding.timersCharactersBody", "Retainers are grouped per character and stay here after you log out, stamped with when they were last seen.");
+        public static readonly LocString TimersBellTitle = new("onboarding.timersBellTitle", "Get notified");
+        public static readonly LocString TimersBellBody = new("onboarding.timersBellBody", "Tap a bell and the phone notifies you the moment that timer finishes.");
         public static readonly LocString VelvetCardsTitle = new("onboarding.velvetCardsTitle", "People to meet");
         public static readonly LocString VelvetCardsBody = new("onboarding.velvetCardsBody", "Each card is someone open to connecting, best fits first. Tap a card for their profile, or the heart to write them an intro.");
         public static readonly LocString VelvetFiltersTitle = new("onboarding.velvetFiltersTitle", "Open your filters");

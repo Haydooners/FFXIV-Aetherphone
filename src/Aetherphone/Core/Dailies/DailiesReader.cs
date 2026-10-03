@@ -213,5 +213,6 @@ internal static unsafe class DailiesReader
 
     public static TimerWindow ReadFashionReportWindow(DateTime utcNow) => GameSchedule.FashionReport(utcNow);
 
-    public static DateTime ReadNextJumboCactpot(DateTime utcNow) => GameSchedule.NextJumboCactpot(utcNow);
+    public static DateTime ReadNextJumboCactpot(DateTime utcNow, string regionCode) =>
+        GameSchedule.NextJumboCactpot(utcNow, regionCode);
 }

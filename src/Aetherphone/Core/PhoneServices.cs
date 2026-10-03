@@ -199,6 +199,7 @@ internal sealed class PhoneServices : IDisposable
     public required LiveBackdrop LiveBackdrop { get; init; }
     public required WallpaperImageCache WallpaperImages { get; init; }
     public required Hunts.HuntsService Hunts { get; init; }
+    public required Timers.GameTimers GameTimers { get; init; }
     public required Hunts.HuntMobCatalog HuntMobCatalog { get; init; }
     public required Hunts.HuntZoneCatalog HuntZoneCatalog { get; init; }
     public required Maps.ZoneMapTextures ZoneMapTextures { get; init; }
@@ -412,6 +413,8 @@ internal sealed class PhoneServices : IDisposable
         var huntsClient = new HuntsClient(http, huntsAuthTokens);
         var hunts = new HuntsService(huntsClient, huntsAuthTokens, huntMobCatalog, gameData, characterWatch,
             notifications, configuration);
+        var gameTimers = new Timers.GameTimers(configuration, framework, characterWatch, gameData, dataManager,
+            installer.Gate("timers"));
         var huntCandidateCache = new HuntCandidateCache(huntMobCatalog, huntZoneCatalog, hunts);
         var huntsMapMarkers = new Maps.HuntsMapMarkers(configuration, hunts, huntMobCatalog, huntZoneCatalog,
             huntCandidateCache);
@@ -555,6 +558,7 @@ internal sealed class PhoneServices : IDisposable
             LiveBackdrop = liveBackdrop,
             WallpaperImages = wallpaperImages,
             Hunts = hunts,
+            GameTimers = gameTimers,
             HuntMobCatalog = huntMobCatalog,
             HuntZoneCatalog = huntZoneCatalog,
             ZoneMapTextures = zoneMapTextures,
@@ -595,6 +599,7 @@ internal sealed class PhoneServices : IDisposable
         Housing.Dispose();
         Venues.Dispose();
         Hunts.Dispose();
+        GameTimers.Dispose();
         StratsManifest.Dispose();
         StratsGuides.Dispose();
         Musters.Dispose();

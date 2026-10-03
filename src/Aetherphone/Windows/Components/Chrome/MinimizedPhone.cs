@@ -141,7 +141,7 @@ internal sealed partial class MinimizedPhone : IDisposable
         this.layout = layout;
         themes = services.Themes;
         feed = new MinimizedFeed(services.Weather, services.Coins, services.AethernetSession, services.Activity,
-            services.GameData);
+            services.GameData, services.GameTimers);
         minimap = new MinimapReader(services.ZoneMapTextures);
         liveBackdrop = services.LiveBackdrop;
         mapSpan = new Spring(MinimizedShapes.MapSpan(configuration.MinimizedMapZoom));

@@ -4,6 +4,7 @@ using Aetherphone.Core.Game;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
+using Aetherphone.Core.Timers;
 using Aetherphone.Windows.Components;
 using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
@@ -55,6 +56,12 @@ internal sealed class ResetsWidget : IHomeWidget
     private readonly CachedText[] countdowns = new CachedText[RowCount];
     private readonly CachedText[] details = new CachedText[RowCount];
     private readonly DateTime[] moments = new DateTime[RowCount];
+    private readonly GameTimers timers;
+
+    public ResetsWidget(GameTimers timers)
+    {
+        this.timers = timers;
+    }
 
     public string Id => "timers.resets";
     public string DisplayName => Loc.T(L.WidgetsTime.Resets);
@@ -160,7 +167,7 @@ internal sealed class ResetsWidget : IHomeWidget
         var headerBottom = WidgetChrome.Header(context, ink, AppId, L.WidgetsTime.Resets, AppAccents.For(AppId));
         var listTop = headerBottom + WidgetMetrics.Gutter * scale;
         var rowHeight = (content.Max.Y - listTop) / RowCount;
-        var cactpot = GameSchedule.NextJumboCactpot(utcNow);
+        var cactpot = GameSchedule.NextJumboCactpot(utcNow, timers.RegionCode);
         var fashion = GameSchedule.FashionReport(utcNow);
         var ocean = GameSchedule.OceanFishing(utcNow, OceanRoute.Indigo);
         moments[Cactpot] = cactpot;
