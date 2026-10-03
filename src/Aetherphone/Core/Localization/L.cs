@@ -5939,6 +5939,22 @@ internal static class L
         public static readonly LocString LookDeleteConfirm = new("home.lookDeleteConfirm", "Delete");
     }
 
+    internal static class WidgetGallery
+    {
+        public static readonly LocString SearchHint = new("widgetGallery.searchHint", "Search Widgets");
+        public static readonly LocString Featured = new("widgetGallery.featured", "Featured");
+        public static readonly LocString AllWidgets = new("widgetGallery.allWidgets", "All Widgets");
+        public static readonly LocPlural WidgetCount =
+            new("widgetGallery.widgetCount", "{0} widget", "{0} widgets");
+        public static readonly LocString SmartStack = new("widgetGallery.smartStack", "Smart Stack");
+        public static readonly LocString SmartStackCaption = new("widgetGallery.smartStackCaption", "Suggested for you");
+        public static readonly LocString SmartStackDescription = new("widgetGallery.smartStackDescription",
+            "A stack of suggested widgets that brings the right one to the top.");
+        public static readonly LocString NoResults = new("widgetGallery.noResults", "No Widgets Found");
+        public static readonly LocString NoResultsHint =
+            new("widgetGallery.noResultsHint", "Try another widget name, app or keyword.");
+    }
+
     internal static class Photos
     {
         public static readonly LocString NoPhotos = new("photos.noPhotos", "No Photos");
