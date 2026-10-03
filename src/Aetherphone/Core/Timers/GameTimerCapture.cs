@@ -23,7 +23,7 @@ internal static unsafe class GameTimerCapture
         for (var index = 0; index < count; index++)
         {
             var retainer = manager->GetRetainerBySortedIndex((uint)index);
-            if (retainer is null || retainer->RetainerId == 0)
+            if (retainer is null || retainer->RetainerId == 0 || !retainer->Available)
             {
                 continue;
             }
