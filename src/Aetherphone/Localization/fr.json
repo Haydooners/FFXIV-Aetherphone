@@ -2913,6 +2913,7 @@
   "controlCenter.addControls": "Ajouter un contrôle",
   "controlCenter.allControlsAdded": "Tous les contrôles sont en place",
   "controlCenter.editHint": "Glissez pour réorganiser · touchez ⤢ pour redimensionner",
+  "controlCenter.quickToggles": "Commutateurs rapides",
   "appSwitcher.closeAll": "Tout fermer",
   "appSwitcher.empty": "Rien n'est ouvert",
   "home.done": "OK",

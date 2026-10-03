@@ -2913,6 +2913,7 @@
   "controlCenter.addControls": "Добавить элемент",
   "controlCenter.allControlsAdded": "Все элементы на месте",
   "controlCenter.editHint": "Перетащите для перестановки · нажмите ⤢ для изменения размера",
+  "controlCenter.quickToggles": "Быстрые переключатели",
   "appSwitcher.closeAll": "Закрыть все",
   "appSwitcher.empty": "Ничего не открыто",
   "home.done": "Готово",
