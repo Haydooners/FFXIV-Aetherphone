@@ -9,6 +9,7 @@ using Aetherphone.Core.Changelog;
 using Aetherphone.Core.ControlCenter;
 using Aetherphone.Core.Dailies;
 using Aetherphone.Core.Feedback;
+using Aetherphone.Core.Fishing;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Games;
 using Aetherphone.Core.Geography;
@@ -494,6 +495,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public List<ReminderItem> Reminders { get; set; } = new();
     public List<WorldClockEntry> WorldClocks { get; set; } = new();
     public List<AlarmEntry> Alarms { get; set; } = new();
+    public List<uint> FishingAlarms { get; set; } = new();
+    public List<FishingVoyageReminder> FishingVoyageReminders { get; set; } = new();
     public DateTime? TimerEndsAtUtc { get; set; }
     public int TimerDurationSeconds { get; set; }
     public bool TimerNotified { get; set; }

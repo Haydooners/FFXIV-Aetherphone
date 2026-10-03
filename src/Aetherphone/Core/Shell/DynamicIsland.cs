@@ -1,6 +1,7 @@
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Fishing;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Muster;
 using Aetherphone.Core.Notifications;
@@ -48,6 +49,7 @@ internal sealed class DynamicIsland
     private static readonly Vector4 MusicAccent = AppAccents.For("music");
     private static readonly Vector4 SessionAccent = AppAccents.For("aetherstream");
     private static readonly Vector4 MusterAccent = AppAccents.For("muster");
+    private static readonly Vector4 FishingAccent = AppAccents.For("fishing");
     private static readonly Vector4 CallAccent = new(0.20f, 0.78f, 0.35f, 1f);
     private static readonly Vector4 TimerAccent = new(1.00f, 0.62f, 0.18f, 1f);
     private static readonly Vector4 Ink = new(0.98f, 0.98f, 0.99f, 1f);
@@ -60,11 +62,17 @@ internal sealed class DynamicIsland
     private readonly VideoSuite? video;
     private readonly MusterStore? musters;
     private readonly MusterLauncher? musterLauncher;
+    private readonly FishingAlerts? fishing;
     private int timerCachedSeconds = -1;
     private string timerCachedText = string.Empty;
     private int musterCachedMinutes = -1;
     private string musterCachedCountdown = string.Empty;
     private string musterCachedStatus = string.Empty;
+    private long fishingCachedSeconds = -1;
+    private FishingIslandKind fishingCachedKind;
+    private bool fishingCachedOpen;
+    private string fishingCachedCountdown = string.Empty;
+    private string fishingCachedStatus = string.Empty;
     private int viewersCachedCount = -1;
     private string viewersCachedText = string.Empty;
     private Spring presence;
@@ -87,8 +95,9 @@ internal sealed class DynamicIsland
     private bool lastBubbleVisible;
 
     public DynamicIsland(PlaybackHub playback, CallHub calls, Configuration configuration, VideoSuite? video,
-        MusterStore? musters, MusterLauncher? musterLauncher)
+        MusterStore? musters, MusterLauncher? musterLauncher, FishingAlerts? fishing = null)
     {
+        this.fishing = fishing;
         this.playback = playback;
         this.calls = calls;
         this.configuration = configuration;
@@ -184,7 +193,7 @@ internal sealed class DynamicIsland
             ? IslandActivities.SoonestMuster(store.GoingMusters, store.Mine, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             : null;
         return new IslandSignals(call, session, playback.IsActive, TimerRemainingSeconds() > 0,
-            upcomingMuster is not null);
+            upcomingMuster is not null, fishing is { Island.Kind: not FishingIslandKind.None });
     }
 
     private void DrawContent(Rect screen, PhoneTheme theme, INavigator navigation, in CallView view,
@@ -312,6 +321,8 @@ internal sealed class DynamicIsland
                 return TimerAccent;
             case IslandActivity.Muster:
                 return MusterAccent;
+            case IslandActivity.Fishing:
+                return FishingAccent;
             case IslandActivity.Notice:
                 return FocusAccent;
             default:
@@ -364,6 +375,24 @@ internal sealed class DynamicIsland
         }
 
         return compact ? musterCachedCountdown : musterCachedStatus;
+    }
+
+    private static FontAwesomeIcon FishingIcon(in FishingIslandStatus status) =>
+        status.Kind == FishingIslandKind.Voyage ? FontAwesomeIcon.Anchor : FontAwesomeIcon.Fish;
+
+    private string FishingCountdown(in FishingIslandStatus status, bool compact)
+    {
+        var remaining = Math.Max(0L, status.TargetUnix - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        if (remaining != fishingCachedSeconds || status.Kind != fishingCachedKind || status.Open != fishingCachedOpen)
+        {
+            fishingCachedSeconds = remaining;
+            fishingCachedKind = status.Kind;
+            fishingCachedOpen = status.Open;
+            fishingCachedCountdown = FishingClock.Countdown(remaining);
+            fishingCachedStatus = FishingClock.IslandStatus(status.Kind, status.Open, fishingCachedCountdown);
+        }
+
+        return compact ? fishingCachedCountdown : fishingCachedStatus;
     }
 
     private string ViewersText(int count)
@@ -446,6 +475,16 @@ internal sealed class DynamicIsland
                 break;
             case IslandActivity.Notice:
                 DrawNotice(drawList, bubbleCenter, bubbleRadius, trailingRight, bounds.Center.Y, scale, alpha);
+                break;
+            case IslandActivity.Fishing:
+                if (fishing is not { } alerts)
+                {
+                    break;
+                }
+
+                DrawIconBubble(drawList, bubbleCenter, bubbleRadius, FishingIcon(alerts.Island), accent, alpha);
+                DrawTrailingLabel(drawList, FishingCountdown(alerts.Island, true), trailingRight, bounds.Center.Y,
+                    trailingMaxWidth, accent, alpha);
                 break;
         }
     }
@@ -621,6 +660,25 @@ internal sealed class DynamicIsland
                 DrawLines(drawList, MusterText.HostLabel(muster), TextStyles.Headline, Ink,
                     MusterCountdown(muster, false), TextStyles.Subheadline, accent, textLeft, textWidth, centerY,
                     scale, alpha, false);
+                if (RoundButton(drawList, controlCenter, controlRadius, FontAwesomeIcon.ArrowRight, controlFill, Ink,
+                        alpha, active))
+                {
+                    OpenOwner(navigation);
+                }
+
+                break;
+            }
+            case IslandActivity.Fishing:
+            {
+                if (fishing is not { } alerts)
+                {
+                    break;
+                }
+
+                var status = alerts.Island;
+                DrawIconBubble(drawList, iconCenter, iconRadius, FishingIcon(status), accent, alpha);
+                DrawLines(drawList, status.Title, TextStyles.Headline, Ink, FishingCountdown(status, false),
+                    TextStyles.Subheadline, accent, textLeft, textWidth, centerY, scale, alpha, true);
                 if (RoundButton(drawList, controlCenter, controlRadius, FontAwesomeIcon.ArrowRight, controlFill, Ink,
                         alpha, active))
                 {

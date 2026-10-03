@@ -43,6 +43,15 @@ public sealed class IslandActivityTests
     }
 
     [Fact]
+    public void FishingRanksBelowMuster()
+    {
+        Assert.Equal(IslandActivity.Muster,
+            IslandActivities.Select(new IslandSignals(false, false, false, false, true, true)));
+        Assert.Equal(IslandActivity.Fishing,
+            IslandActivities.Select(new IslandSignals(false, false, false, false, false, true)));
+    }
+
+    [Fact]
     public void NothingLiveSelectsNone()
     {
         Assert.Equal(IslandActivity.None, IslandActivities.Select(new IslandSignals(false, false, false, false, false)));
@@ -54,6 +63,7 @@ public sealed class IslandActivityTests
     [InlineData((byte)IslandActivity.Playback, "music")]
     [InlineData((byte)IslandActivity.Timer, "clock")]
     [InlineData((byte)IslandActivity.Muster, "muster")]
+    [InlineData((byte)IslandActivity.Fishing, "fishing")]
     [InlineData((byte)IslandActivity.None, "")]
     public void EveryActivityNamesItsOwningApp(byte activity, string expected)
     {

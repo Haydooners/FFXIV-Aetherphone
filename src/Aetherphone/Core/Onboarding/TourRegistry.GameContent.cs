@@ -59,7 +59,7 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.HuntsMapTitle, L.Onboarding.HuntsMapBody, "hunts.detail.map",
                     GuideGesture.None),
             });
-        Add(tours, "fishing", 3,
+        Add(tours, "fishing", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.FishingHeroTitle, L.Onboarding.FishingHeroBody, "fishing.hero",
@@ -69,6 +69,10 @@ internal static partial class TourRegistry
                 GuideStep.TryTap(L.Onboarding.FishingRouteTitle, L.Onboarding.FishingRouteBody, "fishing.route"),
                 GuideStep.Point(L.Onboarding.FishingUpcomingTitle, L.Onboarding.FishingLaterBody, "fishing.upcoming",
                     GuideGesture.None),
+                GuideStep.TryUntil(L.Onboarding.FishingTimedTitle, L.Onboarding.FishingTimedBody, "fishing.tab.fish",
+                    GuideGesture.Tap, "fishing.fish.first"),
+                GuideStep.Point(L.Onboarding.FishingFishTitle, L.Onboarding.FishingFishBody, "fishing.fish.first",
+                    GuideGesture.Tap),
             });
         Add(tours, "venues", 4,
             new[]

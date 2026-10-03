@@ -279,6 +279,7 @@ once at the end of this section:
 | System.Security.Cryptography.ProtectedData | 10.0.11 | Microsoft Corporation (https://github.com/dotnet/runtime) |
 | NEbml | 1.1.0.5 | Oleg Zee (https://github.com/OlegZee/NEbml) |
 | NLayer / NLayer.NAudioSupport | 2.0.1 | Mark Heath, Andrew Ward (https://github.com/naudio/NLayer) |
+| FF14 Fish Tracker App fish data (derived) | 2026-10 | 2019 icykoneko (https://github.com/icykoneko/ff14-fish-tracker-app) |
 
 ```
 MIT License
@@ -309,6 +310,14 @@ karashiiro and Thibaut Renoncourt) is a fork of HtmlAgilityPack.CssSelectors
 pulled in by NetStone. The package declares no license metadata; the upstream
 HtmlAgilityPack.CssSelectors project is published under the MIT License
 (https://github.com/trenoncourt/HtmlAgilityPack.CssSelectors).
+
+## Timed fish data
+
+`src/Aetherphone/Fishing/TimedFish.txt` lists the catch conditions of timed and big
+fish (Eorzea hours, weather, previous weather, bait chain, Fisher's Intuition,
+hookset and tug) as game row ids. It is derived from the FF14 Fish Tracker App
+data under the MIT License listed above. Names, places, weather rates and map
+positions are read from the game's own data at runtime.
 
 ## Calendar event data
 
