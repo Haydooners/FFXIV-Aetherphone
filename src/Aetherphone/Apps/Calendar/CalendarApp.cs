@@ -140,17 +140,20 @@ internal sealed partial class CalendarApp : IPhoneApp
         {
             if (events.IsLoaded)
             {
+                TourHolds.Release(Id);
                 DrawMonthBody(body, scale);
             }
             else
             {
+                TourHolds.Hold(Id);
                 DrawMonthStatus(body, scale);
             }
         }
 
         headerButtons[0] = new NavBarButton(IconGlyph.Of(FontAwesomeIcon.LayerGroup), Loc.T(L.Calendar.Groups));
         headerButtons[1] = new NavBarButton(IconGlyph.Of(FontAwesomeIcon.Plus), Loc.T(L.Calendar.NewEvent));
-        UiAnchors.Report("calendar.new", AppHeader.LargeTitleButtonRect(in navBar, 1, headerButtons.Length));
+        UiAnchors.Report("calendar.groups", AppHeader.LargeTitleButtonRect(in navBar, 0, headerButtons.Length));
+        UiAnchors.Report("calendar.new",AppHeader.LargeTitleButtonRect(in navBar, 1, headerButtons.Length));
         var pressed = AppHeader.EndLargeTitle(in navBar, context, "calendar.nav", DisplayName, NavBarStyle.From(ui),
             headerButtons);
         if (pressed == 0)

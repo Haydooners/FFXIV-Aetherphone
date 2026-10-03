@@ -44,11 +44,6 @@ internal sealed partial class CasinoApp
 
     private void DrawFloor(Rect body)
     {
-        if (GuideIntents.Consume("casino.tab.live"))
-        {
-            tab = CasinoTab.Live;
-        }
-
         var scale = UiScale.Current;
         using (TabBar.ReserveContent(scale))
         {
@@ -75,12 +70,12 @@ internal sealed partial class CasinoApp
     private void DrawFloorTabBar(Rect area)
     {
         navTabs[0] = new TabItem(Loc.T(L.Casino.TabLobby), IconGlyph.Of(FontAwesomeIcon.DiceD20));
-        navTabs[1] = new TabItem(Loc.T(L.Casino.TabGames), IconGlyph.Of(FontAwesomeIcon.Th));
+        navTabs[1] = new TabItem(Loc.T(L.Casino.TabGames), IconGlyph.Of(FontAwesomeIcon.Th),
+            AnchorKey: "casino.tab.games");
         navTabs[2] = new TabItem(Loc.T(L.Casino.TabLive), IconGlyph.Of(FontAwesomeIcon.BroadcastTower),
             Badge: LiveHeadcount());
         navTabs[3] = new TabItem(Loc.T(L.Casino.TabCashier), IconGlyph.Of(FontAwesomeIcon.CashRegister));
         var result = bottomNav.Draw(area, ui, navTabs, (int)tab);
-        UiAnchors.Report("casino.tabs", bottomNav.Bounds);
         if (result.Tapped < 0)
         {
             return;
@@ -99,8 +94,6 @@ internal sealed partial class CasinoApp
 
     private void DrawRecordsRows(float scale)
     {
-        var recordsOrigin = ImGui.GetCursorScreenPos();
-        var recordsWidth = ScrollLayout.StableContentWidth();
         ui.SectionHeading(Loc.T(L.Casino.RecordsHeading), 4f);
         if (DrawNavRow(FontAwesomeIcon.Receipt, L.Casino.HistoryRow, L.Casino.HistoryRowHint, scale))
         {
@@ -115,13 +108,9 @@ internal sealed partial class CasinoApp
             router.Push(new CasinoRoute(CasinoScreen.Fairness));
         }
 
-        UiAnchors.Report("casino.records", new Rect(recordsOrigin,
-            new Vector2(recordsOrigin.X + recordsWidth, ImGui.GetCursorScreenPos().Y)));
-
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
         ui.SectionHeading(Loc.T(L.Casino.CareHeading), 4f);
-        if (DrawNavRow(FontAwesomeIcon.HandHoldingHeart, L.Casino.LimitsRow, L.Casino.LimitsRowHint, scale,
-                "casino.limits"))
+        if (DrawNavRow(FontAwesomeIcon.HandHoldingHeart, L.Casino.LimitsRow, L.Casino.LimitsRowHint, scale))
         {
             router.Push(new CasinoRoute(CasinoScreen.Limits));
         }
@@ -231,7 +220,6 @@ internal sealed partial class CasinoApp
         var tileHeight = TileHeight * scale;
         var rowCount = (FloorTiles.Length + 1) / 2;
         var gridHeight = rowCount * tileHeight + (rowCount - 1) * gap;
-        UiAnchors.Report("casino.games", new Rect(origin, new Vector2(origin.X + width, origin.Y + gridHeight)));
         for (var index = 0; index < FloorTiles.Length; index++)
         {
             var column = index % 2;
@@ -414,19 +402,13 @@ internal sealed partial class CasinoApp
         return wireKind.StartsWith(prefix, StringComparison.Ordinal) ? wireKind[prefix.Length..] : wireKind;
     }
 
-    private bool DrawNavRow(FontAwesomeIcon icon, LocString title, LocString hint, float scale,
-        string anchorKey = "")
+    private bool DrawNavRow(FontAwesomeIcon icon, LocString title, LocString hint, float scale)
     {
         var width = ScrollLayout.StableContentWidth();
         var origin = ImGui.GetCursorScreenPos();
         var drawList = ImGui.GetWindowDrawList();
         var height = NavRowHeight * scale;
         var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        if (anchorKey.Length > 0)
-        {
-            UiAnchors.Report(anchorKey, row);
-        }
-
         var rounding = Metrics.Radius.Card * scale;
         var hovered = UiInteract.Hover(row.Min, row.Max);
         ui.Card(drawList, row.Min, row.Max, rounding);
