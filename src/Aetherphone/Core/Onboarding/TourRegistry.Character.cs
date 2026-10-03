@@ -46,7 +46,7 @@ internal static partial class TourRegistry
                 GuideStep.TryUntil(L.Onboarding.JobsGroupsTitle, L.Onboarding.JobsGroupsBody, "jobs.categories",
                     GuideGesture.Tap, "jobs.categories.menu"),
             });
-        Add(tours, "dailies", 3,
+        Add(tours, "dailies", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.DailiesProgressTitle, L.Onboarding.DailiesProgressBody, "dailies.hero",
@@ -56,6 +56,8 @@ internal static partial class TourRegistry
                 GuideStep.TryTap(L.Onboarding.DailiesTickTitle, L.Onboarding.DailiesTickBody, "dailies.manual"),
                 GuideStep.TryTap(L.Onboarding.DailiesWeeklyTitle, L.Onboarding.DailiesWeeklyBody,
                     "dailies.tab.weekly"),
+                GuideStep.Point(L.Onboarding.DailiesAddTitle, L.Onboarding.DailiesAddBody, "dailies.add",
+                    GuideGesture.Tap),
             });
         Add(tours, "housing", 2,
             new[]

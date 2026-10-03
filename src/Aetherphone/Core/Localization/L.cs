@@ -6735,10 +6735,7 @@ internal static class L
         public static readonly LocString Daily = new("dailies.daily", "Daily");
         public static readonly LocString Weekly = new("dailies.weekly", "Weekly");
         public static readonly LocString AllDone = new("dailies.allDone", "All done");
-        public static readonly LocString NothingLeft = new("dailies.nothingLeft", "Nothing left to do");
-        public static readonly LocString Remaining = new("dailies.remaining", "{0} remaining");
         public static readonly LocString Resets = new("dailies.resets", "Resets {0}");
-        public static readonly LocString AutoTracked = new("dailies.autoTracked", "Auto");
         public static readonly LocString DutyRoulettes = new("dailies.dutyRoulettes", "Duty Roulettes");
         public static readonly LocString BeastTribe = new("dailies.beastTribe", "Tribal Quests");
         public static readonly LocString MiniCactpot = new("dailies.miniCactpot", "Mini Cactpot");
@@ -6757,7 +6754,24 @@ internal static class L
         public static readonly LocString VotingOpenCloses = new("dailies.votingOpenCloses", "Open · closes {0}");
         public static readonly LocString VotingOpensIn = new("dailies.votingOpensIn", "Opens {0}");
         public static readonly LocString NextDrawing = new("dailies.nextDrawing", "Next drawing {0}");
-        public static readonly LocString SealBalance = new("dailies.sealBalance", "{0} seals");
+        public static readonly LocString NewTask = new("dailies.newTask", "New Task");
+        public static readonly LocString More = new("dailies.more", "More");
+        public static readonly LocString EditList = new("dailies.editList", "Edit List");
+        public static readonly LocString Done = new("dailies.done", "Done");
+        public static readonly LocString RemindDaily = new("dailies.remindDaily", "Remind Before Daily Reset");
+        public static readonly LocString RemindWeekly = new("dailies.remindWeekly", "Remind Before Weekly Reset");
+        public static readonly LocString ReminderDaily = new("dailies.reminderDaily", "Daily reset {0}");
+        public static readonly LocString ReminderWeekly = new("dailies.reminderWeekly", "Weekly reset {0}");
+        public static readonly LocString NotUnlocked = new("dailies.notUnlocked", "Not unlocked on this character");
+        public static readonly LocString LevequestsCapped = new("dailies.levequestsCapped", "At the cap, new allowances are lost");
+        public static readonly LocString Hide = new("dailies.hide", "Hide");
+        public static readonly LocString Show = new("dailies.show", "Show");
+        public static readonly LocString Delete = new("dailies.delete", "Delete");
+        public static readonly LocString EmptyTitle = new("dailies.emptyTitle", "Nothing on this list");
+        public static readonly LocString EmptyBody = new("dailies.emptyBody", "Tap + to add a task, or bring hidden items back with Edit List.");
+        public static readonly LocString SignedOutTitle = new("dailies.signedOutTitle", "Log in to a character");
+        public static readonly LocString SignedOutBody = new("dailies.signedOutBody", "Dailies reads your progress from the game and keeps a separate list for each character.");
+        public static readonly LocPlural OpenTasks = new("dailies.openTasks", "{0} task still open", "{0} tasks still open");
     }
 
     internal static class Island
@@ -8731,6 +8745,8 @@ internal static class L
         public static readonly LocString DailiesTickBody = new("onboarding.dailiesTickBody", "The game does not report these, so tap one once it is done. Tap it again to undo.");
         public static readonly LocString DailiesWeeklyTitle = new("onboarding.dailiesWeeklyTitle", "Weekly routines");
         public static readonly LocString DailiesWeeklyBody = new("onboarding.dailiesWeeklyBody", "Tap Weekly for everything that resets once a week.");
+        public static readonly LocString DailiesAddTitle = new("onboarding.dailiesAddTitle", "Your own tasks");
+        public static readonly LocString DailiesAddBody = new("onboarding.dailiesAddBody", "Tap + to add anything you do every day or week. Ticks are kept separately for each character.");
         public static readonly LocString HousingWhereTitle = new("onboarding.housingWhereTitle", "Choose where");
         public static readonly LocString HousingWhereBody = new("onboarding.housingWhereBody", "Pick the world, district and ward whose plots you want to see.");
         public static readonly LocString HousingNarrowTitle = new("onboarding.housingNarrowTitle", "Narrow it down");
