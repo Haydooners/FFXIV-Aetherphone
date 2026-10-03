@@ -431,6 +431,11 @@ internal sealed class SongPlayer : IDisposable
                 return VoiceOutcome.Detached;
             }
 
+            if (drainDeadline == long.MaxValue)
+            {
+                voice.ServicePendingSeek();
+            }
+
             if (voice.Faulted)
             {
                 return IsCurrent(workerSession) ? VoiceOutcome.Faulted : VoiceOutcome.Detached;
@@ -459,7 +464,7 @@ internal sealed class SongPlayer : IDisposable
                 }
             }
 
-            Thread.Sleep(MonitorIntervalMilliseconds);
+            voice.WaitForWork(MonitorIntervalMilliseconds);
         }
 
         if (voice.Faulted)
