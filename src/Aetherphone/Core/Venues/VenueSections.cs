@@ -129,7 +129,11 @@ internal sealed class VenueSections
         events.Sort(eventOrder);
         saved.Sort(mixedOrder);
         PickFeatured();
-        FillRail(laterRail, laterToday, null);
+        if (FeaturedIsLive)
+        {
+            FillRail(laterRail, laterToday, null);
+        }
+
         FillRail(nearRail, nearYou, laterRail);
         return true;
     }

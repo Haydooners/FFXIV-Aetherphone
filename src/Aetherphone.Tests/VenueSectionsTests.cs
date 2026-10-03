@@ -87,6 +87,34 @@ public sealed class VenueSectionsTests
     }
 
     [Fact]
+    public void LaterRail_StaysEmptyWhileTheCarouselAlreadyShowsLaterToday()
+    {
+        var source = new List<VenueEvent>();
+        for (var index = 0; index < VenueSections.MaxFeatured + 3; index++)
+        {
+            source.Add(Venue("later" + index, start: Now.AddMinutes(1 + index), end: Now.AddHours(3)));
+        }
+
+        var sections = Build(source, [], []);
+
+        Assert.False(sections.FeaturedIsLive);
+        Assert.NotEmpty(sections.Featured);
+        Assert.Empty(sections.LaterRail);
+    }
+
+    [Fact]
+    public void LaterRail_ListsLaterTodayBelowALiveCarousel()
+    {
+        var open = Venue("open", start: Now.AddHours(-1), end: Now.AddHours(2));
+        var later = Venue("later", start: Now.AddMinutes(1), end: Now.AddHours(3));
+
+        var sections = Build([open, later], [], []);
+
+        Assert.True(sections.FeaturedIsLive);
+        Assert.Same(later, Assert.Single(sections.LaterRail));
+    }
+
+    [Fact]
     public void CategoryCover_PrefersAnOpenVenueWithABanner()
     {
         var closed = Venue("closed", tags: ["Bar"], banner: "https://example.com/closed.png");
