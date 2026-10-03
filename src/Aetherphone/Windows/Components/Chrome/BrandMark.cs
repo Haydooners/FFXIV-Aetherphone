@@ -83,7 +83,7 @@ internal static class BrandMark
         Glow(drawList, center, size, alpha);
         Elevation.Draw(drawList, min, max, radius, 1f, size * 0.10f, size * 0.07f, 0.42f, alpha);
         Squircle.FillImage(drawList, min, max, radius, texture, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha)));
-        DrawSheen(drawList, min, max, radius, sheen, alpha);
+        Sheen(drawList, min, max, radius, sheen, alpha);
         Squircle.Stroke(drawList, min, max, radius, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.10f * alpha)),
             1f * scale);
         Squircle.StrokeDirectional(drawList, min, max, radius,
@@ -184,7 +184,7 @@ internal static class BrandMark
         return phase < SheenSweepFraction ? phase / SheenSweepFraction : -1f;
     }
 
-    private static void DrawSheen(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float progress,
+    public static void Sheen(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float progress,
         float alpha)
     {
         if (progress < 0f || progress > 1f || !TryResolveSheen(out var texture))
