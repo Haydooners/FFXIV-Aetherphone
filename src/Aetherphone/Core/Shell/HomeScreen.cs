@@ -87,7 +87,7 @@ internal sealed class HomeScreen
         renderer.DrawSettleGhost(metrics, theme, delta);
         renderer.DrawDragGhost(metrics, theme, delta);
         ghostDrawList.PopClipRect();
-        folder.Draw(content, metrics, theme, navigation, interaction.Editing, pager.Page, delta);
+        folder.Draw(screen, content, metrics, theme, navigation, interaction.Editing, pager.Page, delta);
         DrawSizeMenu(content, metrics, theme, delta);
         gallery.Draw(screen, theme, delta, metrics.Scale);
         spotlight.Draw(screen, content, theme, navigation, delta, metrics.Scale);
