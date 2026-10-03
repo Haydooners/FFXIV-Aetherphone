@@ -24,7 +24,7 @@ internal static partial class TourRegistry
             GuideStep.Point(L.Onboarding.SignalTourTitle, L.Onboarding.SignalTourBody, "chrome.signal"),
             GuideStep.Point(L.Onboarding.BatteryTourTitle, L.Onboarding.BatteryTourBody, "chrome.battery"),
             GuideStep.Point(L.Onboarding.MinimizeTitle, L.Onboarding.MinimizeBody, "chrome.minimize"),
-            GuideStep.Point(L.Onboarding.LockTitle, L.Onboarding.LockBody, "chrome.lock"),
+            GuideStep.Point(L.Onboarding.ActionTitle, L.Onboarding.ActionBody, "chrome.action"),
         });
 
     private static readonly Dictionary<string, GuideSequence> Tours = BuildTours();

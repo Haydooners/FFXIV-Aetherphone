@@ -141,7 +141,7 @@ Other things `PhoneWindow` handles:
 
 ## The shell layer (Core/Shell)
 
-`PhoneShell.Draw(Rect device)` is the per-frame orchestrator. In order it: advances the minimize morph (and short-circuits into `MinimizeMorphView` when the phone is minimized), applies the notification shake offset, steps day/night wallpaper blending, computes the chassis, draws the phone body, advances `LoadingScreen`/`NavigationStack`/banner/calls, handles the three physical side buttons (minimize/close, do-not-disturb, position lock), asks `ShellOverlayCoordinator.Assess` who owns the pointer, draws the screen content, then the chrome, then the overlays.
+`PhoneShell.Draw(Rect device)` is the per-frame orchestrator. In order it: advances the minimize morph (and short-circuits into `MinimizeMorphView` when the phone is minimized), applies the notification shake offset, steps day/night wallpaper blending, computes the chassis, draws the phone body, advances `LoadingScreen`/`NavigationStack`/banner/calls, handles the five hardware keys laid out like an iPhone 17 Pro (Side button for minimize/close, Action button for do-not-disturb with a Dynamic Island notice, volume up/down for music volume with a slim on-screen level, Camera Control to open Camera), asks `ShellOverlayCoordinator.Assess` who owns the pointer, draws the screen content, then the chrome, then the overlays.
 
 The shell's cast, all in `src/Aetherphone/Core/Shell/`:
 
@@ -218,7 +218,7 @@ Apps are opened through `NavigationStack.Open(appId)` (string id, checks `AppIns
 
 All layout is done in absolute screen coordinates using `Rect` (src/Aetherphone/Core/Rect.cs), a `readonly record struct` of `Min`/`Max` vectors with `Width`, `Height`, `Size`, `Center`, `Inset`, `Translate`, and `Contains`. There is no layout engine: parents compute child rects and pass them down.
 
-`ChassisGeometry.Device(window, theme, scale)` turns the window rect into three nested, pixel-snapped rects with matching corner radii: `Body` (the metal frame), `Glass` (the bezel), and `Screen` (where content lives). `DeviceChrome` (src/Aetherphone/Windows/Components/DeviceChrome.cs) renders them as squircles, plus the side button hit rects (`SideButtonRect`, `MuteButtonRect`, `LockButtonRect`), the wallpaper, and `SealScreen`.
+`ChassisGeometry.Device(window, theme, scale)` turns the window rect into three nested, pixel-snapped rects with matching corner radii: `Body` (the metal frame), `Glass` (the bezel), and `Screen` (where content lives). `DeviceChrome` (src/Aetherphone/Windows/Components/DeviceChrome.cs) renders them as squircles, plus the hardware key slots (`KeyRect`, one fractional placement per `HardwareKey`), the antenna lines on the metal band, the wallpaper, and `SealScreen`. Each slot spans the full rail gutter so the hit target stays large, while `HardwareButton` paints only the proud part (under half the gutter) as a frame-coloured pill.
 
 Two scale factors are in play and they multiply, which is what `UiScale.Current` returns:
 
