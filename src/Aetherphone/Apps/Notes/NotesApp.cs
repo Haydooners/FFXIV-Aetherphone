@@ -95,7 +95,24 @@ internal sealed partial class NotesApp : IResumableApp, ISpotlightNotes, ITabRou
 
     public void OnResumed()
     {
+        ReopenClosedEditor();
         ConsumePendingNote();
+    }
+
+    private void ReopenClosedEditor()
+    {
+        if (router.Current != NotesScreen.EditNote || editingNote is not null)
+        {
+            return;
+        }
+
+        if (shownNote is { } note && configuration.Notes.Contains(note))
+        {
+            OpenEditor(note);
+            return;
+        }
+
+        router.Reset();
     }
 
     public void OnClosed()
