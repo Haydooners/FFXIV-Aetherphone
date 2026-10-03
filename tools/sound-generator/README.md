@@ -2,8 +2,9 @@
 
 Rebuilds every bundled clip in `src/Aetherphone/Sounds/`:
 
-- **Synthesizes** the original interface and game clips: glass taps and keyboard clicks from short
-  decaying partials plus a filtered noise transient, app and sheet transitions from band-passed
+- **Synthesizes** the original interface and game clips: glass taps from short decaying partials
+  plus a filtered noise transient, dry keyboard clicks from a band-passed noise snap over a faint
+  low thump, app and sheet transitions from band-passed
   noise swept up or down, marimba and bell chimes from tuned inharmonic partials, and a small
   synthetic room on every clip for polish.
 - **Downloads** the third-party clips from pinned sources into `.cache/` (ignored by git): Material
