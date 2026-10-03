@@ -4465,6 +4465,36 @@ internal static class L
         public static readonly LocString ImportPlaylist = new("music.importPlaylist", "Import playlist");
         public static readonly LocString DurationHoursMinutes = new("music.durationHoursMinutes", "{0} hr {1} min");
         public static readonly LocString DurationMinutes = new("music.durationMinutes", "{0} min");
+
+        internal static class NowPlaying
+        {
+            public static readonly LocString UpNext = new("music.nowPlaying.upNext", "Up Next");
+            public static readonly LocString PlayingNext = new("music.nowPlaying.playingNext", "Playing Next");
+            public static readonly LocString ContinuePlaying = new("music.nowPlaying.continuePlaying",
+                "Continue Playing");
+            public static readonly LocString History = new("music.nowPlaying.history", "History");
+            public static readonly LocString Clear = new("music.nowPlaying.clear", "Clear");
+            public static readonly LocString Autoplay = new("music.nowPlaying.autoplay", "Autoplay");
+            public static readonly LocString AddedBy = new("music.nowPlaying.addedBy", "Added by {0}");
+            public static readonly LocString JamQueue = new("music.nowPlaying.jamQueue", "Jam queue");
+            public static readonly LocString QueueEmpty = new("music.nowPlaying.queueEmpty", "Nothing up next");
+            public static readonly LocString Lyrics = new("music.nowPlaying.lyrics", "Lyrics");
+            public static readonly LocString LyricsUnavailable = new("music.nowPlaying.lyricsUnavailable",
+                "Lyrics aren't available for this song");
+            public static readonly LocString Instrumental = new("music.nowPlaying.instrumental", "Instrumental");
+            public static readonly LocString LyricsFailed = new("music.nowPlaying.lyricsFailed",
+                "Couldn't load lyrics");
+            public static readonly LocString Output = new("music.nowPlaying.output", "Output");
+            public static readonly LocString ThisPhone = new("music.nowPlaying.thisPhone", "This phone");
+            public static readonly LocString PlayingOn = new("music.nowPlaying.playingOn", "Playing on {0}");
+            public static readonly LocString SleepTimer = new("music.nowPlaying.sleepTimer", "Sleep timer");
+            public static readonly LocString SleepMinutes = new("music.nowPlaying.sleepMinutes", "{0} minutes");
+            public static readonly LocString SleepEndOfTrack = new("music.nowPlaying.sleepEndOfTrack", "End of track");
+            public static readonly LocString Crossfade = new("music.nowPlaying.crossfade", "Crossfade");
+            public static readonly LocString CrossfadeSeconds = new("music.nowPlaying.crossfadeSeconds", "{0} s");
+            public static readonly LocString RemoveFromQueue = new("music.nowPlaying.removeFromQueue",
+                "Remove from queue");
+        }
     }
 
     internal static class Messages

@@ -65,6 +65,22 @@ internal sealed class LyricsService : IDisposable
         }
     }
 
+    public void Retry(in Song song)
+    {
+        if (song.IsEmpty)
+        {
+            return;
+        }
+
+        lock (sync)
+        {
+            if (entries.TryGetValue(song.VideoId, out var node) && node.Value.State.Status == LyricsStatus.Failed)
+            {
+                node.Value.RetryAtMilliseconds = 0;
+            }
+        }
+    }
+
     public void Dispose()
     {
         cancellation.Cancel();
