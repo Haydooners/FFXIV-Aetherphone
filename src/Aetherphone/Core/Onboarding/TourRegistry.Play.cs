@@ -70,13 +70,15 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.CalendarAlertTitle, L.Onboarding.CalendarAlertBody,
                     "calendar.editor.alert", GuideGesture.None),
             });
-        Add(tours, "calculator", 3,
+        Add(tours, "calculator", 4,
             new[]
             {
                 GuideStep.TryUntil(L.Onboarding.CalculatorSumTitle, L.Onboarding.CalculatorSumBody,
                     "calculator.keypad", GuideGesture.Tap, "calculator.answer"),
                 GuideStep.TryTap(L.Onboarding.CalculatorReuseTitle, L.Onboarding.CalculatorReuseBody,
                     "calculator.tape"),
+                GuideStep.Point(L.Onboarding.CalculatorTypeTitle, L.Onboarding.CalculatorTypeBody,
+                    "calculator.display", GuideGesture.None),
             });
         Add(tours, "timers", 4,
             new[]

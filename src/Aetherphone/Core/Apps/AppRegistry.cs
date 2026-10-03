@@ -118,7 +118,7 @@ internal static class AppRegistry
         apps.Add(new MusicApp(services.Radio, services.SongSearch, services.SongResolver, services.Playback, services.MusicLibrary, services.Artwork, services.Aethernet, services.AethernetSession, services.Report, photoLibrary, services.WallpaperImages, services.Confirm, services.Configuration, services.RemoteImages, services.Lodestone, services.GameData, services.RadioLauncher, services.SocialNotifications, services.Rolladeck, services.PcMedia, services.Jam, services.JamLauncher, services.Contacts, services.RadioRooms.Room, services.MusicDownloads, services.Lyrics, services.WindowsMedia, services.Listening));
         apps.Add(new ClockApp(services.Configuration, services.Confirm));
         apps.Add(new NotesApp(services.Configuration, services.Confirm));
-        apps.Add(new CalculatorApp());
+        apps.Add(new CalculatorApp(services.Configuration, services.Confirm));
         apps.Add(new AetherStreamApp(videoSuite, services.Configuration, services.Confirm, services.RemoteImages,
             services.Http, services.AethernetSession, services.Lodestone, services.AetherStreamLauncher,
             screenWindow));

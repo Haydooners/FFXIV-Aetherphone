@@ -164,6 +164,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public List<Core.Timers.TimerCharacterRecord> TimerCharacters { get; set; } = new();
     public List<Core.Timers.TimerWorkshopRecord> TimerWorkshops { get; set; } = new();
     public string TimerRegionCode { get; set; } = string.Empty;
+    public List<Core.Calculator.CalculatorHistoryRecord> CalculatorHistory { get; set; } = new();
     [JsonProperty("ShowWalletBadge")]
     public bool LegacyShowWalletBadge { get; set; } = true;
     [JsonProperty("ShowDailiesBadge")]

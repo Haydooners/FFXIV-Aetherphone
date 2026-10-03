@@ -31,13 +31,13 @@ Everything here is client side. The backend ("Aethernet") lives in a separate re
 
 ## Step 1: study a real app
 
-Open src/Aetherphone/Apps/Calculator/CalculatorApp.cs. It is a small, self-contained app with no constructor dependencies and shows the whole anatomy:
+Open src/Aetherphone/Apps/Calculator/CalculatorApp.cs. It is a compact app split into partial files by area (display, keypad, keyboard, history sheet); its only constructor dependencies are `Configuration`, which stores the calculation history, and `ConfirmService` for the Clear History prompt. It shows the whole anatomy:
 
 - **Identity properties.** `Id => "calculator"`, `DisplayName => Loc.T(L.Apps.Calculator)`, `Glyph => "="`, `Accent => AppAccents.For("calculator")`, `BadgeCount => 0`. The id is a stable lowercase key used everywhere: accent lookup, icon file name, availability flags, navigation.
 - **An `AppSkin` field.** `private readonly AppSkin ui = new(AppPalettes.Calculator);` bundles the app's palette (inks, backdrop gradient, card fills) with reusable widgets.
-- **`Draw(in PhoneContext context)`.** Runs every frame while the app is open. It reads `UiScale.Current` (Dalamud's UI scale times the phone zoom; multiply every pixel constant by it), refreshes `ui.Theme` from the context, paints the backdrop, draws the header, then lays out content with plain rectangle math.
-- **Hit testing.** Buttons are drawn shapes plus `UiInteract.Hover(min, max)` and `ImGui.IsMouseClicked(...)` checks. No retained state.
-- **Empty lifecycle members.** `OnOpened`, `OnClosed`, and `Dispose` can be empty when there is nothing to set up or tear down.
+- **`Draw(in PhoneContext context)`.** Runs every frame while the app is open. It reads `UiScale.Current` (Dalamud's UI scale times the phone zoom; multiply every pixel constant by it), refreshes `ui.Theme` from the context, paints the backdrop, then lays out the display, keypad and history button with plain rectangle math.
+- **Hit testing.** Buttons are drawn shapes plus `UiInteract.Hover(min, max)` and `UiInteract.Click(min, max, hovered)`, which fires on release. The only retained state is a `Spring` per key for the press animation.
+- **Lifecycle members.** `OnOpened` resets per-visit state (the history sheet, the copy menu), `OnClosed` saves pending history, and `Dispose` stays empty because there is nothing to release.
 
 Then skim src/Aetherphone/Apps/Notes/NotesApp.cs for the next tier: a `ViewRouter<NotesScreen>` for multiple screens, `Configuration` for persistence, and `WantsSystemTheme => true` so the app follows the phone's light/dark theme instead of shipping its own dark palette.
 
@@ -154,7 +154,7 @@ The idioms, all copied from CalculatorApp and NotesApp:
 
 - `SceneChrome.ScreenFrom(content, theme, scale)` expands the content rect back to the full screen so `ui.Backdrop(screen)` can paint the gradient edge to edge.
 - `AppHeader.Draw(context, DisplayName)` renders the centered title and a back button that calls `context.Navigation.Back()` for you.
-- `Typography` draws all text; never call `ImGui.Text` for styled copy. Styles come from the `TextStyles` ladder (see [the UI toolkit](ui-toolkit.md)). The sample fetches `ImGui.GetWindowDrawList()` and passes it to `Typography.DrawCentered` because the overloads without an `ImDrawListPtr` move the ImGui cursor, which has no place in a hand-laid-out `Draw`; CalculatorApp passes the draw list the same way in its key art (`DrawKey` and `DrawZeroKey`), while its `DrawLive` text goes through the cursor-moving overloads.
+- `Typography` draws all text; never call `ImGui.Text` for styled copy. Styles come from the `TextStyles` ladder (see [the UI toolkit](ui-toolkit.md)). The sample fetches `ImGui.GetWindowDrawList()` and passes it to `Typography.DrawCentered` because the overloads without an `ImDrawListPtr` move the ImGui cursor, which has no place in a hand-laid-out `Draw`; CalculatorApp passes the draw list the same way everywhere (`DrawKey`, `DrawLive` and the history rows).
 - `AppSkin.PillButton` draws the shape, handles hover, and returns `true` on click, all in one call.
 - Every layout constant is multiplied by `UiScale.Current`. `Metrics` tokens (`Metrics.Space`, `Metrics.Radius`, `Metrics.Size`) are unscaled values; scale them at the call site.
 
