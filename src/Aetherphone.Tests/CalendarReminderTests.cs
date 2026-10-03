@@ -50,4 +50,74 @@ public sealed class CalendarReminderTests
             Assert.Equal(index, CalendarReminder.LeadIndexOf(options[index]));
         }
     }
+
+    [Fact]
+    public void WeeklyEventNotifiesEachOccurrenceOnce()
+    {
+        var calendarEvent = new CalendarCustomEvent
+        {
+            When = When, Repeat = CalendarRepeat.Weekly, ReminderMinutesBefore = 15,
+        };
+        CalendarReminder.Arm(calendarEvent, When.AddDays(-1), true);
+        var secondLead = When.AddDays(7).AddMinutes(-10);
+
+        Assert.Equal(CalendarReminderDue.None, CalendarReminder.Due(calendarEvent, When.AddMinutes(-20), out _));
+        Assert.Equal(CalendarReminderDue.Notify, CalendarReminder.Due(calendarEvent, When.AddMinutes(-10), out var first));
+        Assert.Equal(When, first);
+        CalendarReminder.MarkHandled(calendarEvent, first);
+        Assert.Equal(CalendarReminderDue.None, CalendarReminder.Due(calendarEvent, When.AddMinutes(5), out _));
+        Assert.Equal(CalendarReminderDue.Notify, CalendarReminder.Due(calendarEvent, secondLead, out var second));
+        Assert.Equal(When.AddDays(7), second);
+    }
+
+    [Fact]
+    public void ArmingARepeatingEventSkipsOccurrencesThatAlreadyStarted()
+    {
+        var calendarEvent = new CalendarCustomEvent
+        {
+            When = When, Repeat = CalendarRepeat.Daily, ReminderMinutesBefore = CalendarReminder.AtEventTime,
+        };
+
+        CalendarReminder.Arm(calendarEvent, When.AddDays(3).AddHours(1), true);
+
+        Assert.Equal(When.AddDays(3), calendarEvent.LastNotifiedOccurrence);
+        Assert.Equal(CalendarReminderDue.None,
+            CalendarReminder.Due(calendarEvent, When.AddDays(3).AddHours(2), out _));
+    }
+
+    [Fact]
+    public void LongMissedRepeatingRemindersAreSkippedSilently()
+    {
+        var calendarEvent = new CalendarCustomEvent
+        {
+            When = When, Repeat = CalendarRepeat.Weekly, ReminderMinutesBefore = CalendarReminder.AtEventTime,
+            DurationMinutes = 60,
+        };
+        CalendarReminder.Arm(calendarEvent, When.AddDays(-1), true);
+        var late = When.AddMinutes(60 + CalendarReminder.LateGraceMinutes + 1);
+
+        Assert.Equal(CalendarReminderDue.Skip, CalendarReminder.Due(calendarEvent, late, out var occurrence));
+        Assert.Equal(When, occurrence);
+    }
+
+    [Fact]
+    public void CreatingAPastOneOffEventDoesNotNotify()
+    {
+        var calendarEvent = new CalendarCustomEvent { When = When, ReminderMinutesBefore = 30 };
+
+        CalendarReminder.Arm(calendarEvent, When.AddHours(1), true);
+
+        Assert.Equal(CalendarReminderDue.None, CalendarReminder.Due(calendarEvent, When.AddHours(1), out _));
+    }
+
+    [Fact]
+    public void EditingAOneOffEventIntoTheFutureRearmsIt()
+    {
+        var calendarEvent = new CalendarCustomEvent { When = When, ReminderMinutesBefore = 30, Notified = true };
+        calendarEvent.When = When.AddDays(1);
+
+        CalendarReminder.Arm(calendarEvent, When, false);
+
+        Assert.False(calendarEvent.Notified);
+    }
 }

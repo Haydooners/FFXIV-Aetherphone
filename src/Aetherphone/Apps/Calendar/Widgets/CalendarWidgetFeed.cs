@@ -152,9 +152,13 @@ internal sealed class CalendarWidgetFeed
 
     private void Rebuild(Vector4 accent)
     {
-        var merged = CalendarEventMerger.Merge(events.Events, configuration.CalendarCustomEvents,
-            configuration.CalendarGroups, configuration.CalendarGameEventsInWidget, CalendarSurface.Widget, accent);
         var now = DateTime.Now;
+        var monthStart = new DateTime(now.Year, now.Month, 1);
+        var windowEnd = monthStart.AddMonths(1);
+        var lookaheadEnd = now.Date.AddDays(LookaheadDays);
+        var merged = CalendarEventMerger.Merge(events.Events, configuration.CalendarCustomEvents,
+            configuration.CalendarGroups, configuration.CalendarGameEventsInWidget, CalendarSurface.Widget, accent,
+            monthStart, lookaheadEnd > windowEnd ? lookaheadEnd : windowEnd);
         CollectUpcoming(merged, now);
         CollectMonth(merged, now.Date);
     }
