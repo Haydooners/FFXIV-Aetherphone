@@ -36,5 +36,35 @@ internal static partial class TourRegistry
                 GuideStep.Tap(L.Onboarding.CoinShopTitle, L.Onboarding.CoinShopBody, "coin.tabs", "coin.tab.shop"),
                 GuideStep.Note(L.Onboarding.CoinFairTitle, L.Onboarding.CoinFairBody),
             });
+        Add(tours, "clock", 2,
+            new[]
+            {
+                GuideStep.Note(L.Apps.Clock, L.Onboarding.ClockIntroBody),
+                GuideStep.Tap(L.Onboarding.ClockTabsTitle, L.Onboarding.ClockTabsBody, "clock.tabs",
+                    "clock.tab.alarms"),
+                GuideStep.Point(L.Onboarding.ClockAddTitle, L.Onboarding.ClockAddBody, "clock.add"),
+            });
+        Add(tours, "calendar", 2,
+            new[]
+            {
+                GuideStep.Point(L.Calendar.Title, L.Onboarding.CalendarBody, "calendar.grid"),
+                GuideStep.Point(L.Onboarding.CalendarAgendaTitle, L.Onboarding.CalendarAgendaBody, "calendar.agenda"),
+                GuideStep.Point(L.Calendar.NewEvent, L.Onboarding.CalendarAddBody, "calendar.new"),
+            });
+        Add(tours, "calculator", 2,
+            new[]
+            {
+                GuideStep.Note(L.Apps.Calculator, L.Onboarding.CalculatorBody),
+                GuideStep.Point(L.Onboarding.CalculatorTapeTitle, L.Onboarding.CalculatorTapeBody,
+                    "calculator.display"),
+            });
+        Add(tours, "timers", 2,
+            new[]
+            {
+                GuideStep.Note(L.Apps.Timers, L.Onboarding.TimersBody),
+                GuideStep.Point(L.Onboarding.TimersResetsTitle, L.Onboarding.TimersResetsBody, "timers.resets"),
+                GuideStep.Point(L.Onboarding.TimersRemindersTitle, L.Onboarding.TimersRemindersBody,
+                    "timers.reminders"),
+            });
     }
 }
