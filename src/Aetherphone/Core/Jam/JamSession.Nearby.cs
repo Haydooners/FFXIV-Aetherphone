@@ -47,7 +47,8 @@ internal sealed partial class JamSession
         }
 
         nearbyWanted = true;
-        if (!signals.Connected || session.CurrentUser is null || disconnectedSinceTicks != 0)
+        if (!nearbyCadence.MayReport(now) || !signals.Connected || session.CurrentUser is null
+            || disconnectedSinceTicks != 0)
         {
             return;
         }

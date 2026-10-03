@@ -237,6 +237,8 @@ public sealed class JamWaveTwoTests
         Assert.True(cadence.ShouldReport(1_000, 132, 73));
         cadence.MarkSent(1_000, 132, 73);
 
+        Assert.False(cadence.MayReport(1_500));
+        Assert.True(cadence.MayReport(1_000 + JamNearbyCadence.MinimumGapMilliseconds));
         Assert.False(cadence.ShouldReport(2_000, 132, 73));
         Assert.False(cadence.ShouldReport(1_500, 133, 73));
         Assert.True(cadence.ShouldReport(1_000 + JamNearbyCadence.MinimumGapMilliseconds, 133, 73));

@@ -17,6 +17,11 @@ internal sealed class JamNearbyCadence
         return hostingDiscoverable || (interestAt != 0 && nowMilliseconds - interestAt <= InterestMilliseconds);
     }
 
+    public bool MayReport(long nowMilliseconds)
+    {
+        return !sent || nowMilliseconds - sentAt >= MinimumGapMilliseconds;
+    }
+
     public bool ShouldReport(long nowMilliseconds, uint territoryId, uint worldId)
     {
         if (territoryId == 0 || worldId == 0)
