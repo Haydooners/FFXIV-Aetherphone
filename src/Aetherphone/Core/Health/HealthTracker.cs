@@ -838,17 +838,10 @@ internal sealed class HealthTracker : IDisposable
     private string ScopeKey(HealthGoalScope scope) => scope switch
     {
         HealthGoalScope.Daily => DateKey(),
-        HealthGoalScope.Weekly => WeekStartKey(),
+        HealthGoalScope.Weekly => WeekCutoffKey(),
         HealthGoalScope.Session => SessionStartedUnix.ToString(CultureInfo.InvariantCulture),
         _ => "all",
     };
-
-    private static string WeekStartKey()
-    {
-        var today = DateTime.Now.Date;
-        var offset = (int)today.DayOfWeek;
-        return today.AddDays(-offset).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-    }
 
     private double GoalValue(HealthGoalType type, HealthGoalScope scope) => type switch
     {
@@ -904,7 +897,7 @@ internal sealed class HealthTracker : IDisposable
         if (today != weekCutoffDate || weekCutoffKey.Length == 0)
         {
             weekCutoffDate = today;
-            weekCutoffKey = today.AddDays(-6).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            weekCutoffKey = today.AddDays(-(int)today.DayOfWeek).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         }
 
         return weekCutoffKey;
