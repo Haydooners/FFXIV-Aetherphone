@@ -45,12 +45,35 @@ internal sealed partial class SetupOverlay
     private const float FloatUnits = 3f;
     private const float ExitZoom = 0.55f;
 
-    private static readonly Vector4 InkStrong = new(1f, 1f, 1f, 0.97f);
-    private static readonly Vector4 InkMuted = new(0.90f, 0.88f, 1f, 0.66f);
-    private static readonly Vector4 InkHairline = new(1f, 1f, 1f, 0.10f);
-    private static readonly Vector4 ButtonInk = new(0.08f, 0.05f, 0.15f, 1f);
-    private static readonly Vector4 SoftDanger = new(1f, 0.55f, 0.55f, 1f);
-    private static readonly Vector4 HoverWash = new(1f, 1f, 1f, 0.06f);
+    private static readonly SetupInk LightInk = new(new Vector4(0.07f, 0.05f, 0.13f, 0.95f),
+        new Vector4(0.24f, 0.20f, 0.34f, 0.70f), new Vector4(0f, 0f, 0f, 0.08f), new Vector4(0f, 0f, 0f, 0.045f),
+        new Vector4(0.44f, 0.27f, 0.92f, 1f), new Vector4(0.84f, 0.20f, 0.22f, 1f),
+        new Vector4(0.95f, 0.94f, 0.99f, 1f), new Vector4(0f, 0f, 0f, 0.08f), new Vector4(0.07f, 0.05f, 0.13f, 0.38f));
+
+    private static readonly SetupInk DarkInk = new(new Vector4(1f, 1f, 1f, 0.97f),
+        new Vector4(0.90f, 0.88f, 1f, 0.66f), new Vector4(1f, 1f, 1f, 0.10f), new Vector4(1f, 1f, 1f, 0.06f),
+        BrandMark.Lilac, new Vector4(1f, 0.55f, 0.55f, 1f), BrandMark.Night, new Vector4(1f, 1f, 1f, 0.14f),
+        new Vector4(1f, 1f, 1f, 0.45f));
+
+    private readonly record struct SetupInk(Vector4 Strong, Vector4 Muted, Vector4 Hairline, Vector4 Wash,
+        Vector4 Accent, Vector4 Danger, Vector4 Base, Vector4 Disabled, Vector4 DisabledText);
+
+    private static SetupInk ink = DarkInk;
+    private static GlassTone glass = GlassTone.Dark;
+
+    private static void ResolveInk(float darkness)
+    {
+        ink = new SetupInk(Vector4.Lerp(LightInk.Strong, DarkInk.Strong, darkness),
+            Vector4.Lerp(LightInk.Muted, DarkInk.Muted, darkness),
+            Vector4.Lerp(LightInk.Hairline, DarkInk.Hairline, darkness),
+            Vector4.Lerp(LightInk.Wash, DarkInk.Wash, darkness),
+            Vector4.Lerp(LightInk.Accent, DarkInk.Accent, darkness),
+            Vector4.Lerp(LightInk.Danger, DarkInk.Danger, darkness),
+            Vector4.Lerp(LightInk.Base, DarkInk.Base, darkness),
+            Vector4.Lerp(LightInk.Disabled, DarkInk.Disabled, darkness),
+            Vector4.Lerp(LightInk.DisabledText, DarkInk.DisabledText, darkness));
+        glass = darkness >= 0.5f ? GlassTone.Dark : GlassTone.Light;
+    }
     private static readonly Vector4 PreviewInk = new(1f, 1f, 1f, 0.96f);
     private static readonly Vector4 PreviewShadow = new(0f, 0f, 0f, 0.42f);
     private static readonly Vector4 PreviewBadgeWarm = new(0.95f, 0.38f, 0.62f, 1f);
@@ -113,8 +136,9 @@ internal sealed partial class SetupOverlay
     private static float Float(float scale) =>
         MathF.Sin(Pulse.Phase(FloatPeriodMs) * MathF.PI * 2f) * FloatUnits * scale;
 
-    private static void DrawBackdrop(ImDrawListPtr drawList, Rect screen, float alpha, float rounding) =>
-        BrandMark.DrawStage(drawList, screen, rounding, alpha, true);
+    private static void DrawBackdrop(ImDrawListPtr drawList, Rect screen, float alpha, float rounding,
+        float darkness) =>
+        BrandMark.DrawStage(drawList, screen, rounding, alpha, true, darkness);
 
     private void DrawWelcome(Rect screen, PhoneTheme theme, Vector2 offset, float alpha, bool live)
     {
@@ -142,7 +166,7 @@ internal sealed partial class SetupOverlay
         DrawWordmark(drawList, new Vector2(centerX, titleTop + titleHeight * 0.5f), title, ContentWidth(screen),
             alpha * titleReveal);
         var bodyReveal = Reveal(4);
-        Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline, Fade(InkMuted, alpha * bodyReveal),
+        Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline, Fade(ink.Muted, alpha * bodyReveal),
             new Vector2(centerX, titleTop + titleHeight + Metrics.Space.Md * scale + Rise(bodyReveal)), bodyWidth);
         if (Primary(drawList, ButtonRect(screen, offset, 0), Loc.T(L.Onboarding.GetStarted), alpha * Reveal(6),
                 live))
@@ -164,7 +188,7 @@ internal sealed partial class SetupOverlay
         var effect = new TextEffect(NameEffectKind.Glint, Fade(BrandMark.Lilac, alpha),
             Pulse.Phase(GlintPeriodMs));
         Typography.Draw(drawList, new Vector2(center.X - size.X * 0.5f, center.Y - size.Y * 0.5f), fitted,
-            Fade(InkStrong, alpha), TextStyles.Hero, effect);
+            Fade(ink.Strong, alpha), TextStyles.Hero, effect);
     }
 
     private void DrawLanguage(Rect screen, PhoneTheme theme, Vector2 offset, float alpha, bool live)
@@ -181,12 +205,12 @@ internal sealed partial class SetupOverlay
         var top = CenteredTop(screen, contentHeight, 0) + offset.Y;
         var centerX = screen.Center.X + offset.X;
         DrawGlyphBadge(drawList, new Vector2(centerX, top + glyphHeight * 0.5f), FontAwesomeIcon.Globe,
-            BrandMark.Lilac, alpha, Reveal(0));
+            ink.Accent, alpha, Reveal(0));
         var titleReveal = Reveal(1);
         var titleCenter = new Vector2(centerX,
             top + glyphHeight + Metrics.Space.Xl * scale + titleHeight * 0.5f + Rise(titleReveal));
         Typography.DrawCentered(drawList, titleCenter, Loc.T(L.Settings.Language),
-            Fade(InkStrong, alpha * titleReveal), TextStyles.Title1);
+            Fade(ink.Strong, alpha * titleReveal), TextStyles.Title1);
         var listAlpha = alpha * Reveal(2);
         var card = CardRect(screen, offset,
             top + glyphHeight + Metrics.Space.Xl * scale + titleHeight + Metrics.Space.Xl * scale, listHeight);
@@ -229,10 +253,10 @@ internal sealed partial class SetupOverlay
         var centerX = screen.Center.X + offset.X;
         var titleReveal = Reveal(0);
         Typography.DrawCentered(drawList, new Vector2(centerX, top + titleHeight * 0.5f + Rise(titleReveal)),
-            Loc.T(L.Setup.AppearanceTitle), Fade(InkStrong, alpha * titleReveal), TextStyles.LargeTitle);
+            Loc.T(L.Setup.AppearanceTitle), Fade(ink.Strong, alpha * titleReveal), TextStyles.LargeTitle);
         var bodyReveal = Reveal(1);
         var bodyBottom = Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline,
-            Fade(InkMuted, alpha * bodyReveal),
+            Fade(ink.Muted, alpha * bodyReveal),
             new Vector2(centerX, top + titleHeight + Metrics.Space.Md * scale + Rise(bodyReveal)), bodyWidth) -
             Rise(bodyReveal);
         var tilesTop = bodyBottom + Metrics.Space.Xl * scale;
@@ -269,7 +293,7 @@ internal sealed partial class SetupOverlay
         var labelSize = Typography.Measure(Loc.T(L.Setup.AppearanceDynamic), TextStyles.BodyEmphasized);
         Typography.Draw(drawList,
             new Vector2(card.Min.X + Metrics.Space.Lg * scale, card.Center.Y - labelSize.Y * 0.5f),
-            Loc.T(L.Setup.AppearanceDynamic), Fade(InkStrong, cardAlpha), TextStyles.BodyEmphasized);
+            Loc.T(L.Setup.AppearanceDynamic), Fade(ink.Strong, cardAlpha), TextStyles.BodyEmphasized);
         var toggleSize = new Vector2(Metrics.Size.ToggleWidth * scale, Metrics.Size.ToggleHeight * scale);
         var toggleMin = new Vector2(card.Max.X - Metrics.Space.Lg * scale - toggleSize.X,
             card.Center.Y - toggleSize.Y * 0.5f);
@@ -309,7 +333,7 @@ internal sealed partial class SetupOverlay
             Fade(PreviewShadow, alpha), TextStyles.Title3);
         Typography.DrawCentered(drawList, clockCenter, clock, Fade(PreviewInk, alpha), TextStyles.Title3);
         DrawPreviewNotifications(drawList, rect, dark, alpha);
-        var ring = selected ? BrandMark.Lilac : hovered ? new Vector4(1f, 1f, 1f, 0.32f) : InkHairline;
+        var ring = selected ? ink.Accent : hovered ? ink.Muted : ink.Hairline;
         var ringPad = selected ? 3f * scale : 0f;
         Squircle.Stroke(drawList, rect.Min - new Vector2(ringPad, ringPad), rect.Max + new Vector2(ringPad, ringPad),
             radius + ringPad, ImGui.GetColorU32(Fade(ring, alpha)),
@@ -361,13 +385,13 @@ internal sealed partial class SetupOverlay
         var scale = UiScale.Current;
         var labelHeight = LineBlock(TextStyles.Subheadline);
         Typography.DrawCentered(drawList, new Vector2(centerX, top + labelHeight * 0.5f), label,
-            Fade(InkStrong, alpha), TextStyles.Subheadline);
+            Fade(ink.Strong, alpha), TextStyles.Subheadline);
         var markRadius = 11f * scale;
         var markCenter = new Vector2(centerX, top + labelHeight + Metrics.Space.Sm * scale + markRadius);
         if (!selected)
         {
-            drawList.AddCircle(markCenter, markRadius, ImGui.GetColorU32(Fade(new Vector4(1f, 1f, 1f, 0.32f), alpha)),
-                32, Metrics.Stroke.Thin * scale);
+            drawList.AddCircle(markCenter, markRadius, ImGui.GetColorU32(Fade(ink.Muted, 0.6f * alpha)), 32,
+                Metrics.Stroke.Thin * scale);
             return;
         }
 
@@ -428,7 +452,7 @@ internal sealed partial class SetupOverlay
             : Metrics.Space.Xl * scale + WrappedHeight(logInFirst, TextStyles.Subheadline, BodyWidth(screen));
         var contentHeight = HeaderHeight(screen, body) + extraHeight;
         var top = CenteredTop(screen, contentHeight, 3) + offset.Y;
-        var y = DrawHeader(drawList, screen, offset, alpha, FontAwesomeIcon.UserCircle, BrandMark.Lilac,
+        var y = DrawHeader(drawList, screen, offset, alpha, FontAwesomeIcon.UserCircle, ink.Accent,
             Loc.T(L.Setup.AccountTitle), body, top);
         var contentAlpha = alpha * Reveal(3);
         if (hasPlayer)
@@ -438,7 +462,7 @@ internal sealed partial class SetupOverlay
         else
         {
             Typography.DrawWrappedCentered(drawList, logInFirst, TextStyles.Subheadline,
-                Fade(InkMuted, contentAlpha),
+                Fade(ink.Muted, contentAlpha),
                 new Vector2(screen.Center.X + offset.X, y + Metrics.Space.Xl * scale), BodyWidth(screen));
         }
 
@@ -484,7 +508,7 @@ internal sealed partial class SetupOverlay
             Metrics.Space.Md * scale + warningHeight;
         var contentHeight = HeaderHeight(screen, body) + extraHeight;
         var top = CenteredTop(screen, contentHeight, 2) + offset.Y;
-        var y = DrawHeader(drawList, screen, offset, alpha, FontAwesomeIcon.UserCircle, BrandMark.Lilac,
+        var y = DrawHeader(drawList, screen, offset, alpha, FontAwesomeIcon.UserCircle, ink.Accent,
             Loc.T(L.Setup.AccountTitle), body, top);
         var contentAlpha = alpha * Reveal(3);
         var ready = false;
@@ -496,7 +520,7 @@ internal sealed partial class SetupOverlay
                 ref risingStonesUuidDraft, SignInFlow.RisingStonesUuidMaxLength, contentAlpha, live);
             risingStonesUuidDraft = SanitizeDigits(risingStonesUuidDraft);
             var hintTop = fieldRect.Max.Y + Metrics.Space.Md * scale;
-            Typography.DrawWrappedCentered(drawList, hint, TextStyles.Footnote, Fade(InkMuted, contentAlpha),
+            Typography.DrawWrappedCentered(drawList, hint, TextStyles.Footnote, Fade(ink.Muted, contentAlpha),
                 new Vector2(screen.Center.X + offset.X, hintTop), bodyWidth);
             warningTop = hintTop + WrappedHeight(hint, TextStyles.Footnote, bodyWidth) + Metrics.Space.Md * scale;
             ready = live && !flow.Busy && risingStonesUuidDraft.Length > 0;
@@ -504,13 +528,13 @@ internal sealed partial class SetupOverlay
         else
         {
             var noticeTop = y + Metrics.Space.Xl * scale;
-            Typography.DrawWrappedCentered(drawList, logInFirst, TextStyles.Subheadline, Fade(InkMuted, contentAlpha),
+            Typography.DrawWrappedCentered(drawList, logInFirst, TextStyles.Subheadline, Fade(ink.Muted, contentAlpha),
                 new Vector2(screen.Center.X + offset.X, noticeTop), bodyWidth);
             warningTop = noticeTop + WrappedHeight(logInFirst, TextStyles.Subheadline, bodyWidth) +
                          Metrics.Space.Md * scale;
         }
 
-        Typography.DrawWrappedCentered(drawList, warning, TextStyles.Footnote, Fade(SoftDanger, contentAlpha),
+        Typography.DrawWrappedCentered(drawList, warning, TextStyles.Footnote, Fade(ink.Danger, contentAlpha),
             new Vector2(screen.Center.X + offset.X, warningTop), bodyWidth);
 
         var buttonsAlpha = alpha * Reveal(4);
@@ -558,7 +582,7 @@ internal sealed partial class SetupOverlay
         var contentHeight = HeaderHeight(screen, body) + Metrics.Space.Lg * scale + 54f * scale +
                             Metrics.Space.Lg * scale + stepsHeight;
         var top = CenteredTop(screen, contentHeight, 3) + offset.Y;
-        var y = DrawHeader(drawList, screen, offset, alpha, FontAwesomeIcon.Key, BrandMark.Lilac,
+        var y = DrawHeader(drawList, screen, offset, alpha, FontAwesomeIcon.Key, ink.Accent,
             Loc.T(titleKey), body, top);
         var contentAlpha = alpha * Reveal(3);
         var codeRect = CardRect(screen, offset, y + Metrics.Space.Lg * scale, 54f * scale);
@@ -681,9 +705,9 @@ internal sealed partial class SetupOverlay
             var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
             var distance = (30f + 52f * reach) * scale;
             var spark = center + direction * distance;
-            var ink = sparkIndex % 2 == 0 ? SignedInTint : BrandMark.Lilac;
-            drawList.AddCircleFilled(spark, 4.5f * scale * fade, ImGui.GetColorU32(Fade(ink, 0.18f * fade)), 12);
-            drawList.AddCircleFilled(spark, 2f * scale, ImGui.GetColorU32(Fade(ink, fade)), 10);
+            var sparkInk = sparkIndex % 2 == 0 ? SignedInTint : ink.Accent;
+            drawList.AddCircleFilled(spark, 4.5f * scale * fade, ImGui.GetColorU32(Fade(sparkInk, 0.18f * fade)), 12);
+            drawList.AddCircleFilled(spark, 2f * scale, ImGui.GetColorU32(Fade(sparkInk, fade)), 10);
         }
     }
 
@@ -694,7 +718,7 @@ internal sealed partial class SetupOverlay
         var body = Loc.T(L.Account.XivIntro);
         var contentHeight = HeaderHeight(screen, body) + Metrics.Space.Lg * scale + 54f * scale + 76f * scale;
         var top = CenteredTop(screen, contentHeight, 1) + offset.Y;
-        var y = DrawHeader(drawList, screen, offset, alpha, FontAwesomeIcon.ShieldAlt, BrandMark.Lilac,
+        var y = DrawHeader(drawList, screen, offset, alpha, FontAwesomeIcon.ShieldAlt, ink.Accent,
             Loc.T(L.Account.XivTitle), body, top);
         var contentAlpha = alpha * Reveal(3);
         if (flow.XivUserCode.Length > 0)
@@ -709,9 +733,9 @@ internal sealed partial class SetupOverlay
         }
 
         var waitCenter = new Vector2(screen.Center.X + offset.X, y + Metrics.Space.Xxl * scale);
-        LoadingPulse.Spinner(waitCenter, 9f * scale, BrandMark.Lilac, contentAlpha, drawList);
+        LoadingPulse.Spinner(waitCenter, 9f * scale, ink.Accent, contentAlpha, drawList);
         Typography.DrawCentered(drawList, waitCenter + new Vector2(0f, Metrics.Space.Xl * scale),
-            Loc.T(L.Account.XivWaiting), Fade(InkMuted, contentAlpha), TextStyles.Footnote);
+            Loc.T(L.Account.XivWaiting), Fade(ink.Muted, contentAlpha), TextStyles.Footnote);
         var buttonsAlpha = alpha * Reveal(4);
         var (leftRect, rightRect) = HalfButtonRects(screen, offset, 0);
         if (Secondary(drawList, leftRect, Loc.T(L.Account.XivOpen), buttonsAlpha, live) &&
@@ -777,10 +801,10 @@ internal sealed partial class SetupOverlay
         var titleCenter = new Vector2(centerX,
             top + avatarRadius * 2f + Metrics.Space.Xl * scale + titleHeight * 0.5f);
         Typography.DrawCentered(drawList, titleCenter + new Vector2(0f, Rise(titleReveal)), Loc.T(L.Setup.IdTitle),
-            Fade(InkStrong, alpha * titleReveal), TextStyles.Title1);
+            Fade(ink.Strong, alpha * titleReveal), TextStyles.Title1);
         var bodyReveal = Reveal(2);
         var bodyBottom = Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline,
-            Fade(InkMuted, alpha * bodyReveal),
+            Fade(ink.Muted, alpha * bodyReveal),
             new Vector2(centerX, titleCenter.Y + titleHeight * 0.5f + Metrics.Space.Md * scale + Rise(bodyReveal)),
             bodyWidth) - Rise(bodyReveal);
         var fieldsAlpha = alpha * Reveal(3);
@@ -792,7 +816,7 @@ internal sealed partial class SetupOverlay
         DrawField(drawList, handleRect, "setupHandle", Loc.T(L.Setup.HandleLabel), ref handleDraft, HandleMax,
             fieldsAlpha, live, "@");
         handleDraft = SanitizeHandle(handleDraft);
-        var hintInk = handleRejected ? Fade(SoftDanger, fieldsAlpha) : Fade(InkMuted, fieldsAlpha);
+        var hintInk = handleRejected ? Fade(ink.Danger, fieldsAlpha) : Fade(ink.Muted, fieldsAlpha);
         Typography.DrawWrappedCentered(drawList, hint, TextStyles.Footnote, hintInk,
             new Vector2(centerX, handleRect.Max.Y + Metrics.Space.Md * scale), bodyWidth);
         var valid = !profileSaving && IsHandleValid(handleDraft) && displayNameDraft.Trim().Length > 0;
@@ -817,7 +841,7 @@ internal sealed partial class SetupOverlay
         var reach = avatarRadius * 0.72f;
         var badgeCenter = new Vector2(avatarCenter.X + reach, avatarCenter.Y + reach);
         drawList.AddCircleFilled(badgeCenter, badgeRadius + 2.5f * scale,
-            ImGui.GetColorU32(Fade(BrandMark.Night, alpha)), 32);
+            ImGui.GetColorU32(Fade(ink.Base, alpha)), 32);
         drawList.AddCircleFilled(badgeCenter, badgeRadius, ImGui.GetColorU32(Fade(BrandMark.Violet, alpha)), 32);
         AppSkin.Icon(drawList, badgeCenter, IconGlyph.Of(FontAwesomeIcon.Camera), new Vector4(1f, 1f, 1f, alpha),
             0.6f);
@@ -876,10 +900,10 @@ internal sealed partial class SetupOverlay
         var centerX = screen.Center.X + offset.X;
         var titleReveal = Reveal(0);
         Typography.DrawCentered(drawList, new Vector2(centerX, top + titleHeight * 0.5f + Rise(titleReveal)),
-            Loc.T(L.Onboarding.AllInOneTitle), Fade(InkStrong, alpha * titleReveal), TextStyles.LargeTitle);
+            Loc.T(L.Onboarding.AllInOneTitle), Fade(ink.Strong, alpha * titleReveal), TextStyles.LargeTitle);
         var bodyReveal = Reveal(1);
         var y = Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline,
-            Fade(InkMuted, alpha * bodyReveal),
+            Fade(ink.Muted, alpha * bodyReveal),
             new Vector2(centerX, top + titleHeight + Metrics.Space.Md * scale + Rise(bodyReveal)), bodyWidth) -
             Rise(bodyReveal);
         y += Metrics.Space.Xxl * scale;
@@ -924,7 +948,7 @@ internal sealed partial class SetupOverlay
         if (!AppIconTile.TryDraw(drawList, row.AppId, AppAccents.For(row.AppId), tileMin, tileMax, radius, alpha,
                 true, scale))
         {
-            Material.LiquidGlass(drawList, tileMin, tileMax, radius, scale, GlassTone.Dark, 0f, alpha);
+            Material.LiquidGlass(drawList, tileMin, tileMax, radius, scale, glass, 0f, alpha);
         }
 
         var textLeft = left + tile + Metrics.Space.Lg * scale;
@@ -935,13 +959,13 @@ internal sealed partial class SetupOverlay
         var textHeight = headlineHeight + Metrics.Space.Xxs * scale + lines.Length * lineHeight;
         var textTop = top + MathF.Max(0f, (tile - textHeight) * 0.5f);
         Typography.Draw(drawList, new Vector2(textLeft, textTop),
-            Typography.FitText(Loc.T(row.Title), textWidth, TextStyles.Headline), Fade(InkStrong, alpha),
+            Typography.FitText(Loc.T(row.Title), textWidth, TextStyles.Headline), Fade(ink.Strong, alpha),
             TextStyles.Headline);
         var bodyTop = textTop + headlineHeight + Metrics.Space.Xxs * scale;
         for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
         {
             Typography.Draw(drawList, new Vector2(textLeft, bodyTop + lineIndex * lineHeight), lines[lineIndex],
-                Fade(InkMuted, alpha), TextStyles.Footnote);
+                Fade(ink.Muted, alpha), TextStyles.Footnote);
         }
     }
 
@@ -971,10 +995,10 @@ internal sealed partial class SetupOverlay
         var titleCenter = new Vector2(centerX,
             top + heroHeight + Metrics.Space.Xl * scale + titleHeight * 0.5f + Rise(titleReveal));
         Typography.DrawCentered(drawList, titleCenter,
-            Typography.FitText(title, ContentWidth(screen), TextStyles.Title1), Fade(InkStrong, alpha * titleReveal),
+            Typography.FitText(title, ContentWidth(screen), TextStyles.Title1), Fade(ink.Strong, alpha * titleReveal),
             TextStyles.Title1);
         var bodyReveal = Reveal(4);
-        Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline, Fade(InkMuted, alpha * bodyReveal),
+        Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline, Fade(ink.Muted, alpha * bodyReveal),
             new Vector2(centerX, titleCenter.Y - Rise(titleReveal) + titleHeight * 0.5f + Metrics.Space.Md * scale +
                                  Rise(bodyReveal)), bodyWidth);
         if (Primary(drawList, ButtonRect(screen, offset, 0), Loc.T(L.Setup.StartUsing), alpha * Reveal(6), live))
@@ -1001,12 +1025,12 @@ internal sealed partial class SetupOverlay
         var titleReveal = Reveal(1);
         var titleCenter = new Vector2(centerX, top + glyphHeight + Metrics.Space.Xl * scale + titleHeight * 0.5f);
         Typography.DrawCentered(drawList, titleCenter + new Vector2(0f, Rise(titleReveal)),
-            Typography.FitText(title, ContentWidth(screen), TextStyles.Title1), Fade(InkStrong, alpha * titleReveal),
+            Typography.FitText(title, ContentWidth(screen), TextStyles.Title1), Fade(ink.Strong, alpha * titleReveal),
             TextStyles.Title1);
         var bodyReveal = Reveal(2);
         var bodyTop = titleCenter.Y + titleHeight * 0.5f + Metrics.Space.Md * scale;
         return Typography.DrawWrappedCentered(drawList, body, TextStyles.Subheadline,
-            Fade(InkMuted, alpha * bodyReveal), new Vector2(centerX, bodyTop + Rise(bodyReveal)),
+            Fade(ink.Muted, alpha * bodyReveal), new Vector2(centerX, bodyTop + Rise(bodyReveal)),
             BodyWidth(screen)) - Rise(bodyReveal);
     }
 
@@ -1039,7 +1063,7 @@ internal sealed partial class SetupOverlay
         var scale = UiScale.Current;
         var center = new Vector2(screen.Center.X + offset.X,
             ButtonRect(screen, offset, buttonSlots - 1).Min.Y - Metrics.Space.Lg * scale);
-        Typography.DrawCentered(drawList, center, message, Fade(InkMuted, alpha), TextStyles.Footnote);
+        Typography.DrawCentered(drawList, center, message, Fade(ink.Muted, alpha), TextStyles.Footnote);
     }
 
     private void DrawBackButton(ImDrawListPtr drawList, Rect screen, float alpha, bool live)
@@ -1060,19 +1084,14 @@ internal sealed partial class SetupOverlay
         var min = new Vector2(screen.Min.X + inset, screen.Min.Y + inset);
         var max = new Vector2(min.X + size, min.Y + size);
         var hovered = live && UiInteract.Hover(min, max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var shrink = pressed ? size * (1f - Motion.PressScaleControl) * 0.5f : 0f;
-        var drawMin = min + new Vector2(shrink, shrink);
-        var drawMax = max - new Vector2(shrink, shrink);
-        var radius = (drawMax.X - drawMin.X) * 0.5f;
-        Material.LiquidGlass(drawList, drawMin, drawMax, radius, scale, GlassTone.Dark, 0f, alpha);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, drawMin, drawMax, radius, ImGui.GetColorU32(Fade(HoverWash, alpha)));
-        }
-
-        _ = BackButton.Draw("setup.back", (drawMin + drawMax) * 0.5f - new Vector2(1.5f * scale, 0f),
-            13f * scale, Fade(InkStrong, alpha), hovered, scale);
+        var pose = Animate(new Rect(min, max), "back", hovered, hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left));
+        var face = pose.Face;
+        var radius = face.Width * 0.5f;
+        DrawHalo(drawList, face, radius, new Vector4(0f, 0f, 0f, 1f), 0.18f * pose.Hover * alpha);
+        Material.LiquidGlass(drawList, face.Min, face.Max, radius, scale, glass, 0f, alpha);
+        DrawRimLight(drawList, face, radius, pose.Hover * alpha);
+        var nudge = new Vector2((1.5f + 1.5f * pose.Hover) * scale, 0f);
+        _ = BackButton.Draw("setup.back", face.Center - nudge, 13f * scale, Fade(ink.Strong, alpha), hovered, scale);
         if (live && UiInteract.Click(min, max, hovered))
         {
             BackPage();
@@ -1082,7 +1101,7 @@ internal sealed partial class SetupOverlay
     private static void DrawCard(ImDrawListPtr drawList, Rect rect, float alpha)
     {
         var scale = UiScale.Current;
-        Material.LiquidGlass(drawList, rect.Min, rect.Max, Metrics.Radius.Card * scale, scale, GlassTone.Dark, 0f,
+        Material.LiquidGlass(drawList, rect.Min, rect.Max, Metrics.Radius.Card * scale, scale, glass, 0f,
             alpha);
     }
 
@@ -1095,7 +1114,7 @@ internal sealed partial class SetupOverlay
         var hovered = live && UiInteract.Hover(row.Min, row.Max);
         if (hovered)
         {
-            var tint = ImGui.GetColorU32(Fade(HoverWash, alpha));
+            var tint = ImGui.GetColorU32(Fade(ink.Wash, alpha));
             if (first && last)
             {
                 Squircle.Fill(drawList, row.Min, row.Max, radius, tint);
@@ -1119,7 +1138,7 @@ internal sealed partial class SetupOverlay
         if (!first)
         {
             drawList.AddLine(new Vector2(row.Min.X + padding, row.Min.Y), new Vector2(row.Max.X, row.Min.Y),
-                ImGui.GetColorU32(Fade(InkHairline, alpha)), Metrics.Stroke.Hairline);
+                ImGui.GetColorU32(Fade(ink.Hairline, alpha)), Metrics.Stroke.Hairline);
         }
 
         var checkColumn = 30f * scale;
@@ -1127,11 +1146,11 @@ internal sealed partial class SetupOverlay
         var labelSize = Typography.Measure(label, labelStyle);
         Typography.Draw(drawList, new Vector2(row.Min.X + padding, row.Center.Y - labelSize.Y * 0.5f),
             Typography.FitText(label, row.Width - padding * 2f - checkColumn, labelStyle),
-            Fade(InkStrong, alpha), labelStyle);
+            Fade(ink.Strong, alpha), labelStyle);
         if (selected)
         {
             AppSkin.Icon(drawList, new Vector2(row.Max.X - padding - 5f * scale, row.Center.Y),
-                IconGlyph.Of(FontAwesomeIcon.Check), Fade(BrandMark.Lilac, alpha), 0.95f);
+                IconGlyph.Of(FontAwesomeIcon.Check), Fade(ink.Accent, alpha), 0.95f);
         }
 
         return live && UiInteract.Click(row.Min, row.Max, hovered);
@@ -1145,11 +1164,11 @@ internal sealed partial class SetupOverlay
         DrawCard(drawList, rect, alpha);
         var left = rect.Min.X + Metrics.Space.Lg * scale;
         Typography.Draw(drawList, new Vector2(left, rect.Min.Y + Metrics.Space.Sm * scale),
-            Loc.T(L.Account.SigningInAs), Fade(InkMuted, alpha), TextStyles.Footnote);
+            Loc.T(L.Account.SigningInAs), Fade(ink.Muted, alpha), TextStyles.Footnote);
         var identityMaxWidth = rect.Max.X - Metrics.Space.Lg * scale - left;
         Typography.Draw(drawList, new Vector2(left, rect.Min.Y + 30f * scale),
             Typography.FitText($"{name}@{world}", identityMaxWidth, TextStyles.Headline),
-            Fade(InkStrong, alpha), TextStyles.Headline);
+            Fade(ink.Strong, alpha), TextStyles.Headline);
     }
 
     private static bool DrawCodeCard(ImDrawListPtr drawList, Rect rect, string value, float alpha, bool live)
@@ -1160,13 +1179,13 @@ internal sealed partial class SetupOverlay
         DrawCard(drawList, rect, alpha);
         if (hovered)
         {
-            Squircle.Fill(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(Fade(HoverWash, alpha)));
+            Squircle.Fill(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(Fade(ink.Wash, alpha)));
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
         Squircle.Stroke(drawList, rect.Min, rect.Max, radius,
-            ImGui.GetColorU32(Fade(BrandMark.Lilac, 0.55f * alpha)), Metrics.Stroke.Thin * scale);
-        Typography.DrawCentered(drawList, rect.Center, value, Fade(BrandMark.Lilac, alpha), TextStyles.Title3);
+            ImGui.GetColorU32(Fade(ink.Accent, 0.55f * alpha)), Metrics.Stroke.Thin * scale);
+        Typography.DrawCentered(drawList, rect.Center, value, Fade(ink.Accent, alpha), TextStyles.Title3);
         return live && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
@@ -1190,10 +1209,10 @@ internal sealed partial class SetupOverlay
         var lines = Typography.WrapText(text, TextStyles.Footnote, textWidth);
         var lineHeight = LineBlock(TextStyles.Footnote) * 1.25f;
         var textTop = top + badgeRadius - lineHeight * 0.5f + 2f * scale;
-        var ink = Fade(InkStrong, 0.88f * alpha);
+        var stepInk = Fade(ink.Strong, 0.88f * alpha);
         for (var index = 0; index < lines.Length; index++)
         {
-            Typography.Draw(drawList, new Vector2(textLeft, textTop + index * lineHeight), lines[index], ink,
+            Typography.Draw(drawList, new Vector2(textLeft, textTop + index * lineHeight), lines[index], stepInk,
                 TextStyles.Footnote);
         }
 
@@ -1210,7 +1229,7 @@ internal sealed partial class SetupOverlay
         Typography.Draw(drawList,
             new Vector2(rect.Min.X + Metrics.Space.Xs * scale,
                 rect.Min.Y - labelHeight - Metrics.Space.Xs * scale),
-            Typography.FitText(label, labelMaxWidth, TextStyles.Footnote), Fade(InkMuted, alpha),
+            Typography.FitText(label, labelMaxWidth, TextStyles.Footnote), Fade(ink.Muted, alpha),
             TextStyles.Footnote);
         DrawCard(drawList, rect, alpha);
         var textLeft = rect.Min.X + Metrics.Space.Md * scale;
@@ -1218,7 +1237,7 @@ internal sealed partial class SetupOverlay
         {
             var prefixSize = Typography.Measure(prefix, TextStyles.Body);
             Typography.Draw(drawList, new Vector2(textLeft, rect.Center.Y - prefixSize.Y * 0.5f), prefix,
-                Fade(InkMuted, alpha), TextStyles.Body);
+                Fade(ink.Muted, alpha), TextStyles.Body);
             textLeft += prefixSize.X + Metrics.Space.Xxs * scale;
         }
 
@@ -1229,7 +1248,7 @@ internal sealed partial class SetupOverlay
                 var valueSize = Typography.Measure(value, TextStyles.Body);
                 var valueMaxWidth = rect.Max.X - Metrics.Space.Md * scale - textLeft;
                 Typography.Draw(drawList, new Vector2(textLeft, rect.Center.Y - valueSize.Y * 0.5f),
-                    Typography.FitText(value, valueMaxWidth, TextStyles.Body), Fade(InkStrong, alpha),
+                    Typography.FitText(value, valueMaxWidth, TextStyles.Body), Fade(ink.Strong, alpha),
                     TextStyles.Body);
             }
 
@@ -1243,7 +1262,7 @@ internal sealed partial class SetupOverlay
                    .Push(ImGuiCol.FrameBgHovered, transparent)
                    .Push(ImGuiCol.FrameBgActive, transparent)
                    .Push(ImGuiCol.TextSelectedBg, Fade(BrandMark.Violet, 0.45f))
-                   .Push(ImGuiCol.Text, InkStrong))
+                   .Push(ImGuiCol.Text, ink.Strong))
         {
             ImGui.InputText($"##{id}", ref value, maxLength);
         }
@@ -1251,7 +1270,7 @@ internal sealed partial class SetupOverlay
         if (ImGui.IsItemActive())
         {
             Squircle.Stroke(drawList, rect.Min, rect.Max, Metrics.Radius.Card * scale,
-                ImGui.GetColorU32(Fade(BrandMark.Lilac, 0.5f * alpha)), Metrics.Stroke.Thin * scale);
+                ImGui.GetColorU32(Fade(ink.Accent, 0.5f * alpha)), Metrics.Stroke.Thin * scale);
         }
     }
 
@@ -1289,83 +1308,6 @@ internal sealed partial class SetupOverlay
             new Rect(new Vector2(full.Max.X - half, full.Min.Y), full.Max));
     }
 
-    private static Rect Pressed(Rect rect, bool pressed, float pressScale)
-    {
-        if (!pressed)
-        {
-            return rect;
-        }
-
-        var inset = rect.Size * (1f - pressScale) * 0.5f;
-        return new Rect(rect.Min + inset, rect.Max - inset);
-    }
-
-    private static bool Primary(ImDrawListPtr drawList, Rect rect, string label, float alpha, bool live,
-        bool enabled = true)
-    {
-        if (alpha <= 0.001f)
-        {
-            return false;
-        }
-
-        var scale = UiScale.Current;
-        var hovered = live && enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var face = Pressed(rect, hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left), Motion.PressScaleCard);
-        var radius = face.Height * 0.5f;
-        if (enabled)
-        {
-            var glowPad = (hovered ? 9f : 6f) * scale;
-            var glowMin = face.Min - new Vector2(glowPad, glowPad * 0.6f);
-            var glowMax = face.Max + new Vector2(glowPad, glowPad * 1.1f);
-            Squircle.Fill(drawList, glowMin, glowMax, radius + glowPad,
-                ImGui.GetColorU32(Fade(BrandMark.Violet, (hovered ? 0.30f : 0.20f) * alpha)));
-            Squircle.FillVerticalGradient(drawList, face.Min, face.Max, radius,
-                ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha)),
-                ImGui.GetColorU32(Fade(hovered ? new Vector4(0.97f, 0.95f, 1f, 1f) : new Vector4(0.90f, 0.87f, 1f, 1f),
-                    alpha)));
-        }
-        else
-        {
-            Squircle.Fill(drawList, face.Min, face.Max, radius,
-                ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.14f * alpha)));
-        }
-
-        var ink = enabled ? Fade(ButtonInk, alpha) : new Vector4(1f, 1f, 1f, 0.45f * alpha);
-        Typography.DrawCentered(drawList, face.Center,
-            Typography.FitText(label, face.Width - Metrics.Space.Xl * scale, TextStyles.Headline), ink,
-            TextStyles.Headline);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return live && enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
-    }
-
-    private static bool Secondary(ImDrawListPtr drawList, Rect rect, string label, float alpha, bool live)
-    {
-        if (alpha <= 0.001f)
-        {
-            return false;
-        }
-
-        var scale = UiScale.Current;
-        var hovered = live && UiInteract.Hover(rect.Min, rect.Max);
-        var face = Pressed(rect, hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left), Motion.PressScaleCard);
-        var radius = face.Height * 0.5f;
-        Material.LiquidGlass(drawList, face.Min, face.Max, radius, scale, GlassTone.Dark, 0f, alpha);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, face.Min, face.Max, radius, ImGui.GetColorU32(Fade(HoverWash, alpha)));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        Typography.DrawCentered(drawList, face.Center,
-            Typography.FitText(label, face.Width - Metrics.Space.Xl * scale, TextStyles.Headline),
-            Fade(InkStrong, alpha), TextStyles.Headline);
-        return live && UiInteract.Click(rect.Min, rect.Max, hovered);
-    }
-
     private static bool TextAction(ImDrawListPtr drawList, Vector2 center, string label, float alpha, bool live)
     {
         if (alpha <= 0.001f)
@@ -1379,8 +1321,8 @@ internal sealed partial class SetupOverlay
         var min = center - size * 0.5f - padding;
         var max = center + size * 0.5f + padding;
         var hovered = live && UiInteract.Hover(min, max);
-        var ink = hovered ? InkStrong : BrandMark.Lilac;
-        Typography.DrawCentered(drawList, center, label, Fade(ink, alpha), TextStyles.SubheadlineEmphasized);
+        var actionInk = hovered ? ink.Strong : ink.Accent;
+        Typography.DrawCentered(drawList, center, label, Fade(actionInk, alpha), TextStyles.SubheadlineEmphasized);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);

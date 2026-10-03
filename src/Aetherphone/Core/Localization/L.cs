@@ -1776,7 +1776,7 @@ internal static class L
         public static readonly LocString LinkpearlContextMenu = new("settings.linkpearlContextMenu", "Linkpearl chat in menus");
         public static readonly LocString LinkpearlContextMenuHint = new("settings.linkpearlContextMenuHint", "Shows \"Open a Linkpearl chat\" option in the in-game context menu when right-clicking on a player.");
         public static readonly LocString ScrollWhileIdle = new("settings.scrollWhileIdle", "Scroll While Idle");
-        public static readonly LocString ScrollWhileIdleHint = new("settings.scrollWhileIdleHint", "Your character scrolls through their phone (Tomescroll emote) while standing still and out of combat. Does nothing if you haven't unlocked the emote.");
+        public static readonly LocString ScrollWhileIdleHint = new("settings.scrollWhileIdleHint", "When you open your phone and stand still, your character scrolls through it (Tomescroll emote). Move or cancel the emote and it stays off until you open the phone again. Does nothing if you haven't unlocked the emote.");
         public static readonly LocString ShowInGpose = new("settings.showInGpose", "Show in Group Pose");
         public static readonly LocString ShowInGposeHint = new("settings.showInGposeHint", "Keep the phone available while you're in Group Pose, so you can open it during photo shoots. Turn it off to keep your screen clear for screenshots.");
         public static readonly LocString ImportScreenshots = new("settings.importScreenshots", "Import screenshots");
@@ -6540,11 +6540,12 @@ internal static class L
         public static readonly LocString SearchTheMarket = new("plugin.searchTheMarket", "Search the Market");
         public static readonly LocString SideButtonHint = new("plugin.sideButtonHint", "Tap to minimize · Hold to turn off");
         public static readonly LocString MinimizedHint = new("plugin.minimizedHint", "Tap to open");
-        public static readonly LocString LockPositionHint = new("plugin.lockPositionHint", "Lock position");
-        public static readonly LocString UnlockPositionHint = new("plugin.unlockPositionHint", "Unlock position");
         public static readonly LocString ResizeHint = new("plugin.resizeHint", "Drag to resize");
         public static readonly LocString DndEnableHint = new("plugin.dndEnableHint", "Turn on Do Not Disturb");
         public static readonly LocString DndDisableHint = new("plugin.dndDisableHint", "Turn off Do Not Disturb");
+        public static readonly LocString VolumeUpHint = new("plugin.volumeUpHint", "Volume up");
+        public static readonly LocString VolumeDownHint = new("plugin.volumeDownHint", "Volume down");
+        public static readonly LocString CameraControlHint = new("plugin.cameraControlHint", "Open Camera");
         public static readonly LocString UpdateChip = new("plugin.updateChip", "Update to {0}");
 
         public static readonly LocString UpdateChipHint = new("plugin.updateChipHint",
@@ -7386,10 +7387,7 @@ internal static class L
         public static readonly LocString SearchTourTitle = new("onboarding.searchTourTitle", "Search everything");
         public static readonly LocString SearchTourBody = new("onboarding.searchTourBody", "Pull down on the Home Screen or tap Search to find apps, contacts, settings, notes, and market items in one place.");
         public static readonly LocString WidgetTourTitle = new("onboarding.widgetTourTitle", "Live at a glance");
-        public static readonly LocString WidgetTourBody = new("onboarding.widgetTourBody", "Widgets live on your Home Screen and update on their own. This one shows the Eorzean weather wherever you're standing.");
         public static readonly LocString MyNumberTourTitle = new("onboarding.myNumberTourTitle", "Your very own number");
-        public static readonly LocString CustomizeTitle = new("onboarding.customizeTitle", "Make it your own");
-        public static readonly LocString CustomizeBody = new("onboarding.customizeBody", "Press and hold anywhere on the Home Screen to rearrange icons, resize widgets, and add new ones.");
         public static readonly LocString ControlCenterTitle = new("onboarding.controlCenterTitle", "Control Center");
         public static readonly LocString HomeTourTitle = new("onboarding.homeTourTitle", "This is your Home Screen");
         public static readonly LocString HomeTourBody = new("onboarding.homeTourBody", "Your phone is ready. Before you dive in, here's a quick look around.");
@@ -7398,14 +7396,10 @@ internal static class L
         public static readonly LocString ControlCenterTapBody = new("onboarding.controlCenterTapBody", "Tap the top of the screen to open Control Center.");
         public static readonly LocString ControlCenterInsideTitle = new("onboarding.controlCenterInsideTitle", "Everything at hand");
         public static readonly LocString ControlCenterInsideBody = new("onboarding.controlCenterInsideBody", "Volume, brightness, accent color and your notifications all live here. Tap the bottom edge to close it anytime; for now, Continue will do it for you.");
-        public static readonly LocString SignalTourTitle = new("onboarding.signalTourTitle", "Live signal");
-        public static readonly LocString SignalTourBody = new("onboarding.signalTourBody", "These bars show your ping to the data center you are playing on, updated as you play. More bars means lower latency and less packet loss.");
-        public static readonly LocString BatteryTourTitle = new("onboarding.batteryTourTitle", "Real battery");
-        public static readonly LocString BatteryTourBody = new("onboarding.batteryTourBody", "And this is your device's actual battery, read straight from your computer.");
         public static readonly LocString MinimizeTitle = new("onboarding.minimizeTitle", "Tuck it away");
         public static readonly LocString MinimizeBody = new("onboarding.minimizeBody", "This side button shrinks the phone into a small one in the corner that keeps showing the time, your music and new alerts. Tap it to bring the phone back.");
-        public static readonly LocString LockTitle = new("onboarding.lockTitle", "Lock it in place");
-        public static readonly LocString LockBody = new("onboarding.lockBody", "This button locks the phone's position on your screen so it stays put while you play. That's the tour: enjoy your Aetherphone.");
+        public static readonly LocString ActionTitle = new("onboarding.actionTitle", "Quiet it down");
+        public static readonly LocString ActionTourBody = new("onboarding.actionTourBody", "This Action button turns Do Not Disturb on or off, and the two buttons below it set your music volume.");
         public static readonly LocString MessagesTitle = new("onboarding.messagesTitle", "Messages");
         public static readonly LocString MessagesBody = new("onboarding.messagesBody", "Every /tell you get in game turns into a chat bubble here. Read and reply straight from your phone, and get a badge the moment someone new writes.");
         public static readonly LocString SkywatcherTitle = new("onboarding.skywatcherTitle", "Skywatcher");
@@ -7628,6 +7622,15 @@ internal static class L
         public static readonly LocString CollectionsMissingBody = new("onboarding.collectionsMissingBody", "With your Lodestone linked, flip to Missing to see exactly what's left to hunt down.");
         public static readonly LocString StoreTourTitle = new("onboarding.storeTourTitle", "Get more apps");
         public static readonly LocString StoreTourBody = new("onboarding.storeTourBody", "The phone starts with a handful of apps. The App Store has the rest, and you decide which ones live on your Home Screen.");
+        public static readonly LocString SkipTour = new("onboarding.skipTour", "Skip Tour");
+        public static readonly LocString TakeTour = new("onboarding.takeTour", "Show Me Around");
+        public static readonly LocString WidgetCustomizeBody = new("onboarding.widgetCustomizeBody", "Widgets update on their own, like this weather one. Press and hold anywhere on the Home Screen to rearrange icons, resize widgets and add new ones.");
+        public static readonly LocString StatusTourTitle = new("onboarding.statusTourTitle", "Live status");
+        public static readonly LocString StatusTourBody = new("onboarding.statusTourBody", "The bars show your ping to the data center you're playing on, and the battery is your computer's real charge.");
+        public static readonly LocString FinaleTitle = new("onboarding.finaleTitle", "You're all set");
+        public static readonly LocString FinaleBody = new("onboarding.finaleBody", "Every app shows you around the first time you open it. Replay this tour anytime from Settings, under Tips & Tutorials.");
+        public static readonly LocString StartExploring = new("onboarding.startExploring", "Start Exploring");
+        public static readonly LocString StepCounter = new("onboarding.stepCounter", "{0} of {1}");
         public static readonly LocString AppStoreBody = new("onboarding.appStoreBody", "Every app on the phone comes from here. Install what you want, skip what you don't, and come back whenever you change your mind.");
         public static readonly LocString AppStoreGetTitle = new("onboarding.appStoreGetTitle", "Install an app");
         public static readonly LocString AppStoreGetBody = new("onboarding.appStoreGetBody", "Tap Get to add an app to your Home Screen, or tap the row itself to read what it does first.");

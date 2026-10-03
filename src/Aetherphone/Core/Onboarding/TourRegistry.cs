@@ -8,23 +8,30 @@ internal static partial class TourRegistry
     public const string ControlCenterOpenIntent = "chrome.controlcenter.open";
     public const string ControlCenterCloseIntent = "chrome.controlcenter.close";
 
-    private static readonly GuideSequence Welcome = new(WelcomeId, 7, null,
+    private static readonly GuideSequence Welcome = new(WelcomeId, 8, null,
         new[]
         {
-            GuideStep.Page(L.Onboarding.HomeTourTitle, L.Onboarding.HomeTourBody, L.Onboarding.Continue),
-            GuideStep.Point(L.Onboarding.AppsTourTitle, L.Onboarding.AppsTourBody, "home.app.message"),
-            GuideStep.Point(L.Onboarding.StoreTourTitle, L.Onboarding.StoreTourBody, "home.app.appstore"),
-            GuideStep.Point(L.Onboarding.WidgetTourTitle, L.Onboarding.WidgetTourBody, "home.widget"),
-            GuideStep.Point(L.Onboarding.SearchTourTitle, L.Onboarding.SearchTourBody, "home.search"),
-            GuideStep.Note(L.Onboarding.CustomizeTitle, L.Onboarding.CustomizeBody),
+            GuideStep.Page(L.Onboarding.HomeTourTitle, L.Onboarding.HomeTourBody, L.Onboarding.TakeTour),
+            GuideStep.Point(L.Onboarding.AppsTourTitle, L.Onboarding.AppsTourBody, "home.app.message",
+                GuideGesture.Tap),
+            GuideStep.Point(L.Onboarding.StoreTourTitle, L.Onboarding.StoreTourBody, "home.app.appstore",
+                GuideGesture.Tap),
+            GuideStep.Point(L.Onboarding.WidgetTourTitle, L.Onboarding.WidgetCustomizeBody, "home.widget",
+                GuideGesture.Hold),
+            GuideStep.Point(L.Onboarding.SearchTourTitle, L.Onboarding.SearchTourBody, "home.search",
+                GuideGesture.SwipeDown),
             GuideStep.Tap(L.Onboarding.ControlCenterTitle, L.Onboarding.ControlCenterTapBody, "chrome.controlcenter",
                 ControlCenterOpenIntent),
             GuideStep.ControlCenterNote(L.Onboarding.ControlCenterInsideTitle, L.Onboarding.ControlCenterInsideBody,
                 ControlCenterCloseIntent),
-            GuideStep.Point(L.Onboarding.SignalTourTitle, L.Onboarding.SignalTourBody, "chrome.signal"),
-            GuideStep.Point(L.Onboarding.BatteryTourTitle, L.Onboarding.BatteryTourBody, "chrome.battery"),
-            GuideStep.Point(L.Onboarding.MinimizeTitle, L.Onboarding.MinimizeBody, "chrome.minimize"),
-            GuideStep.Point(L.Onboarding.LockTitle, L.Onboarding.LockBody, "chrome.lock"),
+            GuideStep.Span(L.Onboarding.StatusTourTitle, L.Onboarding.StatusTourBody, "chrome.signal",
+                "chrome.battery"),
+            GuideStep.Point(L.Onboarding.MinimizeTitle, L.Onboarding.MinimizeBody, "chrome.minimize",
+                GuideGesture.None),
+            GuideStep.Point(L.Onboarding.ActionTitle, L.Onboarding.ActionTourBody, "chrome.action",
+                GuideGesture.None),
+            GuideStep.Page(L.Onboarding.FinaleTitle, L.Onboarding.FinaleBody, L.Onboarding.StartExploring,
+                HeroMotif.Finale),
         });
 
     private static readonly Dictionary<string, GuideSequence> Tours = BuildTours();

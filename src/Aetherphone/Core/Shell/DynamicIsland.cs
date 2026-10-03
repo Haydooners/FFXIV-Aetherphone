@@ -42,6 +42,8 @@ internal sealed class DynamicIsland
     private const float CompactRingAlpha = 0.16f;
     private const float ControlThreshold = 0.6f;
     private const float CallPulseSpeed = 3f;
+    private const float NoticeHoldSeconds = 1.8f;
+    private const float NoticeHalfWidth = 104f;
 
     private static readonly Vector4 MusicAccent = AppAccents.For("music");
     private static readonly Vector4 SessionAccent = AppAccents.For("aetherstream");
@@ -49,6 +51,8 @@ internal sealed class DynamicIsland
     private static readonly Vector4 CallAccent = new(0.20f, 0.78f, 0.35f, 1f);
     private static readonly Vector4 TimerAccent = new(1.00f, 0.62f, 0.18f, 1f);
     private static readonly Vector4 Ink = new(0.98f, 0.98f, 0.99f, 1f);
+    private static readonly Vector4 FocusAccent = new(0.42f, 0.40f, 0.95f, 1f);
+    private static readonly Vector4 QuietInk = new(0.64f, 0.64f, 0.68f, 1f);
 
     private readonly PlaybackHub playback;
     private readonly CallHub calls;
@@ -67,6 +71,9 @@ internal sealed class DynamicIsland
     private Spring split;
     private Spring expand;
     private Spring pulse;
+    private Spring noticeWidth;
+    private double noticeUntil = -1d;
+    private bool noticeEnabled;
     private float clock;
     private float pulseUntil = -1f;
     private bool expanded;
@@ -99,6 +106,13 @@ internal sealed class DynamicIsland
         pulseUntil = clock + PulseHoldSeconds;
     }
 
+    public void AnnounceDoNotDisturb(bool enabled)
+    {
+        noticeEnabled = enabled;
+        noticeUntil = ImGui.GetTime() + NoticeHoldSeconds;
+        expanded = false;
+    }
+
     public bool CapturesPointer()
     {
         if (presence.Value < 0.05f)
@@ -123,7 +137,10 @@ internal sealed class DynamicIsland
     {
         var view = calls.Snapshot();
         var signals = ReadSignals(view);
-        var primary = IslandActivities.Select(signals);
+        var selected = IslandActivities.Select(signals);
+        var primary = selected != IslandActivity.Call && ImGui.GetTime() < noticeUntil
+            ? IslandActivity.Notice
+            : selected;
         if (primary != IslandActivity.None)
         {
             shownKind = primary;
@@ -138,6 +155,7 @@ internal sealed class DynamicIsland
         presence.Step(primary == IslandActivity.None ? 0f : 1f, Motion.Appear, delta);
         split.Step(signals.Playback && primary != IslandActivity.Playback ? 1f : 0f, Motion.Island, delta);
         pulse.Step(clock < pulseUntil ? 1f : 0f, Motion.Appear, delta);
+        noticeWidth.Step(shownKind == IslandActivity.Notice ? 1f : 0f, Motion.Island, delta);
         var presenceValue = Math.Clamp(presence.Value, 0f, 1f);
         var pulseValue = Math.Clamp(pulse.Value, 0f, 1f);
         if (primary == IslandActivity.None && presenceValue < 0.02f && pulseValue < 0.01f)
@@ -172,7 +190,8 @@ internal sealed class DynamicIsland
     {
         var scale = UiScale.Current;
         var rest = StatusBar.BaseIsland(screen);
-        var compact = CompactBounds(rest, scale);
+        var compact = LerpRect(CompactBounds(rest, scale), NoticeBounds(screen, rest, scale),
+            Math.Clamp(noticeWidth.Value, 0f, 1f));
         var card = ExpandedBounds(screen, rest, scale);
         var morphed = LerpRect(rest, compact, presenceValue);
         var suppress = shownKind != IslandActivity.Call &&
@@ -221,7 +240,7 @@ internal sealed class DynamicIsland
     {
         if (expandAmount < 0.5f)
         {
-            if (suppress || !hovered || presenceValue < ControlThreshold)
+            if (suppress || shownKind == IslandActivity.Notice || !hovered || presenceValue < ControlThreshold)
             {
                 return;
             }
@@ -291,6 +310,8 @@ internal sealed class DynamicIsland
                 return TimerAccent;
             case IslandActivity.Muster:
                 return MusterAccent;
+            case IslandActivity.Notice:
+                return FocusAccent;
             default:
                 return MusicAccent;
         }
@@ -421,7 +442,27 @@ internal sealed class DynamicIsland
                 DrawTrailingLabel(drawList, MusterCountdown(muster, true), trailingRight, bounds.Center.Y,
                     trailingMaxWidth, accent, alpha);
                 break;
+            case IslandActivity.Notice:
+                DrawNotice(drawList, bubbleCenter, bubbleRadius, trailingRight, bounds.Center.Y, scale, alpha);
+                break;
         }
+    }
+
+    private void DrawNotice(ImDrawListPtr drawList, Vector2 bubbleCenter, float bubbleRadius, float right,
+        float centerY, float scale, float alpha)
+    {
+        var tint = noticeEnabled ? FocusAccent : QuietInk;
+        DrawIconBubble(drawList, bubbleCenter, bubbleRadius, FontAwesomeIcon.Moon, tint, alpha);
+        var state = Loc.T(noticeEnabled ? L.Common.On : L.Common.Off);
+        var stateSize = Typography.Measure(state, TextStyles.FootnoteEmphasized);
+        Typography.Draw(drawList, new Vector2(right - stateSize.X, centerY - stateSize.Y * 0.5f), state,
+            Palette.WithAlpha(tint, alpha), TextStyles.FootnoteEmphasized);
+        var titleLeft = bubbleCenter.X + bubbleRadius + CompactTrailingGap * scale;
+        var titleWidth = MathF.Max(1f, right - stateSize.X - CompactTrailingGap * scale - titleLeft);
+        var title = Typography.FitText(Loc.T(L.Settings.DoNotDisturb), titleWidth, TextStyles.Footnote);
+        var titleSize = Typography.Measure(title, TextStyles.Footnote);
+        Typography.Draw(drawList, new Vector2(titleLeft, centerY - titleSize.Y * 0.5f), title,
+            Palette.WithAlpha(Ink, alpha), TextStyles.Footnote);
     }
 
     private void DrawCallBubble(ImDrawListPtr drawList, Vector2 center, float radius, float scale, float alpha)
@@ -678,6 +719,15 @@ internal sealed class DynamicIsland
         var padY = MathF.Max(0f, (CompactHeight * scale - rest.Height) * 0.5f);
         var pad = new Vector2(CompactPadX * scale, padY);
         return new Rect(rest.Min - pad, rest.Max + pad);
+    }
+
+    private static Rect NoticeBounds(Rect screen, Rect rest, float scale)
+    {
+        var compact = CompactBounds(rest, scale);
+        var halfWidth = MathF.Min(screen.Width * 0.5f - ExpandedSideInset * scale, NoticeHalfWidth * scale);
+        var centerX = rest.Center.X;
+        return new Rect(new Vector2(MathF.Min(compact.Min.X, centerX - halfWidth), compact.Min.Y),
+            new Vector2(MathF.Max(compact.Max.X, centerX + halfWidth), compact.Max.Y));
     }
 
     private static Rect ExpandedBounds(Rect screen, Rect rest, float scale)

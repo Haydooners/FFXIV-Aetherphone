@@ -28,6 +28,10 @@ internal static class BrandMark
     private const int SlotCount = TextureSizes.LevelCount + 1;
     private static readonly Vector4 ScrimTop = new(0.020f, 0.014f, 0.050f, 0.30f);
     private static readonly Vector4 ScrimBottom = new(0.016f, 0.010f, 0.040f, 0.58f);
+    private static readonly Vector4 DayWash = new(0.97f, 0.96f, 1f, 0.78f);
+    private static readonly Vector4 DayFlat = new(0.95f, 0.94f, 0.99f, 1f);
+    private static readonly Vector4 DayScrimTop = new(1f, 1f, 1f, 0.45f);
+    private static readonly Vector4 DayScrimBottom = new(0.98f, 0.97f, 1f, 0.70f);
     private static readonly Vector2 RimLight = new(-0.55f, -1f);
     private const int ShockwaveRings = 3;
     private const float ShockwaveReach = 1.35f;
@@ -79,7 +83,7 @@ internal static class BrandMark
         Glow(drawList, center, size, alpha);
         Elevation.Draw(drawList, min, max, radius, 1f, size * 0.10f, size * 0.07f, 0.42f, alpha);
         Squircle.FillImage(drawList, min, max, radius, texture, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha)));
-        DrawSheen(drawList, min, max, radius, sheen, alpha);
+        Sheen(drawList, min, max, radius, sheen, alpha);
         Squircle.Stroke(drawList, min, max, radius, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.10f * alpha)),
             1f * scale);
         Squircle.StrokeDirectional(drawList, min, max, radius,
@@ -100,7 +104,8 @@ internal static class BrandMark
         }
     }
 
-    public static void DrawStage(ImDrawListPtr drawList, Rect screen, float rounding, float alpha, bool record)
+    public static void DrawStage(ImDrawListPtr drawList, Rect screen, float rounding, float alpha, bool record,
+        float darkness)
     {
         if (alpha <= 0f)
         {
@@ -113,23 +118,37 @@ internal static class BrandMark
             var (uv0, uv1) = StageUv(screen);
             Squircle.FillImage(drawList, screen.Min, screen.Max, rounding, texture,
                 ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha)), uv0, uv1);
-            if (record)
+            if (record && darkness >= 0.5f)
             {
                 WallpaperBackdrop.Record(screen, texture, uv0, uv1, null);
             }
         }
-        else if (record)
+        else if (record && darkness >= 0.5f)
         {
+            WallpaperBackdrop.Clear();
             WallpaperBackdrop.RecordFlat(Night);
         }
 
+        if (record && darkness < 0.5f)
+        {
+            WallpaperBackdrop.Clear();
+            WallpaperBackdrop.RecordFlat(DayFlat);
+        }
+
+        var light = 1f - darkness;
+        if (light > 0.001f)
+        {
+            Squircle.Fill(drawList, screen.Min, screen.Max, rounding,
+                ImGui.GetColorU32(DayWash with { W = DayWash.W * light * alpha }));
+        }
+
+        var top = Vector4.Lerp(DayScrimTop, ScrimTop, darkness);
+        var bottom = Vector4.Lerp(DayScrimBottom, ScrimBottom, darkness);
         Squircle.FillVerticalGradient(drawList, screen.Min, screen.Max, rounding,
-            ImGui.GetColorU32(ScrimTop with { W = ScrimTop.W * alpha }),
-            ImGui.GetColorU32(ScrimTop with { W = 0f }));
+            ImGui.GetColorU32(top with { W = top.W * alpha }), ImGui.GetColorU32(top with { W = 0f }));
         Squircle.FillVerticalGradient(drawList, screen.Min, screen.Max, rounding,
-            ImGui.GetColorU32(ScrimBottom with { W = 0f }),
-            ImGui.GetColorU32(ScrimBottom with { W = ScrimBottom.W * alpha }));
-        DrawMotes(drawList, screen, alpha);
+            ImGui.GetColorU32(bottom with { W = 0f }), ImGui.GetColorU32(bottom with { W = bottom.W * alpha }));
+        DrawMotes(drawList, screen, alpha, darkness);
     }
 
     public static void Shockwave(ImDrawListPtr drawList, Vector2 center, float size, float progress, float alpha,
@@ -165,7 +184,7 @@ internal static class BrandMark
         return phase < SheenSweepFraction ? phase / SheenSweepFraction : -1f;
     }
 
-    private static void DrawSheen(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float progress,
+    public static void Sheen(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float progress,
         float alpha)
     {
         if (progress < 0f || progress > 1f || !TryResolveSheen(out var texture))
@@ -180,7 +199,7 @@ internal static class BrandMark
             new Vector2(offset + window, 1f));
     }
 
-    private static void DrawMotes(ImDrawListPtr drawList, Rect screen, float alpha)
+    private static void DrawMotes(ImDrawListPtr drawList, Rect screen, float alpha, float darkness)
     {
         var scale = UiScale.Current;
         var seconds = (float)(Environment.TickCount64 % 3_600_000L / 1000.0);
@@ -203,7 +222,8 @@ internal static class BrandMark
             }
 
             var radius = (0.7f + seed.Y * 1.5f) * scale;
-            var ink = moteIndex % 7 == 0 ? Vine : moteIndex % 3 == 0 ? Vector4.One : Lilac;
+            var ink = moteIndex % 7 == 0 ? Vine : moteIndex % 3 == 0 ? Vector4.Lerp(Violet, Vector4.One, darkness) :
+                Vector4.Lerp(Violet, Lilac, darkness);
             drawList.AddCircleFilled(position, radius * 4f, ImGui.GetColorU32(ink with { W = 0.06f * strength }), 16);
             drawList.AddCircleFilled(position, radius * 2f, ImGui.GetColorU32(ink with { W = 0.14f * strength }), 12);
             drawList.AddCircleFilled(position, radius, ImGui.GetColorU32(ink with { W = 0.85f * strength }), 10);
