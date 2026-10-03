@@ -76,6 +76,12 @@ internal sealed partial class MusterApp
             return;
         }
 
+        if (createSucceeded)
+        {
+            createSucceeded = false;
+            ResetCreateForm();
+        }
+
         createOutcome = null;
         createBusy = false;
         router.Push(MusterRoute.Create(RootTitle()));
