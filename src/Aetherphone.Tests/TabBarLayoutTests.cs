@@ -74,17 +74,11 @@ public sealed class TabBarLayoutTests
     }
 
     [Fact]
-    public void IconSitsAboveTheLabelInsideTheCell()
+    public void IconSitsAtTheCentreOfItsCell()
     {
         var capsule = TabBarLayout.FullCapsule(Area, 1f, false);
         var cell = TabBarLayout.Cell(capsule, 4, 1, 1f);
-        var icon = TabBarLayout.IconCenter(cell, 1f);
-        var label = TabBarLayout.LabelCenter(cell, 1f);
-        Assert.Equal(cell.Center.X, icon.X, Tolerance);
-        Assert.Equal(cell.Center.X, label.X, Tolerance);
-        Assert.True(icon.Y - TabBarLayout.IconSize * 0.5f >= cell.Min.Y);
-        Assert.True(icon.Y + TabBarLayout.IconSize * 0.5f < label.Y);
-        Assert.True(label.Y < cell.Max.Y);
+        Assert.Equal(cell.Center, TabBarLayout.IconCenter(cell));
     }
 
     [Fact]
@@ -96,44 +90,6 @@ public sealed class TabBarLayoutTests
         Assert.Equal(cell.Min.X + TabBarLayout.HighlightInset, highlight.Min.X, Tolerance);
         Assert.Equal(cell.Max.X - TabBarLayout.HighlightInset, highlight.Max.X, Tolerance);
         Assert.Equal(cell.Height - TabBarLayout.HighlightInset * 2f, highlight.Height, Tolerance);
-    }
-
-    [Fact]
-    public void CompactCapsuleCentresWithoutAnActionAndHugsTheLeadingEdgeWithOne()
-    {
-        var full = TabBarLayout.FullCapsule(Area, 1f, false);
-        var width = TabBarLayout.CompactWidth(40f, 1f);
-        var centred = TabBarLayout.CompactCapsule(full, width, false);
-        Assert.Equal(full.Center.X, centred.Center.X, Tolerance);
-        Assert.Equal(width, centred.Width, Tolerance);
-        Assert.Equal(full.Min.Y, centred.Min.Y, Tolerance);
-        Assert.Equal(full.Max.Y, centred.Max.Y, Tolerance);
-
-        var fullWithAction = TabBarLayout.FullCapsule(Area, 1f, true);
-        var leading = TabBarLayout.CompactCapsule(fullWithAction, width, true);
-        Assert.Equal(fullWithAction.Min.X, leading.Min.X, Tolerance);
-        Assert.Equal(width, leading.Width, Tolerance);
-    }
-
-    [Fact]
-    public void CompactWidthFollowsTheLabelWithinItsBounds()
-    {
-        Assert.Equal(TabBarLayout.CompactMinWidth, TabBarLayout.CompactWidth(0f, 1f), Tolerance);
-        Assert.Equal(60f + TabBarLayout.CompactLabelPadding * 2f, TabBarLayout.CompactWidth(60f, 1f), Tolerance);
-        Assert.Equal(TabBarLayout.CompactMaxWidth, TabBarLayout.CompactWidth(500f, 1f), Tolerance);
-        Assert.Equal(TabBarLayout.CompactMinWidth * 2f, TabBarLayout.CompactWidth(0f, 2f), Tolerance);
-    }
-
-    [Fact]
-    public void CapsuleInterpolatesBetweenFullAndCompact()
-    {
-        var full = TabBarLayout.FullCapsule(Area, 1f, false);
-        var compact = TabBarLayout.CompactCapsule(full, TabBarLayout.CompactWidth(30f, 1f), false);
-        Assert.Equal(full, TabBarLayout.Capsule(full, compact, 0f));
-        Assert.Equal(compact, TabBarLayout.Capsule(full, compact, 1f));
-        var half = TabBarLayout.Capsule(full, compact, 0.5f);
-        Assert.Equal((full.Width + compact.Width) * 0.5f, half.Width, Tolerance);
-        Assert.Equal(full.Height, half.Height, Tolerance);
     }
 
     [Theory]

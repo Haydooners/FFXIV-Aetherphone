@@ -667,7 +667,7 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
 
     void ITabIconDrawer.DrawTabIcon(ImDrawListPtr drawList, int index, TabItemPose pose, bool active)
     {
-        if (store.Me is not { } me || pose.Alpha < 0.5f)
+        if (store.Me is not { } me)
         {
             return;
         }
