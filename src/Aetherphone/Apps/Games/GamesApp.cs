@@ -134,9 +134,17 @@ internal sealed partial class GamesApp : IPhoneApp
         back = () => router.Pop();
     }
 
+    public IMiniGame DailyGame => games[FeaturedIndex()];
+
     private void RebuildLayout()
     {
-        featuredIndex = GameStatsStore.TodayIndex * FeaturedStep % games.Length;
+        featuredIndex = FeaturedIndex();
+        stats.DailyGameId = games[featuredIndex].Id;
+        library.Rebuild();
+    }
+
+    private int FeaturedIndex()
+    {
         var serverFeatured = coins.Wallet?.FeaturedGameId;
         if (!string.IsNullOrEmpty(serverFeatured))
         {
@@ -144,14 +152,12 @@ internal sealed partial class GamesApp : IPhoneApp
             {
                 if (string.Equals(games[index].Id, serverFeatured, StringComparison.Ordinal))
                 {
-                    featuredIndex = index;
-                    break;
+                    return index;
                 }
             }
         }
 
-        stats.DailyGameId = games[featuredIndex].Id;
-        library.Rebuild();
+        return GameStatsStore.TodayIndex * FeaturedStep % games.Length;
     }
 
     public void OnOpened()
