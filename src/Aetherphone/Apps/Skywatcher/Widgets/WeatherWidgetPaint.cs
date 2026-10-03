@@ -78,7 +78,7 @@ internal static class WeatherWidgetPaint
         }
 
         WeatherAmbience.Draw(context.DrawList, context.Bounds, radius, kind, isDay, sky, context.Scale,
-            context.Opacity * ink.AmbienceStrength, false);
+            context.Opacity * ink.AmbienceStrength);
     }
 
     public static string Bell(int bell) => TimeText.Clock(new DateTime(1, 1, 1, bell % 24, 0, 0));
