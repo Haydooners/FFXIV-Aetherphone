@@ -5133,6 +5133,31 @@ internal static class L
             public static readonly LocString RemoveFromQueue = new("music.nowPlaying.removeFromQueue",
                 "Remove from queue");
         }
+
+        internal static class Replay
+        {
+            public static readonly LocString Title = new("music.replay.title", "Replay");
+            public static readonly LocString ThisWeek = new("music.replay.thisWeek", "This week");
+            public static readonly LocString ThisMonth = new("music.replay.thisMonth", "This month");
+            public static readonly LocString ThisYear = new("music.replay.thisYear", "This year");
+            public static readonly LocString AllTime = new("music.replay.allTime", "All time");
+            public static readonly LocString MinutesListened = new("music.replay.minutesListened", "minutes listened");
+            public static readonly LocString PlayOne = new("music.replay.playOne", "1 play");
+            public static readonly LocString PlaysMany = new("music.replay.playsMany", "{0} plays");
+            public static readonly LocString MinutesShort = new("music.replay.minutesShort", "{0} min");
+            public static readonly LocString MinutesPerDay = new("music.replay.minutesPerDay", "Minutes per day");
+            public static readonly LocString MinutesPerMonth = new("music.replay.minutesPerMonth", "Minutes per month");
+            public static readonly LocString TopSongs = new("music.replay.topSongs", "Top songs");
+            public static readonly LocString TopArtists = new("music.replay.topArtists", "Top artists");
+            public static readonly LocString PlayTopSongs = new("music.replay.playTopSongs", "Play your top songs");
+            public static readonly LocString EmptyTitle = new("music.replay.emptyTitle", "Nothing played yet");
+            public static readonly LocString EmptySub = new("music.replay.emptySub",
+                "Play some music and your minutes, top songs and top artists for this period will show up here.");
+            public static readonly LocString HomeWeekMinutes = new("music.replay.homeWeekMinutes",
+                "{0} minutes listened this week");
+            public static readonly LocString HomeTeaser = new("music.replay.homeTeaser",
+                "Your top songs and artists, all in one place");
+        }
     }
 
     internal static class Messages

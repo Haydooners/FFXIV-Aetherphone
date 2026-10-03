@@ -16,7 +16,8 @@ internal enum ReplayBarUnit : byte
 
 internal readonly record struct ReplaySong(Song Song, int Plays, long Seconds);
 
-internal readonly record struct ReplayArtist(string Name, string ChannelId, string ThumbnailUrl, int Plays, long Seconds);
+internal readonly record struct ReplayArtist(string Name, string ChannelId, string ThumbnailUrl, int Plays,
+    long Seconds);
 
 internal readonly record struct ReplayBar(DateOnly Start, long Seconds);
 

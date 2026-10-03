@@ -33,6 +33,7 @@ internal enum MusicScreen : byte
     VenueDetail,
     JamLobby,
     Import,
+    Replay,
 }
 
 internal enum SongListKind : byte

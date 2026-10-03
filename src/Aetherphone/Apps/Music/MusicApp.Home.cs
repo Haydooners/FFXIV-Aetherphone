@@ -100,6 +100,7 @@ internal sealed partial class MusicApp
             if (!HomeIsFresh)
             {
                 DrawHomeRediscover();
+                DrawHomeReplayCard(scale);
             }
 
             ImGui.Dummy(new Vector2(0f, MusicUi.SectionGap * scale));
