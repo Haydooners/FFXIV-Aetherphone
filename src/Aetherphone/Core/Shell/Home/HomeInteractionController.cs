@@ -105,6 +105,7 @@ internal sealed class HomeInteractionController
 
     public bool Editing => editing;
     public HomeTile? DragTile => dragTile;
+    public HomeTile? OpenFolder => folder.Folder;
     public int DragPage => dragPage;
     public GridCell DropCell => dropCell;
     public bool DropTargetLive =>

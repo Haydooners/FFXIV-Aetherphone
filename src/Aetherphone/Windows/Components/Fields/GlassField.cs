@@ -12,6 +12,7 @@ internal static class GlassField
     private const float GlyphInsetUnits = 18f;
     private const float GlyphTextGapUnits = 8f;
     private const float TextInsetUnits = 16f;
+    private const float CaretSlackUnits = 4f;
     private const float ClearRadiusUnits = 9f;
     private const float ClearInsetUnits = 18f;
     private const float ClearTextGapUnits = 6f;
@@ -37,8 +38,12 @@ internal static class GlassField
     {
         using (Plugin.Fonts.Push(TextStyles.Title2.Scale, TextStyles.Title2.Weight))
         {
-            return Input(field, imguiId, hint, ref text, theme, theme.TextStrong, TextInsetUnits * scale,
-                TextInsetUnits * scale, maxLength, false, flags);
+            var shown = text.Length > 0 ? text : hint;
+            var inputWidth = ImGui.CalcTextSize(shown).X + ImGui.GetStyle().FramePadding.X * 2f +
+                             CaretSlackUnits * scale;
+            var inset = MathF.Max(TextInsetUnits * scale, (field.Width - inputWidth) * 0.5f);
+            return Input(field, imguiId, hint, ref text, theme, theme.TextStrong, inset, inset, maxLength, false,
+                flags);
         }
     }
 

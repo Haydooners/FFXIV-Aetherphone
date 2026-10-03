@@ -4,6 +4,21 @@ namespace Aetherphone.Windows.Components;
 
 internal static class VertexWarp
 {
+    public static void Scale(ImDrawListPtr drawList, int firstVertex, Vector2 pivot, float factor)
+    {
+        if (factor == 1f)
+        {
+            return;
+        }
+
+        var vertices = drawList.VtxBuffer.AsSpan();
+        for (var index = Math.Max(0, firstVertex); index < vertices.Length; index++)
+        {
+            ref var vertex = ref vertices[index];
+            vertex.Pos = pivot + (vertex.Pos - pivot) * factor;
+        }
+    }
+
     public static void Tilt(ImDrawListPtr drawList, int firstVertex, Vector2 center, float half, Vector2 direction,
         float amount)
     {

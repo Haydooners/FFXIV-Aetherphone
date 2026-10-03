@@ -236,6 +236,14 @@ internal sealed class HomeGridRenderer
             return;
         }
 
+        if (tile.IsFolder && ReferenceEquals(tile, interaction.OpenFolder))
+        {
+            HomeTileView.DrawFolderLabel(center, rect.Width, tile, theme, labelAlpha, showLabels,
+                Loc.T(L.Home.NewFolder), metrics.CellWidth, zoom);
+            ReportIconAnchor(tile, center, rect.Width, motion);
+            return;
+        }
+
         if (tile.IsFolder)
         {
             HomeTileView.DrawFolder(center, rect.Width, tile, theme, pointer.Scale,

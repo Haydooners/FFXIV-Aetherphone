@@ -12,6 +12,8 @@ namespace Aetherphone.Core.Shell;
 
 internal sealed class HomeScreen
 {
+    private const float FolderLabelAlpha = 0.35f;
+
     private readonly HomeLayoutService layout;
     private readonly Pager pager = new();
     private readonly FolderOverlay folder;
@@ -71,7 +73,7 @@ internal sealed class HomeScreen
         interaction.UpdatePointer(content, metrics, motion, delta);
         if (chromeAlpha > 0.01f)
         {
-            var labelAlpha = folder.Active ? 0.35f : 1f;
+            var labelAlpha = Easing.Lerp(1f, FolderLabelAlpha, folder.Presence);
             var tileDrawList = ImGui.GetWindowDrawList();
             var tileVertexStart = tileDrawList.VtxBuffer.Size;
             renderer.DrawPages(metrics, theme, delta, labelAlpha, configuration.ShowAppNames, motion);

@@ -10,6 +10,14 @@ namespace Aetherphone.Windows.Components;
 internal static class HomeTileView
 {
     private const float TiltDepth = 0.07f;
+    private const float FolderMiniPadFraction = 0.14f;
+    private const float FolderMiniCellFraction = (1f - FolderMiniPadFraction * 2f) / FolderMiniColumns;
+    public const int FolderMiniColumns = 3;
+    public const float FolderMiniIconFraction = FolderMiniCellFraction * 0.78f;
+
+    public static Vector2 FolderMiniCenter(int index) =>
+        new(FolderMiniPadFraction + (index % FolderMiniColumns + 0.5f) * FolderMiniCellFraction,
+            FolderMiniPadFraction + (index / FolderMiniColumns + 0.5f) * FolderMiniCellFraction);
 
     public static void DrawApp(Vector2 center, float size, IPhoneApp app, PhoneTheme theme, float drawScale,
         float labelAlpha, bool showLabels, float labelWidth, Configuration configuration, float zoom = 1f,
@@ -116,8 +124,7 @@ internal static class HomeTileView
 
         DrawFolderMiniGrid(dl, min, max, folder, shortcutIcon, scale);
         FinishPointer(dl, firstVertex, center, min, max, radius, drawHalf, pointer, scale);
-        var name = string.IsNullOrEmpty(folder.FolderName) ? fallbackName : folder.FolderName;
-        DrawLabel(center, size, name, theme, scale, labelAlpha, showLabels, labelWidth, zoom);
+        DrawFolderLabel(center, size, folder, theme, labelAlpha, showLabels, fallbackName, labelWidth, zoom);
         var badgeTotal = 0;
         var badgeHasDot = false;
         for (var memberIndex = 0; memberIndex < folder.Members.Count; memberIndex++)
@@ -148,19 +155,22 @@ internal static class HomeTileView
         }
     }
 
+    public static void DrawFolderLabel(Vector2 center, float size, HomeTile folder, PhoneTheme theme,
+        float labelAlpha, bool showLabels, string fallbackName, float labelWidth, float zoom = 1f)
+    {
+        var name = string.IsNullOrEmpty(folder.FolderName) ? fallbackName : folder.FolderName;
+        DrawLabel(center, size, name, theme, UiScale.Current * zoom, labelAlpha, showLabels, labelWidth, zoom);
+    }
+
     public static void DrawFolderMiniGrid(ImDrawListPtr dl, Vector2 min, Vector2 max, HomeTile folder,
         Func<ShortcutEntry, IDalamudTextureWrap?> shortcutIcon, float scale)
     {
         var side = MathF.Min(max.X - min.X, max.Y - min.Y);
-        var pad = side * 0.14f;
-        var cell = (side - pad * 2f) / 3f;
-        var mini = cell * 0.78f;
-        var count = Math.Min(9, folder.Members.Count);
+        var mini = side * FolderMiniIconFraction;
+        var count = Math.Min(FolderMiniColumns * FolderMiniColumns, folder.Members.Count);
         for (var index = 0; index < count; index++)
         {
-            var col = index % 3;
-            var row = index / 3;
-            var cellCenter = new Vector2(min.X + pad + (col + 0.5f) * cell, min.Y + pad + (row + 0.5f) * cell);
+            var cellCenter = min + FolderMiniCenter(index) * side;
             var member = folder.Members[index];
             if (member.IsShortcut)
             {
