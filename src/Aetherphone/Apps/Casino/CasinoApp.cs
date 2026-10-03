@@ -409,6 +409,7 @@ internal sealed partial class CasinoApp : IPhoneApp
     {
         if (router.Current.Screen != CasinoScreen.Limits)
         {
+            limitsSeeded = false;
             router.Push(new CasinoRoute(CasinoScreen.Limits));
         }
     }

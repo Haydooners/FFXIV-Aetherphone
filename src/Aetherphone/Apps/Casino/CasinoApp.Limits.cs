@@ -35,6 +35,7 @@ internal sealed partial class CasinoApp
 
     private long? limitChoice;
     private bool limitsSeeded;
+    private bool limitSliderDragging;
     private string limitsSeededAccount = string.Empty;
     private long limitsSavedAtTick;
     private Spring gaugeFill;
@@ -54,7 +55,7 @@ internal sealed partial class CasinoApp
     {
         var scale = UiScale.Current;
         using (ImRaii.PushId("casino.limits"))
-        using (AppSurface.Begin(body))
+        using (var surface = AppSurface.Begin(body))
         {
             ConsumeLimitsResult();
             var state = casino.State;
@@ -85,6 +86,11 @@ internal sealed partial class CasinoApp
             var pickerTop = SectionTitle(drawList, new Vector2(origin.X, cursorY), width,
                 Loc.T(L.Casino.SelfLimitHeading), scale);
             cursorY = DrawLimitPicker(drawList, new Vector2(origin.X, pickerTop), width, state, scale);
+            if (limitSliderDragging)
+            {
+                surface.CancelDrag();
+            }
+
             var ceiling = CasinoLimitPicker.CeilingFor(state.DailyBuyInCap);
             var hint = texts.Numbers(L.Casino.SelfLimitHint, CasinoLimitPicker.Floor, ceiling);
             var hintTop = cursorY + Metrics.Space.Sm * scale;
@@ -226,6 +232,7 @@ internal sealed partial class CasinoApp
     private float DrawLimitPicker(ImDrawListPtr drawList, Vector2 origin, float width, CasinoStateDto state,
         float scale)
     {
+        limitSliderDragging = false;
         if (limitChoice is not long chosen)
         {
             return DrawLimitOff(drawList, origin, width, state, scale);
@@ -285,6 +292,7 @@ internal sealed partial class CasinoApp
         var sliderRow = new Rect(new Vector2(left, top), new Vector2(right, top + sliderHeight));
         var slider = Slider.Draw(LimitSliderId, sliderRow, CasinoLimitPicker.FractionOf(chosen, ceiling), theme,
             Metrics.Space.Sm * scale, Metrics.Space.Sm * scale);
+        limitSliderDragging = slider.Dragging;
         if (slider.Dragging || slider.Released)
         {
             chosen = CasinoLimitPicker.FromFraction(slider.Value, ceiling);
