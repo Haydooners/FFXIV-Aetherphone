@@ -7008,6 +7008,7 @@
   "changelog.r1042.136": "Zufallswiedergabe, Wiederholen und ein Lautstärkeregler für die App, die auf deinem PC spielt, dazu eine Quelle-Taste, mit der du wählst, welcher App Musik folgt",
   "changelog.r1042.137": "Eine App auf deinem PC, die 15 Minuten pausiert bleibt, wird jetzt ausgeblendet, bis sie wieder spielt",
   "changelog.r1042.138": "Albumcover in der Dynamic Island sind jetzt abgerundete Quadrate, passend zur Form der Island",
+  "changelog.r1042.139": "Das Widget „Wird gespielt“ zeigt und steuert jetzt, was auf deinem PC läuft, wenn das Handy keine Musik spielt",
   "changelog.r1042.66": "Deine Playlists, zuletzt gespielten Songs und Lieblingssender werden automatisch in die neue Musik übernommen",
   "changelog.r1042.67": "Behoben, dass sich manche Seiten von Community-Radiosendern leer öffneten",
   "changelog.r1042.77": "Chat im Jam hinzugefügt, dazu Jams in der Nähe, denen du mit einem Tippen beitrittst, wenn der Host sie für Spieler in der Nähe sichtbar macht",
