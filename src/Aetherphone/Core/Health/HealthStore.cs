@@ -34,7 +34,7 @@ internal sealed class HealthStore
             var profile = Sanitize(loaded);
             var savedUnix = new DateTimeOffset(File.GetLastWriteTimeUtc(path)).ToUnixTimeSeconds();
             WeightHistory.Adopt(profile.WeightLog, profile.WeightKg, savedUnix);
-            profile.WeightKg = WeightHistory.Latest(profile.WeightLog) ?? profile.WeightKg;
+            profile.WeightKg = WeightHistory.Latest(profile.WeightLog);
             return profile;
         }
         catch (Exception exception)
