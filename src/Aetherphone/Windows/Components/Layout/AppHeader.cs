@@ -11,6 +11,10 @@ internal static class AppHeader
     public const float Height = Metrics.Size.Header;
 
     private const float LargeTitleInset = Metrics.Space.Lg;
+    private const float GlassReserveThreshold = 0.01f;
+
+    private static bool BarHover(Vector2 min, Vector2 max) =>
+        !UiInteract.InputBlocked && UiInteract.HoverWindowOnly(min, max);
     private const float ButtonGlyphScale = 0.62f;
     private const float BackPadX = 6f;
     private const float BackLabelGap = 4f;
@@ -160,6 +164,12 @@ internal static class AppHeader
             var barMax = new Vector2(content.Max.X - Metrics.Space.GlassInset * scale,
                 content.Min.Y + inlineHeight - NavBarMetrics.BarInsetY * scale);
             Material.ThemedGlass(drawList, barMin, barMax, (barMax.Y - barMin.Y) * 0.5f, scale, theme, glass);
+            if (glass > GlassReserveThreshold)
+            {
+                UiInteract.HoverOverlay(new Rect(new Vector2(content.Min.X, content.Min.Y),
+                    new Vector2(content.Max.X, content.Min.Y + inlineHeight)));
+            }
+
             DrawLargeTitle(drawList, content, title, style.Ink, scrollY, progress, scale);
             var leftReserve = onBack is null
                 ? 0f
@@ -249,7 +259,7 @@ internal static class AppHeader
         var halfHit = NavBarMetrics.BackHitHeight * scale * 0.5f;
         var hitMin = new Vector2(left, centerY - halfHit);
         var hitMax = new Vector2(left + width, centerY + halfHit);
-        var hovered = UiInteract.Hover(hitMin, hitMax);
+        var hovered = BarHover(hitMin, hitMax);
         var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var ink = accent with { W = accent.W * (down ? BackPressedAlpha : 1f) };
         var color = ImGui.GetColorU32(ink);
@@ -285,7 +295,7 @@ internal static class AppHeader
         for (var index = 0; index < count; index++)
         {
             var center = new Vector2(NavBarMetrics.ButtonCenterX(content.Max.X, index, count, scale), centerY);
-            var hovered = UiInteract.Hover(center - hit, center + hit);
+            var hovered = BarHover(center - hit, center + hit);
             var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
             var grow = PressFx.Scale(unchecked(baseKey + (uint)index + 1u), down, PressFx.ControlPressedScale);
             var drawn = new Vector2(radius * grow, radius * grow);
