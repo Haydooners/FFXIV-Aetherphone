@@ -411,12 +411,16 @@ internal sealed class UpdraftApp : IMiniGame
             TextStyles.Title2.Scale * pulse, TextStyles.Title2.Weight);
         Typography.DrawCentered(center, prompt, new Vector4(1f, 1f, 1f, 1f), TextStyles.Title2.Scale * pulse,
             TextStyles.Title2.Weight);
-        var hintCenter = center + new Vector2(0f, 34f * scale);
         var hint = Loc.T(L.Updraft.Hint);
+        var hintWidth = body.Width * 0.82f;
+        var hintHeight = Typography.MeasureWrappedBlock(hint, TextStyles.Footnote, hintWidth).Y;
+        var hintCenter = center + new Vector2(0f, 24f * scale + hintHeight * 0.5f);
         var fade = MathF.Min(1f, pop);
-        Typography.DrawCentered(hintCenter + new Vector2(1f * scale, 1f * scale), hint, new Vector4(0f, 0f, 0f, 0.3f * fade),
-            TextStyles.Footnote);
-        Typography.DrawCentered(hintCenter, hint, new Vector4(1f, 1f, 1f, 0.92f * fade), TextStyles.Footnote);
+        var drawList = ImGui.GetWindowDrawList();
+        Typography.DrawWrappedCentered(drawList, hintCenter + new Vector2(1f * scale, 1f * scale), hint,
+            new Vector4(0f, 0f, 0f, 0.3f * fade), TextStyles.Footnote, hintWidth);
+        Typography.DrawWrappedCentered(drawList, hintCenter, hint, new Vector4(1f, 1f, 1f, 0.92f * fade), TextStyles.Footnote,
+            hintWidth);
     }
 
     private void DrawResult(PhoneTheme theme, Rect body, float deltaSeconds)
