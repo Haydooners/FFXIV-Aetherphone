@@ -122,7 +122,7 @@ internal sealed class TrackVoice : ISampleProvider
 
         lock (gate)
         {
-            ApplyPendingSeek();
+            SafeApplyPendingSeek();
             if (rateDirty)
             {
                 resampler.SetRates(sourceSampleRate * (double)rate, OutputSampleRate);
@@ -147,6 +147,20 @@ internal sealed class TrackVoice : ISampleProvider
         {
             finished = true;
             reader.Dispose();
+        }
+    }
+
+    private void SafeApplyPendingSeek()
+    {
+        try
+        {
+            ApplyPendingSeek();
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, "Song voice seek failed");
+            faulted = true;
+            sourceEnded = true;
         }
     }
 
