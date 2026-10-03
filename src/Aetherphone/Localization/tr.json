@@ -5915,7 +5915,7 @@
   "changelog.r1042.11": "Sayfalar artık yarım ya da tam yükseklikte açılıyor ve ikisi arasında sürükleyebilirsin",
   "changelog.r1042.12": "Spotlight artık arama hapından açılıyor, klasörler kendi kutucuklarından büyüyerek açılıp arkadaki ekranı karartıyor",
   "changelog.r1042.13": "Bir uygulama simgesinin üzerine gelince artık eski büyüteç efekti yerine simge yükseliyor ve kenarı parlıyor",
-  "changelog.r1042.14": "Yan tuşlar güncel bir iPhone gibi yerleştirildi: solda Rahatsız etme için Eylem düğmesi ve Konumu Kilitle tuşu, sağda Yan düğme ve Kamera Denetimi",
+  "changelog.r1042.14": "Yan tuşlar yeniden düzenlendi: solda Rahatsız etme için Eylem düğmesi ve Konumu Kilitle tuşu, sağda Yan düğme ve Kamera Denetimi",
   "changelog.r1042.15": "Ayarlar'daki Ekran sayfasına Canlı cam (deneysel) eklendi: uygulamaların içindeki ve mini telefondaki cam, arkasındaki oyunu bulanıklaştırır",
   "changelog.r1042.16": "Duvar kâğıtları artık çizildikleri boyutta yükleniyor, böylece titremek yerine net kalıyor",
   "changelog.r1042.17": "Pil yüzdesi artık pil simgesinin içinde duruyor; sinyal, Wi-Fi ya da pil simgesinin üzerine gelince neyi ölçtüğünü görebilirsin",

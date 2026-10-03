@@ -5915,7 +5915,7 @@
   "changelog.r1042.11": "Sheets now open at half or full height, and you can drag them between the two",
   "changelog.r1042.12": "Spotlight now drops out of the search pill, and folders grow out of their tile and dim the screen behind them",
   "changelog.r1042.13": "Hovering an app icon now lifts it and lights its edge, in place of the old magnifying effect",
-  "changelog.r1042.14": "Laid out the side keys like a current iPhone: the Action button for Do Not Disturb and a Lock Position key on the left, the Side button and Camera Control on the right",
+  "changelog.r1042.14": "Rearranged the side keys: the Action button for Do Not Disturb and a Lock Position key on the left, the Side button and Camera Control on the right",
   "changelog.r1042.15": "Added Live glass (experimental) to the Display page in Settings: glass inside apps and on the mini phone blurs the game behind it",
   "changelog.r1042.16": "Wallpapers now load at the size they are drawn, so they stay crisp instead of shimmering",
   "changelog.r1042.17": "The battery percentage now sits inside the battery icon, and hovering the signal, Wi-Fi or battery icon shows what it measures",

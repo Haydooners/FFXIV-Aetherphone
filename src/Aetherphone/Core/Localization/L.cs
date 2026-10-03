@@ -2001,7 +2001,7 @@ internal static class L
             new("changelog.r1042.13",
                 "Hovering an app icon now lifts it and lights its edge, in place of the old magnifying effect"),
             new("changelog.r1042.14",
-                "Laid out the side keys like a current iPhone: the Action button for Do Not Disturb and a Lock Position key on the left, the Side button and Camera Control on the right"),
+                "Rearranged the side keys: the Action button for Do Not Disturb and a Lock Position key on the left, the Side button and Camera Control on the right"),
             new("changelog.r1042.15",
                 "Added Live glass (experimental) to the Display page in Settings: glass inside apps and on the mini phone blurs the game behind it"),
             new("changelog.r1042.3",
