@@ -84,7 +84,8 @@ internal sealed partial class MusicApp
 
     private void DrawShell(Rect content, Rect screen, float scale, float delta)
     {
-        var sheetsCapture = songMenu.CapturesPointer || playlistPicker.CapturesPointer;
+        TickJam();
+        var sheetsCapture = songMenu.CapturesPointer || playlistPicker.CapturesPointer || JamCapturesPointer;
         var stage = TabBar.ContentArea(content, scale);
         bottomChrome = TabBar.ContentInset(scale) + MiniPlayerInset(scale, delta);
         using (InputShield.Engage(sheetsCapture || NowPlayingCapturesPointer))
@@ -107,6 +108,7 @@ internal sealed partial class MusicApp
 
         DrawSongMenu(screen);
         playlistPicker.Draw(screen, kit);
+        DrawJamOverlays(screen);
     }
 
     private void DrawTabBar(Rect area)
@@ -319,6 +321,7 @@ internal sealed partial class MusicApp
 
     private void ConsumeLaunchRequests()
     {
+        ConsumeJamLaunch();
         if (!launcher.TryConsumeStation(out var stationId))
         {
             community.EnsureFresh(false);
