@@ -56,6 +56,11 @@ internal sealed class ShareSheet
         }
 
         wasPending = pending;
+        if (!pending && !sheet.CapturesPointer)
+        {
+            return;
+        }
+
         ImGui.SetCursorScreenPos(screen.Min);
         using (ImRaii.Child("##shareSheet", screen.Size, false, OverlayFlags))
         {
