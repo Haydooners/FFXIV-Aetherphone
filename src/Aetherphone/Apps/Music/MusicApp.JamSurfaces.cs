@@ -38,6 +38,7 @@ internal sealed partial class MusicApp
     private void DrawJamHomeCard(float scale)
     {
         EnsureJamMembers();
+        jam.WantNearby();
         JamGap(MusicUi.SectionGap);
         if (jam.InJam)
         {
@@ -78,7 +79,7 @@ internal sealed partial class MusicApp
         Typography.Draw(drawList, new Vector2(textLeft, top), Typography.FitText(Loc.T(L.Music.Jam.Start), textWidth,
             TextStyles.Headline), ui.TitleInk, TextStyles.Headline);
         Typography.Draw(drawList, new Vector2(textLeft, top + titleHeight),
-            Typography.FitText(Loc.T(L.Music.Jam.HomeIdleBody), textWidth, TextStyles.Footnote), ui.MutedInk,
+            Typography.FitText(JamHomeIdleBody(), textWidth, TextStyles.Footnote), ui.MutedInk,
             TextStyles.Footnote);
         EndJamBlock();
         if (UiInteract.Click(card.Min, card.Max, hovered))
