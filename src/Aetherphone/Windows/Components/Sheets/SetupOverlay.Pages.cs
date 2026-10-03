@@ -1090,19 +1090,14 @@ internal sealed partial class SetupOverlay
         var min = new Vector2(screen.Min.X + inset, screen.Min.Y + inset);
         var max = new Vector2(min.X + size, min.Y + size);
         var hovered = live && UiInteract.Hover(min, max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var shrink = pressed ? size * (1f - Motion.PressScaleControl) * 0.5f : 0f;
-        var drawMin = min + new Vector2(shrink, shrink);
-        var drawMax = max - new Vector2(shrink, shrink);
-        var radius = (drawMax.X - drawMin.X) * 0.5f;
-        Material.LiquidGlass(drawList, drawMin, drawMax, radius, scale, glass, 0f, alpha);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, drawMin, drawMax, radius, ImGui.GetColorU32(Fade(ink.Wash, alpha)));
-        }
-
-        _ = BackButton.Draw("setup.back", (drawMin + drawMax) * 0.5f - new Vector2(1.5f * scale, 0f),
-            13f * scale, Fade(ink.Strong, alpha), hovered, scale);
+        var pose = Animate(new Rect(min, max), "back", hovered, hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left));
+        var face = pose.Face;
+        var radius = face.Width * 0.5f;
+        DrawHalo(drawList, face, radius, new Vector4(0f, 0f, 0f, 1f), 0.18f * pose.Hover * alpha);
+        Material.LiquidGlass(drawList, face.Min, face.Max, radius, scale, glass, 0f, alpha);
+        DrawRimLight(drawList, face, radius, pose.Hover * alpha);
+        var nudge = new Vector2((1.5f + 1.5f * pose.Hover) * scale, 0f);
+        _ = BackButton.Draw("setup.back", face.Center - nudge, 13f * scale, Fade(ink.Strong, alpha), hovered, scale);
         if (live && UiInteract.Click(min, max, hovered))
         {
             BackPage();
@@ -1317,83 +1312,6 @@ internal sealed partial class SetupOverlay
         var half = (full.Width - gap) * 0.5f;
         return (new Rect(full.Min, new Vector2(full.Min.X + half, full.Max.Y)),
             new Rect(new Vector2(full.Max.X - half, full.Min.Y), full.Max));
-    }
-
-    private static Rect Pressed(Rect rect, bool pressed, float pressScale)
-    {
-        if (!pressed)
-        {
-            return rect;
-        }
-
-        var inset = rect.Size * (1f - pressScale) * 0.5f;
-        return new Rect(rect.Min + inset, rect.Max - inset);
-    }
-
-    private static bool Primary(ImDrawListPtr drawList, Rect rect, string text, float alpha, bool live,
-        bool enabled = true)
-    {
-        if (alpha <= 0.001f)
-        {
-            return false;
-        }
-
-        var scale = UiScale.Current;
-        var hovered = live && enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var face = Pressed(rect, hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left), Motion.PressScaleCard);
-        var radius = face.Height * 0.5f;
-        if (enabled)
-        {
-            var glowPad = (hovered ? 9f : 6f) * scale;
-            var glowMin = face.Min - new Vector2(glowPad, glowPad * 0.6f);
-            var glowMax = face.Max + new Vector2(glowPad, glowPad * 1.1f);
-            Squircle.Fill(drawList, glowMin, glowMax, radius + glowPad,
-                ImGui.GetColorU32(Fade(BrandMark.Violet, (hovered ? 0.30f : 0.20f) * alpha)));
-            Squircle.FillVerticalGradient(drawList, face.Min, face.Max, radius,
-                ImGui.GetColorU32(Fade(hovered ? PrimaryHoverTop : PrimaryTop, alpha)),
-                ImGui.GetColorU32(Fade(hovered ? PrimaryHoverBottom : PrimaryBottom, alpha)));
-            Squircle.StrokeDirectional(drawList, face.Min, face.Max, radius,
-                ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.35f * alpha)), 1.2f * scale, new Vector2(0f, -1f), 2f);
-        }
-        else
-        {
-            Squircle.Fill(drawList, face.Min, face.Max, radius, ImGui.GetColorU32(Fade(ink.Disabled, alpha)));
-        }
-
-        var label = enabled ? Fade(PrimaryInk, alpha) : Fade(ink.DisabledText, alpha);
-        Typography.DrawCentered(drawList, face.Center,
-            Typography.FitText(text, face.Width - Metrics.Space.Xl * scale, TextStyles.Headline), label,
-            TextStyles.Headline);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return live && enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
-    }
-
-    private static bool Secondary(ImDrawListPtr drawList, Rect rect, string label, float alpha, bool live)
-    {
-        if (alpha <= 0.001f)
-        {
-            return false;
-        }
-
-        var scale = UiScale.Current;
-        var hovered = live && UiInteract.Hover(rect.Min, rect.Max);
-        var face = Pressed(rect, hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left), Motion.PressScaleCard);
-        var radius = face.Height * 0.5f;
-        Material.LiquidGlass(drawList, face.Min, face.Max, radius, scale, glass, 0f, alpha);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, face.Min, face.Max, radius, ImGui.GetColorU32(Fade(ink.Wash, alpha)));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        Typography.DrawCentered(drawList, face.Center,
-            Typography.FitText(label, face.Width - Metrics.Space.Xl * scale, TextStyles.Headline),
-            Fade(ink.Strong, alpha), TextStyles.Headline);
-        return live && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private static bool TextAction(ImDrawListPtr drawList, Vector2 center, string label, float alpha, bool live)
