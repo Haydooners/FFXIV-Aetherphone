@@ -69,6 +69,16 @@ internal sealed class NowPlayingPresenter
         hidden.SnapTo(1f);
     }
 
+    public void ReleasePress()
+    {
+        if (dragging)
+        {
+            return;
+        }
+
+        pressed = false;
+    }
+
     public void Step(float travel, bool pressInDragZone, float delta, float scale)
     {
         if (open)
