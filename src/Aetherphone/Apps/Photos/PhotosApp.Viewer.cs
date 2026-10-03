@@ -166,7 +166,7 @@ internal sealed partial class PhotosApp
         }
 
         var hovered = UiInteract.Hover(screen.Min, screen.Max);
-        if (!UiInteract.Click(screen.Min, screen.Max, hovered, false) || swiping)
+        if (!UiInteract.Click(screen.Min, screen.Max, hovered, false))
         {
             return;
         }
@@ -174,6 +174,11 @@ internal sealed partial class PhotosApp
         if (suppressTap)
         {
             suppressTap = false;
+            return;
+        }
+
+        if (swiping)
+        {
             return;
         }
 
