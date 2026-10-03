@@ -151,6 +151,7 @@ internal static class AppRegistry
             Photos = photoLibrary,
             Contacts = contactBook,
             MessagePopouts = messagePopouts,
+            Video = videoSuite,
         };
     }
 }

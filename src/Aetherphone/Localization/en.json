@@ -6887,5 +6887,11 @@
   "onboarding.stratsRoleTitle": "Your role",
   "onboarding.stratsRoleBody": "Choose your role and party. Every diagram highlights where you stand.",
   "onboarding.stratsChipsTitle": "Strats and options",
-  "onboarding.stratsChipsBody": "Switch between community strats and their variants. Your choice is remembered per fight."
+  "onboarding.stratsChipsBody": "Switch between community strats and their variants. Your choice is remembered per fight.",
+  "island.live": "Live",
+  "island.watching": "Watching",
+  "island.hosting": "Hosting",
+  "island.viewers.one": "{0} watching",
+  "island.viewers.other": "{0} watching",
+  "island.startsIn": "Starts in {0}"
 }

@@ -6887,5 +6887,11 @@
   "onboarding.stratsRoleTitle": "Sua função",
   "onboarding.stratsRoleBody": "Escolha a sua função e o seu grupo. Cada diagrama destaca onde você fica.",
   "onboarding.stratsChipsTitle": "Estratégias e opções",
-  "onboarding.stratsChipsBody": "Alterne entre estratégias da comunidade e suas variantes. Sua escolha é lembrada por luta."
+  "onboarding.stratsChipsBody": "Alterne entre estratégias da comunidade e suas variantes. Sua escolha é lembrada por luta.",
+  "island.live": "Ao vivo",
+  "island.watching": "Assistindo",
+  "island.hosting": "Anfitrião",
+  "island.viewers.one": "{0} assistindo",
+  "island.viewers.other": "{0} assistindo",
+  "island.startsIn": "Começa em {0}"
 }

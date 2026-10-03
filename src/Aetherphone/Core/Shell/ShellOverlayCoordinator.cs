@@ -46,6 +46,7 @@ internal sealed class ShellOverlayCoordinator
     private readonly EncryptionHelpOverlay encryptionHelpOverlay;
     private readonly OnboardingDirector director;
     private readonly SetupOverlay setup;
+    private bool bannerWasVisible;
 
     public ShellOverlayCoordinator(Configuration configuration, LoadingScreen loading, NavigationStack navigation,
         ControlCenter controlCenter, AppSwitcher appSwitcher, NotificationBanner banner, DynamicIsland island,
@@ -186,6 +187,12 @@ internal sealed class ShellOverlayCoordinator
             return;
         }
 
+        if (banner.IsVisible && !bannerWasVisible)
+        {
+            island.Pulse();
+        }
+
+        bannerWasVisible = banner.IsVisible;
         if (!director.CapturesPointer)
         {
             if (!controlCenter.IsActive && !appSwitcher.IsActive)

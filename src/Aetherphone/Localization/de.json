@@ -6887,5 +6887,11 @@
   "onboarding.stratsRoleTitle": "Deine Rolle",
   "onboarding.stratsRoleBody": "Wähle deine Rolle und Gruppe. Jedes Diagramm hebt hervor, wo du stehst.",
   "onboarding.stratsChipsTitle": "Strats und Optionen",
-  "onboarding.stratsChipsBody": "Wechsle zwischen Community-Strats und ihren Varianten. Deine Wahl wird pro Kampf gespeichert."
+  "onboarding.stratsChipsBody": "Wechsle zwischen Community-Strats und ihren Varianten. Deine Wahl wird pro Kampf gespeichert.",
+  "island.live": "Live",
+  "island.watching": "Du siehst zu",
+  "island.hosting": "Du bist Host",
+  "island.viewers.one": "{0} sieht zu",
+  "island.viewers.other": "{0} sehen zu",
+  "island.startsIn": "Beginnt in {0}"
 }

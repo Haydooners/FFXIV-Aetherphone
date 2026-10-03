@@ -6887,5 +6887,11 @@
   "onboarding.stratsRoleTitle": "Ваша роль",
   "onboarding.stratsRoleBody": "Выберите роль и группу. Каждая схема подсвечивает, где вы стоите.",
   "onboarding.stratsChipsTitle": "Стратегии и варианты",
-  "onboarding.stratsChipsBody": "Переключайтесь между стратегиями сообщества и их вариантами. Выбор запоминается для каждого боя."
+  "onboarding.stratsChipsBody": "Переключайтесь между стратегиями сообщества и их вариантами. Выбор запоминается для каждого боя.",
+  "island.live": "В эфире",
+  "island.watching": "Вы смотрите",
+  "island.hosting": "Вы ведёте",
+  "island.viewers.one": "{0} зритель",
+  "island.viewers.other": "{0} зрителей",
+  "island.startsIn": "Начнётся через {0}"
 }
