@@ -286,14 +286,16 @@ internal sealed class RootSettingsPage : ISettingsPage
         var scale = UiScale.Current;
         var card = GroupCard.Begin(theme, 1, SupportRowHeight);
         var row = card.NextRow();
+        var bounds = card.Bounds;
         var drawList = ImGui.GetWindowDrawList();
         var radius = Metrics.Radius.Grouped * scale;
-        var hovered = UiInteract.Hover(row.Min, row.Max);
+        var hovered = UiInteract.Hover(bounds.Min, bounds.Max);
         var lift = HoverFx.Amount("##settings.supportRow", hovered);
-        Squircle.FillVerticalGradient(drawList, row.Min, row.Max, radius,
+        Squircle.FillVerticalGradient(drawList, bounds.Min, bounds.Max, radius,
             ImGui.GetColorU32(Palette.WithAlpha(SupportPage.PatreonCoral, SupportWashTop + SupportWashLift * lift)),
             ImGui.GetColorU32(Palette.WithAlpha(SupportViolet, SupportWashBottom + SupportWashLift * lift)));
-        DrawSupportShimmer(drawList, row, radius, scale);
+        DrawSupportShimmer(drawList, bounds, radius, scale);
+        Material.EdgeSquircle(drawList, bounds.Min, bounds.Max, radius, scale);
         var tile = SupportTileUnits * scale;
         var tileMin = new Vector2(row.Min.X + Metrics.Space.Md * scale, row.Center.Y - tile * 0.5f);
         var tileMax = tileMin + new Vector2(tile, tile);
@@ -325,7 +327,7 @@ internal sealed class RootSettingsPage : ISettingsPage
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        if (UiInteract.Click(row.Min, row.Max, hovered))
+        if (UiInteract.Click(bounds.Min, bounds.Max, hovered))
         {
             navigator.Open(supportPage);
         }
@@ -333,24 +335,24 @@ internal sealed class RootSettingsPage : ISettingsPage
         card.End();
     }
 
-    private static void DrawSupportShimmer(ImDrawListPtr drawList, Rect row, float radius, float scale)
+    private static void DrawSupportShimmer(ImDrawListPtr drawList, Rect bounds, float radius, float scale)
     {
         var progress = Pulse.Phase(SupportShimmerMs);
-        var bandWidth = row.Height * SupportShimmerWidth;
-        var slant = row.Height * SupportShimmerSlant;
-        var travel = row.Width + bandWidth * 2f + slant;
-        var x = row.Min.X - bandWidth - slant + travel * progress;
+        var bandWidth = bounds.Height * SupportShimmerWidth;
+        var slant = bounds.Height * SupportShimmerSlant;
+        var travel = bounds.Width + bandWidth * 2f + slant;
+        var x = bounds.Min.X - bandWidth - slant + travel * progress;
         var cornerGuard = radius * SupportShimmerCornerGuard;
-        drawList.PushClipRect(new Vector2(row.Min.X + cornerGuard, row.Min.Y),
-            new Vector2(row.Max.X - cornerGuard, row.Max.Y), true);
+        drawList.PushClipRect(new Vector2(bounds.Min.X + cornerGuard, bounds.Min.Y),
+            new Vector2(bounds.Max.X - cornerGuard, bounds.Max.Y), true);
         for (var layer = 0; layer < SupportShimmerLayers; layer++)
         {
             var inset = bandWidth * SupportShimmerStep * layer;
             var alpha = SupportShimmerAlpha * (layer + 1) / SupportShimmerLayers;
             var color = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha));
-            drawList.AddQuadFilled(new Vector2(x + inset, row.Max.Y), new Vector2(x + inset + slant, row.Min.Y),
-                new Vector2(x + bandWidth - inset + slant, row.Min.Y), new Vector2(x + bandWidth - inset, row.Max.Y),
-                color);
+            drawList.AddQuadFilled(new Vector2(x + inset, bounds.Max.Y), new Vector2(x + inset + slant, bounds.Min.Y),
+                new Vector2(x + bandWidth - inset + slant, bounds.Min.Y),
+                new Vector2(x + bandWidth - inset, bounds.Max.Y), color);
         }
 
         drawList.PopClipRect();
