@@ -31,7 +31,7 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Aethergram;
 
-internal sealed partial class AethergramApp : IResumableApp
+internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
 {
     private enum PostSheetAction
     {
@@ -1565,8 +1565,7 @@ internal sealed partial class AethergramApp : IResumableApp
         tabItems[(int)AethergramTab.Profile] = new TabItem(Loc.T(L.Aethergram.Profile), PhoneIcons.User,
             PhoneIcons.UserFilled, AnchorKey: "aethergram.tab.profile", CustomIcon: hasAvatar);
         var inbox = new TabBarAction(PhoneIcons.Send, Loc.T(L.Aethergram.InboxTitle), dmStore.UnreadCount);
-        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab, inbox);
-        DrawNavAvatar(tabBar.Pose((int)AethergramTab.Profile), activeTab == AethergramTab.Profile);
+        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab, inbox, this);
         if (result.ActionTapped)
         {
             OpenInbox();
@@ -1581,7 +1580,7 @@ internal sealed partial class AethergramApp : IResumableApp
         SelectTab((AethergramTab)result.Tapped);
     }
 
-    private void DrawNavAvatar(TabItemPose pose, bool active)
+    void ITabIconDrawer.DrawTabIcon(ImDrawListPtr drawList, int index, TabItemPose pose, bool active)
     {
         if (store.Me is not { } me || pose.Alpha < 0.5f)
         {
@@ -1596,8 +1595,8 @@ internal sealed partial class AethergramApp : IResumableApp
             return;
         }
 
-        ImGui.GetWindowDrawList().AddCircle(pose.IconCenter, radius + NavAvatarRingGap * scale,
-            ImGui.GetColorU32(ui.Accent), 32, 1.6f * scale);
+        drawList.AddCircle(pose.IconCenter, radius + NavAvatarRingGap * scale, ImGui.GetColorU32(ui.Accent), 32,
+            1.6f * scale);
     }
 
     private void DrawAvatar(Vector2 center, float radius, string name, string world, string? avatarUrl,

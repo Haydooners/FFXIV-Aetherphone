@@ -29,7 +29,7 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Chirper;
 
-internal sealed partial class ChirperApp : IResumableApp
+internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
 {
     private enum SheetKind
     {
@@ -646,8 +646,7 @@ internal sealed partial class ChirperApp : IResumableApp
             PhoneIcons.BellFilled, social.UnseenCount(Id));
         tabItems[(int)HomeTab.Profile] = new TabItem(Loc.T(L.Chirper.TabProfile), PhoneIcons.User,
             PhoneIcons.UserFilled, CustomIcon: hasAvatar);
-        var result = tabBar.Draw(area, ui, tabItems, (int)homeTab);
-        DrawProfileTabAvatar(tabBar.Pose((int)HomeTab.Profile), homeTab == HomeTab.Profile);
+        var result = tabBar.Draw(area, ui, tabItems, (int)homeTab, icons: this);
         if (result.Tapped < 0)
         {
             return;
@@ -656,7 +655,7 @@ internal sealed partial class ChirperApp : IResumableApp
         SelectHomeTab((HomeTab)result.Tapped);
     }
 
-    private void DrawProfileTabAvatar(TabItemPose pose, bool active)
+    void ITabIconDrawer.DrawTabIcon(ImDrawListPtr drawList, int index, TabItemPose pose, bool active)
     {
         if (store.Me is not { } me || pose.Alpha < 0.5f)
         {
@@ -664,7 +663,6 @@ internal sealed partial class ChirperApp : IResumableApp
         }
 
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         var radius = TabBarAvatarRadius * scale * pose.Scale;
         DrawAvatar(drawList, pose.IconCenter, radius, me.Name, me.World, me.AvatarUrl, 0.85f, 28,
             Frames.Of(me.FrameId));

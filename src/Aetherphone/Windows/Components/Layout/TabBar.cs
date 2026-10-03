@@ -21,6 +21,11 @@ internal readonly record struct TabBarResult(int Tapped, bool ActionTapped)
 
 internal readonly record struct TabItemPose(Vector2 IconCenter, float Scale, float Alpha);
 
+internal interface ITabIconDrawer
+{
+    void DrawTabIcon(ImDrawListPtr drawList, int index, TabItemPose pose, bool active);
+}
+
 internal sealed class TabBar
 {
     public const float GlassOpacity = 0.86f;
@@ -72,11 +77,11 @@ internal sealed class TabBar
     public TabItemPose Pose(int index) => index >= 0 && index < poses.Length ? poses[index] : default;
 
     public TabBarResult Draw(Rect area, AppSkin ui, ReadOnlySpan<TabItem> items, int active,
-        TabBarAction? action = null) =>
-        Draw(area, ui, items, active, AppSurface.ScrollOffsetThisFrame, action);
+        TabBarAction? action = null, ITabIconDrawer? icons = null) =>
+        Draw(area, ui, items, active, AppSurface.ScrollOffsetThisFrame, action, icons);
 
     public TabBarResult Draw(Rect area, AppSkin ui, ReadOnlySpan<TabItem> items, int active, float scrollOffset,
-        TabBarAction? action = null)
+        TabBarAction? action = null, ITabIconDrawer? icons = null)
     {
         if (items.Length == 0)
         {
@@ -149,7 +154,11 @@ internal sealed class TabBar
             {
                 var baseInk = isActive ? ui.Accent : inactiveInk;
                 var ink = Palette.WithAlpha(baseInk, baseInk.W * alpha);
-                if (!item.CustomIcon)
+                if (item.CustomIcon && icons is not null)
+                {
+                    icons.DrawTabIcon(drawList, index, poses[index], isActive);
+                }
+                else
                 {
                     PhoneIcon.Draw(drawList, iconCenter, item.GlyphFor(isActive), ink,
                         TabBarLayout.IconSize * scale * itemScale);

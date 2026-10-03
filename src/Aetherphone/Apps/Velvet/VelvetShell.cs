@@ -31,7 +31,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 
 namespace Aetherphone.Apps.Velvet;
 
-internal sealed partial class VelvetShell : IResumableApp
+internal sealed partial class VelvetShell : IResumableApp, ITabIconDrawer
 {
     private const float HeartbeatSeconds = 45f;
     private const byte LalafellRaceId = 3;
