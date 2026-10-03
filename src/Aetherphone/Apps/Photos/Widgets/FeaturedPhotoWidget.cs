@@ -64,6 +64,9 @@ internal sealed class FeaturedPhotoWidget : IHomeWidget
     private readonly List<(string Path, int Level)> evictions = new();
     private readonly WidgetStates<Show> shows = new();
     private readonly CancellationTokenSource cancellation = new();
+    private CachedText sampleTitle;
+    private CachedText sampleYear;
+    private volatile bool disposed;
     private string[] paths = Array.Empty<string>();
     private WidgetRefresh listCadence;
     private WidgetRefresh evictCadence;
@@ -251,7 +254,7 @@ internal sealed class FeaturedPhotoWidget : IHomeWidget
         return date;
     }
 
-    private static void DrawSample(in WidgetContext context, in WidgetInk ink)
+    private void DrawSample(in WidgetContext context, in WidgetInk ink)
     {
         var bounds = context.Bounds;
         var drawList = context.DrawList;
@@ -268,12 +271,18 @@ internal sealed class FeaturedPhotoWidget : IHomeWidget
         drawList.AddCircleFilled(sunCenter, sunRadius, ImGui.GetColorU32(Mapped(ink, SampleSun)), 48);
         Squircle.FillCap(drawList, new Vector2(bounds.Min.X, horizon), bounds.Max, radius,
             ImGui.GetColorU32(Mapped(ink, SampleSea)), false);
-        var title = SampleDate.ToString(Loc.Culture.DateTimeFormat.MonthDayPattern, Loc.Culture);
+        var title = sampleTitle.IsCurrent(SampleDate.Ticks)
+            ? sampleTitle.Value
+            : sampleTitle.Store(SampleDate.Ticks,
+                SampleDate.ToString(Loc.Culture.DateTimeFormat.MonthDayPattern, Loc.Culture));
+        var year = sampleYear.IsCurrent(SampleDate.Year)
+            ? sampleYear.Value
+            : sampleYear.Store(SampleDate.Year, SampleDate.Year.ToString(Loc.Culture));
         var bottom = bounds.Max.Y - bounds.Height * ScrimFraction;
         Squircle.FillVerticalGradient(drawList, new Vector2(bounds.Min.X, bottom), bounds.Max, radius,
             ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0f)),
             ImGui.GetColorU32(new Vector4(0f, 0f, 0f, ScrimAlpha * 0.6f * ink.Opacity)));
-        DrawDate(context, ink, title, SampleDate.Year.ToString(Loc.Culture));
+        DrawDate(context, ink, title, year);
         WidgetChrome.Edge(context);
     }
 
@@ -330,6 +339,12 @@ internal sealed class FeaturedPhotoWidget : IHomeWidget
             if (!ready.TryAdd((path, level), new Entry(wrap, Environment.TickCount64)))
             {
                 wrap.Dispose();
+                return;
+            }
+
+            if (disposed && ready.TryRemove((path, level), out var orphan))
+            {
+                orphan.Wrap.Dispose();
             }
         }
         catch (OperationCanceledException)
@@ -373,13 +388,14 @@ internal sealed class FeaturedPhotoWidget : IHomeWidget
 
     public void Dispose()
     {
+        disposed = true;
         cancellation.Cancel();
-        cancellation.Dispose();
         foreach (var pair in ready)
         {
-            pair.Value.Wrap.Dispose();
+            if (ready.TryRemove(pair.Key, out var entry))
+            {
+                entry.Wrap.Dispose();
+            }
         }
-
-        ready.Clear();
     }
 }

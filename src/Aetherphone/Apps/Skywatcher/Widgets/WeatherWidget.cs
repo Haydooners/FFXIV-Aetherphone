@@ -24,18 +24,24 @@ internal sealed class WeatherWidget : IHomeWidget
     private const float SectionGapUnits = 10f;
 
     private readonly WeatherService weather;
-    private readonly List<WeatherWindow> forecast = new(ForecastWindows);
+    private readonly List<WeatherWindow> liveForecast = new(ForecastWindows);
+    private readonly List<WeatherWindow> sampleForecast = new(ForecastWindows);
     private readonly CachedText[] whenLabels = new CachedText[StripColumns];
     private readonly CachedText[] untilLabels = new CachedText[ListRows];
-    private WidgetRefresh cadence;
+    private WidgetRefresh liveCadence;
+    private WidgetRefresh sampleCadence;
     private CachedText changeLine;
+    private List<WeatherWindow> forecast;
     private string zone = string.Empty;
+    private string liveZone = string.Empty;
+    private string sampleZone = string.Empty;
     private bool sample;
     private bool inWorld;
 
     public WeatherWidget(WeatherService weather)
     {
         this.weather = weather;
+        forecast = liveForecast;
     }
 
     public string Id => "skywatcher.forecast";
@@ -88,23 +94,29 @@ internal sealed class WeatherWidget : IHomeWidget
 
     private void Refresh(bool preview)
     {
-        var wantsSample = preview && weather.CurrentTerritory == 0;
-        if (!cadence.Due(RefreshMilliseconds) && wantsSample == sample)
-        {
-            return;
-        }
-
-        sample = wantsSample;
         inWorld = weather.CurrentTerritory != 0;
+        sample = preview && !inWorld;
         if (sample)
         {
-            zone = weather.ZoneName(SampleTerritory);
-            weather.Forecast(SampleTerritory, forecast, ForecastWindows);
+            if (sampleCadence.Due(RefreshMilliseconds))
+            {
+                sampleZone = weather.ZoneName(SampleTerritory);
+                weather.Forecast(SampleTerritory, sampleForecast, ForecastWindows);
+            }
+
+            forecast = sampleForecast;
+            zone = sampleZone;
             return;
         }
 
-        zone = weather.ZoneName(weather.CurrentTerritory);
-        weather.Forecast(forecast, ForecastWindows);
+        if (liveCadence.Due(RefreshMilliseconds))
+        {
+            liveZone = weather.ZoneName(weather.CurrentTerritory);
+            weather.Forecast(liveForecast, ForecastWindows);
+        }
+
+        forecast = liveForecast;
+        zone = liveZone;
     }
 
     private void DrawSmall(in WidgetContext context, in WeatherInk ink, Rect content, WeatherKind kind, bool isDay,
