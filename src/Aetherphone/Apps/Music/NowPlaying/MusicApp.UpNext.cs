@@ -114,6 +114,7 @@ internal sealed partial class MusicApp
         queueScroll.Update(list, queueContentHeight, maximum, interactive, queueDragActive || OverQueueHandle(list),
             delta);
         UpdateQueueDrag(list, interactive, scale, delta);
+        EnsureQueueRows(scale);
         drawList.PushClipRect(list.Min, list.Max, true);
         var offset = queueScroll.Offset;
         var dragRow = -1;
