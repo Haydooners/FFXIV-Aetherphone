@@ -74,6 +74,8 @@ internal sealed partial class MusterApp
         public string MusterId;
         public int WorldId;
         public uint TerritoryId;
+        public int TargetWorldId;
+        public int TargetTerritoryId;
         public TravelDestination Destination;
         public string Label;
     }
@@ -585,7 +587,8 @@ internal sealed partial class MusterApp
         var worldId = store.CurrentWorldId;
         var territoryId = store.CurrentTerritoryId;
         if (string.Equals(travelCache.MusterId, muster.Id, StringComparison.Ordinal) && travelCache.WorldId == worldId
-            && travelCache.TerritoryId == territoryId)
+            && travelCache.TerritoryId == territoryId && travelCache.TargetWorldId == muster.WorldId
+            && travelCache.TargetTerritoryId == muster.TerritoryId)
         {
             return travelCache.Destination;
         }
@@ -597,6 +600,8 @@ internal sealed partial class MusterApp
             MusterId = muster.Id,
             WorldId = worldId,
             TerritoryId = territoryId,
+            TargetWorldId = muster.WorldId,
+            TargetTerritoryId = muster.TerritoryId,
             Destination = destination,
             Label = TravelPlanner.CanGo(in destination) ? TravelPlanner.Label(in destination) : string.Empty,
         };
