@@ -55,12 +55,6 @@ internal sealed partial class SetupOverlay
         BrandMark.Lilac, new Vector4(1f, 0.55f, 0.55f, 1f), BrandMark.Night, new Vector4(1f, 1f, 1f, 0.14f),
         new Vector4(1f, 1f, 1f, 0.45f));
 
-    private static readonly Vector4 PrimaryTop = new(0.66f, 0.50f, 1f, 1f);
-    private static readonly Vector4 PrimaryBottom = new(0.49f, 0.32f, 0.96f, 1f);
-    private static readonly Vector4 PrimaryHoverTop = new(0.72f, 0.58f, 1f, 1f);
-    private static readonly Vector4 PrimaryHoverBottom = new(0.56f, 0.40f, 1f, 1f);
-    private static readonly Vector4 PrimaryInk = new(1f, 1f, 1f, 1f);
-
     private readonly record struct SetupInk(Vector4 Strong, Vector4 Muted, Vector4 Hairline, Vector4 Wash,
         Vector4 Accent, Vector4 Danger, Vector4 Base, Vector4 Disabled, Vector4 DisabledText);
 
