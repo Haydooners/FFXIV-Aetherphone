@@ -22,6 +22,8 @@ internal enum GuideCondition
     AppOpened,
     AtHome,
     MinimizeRoundTrip,
+    TapAnchor,
+    AnchorVisible,
 }
 
 internal enum HeroMotif
@@ -29,6 +31,7 @@ internal enum HeroMotif
     Constellation,
     Care,
     Finale,
+    AppIcon,
 }
 
 internal enum GuideGesture
@@ -54,11 +57,12 @@ internal readonly struct GuideStep
     public readonly GuideGesture Gesture;
     public readonly string? SecondaryAnchorKey;
     public readonly GuideCondition Condition;
+    public readonly string? WaitAnchorKey;
 
     public GuideStep(LocString title, LocString body, LocString buttonLabel, string? anchorKey, GuideSurface surface,
         GuideAdvance advance, Action<INavigator>? onAdvance, HeroMotif hero = HeroMotif.Constellation,
         bool overControlCenter = false, GuideGesture gesture = GuideGesture.None, string? secondaryAnchorKey = null,
-        GuideCondition condition = GuideCondition.None)
+        GuideCondition condition = GuideCondition.None, string? waitAnchorKey = null)
     {
         Title = title;
         Body = body;
@@ -72,6 +76,7 @@ internal readonly struct GuideStep
         Gesture = gesture;
         SecondaryAnchorKey = secondaryAnchorKey;
         Condition = condition;
+        WaitAnchorKey = waitAnchorKey;
     }
 
     public bool IsAction => Advance == GuideAdvance.Action;
@@ -98,6 +103,19 @@ internal readonly struct GuideStep
         GuideCondition condition) =>
         new(title, body, L.Onboarding.Continue, anchorKey, GuideSurface.Coachmark, GuideAdvance.Action, null,
             gesture: gesture, condition: condition);
+
+    public static GuideStep Intro(LocString title, LocString body) =>
+        new(title, body, L.Onboarding.TakeTour, null, GuideSurface.FullCard, GuideAdvance.Button, null,
+            HeroMotif.AppIcon);
+
+    public static GuideStep TryTap(LocString title, LocString body, string anchorKey) =>
+        new(title, body, L.Onboarding.Continue, anchorKey, GuideSurface.Coachmark, GuideAdvance.Action, null,
+            gesture: GuideGesture.Tap, condition: GuideCondition.TapAnchor);
+
+    public static GuideStep TryUntil(LocString title, LocString body, string anchorKey, GuideGesture gesture,
+        string waitAnchorKey) =>
+        new(title, body, L.Onboarding.Continue, anchorKey, GuideSurface.Coachmark, GuideAdvance.Action, null,
+            gesture: gesture, condition: GuideCondition.AnchorVisible, waitAnchorKey: waitAnchorKey);
 
     public static GuideStep Span(LocString title, LocString body, string anchorKey, string secondaryAnchorKey) =>
         new(title, body, L.Onboarding.Continue, anchorKey, GuideSurface.Coachmark, GuideAdvance.Button, null,

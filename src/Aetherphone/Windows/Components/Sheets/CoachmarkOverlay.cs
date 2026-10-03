@@ -82,7 +82,7 @@ internal sealed partial class CoachmarkOverlay
     }
 
     public CoachmarkAction Draw(Rect screen, PhoneTheme theme, in GuideStep step, Rect? anchor, float presence,
-        float textProgress, int index, int count, bool interactive)
+        float textProgress, int index, int count, bool interactive, string? appId)
     {
         var scale = UiScale.Current;
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
@@ -93,6 +93,7 @@ internal sealed partial class CoachmarkOverlay
         {
             lastIndex = index;
             stepClock = 0f;
+            anchorPressed = false;
             segmentFill.SnapTo(0f);
         }
 
@@ -123,7 +124,7 @@ internal sealed partial class CoachmarkOverlay
         CoachmarkAction action;
         if (fullCard)
         {
-            action = DrawPage(drawList, screen, step, alpha, live, index, count, scale);
+            action = DrawPage(drawList, screen, step, alpha, live, index, count, scale, appId);
         }
         else if (edge)
         {
