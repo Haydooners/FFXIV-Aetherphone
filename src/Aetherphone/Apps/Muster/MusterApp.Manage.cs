@@ -97,10 +97,9 @@ internal sealed partial class MusterApp
             var origin = ImGui.GetCursorScreenPos();
             var width = ScrollLayout.StableContentWidth();
             var cursorY = DrawDetailHero(drawList, mine, origin.X, origin.Y, width, nowUnix, false, scale);
-            cursorY = DrawNoticeBanner(drawList, mine, origin.X, cursorY, width, nowUnix, scale);
             cursorY = DrawAttendees(drawList, origin.X, cursorY + MusterArt.SectionGap * scale, width, scale);
             cursorY = DrawNotices(drawList, mine, origin.X, cursorY + MusterArt.SectionGap * scale, width, scale);
-            cursorY = DrawInfo(drawList, mine, origin.X, cursorY + MusterArt.SectionGap * scale, width, true, scale);
+            cursorY = DrawListing(drawList, mine, origin.X, cursorY + MusterArt.SectionGap * scale, width, scale);
             cursorY = DrawWhere(drawList, mine, origin.X, cursorY + MusterArt.SectionGap * scale, width, false,
                 scale);
             cursorY = DrawEndRow(drawList, origin.X, cursorY + MusterArt.SectionGap * scale, width, scale);

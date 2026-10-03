@@ -32,7 +32,6 @@ internal sealed partial class MusterApp
     private const float LocationLineHeight = 24f;
     private const float LocationGlyph = 14f;
     private const float FeedbackGap = 8f;
-    private const int MaxInfoRows = 3;
     private const int MaxLocationLines = 5;
     private const int MaxActionTiles = 3;
 
@@ -41,8 +40,6 @@ internal sealed partial class MusterApp
         MusterStatuses.OnMyWay, MusterStatuses.RunningLate, MusterStatuses.Here, MusterStatuses.WhereExactly,
     };
 
-    private readonly string[] infoLabels = new string[MaxInfoRows];
-    private readonly string[] infoValues = new string[MaxInfoRows];
     private readonly string[] locationLines = new string[MaxLocationLines];
     private readonly LocationTone[] locationTones = new LocationTone[MaxLocationLines];
     private readonly LocationAction[] actionKinds = new LocationAction[MaxActionTiles];
@@ -152,7 +149,11 @@ internal sealed partial class MusterApp
             cursorY = DrawRsvp(drawList, muster, origin.X, cursorY + MusterArt.CardGap * scale, width, scale);
         }
 
-        cursorY = DrawInfo(drawList, muster, origin.X, cursorY + MusterArt.SectionGap * scale, width, mine, scale);
+        if (mine)
+        {
+            cursorY = DrawListing(drawList, muster, origin.X, cursorY + MusterArt.SectionGap * scale, width, scale);
+        }
+
         cursorY = DrawWhere(drawList, muster, origin.X, cursorY + MusterArt.SectionGap * scale, width, !mine, scale);
         return mine
             ? cursorY
@@ -457,53 +458,23 @@ internal sealed partial class MusterApp
         });
     }
 
-    private float DrawInfo(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width,
-        bool showListing, float scale)
+    private float DrawListing(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width,
+        float scale)
     {
-        var count = 0;
-        infoLabels[count] = Loc.T(L.Muster.WhenSection);
-        infoValues[count++] = labels.Range(muster);
-        infoLabels[count] = Loc.T(L.Muster.WhoSection);
-        infoValues[count++] = labels.Capacity(muster);
-        if (showListing)
-        {
-            infoLabels[count] = Loc.T(L.Muster.FactListing);
-            infoValues[count++] = Loc.T(muster.IsPublic ? L.Muster.ListedPublicly : L.Muster.ListedPrivately);
-        }
-        else
-        {
-            var dataCenter = MusterDataCenters.Name(muster.DataCenterId);
-            if (dataCenter.Length > 0)
-            {
-                infoLabels[count] = Loc.T(L.Muster.DataCenterSection);
-                infoValues[count++] = dataCenter;
-            }
-        }
-
-        var rowHeight = InfoRowHeight * scale;
-        var max = new Vector2(left + width, top + count * rowHeight);
+        var max = new Vector2(left + width, top + InfoRowHeight * scale);
         MusterArt.Card(drawList, ui, new Vector2(left, top), max, scale);
         var pad = Metrics.Space.Lg * scale;
+        var centerY = (top + max.Y) * 0.5f;
         var lineHeight = Typography.LineHeight(TextStyles.Body);
-        for (var index = 0; index < count; index++)
-        {
-            var rowTop = top + index * rowHeight;
-            var centerY = rowTop + rowHeight * 0.5f;
-            if (index > 0)
-            {
-                MusterArt.Hairline(drawList, ui, left + pad, max.X, rowTop);
-            }
-
-            var labelWidth = Typography.Measure(infoLabels[index], TextStyles.Body).X;
-            Typography.Draw(drawList, new Vector2(left + pad, centerY - lineHeight * 0.5f), infoLabels[index],
-                ui.TitleInk, TextStyles.Body);
-            var value = Typography.FitText(infoValues[index], MathF.Max(1f, width - pad * 3f - labelWidth),
-                TextStyles.Body);
-            var valueWidth = Typography.Measure(value, TextStyles.Body).X;
-            Typography.Draw(drawList, new Vector2(max.X - pad - valueWidth, centerY - lineHeight * 0.5f), value,
-                ui.MutedInk, TextStyles.Body);
-        }
-
+        var label = Loc.T(L.Muster.FactListing);
+        var labelWidth = Typography.Measure(label, TextStyles.Body).X;
+        Typography.Draw(drawList, new Vector2(left + pad, centerY - lineHeight * 0.5f), label, ui.TitleInk,
+            TextStyles.Body);
+        var value = Typography.FitText(Loc.T(muster.IsPublic ? L.Muster.ListedPublicly : L.Muster.ListedPrivately),
+            MathF.Max(1f, width - pad * 3f - labelWidth), TextStyles.Body);
+        var valueWidth = Typography.Measure(value, TextStyles.Body).X;
+        Typography.Draw(drawList, new Vector2(max.X - pad - valueWidth, centerY - lineHeight * 0.5f), value,
+            ui.MutedInk, TextStyles.Body);
         return max.Y;
     }
 

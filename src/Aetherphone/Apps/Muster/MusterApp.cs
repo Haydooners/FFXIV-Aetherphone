@@ -85,7 +85,6 @@ internal sealed partial class MusterApp : IPhoneApp
         router.Reset();
         activeTab = MusterTab.Discover;
         sections.Invalidate();
-        ConsumeLaunch();
         store.SyncNow();
         store.RefreshDirectory();
     }
@@ -104,15 +103,29 @@ internal sealed partial class MusterApp : IPhoneApp
             return;
         }
 
+        var current = router.Current;
         if (store.Mine is { } mine && mine.Id == musterId)
         {
+            if (current.Screen == MusterScreen.Manage)
+            {
+                return;
+            }
+
+            router.Reset();
             activeTab = MusterTab.Plans;
             OpenManage(false);
             return;
         }
 
+        if (current.Screen == MusterScreen.Detail
+            && string.Equals(current.MusterId, musterId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        router.Reset();
         ResetDetailState();
-        router.Push(MusterRoute.Detail(musterId, DisplayName), false);
+        router.Push(MusterRoute.Detail(musterId, RootTitle()), false);
     }
 
     public void Draw(in PhoneContext context)
@@ -131,6 +144,7 @@ internal sealed partial class MusterApp : IPhoneApp
         }
 
         TourHolds.Release(Id);
+        ConsumeLaunch();
         TickTimers();
         router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
     }
