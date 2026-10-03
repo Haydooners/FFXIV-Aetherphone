@@ -1891,6 +1891,10 @@ internal static class L
         public static readonly LocString IconAppearanceTinted = new("settings.iconAppearanceTinted", "Tinted");
         public static readonly LocString IconAppearanceClear = new("settings.iconAppearanceClear", "Clear");
         public static readonly LocString IconAppearanceHint = new("settings.iconAppearanceHint", "Dark and Tinted repaint each icon on graphite, Clear shows it as glass over the wallpaper. Icons without painted artwork keep their colored tile.");
+        public static readonly LocString SearchHint = new("settings.searchHint", "Search settings");
+        public static readonly LocString NoResults = new("settings.noResults", "No settings match that");
+        public static readonly LocString PhoneWidthReadout = new("settings.phoneWidthReadout", "{0} px wide");
+        public static readonly LocString PhoneSizeHint = new("settings.phoneSizeHint", "Pick a preset here, or drag the corner grip of the phone for any size in between.");
     }
 
     internal static class Translate

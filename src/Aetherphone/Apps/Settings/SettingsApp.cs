@@ -78,7 +78,8 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
             encryptionPage, coinPage, photoLibrary, confirm, wallpaperImages, services.CacheStorage,
             services.ChatHistory);
         var appearance = new AppearancePage(configuration, themes, this, photoLibrary, confirm, wallpapers,
-            wallpaperImages, services.MinimizedLayout, services.Looks);
+            wallpaperImages, services.Looks);
+        var display = new DisplayPage(configuration, this, services.MinimizedLayout);
         var language = new LanguagePage(configuration, services.Translation);
         var general = new GeneralPage(configuration, services.Translation, confirm);
         var tutorials = new TutorialsPage(configuration);
@@ -121,7 +122,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         linkedDevicesPage = new LinkedDevicesPage(configuration, aethernetSession, aethernet.Auth, this);
         var groups = new[]
         {
-            new ISettingsPage[] { general, appearance, sounds, notificationsPage, callsPage, language },
+            new ISettingsPage[] { general, appearance, display, sounds, notificationsPage, callsPage, language },
             new ISettingsPage[] { privacyPage, safetyPage, linkedDevicesPage },
             new ISettingsPage[] { tutorials, commands, changelogPage, about },
         };
@@ -141,9 +142,10 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
             }
         }
 
+        var profileCard = new ProfileCard(aethernetSession, gameData, services.CharacterWatch, remoteImages,
+            lodestone);
         router = new ViewRouter<ISettingsPage>(
-            new RootSettingsPage(this, groups, configuration, aethernetSession, remoteImages, lodestone,
-                accountPage));
+            new RootSettingsPage(this, groups, configuration, accountPage, profileCard));
         drawPage = DrawPage;
         popBack = PopBack;
         assignWallpaper = AssignWallpaper;
