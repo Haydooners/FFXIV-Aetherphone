@@ -196,15 +196,18 @@ internal sealed class LodestoneWidget : IHomeWidget
         entries[slot] = news.Request(category, gameData.LodestoneLocale(), false);
     }
 
-    private static NewsCategory CategoryOf(string config)
+    private NewsCategory CategoryOf(string config)
     {
         var value = WidgetConfig.Get(config, CategoryKey);
         for (var index = 0; index < CategoryChoices.Length; index++)
         {
-            if (string.Equals(CategoryChoices[index].Value, value, StringComparison.Ordinal))
+            if (!string.Equals(CategoryChoices[index].Value, value, StringComparison.Ordinal))
             {
-                return NewsCategories.All[index];
+                continue;
             }
+
+            var category = NewsCategories.All[index];
+            return category == NewsCategory.Status && gameData.IsChineseGameClient() ? NewsCategory.Topics : category;
         }
 
         return NewsCategory.Topics;
