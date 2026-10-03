@@ -348,6 +348,8 @@ internal sealed record CallControl
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RadioSongRequest[]? Requests { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? JamId { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
