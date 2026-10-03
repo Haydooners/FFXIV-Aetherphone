@@ -22,7 +22,9 @@ internal static class GameInput
 
     private static int claimedFrame = -1;
 
-    public static bool Claim()
+    public static bool Claim() => Claim(ConsumedKeys);
+
+    public static bool Claim(ReadOnlySpan<VirtualKey> consumedKeys)
     {
         if (!GameFocus.Active)
         {
@@ -38,9 +40,13 @@ internal static class GameInput
         claimedFrame = frame;
         ImGui.GetIO().WantTextInput = true;
         var keyState = Plugin.KeyState;
-        for (var keyIndex = 0; keyIndex < ConsumedKeys.Length; keyIndex++)
+        for (var keyIndex = 0; keyIndex < consumedKeys.Length; keyIndex++)
         {
-            keyState[ConsumedKeys[keyIndex]] = false;
+            var key = consumedKeys[keyIndex];
+            if (keyState.IsVirtualKeyValid(key))
+            {
+                keyState[key] = false;
+            }
         }
 
         return true;

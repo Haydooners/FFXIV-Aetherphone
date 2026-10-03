@@ -3,6 +3,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Notifications;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Game.ClientState.Keys;
 
 namespace Aetherphone.Apps.Calculator;
 
@@ -15,14 +16,28 @@ internal sealed partial class CalculatorApp
         CalcKey.Seven, CalcKey.Eight, CalcKey.Nine,
     };
 
+    private static readonly VirtualKey[] KeyboardKeys =
+    {
+        VirtualKey.KEY_0, VirtualKey.KEY_1, VirtualKey.KEY_2, VirtualKey.KEY_3, VirtualKey.KEY_4,
+        VirtualKey.KEY_5, VirtualKey.KEY_6, VirtualKey.KEY_7, VirtualKey.KEY_8, VirtualKey.KEY_9,
+        VirtualKey.NUMPAD0, VirtualKey.NUMPAD1, VirtualKey.NUMPAD2, VirtualKey.NUMPAD3, VirtualKey.NUMPAD4,
+        VirtualKey.NUMPAD5, VirtualKey.NUMPAD6, VirtualKey.NUMPAD7, VirtualKey.NUMPAD8, VirtualKey.NUMPAD9,
+        VirtualKey.MULTIPLY, VirtualKey.ADD, VirtualKey.SUBTRACT, VirtualKey.DECIMAL, VirtualKey.DIVIDE,
+        VirtualKey.OEM_PLUS, VirtualKey.OEM_MINUS, VirtualKey.OEM_PERIOD, VirtualKey.OEM_COMMA, VirtualKey.OEM_2,
+        VirtualKey.X, VirtualKey.BACK, VirtualKey.DELETE, VirtualKey.RETURN, VirtualKey.ESCAPE,
+    };
+
+    private static readonly VirtualKey[] ClipboardKeys = [.. KeyboardKeys, VirtualKey.C, VirtualKey.V];
+
     private void HandleKeyboard(Rect screen)
     {
-        if (!UiInteract.Hover(screen.Min, screen.Max) || !GameInput.Claim())
+        var io = ImGui.GetIO();
+        var claimedKeys = io.KeyCtrl ? ClipboardKeys : KeyboardKeys;
+        if (!UiInteract.Hover(screen.Min, screen.Max) || !GameInput.Claim(claimedKeys))
         {
             return;
         }
 
-        var io = ImGui.GetIO();
         if (io.KeyCtrl)
         {
             if (ImGui.IsKeyPressed(ImGuiKey.C, false))
