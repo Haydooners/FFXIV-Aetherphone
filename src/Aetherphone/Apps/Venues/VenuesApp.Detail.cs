@@ -71,7 +71,8 @@ internal sealed partial class VenuesApp
     private readonly record struct ActionTile(TileKind Kind, string Glyph, string Label);
 
     private readonly record struct DetailText(VenueStatus Status, string Title, string Meta, string Window,
-        string Viewers, string Initial, string HostLine, string Performer, string Playing, string StatusHint);
+        string Viewers, string Initial, string HostLine, string Performer, string Playing, string StatusHint,
+        string Attendees);
 
     private VenueEvent ResolveDetail(VenueEvent routed)
     {
@@ -109,7 +110,8 @@ internal sealed partial class VenuesApp
         var hint = status.Kind == VenueStatusKind.Open ? Loc.T(L.Venues.ScheduledOpen) : string.Empty;
         detailText = new DetailText(status, title.Length > 0 ? title : resolved.Title, DetailMeta(resolved),
             NextWindow(resolved), viewers, VenueLabelCache.InitialOf(title), host,
-            VenueFormat.Performer(resolved, nowUtc), playing, hint);
+            VenueFormat.Performer(resolved, nowUtc), playing, hint,
+            resolved.AttendeeCount > 0 ? resolved.AttendeeCount.ToString(Loc.Culture) : string.Empty);
         return resolved;
     }
 
@@ -555,7 +557,7 @@ internal sealed partial class VenuesApp
         if (showAttendees)
         {
             InfoRow(drawList, card, rowIndex, rows, PhoneIcons.Users, HostTint, Loc.T(L.Venues.Attendees),
-                venue.AttendeeCount.ToString(Loc.Culture), scale);
+                detailText.Attendees, scale);
         }
 
         return card.Max.Y;
