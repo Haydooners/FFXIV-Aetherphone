@@ -8299,9 +8299,7 @@ internal static class L
         public static readonly LocString CapReached = new("coin.capReached", "Daily cap reached");
         public static readonly LocString PausedTitle = new("coin.pausedTitle", "Earning is paused");
         public static readonly LocString PausedHint = new("coin.pausedHint", "The team switched earning off for now. Your balance and the shop still work.");
-        public static readonly LocString StreakLabel = new("coin.streakLabel", "Check-in streak");
         public static readonly LocString StreakDays = new("coin.streakDays", "{0} day streak");
-        public static readonly LocString StreakGraceUsed = new("coin.streakGraceUsed", "Grace day used this week");
         public static readonly LocString StreakNext = new("coin.streakNext", "Come back tomorrow to keep it going");
         public static readonly LocString StreakClaim = new("coin.streakClaim", "Check in to keep it going");
         public static readonly LocString DailyGoals = new("coin.dailyGoals", "Daily goals");
@@ -8310,7 +8308,6 @@ internal static class L
         public static readonly LocString CheckIn = new("coin.checkIn", "Check in");
         public static readonly LocString CheckedIn = new("coin.checkedIn", "Checked in");
         public static readonly LocString CheckInReward = new("coin.checkInReward", "+{0} Aether Coin");
-        public static readonly LocString CheckInUnavailable = new("coin.checkInUnavailable", "Check-in is not available right now");
         public static readonly LocString RuleCheckin = new("coin.ruleCheckin", "Daily check-in");
         public static readonly LocString RuleStreak = new("coin.ruleStreak", "Streak bonus");
         public static readonly LocString RuleWelcome = new("coin.ruleWelcome", "Welcome bonus");
@@ -8349,21 +8346,12 @@ internal static class L
         public static readonly LocString RuleStoryHint = new("coin.ruleStoryHint", "A story that runs its full day without being taken down, once a week");
         public static readonly LocString RuleCommentHint = new("coin.ruleCommentHint", "A comment on someone else's post that stays up for an hour, once a week");
         public static readonly LocString EarnHeader = new("coin.earnHeader", "How to earn");
-        public static readonly LocString FeaturedToday = new("coin.featuredToday", "Featured today");
-        public static readonly LocString PlayToEarn = new("coin.playToEarn", "Play to earn");
         public static readonly LocString SessionTooShort = new("coin.sessionTooShort", "Played too short to pay");
-        public static readonly LocString SessionExpired = new("coin.sessionExpired", "The session expired");
-        public static readonly LocString DeepPlay = new("coin.deepPlay", "Deep play bonus");
-        public static readonly LocString GameCooldown = new("coin.gameCooldown", "Give it a minute before the next game");
-        public static readonly LocString HistoryHeader = new("coin.historyHeader", "History");
         public static readonly LocString HistoryEmptyTitle = new("coin.historyEmptyTitle", "Nothing earned yet");
         public static readonly LocString HistoryEmptyHint = new("coin.historyEmptyHint", "Check in, play, and talk; it all lands here.");
-        public static readonly LocString HistoryFailed = new("coin.historyFailed", "The ledger did not load");
-        public static readonly LocString Retry = new("coin.retry", "Retry");
         public static readonly LocString FilterAll = new("coin.filterAll", "All");
         public static readonly LocString FilterEarned = new("coin.filterEarned", "Earned");
         public static readonly LocString FilterSpent = new("coin.filterSpent", "Spent");
-        public static readonly LocString ShopHeader = new("coin.shopHeader", "Shop");
         public static readonly LocString Owned = new("coin.owned", "Owned");
         public static readonly LocString SectionOwned = new("coin.sectionOwned", "{0} of {1} owned");
         public static readonly LocString Buy = new("coin.buy", "Buy");
@@ -8371,7 +8359,6 @@ internal static class L
         public static readonly LocString BuyConfirmTitle = new("coin.buyConfirmTitle", "Buy {0}?");
         public static readonly LocPlural BuyConfirmBody = new("coin.buyConfirmBody", "This purchase will cost {0:N0} Aether Coin. The coin will be deducted from your wallet immediately.", "This purchase will cost {0:N0} Aether Coins. The coins will be deducted from your wallet immediately.");
         public static readonly LocString Insufficient = new("coin.insufficient", "Not enough Aether Coin yet");
-        public static readonly LocString Purchased = new("coin.purchased", "It is yours");
         public static readonly LocString PriceChanged = new("coin.priceChanged", "The price changed; take another look");
         public static readonly LocString Unavailable = new("coin.unavailable", "Not for sale right now");
         public static readonly LocString ShopEmpty = new("coin.shopEmpty", "The shelves are being stocked");
@@ -8391,6 +8378,38 @@ internal static class L
         public static readonly LocString RollupMore = new("coin.rollupMore", "and {0} more");
         public static readonly LocString SettingsRow = new("coin.settingsRow", "Aether Coin");
         public static readonly LocString AboutWhat = new("coin.aboutWhat", "A little thank-you for using the phone: check in, play, talk, and spend it on looks.");
+        public static readonly LocString OpenSettings = new("coin.openSettings", "Open Settings");
+        public static readonly LocString HistoryRowDetail = new("coin.historyRowDetail", "{0} · Balance {1}");
+        public static readonly LocString EntryStamp = new("coin.entryStamp", "{0}, {1}");
+        public static readonly LocString StreakGrace = new("coin.streakGrace", "Miss a day and your streak survives, once a week");
+        public static readonly LocString WeekTitle = new("coin.weekTitle", "Last 7 days");
+        public static readonly LocString SavingFor = new("coin.savingFor", "Saving for");
+        public static readonly LocString GoalRemaining = new("coin.goalRemaining", "{0} to go");
+        public static readonly LocString GoalReady = new("coin.goalReady", "You have enough to buy it");
+        public static readonly LocString LatestActivity = new("coin.latestActivity", "Latest activity");
+        public static readonly LocString SeeAll = new("coin.seeAll", "See All");
+        public static readonly LocString LifetimeSummary = new("coin.lifetimeSummary", "{0} earned · {1} spent");
+        public static readonly LocString LifetimeEarnedOnly = new("coin.lifetimeEarnedOnly", "{0} earned so far");
+        public static readonly LocString EarnProgress = new("coin.earnProgress", "{0}/{1}");
+        public static readonly LocString OpenSource = new("coin.openSource", "Open the app");
+        public static readonly LocString EntryMissingTitle = new("coin.entryMissingTitle", "This entry is not loaded");
+        public static readonly LocString EntryMissingHint = new("coin.entryMissingHint", "Go back to History and pull down to refresh.");
+        public static readonly LocString DetailType = new("coin.detailType", "Type");
+        public static readonly LocString BalanceAfter = new("coin.balanceAfter", "Balance after");
+        public static readonly LocString HowItWorks = new("coin.howItWorks", "How it works");
+        public static readonly LocString BrowseShop = new("coin.browseShop", "Browse the shop");
+        public static readonly LocString KindFrame = new("coin.kindFrame", "Avatar frame");
+        public static readonly LocString KindFlair = new("coin.kindFlair", "Name badge");
+        public static readonly LocString KindOther = new("coin.kindOther", "Cosmetic");
+        public static readonly LocString Wearing = new("coin.wearing", "Wearing");
+        public static readonly LocString SaveForThis = new("coin.saveForThis", "Save for this");
+        public static readonly LocString SavingForThis = new("coin.savingForThis", "Saving for this");
+        public static readonly LocString ProductGoneHint = new("coin.productGoneHint", "It may have left the shop. Pull down on the shelf to refresh.");
+        public static readonly LocString YourBalance = new("coin.yourBalance", "Your balance");
+        public static readonly LocString Categories = new("coin.categories", "Categories");
+        public static readonly LocString BuyFor = new("coin.buyFor", "Buy for {0}");
+        public static readonly LocString TourTodayTitle = new("coin.tourTodayTitle", "Today at a glance");
+        public static readonly LocString TourTodayBody = new("coin.tourTodayBody", "The ring fills as you earn toward today's limit, and the bars show what you earned on each of the last seven days. Every way to earn is listed further down.");
     }
 
     internal static class Casino
@@ -9405,8 +9424,6 @@ internal static class L
         public static readonly LocString CoinWalletBody = new("onboarding.coinWalletBody", "This is your Aether Coin. You earn it by using the phone, and it is never bought with real money.");
         public static readonly LocString CoinDailyTitle = new("onboarding.coinDailyTitle", "Check in daily");
         public static readonly LocString CoinDailyBody = new("onboarding.coinDailyBody", "Tap Check in once a day for coin. Every day in a row grows your streak bonus.");
-        public static readonly LocString CoinWaysTitle = new("onboarding.coinWaysTitle", "Ways to earn");
-        public static readonly LocString CoinWaysBody = new("onboarding.coinWaysBody", "Each card is one way to earn. Its bar shows how much of the limit you have already collected.");
         public static readonly LocString CoinShopTabTitle = new("onboarding.coinShopTabTitle", "Open the shop");
         public static readonly LocString CoinShopTabBody = new("onboarding.coinShopTabBody", "Tap Shop to see what your coin can buy.");
         public static readonly LocString CoinShelvesTitle = new("onboarding.coinShelvesTitle", "Browse by category");

@@ -30,14 +30,13 @@ internal static partial class TourRegistry
                     "casino.tab.games"),
                 GuideStep.TryTap(L.Onboarding.CasinoRulesTitle, L.Onboarding.CasinoRulesBody, "casino.rules"),
             });
-        Add(tours, "coin", 2,
+        Add(tours, "coin", 3,
             new[]
             {
                 GuideStep.Point(L.Onboarding.CoinWalletTitle, L.Onboarding.CoinWalletBody, "coin.balance",
                     GuideGesture.None),
                 GuideStep.TryTap(L.Onboarding.CoinDailyTitle, L.Onboarding.CoinDailyBody, "coin.checkin"),
-                GuideStep.Point(L.Onboarding.CoinWaysTitle, L.Onboarding.CoinWaysBody, "coin.earn",
-                    GuideGesture.None),
+                GuideStep.Point(L.Coin.TourTodayTitle, L.Coin.TourTodayBody, "coin.today", GuideGesture.None),
                 GuideStep.TryTap(L.Onboarding.CoinShopTabTitle, L.Onboarding.CoinShopTabBody, "coin.tab.shop"),
                 GuideStep.Point(L.Onboarding.CoinShelvesTitle, L.Onboarding.CoinShelvesBody, "coin.shop",
                     GuideGesture.Tap),
