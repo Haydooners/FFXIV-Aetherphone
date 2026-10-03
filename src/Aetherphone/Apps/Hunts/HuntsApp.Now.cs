@@ -179,15 +179,8 @@ internal sealed partial class HuntsApp
             return;
         }
 
-        if (hunts.Failed)
+        if (DrawFailed(body))
         {
-            if (DrawEmpty(body, FontAwesomeIcon.CloudDownloadAlt, Loc.T(L.Hunts.Failed), Loc.T(L.Hunts.FailedHint),
-                    Loc.T(L.Hunts.TryAgain)))
-            {
-                UiFeedback.Play(UiSound.Refresh);
-                hunts.Retry();
-            }
-
             return;
         }
 
@@ -254,6 +247,23 @@ internal sealed partial class HuntsApp
             filter.Reset();
             filterStore.Save(filter.ToSnapshot());
         }
+    }
+
+    private bool DrawFailed(Rect body)
+    {
+        if (!hunts.Failed)
+        {
+            return false;
+        }
+
+        if (DrawEmpty(body, FontAwesomeIcon.CloudDownloadAlt, Loc.T(L.Hunts.Failed), Loc.T(L.Hunts.FailedHint),
+                Loc.T(L.Hunts.TryAgain)))
+        {
+            UiFeedback.Play(UiSound.Refresh);
+            hunts.Retry();
+        }
+
+        return true;
     }
 
     private bool DrawEmpty(Rect body, FontAwesomeIcon icon, string title, string hint, string action)
@@ -587,7 +597,7 @@ internal sealed partial class HuntsApp
 
         ui.SectionLabel(title, TextStyles.FootnoteEmphasized, 6f);
         var card = GroupCard.Begin(ui, rows.Count, BoardRowHeight);
-        card.SeparatorInset = (RingSize + HuntsArt.RowGap) * scale;
+        card.SeparatorInset = RingSize + HuntsArt.RowGap;
         for (var index = 0; index < rows.Count; index++)
         {
             var row = card.NextRow();

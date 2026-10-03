@@ -75,6 +75,11 @@ internal sealed partial class HuntsApp
             return;
         }
 
+        if (DrawFailed(body))
+        {
+            return;
+        }
+
         if (!hunts.Loaded)
         {
             DrawSkeleton(scale);
@@ -285,7 +290,7 @@ internal sealed partial class HuntsApp
     {
         ui.SectionLabel(title, TextStyles.FootnoteEmphasized, 6f);
         var card = GroupCard.Begin(ui, count, TrainRowHeight);
-        card.SeparatorInset = (RingSize + HuntsArt.RowGap) * scale;
+        card.SeparatorInset = RingSize + HuntsArt.RowGap;
         for (var offset = 0; offset < count; offset++)
         {
             var row = card.NextRow();

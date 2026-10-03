@@ -638,7 +638,7 @@ internal sealed partial class HuntsApp
 
         ui.SectionLabel(Loc.T(L.Hunts.OtherWorldsSection), TextStyles.FootnoteEmphasized, 6f);
         var card = GroupCard.Begin(ui, otherWorldRows.Count, WorldRowHeight);
-        card.SeparatorInset = (WorldRingSize + HuntsArt.RowGap) * scale;
+        card.SeparatorInset = WorldRingSize + HuntsArt.RowGap;
         var drawList = ImGui.GetWindowDrawList();
         for (var index = 0; index < otherWorldRows.Count; index++)
         {

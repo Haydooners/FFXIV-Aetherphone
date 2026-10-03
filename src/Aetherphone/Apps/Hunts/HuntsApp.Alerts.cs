@@ -282,7 +282,7 @@ internal sealed partial class HuntsApp
 
         var drawList = ImGui.GetWindowDrawList();
         var card = GroupCard.Begin(ui, alertOverrides.Count, AlertRowHeight);
-        card.SeparatorInset = (AlertRowTile + HuntsArt.RowGap) * scale;
+        card.SeparatorInset = AlertRowTile + HuntsArt.RowGap;
         for (var index = 0; index < alertOverrides.Count; index++)
         {
             var row = card.NextRow();
