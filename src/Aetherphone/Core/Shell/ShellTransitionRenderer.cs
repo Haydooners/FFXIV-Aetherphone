@@ -40,6 +40,8 @@ internal sealed class ShellTransitionRenderer
         this.painter = painter;
     }
 
+    public float StatusBarAlpha { get; private set; } = 1f;
+
     public void ResetPrepared() => zoomPreparedFor = null;
 
     public void Draw(Rect screen, float screenRadius, PhoneTheme theme)
@@ -52,6 +54,7 @@ internal sealed class ShellTransitionRenderer
             return;
         }
 
+        StatusBarAlpha = 1f;
         DrawSlide(screen, screenRadius, theme, over, under);
     }
 
@@ -100,10 +103,11 @@ internal sealed class ShellTransitionRenderer
         var rest = navigation.MotionOrigin ?? RestRect(over, content, out kind);
         var zoom = 1f + TransitionTiming.HomeZoomDepth * raw;
         var homeTransform = LayerTransform.ScaleAbout(rest.Center, zoom, screen);
+        var homeMotion = HomeMotion.Recede(raw, kind == LaunchOrigin.Icon ? over.Id : null, zoom, rest.Center);
+        StatusBarAlpha = MathF.Max(1f - homeMotion.Recession, Easing.Segment(raw, VeilFadeEnd, 1f));
         using (var homeLayer = ScreenLayer.Begin(ShellScreenPainter.HomeLayerId, screen, true))
         {
-            painter.PaintHome(screen, screenRadius, theme,
-                HomeMotion.Recede(raw, kind == LaunchOrigin.Icon ? over.Id : null));
+            painter.PaintHome(screen, screenRadius, theme, homeMotion);
             homeLayer.Veil(ImGui.GetColorU32(new Vector4(0f, 0f, 0f, TransitionTiming.HomeRecedeDim * raw)));
             homeLayer.Transform(in homeTransform);
         }

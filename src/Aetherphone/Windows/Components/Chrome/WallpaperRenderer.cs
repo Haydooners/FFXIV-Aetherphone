@@ -66,7 +66,7 @@ internal static class WallpaperRenderer
     public static void DrawSingle(ImDrawListPtr drawList, Rect shape, Rect quad, float radius, WallpaperEntry entry,
         float aspect, float alpha, Vector4? fallback)
     {
-        var extent = MathF.Max(quad.Width, quad.Height);
+        var extent = MathF.Max(MathF.Max(shape.Width, shape.Height), MathF.Max(quad.Width, quad.Height));
         if (!Plugin.Wallpapers.TryGetTexture(entry.FilePath, extent, out var handle, out var size))
         {
             if (fallback is { } color)

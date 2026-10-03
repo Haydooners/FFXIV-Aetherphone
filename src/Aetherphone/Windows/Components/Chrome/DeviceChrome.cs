@@ -308,7 +308,7 @@ internal static class DeviceChrome
 
     public static void DrawWallpaper(Rect screen, float screenRadius, PhoneTheme theme, in HomeMotion motion)
     {
-        var quad = motion.Zoom == 1f ? screen : motion.Warp(screen);
+        var quad = motion.Zoom == 1f ? motion.WallpaperQuad(screen) : motion.Warp(screen);
         var shape = motion.Zoom >= 1f ? screen : quad;
         var radius = motion.Zoom >= 1f ? screenRadius : screenRadius * motion.Zoom;
         DrawWallpaper(ImGui.GetWindowDrawList(), screen, shape, quad, radius, theme, motion.Recession);
