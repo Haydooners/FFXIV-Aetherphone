@@ -1,3 +1,4 @@
+using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Windows.Components;
@@ -80,6 +81,13 @@ internal static class Material
     public static void FrostedGlass(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
         float opacity = 1f) =>
         LiquidGlass(drawList, min, max, radius, scale, GlassTone.Dark, 0f, opacity);
+
+    public static GlassTone ToneFor(PhoneTheme theme) =>
+        Palette.Luminance(theme.AppBackground) >= 0.5f ? GlassTone.Light : GlassTone.Dark;
+
+    public static void ThemedGlass(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
+        PhoneTheme theme, float opacity = 1f) =>
+        LiquidGlass(drawList, min, max, radius, scale, ToneFor(theme), 0f, opacity);
 
     public static void LiquidGlass(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
         GlassTone tone, float brightness, float opacity = 1f)

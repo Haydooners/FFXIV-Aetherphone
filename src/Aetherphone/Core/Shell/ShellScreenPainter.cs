@@ -74,6 +74,7 @@ internal sealed class ShellScreenPainter
         if (!app.WantsTransparentScreen)
         {
             DeviceChrome.FillScreen(screen, screenRadius, content.AppBackground);
+            WallpaperBackdrop.RecordFlat(content.AppBackground);
         }
 
         var contentRect = ContentRect(screen, theme);
