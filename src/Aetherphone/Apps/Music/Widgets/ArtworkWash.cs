@@ -30,21 +30,50 @@ internal sealed class ArtworkWash : IDisposable
 
     public bool TryGet(string url, Func<CancellationToken, Task<byte[]?>> source, out Vector4 color)
     {
-        lock (gate)
+        if (Cached(url, out color))
         {
-            if (colors.TryGetValue(url, out color))
-            {
-                return true;
-            }
-
-            if (failed.Contains(url) || !pending.Add(url))
-            {
-                return false;
-            }
+            return true;
         }
 
-        _ = Task.Run(() => SampleAsync(url, source));
+        if (!Claim(url))
+        {
+            return false;
+        }
+
+        _ = Task.Run(() => SampleAsync(url, () => media.BytesFor(url, source)));
         return false;
+    }
+
+    public bool TryGet(string key, byte[] bytes, out Vector4 color)
+    {
+        if (Cached(key, out color))
+        {
+            return true;
+        }
+
+        if (!Claim(key))
+        {
+            return false;
+        }
+
+        _ = Task.Run(() => SampleAsync(key, () => Task.FromResult<byte[]?>(bytes)));
+        return false;
+    }
+
+    private bool Cached(string key, out Vector4 color)
+    {
+        lock (gate)
+        {
+            return colors.TryGetValue(key, out color);
+        }
+    }
+
+    private bool Claim(string key)
+    {
+        lock (gate)
+        {
+            return !failed.Contains(key) && pending.Add(key);
+        }
     }
 
     public bool Failed(string url)
@@ -89,13 +118,13 @@ internal sealed class ArtworkWash : IDisposable
     public static Vector4 Bottom(Vector4 average) =>
         Palette.ShadeToLuminance(average with { W = 1f }, BottomLuminance);
 
-    private async Task SampleAsync(string url, Func<CancellationToken, Task<byte[]?>> source)
+    private async Task SampleAsync(string url, Func<Task<byte[]?>> read)
     {
         var resolved = false;
         var color = Neutral;
         try
         {
-            var bytes = await media.BytesFor(url, source).ConfigureAwait(false);
+            var bytes = await read().ConfigureAwait(false);
             if (bytes is not null && !disposed)
             {
                 var (pixels, _, _) = ImageProcessor.DecodeRgba32(bytes, SampleSide);

@@ -61,7 +61,7 @@ internal static class WidgetCatalog
             new HuntsLiveWidget(phone.Hunts, phone.HuntMobCatalog, phone.Configuration),
             new HousingLotteryWidget(phone.Housing),
             new TeleportWidget(phone.Maps, phone.Configuration),
-            new NowPlayingWidget(phone.Playback, phone.MusicLibrary, phone.Media, phone.Http),
+            new NowPlayingWidget(phone.Playback, phone.PcMedia, phone.MusicLibrary, phone.Media, phone.Http),
             new NowWatchingWidget(services.Video, phone.RemoteImages, phone.Http),
             new PeopleWidget(messages, messages.Contacts, phone.Configuration,
                 phone.AethernetSession, phone.RemoteImages),
