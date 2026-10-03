@@ -35,8 +35,6 @@ internal sealed partial class SetupOverlay
     private const float RevealRiseUnits = 16f;
     private const float ShockwaveDelaySeconds = 0.22f;
     private const float ShockwaveSeconds = 1.25f;
-    private const float EntrySheenDelaySeconds = 0.62f;
-    private const float EntrySheenSeconds = 0.75f;
     private const float BurstDelaySeconds = 0.18f;
     private const float BurstSeconds = 0.95f;
     private const int BurstSparks = 10;
@@ -127,12 +125,6 @@ internal sealed partial class SetupOverlay
     private float Timeline(float delay, float duration) =>
         drawingCurrent ? (pageAge - delay) / duration : 2f;
 
-    private float EntrySheen()
-    {
-        var progress = Timeline(EntrySheenDelaySeconds, EntrySheenSeconds);
-        return progress is >= 0f and <= 1f ? progress : BrandMark.AutoSheen();
-    }
-
     private static float Float(float scale) =>
         MathF.Sin(Pulse.Phase(FloatPeriodMs) * MathF.PI * 2f) * FloatUnits * scale;
 
@@ -159,8 +151,7 @@ internal sealed partial class SetupOverlay
             top + markSize * 0.5f + Float(scale) * markReveal + Rise(markReveal) * 1.6f);
         BrandMark.Shockwave(drawList, markCenter, markSize, Timeline(ShockwaveDelaySeconds, ShockwaveSeconds),
             alpha, scale);
-        BrandMark.TryDraw(drawList, markCenter, markSize * (0.70f + 0.30f * markReveal), alpha * markReveal, scale,
-            EntrySheen());
+        BrandMark.TryDrawEmblem(drawList, markCenter, markSize * (0.70f + 0.30f * markReveal), alpha * markReveal);
         var titleReveal = Reveal(3);
         var titleTop = top + markSize + markGap + Rise(titleReveal);
         DrawWordmark(drawList, new Vector2(centerX, titleTop + titleHeight * 0.5f), title, ContentWidth(screen),
