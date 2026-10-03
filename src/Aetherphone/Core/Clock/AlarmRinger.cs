@@ -17,6 +17,7 @@ internal sealed class AlarmRinger
     private DateTime? snoozeEndsUtc;
     private TimeSpan snoozeLength = SnoozeLength;
     private string snoozedLabel = string.Empty;
+    private TimeSpan snoozedLength = SnoozeLength;
 
     public AlarmRinger(Action<AlarmRingKind> startTone, Action stopTone)
     {
@@ -77,6 +78,7 @@ internal sealed class AlarmRinger
         }
 
         snoozedLabel = Label;
+        snoozedLength = snoozeLength;
         snoozeEndsUtc = utcNow + snoozeLength;
         Stop();
     }
@@ -94,6 +96,6 @@ internal sealed class AlarmRinger
         }
 
         snoozeEndsUtc = null;
-        Ring(AlarmRingKind.Alarm, snoozedLabel, utcNow, snoozeLength);
+        Ring(AlarmRingKind.Alarm, snoozedLabel, utcNow, snoozedLength);
     }
 }

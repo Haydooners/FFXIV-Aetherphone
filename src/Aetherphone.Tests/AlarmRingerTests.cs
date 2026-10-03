@@ -108,4 +108,21 @@ public sealed class AlarmRingerTests
         Assert.Equal(2, starts);
         Assert.Equal(AlarmRingKind.Timer, ringer.Kind);
     }
+
+    [Fact]
+    public void SnoozedAlarmKeepsItsOwnSnoozeAfterAnotherRing()
+    {
+        var ringer = Create();
+        var snooze = TimeSpan.FromMinutes(5);
+        ringer.Ring(AlarmRingKind.Alarm, "Raid", Start, snooze);
+        ringer.Snooze(Start);
+        ringer.Ring(AlarmRingKind.Alarm, "Retainers", Start + TimeSpan.FromMinutes(1), TimeSpan.Zero);
+        ringer.Stop();
+
+        ringer.Tick(Start + snooze);
+
+        Assert.True(ringer.IsRinging);
+        Assert.Equal("Raid", ringer.Label);
+        Assert.True(ringer.CanSnooze);
+    }
 }
