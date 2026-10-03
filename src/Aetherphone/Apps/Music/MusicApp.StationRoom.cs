@@ -44,6 +44,7 @@ internal sealed partial class MusicApp
     private readonly ChatMenuAction[] chatMenuActions = new ChatMenuAction[ChatMenuCapacity];
     private int chatMenuCount;
     private RadioChatEntry? chatMenuEntry;
+    private bool chatMenuForJam;
     private int roomVisitFrame = -1;
     private string roomStationId = string.Empty;
     private StationPanel stationPanel = StationPanel.Chat;
@@ -147,6 +148,7 @@ internal sealed partial class MusicApp
 
     private void OpenChatMenu(RadioChatEntry entry)
     {
+        chatMenuForJam = false;
         chatMenuCount = 0;
         if (!entry.IsMine)
         {
@@ -195,6 +197,12 @@ internal sealed partial class MusicApp
 
     private void RunChatMenu(ChatMenuAction action, RadioChatEntry entry)
     {
+        if (chatMenuForJam)
+        {
+            RunJamChatMenu(action, entry);
+            return;
+        }
+
         switch (action)
         {
             case ChatMenuAction.Report:
@@ -231,13 +239,13 @@ internal sealed partial class MusicApp
         report.Open(new ReportPrompt
         {
             Title = Loc.T(L.Music.Live.ReportTitle),
-            Submit = (reason, done) => SubmitChatReport(stationId, entry, reason, done),
+            Submit = (reason, done) =>
+                SubmitChatReport(entry, RadioRoomReport.ComposeReason(reason, stationId, entry), done),
         });
     }
 
-    private void SubmitChatReport(string stationId, RadioChatEntry entry, string? reason, Action<bool> done)
+    private void SubmitChatReport(RadioChatEntry entry, string composed, Action<bool> done)
     {
-        var composed = RadioRoomReport.ComposeReason(reason, stationId, entry);
         _ = Task.Run(async () =>
         {
             var succeeded = false;
@@ -249,7 +257,7 @@ internal sealed partial class MusicApp
             }
             catch (Exception exception)
             {
-                AepLog.Warning(exception, "[Radio] chat report failed");
+                AepLog.Warning(exception, "[Music] chat report failed");
             }
 
             done(succeeded);

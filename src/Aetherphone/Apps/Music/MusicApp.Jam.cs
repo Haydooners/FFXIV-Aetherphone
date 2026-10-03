@@ -92,6 +92,7 @@ internal sealed partial class MusicApp
             }
         }
 
+        TrackJamChatRefusal();
         TrackJamQueue();
         EnsureJamMembers();
     }

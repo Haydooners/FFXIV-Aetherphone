@@ -154,11 +154,17 @@ internal static class RadioRoomReport
 {
     public const string TargetType = "user";
     public const int MaxReasonLength = 500;
+    public const string JamEvidenceTag = "Jam chat";
     private const string EvidenceTag = "Community Radio chat";
 
     public static string ComposeReason(string? reason, string stationId, RadioChatEntry entry)
     {
-        var evidence = $"{EvidenceTag} ({stationId}, message {entry.MessageId}): \"{entry.Text}\"";
+        return Compose(reason, EvidenceTag, stationId, entry);
+    }
+
+    public static string Compose(string? reason, string evidenceTag, string scopeId, RadioChatEntry entry)
+    {
+        var evidence = $"{evidenceTag} ({scopeId}, message {entry.MessageId}): \"{entry.Text}\"";
         var composed = string.IsNullOrWhiteSpace(reason) ? evidence : string.Concat(reason.Trim(), " | ", evidence);
         return composed.Length <= MaxReasonLength ? composed : composed[..MaxReasonLength];
     }
