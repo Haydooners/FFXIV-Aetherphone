@@ -81,6 +81,19 @@ internal static class Material
         float opacity = 1f) =>
         LiquidGlass(drawList, min, max, radius, scale, GlassTone.Dark, 0f, opacity);
 
+    public static void AccentGlass(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
+        Vector4 accent, float opacity = 1f)
+    {
+        if (opacity <= 0f)
+        {
+            return;
+        }
+
+        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(accent with { W = opacity }));
+        GlassRim(drawList, min, max, radius, scale, GlassTone.Dark, opacity);
+        PointerLight(drawList, min, max, radius, scale, GlassTone.Dark, opacity);
+    }
+
     public static void LiquidGlass(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
         GlassTone tone, float brightness, float opacity = 1f)
     {
