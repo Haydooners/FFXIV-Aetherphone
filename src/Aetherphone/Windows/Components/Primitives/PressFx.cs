@@ -6,15 +6,20 @@ namespace Aetherphone.Windows.Components;
 internal static class PressFx
 {
     public const float DefaultPressedScale = 0.95f;
+    public const float ControlPressedScale = 0.93f;
     private const float SmoothTime = 0.09f;
     private static readonly Dictionary<uint, Spring> Springs = new();
 
     public static float Scale(string id, bool pressed, float pressedScale = DefaultPressedScale) =>
         Toward(id, pressed ? pressedScale : 1f);
 
-    public static float Toward(string id, float target)
+    public static float Scale(uint key, bool pressed, float pressedScale = DefaultPressedScale) =>
+        Toward(key, pressed ? pressedScale : 1f);
+
+    public static float Toward(string id, float target) => Toward(ImGui.GetID(id), target);
+
+    public static float Toward(uint key, float target)
     {
-        var key = ImGui.GetID(id);
         if (!Springs.TryGetValue(key, out var spring))
         {
             spring = new Spring(1f);
