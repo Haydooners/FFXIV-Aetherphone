@@ -316,7 +316,7 @@ internal sealed unsafe class ActivityTracker : IDisposable
         for (var index = 0u; index < retainerCount; index++)
         {
             var retainer = manager->GetRetainerBySortedIndex(index);
-            if (retainer is null)
+            if (retainer is null || !retainer->Available)
             {
                 continue;
             }
