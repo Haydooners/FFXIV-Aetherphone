@@ -142,7 +142,7 @@ internal sealed class ListeningPresence : IDisposable
         return new ListeningState(sharing, song.VideoId, playback.IsPaused, ShareableJamCode(), 0);
     }
 
-    private string ShareableJamCode() => jam.IsHost ? jam.Code : string.Empty;
+    private string ShareableJamCode() => jam.InJam && (jam.IsHost || jam.Discoverable) ? jam.Code : string.Empty;
 
     private ListeningUpdateRequest BuildRequest(string jamCode)
     {
