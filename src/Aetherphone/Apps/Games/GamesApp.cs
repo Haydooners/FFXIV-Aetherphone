@@ -4,6 +4,7 @@ using Aetherphone.Apps.Games.Breakout;
 using Aetherphone.Apps.Games.BubbleShooter;
 using Aetherphone.Apps.Games.CapMan;
 using Aetherphone.Apps.Games.Chess;
+using Aetherphone.Apps.Games.Coil;
 using Aetherphone.Apps.Games.CrystalDrop;
 using Aetherphone.Apps.Games.Doom;
 using Aetherphone.Apps.Games.Flap;
@@ -24,9 +25,11 @@ using Aetherphone.Apps.Games.Squadron;
 using Aetherphone.Apps.Games.Stack;
 using Aetherphone.Apps.Games.Sudoku;
 using Aetherphone.Apps.Games.Sweeper;
+using Aetherphone.Apps.Games.Swoop;
 using Aetherphone.Apps.Games.Tetris;
 using Aetherphone.Apps.Games.Trivia;
 using Aetherphone.Apps.Games.Twenty48;
+using Aetherphone.Apps.Games.Updraft;
 using Aetherphone.Apps.Games.WaterSort;
 using Aetherphone.Apps.Games.Whack;
 using Aetherphone.Apps.Games.WordRun;
@@ -125,6 +128,7 @@ internal sealed partial class GamesApp : IPhoneApp
             new SolitaireApp(), new SimonApp(), new FlapApp(), new ReversiApp(), new WhackApp(), new SnakeApp(),
             new SudokuApp(), new ChessApp(), new StackApp(), new CrystalDropApp(), new BeatApp(), new BladeApp(),
             new TriviaApp(gameData, textures), new SkyfallApp(), new InvadersApp(), new CapManApp(), new HopApp(), new SquadronApp(), new DoomApp(), new WordRunApp(gameData),
+            new CoilApp(), new UpdraftApp(), new SwoopApp(),
         };
         library = new GamesLibrary(games, stats);
         countLabels = new string[library.Entries.Length + 1];
