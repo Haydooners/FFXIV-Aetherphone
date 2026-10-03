@@ -8,12 +8,16 @@ internal static class Material
     private const float HighlightAlpha = 0.11f;
     private const float SheenFalloff = 0.18f;
     private const float LensZoom = 1.05f;
+    private const float EdgeBandFraction = 0.08f;
+    private const float EdgeRefraction = 0.7f;
+    private const float PointerReachUnits = 56f;
     private const float FallbackBody = 0.14f;
     private const uint AlphaChannel = 0xFF000000;
     private static readonly Vector4 FrostedFill = new(0.12f, 0.12f, 0.15f, 0.86f);
     private static readonly Vector4 LightGlassCalm = new(0.92f, 0.94f, 1f, 0.20f);
     private static readonly Vector4 LightGlassHarsh = new(0.56f, 0.58f, 0.64f, 0.38f);
-    private static readonly Vector4 DarkGlass = new(0.05f, 0.06f, 0.09f, 0.48f);
+    private static readonly Vector4 DarkGlass = new(0.05f, 0.06f, 0.09f, 0.44f);
+    private const float DarkGlassHarshBoost = 0.18f;
 
     public static void TopGlow(ImDrawListPtr drawList, Vector2 min, Vector2 max, float rounding, Vector4 accent,
         float coverage, float strength)
@@ -85,10 +89,22 @@ internal static class Material
             return;
         }
 
-        var backdrop = WallpaperBackdrop.Fill(drawList, min, max, radius, opacity, LensZoom);
+        var band = Math.Clamp(MathF.Min(max.X - min.X, max.Y - min.Y) * EdgeBandFraction, 1.5f * scale,
+            10f * scale);
+        var backdrop = WallpaperBackdrop.Fill(drawList, min, max, radius, opacity, LensZoom, band, EdgeRefraction);
+        if (backdrop)
+        {
+            var local = WallpaperBackdrop.Brightness(min, max);
+            if (local >= 0f)
+            {
+                brightness = WallpaperLegibility.Normalize(local);
+            }
+        }
+
+        brightness = Math.Clamp(brightness, 0f, 1f);
         var tint = tone == GlassTone.Light
-            ? Vector4.Lerp(LightGlassCalm, LightGlassHarsh, Math.Clamp(brightness, 0f, 1f))
-            : DarkGlass;
+            ? Vector4.Lerp(LightGlassCalm, LightGlassHarsh, brightness)
+            : DarkGlass with { W = DarkGlass.W + (DarkGlassHarshBoost * brightness) };
         if (!backdrop)
         {
             tint = tone == GlassTone.Light ? tint with { W = tint.W + FallbackBody } : FrostedFill;
@@ -96,6 +112,21 @@ internal static class Material
 
         Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(tint with { W = tint.W * opacity }));
         GlassRim(drawList, min, max, radius, scale, tone, opacity);
+        PointerLight(drawList, min, max, radius, scale, tone, opacity);
+    }
+
+    private static void PointerLight(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
+        GlassTone tone, float opacity)
+    {
+        var reach = PointerReachUnits * scale;
+        if (!UiInteract.HoverWindowOnly(new Vector2(min.X - reach, min.Y - reach), new Vector2(max.X + reach, max.Y + reach)))
+        {
+            return;
+        }
+
+        var strength = (tone == GlassTone.Light ? 0.75f : 0.50f) * opacity;
+        Squircle.StrokeNear(drawList, min, max, radius, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, strength)),
+            1.4f * scale, ImGui.GetMousePos(), reach);
     }
 
     public static void PointerHalo(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float strength,

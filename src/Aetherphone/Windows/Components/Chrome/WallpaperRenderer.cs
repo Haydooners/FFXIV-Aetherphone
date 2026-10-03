@@ -38,14 +38,14 @@ internal static class WallpaperRenderer
         }
 
         var (lightUv0, lightUv1) = light.Crop.ComputeUv(lightSize, aspect);
-        WallpaperBackdrop.Record(quad, lightHandle, lightUv0, lightUv1);
+        WallpaperBackdrop.Record(quad, lightHandle, lightUv0, lightUv1, library.LumaGrid(light.FilePath));
         if (darkness <= 0.001f || !library.TryGetBlurred(dark.FilePath, out var darkHandle, out var darkSize))
         {
             return;
         }
 
         var (darkUv0, darkUv1) = dark.Crop.ComputeUv(darkSize, aspect);
-        WallpaperBackdrop.RecordDark(darkHandle, darkUv0, darkUv1, darkness);
+        WallpaperBackdrop.RecordDark(darkHandle, darkUv0, darkUv1, darkness, library.LumaGrid(dark.FilePath));
     }
 
     private static void DrawBlurred(ImDrawListPtr drawList, Rect shape, Rect quad, WallpaperEntry entry, float aspect,

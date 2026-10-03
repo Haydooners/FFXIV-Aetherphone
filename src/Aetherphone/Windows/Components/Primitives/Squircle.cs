@@ -14,6 +14,8 @@ internal static class Squircle
     private const uint AlphaMask = 0xFF000000;
     private static readonly Vector2[][] UnitCorners = BuildUnitCorners();
     private static readonly Vector2[] PathScratch = new Vector2[(MaxCornerSegments + 1) * 4 + 4];
+    private static readonly Vector2[] OuterRing = new Vector2[(MaxCornerSegments + 1) * 4];
+    private static readonly Vector2[] InnerRing = new Vector2[(MaxCornerSegments + 1) * 4];
 
     public static void Fill(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, uint color)
     {
@@ -50,6 +52,95 @@ internal static class Squircle
         MapLinearUv(drawList, firstVertex, min, max, uv0, uv1);
         BindTexture(drawList, firstCommand, texture);
         drawList.AddDrawCmd();
+    }
+
+    public static void FillImageEdge(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float band,
+        ImTextureID texture, uint tint, Vector2 uv0, Vector2 uv1, float refraction)
+    {
+        var box = CornerBox(min, max, radius);
+        var innerMin = new Vector2(min.X + band, min.Y + band);
+        var innerMax = new Vector2(max.X - band, max.Y - band);
+        if (box <= DegenerateBox || band <= 0f || innerMax.X - innerMin.X <= 1f || innerMax.Y - innerMin.Y <= 1f)
+        {
+            return;
+        }
+
+        var corner = CornerFor(box);
+        var count = TraceRing(OuterRing, min, max, box, corner);
+        TraceRing(InnerRing, innerMin, innerMax, CornerBox(innerMin, innerMax, MathF.Max(box - band, 0f)), corner);
+        var size = max - min;
+        var span = uv1 - uv0;
+        for (var index = 0; index < count; index++)
+        {
+            var next = index + 1 == count ? 0 : index + 1;
+            var outerA = OuterRing[index];
+            var outerB = OuterRing[next];
+            var innerA = InnerRing[index];
+            var innerB = InnerRing[next];
+            var bentA = outerA + (outerA - innerA) * refraction;
+            var bentB = outerB + (outerB - innerB) * refraction;
+            drawList.AddImageQuad(texture, outerA, outerB, innerB, innerA,
+                MapUv(bentA, min, size, uv0, span), MapUv(bentB, min, size, uv0, span),
+                MapUv(innerB, min, size, uv0, span), MapUv(innerA, min, size, uv0, span), tint);
+        }
+    }
+
+    private static Vector2 MapUv(Vector2 point, Vector2 min, Vector2 size, Vector2 uv0, Vector2 span) =>
+        new(uv0.X + (point.X - min.X) / size.X * span.X, uv0.Y + (point.Y - min.Y) / size.Y * span.Y);
+
+    private static int TraceRing(Vector2[] target, Vector2 min, Vector2 max, float box, Vector2[] corner)
+    {
+        var count = 0;
+        WriteCorner(target, new Vector2(min.X + box, min.Y + box), -1f, -1f, box, false, corner, ref count);
+        WriteCorner(target, new Vector2(max.X - box, min.Y + box), 1f, -1f, box, true, corner, ref count);
+        WriteCorner(target, new Vector2(max.X - box, max.Y - box), 1f, 1f, box, false, corner, ref count);
+        WriteCorner(target, new Vector2(min.X + box, max.Y - box), -1f, 1f, box, true, corner, ref count);
+        return count;
+    }
+
+    private static void WriteCorner(Vector2[] target, Vector2 anchor, float signX, float signY, float box, bool reverse,
+        Vector2[] corner, ref int count)
+    {
+        if (reverse)
+        {
+            for (var index = corner.Length - 1; index >= 0; index--)
+            {
+                var point = corner[index];
+                target[count] = new Vector2(anchor.X + signX * point.X * box, anchor.Y + signY * point.Y * box);
+                count++;
+            }
+
+            return;
+        }
+
+        for (var index = 0; index < corner.Length; index++)
+        {
+            var point = corner[index];
+            target[count] = new Vector2(anchor.X + signX * point.X * box, anchor.Y + signY * point.Y * box);
+            count++;
+        }
+    }
+
+    public static void StrokeNear(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, uint color,
+        float thickness, Vector2 point, float reach)
+    {
+        if (reach <= 0f)
+        {
+            return;
+        }
+
+        var firstVertex = drawList.VtxBuffer.Size;
+        Stroke(drawList, min, max, radius, color, thickness);
+        var vertices = drawList.VtxBuffer.AsSpan();
+        for (var index = firstVertex; index < vertices.Length; index++)
+        {
+            ref var vertex = ref vertices[index];
+            var distance = Vector2.Distance(vertex.Pos, point);
+            var weight = distance >= reach ? 0f : 1f - distance / reach;
+            weight *= weight;
+            var alpha = (uint)MathF.Round((vertex.Col >> 24) * weight);
+            vertex.Col = (vertex.Col & ~AlphaMask) | (alpha << 24);
+        }
     }
 
     private static void BindTexture(ImDrawListPtr drawList, int firstCommand, ImTextureID texture)
