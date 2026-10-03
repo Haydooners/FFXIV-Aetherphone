@@ -8,6 +8,9 @@ internal sealed class LibraryStore : IDisposable
     public const int DescriptionLimit = 300;
     public const int PlayHistoryCapacity = 500;
     public const int RecentSearchCapacity = 20;
+    public const int ListeningHistoryDays = 400;
+    public const int LoudnessCapacity = 4000;
+    private const int LoudnessEvictBatch = 200;
     private const string FileName = "library.json";
     private const int SaveDelayMilliseconds = 750;
 
@@ -421,6 +424,9 @@ internal sealed class LibraryStore : IDisposable
             record ??= new PlayRecord { Song = SongRecord.From(song), FirstPlayedUnix = now };
             record.Count++;
             record.LastPlayedUnix = now;
+            var today = Today();
+            AddListening(record.Days, today, 1, 0);
+            AddListening(data.Days, today, 1, 0);
             plays.Insert(0, record);
             while (plays.Count > PlayHistoryCapacity)
             {
@@ -429,6 +435,73 @@ internal sealed class LibraryStore : IDisposable
         }
 
         Touch();
+    }
+
+    public void RecordListening(in Song song, int seconds)
+    {
+        if (song.IsEmpty || seconds <= 0)
+        {
+            return;
+        }
+
+        lock (gate)
+        {
+            var today = Today();
+            data.ListenedSeconds += seconds;
+            AddListening(data.Days, today, 0, seconds);
+            var plays = data.Plays;
+            for (var index = 0; index < plays.Count; index++)
+            {
+                if (!string.Equals(plays[index].Song.VideoId, song.VideoId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                plays[index].ListenedSeconds += seconds;
+                AddListening(plays[index].Days, today, 0, seconds);
+                break;
+            }
+        }
+
+        Touch();
+    }
+
+    public bool TryGetLoudnessGain(string videoId, out float decibels)
+    {
+        lock (gate)
+        {
+            return data.LoudnessGains.TryGetValue(videoId, out decibels);
+        }
+    }
+
+    public void RecordLoudnessGain(string videoId, float decibels)
+    {
+        if (string.IsNullOrEmpty(videoId) || !float.IsFinite(decibels))
+        {
+            return;
+        }
+
+        lock (gate)
+        {
+            var gains = data.LoudnessGains;
+            if (!gains.ContainsKey(videoId) && gains.Count >= LoudnessCapacity)
+            {
+                EvictLoudness(gains);
+            }
+
+            gains[videoId] = decibels;
+            dirty = true;
+        }
+
+        saveTimer.Change(SaveDelayMilliseconds, Timeout.Infinite);
+    }
+
+    public ListeningSummary BuildListening(ReplayPeriod period, DateOnly today, int topCount)
+    {
+        lock (gate)
+        {
+            return ListeningStats.Build(data.Plays, data.Days, data.ListenedSeconds, period, today, topCount);
+        }
     }
 
     public Song[] RecentlyPlayed(int max)
@@ -674,9 +747,12 @@ internal sealed class LibraryStore : IDisposable
         data.Plays ??= new List<PlayRecord>();
         data.Artists ??= new List<ArtistRecord>();
         data.RecentSearches ??= new List<string>();
+        data.Days ??= new List<ListeningDay>();
+        data.LoudnessGains ??= new Dictionary<string, float>();
         data.Playlists.RemoveAll(static record => record is null || string.IsNullOrEmpty(record.Id));
         data.Songs.RemoveAll(static record => record is null || string.IsNullOrEmpty(record.VideoId));
         data.Plays.RemoveAll(static record => record?.Song is null || string.IsNullOrEmpty(record.Song.VideoId));
+        MigrateListening();
         libraryIds.Clear();
         lovedIds.Clear();
         downloadIds.Clear();
@@ -695,6 +771,65 @@ internal sealed class LibraryStore : IDisposable
             downloadIds.Add(data.Downloads[index]);
         }
     }
+
+    private void MigrateListening()
+    {
+        var oldest = Today() - ListeningHistoryDays;
+        var plays = data.Plays;
+        var estimate = data.Version < MusicLibraryData.CurrentVersion;
+        var estimatedSeconds = 0L;
+        for (var index = 0; index < plays.Count; index++)
+        {
+            var record = plays[index];
+            record.Days ??= new List<ListeningDay>();
+            ListeningStats.Prune(record.Days, oldest);
+            if (!estimate || record.ListenedSeconds > 0)
+            {
+                continue;
+            }
+
+            record.ListenedSeconds = (long)record.Count * Math.Max(0, record.Song.DurationSeconds);
+            estimatedSeconds += record.ListenedSeconds;
+        }
+
+        ListeningStats.Prune(data.Days, oldest);
+        if (!estimate)
+        {
+            return;
+        }
+
+        data.ListenedSeconds += estimatedSeconds;
+        data.Version = MusicLibraryData.CurrentVersion;
+        dirty = true;
+    }
+
+    private static void EvictLoudness(Dictionary<string, float> gains)
+    {
+        var stale = new string[Math.Min(LoudnessEvictBatch, gains.Count)];
+        var count = 0;
+        foreach (var key in gains.Keys)
+        {
+            if (count == stale.Length)
+            {
+                break;
+            }
+
+            stale[count++] = key;
+        }
+
+        for (var index = 0; index < count; index++)
+        {
+            gains.Remove(stale[index]);
+        }
+    }
+
+    private static void AddListening(List<ListeningDay> days, int today, int plays, int seconds)
+    {
+        ListeningStats.Add(days, today, plays, seconds);
+        ListeningStats.Prune(days, today - ListeningHistoryDays);
+    }
+
+    private static int Today() => DateOnly.FromDateTime(DateTime.Now).DayNumber;
 
     private static MusicLibraryData? Load(string path)
     {

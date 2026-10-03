@@ -2094,10 +2094,20 @@ internal static class L
                 "Added what Spotify, foobar2000 or your browser is playing on your PC to Music, the Dynamic Island and Control Center, with pause and skip"),
             new("changelog.r1042.65",
                 "Your keyboard media keys now pause and skip the phone's music"),
+            new("changelog.r1042.77",
+                "Added chat to Jam, and Nearby Jams you can join with a tap when a host lets people nearby find theirs"),
+            new("changelog.r1042.78",
+                "Added Friends listening on Home: see what your friends are playing, play it yourself or join their Jam. Sharing stays off until you turn it on"),
+            new("changelog.r1042.79",
+                "Added Replay: minutes listened, top songs and top artists for the week, month, year or all time"),
+            new("changelog.r1042.80",
+                "Added Sound Check, which keeps every song at the same volume"),
             new("changelog.r1042.66",
                 "Your playlists, recently played songs and favorite stations carry over to the new Music automatically"),
             new("changelog.r1042.67",
                 "Fixed some Community Radio station pages opening blank"),
+            new("changelog.r1042.81",
+                "Fixed radio stations that went silent after connecting; they now reconnect on their own"),
         };
 
         public static readonly LocString[] Release1042Widgets =
@@ -4906,6 +4916,21 @@ internal static class L
             public static readonly LocString SwitchTitle = new("music.jam.switchTitle", "Join this Jam?");
             public static readonly LocString SwitchBody = new("music.jam.switchBody",
                 "You will leave the Jam you're in now.");
+            public static readonly LocString ChatHeader = new("music.jam.chatHeader", "Chat");
+            public static readonly LocString ChatHint = new("music.jam.chatHint", "Message everyone in the Jam");
+            public static readonly LocString ChatEmptyTitle = new("music.jam.chatEmptyTitle", "No messages yet");
+            public static readonly LocString ChatEmptyBody = new("music.jam.chatEmptyBody",
+                "Say hi and talk about the songs while you listen");
+            public static readonly LocString ChatNotInJam = new("music.jam.chatNotInJam",
+                "You are no longer in this Jam");
+            public static readonly LocString Discoverable = new("music.jam.discoverable",
+                "Let people nearby find this Jam");
+            public static readonly LocString DiscoverableHint = new("music.jam.discoverableHint",
+                "Players in your zone on this world see it under Nearby Jams and can join with one tap");
+            public static readonly LocString NearbyHeader = new("music.jam.nearbyHeader", "Nearby Jams");
+            public static readonly LocString NearbyIdle = new("music.jam.nearbyIdle", "Nothing playing yet");
+            public static readonly LocPlural NearbyCount =
+                new("music.jam.nearbyCount", "{0} Jam nearby", "{0} Jams nearby");
         }
         internal static class PcMedia
         {
@@ -4946,6 +4971,22 @@ internal static class L
             public static readonly LocString StarterCalm = new("music.home.starterCalm", "Calm in Eorzea");
             public static readonly LocString Play = new("music.home.play", "Play");
             public static readonly LocString ShelfEmpty = new("music.home.shelfEmpty", "Nothing here right now. Check back soon.");
+        }
+
+        internal static class Friends
+        {
+            public static readonly LocString ShelfTitle = new("music.friends.shelfTitle", "Friends listening");
+            public static readonly LocString ListeningNow = new("music.friends.listeningNow", "Listening now");
+            public static readonly LocString Paused = new("music.friends.paused", "Paused");
+            public static readonly LocString MinutesAgo = new("music.friends.minutesAgo", "{0} min ago");
+            public static readonly LocString JoinJam = new("music.friends.joinJam", "Join their Jam");
+            public static readonly LocString PromptTitle = new("music.friends.promptTitle", "Share what you listen to with friends?");
+            public static readonly LocString PromptBody = new("music.friends.promptBody", "Your mutual contacts see the song playing on your phone. Radio is never shared, and you can turn this off in Settings.");
+            public static readonly LocString Share = new("music.friends.share", "Share");
+            public static readonly LocString NotNow = new("music.friends.notNow", "Not now");
+            public static readonly LocString SettingsHeader = new("music.friends.settingsHeader", "Friends");
+            public static readonly LocString ShareToggle = new("music.friends.shareToggle", "Share what I listen to");
+            public static readonly LocString SettingsHint = new("music.friends.settingsHint", "Your mutual contacts see the song playing on your phone, and can join your Jam when you host one. Radio and Windows media are never shared.");
         }
 
         internal static class New
@@ -5136,6 +5177,39 @@ internal static class L
             public static readonly LocString CrossfadeSeconds = new("music.nowPlaying.crossfadeSeconds", "{0} s");
             public static readonly LocString RemoveFromQueue = new("music.nowPlaying.removeFromQueue",
                 "Remove from queue");
+        }
+
+        internal static class Replay
+        {
+            public static readonly LocString Title = new("music.replay.title", "Replay");
+            public static readonly LocString ThisWeek = new("music.replay.thisWeek", "This week");
+            public static readonly LocString ThisMonth = new("music.replay.thisMonth", "This month");
+            public static readonly LocString ThisYear = new("music.replay.thisYear", "This year");
+            public static readonly LocString AllTime = new("music.replay.allTime", "All time");
+            public static readonly LocString MinutesListened = new("music.replay.minutesListened", "minutes listened");
+            public static readonly LocString PlayOne = new("music.replay.playOne", "1 play");
+            public static readonly LocString PlaysMany = new("music.replay.playsMany", "{0} plays");
+            public static readonly LocString MinutesShort = new("music.replay.minutesShort", "{0} min");
+            public static readonly LocString MinutesPerDay = new("music.replay.minutesPerDay", "Minutes per day");
+            public static readonly LocString MinutesPerMonth = new("music.replay.minutesPerMonth", "Minutes per month");
+            public static readonly LocString TopSongs = new("music.replay.topSongs", "Top songs");
+            public static readonly LocString TopArtists = new("music.replay.topArtists", "Top artists");
+            public static readonly LocString PlayTopSongs = new("music.replay.playTopSongs", "Play your top songs");
+            public static readonly LocString EmptyTitle = new("music.replay.emptyTitle", "Nothing played yet");
+            public static readonly LocString EmptySub = new("music.replay.emptySub",
+                "Play some music and your minutes, top songs and top artists for this period will show up here.");
+            public static readonly LocString HomeWeekMinutes = new("music.replay.homeWeekMinutes",
+                "{0} minutes listened this week");
+            public static readonly LocString HomeTeaser = new("music.replay.homeTeaser",
+                "Your top songs and artists, all in one place");
+        }
+
+        internal static class SoundCheck
+        {
+            public static readonly LocString Title = new("music.soundCheck.title", "Sound Check");
+            public static readonly LocString SettingsHeader = new("music.soundCheck.settingsHeader", "Playback");
+            public static readonly LocString Hint = new("music.soundCheck.hint",
+                "Plays every song at about the same volume, so you don't have to reach for the slider between tracks.");
         }
     }
 

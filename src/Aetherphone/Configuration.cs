@@ -238,8 +238,11 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool MusicShuffle { get; set; }
     public bool MusicAutoplay { get; set; } = true;
     public float MusicCrossfadeSeconds { get; set; }
+    public bool MusicSoundCheck { get; set; } = true;
     public bool ShowWindowsMedia { get; set; } = true;
     public bool PublishToWindowsMedia { get; set; } = true;
+    public bool ShareListeningActivity { get; set; }
+    public bool ListeningPromptShown { get; set; }
     public float VideoVolume { get; set; } = 0.6f;
     public int VideoMaxQualityHeight { get; set; } = 720;
     public bool VideoHideNameplates { get; set; } = true;

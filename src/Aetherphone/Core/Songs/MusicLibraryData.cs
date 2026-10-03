@@ -3,7 +3,7 @@ namespace Aetherphone.Core.Songs;
 [Serializable]
 internal sealed class MusicLibraryData
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     public int Version { get; set; } = CurrentVersion;
     public List<PlaylistRecord> Playlists { get; set; } = new();
@@ -13,6 +13,9 @@ internal sealed class MusicLibraryData
     public List<PlayRecord> Plays { get; set; } = new();
     public List<ArtistRecord> Artists { get; set; } = new();
     public List<string> RecentSearches { get; set; } = new();
+    public List<ListeningDay> Days { get; set; } = new();
+    public long ListenedSeconds { get; set; }
+    public Dictionary<string, float> LoudnessGains { get; set; } = new();
 }
 
 [Serializable]
@@ -22,6 +25,16 @@ internal sealed class PlayRecord
     public int Count { get; set; }
     public long FirstPlayedUnix { get; set; }
     public long LastPlayedUnix { get; set; }
+    public long ListenedSeconds { get; set; }
+    public List<ListeningDay> Days { get; set; } = new();
+}
+
+[Serializable]
+internal struct ListeningDay
+{
+    public int Day { get; set; }
+    public int Plays { get; set; }
+    public int Seconds { get; set; }
 }
 
 [Serializable]

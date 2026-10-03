@@ -1,11 +1,14 @@
 using Aetherphone.Core.Songs;
 using Aetherphone.Core.Telephony.Contracts;
+using Aetherphone.Core.Video;
 
 namespace Aetherphone.Core.Jam;
 
 internal static class JamWire
 {
     public const int MaxTitleLength = 64;
+    public const int MaxNearbyJams = 20;
+    public const int MaxChatLength = 300;
     private const int MaxTrackTextLength = 256;
     private const int MaxUrlLength = 2048;
 
@@ -79,6 +82,62 @@ internal static class JamWire
             from?.AvatarUrl);
     }
 
+    public static JamNearbyJam[] ToNearby(JamNearbyInfo[]? incoming, string currentJamId)
+    {
+        if (incoming is null || incoming.Length == 0)
+        {
+            return Array.Empty<JamNearbyJam>();
+        }
+
+        var result = new JamNearbyJam[Math.Min(incoming.Length, MaxNearbyJams)];
+        var count = 0;
+        for (var index = 0; index < incoming.Length && count < result.Length; index++)
+        {
+            var info = incoming[index];
+            if (info is null || string.IsNullOrEmpty(info.JamId)
+                || string.Equals(info.JamId, currentJamId, StringComparison.Ordinal)
+                || PartyCode.Normalize(info.Code) is not { Length: > 0 } code
+                || ContainsJam(result, count, info.JamId))
+            {
+                continue;
+            }
+
+            var handle = info.HostHandle ?? string.Empty;
+            var handleLabel = handle.Length > 0 ? string.Concat("@", handle) : string.Empty;
+            var displayName = info.HostDisplayName ?? string.Empty;
+            result[count] = new JamNearbyJam(info.JamId, code, NormalizeTitle(info.Title), info.HostId ?? string.Empty,
+                displayName.Length > 0 ? displayName : handleLabel, handleLabel, info.HostAvatarUrl,
+                Math.Max(1, info.MemberCount), ToSong(info.Track));
+            count++;
+        }
+
+        if (count < result.Length)
+        {
+            Array.Resize(ref result, count);
+        }
+
+        return result;
+    }
+
+    public static string? ValidateChat(string text, out JamChatRefusal refusal)
+    {
+        var trimmed = text.Trim();
+        if (trimmed.Length == 0)
+        {
+            refusal = JamChatRefusal.Empty;
+            return null;
+        }
+
+        if (trimmed.Length > MaxChatLength)
+        {
+            refusal = JamChatRefusal.TooLong;
+            return null;
+        }
+
+        refusal = JamChatRefusal.None;
+        return trimmed;
+    }
+
     public static string PublicName(ParticipantInfo? from)
     {
         if (from is null)
@@ -116,6 +175,19 @@ internal static class JamWire
         }
 
         return -1;
+    }
+
+    private static bool ContainsJam(JamNearbyJam[] items, int count, string jamId)
+    {
+        for (var index = 0; index < count; index++)
+        {
+            if (string.Equals(items[index].JamId, jamId, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string? Cap(string? text, int length)

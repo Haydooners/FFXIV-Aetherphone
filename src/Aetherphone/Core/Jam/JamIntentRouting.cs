@@ -23,6 +23,7 @@ internal enum JamRoute : byte
     ReleaseHold,
     Swallow,
     Refuse,
+    AwaitQueue,
 }
 
 internal readonly record struct JamRouteDecision(JamRoute Route, JamRefusal Refusal = JamRefusal.None)
@@ -30,7 +31,8 @@ internal readonly record struct JamRouteDecision(JamRoute Route, JamRefusal Refu
     public bool Handled => Route is not (JamRoute.Local or JamRoute.LocalThenPublish);
 }
 
-internal readonly record struct JamHostContext(bool SongActive, int ServerQueueCount, bool RepeatOne);
+internal readonly record struct JamHostContext(bool SongActive, int ServerQueueCount, bool RepeatOne,
+    bool AddInFlight = false);
 
 internal readonly record struct JamGuestContext(int Permissions, bool LocalHold, bool RoomPaused, bool OwnsEntry);
 
@@ -51,9 +53,7 @@ internal static class JamIntentRouting
             PlaybackIntentKind.RemoveQueued => new(JamRoute.QueueRemove),
             PlaybackIntentKind.MoveQueued => new(JamRoute.QueueMove),
             PlaybackIntentKind.Stop => new(JamRoute.PauseForEveryone),
-            PlaybackIntentKind.TrackEnded => new(!context.RepeatOne && context.ServerQueueCount > 0
-                ? JamRoute.Advance
-                : JamRoute.LocalThenPublish),
+            PlaybackIntentKind.TrackEnded => new(TrackEndRoute(context)),
             _ => new(JamRoute.Local),
         };
     }
@@ -82,6 +82,21 @@ internal static class JamIntentRouting
             PlaybackIntentKind.TrackEnded => new(JamRoute.Swallow),
             _ => new(JamRoute.Swallow),
         };
+    }
+
+    private static JamRoute TrackEndRoute(in JamHostContext context)
+    {
+        if (context.RepeatOne)
+        {
+            return JamRoute.LocalThenPublish;
+        }
+
+        if (context.ServerQueueCount > 0)
+        {
+            return JamRoute.Advance;
+        }
+
+        return context.AddInFlight ? JamRoute.AwaitQueue : JamRoute.LocalThenPublish;
     }
 
     private static JamRouteDecision Control(bool allowed, JamRoute route)

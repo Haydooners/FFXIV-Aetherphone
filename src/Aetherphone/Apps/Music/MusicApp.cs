@@ -78,7 +78,7 @@ internal sealed partial class MusicApp : IResumableApp
         SocialNotificationService socialNotifications, RolladeckService rolladeck, PcMediaSource pcMedia,
         JamSession jam, JamLauncher jamLauncher, ContactBook contacts,
         RadioRoomSession room, DownloadStore downloads,
-        LyricsService lyrics, WindowsMediaSessions windowsMedia)
+        LyricsService lyrics, WindowsMediaSessions windowsMedia, ListeningPresence listening)
     {
         this.radio = radio;
         this.songSearch = songSearch;
@@ -108,6 +108,7 @@ internal sealed partial class MusicApp : IResumableApp
         this.downloads = downloads;
         this.lyrics = lyrics;
         this.windowsMedia = windowsMedia;
+        this.listening = listening;
         PastedLinkHandler = TryHandlePastedLink;
         community = new CommunityRadioService(aethernet, session);
         kit = new MusicKit(ui, images, playback, library) { Downloads = downloads };

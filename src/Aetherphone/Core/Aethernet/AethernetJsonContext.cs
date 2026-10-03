@@ -212,6 +212,8 @@ namespace Aetherphone.Core.Aethernet;
 [JsonSerializable(typeof(MyCommunityStationDto))]
 [JsonSerializable(typeof(RadioFollowResultDto))]
 [JsonSerializable(typeof(RadioTrackPage))]
+[JsonSerializable(typeof(ListeningUpdateRequest))]
+[JsonSerializable(typeof(ListeningFriendsPage))]
 [JsonSerializable(typeof(CoinWalletDto))]
 [JsonSerializable(typeof(CoinRuleStatusDto))]
 [JsonSerializable(typeof(CoinLedgerEntryDto))]

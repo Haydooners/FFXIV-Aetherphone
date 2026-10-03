@@ -3,9 +3,9 @@ using Aetherphone.Core.Telephony.Contracts;
 
 namespace Aetherphone.Core.Radio;
 
-internal sealed class RadioRoomSession
+internal sealed class RadioRoomSession : ILiveChatFeed
 {
-    public const int MessageCapacity = 100;
+    public const int MessageCapacity = RadioChatRing.Capacity;
     public const int MaxChatLength = 300;
     public const int MaxPinnedLength = 200;
     public const int MaxRequestLength = 200;
@@ -20,7 +20,7 @@ internal sealed class RadioRoomSession
     private readonly Func<long> tickClock;
     private readonly Func<long> unixClock;
     private readonly Func<long, string> formatClock;
-    private readonly RadioChatEntry?[] messages = new RadioChatEntry?[MessageCapacity];
+    private readonly RadioChatRing messages = new();
     private readonly RadioReactionPulse[] reactions = new RadioReactionPulse[ReactionCapacity];
     private readonly HashSet<string> hiddenUserIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, long> mutedUsers = new(StringComparer.Ordinal);
@@ -29,8 +29,6 @@ internal sealed class RadioRoomSession
     private readonly RadioCooldownGate requestGate = new(RadioRoomPacing.RequestMilliseconds);
     private readonly RadioCooldownGate attachGate = new(RadioRoomPacing.AttachMilliseconds);
     private RadioRequestEntry[] requests = Array.Empty<RadioRequestEntry>();
-    private int messageStart;
-    private int messageCount;
     private int reactionStart;
     private int reactionCount;
     private long attachDueTick;
@@ -75,7 +73,7 @@ internal sealed class RadioRoomSession
 
     public bool HasOwnRequest { get; private set; }
 
-    public int MessageCount => messageCount;
+    public int MessageCount => messages.Count;
 
     public int RequestCount => requests.Length;
 
@@ -85,8 +83,12 @@ internal sealed class RadioRoomSession
 
     public RadioChatEntry MessageAt(int index)
     {
-        return messages[(messageStart + index) % MessageCapacity]!;
+        return messages.At(index);
     }
+
+    int ILiveChatFeed.Count => messages.Count;
+
+    RadioChatEntry ILiveChatFeed.At(int index) => messages.At(index);
 
     public RadioRequestEntry RequestAt(int index)
     {
@@ -635,63 +637,23 @@ internal sealed class RadioRoomSession
     private RadioChatEntry BuildEntry(long messageId, string userId, string displayName, string handle,
         string? avatarUrl, string text, long sentAtUnixMs, bool isDj, string? me)
     {
-        return new RadioChatEntry(messageId, userId, RadioRoomWire.PublicNameOf(displayName, handle), handle,
-            RadioRoomWire.HandleLabelOf(handle), avatarUrl, text, sentAtUnixMs, formatClock(sentAtUnixMs), isDj,
-            string.Equals(userId, me, StringComparison.Ordinal));
+        return RadioRoomWire.BuildEntry(messageId, userId, displayName, handle, avatarUrl, text, sentAtUnixMs,
+            formatClock(sentAtUnixMs), isDj, me);
     }
 
     private void AppendMessage(RadioChatEntry entry)
     {
-        if (messageCount < MessageCapacity)
-        {
-            messages[(messageStart + messageCount) % MessageCapacity] = entry;
-            messageCount++;
-            return;
-        }
-
-        messages[messageStart] = entry;
-        messageStart = (messageStart + 1) % MessageCapacity;
+        messages.Append(entry);
     }
 
     private int RemoveMessages(long messageId, string? userId)
     {
-        var kept = 0;
-        for (var read = 0; read < messageCount; read++)
-        {
-            var entry = messages[(messageStart + read) % MessageCapacity]!;
-            var matches = entry.MessageId == messageId
-                || (userId is not null && string.Equals(entry.UserId, userId, StringComparison.Ordinal));
-            if (matches)
-            {
-                continue;
-            }
-
-            messages[(messageStart + kept) % MessageCapacity] = entry;
-            kept++;
-        }
-
-        for (var clear = kept; clear < messageCount; clear++)
-        {
-            messages[(messageStart + clear) % MessageCapacity] = null;
-        }
-
-        var removed = messageCount - kept;
-        messageCount = kept;
-        return removed;
+        return messages.Remove(messageId, userId);
     }
 
     private RadioChatEntry? FindMessage(long messageId)
     {
-        for (var index = 0; index < messageCount; index++)
-        {
-            var entry = MessageAt(index);
-            if (entry.MessageId == messageId)
-            {
-                return entry;
-            }
-        }
-
-        return null;
+        return messages.Find(messageId);
     }
 
     private RadioRequestEntry? FindRequest(long requestId)
@@ -769,9 +731,7 @@ internal sealed class RadioRoomSession
 
     private void ClearMessages()
     {
-        Array.Clear(messages);
-        messageStart = 0;
-        messageCount = 0;
+        messages.Clear();
     }
 
     private void ClearRoom()

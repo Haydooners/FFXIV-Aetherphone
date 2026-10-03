@@ -39,7 +39,19 @@ internal sealed class JamSignalRouter : IDisposable
 
     public void React(int reaction) => Send(new CallControl { Type = SignalType.JamReact, Reaction = reaction });
 
-    public void Settings(int? guestPermissions, bool? approvalRequired, string? title)
+    public void Chat(string text) => Send(new CallControl { Type = SignalType.JamChat, Text = text });
+
+    public void DeleteMessage(long messageId)
+    {
+        Send(new CallControl { Type = SignalType.JamDeleteMessage, MessageId = messageId });
+    }
+
+    public void Nearby(uint territoryId, uint worldId)
+    {
+        Send(new CallControl { Type = SignalType.JamNearby, TerritoryId = territoryId, WorldId = worldId });
+    }
+
+    public void Settings(int? guestPermissions, bool? approvalRequired, string? title, bool? discoverable = null)
     {
         Send(new CallControl
         {
@@ -47,6 +59,7 @@ internal sealed class JamSignalRouter : IDisposable
             GuestPermissions = guestPermissions,
             ApprovalRequired = approvalRequired,
             Title = title,
+            Discoverable = discoverable,
         });
     }
 

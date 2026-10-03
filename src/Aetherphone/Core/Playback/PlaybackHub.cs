@@ -28,6 +28,8 @@ internal sealed class PlaybackHub : IDisposable
     private long autoplayRetryAt;
     private long sleepDeadline;
     private bool sleepAtTrackEnd;
+    private ListeningClock listening;
+    private Song listeningSong;
 
     public PlaybackHub(RadioPlayer radio, SongPlayer songs, LibraryStore library, SongLinkResolver resolver,
         Configuration configuration, IFramework? framework)
@@ -42,6 +44,8 @@ internal sealed class PlaybackHub : IDisposable
         radio.Volume = volume;
         songs.Volume = volume;
         songs.CrossfadeSeconds = configuration.MusicCrossfadeSeconds;
+        songs.Library = library;
+        songs.SoundCheckEnabled = configuration.MusicSoundCheck;
         queue.SetShuffle(configuration.MusicShuffle);
         songs.TrackCompleted += OnTrackCompleted;
         songs.TrackNearEnd += OnTrackNearEnd;
@@ -100,6 +104,7 @@ internal sealed class PlaybackHub : IDisposable
     public bool ShuffleEnabled => queue.Shuffled;
     public bool AutoplayEnabled => configuration.MusicAutoplay;
     public float CrossfadeSeconds => songs.CrossfadeSeconds;
+    public bool SoundCheckEnabled => configuration.MusicSoundCheck;
     public bool SleepTimerActive => sleepDeadline > 0 || sleepAtTrackEnd;
     public bool SleepAtTrackEnd => sleepAtTrackEnd;
 
@@ -142,6 +147,13 @@ internal sealed class PlaybackHub : IDisposable
     {
         songs.CrossfadeSeconds = seconds;
         configuration.MusicCrossfadeSeconds = songs.CrossfadeSeconds;
+        configuration.Save();
+    }
+
+    public void SetSoundCheck(bool enabled)
+    {
+        configuration.MusicSoundCheck = enabled;
+        songs.SoundCheckEnabled = enabled;
         configuration.Save();
     }
 
@@ -387,6 +399,7 @@ internal sealed class PlaybackHub : IDisposable
 
     public void Dispose()
     {
+        CreditListening();
         songs.TrackCompleted -= OnTrackCompleted;
         songs.TrackNearEnd -= OnTrackNearEnd;
         songs.CrossfadePoint -= OnCrossfadePoint;
@@ -398,6 +411,9 @@ internal sealed class PlaybackHub : IDisposable
 
     public void Tick()
     {
+        listening.Observe(songs.Position,
+            SongActive && songs.State == SongPlaybackState.Playing && !songs.IsPaused);
+        songs.SoundCheckEnabled = configuration.MusicSoundCheck;
         if (Interlocked.Exchange(ref crossfadeSignals, 0) > 0 && SongActive && RepeatMode != SongRepeatMode.One &&
             !sleepAtTrackEnd && Authority is null)
         {
@@ -506,6 +522,8 @@ internal sealed class PlaybackHub : IDisposable
 
     private void OnStarted()
     {
+        CreditListening();
+        listeningSong = queue.Current.Song;
         TrackVersion++;
         library.RecordPlay(queue.Current.Song);
         if (!string.Equals(autoplaySeedId, queue.Current.Song.VideoId, StringComparison.Ordinal) &&
@@ -517,8 +535,16 @@ internal sealed class PlaybackHub : IDisposable
         TrackStarted?.Invoke();
     }
 
+    private void CreditListening()
+    {
+        var seconds = listening.Take();
+        library.RecordListening(listeningSong, seconds);
+        listeningSong = default;
+    }
+
     private void StopSongs()
     {
+        CreditListening();
         songs.Stop();
         queue.Clear();
         TrackVersion++;

@@ -159,6 +159,7 @@ internal sealed class PhoneServices : IDisposable
     public required SongLinkResolver SongResolver { get; init; }
     public required PlaybackHub Playback { get; init; }
     public required LibraryStore MusicLibrary { get; init; }
+    public required ListeningPresence Listening { get; init; }
     public required DownloadStore MusicDownloads { get; init; }
     public required WindowsMediaSessions WindowsMedia { get; init; }
     public required PcMediaSource PcMedia { get; init; }
@@ -376,6 +377,8 @@ internal sealed class PhoneServices : IDisposable
         var streamSignals = new StreamSignalRouter(calls.Router);
         var radioRooms = new RadioRoomRouter(realtimeSignals, aethernetSession, framework);
         var jam = new JamSession(calls.Router, playback, aethernetSession, notifications, framework);
+        var listening = new ListeningPresence(aethernet.MusicListening, aethernetSession, playback, jam, configuration,
+            framework);
         var characterSwitcher = new CharacterSessionManager(framework, aethernetSession, aethernet.Account,
             gameData, configuration, confirm);
         var socialNotifications = new SocialNotificationService(aethernetSession, aethernet.Account, notifications, configuration, framework, visibility, realtimeSignals, installer);
@@ -525,6 +528,7 @@ internal sealed class PhoneServices : IDisposable
             SongResolver = songResolver,
             Playback = playback,
             MusicLibrary = musicLibrary,
+            Listening = listening,
             MusicDownloads = musicDownloads,
             WindowsMedia = windowsMedia,
             PcMedia = new PcMediaSource(configuration, windowsMedia),
@@ -594,6 +598,7 @@ internal sealed class PhoneServices : IDisposable
         DeviceLinks.Dispose();
         KeyVault.Dispose();
         RadioRooms.Dispose();
+        Listening.Dispose();
         Jam.Dispose();
         StreamSignals.Dispose();
         Calls.Dispose();

@@ -52,6 +52,8 @@ internal sealed partial class MusicApp
             jamApprovalDraftAt = clock;
             jam.SetApprovalRequired(nextApproval);
         }
+
+        DrawJamDiscoverableSetting(scale);
     }
 
     private int ShownJamPermissions()
@@ -70,18 +72,20 @@ internal sealed partial class MusicApp
         return jamPermissionsDraft;
     }
 
-    private bool ShownJamApproval()
+    private bool ShownJamApproval() => ShownJamFlag(ref jamApprovalDraft, jamApprovalDraftAt, jam.ApprovalRequired);
+
+    private bool ShownJamFlag(ref int draft, float draftAt, bool confirmed)
     {
-        if (jamApprovalDraft == JamNoDraft)
+        if (draft == JamNoDraft)
         {
-            return jam.ApprovalRequired;
+            return confirmed;
         }
 
-        var drafted = jamApprovalDraft == 1;
-        if (drafted == jam.ApprovalRequired || clock - jamApprovalDraftAt > JamDraftHoldSeconds)
+        var drafted = draft == 1;
+        if (drafted == confirmed || clock - draftAt > JamDraftHoldSeconds)
         {
-            jamApprovalDraft = JamNoDraft;
-            return jam.ApprovalRequired;
+            draft = JamNoDraft;
+            return confirmed;
         }
 
         return drafted;

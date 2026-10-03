@@ -83,6 +83,7 @@ internal sealed partial class MusicApp
         var frame = BeginPage(context);
         using (AppSurface.BeginEdgeToEdge(frame.Body))
         {
+            DrawListeningPrompt(scale);
             DrawPcMediaCard(scale);
             if (HomeIsFresh)
             {
@@ -92,6 +93,7 @@ internal sealed partial class MusicApp
             {
                 DrawHomeTopPicks();
                 DrawJamHomeCard(scale);
+                DrawFriendsListening(scale);
                 DrawHomeRecentShelf();
                 DrawHomeMadeForYou();
             }
@@ -100,6 +102,7 @@ internal sealed partial class MusicApp
             if (!HomeIsFresh)
             {
                 DrawHomeRediscover();
+                DrawHomeReplayCard(scale);
             }
 
             ImGui.Dummy(new Vector2(0f, MusicUi.SectionGap * scale));
@@ -224,6 +227,7 @@ internal sealed partial class MusicApp
         }
 
         DrawJamHomeCard(scale);
+        DrawFriendsListening(scale);
     }
 
     private void DrawHomeTopPicks()
