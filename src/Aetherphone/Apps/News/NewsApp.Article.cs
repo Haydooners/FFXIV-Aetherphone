@@ -28,11 +28,12 @@ internal sealed partial class NewsApp
     private const string ArticleNavId = "news.article.nav";
     private const string ReadButtonId = "news.article.read";
     private const string ArticleAnchor = "news.article";
+    private const int NoArticleTop = -1;
 
     private readonly NavBarButton[] articleButtons = new NavBarButton[2];
     private readonly string?[] categoryEyebrows = new string?[NewsCategories.All.Length];
     private CultureInfo? categoryEyebrowCulture;
-    private string shownArticleId = string.Empty;
+    private int articleTopDepth = NoArticleTop;
 
     private void DrawArticle(Rect area, NewsView view, int depth)
     {
@@ -56,10 +57,10 @@ internal sealed partial class NewsApp
         var story = feed.Stories[index];
         using (var surface = AppSurface.Begin(body))
         {
-            if (depth == router.Depth && !string.Equals(shownArticleId, story.Id, StringComparison.Ordinal))
+            if (depth == articleTopDepth && depth == router.Depth)
             {
                 surface.JumpToTop();
-                shownArticleId = story.Id;
+                articleTopDepth = NoArticleTop;
             }
 
             DrawStory(feed, index, scale);

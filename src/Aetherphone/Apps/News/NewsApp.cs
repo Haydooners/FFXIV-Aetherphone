@@ -83,7 +83,7 @@ internal sealed partial class NewsApp : IPhoneApp, ITabRouteTarget
         router.Reset();
         activeCategory = NewsCategory.Topics;
         resetScroll = true;
-        shownArticleId = string.Empty;
+        articleTopDepth = NoArticleTop;
     }
 
     public void OnClosed()
@@ -169,6 +169,7 @@ internal sealed partial class NewsApp : IPhoneApp, ITabRouteTarget
     {
         UiFeedback.Play(UiSound.Tap);
         router.Push(NewsView.Article(category, story.Id));
+        articleTopDepth = router.Depth;
     }
 
     private void UpdateTourHold()
