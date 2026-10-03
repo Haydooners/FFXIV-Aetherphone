@@ -2,6 +2,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Jobs;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -66,6 +67,7 @@ internal sealed partial class JobsApp
             return;
         }
 
+        UiAnchors.Report("jobs.categories.menu", categoriesButtonRect);
         var categories = CurrentCategories();
         var items = new DropdownMenu.Item[categories.Count + 1];
         for (var index = 0; index < categories.Count; index++)

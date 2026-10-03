@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Housing;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -54,6 +55,7 @@ internal sealed partial class HousingApp
             return;
         }
 
+        UiAnchors.Report("housing.sheet", sheet);
         var pad = 16f * scale;
         var contentLeft = sheet.Min.X + pad;
         var contentRight = sheet.Max.X - pad;
@@ -157,6 +159,8 @@ internal sealed partial class HousingApp
         var watchRect = rects[0];
         var remindRect = rects[1];
         var detailsRect = rects[2];
+        UiAnchors.Report("housing.sheet.watch", watchRect);
+        UiAnchors.Report("housing.sheet.remind", remindRect);
         if (HousingChrome.PillButton(watchRect, watchLabel, watched, ui, false))
         {
             var nowWatched = housing.Watch.ToggleWatch(plot, housing.WorldNameOf(plot.Key.WorldId));

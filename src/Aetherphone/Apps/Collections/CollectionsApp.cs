@@ -116,9 +116,13 @@ internal sealed partial class CollectionsApp : IPhoneApp
         frameTheme = context.Theme;
         frameNavigation = context.Navigation;
         ui.Theme = context.Theme;
-        if (GuideIntents.Consume("collections.category.mounts"))
+        if (gameData.LocalPlayer is null)
         {
-            OpenCategory(CollectionCategory.Mounts);
+            TourHolds.Hold(Id);
+        }
+        else
+        {
+            TourHolds.Release(Id);
         }
 
         var scale = UiScale.Current;
