@@ -86,6 +86,7 @@ internal sealed class PeopleWidget : IHomeWidget
 
     public float Relevance(string config)
     {
+        Advance(false);
         var count = Math.Min(people.Count, LargeCount);
         for (var index = 0; index < count; index++)
         {

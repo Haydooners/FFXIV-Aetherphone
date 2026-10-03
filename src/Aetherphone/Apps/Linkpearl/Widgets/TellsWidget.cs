@@ -91,7 +91,11 @@ internal sealed class TellsWidget : IHomeWidget
     public string AppId => LinkpearlAppId;
     public WidgetSizeSet Sizes => WidgetSizeSet.Medium | WidgetSizeSet.Large;
 
-    public float Relevance(string config) => unreadTotal > 0 ? 0.7f : 0f;
+    public float Relevance(string config)
+    {
+        inbox.Sync();
+        return inbox.TotalUnread > 0 ? 0.7f : 0f;
+    }
 
     public void Draw(in WidgetContext context)
     {

@@ -57,6 +57,7 @@ internal sealed class VenturesWidget : IHomeWidget
 
     public float Relevance(string config)
     {
+        Refresh(DateTime.UtcNow, false);
         if (!known)
         {
             return 0f;

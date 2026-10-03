@@ -67,7 +67,11 @@ internal sealed class HuntsLiveWidget : IHomeWidget
     public WidgetRoute Target(in WidgetContext context) =>
         IsSetUp ? WidgetRoute.App(AppId) : WidgetRoute.Tab(AppId, SettingsIntent);
 
-    public float Relevance(string config) => IsSetUp && liveCount > 0 ? LiveRelevance : 0f;
+    public float Relevance(string config)
+    {
+        Sync();
+        return IsSetUp && liveCount > 0 ? LiveRelevance : 0f;
+    }
 
     private bool IsSetUp => configuration.HuntsAppOpened && hunts.CurrentDataCenter is { Length: > 0 };
 
@@ -75,17 +79,8 @@ internal sealed class HuntsLiveWidget : IHomeWidget
     {
         WidgetChrome.Container(context);
         var ink = WidgetInk.From(context);
-        if (configuration.HuntsAppOpened && activate.Due(ActivateMilliseconds))
-        {
-            hunts.EnsureActive();
-        }
-
+        Sync();
         var setUp = IsSetUp;
-        if (setUp && refresh.Due(RefreshMilliseconds))
-        {
-            Snapshot();
-        }
-
         var headerBottom = WidgetChrome.Header(context, ink, AppId, Eyebrow(setUp), HuntsAccent);
         var content = WidgetMetrics.Content(context);
         var body = new Rect(new Vector2(content.Min.X, headerBottom + WidgetMetrics.Gutter * context.Scale * 0.5f),
@@ -199,6 +194,19 @@ internal sealed class HuntsLiveWidget : IHomeWidget
     {
         var fit = Math.Max(1, (int)(body.Height / (RowMinimumUnits * context.Scale)));
         return context.Size == WidgetSize.Large ? Math.Min(fit, Capacity) : Math.Min(fit, MediumRows);
+    }
+
+    private void Sync()
+    {
+        if (configuration.HuntsAppOpened && activate.Due(ActivateMilliseconds))
+        {
+            hunts.EnsureActive();
+        }
+
+        if (IsSetUp && refresh.Due(RefreshMilliseconds))
+        {
+            Snapshot();
+        }
     }
 
     private void Snapshot()

@@ -37,7 +37,11 @@ internal sealed class UpNextWidget : IHomeWidget
     public string AppId => "calendar";
     public WidgetSizeSet Sizes => WidgetSizeSet.Small | WidgetSizeSet.Medium | WidgetSizeSet.Large;
 
-    public float Relevance(string config) => feed.Relevance();
+    public float Relevance(string config)
+    {
+        feed.Update(AppAccents.For(AppId));
+        return feed.Relevance();
+    }
 
     public void Draw(in WidgetContext context)
     {

@@ -72,6 +72,16 @@ internal sealed class DailiesWidget : IHomeWidget
 
     public float Relevance(string config)
     {
+        if (!AdventureWidgetArt.IsLoggedIn)
+        {
+            return 0f;
+        }
+
+        if (refresh.Due(RefreshMilliseconds))
+        {
+            Refresh(DateTime.UtcNow);
+        }
+
         if (!hasData)
         {
             return 0f;

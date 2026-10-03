@@ -87,7 +87,7 @@ internal sealed class ChatsWidget : IHomeWidget
     public string AppId => MessageAppId;
     public WidgetSizeSet Sizes => WidgetSizeSet.Medium | WidgetSizeSet.Large;
 
-    public float Relevance(string config) => session.IsSignedIn && unreadTotal > 0 ? 0.75f : 0f;
+    public float Relevance(string config) => session.IsSignedIn && store.UnreadTotal > 0 ? 0.75f : 0f;
 
     public void Draw(in WidgetContext context)
     {

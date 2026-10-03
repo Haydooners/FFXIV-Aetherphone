@@ -53,6 +53,7 @@ internal sealed class HousingLotteryWidget : IHomeWidget
 
     public float Relevance(string config)
     {
+        Sync();
         if (!known)
         {
             return 0f;
@@ -75,13 +76,11 @@ internal sealed class HousingLotteryWidget : IHomeWidget
     {
         WidgetChrome.Container(context);
         var ink = WidgetInk.From(context);
-        if (!context.Preview && !started && (AdventureWidgetArt.IsLoggedIn || housing.HasWorldSelected))
+        if (!context.Preview)
         {
-            started = true;
-            housing.EnsureStarted();
+            Sync();
         }
-
-        if (refresh.Due(RefreshMilliseconds))
+        else if (refresh.Due(RefreshMilliseconds))
         {
             Refresh();
         }
@@ -221,6 +220,20 @@ internal sealed class HousingLotteryWidget : IHomeWidget
             : placeTexts[index].Store(key, HousingFormat.Place(HousingDistricts.ShortDisplayName(district), ward));
         WidgetText.Draw(drawList, new Vector2(textLeft, blockTop + headlineHeight + gap), place, ink.Secondary,
             WidgetType.Caption, MathF.Max(1f, row.Max.X - textLeft));
+    }
+
+    private void Sync()
+    {
+        if (!started && (AdventureWidgetArt.IsLoggedIn || housing.HasWorldSelected))
+        {
+            started = true;
+            housing.EnsureStarted();
+        }
+
+        if (refresh.Due(RefreshMilliseconds))
+        {
+            Refresh();
+        }
     }
 
     private void Refresh()

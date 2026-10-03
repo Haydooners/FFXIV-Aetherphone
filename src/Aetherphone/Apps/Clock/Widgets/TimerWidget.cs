@@ -57,7 +57,7 @@ internal sealed class TimerWidget : IHomeWidget
         var phase = Phase(DateTime.UtcNow, out var remaining);
         return phase switch
         {
-            TimerPhase.Done => 1f,
+            TimerPhase.Done when IsRinging || remaining > -SecondsPerMinute => 1f,
             TimerPhase.Running when remaining <= SecondsPerMinute => 0.95f,
             TimerPhase.Running when remaining <= 5 * SecondsPerMinute => 0.75f,
             TimerPhase.Running => 0.45f,
@@ -187,7 +187,7 @@ internal sealed class TimerWidget : IHomeWidget
         var fraction = phase switch
         {
             TimerPhase.Running => (float)(remaining / duration),
-            TimerPhase.Done => 1f,
+            TimerPhase.Done when IsRinging || remaining > -SecondsPerMinute => 1f,
             _ => 0f,
         };
         WidgetChrome.Ring(drawList, ink, center, ringRadius, thickness, fraction, accent);

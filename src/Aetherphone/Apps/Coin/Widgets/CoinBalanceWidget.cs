@@ -53,7 +53,8 @@ internal sealed class CoinBalanceWidget : IHomeWidget
     public string AppId => "coin";
     public WidgetSizeSet Sizes => WidgetSizeSet.Small | WidgetSizeSet.Medium;
 
-    public float Relevance(string config) => coins.Wallet is { CheckInAvailable: true, Paused: false } ? 0.9f : 0f;
+    public float Relevance(string config) =>
+        coins.Wallet is { CheckInAvailable: true, Paused: false, FrozenUntilUnix: null } ? 0.9f : 0f;
 
     public void Draw(in WidgetContext context)
     {

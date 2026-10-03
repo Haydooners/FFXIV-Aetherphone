@@ -61,6 +61,17 @@ internal sealed class CurrenciesWidget : IHomeWidget
 
     public float Relevance(string config)
     {
+        if (!AdventureWidgetArt.IsLoggedIn)
+        {
+            return 0f;
+        }
+
+        EnsureBuilt(true);
+        if (refresh.Due(RefreshMilliseconds) && gil is not null)
+        {
+            WalletReader.RefreshAmounts(gil, sections);
+        }
+
         var limited = tomestones[0];
         if (gil is null || limited is null || !limited.HasWeeklyCap || limited.WeeklyAmount >= limited.WeeklyCap)
         {
