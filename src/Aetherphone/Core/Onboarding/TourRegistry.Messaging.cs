@@ -36,11 +36,13 @@ internal static partial class TourRegistry
                 GuideStep.Point(L.Onboarding.ChocoChatAddContactTitle, L.Onboarding.ChocoChatAddContactBody,
                     "message.addcontact", GuideGesture.Tap),
             });
-        Add(tours, "notifications", 3,
+        Add(tours, "notifications", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.NotificationsAlertsTitle, L.Onboarding.NotificationsAlertsBody,
                     "notifications.list", GuideGesture.None),
+                GuideStep.Point(L.Onboarding.NotificationsFocusTitle, L.Onboarding.NotificationsFocusBody,
+                    "notifications.focus", GuideGesture.Tap),
                 GuideStep.Point(L.Onboarding.NotificationsAnywhereTitle, L.Onboarding.NotificationsAnywhereBody,
                     "chrome.controlcenter", GuideGesture.SwipeDown),
             });

@@ -49,6 +49,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
     private readonly LinkedDevicesPage linkedDevicesPage;
     private readonly TagsMentionsPage tagsMentionsPage;
     private readonly InstalledAppList installedApps;
+    private readonly AppSettingsPages appSettingsPages;
     private readonly ThemeProvider themes;
     private readonly WallpaperLibrary wallpapers;
     private readonly WallpaperImageCache wallpaperImages;
@@ -97,7 +98,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
                 configuration.Save();
             });
         installedApps = new InstalledAppList(services.Installer, apps);
-        var appSettingsPages = new AppSettingsPages(configuration, sound, services.Installer, confirm, this);
+        appSettingsPages = new AppSettingsPages(configuration, sound, services.Installer, confirm, this);
         notificationsPage = new NotificationsPage(configuration, this, installedApps, appSettingsPages);
         var appsPage = new AppsPage(installedApps, appSettingsPages, this, configuration);
         var ringtonePage = new SoundSettingsPage(sound, SoundKind.Ringtone, L.Settings.Ringtone, FontAwesomeIcon.Music,
@@ -273,6 +274,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         {
             router.Reset();
             router.Push(PageFor(requestedPage));
+            PushAppNotifications(settingsLauncher.TryConsumeAppId());
         }
 
         frameTheme = context.Theme;
@@ -303,6 +305,26 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         SettingsPageKind.Calls => callsPage,
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
+
+    private void PushAppNotifications(string? appId)
+    {
+        if (appId is null)
+        {
+            return;
+        }
+
+        var entries = installedApps.Entries;
+        for (var index = 0; index < entries.Length; index++)
+        {
+            if (!string.Equals(entries[index].AppId, appId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            router.Push(appSettingsPages.For(entries[index]));
+            return;
+        }
+    }
 
     private void PopBack()
     {
