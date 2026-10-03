@@ -105,8 +105,8 @@ internal sealed partial class NotificationsApp : IPhoneApp
                 var listTop = ImGui.GetCursorScreenPos();
                 DrawSections(deck, width, scale);
                 UiAnchors.Report("notifications.list",
-                    new Rect(listTop, new Vector2(listTop.X + width, MathF.Min(bounds.Max.Y,
-                        ImGui.GetCursorScreenPos().Y))));
+                    new Rect(listTop, new Vector2(listTop.X + width, MathF.Max(listTop.Y, MathF.Min(bounds.Max.Y,
+                        ImGui.GetCursorScreenPos().Y)))));
                 DrawSettingsLink(width, scale);
             }
 

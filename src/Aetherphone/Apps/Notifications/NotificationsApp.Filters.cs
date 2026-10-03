@@ -56,7 +56,7 @@ internal sealed partial class NotificationsApp
 
     private void DrawFilters(float scale)
     {
-        if (appCounts.Count < 2 && appFilter is null)
+        if (appCounts.Count == 0 && appFilter is null)
         {
             return;
         }
