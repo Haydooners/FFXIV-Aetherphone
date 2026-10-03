@@ -175,7 +175,7 @@ Who sees it after that:
 
 - **Fresh installs** get every available app installed and placed automatically (`HomeLayoutService.SeedInstalled` in src/Aetherphone/Core/Home/HomeLayoutService.cs).
 - **Existing users** keep their saved layout. Your new app is not force-installed; it shows up in the App Store app (its Today tab lists apps that are not installed yet) and lands on the home screen when the user installs it.
-- Optionally add a `StoreEntry` for your id in src/Aetherphone/Apps/AppStore/AppStoreCatalog.cs so the store shows a real subtitle, description, and category instead of the generic fallback.
+- Add a `StoreEntry` for your id in src/Aetherphone/Core/Apps/AppStoreCatalog.cs with its name, subtitle, description, and category; `AppStoreCatalogTests` fails until every registered app has one, and each category must keep between three and eight apps.
 
 ## Step 5: accent color and icon
 

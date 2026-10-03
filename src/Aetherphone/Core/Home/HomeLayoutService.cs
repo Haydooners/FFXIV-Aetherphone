@@ -32,7 +32,7 @@ internal sealed class HomeLayoutService
 
     private static readonly string[] MandatoryApps =
     {
-        "appstore", "settings", "announcements", "messages", "camera", "photos",
+        "appstore", "settings", "announcements", "messages", "camera", "photos", "notifications",
     };
 
     private readonly IReadOnlyList<IPhoneApp> apps;

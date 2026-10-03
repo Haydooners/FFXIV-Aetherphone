@@ -43,6 +43,7 @@ using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Inventory;
 using Aetherphone.Core.Photos;
+using Aetherphone.Core.Shell.Home;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Video;
 using Aetherphone.Windows;
@@ -139,7 +140,8 @@ internal static class AppRegistry
             services.CasinoHistory, services.CasinoRooms, services.CasinoTables, services.CasinoSpin,
             services.CasinoTurns, services.CasinoLauncher, services.GameStats, services.Confirm,
             services.Conduct, services.RemoteImages, services.Lodestone));
-        apps.Add(new AppStoreApp(services.Installer, apps));
+        var appStore = new AppStoreApp(services.Installer, services.Confirm, apps);
+        apps.Add(appStore);
         apps.Add(new HousingApp(services.Housing, services.Configuration, services.Confirm));
         apps.Add(new HuntsApp(services.Hunts, services.HuntMobCatalog, services.HuntZoneCatalog,
             services.ZoneMapTextures, services.HuntMobRewardCatalog, services.HuntCandidateCache,
@@ -153,11 +155,14 @@ internal static class AppRegistry
             Video = videoSuite,
             Apps = apps,
         };
+        var widgets = WidgetCatalog.Build(widgetServices, calendarEvents, messageStore);
+        var widgetActions = new WidgetActions(widgetServices);
+        appStore.AttachWidgets(widgets, new WidgetHost(widgetActions, services.Configuration));
         return new AppBundle
         {
             Apps = apps,
-            Widgets = WidgetCatalog.Build(widgetServices, calendarEvents, messageStore),
-            WidgetActions = new WidgetActions(widgetServices),
+            Widgets = widgets,
+            WidgetActions = widgetActions,
             Photos = photoLibrary,
             Contacts = contactBook,
             MessagePopouts = messagePopouts,
