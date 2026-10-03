@@ -1748,6 +1748,11 @@ internal static class L
         public static readonly LocString PhoneSize = new("settings.phoneSize", "Phone Size");
         public static readonly LocString ClockFormat = new("settings.clockFormat", "Clock");
         public static readonly LocString Use24HourClock = new("settings.use24HourClock", "24-hour time");
+        public static readonly LocString LiveGlass = new("settings.liveGlass", "Live glass (experimental)");
+        public static readonly LocString LiveGlassHint = new("settings.liveGlassHint", "Glass inside apps blurs what is really behind the phone instead of the app colour. Uses a little GPU time every frame; turn it off if the game stutters.");
+        public static readonly LocString LiveGlassSourceWorld = new("settings.liveGlassSourceWorld", "Game world");
+        public static readonly LocString LiveGlassSourceComposite = new("settings.liveGlassSourceComposite", "Whole screen");
+        public static readonly LocString LiveGlassReadout = new("settings.liveGlassReadout", "Live glass pass");
         public static readonly LocString Notifications = new("settings.notifications", "Notifications and Badges");
         public static readonly LocString DoNotDisturb = new("settings.doNotDisturb", "Do Not Disturb");
         public static readonly LocString Vibration = new("settings.vibration", "Vibration");

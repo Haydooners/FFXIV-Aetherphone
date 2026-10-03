@@ -133,6 +133,7 @@ internal sealed class PhoneWindow : Window
     public override void OnClose()
     {
         PersistPositions();
+        Plugin.LiveBackdrop.Release();
         shell.OnClosed();
     }
 
@@ -140,6 +141,7 @@ internal sealed class PhoneWindow : Window
     {
         FrameClock.Advance(ImGui.GetFrameCount(), ImGui.GetIO().DeltaTime);
         shell.PrepareFrame(FrameClock.Delta);
+        Plugin.LiveBackdrop.Prepare();
         var portraitWidth = Components.PhoneBounds.ClampWidth(configuration.PhoneWidth);
         var landscapeWidth = Components.PhoneBounds.LandscapeWidth(configuration);
         var turn = shell.Turn;
