@@ -1,5 +1,6 @@
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 
@@ -36,7 +37,7 @@ internal sealed class OnboardingDirector
         this.navigation = navigation;
     }
 
-    public bool CapturesPointer => active.HasValue && !suppressed;
+    public bool CapturesPointer => active is { } sequence && !suppressed && !sequence.Steps[stepIndex].IsAction;
     public bool WantsAnchors => active.HasValue && !suppressed;
     public bool WantsControlCenter => active is { } sequence && sequence.Steps[stepIndex].OverControlCenter;
 
@@ -96,16 +97,18 @@ internal sealed class OnboardingDirector
         suspended = active;
         suspendedIndex = stepIndex;
         active = null;
+        TourCue.MiniPhone = false;
         presence.SnapTo(0f);
     }
 
-    public void Advance(float delta, bool busy, bool atHome, string? currentAppId)
+    public void Advance(float delta, bool busy, bool atHome, string? currentAppId, bool restoredFromMinimize)
     {
         frameDelta = MathF.Min(delta, TransitionTiming.MaxFrameSeconds);
         if (!OnboardingState.Enabled)
         {
             active = null;
             suspended = null;
+            TourCue.MiniPhone = false;
             pendingWelcome = false;
             pendingResume = false;
             pendingAppId = null;
@@ -135,6 +138,14 @@ internal sealed class OnboardingDirector
                 return;
             }
 
+            if (!busy && !exiting && Satisfied(current.Steps[stepIndex], atHome, currentAppId, restoredFromMinimize))
+            {
+                UiFeedback.Play(UiSound.Success);
+                StepForward(current);
+            }
+
+            TourCue.MiniPhone = !exiting && active is { } running &&
+                                running.Steps[stepIndex].Condition == GuideCondition.MinimizeRoundTrip;
             if (!busy)
             {
                 presence.Step(exiting ? 0f : 1f, PresenceSmoothTime, frameDelta);
@@ -220,17 +231,7 @@ internal sealed class OnboardingDirector
         {
             case CoachmarkAction.Advance:
                 step.OnAdvance?.Invoke(navigation);
-                stepIndex++;
-                if (stepIndex >= sequence.Steps.Length)
-                {
-                    stepIndex = sequence.Steps.Length - 1;
-                    BeginExit(true);
-                }
-                else
-                {
-                    ResetForStep();
-                }
-
+                StepForward(sequence);
                 break;
             case CoachmarkAction.Skip:
                 if (step.OverControlCenter)
@@ -243,6 +244,28 @@ internal sealed class OnboardingDirector
         }
     }
 
+    private void StepForward(in GuideSequence sequence)
+    {
+        stepIndex++;
+        if (stepIndex >= sequence.Steps.Length)
+        {
+            stepIndex = sequence.Steps.Length - 1;
+            BeginExit(true);
+            return;
+        }
+
+        ResetForStep();
+    }
+
+    private static bool Satisfied(in GuideStep step, bool atHome, string? currentAppId, bool restoredFromMinimize) =>
+        step.Condition switch
+        {
+            GuideCondition.AppOpened => !atHome && currentAppId is not null,
+            GuideCondition.AtHome => atHome,
+            GuideCondition.MinimizeRoundTrip => restoredFromMinimize,
+            _ => false,
+        };
+
     private void Start(GuideSequence sequence)
     {
         active = sequence;
@@ -253,6 +276,7 @@ internal sealed class OnboardingDirector
     private void BeginExit(bool completesCoveredTours)
     {
         exiting = true;
+        TourCue.MiniPhone = false;
         exitCompletes = completesCoveredTours;
         textClock = TextSeconds;
     }

@@ -1,3 +1,4 @@
+using Aetherphone.Core.Onboarding;
 using System.Globalization;
 using Aetherphone.Core;
 using Aetherphone.Core.Animation;
@@ -206,7 +207,13 @@ internal sealed class MinimizedPhone : IDisposable
             DeviceChrome.DrawShell(dl, geometry, scale, theme, 1f);
         }
 
-        return DrawFace(dl, geometry, theme, delta, true, 1f, glassBody);
+        var clicked = DrawFace(dl, geometry, theme, delta, true, 1f, glassBody);
+        if (TourCue.MiniPhone)
+        {
+            CoachmarkOverlay.DrawMiniCue(dl, body, geometry.BodyRadius, scale);
+        }
+
+        return clicked;
     }
 
     public bool DrawFace(ImDrawListPtr dl, in ChassisGeometry geometry, PhoneTheme theme, float delta,

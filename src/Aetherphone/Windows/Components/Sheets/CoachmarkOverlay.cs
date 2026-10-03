@@ -102,6 +102,7 @@ internal sealed partial class CoachmarkOverlay
         var contentRise = (1f - contentProgress) * 8f * scale;
         var live = interactive && presence > 0.55f && textProgress > 0.45f;
         var fullCard = step.Surface == GuideSurface.FullCard;
+        passthrough = false;
         if (fullCard != lastFullCard)
         {
             lastFullCard = fullCard;

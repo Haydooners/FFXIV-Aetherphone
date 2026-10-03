@@ -43,6 +43,7 @@ internal sealed class PhoneShell : IDisposable
     private readonly CoinEarnPill coinPill;
     private readonly CoinEarnFloats coinFloats;
     private readonly MinimizedPhone minimizedPhone;
+    private bool minimizedSinceDraw;
     private readonly MinimizeTransition minimize = new();
     private readonly OrientationTurn turn = new();
     private readonly SideButton sideButton = new();
@@ -278,6 +279,7 @@ internal sealed class PhoneShell : IDisposable
                 loading.Cancel();
             }
 
+            minimizedSinceDraw = true;
             var backdrop = WallpaperBackdrop.Snapshot();
             morph.Draw(device, delta);
             HoverTooltip.Flush();
@@ -368,7 +370,8 @@ internal sealed class PhoneShell : IDisposable
 
         SyncCallNavigation();
         var state = overlays.Assess(screen);
-        director.Advance(delta, state.Busy, navigation.AtHome, navigation.Current?.Id);
+        director.Advance(delta, state.Busy, navigation.AtHome, navigation.Current?.Id, minimizedSinceDraw);
+        minimizedSinceDraw = false;
         UiAnchors.BeginFrame(director.WantsAnchors);
         UiAnchors.Report("chrome.action", actionButtonRect);
         UiAnchors.Report("chrome.minimize", sideButtonRect);

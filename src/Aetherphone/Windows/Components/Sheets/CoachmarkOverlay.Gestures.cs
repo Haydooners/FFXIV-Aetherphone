@@ -1,3 +1,4 @@
+using Aetherphone.Core;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Onboarding;
 using Dalamud.Bindings.ImGui;
@@ -35,9 +36,19 @@ internal sealed partial class CoachmarkOverlay
                 DrawHold(drawList, center, time % HoldPeriodSeconds, alpha, scale);
                 break;
             case GuideGesture.SwipeDown:
-                DrawSwipe(drawList, center, time % SwipePeriodSeconds, alpha, scale);
+                DrawSwipe(drawList, center, time % SwipePeriodSeconds, alpha, scale, 1f);
+                break;
+            case GuideGesture.SwipeUp:
+                DrawSwipe(drawList, center, time % SwipePeriodSeconds, alpha, scale, -1f);
                 break;
         }
+    }
+
+    public static void DrawMiniCue(ImDrawListPtr drawList, Rect body, float radius, float scale)
+    {
+        Ring(drawList, body.Inset(-4f * scale), radius + 4f * scale, 1f, scale);
+        var seconds = (float)(Environment.TickCount64 % 1_000_000L / 1000.0);
+        DrawTap(drawList, body.Center, seconds % TapPeriodSeconds, 1f, scale);
     }
 
     private static float Bump(float seconds, float start, float end, float smoothTime) =>
@@ -77,10 +88,11 @@ internal sealed partial class CoachmarkOverlay
         Finger(drawList, center, radius, shown, scale);
     }
 
-    private static void DrawSwipe(ImDrawListPtr drawList, Vector2 center, float seconds, float alpha, float scale)
+    private static void DrawSwipe(ImDrawListPtr drawList, Vector2 center, float seconds, float alpha, float scale,
+        float direction)
     {
         var shown = Presence(seconds, 1.35f) * alpha;
-        var travel = SwipeTravelUnits * scale;
+        var travel = SwipeTravelUnits * scale * direction;
         var start = center - new Vector2(0f, travel * 0.5f);
         var progress = Spring.Settle(seconds - 0.35f, 0.16f);
         var position = start + new Vector2(0f, travel * progress);
