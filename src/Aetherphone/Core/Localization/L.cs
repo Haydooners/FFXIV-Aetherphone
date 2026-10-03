@@ -1830,6 +1830,18 @@ internal static class L
         public static readonly LocString SupportAetherphone = new("settings.supportAetherphone", "Support Aetherphone");
         public static readonly LocString SupportHint = new("settings.supportHint", "Aetherphone is developed in spare time. Pledges on Patreon and contributions through Buy Me a Coffee support its development.");
         public static readonly LocString SupportOnPatreon = new("settings.supportOnPatreon", "Support on Patreon");
+        public static readonly LocString SupportBecomeMember = new("settings.supportBecomeMember", "Become a member");
+        public static readonly LocString SupportPerksTitle = new("settings.supportPerksTitle", "What members get");
+        public static readonly LocString SupportPerkBadge = new("settings.supportPerkBadge", "The Patreon member badge beside your name everywhere you post");
+        public static readonly LocString SupportPerkName = new("settings.supportPerkName", "A coloured name with its own animated effect across the social apps");
+        public static readonly LocString SupportPerkAuto = new("settings.supportPerkAuto", "Perks arrive on their own once you link Patreon under Account");
+        public static readonly LocString SupportPerkThanks = new("settings.supportPerkThanks", "You keep Aetherphone and its social network online");
+        public static readonly LocString SupportMembershipTitle = new("settings.supportMembershipTitle", "Your membership");
+        public static readonly LocString SupportMemberActive = new("settings.supportMemberActive", "Active member, thank you");
+        public static readonly LocString SupportMemberInactive = new("settings.supportMemberInactive", "Not a member yet");
+        public static readonly LocString SupportTiersTitle = new("settings.supportTiersTitle", "Membership tiers");
+        public static readonly LocString SupportPerMonth = new("settings.supportPerMonth", "{0} per month");
+        public static readonly LocString SupportMostPopular = new("settings.supportMostPopular", "Most popular");
         public static readonly LocString BuyMeACoffee = new("settings.buyMeACoffee", "Buy me a coffee");        public static readonly LocString JoinDiscord = new("settings.joinDiscord", "Join our Discord");
         public static readonly LocString VisitWebsite = new("settings.visitWebsite", "Visit our website");
         public static readonly LocString Changelog = new("settings.changelog", "Changelog");

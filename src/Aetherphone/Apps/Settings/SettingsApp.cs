@@ -145,7 +145,8 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         var profileCard = new ProfileCard(aethernetSession, gameData, services.CharacterWatch, remoteImages,
             lodestone);
         router = new ViewRouter<ISettingsPage>(
-            new RootSettingsPage(this, groups, configuration, accountPage, new SupportPage(), profileCard));
+            new RootSettingsPage(this, groups, configuration, accountPage,
+                new SupportPage(this, accountPage, aethernetSession), profileCard));
         drawPage = DrawPage;
         popBack = PopBack;
         assignWallpaper = AssignWallpaper;
