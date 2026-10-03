@@ -34,6 +34,8 @@ internal sealed class TileRail
 
     public bool TapAllowed => axis != Axis.Horizontal && !scroller.IsControlling;
 
+    public bool Swiping => pressed && axis == Axis.Horizontal;
+
     public void Reset()
     {
         scroller.Reset();

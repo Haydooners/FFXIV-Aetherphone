@@ -66,7 +66,7 @@ internal sealed partial class GamesApp
     private void DrawHome(in PhoneContext context)
     {
         var navBar = AppHeader.BeginLargeTitle(context, false);
-        using (AppSurface.Begin(navBar.Body))
+        using (var surface = AppSurface.Begin(navBar.Body))
         {
             var scale = UiScale.Current;
             entrance = GameJuice.Advance(entrance, frameSeconds, EntranceSpeed);
@@ -114,10 +114,32 @@ internal sealed partial class GamesApp
             }
 
             FinishPage(origin, width, y, scale);
+            if (AnyRailSwiping())
+            {
+                surface.CancelDrag();
+            }
         }
 
         AppHeader.EndLargeTitle(in navBar, context, HomeNavId, DisplayName, NavBarStyle.From(ui),
             ReadOnlySpan<NavBarButton>.Empty);
+    }
+
+    private bool AnyRailSwiping()
+    {
+        if (latestRail.Swiping || recentRail.Swiping)
+        {
+            return true;
+        }
+
+        for (var index = 0; index < genreRails.Length; index++)
+        {
+            if (genreRails[index].Swiping)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private float DrawShelfSection(string title, GamesShelf shelf, string seeAllId, ReadOnlySpan<int> entries,
