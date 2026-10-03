@@ -88,19 +88,19 @@ internal sealed partial class NotesApp
 
     private void RefreshLibrary(List<PhoneNote> notes)
     {
-        var query = searchQuery.Trim();
+        var query = searchQuery.AsSpan().Trim();
         var fingerprint = NoteLibrary.Fingerprint(notes);
         var today = DateTime.Today;
-        if (fingerprint == builtFingerprint && today == builtDay && string.Equals(query, builtQuery,
-                StringComparison.Ordinal))
+        if (fingerprint == builtFingerprint && today == builtDay &&
+            query.Equals(builtQuery, StringComparison.Ordinal))
         {
             return;
         }
 
         builtFingerprint = fingerprint;
         builtDay = today;
-        builtQuery = query;
-        library.Build(notes, today, query);
+        builtQuery = query.ToString();
+        library.Build(notes, today, builtQuery);
     }
 
     private void DrawNotesEmpty(Rect body, float scale)

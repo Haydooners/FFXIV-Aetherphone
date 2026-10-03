@@ -120,7 +120,7 @@ internal sealed partial class NotesApp
             ImGui.Dummy(new Vector2(0f, BottomBreathing * scale));
         }
 
-        var canSave = reminderTitle.Trim().Length > 0;
+        var canSave = !string.IsNullOrWhiteSpace(reminderTitle);
         reminderButtons[0] = new NavBarButton(IconGlyph.Of(FontAwesomeIcon.Check), Loc.T(L.Notes.Done));
         var title = isExisting ? Loc.T(L.Notes.Details) : Loc.T(L.Notes.NewReminder);
         var pressed = AppHeader.EndLargeTitle(in navBar, context, "notes.reminder.nav", title, NavBarStyle.From(ui),
