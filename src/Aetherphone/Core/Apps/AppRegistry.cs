@@ -60,7 +60,7 @@ internal static class AppRegistry
         var apps = new List<IPhoneApp>
         {
             new LinkpearlApp(services.ChatInbox, services.ChatTabs, services.ChatArchive, services.LinkpearlNotificationGate, services.LinkpearlLauncher, services.Lodestone, services.MarketLauncher, services.Notifications, services.GameData, services.Lookup, services.Confirm, services.ChatLog, services.ChatSend, services.Configuration, linkpearlPopouts, services.WallpaperImages, photoLibrary),
-            new ActivityApp(services.GameData, services.Activity, services.Configuration),
+            new ActivityApp(services.Activity, services.Configuration),
             new HealthApp(services.Health, services.GameData, services.Confirm),
         };
 
