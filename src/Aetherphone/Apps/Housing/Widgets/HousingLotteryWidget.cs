@@ -243,29 +243,27 @@ internal sealed class HousingLotteryWidget : IHomeWidget
         phase = HousingLotteryPhase.Unknown;
         phaseEndsUtc = null;
         openPlots = -1;
-        var snapshot = housing.Snapshot;
-        if (snapshot is not null)
+        var world = housing.WorldId;
+        var lottery = HousingLotteryState.Unknown;
+        var districts = HousingDistricts.All;
+        for (var index = 0; index < districts.Count; index++)
         {
-            openPlots = snapshot.OpenPlotCount;
-            worldName = snapshot.WorldName.Length > 0 ? snapshot.WorldName : housing.WorldName;
-            districtId = snapshot.DistrictId;
-            var plots = snapshot.Plots;
-            for (var index = 0; index < plots.Count; index++)
+            if (housing.Lookup(world, districts[index].Id) is not { } snapshot)
             {
-                var plot = plots[index];
-                if (plot.PhaseEndsUtc is not { } ends || plot.Phase == HousingLotteryPhase.Unknown)
-                {
-                    continue;
-                }
-
-                if (phaseEndsUtc is null || ends < phaseEndsUtc)
-                {
-                    phaseEndsUtc = ends;
-                    phase = plot.Phase;
-                }
+                continue;
             }
 
+            openPlots = Math.Max(openPlots, 0) + snapshot.OpenPlotCount;
+            lottery = HousingLottery.Prefer(lottery, HousingLottery.Resolve(snapshot.Plots));
             known = true;
+        }
+
+        if (known)
+        {
+            worldName = housing.WorldName;
+            districtId = 0;
+            phase = lottery.Phase;
+            phaseEndsUtc = lottery.EndsUtc;
         }
 
         if (phaseEndsUtc is null)

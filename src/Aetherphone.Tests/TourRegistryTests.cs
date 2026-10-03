@@ -31,7 +31,7 @@ public sealed class TourRegistryTests
         { "yellowpages", (2, 6) },
         { "jobs", (2, 3) },
         { "announcements", (2, 2) },
-        { "housing", (2, 4) },
+        { "housing", (3, 6) },
         { "feedback", (4, 4) },
         { "appstore", (2, 5) },
         { "health", (2, 5) },

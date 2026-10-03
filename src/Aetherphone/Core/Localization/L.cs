@@ -1216,16 +1216,12 @@ internal static class L
     internal static class Housing
     {
         public static readonly LocString Map = new("housing.map", "Map");
-        public static readonly LocString List = new("housing.list", "List");
         public static readonly LocString Watchlist = new("housing.watchlist", "Watchlist");
         public static readonly LocString Settings = new("housing.settings", "Housing Settings");
-        public static readonly LocString Details = new("housing.details", "Plot Details");
         public static readonly LocString ChooseWorld = new("housing.chooseWorld", "Choose World");
         public static readonly LocString ChooseWard = new("housing.chooseWard", "Choose Another Ward");
         public static readonly LocString ViewAsList = new("housing.viewAsList", "View as List");
-        public static readonly LocString BackToMap = new("housing.backToMap", "Back to Map");
         public static readonly LocString WorldLabel = new("housing.worldLabel", "World");
-        public static readonly LocString DistrictLabel = new("housing.districtLabel", "District");
         public static readonly LocString DistrictMist = new("housing.districtMist", "Mist");
         public static readonly LocString DistrictMistShort = new("housing.districtMistShort", "Mist");
         public static readonly LocString DistrictLavenderBeds =
@@ -1281,10 +1277,8 @@ internal static class L
         public static readonly LocString RegionLabel = new("housing.regionLabel", "Region");
         public static readonly LocString DataCenterLabel = new("housing.dataCenterLabel", "Data centre");
         public static readonly LocString FirstReported = new("housing.firstReported", "First reported");
-        public static readonly LocString PhaseEndsLabel = new("housing.phaseEndsLabel", "Phase ends");
         public static readonly LocString ScannedLabel = new("housing.scannedLabel", "Last scanned");
         public static readonly LocString ProviderLabel = new("housing.providerLabel", "Data provider");
-        public static readonly LocString ExactTime = new("housing.exactTime", "Exact time");
         public static readonly LocString StatusLabel = new("housing.statusLabel", "Status");
 
         public static readonly LocString CountdownDays = new("housing.countdownDays", "{0}d {1:00}h {2:00}m");
@@ -1293,7 +1287,6 @@ internal static class L
         public static readonly LocString CountdownUnderMinute =
             new("housing.countdownUnderMinute", "Under 1 minute");
         public static readonly LocString CountdownEnded = new("housing.countdownEnded", "Ended");
-        public static readonly LocString Remaining = new("housing.remaining", "{0} remaining");
         public static readonly LocString ScannedJustNow = new("housing.scannedJustNow", "Scanned just now");
         public static readonly LocString ScannedMinutes = new("housing.scannedMinutes", "Scanned {0} minutes ago");
         public static readonly LocString ScannedHours = new("housing.scannedHours", "Scanned {0} hours ago");
@@ -1322,11 +1315,8 @@ internal static class L
         public static readonly LocString Unwatch = new("housing.unwatch", "Unwatch");
         public static readonly LocString RemindMe = new("housing.remindMe", "Remind Me");
         public static readonly LocString ReminderSet = new("housing.reminderSet", "Reminder Set");
-        public static readonly LocString ChangeReminder = new("housing.changeReminder", "Change");
         public static readonly LocString CancelReminder = new("housing.cancelReminder", "Cancel reminder");
         public static readonly LocString DetailsAction = new("housing.detailsAction", "Details");
-        public static readonly LocString ReminderPrompt =
-            new("housing.reminderPrompt", "Notify me before this phase ends:");
         public static readonly LocPlural LeadMinutes = new("housing.leadMinutes", "{0} minute", "{0} minutes");
         public static readonly LocPlural LeadHours = new("housing.leadHours", "{0} hour", "{0} hours");
         public static readonly LocString ReminderConfirmed = new("housing.reminderConfirmed",
@@ -1377,7 +1367,6 @@ internal static class L
 
         public static readonly LocString LoadingFirst =
             new("housing.loadingFirst", "Checking residential listings…");
-        public static readonly LocString LoadingRefresh = new("housing.loadingRefresh", "Updating housing plots…");
         public static readonly LocString NoFilterMatches =
             new("housing.noFilterMatches", "No plots match the current filters.");
         public static readonly LocString NoOpenings =
@@ -1401,16 +1390,12 @@ internal static class L
         public static readonly LocString ClearWatchlist = new("housing.clearWatchlist", "Clear watchlist");
         public static readonly LocString ClearWatchlistConfirm = new("housing.clearWatchlistConfirm",
             "Remove all {0} watched plots? Their reminders are cancelled too.");
-        public static readonly LocString MapHint = new("housing.mapHint",
-            "Available plots appear as markers. Select a marker to view its lottery details.");
-        public static readonly LocString GotIt = new("housing.gotIt", "Got it");
 
         public static readonly LocString LegendSmall = new("housing.legendSmall", "Circle: small");
         public static readonly LocString LegendMedium = new("housing.legendMedium", "Diamond: medium");
         public static readonly LocString LegendLarge = new("housing.legendLarge", "Hexagon: large");
         public static readonly LocString LegendWatched = new("housing.legendWatched", "Notch: watched");
         public static readonly LocString LegendStale = new("housing.legendStale", "Dashed ring: stale scan");
-        public static readonly LocString LegendSelected = new("housing.legendSelected", "Outer ring: selected");
 
         public static readonly LocString SettingsData = new("housing.settingsData", "Data");
         public static readonly LocString SettingsWorld = new("housing.settingsWorld", "World");
@@ -1419,7 +1404,6 @@ internal static class L
         public static readonly LocString SettingsDiagnostics = new("housing.settingsDiagnostics", "Diagnostics");
         public static readonly LocString AutoRefresh = new("housing.autoRefresh", "Refresh automatically");
         public static readonly LocString RefreshInterval = new("housing.refreshInterval", "Refresh every");
-        public static readonly LocString RefreshMinutes = new("housing.refreshMinutes", "{0} min");
         public static readonly LocString FollowCurrentWorld =
             new("housing.followCurrentWorld", "Follow the world I am visiting");
         public static readonly LocString FollowCurrentWorldHint = new("housing.followCurrentWorldHint",
@@ -1451,8 +1435,6 @@ internal static class L
         public static readonly LocString OpenPlotsReported = new("housing.openPlotsReported", "Reported openings");
         public static readonly LocString ApiEndpointLabel = new("housing.apiEndpointLabel", "Endpoint");
         public static readonly LocString ProxyCacheAge = new("housing.proxyCacheAge", "Service cache age");
-        public static readonly LocString ServiceUnavailable = new("housing.serviceUnavailable",
-            "The Aetherphone housing service could not be reached.");
         public static readonly LocString DataSourceNotice = new("housing.dataSourceNotice",
             "Housing reads Aetherphone's housing service, which polls and caches the public PaissaDB API once for all users rather than each client polling it. The PaissaHouse plugin is not required.");
         public static readonly LocString RefreshIntervalHint = new("housing.refreshIntervalHint",
@@ -1466,6 +1448,42 @@ internal static class L
         public static readonly LocString NotifyResultsTitle = new("housing.notifyResultsTitle", "Housing Results");
         public static readonly LocString NotifyResultsBody = new("housing.notifyResultsBody",
             "The results period ends in {0}. Check the estate placard before the claim or refund window closes.");
+
+        public static readonly LocString TabOverview = new("housing.tabOverview", "Overview");
+        public static readonly LocString TabPlots = new("housing.tabPlots", "Plots");
+        public static readonly LocString LotteryTitle = new("housing.lotteryTitle", "Lottery");
+        public static readonly LocString LotteryUnknownHint = new("housing.lotteryUnknownHint",
+            "No lottery deadline has been reported on this world yet.");
+        public static readonly LocString EndsAt = new("housing.endsAt", "Ends {0}");
+        public static readonly LocPlural OpenPlots = new("housing.openPlots", "{0} open plot", "{0} open plots");
+        public static readonly LocString DistrictsTitle = new("housing.districtsTitle", "Districts");
+        public static readonly LocString OpenCaption = new("housing.openCaption", "open");
+        public static readonly LocString DistrictNoOpenings =
+            new("housing.districtNoOpenings", "No reported openings");
+        public static readonly LocString DistrictNotLoaded = new("housing.districtNotLoaded", "Not loaded yet");
+        public static readonly LocString FewestEntries = new("housing.fewestEntries", "Fewest entries {0}");
+        public static readonly LocString SeeAll = new("housing.seeAll", "See All");
+        public static readonly LocString PlotAndWard = new("housing.plotAndWard", "Plot {0}, Ward {1}");
+        public static readonly LocString WardOpenLine = new("housing.wardOpenLine", "Ward {0} · {1} open");
+        public static readonly LocString LegendResults = new("housing.legendResults", "Orange: results period");
+        public static readonly LocString LocationTitle = new("housing.locationTitle", "Location");
+        public static readonly LocString Done = new("housing.done", "Done");
+        public static readonly LocString ReminderSubtitle =
+            new("housing.reminderSubtitle", "{0} · {1} ends in {2}. Choose how early to be notified.");
+        public static readonly LocString SetReminder = new("housing.setReminder", "Set Reminder");
+        public static readonly LocString ReminderRemoved = new("housing.reminderRemoved", "Reminder removed.");
+        public static readonly LocPlural UnitHours = new("housing.unitHours", "hour", "hours");
+        public static readonly LocPlural UnitMinutes = new("housing.unitMinutes", "minute", "minutes");
+        public static readonly LocString AllDistricts = new("housing.allDistricts", "All Districts");
+        public static readonly LocString EntriesCaption = new("housing.entriesCaption", "entries");
+        public static readonly LocPlural EntriesCount = new("housing.entriesCount", "{0} entry", "{0} entries");
+        public static readonly LocString EntriesUnknown = new("housing.entriesUnknown", "Entries not scanned");
+        public static readonly LocString ReminderLeadShort = new("housing.reminderLeadShort", "{0} before");
+        public static readonly LocString PlotGoneTitle =
+            new("housing.plotGoneTitle", "This plot is no longer reported");
+        public static readonly LocString SectionPlot = new("housing.sectionPlot", "Plot");
+        public static readonly LocString SizeLabel = new("housing.sizeLabel", "Size");
+        public static readonly LocString OddsLabel = new("housing.oddsLabel", "Odds");
     }
 
     public static class Hunts
@@ -8833,8 +8851,12 @@ internal static class L
         public static readonly LocString DailiesWeeklyBody = new("onboarding.dailiesWeeklyBody", "Tap Weekly for everything that resets once a week.");
         public static readonly LocString DailiesAddTitle = new("onboarding.dailiesAddTitle", "Your own tasks");
         public static readonly LocString DailiesAddBody = new("onboarding.dailiesAddBody", "Tap + to add anything you do every day or week. Ticks are kept separately for each character.");
-        public static readonly LocString HousingWhereTitle = new("onboarding.housingWhereTitle", "Choose where");
-        public static readonly LocString HousingWhereBody = new("onboarding.housingWhereBody", "Pick the world, district and ward whose plots you want to see.");
+        public static readonly LocString HousingLotteryTitle = new("onboarding.housingLotteryTitle", "The lottery at a glance");
+        public static readonly LocString HousingLotteryBody = new("onboarding.housingLotteryBody", "The phase your world is in right now and how long it has left.");
+        public static readonly LocString HousingDistrictsTitle = new("onboarding.housingDistrictsTitle", "Every district");
+        public static readonly LocString HousingDistrictsBody = new("onboarding.housingDistrictsBody", "Open plots in each district, by size. Tap a district to see it on the map.");
+        public static readonly LocString HousingMapTitle = new("onboarding.housingMapTitle", "Open the map");
+        public static readonly LocString HousingMapBody = new("onboarding.housingMapBody", "Tap Map to browse the open plots ward by ward.");
         public static readonly LocString HousingNarrowTitle = new("onboarding.housingNarrowTitle", "Narrow it down");
         public static readonly LocString HousingNarrowBody = new("onboarding.housingNarrowBody", "Filters show only the plot sizes, lottery phases and buyers you care about.");
         public static readonly LocString HousingPlotTitle = new("onboarding.housingPlotTitle", "Open a plot");
