@@ -2234,6 +2234,8 @@ internal static class L
                 "Added Zones: keep any zone on a live sky card, search to add more, and tap one for its full forecast"),
             new("changelog.r1042.76",
                 "The weather widgets on the home screen now show the same living skies"),
+            new("changelog.r1042.84",
+                "Added the extra weathers a zone can show beyond its forecast to Control, like snow in Limsa Lominsa, each marked with a star"),
         };
 
         public static readonly LocString[] Release1042MogCast =
@@ -6989,6 +6991,7 @@ internal static class L
         public static readonly LocString Sun = new("skywatcher.sun", "Sun");
         public static readonly LocString ThisWindow = new("skywatcher.thisWindow", "This Window");
         public static readonly LocString Then = new("skywatcher.then", "Then {0}");
+        public static readonly LocString ExtraWeather = new("skywatcher.extraWeather", "Not in this zone's forecast");
     }
 
     internal static class News

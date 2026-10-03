@@ -12,6 +12,10 @@ namespace Aetherphone.Apps.Skywatcher;
 internal sealed partial class SkywatcherApp
 {
     private const int WeatherColumns = 3;
+    private const float LegendUnits = 30f;
+    private const float ExtraBadgeUnits = 15f;
+    private static readonly Vector4 ExtraBadgeFill = new(0f, 0f, 0f, 0.45f);
+    private static readonly Vector4 ExtraBadgeInk = new(1f, 0.86f, 0.44f, 1f);
     private CachedText controlClock;
     private static readonly Vector4 SunKnob = new(1.00f, 0.80f, 0.36f, 1f);
     private static readonly Vector4 MoonKnob = new(0.62f, 0.72f, 1.00f, 1f);
@@ -50,7 +54,7 @@ internal sealed partial class SkywatcherApp
         SectionLabel(Loc.T(L.Skywatcher.Time), ink, scale);
         DrawTimeCard(width, ink, scale);
         SectionLabel(Loc.T(L.Skywatcher.Weather), ink, scale);
-        DrawWeatherGrid(width, ink, zoneWeathers, scale);
+        DrawWeatherGrid(width, ink, zoneWeathers, weather.ExtraWeathers(), scale);
         DrawControlFooter(width, palette, scale);
         ImGui.Dummy(new Vector2(0f, 8f * scale));
     }
@@ -159,13 +163,14 @@ internal sealed partial class SkywatcherApp
     }
 
     private void DrawWeatherGrid(float width, in SkyPalette palette, IReadOnlyList<WeatherEntry> zoneWeathers,
-        float scale)
+        IReadOnlyList<WeatherEntry> extraWeathers, float scale)
     {
         var origin = ImGui.GetCursorScreenPos();
         var cellHeight = 82f * scale;
-        var count = zoneWeathers.Count + 1;
+        var count = zoneWeathers.Count + extraWeathers.Count + 1;
         var rows = (count + WeatherColumns - 1) / WeatherColumns;
-        var height = rows * cellHeight + 12f * scale;
+        var legendHeight = extraWeathers.Count > 0 ? LegendUnits * scale : 0f;
+        var height = rows * cellHeight + 12f * scale + legendHeight;
         var card = new Rect(origin, origin + new Vector2(width, height));
         UiAnchors.Report("skywatcher.control.weather", card);
         WeatherCard.Panel(ImGui.GetWindowDrawList(), card, palette, sky.Density, scale);
@@ -183,7 +188,15 @@ internal sealed partial class SkywatcherApp
                 continue;
             }
 
-            DrawWeatherCell(cell, zoneWeathers[index - 1], palette, scale);
+            var natural = index - 1 < zoneWeathers.Count;
+            var entry = natural ? zoneWeathers[index - 1] : extraWeathers[index - 1 - zoneWeathers.Count];
+            DrawWeatherCell(cell, entry, !natural, palette, scale);
+        }
+
+        if (legendHeight > 0f)
+        {
+            DrawExtraLegend(new Vector2(inner.Min.X + 8f * scale, card.Max.Y - legendHeight * 0.5f - 4f * scale),
+                inner.Width - 16f * scale, palette, scale);
         }
 
         ImGui.SetCursorScreenPos(origin);
@@ -215,12 +228,34 @@ internal sealed partial class SkywatcherApp
         }
     }
 
-    private void DrawWeatherCell(Rect cell, WeatherEntry entry, in SkyPalette palette, float scale)
+    private static void DrawExtraLegend(Vector2 leftCenter, float width, in SkyPalette palette, float scale)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var badgeCenter = new Vector2(leftCenter.X + ExtraBadgeUnits * 0.5f * scale, leftCenter.Y);
+        DrawExtraBadge(drawList, badgeCenter, scale);
+        var style = TextStyles.Footnote;
+        var textX = badgeCenter.X + (ExtraBadgeUnits * 0.5f + 6f) * scale;
+        var text = Typography.FitText(Loc.T(L.Skywatcher.ExtraWeather), leftCenter.X + width - textX, style);
+        Typography.Draw(drawList, new Vector2(textX, leftCenter.Y - Typography.LineHeight(style) * 0.5f), text,
+            palette.InkSoft, style);
+    }
+
+    private static void DrawExtraBadge(ImDrawListPtr drawList, Vector2 center, float scale)
+    {
+        drawList.AddCircleFilled(center, ExtraBadgeUnits * 0.5f * scale, ImGui.GetColorU32(ExtraBadgeFill), 20);
+        ProgressRing.CenterIcon(drawList, center, FontAwesomeIcon.Star, ExtraBadgeInk, 8f * scale);
+    }
+
+    private void DrawWeatherCell(Rect cell, WeatherEntry entry, bool extra, in SkyPalette palette, float scale)
     {
         var active = control.HasWeatherOverride && control.WeatherOverride == entry.Id;
         var tile = CellTile(cell, scale);
         var drawList = ImGui.GetWindowDrawList();
         WeatherCard.Chip(drawList, tile, WeatherSky.Classify(entry.EnglishKey), true, scale);
+        if (extra)
+        {
+            DrawExtraBadge(drawList, new Vector2(tile.Max.X - 9f * scale, tile.Min.Y + 9f * scale), scale);
+        }
         if (active)
         {
             RingActive(drawList, tile, palette, scale);
