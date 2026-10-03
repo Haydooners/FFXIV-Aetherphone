@@ -182,6 +182,7 @@ internal sealed class PhoneServices : IDisposable
     public required ContactBook Contacts { get; init; }
     public required CallHub Calls { get; init; }
     public required StreamSignalRouter StreamSignals { get; init; }
+    public required RadioRoomRouter RadioRooms { get; init; }
     public required PhoneVisibility Visibility { get; init; }
     public required RealtimeSignalBus RealtimeSignals { get; init; }
     public required LoadingScreen Loading { get; init; }
@@ -352,6 +353,7 @@ internal sealed class PhoneServices : IDisposable
         var calls = new CallHub(configuration, aethernetSession, notifications, sound, playback, realtimeSignals,
             confirm, installer.Gate("message"), contacts);
         var streamSignals = new StreamSignalRouter(calls.Router);
+        var radioRooms = new RadioRoomRouter(realtimeSignals, aethernetSession, framework);
         var characterSwitcher = new CharacterSessionManager(framework, aethernetSession, aethernet.Account,
             gameData, configuration, confirm);
         var socialNotifications = new SocialNotificationService(aethernetSession, aethernet.Account, notifications, configuration, framework, visibility, realtimeSignals, installer);
@@ -522,6 +524,7 @@ internal sealed class PhoneServices : IDisposable
             Contacts = contacts,
             Calls = calls,
             StreamSignals = streamSignals,
+            RadioRooms = radioRooms,
             Visibility = visibility,
             RealtimeSignals = realtimeSignals,
             Loading = new LoadingScreen(configuration),
@@ -557,6 +560,7 @@ internal sealed class PhoneServices : IDisposable
         ChatHistory.Dispose();
         DeviceLinks.Dispose();
         KeyVault.Dispose();
+        RadioRooms.Dispose();
         StreamSignals.Dispose();
         Calls.Dispose();
         Contacts.Dispose();

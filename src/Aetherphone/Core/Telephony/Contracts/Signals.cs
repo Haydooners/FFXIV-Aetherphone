@@ -98,6 +98,31 @@ internal static class SignalType
     public const string StreamControlRequest = "stream.controlRequest";
     public const string StreamReact = "stream.react";
     public const string StreamReaction = "stream.reaction";
+
+    public const string RadioPrefix = "radio.";
+    public const string RadioAttach = "radio.attach";
+    public const string RadioDetach = "radio.detach";
+    public const string RadioChat = "radio.chat";
+    public const string RadioDelete = "radio.delete";
+    public const string RadioMute = "radio.mute";
+    public const string RadioUnmute = "radio.unmute";
+    public const string RadioPin = "radio.pin";
+    public const string RadioUnpin = "radio.unpin";
+    public const string RadioReact = "radio.react";
+    public const string RadioRequest = "radio.request";
+    public const string RadioRequestAccept = "radio.requestAccept";
+    public const string RadioRequestSkip = "radio.requestSkip";
+    public const string RadioRequestPlayed = "radio.requestPlayed";
+    public const string RadioRequestsOpen = "radio.requestsOpen";
+    public const string RadioRoom = "radio.room";
+    public const string RadioPresence = "radio.presence";
+    public const string RadioMessage = "radio.message";
+    public const string RadioDeleted = "radio.deleted";
+    public const string RadioMuted = "radio.muted";
+    public const string RadioPinned = "radio.pinned";
+    public const string RadioReaction = "radio.reaction";
+    public const string RadioRequests = "radio.requests";
+    public const string RadioRefused = "radio.refused";
 }
 
 internal static class StreamPermission
@@ -152,6 +177,26 @@ internal sealed record NearbyStreamInfo(string HostId, string Name, string World
 internal sealed record StreamQueueEntry(string? Url, string? Title);
 
 internal sealed record StreamMember(string UserId, int Flags);
+
+internal sealed record RadioChatMessage(
+    long MessageId,
+    string UserId,
+    string DisplayName,
+    string Handle,
+    string? AvatarUrl,
+    string Text,
+    long SentAtUnixMs,
+    bool IsDj);
+
+internal sealed record RadioSongRequest(
+    long RequestId,
+    string UserId,
+    string DisplayName,
+    string Handle,
+    string? AvatarUrl,
+    string Text,
+    int State,
+    long CreatedAtUnixMs);
 
 internal sealed record CallControl
 {
@@ -208,6 +253,63 @@ internal sealed record CallControl
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public GamePayload? Game { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? StationId { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Text { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? MessageId { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? RequestId { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Minutes { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Open { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? DisplayName { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Handle { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? AvatarUrl { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? SentAtUnixMs { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IsDj { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IsModerator { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IsLive { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ListenerCount { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? RequestsOpen { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Pinned { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? MutedUntilUnixMs { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RadioChatMessage[]? Messages { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RadioSongRequest[]? Requests { get; init; }
 }
 
 internal sealed record CasinoPayload
