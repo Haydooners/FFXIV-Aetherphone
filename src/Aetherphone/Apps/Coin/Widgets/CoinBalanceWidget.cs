@@ -216,18 +216,8 @@ internal sealed class CoinBalanceWidget : IHomeWidget
         return Typography.Measure("0", style).Y;
     }
 
-    private static void DrawBar(ImDrawListPtr drawList, in WidgetInk ink, Vector4 accent, Rect bar, float fraction)
-    {
-        var radius = bar.Height * 0.5f;
-        Squircle.Fill(drawList, bar.Min, bar.Max, radius, ImGui.GetColorU32(ink.Fill));
-        if (fraction <= 0.005f)
-        {
-            return;
-        }
-
-        var right = bar.Min.X + MathF.Max(bar.Height, bar.Width * fraction);
-        Squircle.Fill(drawList, bar.Min, new Vector2(right, bar.Max.Y), radius, ImGui.GetColorU32(accent));
-    }
+    private static void DrawBar(ImDrawListPtr drawList, in WidgetInk ink, Vector4 accent, Rect bar, float fraction) =>
+        WidgetChrome.Bar(drawList, bar, fraction <= 0.005f ? 0f : fraction, ink.Fill, accent);
 
     private string Status(bool paused, long earned, long cap, bool checkIn)
     {

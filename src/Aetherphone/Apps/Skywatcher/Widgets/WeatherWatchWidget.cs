@@ -176,7 +176,7 @@ internal sealed class WeatherWatchWidget : IHomeWidget
         var inner = new Rect(card.Min + new Vector2(CardPaddingUnits * scale),
             card.Max - new Vector2(CardPaddingUnits * scale));
         var nameLeft = inner.Min.X;
-        var headlineHeight = WeatherWidgetPaint.LineHeight(WidgetType.Headline);
+        var headlineHeight = WidgetText.LineHeight(WidgetType.Headline);
         if (slot.Here)
         {
             var arrow = ArrowUnits * scale;
@@ -186,18 +186,18 @@ internal sealed class WeatherWatchWidget : IHomeWidget
         }
 
         var name = slot.Name.Length > 0 ? slot.Name : Loc.T(L.WidgetsLife.CurrentLocation);
-        WeatherWidgetPaint.Text(context, new Vector2(nameLeft, inner.Min.Y), name, cardInk.Primary,
+        WidgetText.Draw(context.DrawList, new Vector2(nameLeft, inner.Min.Y), name, cardInk.Primary,
             WidgetType.Headline, MathF.Max(1f, inner.Max.X - nameLeft));
         var glyphRadius = GlyphUnits * scale;
         var glyphCenter = new Vector2(inner.Min.X + glyphRadius,
             inner.Min.Y + headlineHeight + WidgetMetrics.Gutter * scale + glyphRadius);
         WeatherGlyph.Draw(drawList, kind, glyphCenter, glyphRadius,
             hasWeather ? cardInk.Glyph(kind, isDay) : Faded(cardInk.Glyph(kind, isDay)), isDay);
-        var captionHeight = WeatherWidgetPaint.LineHeight(WidgetType.Caption);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         var changeTop = inner.Max.Y - captionHeight;
         if (!hasWeather)
         {
-            WeatherWidgetPaint.Text(context, new Vector2(inner.Min.X, changeTop),
+            WidgetText.Draw(context.DrawList, new Vector2(inner.Min.X, changeTop),
                 Loc.T(slot.Here ? L.WidgetsLife.NotInWorld : L.Skywatcher.NoData), cardInk.Secondary,
                 WidgetType.Caption, inner.Width);
             return;
@@ -205,9 +205,9 @@ internal sealed class WeatherWatchWidget : IHomeWidget
 
         var change = WeatherWidgetPaint.ChangeLine(ref slot.Change, slot.Forecast,
             WeatherWidgetPaint.NextChange(slot.Forecast));
-        WeatherWidgetPaint.Text(context, new Vector2(inner.Min.X, changeTop), change, cardInk.Secondary,
+        WidgetText.Draw(context.DrawList, new Vector2(inner.Min.X, changeTop), change, cardInk.Secondary,
             WidgetType.Caption, inner.Width);
-        WeatherWidgetPaint.Text(context,
+        WidgetText.Draw(context.DrawList,
             new Vector2(inner.Min.X, changeTop - WidgetMetrics.RowGap * scale - headlineHeight),
             slot.Forecast[0].Weather.Name, cardInk.Primary, WidgetType.Headline, inner.Width);
     }

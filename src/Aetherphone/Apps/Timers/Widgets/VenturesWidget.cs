@@ -344,16 +344,8 @@ internal sealed class VenturesWidget : IHomeWidget
 
         var barTop = top + nameHeight + WidgetMetrics.RowGap * scale;
         var track = new Rect(new Vector2(row.Min.X, barTop), new Vector2(row.Max.X, barTop + barHeight));
-        Squircle.Fill(drawList, track.Min, track.Max, barHeight * 0.5f, ImGui.GetColorU32(ink.Fill));
-        var fraction = Progress(entry, utcNow);
-        if (fraction <= 0f)
-        {
-            return;
-        }
-
         var fill = entry.State == VentureState.Ready ? ReadyColor : accent;
-        Squircle.Fill(drawList, track.Min, new Vector2(track.Min.X + MathF.Max(barHeight, track.Width * fraction), track.Max.Y),
-            barHeight * 0.5f, ImGui.GetColorU32(ink.Accent(fill)));
+        WidgetChrome.Bar(drawList, track, Progress(entry, utcNow), ink.Fill, ink.Accent(fill));
     }
 
     private static float Progress(in VentureRow row, DateTime utcNow)

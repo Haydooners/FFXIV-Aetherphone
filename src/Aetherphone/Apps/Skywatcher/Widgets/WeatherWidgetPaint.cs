@@ -183,10 +183,6 @@ internal static class WeatherWidgetPaint
             : 0.5f;
     }
 
-    public static float Text(in WidgetContext context, Vector2 position, string text, Vector4 color,
-        in TextStyle style, float maxWidth) =>
-        WidgetText.Draw(context.DrawList, position, text, color, style, maxWidth);
-
     public static float TextRight(in WidgetContext context, float right, float top, string text, Vector4 color,
         in TextStyle style, float maxWidth)
     {
@@ -205,6 +201,4 @@ internal static class WeatherWidgetPaint
             style.Weight);
         return size.Y;
     }
-
-    public static float LineHeight(in TextStyle style) => Typography.Measure("Ag", style).Y;
 }

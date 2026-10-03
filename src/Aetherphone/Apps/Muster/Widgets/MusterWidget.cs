@@ -246,8 +246,7 @@ internal sealed class MusterWidget : IHomeWidget
             DrawAction(context, ink, index, row, buttonRect, accent);
             if (index < count - 1)
             {
-                drawList.AddLine(new Vector2(textLeft, rowRect.Max.Y), new Vector2(rowRect.Max.X, rowRect.Max.Y),
-                    ImGui.GetColorU32(ink.Separator), MathF.Max(1f, 0.5f * scale));
+                WidgetChrome.Separator(context, ink, textLeft, rowRect.Max.X, rowRect.Max.Y);
             }
         }
     }

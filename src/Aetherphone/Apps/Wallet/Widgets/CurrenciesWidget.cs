@@ -227,8 +227,7 @@ internal sealed class CurrenciesWidget : IHomeWidget
         }
 
         var separatorY = heroTop + heroHeight + gutter;
-        drawList.AddLine(new Vector2(content.Min.X, separatorY), new Vector2(content.Max.X, separatorY),
-            ImGui.GetColorU32(ink.Separator), MathF.Max(1f, scale));
+        WidgetChrome.Separator(context, ink, content.Min.X, content.Max.X, separatorY);
         var grid = new Rect(new Vector2(content.Min.X, separatorY + gutter), content.Max);
         DrawGrid(context, ink, sample, grid);
     }
@@ -241,8 +240,7 @@ internal sealed class CurrenciesWidget : IHomeWidget
         var purse = purses.For(context);
         purse.Gil.Update(clamped, purse.GilFrame.Delta(context.Delta));
         var text = WidgetText.Number(ref purse.GilText, purse.Gil.Display);
-        var width = WidgetText.TabularWidth(text, style);
-        var fitted = width > maxWidth && width > 0f ? new TextStyle(style.Scale * maxWidth / width, style.Weight) : style;
+        var fitted = WidgetText.FitStyle(text, style, maxWidth, true);
         WidgetText.Tabular(context.DrawList, topLeft, text, ink.Primary, fitted);
         return Typography.Measure(text, fitted).Y;
     }

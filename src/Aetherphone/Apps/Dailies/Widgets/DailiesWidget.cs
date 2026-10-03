@@ -211,8 +211,7 @@ internal sealed class DailiesWidget : IHomeWidget
         WidgetText.Tabular(drawList, new Vector2(textLeft, blockTop + titleHeight + WidgetMetrics.RowGap * scale),
             tally, ink.Secondary, WidgetType.Body);
         var separatorY = heroTop + diameter + gutter * 1.5f;
-        drawList.AddLine(new Vector2(content.Min.X, separatorY), new Vector2(content.Max.X, separatorY),
-            ImGui.GetColorU32(ink.Separator), MathF.Max(1f, scale));
+        WidgetChrome.Separator(context, ink, content.Min.X, content.Max.X, separatorY);
         var list = new Rect(new Vector2(content.Min.X, separatorY + gutter), content.Max);
         DrawList(context, ink, cadence, sample, utcNow, list);
     }

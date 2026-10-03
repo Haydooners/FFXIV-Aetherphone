@@ -146,8 +146,7 @@ internal sealed class LodestoneWidget : IHomeWidget
                 ink.Secondary, WidgetType.Caption, rowRect.Width);
             if (index < rows - 1)
             {
-                drawList.AddLine(new Vector2(rowRect.Min.X, rowRect.Max.Y), rowRect.Max,
-                    ImGui.GetColorU32(ink.Separator), MathF.Max(1f, 0.5f * scale));
+                WidgetChrome.Separator(context, ink, rowRect.Min.X, rowRect.Max.X, rowRect.Max.Y);
             }
         }
     }

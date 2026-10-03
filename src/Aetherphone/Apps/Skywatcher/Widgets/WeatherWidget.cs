@@ -124,17 +124,17 @@ internal sealed class WeatherWidget : IHomeWidget
     {
         var scale = context.Scale;
         var top = content.Min.Y;
-        top += WeatherWidgetPaint.Text(context, new Vector2(content.Min.X, top), ZoneLabel(), ink.Primary,
+        top += WidgetText.Draw(context.DrawList, new Vector2(content.Min.X, top), ZoneLabel(), ink.Primary,
             WidgetType.Headline, content.Width);
         DrawHero(context, ink, new Vector2(content.Min.X, top), content.Width, WidgetType.DisplayCompact, now);
-        var captionHeight = WeatherWidgetPaint.LineHeight(WidgetType.Caption);
-        var headlineHeight = WeatherWidgetPaint.LineHeight(WidgetType.Headline);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
+        var headlineHeight = WidgetText.LineHeight(WidgetType.Headline);
         var changeTop = content.Max.Y - captionHeight;
         var change = WeatherWidgetPaint.ChangeLine(ref changeLine, forecast, WeatherWidgetPaint.NextChange(forecast));
-        WeatherWidgetPaint.Text(context, new Vector2(content.Min.X, changeTop), change, ink.Secondary,
+        WidgetText.Draw(context.DrawList, new Vector2(content.Min.X, changeTop), change, ink.Secondary,
             WidgetType.Caption, content.Width);
         var conditionTop = changeTop - WidgetMetrics.RowGap * scale - headlineHeight;
-        WeatherWidgetPaint.Text(context, new Vector2(content.Min.X, conditionTop), forecast[0].Weather.Name,
+        WidgetText.Draw(context.DrawList, new Vector2(content.Min.X, conditionTop), forecast[0].Weather.Name,
             ink.Primary, WidgetType.Headline, content.Width);
         var glyphRadius = SmallGlyphUnits * scale;
         var glyphCenter = new Vector2(content.Min.X + glyphRadius, conditionTop - WidgetMetrics.RowGap * scale -
@@ -148,7 +148,7 @@ internal sealed class WeatherWidget : IHomeWidget
         var scale = context.Scale;
         var leftWidth = content.Width * 0.56f;
         var rightWidth = content.Width - leftWidth - WidgetMetrics.Gutter * scale;
-        var nameHeight = WeatherWidgetPaint.Text(context, new Vector2(content.Min.X, top), ZoneLabel(), ink.Primary,
+        var nameHeight = WidgetText.Draw(context.DrawList, new Vector2(content.Min.X, top), ZoneLabel(), ink.Primary,
             WidgetType.Headline, leftWidth);
         var heroHeight = DrawHero(context, ink, new Vector2(content.Min.X, top + nameHeight), leftWidth,
             WidgetType.Display, now);
@@ -181,7 +181,7 @@ internal sealed class WeatherWidget : IHomeWidget
 
         var drawn = WidgetText.Tabular(context.DrawList, position, clock, ink.Primary, heroStyle);
         var heroHeight = Typography.Measure(clock, heroStyle).Y;
-        var captionHeight = WeatherWidgetPaint.LineHeight(WidgetType.Caption);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         Typography.Draw(context.DrawList,
             new Vector2(position.X + drawn + WidgetMetrics.RowGap * context.Scale,
                 position.Y + heroHeight * 0.82f - captionHeight), suffix, ink.Secondary, WidgetType.Caption);
@@ -189,14 +189,14 @@ internal sealed class WeatherWidget : IHomeWidget
     }
 
     private static float StripHeight(float scale) =>
-        WeatherWidgetPaint.LineHeight(WidgetType.Caption) * 2f + (StripGlyphUnits * 2f + StripGapUnits * 2f) * scale;
+        WidgetText.LineHeight(WidgetType.Caption) * 2f + (StripGlyphUnits * 2f + StripGapUnits * 2f) * scale;
 
     private float DrawStrip(in WidgetContext context, in WeatherInk ink, Rect content, float top, EorzeaTime now)
     {
         var scale = context.Scale;
         var columns = Math.Min(StripColumns, forecast.Count);
         var cellWidth = content.Width / StripColumns;
-        var captionHeight = WeatherWidgetPaint.LineHeight(WidgetType.Caption);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         var glyphRadius = StripGlyphUnits * scale;
         var glyphY = top + captionHeight + StripGapUnits * scale + glyphRadius;
         var bellTop = glyphY + glyphRadius + StripGapUnits * scale;
@@ -238,9 +238,9 @@ internal sealed class WeatherWidget : IHomeWidget
         var nameLeft = glyphX + glyphRadius + WidgetMetrics.Gutter * scale;
         var untilWidth = content.Width * 0.3f;
         var nameWidth = content.Max.X - untilWidth - WidgetMetrics.Gutter * scale - nameLeft;
-        var headlineHeight = WeatherWidgetPaint.LineHeight(WidgetType.Headline);
-        var bodyHeight = WeatherWidgetPaint.LineHeight(WidgetType.Body);
-        var captionHeight = WeatherWidgetPaint.LineHeight(WidgetType.Caption);
+        var headlineHeight = WidgetText.LineHeight(WidgetType.Headline);
+        var bodyHeight = WidgetText.LineHeight(WidgetType.Body);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         for (var row = 0; row < rows; row++)
         {
             var window = forecast[ListFirst + row];
@@ -251,7 +251,7 @@ internal sealed class WeatherWidget : IHomeWidget
             var isDay = WeatherWidgetPaint.IsDay(window, now);
             WeatherGlyph.Draw(drawList, kind, new Vector2(glyphX, centerY), glyphRadius, ink.Glyph(kind, isDay),
                 isDay);
-            WeatherWidgetPaint.Text(context, new Vector2(nameLeft, centerY - bodyHeight * 0.5f), window.Weather.Name,
+            WidgetText.Draw(context.DrawList, new Vector2(nameLeft, centerY - bodyHeight * 0.5f), window.Weather.Name,
                 ink.Primary, WidgetType.Body, nameWidth);
             WeatherWidgetPaint.TextRight(context, content.Max.X, centerY - captionHeight * 0.5f,
                 WeatherWidgetPaint.Until(ref untilLabels[row], window), ink.Secondary, WidgetType.Caption,

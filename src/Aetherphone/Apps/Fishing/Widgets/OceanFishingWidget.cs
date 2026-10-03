@@ -99,7 +99,7 @@ internal sealed class OceanFishingWidget : IHomeWidget
         var plan = OceanRoutes.Resolve(next.Destination, next.Time);
         var remaining = next.BoardingNow ? next.BoardingUtc + BoardingWindow - utcNow : next.BoardingUtc - utcNow;
         var hero = Countdown(ref heroTexts[routeIndex], remaining);
-        var heroStyle = FitStyle(hero, WidgetType.DisplayCompact, content.Width);
+        var heroStyle = WidgetText.FitStyle(hero, WidgetType.DisplayCompact, content.Width, true);
         WidgetText.Tabular(drawList, new Vector2(content.Min.X, headerBottom + WidgetMetrics.Gutter * scale * 0.5f),
             hero, next.BoardingNow ? ink.Accent(FishingAccent) : ink.Primary, heroStyle);
 
@@ -251,17 +251,6 @@ internal sealed class OceanFishingWidget : IHomeWidget
         return cache.Store(totalSeconds, string.Concat(hours.ToString(CultureInfo.InvariantCulture), ":",
             minutes.ToString("D2", CultureInfo.InvariantCulture), ":",
             seconds.ToString("D2", CultureInfo.InvariantCulture)));
-    }
-
-    private static TextStyle FitStyle(string text, in TextStyle style, float maxWidth)
-    {
-        var width = WidgetText.TabularWidth(text, style);
-        if (width <= maxWidth || width <= 0f)
-        {
-            return style;
-        }
-
-        return new TextStyle(style.Scale * maxWidth / width, style.Weight);
     }
 
     private static OceanRoute RouteOf(string config) =>

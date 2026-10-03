@@ -132,13 +132,7 @@ internal sealed class DailySpinWidget : IHomeWidget
 
         var bar = BarUnits * scale;
         var barRect = new Rect(new Vector2(body.Min.X, body.Max.Y - bar), body.Max);
-        Squircle.Fill(drawList, barRect.Min, barRect.Max, bar * 0.5f, ImGui.GetColorU32(ink.Fill));
-        var fraction = Math.Clamp(1f - remaining / (float)DaySeconds, 0f, 1f);
-        if (fraction > 0f)
-        {
-            var filled = new Vector2(barRect.Min.X + MathF.Max(bar, barRect.Width * fraction), barRect.Max.Y);
-            Squircle.Fill(drawList, barRect.Min, filled, bar * 0.5f, ImGui.GetColorU32(ink.Accent(accent)));
-        }
+        WidgetChrome.Bar(drawList, barRect, 1f - remaining / (float)DaySeconds, ink.Fill, ink.Accent(accent));
 
         if (award <= 0)
         {

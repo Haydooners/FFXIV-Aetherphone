@@ -191,8 +191,7 @@ internal sealed class RemindersWidget : IHomeWidget
             DrawRowText(context, ink, row, textLeft, rowRect, titleHeight, dueHeight, done);
             if (index < count - 1)
             {
-                drawList.AddLine(new Vector2(textLeft, rowRect.Max.Y), new Vector2(body.Max.X, rowRect.Max.Y),
-                    ImGui.GetColorU32(ink.Separator), MathF.Max(1f, 0.5f * scale));
+                WidgetChrome.Separator(context, ink, textLeft, body.Max.X, rowRect.Max.Y);
             }
         }
     }

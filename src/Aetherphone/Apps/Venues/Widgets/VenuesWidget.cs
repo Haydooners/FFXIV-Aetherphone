@@ -109,8 +109,7 @@ internal sealed class VenuesWidget : IHomeWidget
             if (index < rows - 1)
             {
                 var left = rowRect.Min.X + ThumbUnits * scale + WidgetMetrics.Gutter * scale;
-                drawList.AddLine(new Vector2(left, rowRect.Max.Y), new Vector2(rowRect.Max.X, rowRect.Max.Y),
-                    ImGui.GetColorU32(ink.Separator), MathF.Max(1f, 0.5f * scale));
+                WidgetChrome.Separator(context, ink, left, rowRect.Max.X, rowRect.Max.Y);
             }
         }
     }

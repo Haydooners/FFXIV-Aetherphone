@@ -209,8 +209,8 @@ internal sealed class ShortcutsWidget : IHomeWidget
             var ringRadius = RingUnits * scale;
             var ringCenter = new Vector2(face.Max.X - ringRadius, glyphCenter.Y);
             var thickness = 2.2f * scale;
-            ProgressRing.Track(drawList, ringCenter, ringRadius, thickness, textColor with { W = textColor.W * 0.3f });
-            ProgressRing.Fill(drawList, ringCenter, ringRadius, thickness, MathF.Max(0.06f, run.Progress), textColor);
+            WidgetChrome.Ring(drawList, ringCenter, ringRadius, thickness, Math.Clamp(run.Progress, 0.06f, 1f), textColor,
+                textColor with { W = textColor.W * 0.3f });
             var stop = ringRadius * 0.36f;
             drawList.AddRectFilled(ringCenter - new Vector2(stop), ringCenter + new Vector2(stop),
                 ImGui.GetColorU32(textColor), 1.5f * scale);
