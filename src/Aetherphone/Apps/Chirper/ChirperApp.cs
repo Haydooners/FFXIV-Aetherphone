@@ -79,9 +79,6 @@ internal sealed partial class ChirperApp : IResumableApp
     private const float LatestScopePillPadX = 14f;
     private const float LatestScopePillGap = 8f;
     private const float FeedTabUnderline = 4f;
-    private const float TabBarHeight = 58f;
-    private const float TabBarIconSize = 24f;
-    private const float TabBarHoverRadius = 20f;
     private const float TabBarAvatarRadius = 13f;
     private const float TabBarAvatarRingGap = 2.5f;
     private const int TabCount = 4;
@@ -180,6 +177,8 @@ internal sealed partial class ChirperApp : IResumableApp
     private readonly AvatarComposer banner;
     private readonly SocialProfilePages profile;
     private readonly AppSkin ui = new(AppPalettes.Chirper);
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabItems = new TabItem[TabCount];
     private readonly ConfirmService confirm;
     private readonly TranslationService translation;
     private readonly RichTextCache bodyLayouts = new(scanHashtags: true);
@@ -470,28 +469,27 @@ internal sealed partial class ChirperApp : IResumableApp
         }
 
         TourHolds.Release(Id);
-        var barRect = new Rect(new Vector2(area.Min.X, area.Max.Y - TabBarHeight * scale), area.Max);
-        var content = new Rect(area.Min, new Vector2(area.Max.X, barRect.Min.Y));
+        using (TabBar.ReserveContent(scale))
         using (ImRaii.PushId((int)homeTab))
         {
             switch (homeTab)
             {
                 case HomeTab.Explore:
-                    DrawDiscover(content, true);
+                    DrawDiscover(area, true);
                     break;
                 case HomeTab.Alerts:
-                    DrawActivity(content, true);
+                    DrawActivity(area, true);
                     break;
                 case HomeTab.Profile:
-                    DrawOwnProfileTab(content);
+                    DrawOwnProfileTab(area);
                     break;
                 default:
-                    DrawFeedTab(content);
+                    DrawFeedTab(area);
                     break;
             }
         }
 
-        DrawTabBar(barRect);
+        DrawTabBar(area);
     }
 
     private void DrawOwnProfileTab(Rect area)
@@ -516,7 +514,7 @@ internal sealed partial class ChirperApp : IResumableApp
         var listTop = activeScope == SocialFeedScope.ForYou ? rowRect.Max.Y : DrawLatestScopeRow(area, rowRect.Max.Y);
         var listRect = new Rect(new Vector2(area.Min.X, listTop), area.Max);
         DrawFeedList(listRect, activeScope);
-        if (ComposeFab.Draw(listRect, "##chirperComposeFab", ChirperInk.Accent,
+        if (ComposeFab.Draw(TabBar.ContentArea(listRect, scale), "##chirperComposeFab", ChirperInk.Accent,
                 PhoneIcons.Feather, Loc.T(L.Chirper.NewChirp), "chirper.compose",
                 ChirperInk.AccentDeep, FabRadius, true))
         {
@@ -637,81 +635,49 @@ internal sealed partial class ChirperApp : IResumableApp
         }
     }
 
-    private void DrawTabBar(Rect bar)
+    private void DrawTabBar(Rect area)
     {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        PaintBarBackdrop(drawList, bar);
-        drawList.AddLine(bar.Min, new Vector2(bar.Max.X, bar.Min.Y), ImGui.GetColorU32(ChirperInk.Hairline), 1f);
-        var slot = bar.Width / TabCount;
-        for (var index = 0; index < TabCount; index++)
-        {
-            var tab = (HomeTab)index;
-            var cellMin = new Vector2(bar.Min.X + slot * index, bar.Min.Y);
-            var cellMax = new Vector2(cellMin.X + slot, bar.Max.Y);
-            var active = homeTab == tab;
-            var hovered = UiInteract.Hover(cellMin, cellMax);
-            var iconCenter = new Vector2((cellMin.X + cellMax.X) * 0.5f, bar.Center.Y);
-            var iconInk = active ? ChirperInk.AccentLink : hovered ? ChirperInk.TitleInk : GlassPillInk;
-            var iconSize = TabBarIconSize * scale;
-            if (hovered)
-            {
-                drawList.AddCircleFilled(iconCenter, TabBarHoverRadius * scale,
-                    ImGui.GetColorU32(ChirperInk.FieldFill), 32);
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            string label;
-            switch (tab)
-            {
-                case HomeTab.Explore:
-                    PhoneIcon.Draw(drawList, iconCenter, PhoneIcons.Search, iconInk, iconSize);
-                    label = Loc.T(L.Chirper.TabExplore);
-                    break;
-                case HomeTab.Alerts:
-                    PhoneIcon.Draw(drawList, iconCenter, active ? PhoneIcons.BellFilled : PhoneIcons.Bell,
-                        iconInk, iconSize);
-                    DrawBellBadge(iconCenter, social.UnseenCount(Id));
-                    label = Loc.T(L.Social.ActivityTitle);
-                    break;
-                case HomeTab.Profile:
-                    DrawProfileTabIcon(drawList, iconCenter, active, iconInk, iconSize);
-                    label = Loc.T(L.Chirper.TabProfile);
-                    break;
-                default:
-                    PhoneIcon.Draw(drawList, iconCenter, active ? PhoneIcons.HomeFilled : PhoneIcons.Home,
-                        iconInk, iconSize);
-                    label = Loc.T(L.Chirper.TabHome);
-                    break;
-            }
-
-            HoverTooltip.Show(new Rect(cellMin, cellMax), label, HoverLabelSide.Above);
-            if (UiInteract.Click(cellMin, cellMax, hovered))
-            {
-                SelectHomeTab(tab);
-            }
-        }
-    }
-
-    private void DrawProfileTabIcon(ImDrawListPtr drawList, Vector2 center, bool active, Vector4 ink, float iconSize)
-    {
-        if (store.Me is not { } me)
+        var hasAvatar = store.Me is not null;
+        if (!hasAvatar)
         {
             store.EnsureMe();
-            PhoneIcon.Draw(drawList, center, active ? PhoneIcons.UserFilled : PhoneIcons.User, ink, iconSize);
+        }
+
+        tabItems[(int)HomeTab.Feed] = new TabItem(Loc.T(L.Chirper.TabHome), PhoneIcons.Home, PhoneIcons.HomeFilled);
+        tabItems[(int)HomeTab.Explore] = new TabItem(Loc.T(L.Chirper.TabExplore), PhoneIcons.Search);
+        tabItems[(int)HomeTab.Alerts] = new TabItem(Loc.T(L.Social.ActivityTitle), PhoneIcons.Bell,
+            PhoneIcons.BellFilled, social.UnseenCount(Id));
+        tabItems[(int)HomeTab.Profile] = new TabItem(Loc.T(L.Chirper.TabProfile), PhoneIcons.User,
+            PhoneIcons.UserFilled, CustomIcon: hasAvatar);
+        var result = tabBar.Draw(area, ui, tabItems, (int)homeTab);
+        DrawProfileTabAvatar(tabBar.Pose((int)HomeTab.Profile), homeTab == HomeTab.Profile);
+        if (result.Tapped < 0)
+        {
+            return;
+        }
+
+        SelectHomeTab((HomeTab)result.Tapped);
+    }
+
+    private void DrawProfileTabAvatar(TabItemPose pose, bool active)
+    {
+        if (store.Me is not { } me || pose.Alpha < 0.5f)
+        {
             return;
         }
 
         var scale = UiScale.Current;
-        var radius = TabBarAvatarRadius * scale;
-        DrawAvatar(drawList, center, radius, me.Name, me.World, me.AvatarUrl, 0.85f, 28, Frames.Of(me.FrameId));
+        var drawList = ImGui.GetWindowDrawList();
+        var radius = TabBarAvatarRadius * scale * pose.Scale;
+        DrawAvatar(drawList, pose.IconCenter, radius, me.Name, me.World, me.AvatarUrl, 0.85f, 28,
+            Frames.Of(me.FrameId));
         if (!active)
         {
             return;
         }
 
-        drawList.AddCircle(center, radius + TabBarAvatarRingGap * scale, ImGui.GetColorU32(ChirperInk.AccentLink), 32,
-            1.6f * scale);
+        drawList.AddCircle(pose.IconCenter, radius + TabBarAvatarRingGap * scale,
+            ImGui.GetColorU32(ChirperInk.AccentLink), 32, 1.6f * scale);
     }
 
     private static RetryGate[] BuildTabRevalidateGates()
