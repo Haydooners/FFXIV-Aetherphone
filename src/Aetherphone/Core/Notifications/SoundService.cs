@@ -4,18 +4,23 @@ namespace Aetherphone.Core.Notifications;
 
 internal sealed class SoundService : IDisposable
 {
+    public const string RingbackFile = "Ui/ringback.wav";
+    private const float RingbackVolume = 0.5f;
+
     private readonly Configuration configuration;
     private readonly SoundLibrary ringtones;
     private readonly SoundLibrary notifications;
     private readonly SoundEffectPlayer player;
+    private readonly string ringbackPath;
 
     public SoundService(Configuration configuration, SoundLibrary ringtones, SoundLibrary notifications,
-        SoundEffectPlayer player)
+        SoundEffectPlayer player, string ringbackPath)
     {
         this.configuration = configuration;
         this.ringtones = ringtones;
         this.notifications = notifications;
         this.player = player;
+        this.ringbackPath = ringbackPath;
     }
 
     public IReadOnlyList<string> Options(SoundKind kind) => For(kind).Options;
@@ -61,6 +66,16 @@ internal sealed class SoundService : IDisposable
         {
             player.PlayLoop(path, configuration.RingtoneVolume);
         }
+    }
+
+    public void StartRingback()
+    {
+        if (configuration.SilentMode || !File.Exists(ringbackPath))
+        {
+            return;
+        }
+
+        player.PlayLoop(ringbackPath, RingbackVolume);
     }
 
     public void StopCallRing() => player.StopLoop();
