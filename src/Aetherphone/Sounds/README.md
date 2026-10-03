@@ -15,7 +15,8 @@ Settings only lists its own kind:
   folder is not a picker: the file names are wired to events in
   `Core/Notifications/UiSound.cs` and never appear in Settings lists, and
   `UiSoundCatalogTests` fails the build server if a wired name goes missing.
-  `ringback.wav` is the outgoing-call loop played by `SoundService`.
+  `ringback.wav` is the outgoing-call loop, and `alarm.wav` and `timer.wav`
+  are the Clock loops, all played by `SoundService`.
 - `Games/` ships the **Game Sounds** palette for the mini-games and the
   Casino (hits, pops, chimes, cards, chips, Simon tones), wired through
   the same catalog on the Game channel and gated by the Game Sounds toggle in

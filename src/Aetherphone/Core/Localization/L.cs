@@ -5739,6 +5739,7 @@ internal static class L
         public static readonly LocString KeepIt = new("clock.keepIt", "Keep");
         public static readonly LocString Start = new("clock.start", "Start");
         public static readonly LocString Stop = new("clock.stop", "Stop");
+        public static readonly LocString Snooze = new("clock.snooze", "Snooze");
         public static readonly LocString Pause = new("clock.pause", "Pause");
         public static readonly LocString Resume = new("clock.resume", "Resume");
         public static readonly LocString Reset = new("clock.reset", "Reset");

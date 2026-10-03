@@ -1,26 +1,31 @@
+using Aetherphone.Core.Clock;
 using Aetherphone.Core.Localization;
 
 namespace Aetherphone.Core.Notifications;
 
 internal sealed class SoundService : IDisposable
 {
-    public const string RingbackFile = "Ui/ringback.wav";
+    private const string RingbackFile = "ringback.wav";
+    private const string AlarmFile = "alarm.wav";
+    private const string TimerFile = "timer.wav";
     private const float RingbackVolume = 0.5f;
 
     private readonly Configuration configuration;
     private readonly SoundLibrary ringtones;
     private readonly SoundLibrary notifications;
     private readonly SoundEffectPlayer player;
-    private readonly string ringbackPath;
+    private readonly SoundEffectPlayer alarmPlayer;
+    private readonly string uiDirectory;
 
     public SoundService(Configuration configuration, SoundLibrary ringtones, SoundLibrary notifications,
-        SoundEffectPlayer player, string ringbackPath)
+        SoundEffectPlayer player, SoundEffectPlayer alarmPlayer, string uiDirectory)
     {
         this.configuration = configuration;
         this.ringtones = ringtones;
         this.notifications = notifications;
         this.player = player;
-        this.ringbackPath = ringbackPath;
+        this.alarmPlayer = alarmPlayer;
+        this.uiDirectory = uiDirectory;
     }
 
     public IReadOnlyList<string> Options(SoundKind kind) => For(kind).Options;
@@ -70,13 +75,27 @@ internal sealed class SoundService : IDisposable
 
     public void StartRingback()
     {
-        if (configuration.SilentMode || !File.Exists(ringbackPath))
+        var path = Path.Combine(uiDirectory, RingbackFile);
+        if (configuration.SilentMode || !File.Exists(path))
         {
             return;
         }
 
-        player.PlayLoop(ringbackPath, RingbackVolume);
+        player.PlayLoop(path, RingbackVolume);
     }
+
+    public void StartAlarmTone(AlarmRingKind kind)
+    {
+        var path = Path.Combine(uiDirectory, kind == AlarmRingKind.Timer ? TimerFile : AlarmFile);
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        alarmPlayer.PlayLoop(path, configuration.RingtoneVolume);
+    }
+
+    public void StopAlarmTone() => alarmPlayer.StopLoop();
 
     public void StopCallRing() => player.StopLoop();
 
@@ -103,5 +122,9 @@ internal sealed class SoundService : IDisposable
         return false;
     }
 
-    public void Dispose() => player.Dispose();
+    public void Dispose()
+    {
+        player.Dispose();
+        alarmPlayer.Dispose();
+    }
 }

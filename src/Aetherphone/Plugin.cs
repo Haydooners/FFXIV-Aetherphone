@@ -186,12 +186,13 @@ public sealed class Plugin : IDalamudPlugin
             timerNotifier = new TimerNotifier(Cfg, Framework, services.Notifications, services.Installer.Gate("timers"));
             calendarReminders = new CalendarReminderService(Cfg, Framework, services.Notifications,
                 services.Installer.Gate("calendar"));
-            clockAlarms = new ClockAlarmService(Cfg, Framework, services.Notifications,
+            clockAlarms = new ClockAlarmService(Cfg, Framework, services.Notifications, services.AlarmRinger,
                 services.Installer.Gate("clock"));
             reminders = new ReminderService(Cfg, Framework, services.Notifications, services.Installer.Gate("notes"));
             services.CharacterSwitcher.Start();
             services.CharacterWatch.Start();
-            services.Calls.IncomingCallPresented += OnIncomingCall;
+            services.Calls.IncomingCallPresented += BringPhoneForward;
+            services.AlarmRinger.Presented += BringPhoneForward;
             services.Calls.Start();
             serverBar = new ServerBarEntry(DtrBar, Cfg, services.Notifications, phoneWindow.ToggleShell);
             services.MarketIndex.EnsureBuilt();
@@ -259,7 +260,8 @@ public sealed class Plugin : IDalamudPlugin
         CommandManager.RemoveHandler(AepConstants.AliasCommand);
         if (services is not null)
         {
-            services.Calls.IncomingCallPresented -= OnIncomingCall;
+            services.Calls.IncomingCallPresented -= BringPhoneForward;
+            services.AlarmRinger.Presented -= BringPhoneForward;
         }
 
         serverBar?.Dispose();
@@ -396,7 +398,8 @@ public sealed class Plugin : IDalamudPlugin
         Framework.Update -= OnAutoOpenTick;
         Framework.Update -= OnVideoFrameworkUpdate;
         Framework.Update -= OnLinkpearlPresenceTick;
-        services.Calls.IncomingCallPresented -= OnIncomingCall;
+        services.Calls.IncomingCallPresented -= BringPhoneForward;
+        services.AlarmRinger.Presented -= BringPhoneForward;
         ContextMenu.OnMenuOpened -= OnMenuOpened;
         serverBar.Dispose();
         phoneWindow.PersistPositions();
@@ -546,7 +549,7 @@ public sealed class Plugin : IDalamudPlugin
         services.ShortcutRunner.Run(shortcut);
     }
 
-    private void OnIncomingCall()
+    private void BringPhoneForward()
     {
         phoneWindow.Maximize();
         phoneWindow.IsOpen = true;
