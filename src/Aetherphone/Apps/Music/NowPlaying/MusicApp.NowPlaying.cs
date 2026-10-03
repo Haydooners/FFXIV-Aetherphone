@@ -153,6 +153,10 @@ internal sealed partial class MusicApp
                               !scrubber.Dragging && !volumeSlider.Dragging && !QueueDragging;
             nowPlaying.Step(screen.Height, pressInZone, delta, scale);
             DrawNowPlayingPanel(screen, scale, delta);
+            if (scrubber.Dragging || volumeSlider.Dragging || QueueDragging)
+            {
+                nowPlaying.ReleasePress();
+            }
         }
 
         DrawNowPlayingPopups(screen);

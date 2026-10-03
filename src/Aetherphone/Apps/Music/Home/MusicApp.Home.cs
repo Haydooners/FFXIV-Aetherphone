@@ -186,7 +186,6 @@ internal sealed partial class MusicApp
         }
 
         homeLive = homeLiveBuffer.ToArray();
-        homeLiveRail.Reset();
     }
 
     private string BecauseTitle()

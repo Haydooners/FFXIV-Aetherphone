@@ -45,6 +45,7 @@ internal sealed partial class MusicApp
     private string editName = string.Empty;
     private string editDescription = string.Empty;
     private bool focusEditName;
+    private bool focusEditDescription;
     private int playlistEditFrame;
     private Spring[] rowSprings = Array.Empty<Spring>();
     private int dragIndex = -1;
@@ -382,6 +383,12 @@ internal sealed partial class MusicApp
         using (ImRaii.PushColor(ImGuiCol.Text, ui.TitleInk))
         {
             var wrapWidth = innerSize.X - ImGui.GetStyle().FramePadding.X * 2f - Metrics.Space.Xxs * scale;
+            if (focusEditDescription)
+            {
+                focusEditDescription = false;
+                ImGui.SetKeyboardFocusHere();
+            }
+
             SoftWrapField.Multiline("##musicPlaylistDescription", ref editDescription, LibraryStore.DescriptionLimit,
                 innerSize, wrapWidth);
         }
@@ -403,6 +410,7 @@ internal sealed partial class MusicApp
         editName = record?.Name ?? string.Empty;
         editDescription = record?.Description ?? string.Empty;
         focusEditName = focusName && !focusDescription;
+        focusEditDescription = focusDescription;
         playlistEditFrame = ImGui.GetFrameCount();
         dragIndex = -1;
     }
