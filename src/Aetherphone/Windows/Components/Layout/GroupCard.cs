@@ -66,6 +66,8 @@ internal struct GroupCard
         return new GroupCard(ui.Hairline, scale, rowHeight, origin.X, right, origin.Y, totalHeight);
     }
 
+    public Rect Bounds => new(new Vector2(left, startY), new Vector2(right, startY + totalHeight * scale));
+
     public Rect NextRow(int rowSpan = 1) => NextRow(rowSpan * rowHeight);
 
     public Rect NextRow(float height)
