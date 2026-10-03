@@ -50,7 +50,7 @@ internal static class BootScreen
     }
 
     public static void DrawBackdrop(ImDrawListPtr dl, Rect screen, float alpha, float rounding) =>
-        BrandMark.DrawStage(dl, screen, rounding, alpha, false);
+        BrandMark.DrawStage(dl, screen, rounding, alpha, false, 1f);
 
     private static void DrawEmblem(ImDrawListPtr dl, Vector2 center, PhoneTheme theme, BootSequence boot, float scale)
     {
