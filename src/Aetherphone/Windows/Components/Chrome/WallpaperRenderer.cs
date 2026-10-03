@@ -28,7 +28,7 @@ internal static class WallpaperRenderer
         }
     }
 
-    private static void RecordBackdrop(Rect quad, WallpaperEntry light, WallpaperEntry dark, float aspect,
+    public static void RecordBackdrop(Rect quad, WallpaperEntry light, WallpaperEntry dark, float aspect,
         float darkness)
     {
         var library = Plugin.Wallpapers;
