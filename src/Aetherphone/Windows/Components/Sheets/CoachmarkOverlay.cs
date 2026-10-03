@@ -94,6 +94,7 @@ internal sealed partial class CoachmarkOverlay
             lastIndex = index;
             stepClock = 0f;
             anchorPressed = false;
+            targetMissing = 0f;
             segmentFill.SnapTo(0f);
         }
 
