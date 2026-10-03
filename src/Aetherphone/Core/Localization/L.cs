@@ -4438,6 +4438,40 @@ internal static class L
         public static readonly LocString LiveDjs          = new("music.liveDjs",           "Live Twitch DJs");
         public static readonly LocString LiveDjsEmpty     = new("music.liveDjsEmpty",     "No DJs are live right now. Check out Community Radio or Radio Stations.");
         public static readonly LocString PoweredByRolladeck = new("music.poweredByRolladeck", "Powered by XIV Rolladeck");
+        public static readonly LocString TabNew = new("music.tabNew", "New");
+        public static readonly LocString WorldRadio = new("music.worldRadio", "World radio");
+        public static readonly LocString YourStations = new("music.yourStations", "Your stations");
+        public static readonly LocString PlayNext = new("music.playNext", "Play next");
+        public static readonly LocString PlayLast = new("music.playLast", "Play last");
+        public static readonly LocString Love = new("music.love", "Love");
+        public static readonly LocString Unlove = new("music.unlove", "Remove from loved");
+        public static readonly LocString AddToLibrary = new("music.addToLibrary", "Add to library");
+        public static readonly LocString RemoveFromLibrary = new("music.removeFromLibrary", "Remove from library");
+        public static readonly LocString Download = new("music.download", "Download");
+        public static readonly LocString RemoveDownload = new("music.removeDownload", "Remove download");
+        public static readonly LocString GoToArtist = new("music.goToArtist", "Go to artist");
+        public static readonly LocString ShareSong = new("music.shareSong", "Share song");
+        public static readonly LocString StartStation = new("music.startStation", "Start station");
+        public static readonly LocString LinkCopied = new("music.linkCopied", "Link copied");
+        public static readonly LocString StationFor = new("music.stationFor", "{0} station");
+        public static readonly LocString AddedToPlaylist = new("music.addedToPlaylist", "Added to {0}");
+        public static readonly LocString MoreOptions = new("music.moreOptions", "More options");
+        public static readonly LocString LibraryPlaylists = new("music.libraryPlaylists", "Playlists");
+        public static readonly LocString LibraryArtists = new("music.libraryArtists", "Artists");
+        public static readonly LocString LibrarySongs = new("music.librarySongs", "Songs");
+        public static readonly LocString LovedSongs = new("music.lovedSongs", "Loved songs");
+        public static readonly LocString Downloaded = new("music.downloaded", "Downloaded");
+        public static readonly LocString RecentlyAdded = new("music.recentlyAdded", "Recently added");
+        public static readonly LocString TopSongs = new("music.topSongs", "Top songs");
+        public static readonly LocString LibraryEmptyTitle = new("music.libraryEmptyTitle", "Nothing here yet");
+        public static readonly LocString LibraryEmptySub = new("music.libraryEmptySub", "Love songs or add them to your library and they show up here.");
+        public static readonly LocString NewEmptyTitle = new("music.newEmptyTitle", "Fresh music is on the way");
+        public static readonly LocString NewEmptySub = new("music.newEmptySub", "New releases, charts and genres will show up here.");
+        public static readonly LocString ComingSoonSub = new("music.comingSoonSub", "This part of Music is still being built.");
+        public static readonly LocString Jam = new("music.jam", "Jam");
+        public static readonly LocString ImportPlaylist = new("music.importPlaylist", "Import playlist");
+        public static readonly LocString DurationHoursMinutes = new("music.durationHoursMinutes", "{0} hr {1} min");
+        public static readonly LocString DurationMinutes = new("music.durationMinutes", "{0} min");
     }
 
     internal static class Messages
