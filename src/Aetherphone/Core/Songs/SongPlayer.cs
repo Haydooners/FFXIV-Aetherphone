@@ -527,7 +527,7 @@ internal sealed class SongPlayer : IDisposable
 
         lock (gate)
         {
-            if (!ReferenceEquals(sender, output))
+            if (output is null || !ReferenceEquals(sender, output))
             {
                 return;
             }

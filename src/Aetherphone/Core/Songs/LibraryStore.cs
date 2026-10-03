@@ -18,7 +18,7 @@ internal sealed class LibraryStore : IDisposable
     private readonly HashSet<string> lovedIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> downloadIds = new(StringComparer.Ordinal);
     private readonly Timer saveTimer;
-    private MusicLibraryData data;
+    private readonly MusicLibraryData data;
     private bool dirty;
 
     public LibraryStore(DirectoryInfo root, Configuration? legacy = null)
