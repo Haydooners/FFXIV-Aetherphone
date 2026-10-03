@@ -3,7 +3,7 @@ using Aetherphone.Core.Animation;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.NowPlaying;
 
 internal readonly record struct SliderResult(float Value, bool Dragging, bool Released);
 

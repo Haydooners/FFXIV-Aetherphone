@@ -1,4 +1,4 @@
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.NowPlaying;
 
 internal readonly record struct ArtworkSwatch(Vector4 Primary, Vector4 Secondary, Vector4 Tertiary,
     Vector4 Quaternary)

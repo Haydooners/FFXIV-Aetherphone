@@ -3,7 +3,7 @@ using Aetherphone.Core.Playback;
 using Aetherphone.Core.Songs;
 using Aetherphone.Windows.Components;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Components;
 
 internal sealed class MusicKit
 {

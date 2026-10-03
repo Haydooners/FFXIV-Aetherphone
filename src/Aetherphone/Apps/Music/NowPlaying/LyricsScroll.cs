@@ -1,6 +1,6 @@
 using Aetherphone.Core.Lyrics;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.NowPlaying;
 
 internal static class LyricsScroll
 {

@@ -4,7 +4,7 @@ using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Components;
 
 internal static class MusicRenderer
 {

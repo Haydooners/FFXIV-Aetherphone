@@ -7,7 +7,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Components;
 
 internal sealed class PlaylistPickerSheet
 {

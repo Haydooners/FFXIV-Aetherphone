@@ -1,3 +1,4 @@
+using Aetherphone.Apps.Music.Components;
 using Aetherphone.Core;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
@@ -5,7 +6,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Library;
 
 internal static class LibraryKit
 {

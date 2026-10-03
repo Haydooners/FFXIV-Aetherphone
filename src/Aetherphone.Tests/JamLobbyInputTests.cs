@@ -1,4 +1,5 @@
 using Aetherphone.Apps.Music;
+using Aetherphone.Apps.Music.Jam;
 using Aetherphone.Core.Jam;
 using Xunit;
 

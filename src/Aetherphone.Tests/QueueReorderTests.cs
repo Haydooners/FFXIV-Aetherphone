@@ -1,4 +1,5 @@
 using Aetherphone.Apps.Music;
+using Aetherphone.Apps.Music.NowPlaying;
 using Aetherphone.Core.Songs;
 using Xunit;
 

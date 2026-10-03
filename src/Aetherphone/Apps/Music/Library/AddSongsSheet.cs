@@ -1,3 +1,4 @@
+using Aetherphone.Apps.Music.Components;
 using Aetherphone.Core;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Songs;
@@ -7,7 +8,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Library;
 
 internal sealed class AddSongsSheet : IDisposable
 {

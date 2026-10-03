@@ -1,6 +1,6 @@
 using Aetherphone.Windows.Components;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Radio.Live;
 
 internal sealed class RadioFittedText
 {

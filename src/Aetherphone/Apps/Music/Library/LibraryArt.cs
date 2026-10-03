@@ -1,3 +1,4 @@
+using Aetherphone.Apps.Music.Components;
 using Aetherphone.Core;
 using Aetherphone.Core.Media;
 using Aetherphone.Core.Songs;
@@ -6,7 +7,7 @@ using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Library;
 
 internal readonly struct CoverArt
 {

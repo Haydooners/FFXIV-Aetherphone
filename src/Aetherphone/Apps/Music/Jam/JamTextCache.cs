@@ -1,6 +1,6 @@
 using Aetherphone.Core.Localization;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Jam;
 
 internal struct JamTextCache
 {

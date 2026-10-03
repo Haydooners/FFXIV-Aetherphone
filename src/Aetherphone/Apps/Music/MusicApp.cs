@@ -1,3 +1,4 @@
+using Aetherphone.Apps.Music.Components;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Animation;

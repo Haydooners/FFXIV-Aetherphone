@@ -2,7 +2,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Media;
 using Aetherphone.Core.Wallpapers;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Library;
 
 internal readonly struct PlaylistCoverSet
 {

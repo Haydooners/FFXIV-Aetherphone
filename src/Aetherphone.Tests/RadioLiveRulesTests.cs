@@ -1,4 +1,5 @@
 using Aetherphone.Apps.Music;
+using Aetherphone.Apps.Music.Radio.Live;
 using Aetherphone.Core.Radio;
 using Xunit;
 

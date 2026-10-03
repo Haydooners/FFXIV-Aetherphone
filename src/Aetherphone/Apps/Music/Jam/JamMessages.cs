@@ -1,7 +1,7 @@
 using Aetherphone.Core.Jam;
 using Aetherphone.Core.Localization;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Jam;
 
 internal static class JamMessages
 {

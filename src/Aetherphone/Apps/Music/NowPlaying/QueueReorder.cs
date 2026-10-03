@@ -1,4 +1,4 @@
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.NowPlaying;
 
 internal static class QueueReorder
 {

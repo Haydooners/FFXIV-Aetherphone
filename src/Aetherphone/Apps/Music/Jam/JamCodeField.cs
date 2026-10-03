@@ -4,7 +4,7 @@ using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Jam;
 
 internal sealed class JamCodeField
 {

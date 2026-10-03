@@ -1,7 +1,7 @@
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Localization;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Radio.Live;
 
 internal sealed class RadioStationText
 {

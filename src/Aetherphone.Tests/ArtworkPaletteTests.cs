@@ -1,5 +1,6 @@
-using System.Numerics;
 using Aetherphone.Apps.Music;
+using Aetherphone.Apps.Music.NowPlaying;
+using System.Numerics;
 using Xunit;
 
 namespace Aetherphone.Tests;

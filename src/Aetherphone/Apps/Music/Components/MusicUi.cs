@@ -2,7 +2,7 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Songs;
 using Aetherphone.Windows.Components;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Components;
 
 internal static class MusicUi
 {

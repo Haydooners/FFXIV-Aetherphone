@@ -1,6 +1,6 @@
 using Aetherphone.Core.Radio;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Radio.Live;
 
 internal enum RadioComposerLock : byte
 {

@@ -1,6 +1,6 @@
 using Aetherphone.Core.Songs;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Library;
 
 internal enum PlaylistSort : byte
 {

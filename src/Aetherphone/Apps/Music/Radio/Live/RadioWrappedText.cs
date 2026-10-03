@@ -1,7 +1,7 @@
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 
-namespace Aetherphone.Apps.Music;
+namespace Aetherphone.Apps.Music.Radio.Live;
 
 internal sealed class RadioWrappedText
 {
