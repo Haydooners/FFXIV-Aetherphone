@@ -103,8 +103,8 @@ internal sealed class NowPlayingWidget : IHomeWidget
         }
 
         var active = playback.IsActive;
-        var idle = !active && recents.Length > 0;
         var sample = context.Preview && !active;
+        var idle = !active && !sample && recents.Length > 0;
         var washColor = sample ? SampleWash : Vector4.Lerp(washFrom, washTo, washBlend);
         WidgetChrome.Container(context, ArtworkWash.Top(washColor), ArtworkWash.Bottom(washColor));
         var ink = context.Mode is WidgetMode.FullColor or WidgetMode.Dark
@@ -302,14 +302,17 @@ internal sealed class NowPlayingWidget : IHomeWidget
             return;
         }
 
+        var canSkip = sample || playback.HasQueue;
         if (WidgetControls.Button(context, ink, PreviousControlId,
-                new Vector2(column.Min.X + pitch * 0.5f, controlCenterY), SkipControl, FontAwesomeIcon.Backward))
+                new Vector2(column.Min.X + pitch * 0.5f, controlCenterY), SkipControl, FontAwesomeIcon.Backward,
+                default, canSkip))
         {
             playback.Previous();
         }
 
         if (WidgetControls.Button(context, ink, NextControlId,
-                new Vector2(column.Min.X + pitch * 2.5f, controlCenterY), SkipControl, FontAwesomeIcon.Forward))
+                new Vector2(column.Min.X + pitch * 2.5f, controlCenterY), SkipControl, FontAwesomeIcon.Forward,
+                default, canSkip))
         {
             playback.Next();
         }
