@@ -114,7 +114,7 @@ internal sealed class ShellTransitionRenderer
         var iconRadius = MathF.Min(MathF.Min(rest.Width, rest.Height) * IconRadiusFactor, IconRadiusCapUnits * scale);
         var rounding = iconRadius + (screenRadius - iconRadius) * raw;
         var surfaceFade = kind == LaunchOrigin.Surface
-            ? Easing.SmootherStep(Easing.Segment(raw, SurfaceFadeStart, SurfaceFadeEnd))
+            ? Easing.Segment(raw, SurfaceFadeStart, SurfaceFadeEnd)
             : 1f;
         var elevation = Easing.Clamp01(raw * ShadowRise) * surfaceFade;
         using (ScreenLayer.BeginPassive(ShadowLayerId, screen))
@@ -214,18 +214,18 @@ internal sealed class ShellTransitionRenderer
 
     private void DrawIconVeil(ImDrawListPtr drawList, IPhoneApp over, Rect card, float rounding, float raw)
     {
-        var veilAlpha = 1f - Easing.SmootherStep(Easing.Segment(raw, VeilFadeStart, VeilFadeEnd));
+        var veilAlpha = 1f - Easing.Segment(raw, VeilFadeStart, VeilFadeEnd);
         if (veilAlpha > 0.001f)
         {
             var surface = IconTile.Surface(over.Accent);
             var background = themes.ForApp(over.WantsSystemTheme).AppBackground;
-            var settle = Easing.SmootherStep(Easing.Segment(raw, 0f, VeilSettleEnd));
+            var settle = Easing.Segment(raw, 0f, VeilSettleEnd);
             IconTile.FillShaded(drawList, card.Min, card.Max, rounding, surface, veilAlpha * (1f - settle));
             Squircle.Fill(drawList, card.Min, card.Max, rounding,
                 ImGui.GetColorU32(background with { W = background.W * veilAlpha * settle }));
         }
 
-        var glyphAlpha = 1f - Easing.SmootherStep(Easing.Segment(raw, GlyphFadeStart, GlyphFadeEnd));
+        var glyphAlpha = 1f - Easing.Segment(raw, GlyphFadeStart, GlyphFadeEnd);
         if (glyphAlpha > 0.001f)
         {
             DrawZoomGlyph(drawList, over, card, rounding, glyphAlpha);

@@ -4,7 +4,7 @@ namespace Aetherphone.Windows.Components;
 
 internal struct TabBarShrink
 {
-    public const float SmoothTime = 0.16f;
+    public const float SmoothTime = Motion.TabBar;
     public const float TopZone = 8f;
     public const float ShrinkTravel = 28f;
     public const float GrowTravel = 16f;

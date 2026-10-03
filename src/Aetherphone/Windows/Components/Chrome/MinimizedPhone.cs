@@ -48,11 +48,6 @@ internal sealed class MinimizedPhone : IDisposable
     private const float PulseSeconds = 0.8f;
     private const float TooltipClearance = 44f;
     private const int MaxQueuedCards = 3;
-    private const float PresenceSmoothTime = 0.16f;
-    private const float HoverSmoothTime = 0.12f;
-    private const float ExpandSmoothTime = 0.17f;
-    private const float CardSmoothTime = 0.20f;
-    private const float ZoomSmoothTime = 0.18f;
     private const float ZoomSaveDelay = 0.9f;
     private const float ControlThreshold = 0.6f;
     private const float GripSizeFactor = 0.7f;
@@ -237,7 +232,7 @@ internal sealed class MinimizedPhone : IDisposable
         frameView = view;
         frameScale = scale;
         frameAlpha = alpha;
-        frameExpandEased = Easing.SmoothStep(Math.Clamp(expand.Value, 0f, 1f));
+        frameExpandEased = Math.Clamp(expand.Value, 0f, 1f);
         frameInteractive = interactive;
         frameBodyHovered = bodyHovered;
         musicHovered = false;
@@ -579,15 +574,15 @@ internal sealed class MinimizedPhone : IDisposable
         var callActive = view.State is CallState.Dialing or CallState.Connecting or CallState.Active;
         var callShown = callActive && layout.IsEnabled(MinimizedPart.Calls);
         var musicShown = playback.IsActive && layout.IsEnabled(MinimizedPart.NowPlaying);
-        musicPresence.Step(musicShown ? 1f : 0f, PresenceSmoothTime, delta);
-        callPresence.Step(callShown ? 1f : 0f, PresenceSmoothTime, delta);
-        badge.Step(badgeAppId is null ? 0f : 1f, PresenceSmoothTime, delta);
-        dnd.Step(configuration.DoNotDisturb ? 1f : 0f, PresenceSmoothTime, delta);
+        musicPresence.Step(musicShown ? 1f : 0f, Motion.Appear, delta);
+        callPresence.Step(callShown ? 1f : 0f, Motion.Appear, delta);
+        badge.Step(badgeAppId is null ? 0f : 1f, Motion.Appear, delta);
+        dnd.Step(configuration.DoNotDisturb ? 1f : 0f, Motion.Appear, delta);
         AdvanceCard(delta, bodyHovered);
-        hover.Step(interactive && bodyHovered ? 1f : 0f, HoverSmoothTime, delta);
+        hover.Step(interactive && bodyHovered ? 1f : 0f, Motion.HoverLift, delta);
         var wantsExpand = interactive && bodyHovered && (musicShown || callShown) && !dragging;
-        expand.Step(wantsExpand ? 1f : 0f, ExpandSmoothTime, delta);
-        mapSpan.Step(MinimizedShapes.MapSpan(configuration.MinimizedMapZoom), ZoomSmoothTime, delta);
+        expand.Step(wantsExpand ? 1f : 0f, Motion.Island, delta);
+        mapSpan.Step(MinimizedShapes.MapSpan(configuration.MinimizedMapZoom), Motion.PageSettle, delta);
         if (zoomDirty && clock >= zoomSaveDue)
         {
             zoomDirty = false;
@@ -610,7 +605,7 @@ internal sealed class MinimizedPhone : IDisposable
 
         if (!cardDismissed)
         {
-            card.Step(1f, CardSmoothTime, delta);
+            card.Step(1f, Motion.Island, delta);
             if (!bodyHovered)
             {
                 cardElapsed += delta;
@@ -624,7 +619,7 @@ internal sealed class MinimizedPhone : IDisposable
             return;
         }
 
-        card.Step(0f, CardSmoothTime, delta);
+        card.Step(0f, Motion.Island, delta);
         if (card.Value > 0.02f)
         {
             return;
@@ -748,7 +743,7 @@ internal sealed class MinimizedPhone : IDisposable
     {
         MinimizedPart.NowPlaying => Math.Clamp(musicPresence.Value, 0f, 1f),
         MinimizedPart.Calls => Math.Clamp(callPresence.Value, 0f, 1f),
-        MinimizedPart.Alerts => Easing.SmoothStep(Math.Clamp(card.Value, 0f, 1f)),
+        MinimizedPart.Alerts => Math.Clamp(card.Value, 0f, 1f),
         MinimizedPart.Badge => Math.Clamp(badge.Value, 0f, 1f),
         _ => 1f,
     };
@@ -770,7 +765,7 @@ internal sealed class MinimizedPhone : IDisposable
     private float ContentHeight(float scale)
     {
         RefreshText(scale);
-        MeasureFlow(scale, Easing.SmoothStep(Math.Clamp(expand.Value, 0f, 1f)), out var flowHeight, out _);
+        MeasureFlow(scale, Math.Clamp(expand.Value, 0f, 1f), out var flowHeight, out _);
         return (TopPadding + BottomPadding) * scale + flowHeight;
     }
 

@@ -79,7 +79,6 @@ internal sealed partial class AethergramApp : IResumableApp
     private const float FeedTabRowHeight = 44f;
     private const float FeedTabUnderline = 2f;
     private const float FabRadius = 27f;
-    private const float SegmentSmoothTime = 0.09f;
     private const float CardPadTop = 10f;
     private const float CardPadBottom = 12f;
     private const float CardAvatarRadius = 16f;
@@ -134,7 +133,7 @@ internal sealed partial class AethergramApp : IResumableApp
     private static readonly TextStyle FeedTabIdleStyle = new(1.07f, FontWeight.Medium);
     private static readonly UnderlineTabStyle FeedTabsStyle = new(FeedTabStyle, FeedTabIdleStyle,
         AethergramInk.Shared.TitleInk, AethergramInk.Shared.SegmentIdleInk, AethergramInk.Shared.TitleInk,
-        FeedTabUnderline, CellPadX, SegmentSmoothTime);
+        FeedTabUnderline, CellPadX, Motion.Release);
 
     private readonly Dictionary<SocialFeedScope, PullToRefresh> pullToRefresh = new()
     {

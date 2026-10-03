@@ -480,7 +480,7 @@ internal sealed partial class AetherStreamApp
         var loading = video.State == VideoPlaybackState.Loading;
         var presentable = video.HasMedia && !loading;
         var hovered = presentable && UiInteract.Hover(hero.Min, hero.Max);
-        var eased = Math.Clamp(heroActionsFade.Step(hovered ? 1f : 0f, 0.12f, delta), 0f, 1f);
+        var eased = Math.Clamp(heroActionsFade.Step(hovered ? 1f : 0f, Motion.HoverLift, delta), 0f, 1f);
         if (eased > 0.01f)
         {
             Squircle.Fill(drawList, hero.Min, hero.Max, rounding,
@@ -812,7 +812,7 @@ internal sealed partial class AetherStreamApp
             var extent = new Vector2(hitRadius, hitRadius);
             var hovered = UiInteract.Hover(center - extent, center + extent);
             var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-            var grow = PressFx.Scale(tokens[index], pressed, 0.82f) * (hovered ? 1.14f : 1f);
+            var grow = PressFx.Scale(tokens[index], pressed, PressFx.ControlPressedScale) * (hovered ? 1.14f : 1f);
             if (hovered)
             {
                 drawList.AddCircleFilled(center, hitRadius, ImGui.GetColorU32(Palette.WithAlpha(WhiteInk, 0.10f * alpha)), 32);

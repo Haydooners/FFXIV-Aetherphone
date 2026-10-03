@@ -249,7 +249,7 @@ internal sealed partial class MusicApp
         var artBottom = titleY - 18f * scale;
         var artSpace = MathF.Max(artBottom - artTop, 40f * scale);
         var artSize = MathF.Min(frame.Width - pad * 2f, artSpace);
-        artBreath.Step(playback.IsPlaying ? 1f : 0.92f, ArtSmoothTime, delta);
+        artBreath.Step(playback.IsPlaying ? 1f : 0.92f, Aetherphone.Core.Animation.Motion.Island, delta);
         var drawnArt = artSize * Math.Clamp(artBreath.Value, 0.85f, 1f);
         var artCenter = new Vector2(centerX, artTop + artSpace * 0.5f);
         var artMin = artCenter - new Vector2(drawnArt * 0.5f, drawnArt * 0.5f);

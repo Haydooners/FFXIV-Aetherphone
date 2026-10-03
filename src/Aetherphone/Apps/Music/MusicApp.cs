@@ -60,9 +60,6 @@ internal sealed partial class MusicApp : IResumableApp
     private const float SearchBarHeight = 50f;
     private const float MiniHeight = 56f;
     private const float MiniMargin = 8f;
-    private const float MiniSmoothTime = 0.18f;
-    private const float SheetSmoothTime = 0.22f;
-    private const float ArtSmoothTime = 0.20f;
     private const int RecentTiles = 6;
     private const int FeaturedTiles = 4;
 
@@ -302,9 +299,9 @@ internal sealed partial class MusicApp : IResumableApp
 
         var scale = UiScale.Current;
         var content = context.Content;
-        miniPresence.Step(playback.IsActive && !nowPlayingOpen ? 1f : 0f, MiniSmoothTime, delta);
-        sheetPresence.Step(nowPlayingOpen ? 1f : 0f, SheetSmoothTime, delta);
-        overlayPresence.Step(overlay != OverlayMode.None ? 1f : 0f, SheetSmoothTime, delta);
+        miniPresence.Step(playback.IsActive && !nowPlayingOpen ? 1f : 0f, Motion.Appear, delta);
+        sheetPresence.Step(nowPlayingOpen ? 1f : 0f, Motion.Sheet, delta);
+        overlayPresence.Step(overlay != OverlayMode.None ? 1f : 0f, Motion.Sheet, delta);
         var sheetValue = Math.Clamp(sheetPresence.Value, 0f, 1f);
         var overlayValue = Math.Clamp(overlayPresence.Value, 0f, 1f);
 

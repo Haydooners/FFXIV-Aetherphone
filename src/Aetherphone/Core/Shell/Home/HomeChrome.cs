@@ -15,7 +15,6 @@ internal sealed class HomeChrome
     private const float DotRadiusUnits = 3f;
     private const float DotsPillPadUnits = 11f;
     private const float DotsPillHeightUnits = 18f;
-    private const float DotsPresenceSmoothTime = 0.16f;
 
     private readonly Pager pager;
     private readonly HomeInteractionController interaction;
@@ -41,7 +40,7 @@ internal sealed class HomeChrome
         var paging = pager.Dragging || MathF.Abs(pager.Value - MathF.Round(pager.Value)) > 0.02f;
         var dotsWanted = pageCount > 1 && (paging || interaction.Editing || interaction.DragTile is not null);
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        dotsPresence.Step(dotsWanted ? 1f : 0f, DotsPresenceSmoothTime, delta);
+        dotsPresence.Step(dotsWanted ? 1f : 0f, Motion.Appear, delta);
         var dots = Math.Clamp(dotsPresence.Value, 0f, 1f);
         if (interaction.Editing && dots <= 0.01f)
         {

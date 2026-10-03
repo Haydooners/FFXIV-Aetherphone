@@ -9,7 +9,6 @@ namespace Aetherphone.Core.Shell.Home;
 
 internal sealed class WidgetSizeMenu
 {
-    private const float PopSmoothTime = 0.14f;
     private const float WidthUnits = 168f;
     private const float RowUnits = 36f;
 
@@ -54,7 +53,7 @@ internal sealed class WidgetSizeMenu
             return;
         }
 
-        pop.Step(closing ? 0f : 1f, PopSmoothTime, delta);
+        pop.Step(closing ? 0f : 1f, Motion.Appear, delta);
         if (closing && pop.Value < 0.03f)
         {
             tile = null;

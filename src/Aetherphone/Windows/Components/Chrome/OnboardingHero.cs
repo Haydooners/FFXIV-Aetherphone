@@ -31,7 +31,7 @@ internal static class OnboardingHero
         }
 
         var clampedReveal = Easing.Clamp01(reveal);
-        var settle = Easing.EaseOutQuint(clampedReveal);
+        var settle = clampedReveal;
         Halo(drawList, center, accent, scale, settle, alpha);
         if (motif == HeroMotif.Care)
         {
@@ -54,7 +54,7 @@ internal static class OnboardingHero
         for (var index = 0; index < count; index++)
         {
             var stagger = index / (float)(count - 1) * StaggerSpan;
-            var appear = Easing.EaseOutQuint(Easing.Clamp01((reveal - stagger) / denominator));
+            var appear = Easing.Clamp01((reveal - stagger) / denominator);
             if (appear <= 0.002f)
             {
                 continue;
@@ -77,7 +77,7 @@ internal static class OnboardingHero
         Ripples(drawList, center, accent, scale, settle * alpha);
         for (var index = 0; index < TwinkleOffsets.Length; index++)
         {
-            var appear = Easing.EaseOutQuint(Easing.Clamp01((reveal - 0.35f - index * 0.08f) / 0.5f));
+            var appear = Easing.Clamp01((reveal - 0.35f - index * 0.08f) / 0.5f);
             if (appear <= 0.002f)
             {
                 continue;

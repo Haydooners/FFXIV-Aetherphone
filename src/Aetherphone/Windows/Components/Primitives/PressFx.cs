@@ -5,27 +5,33 @@ namespace Aetherphone.Windows.Components;
 
 internal static class PressFx
 {
-    public const float DefaultPressedScale = 0.95f;
-    public const float ControlPressedScale = 0.93f;
-    public const float IconPressedScale = 0.93f;
-    public const float CardPressedScale = 0.98f;
-    public const float PressSmoothTime = 0.07f;
-    public const float ReleaseSmoothTime = 0.16f;
-    private const float SmoothTime = 0.09f;
+    public const float DefaultPressedScale = Motion.PressScaleControl;
+    public const float ControlPressedScale = Motion.PressScaleControl;
+    public const float IconPressedScale = Motion.PressScaleControl;
+    public const float CardPressedScale = Motion.PressScaleCard;
+    public const float PressSmoothTime = Motion.PressIn;
+    public const float ReleaseSmoothTime = Motion.Release;
     private static readonly Dictionary<uint, Spring> Springs = new();
 
     public static float Scale(string id, bool pressed, float pressedScale = DefaultPressedScale) =>
-        Toward(ImGui.GetID(id), pressed ? pressedScale : 1f, SmoothTime);
+        Press(ImGui.GetID(id), pressed, pressedScale);
 
     public static float Scale(uint key, bool pressed, float pressedScale = DefaultPressedScale) =>
-        Toward(key, pressed ? pressedScale : 1f, SmoothTime);
+        Press(key, pressed, pressedScale);
 
     public static float Press(string id, bool pressed, float pressedScale) =>
-        Toward(ImGui.GetID(id), pressed ? pressedScale : 1f, pressed ? PressSmoothTime : ReleaseSmoothTime);
+        Press(ImGui.GetID(id), pressed, pressedScale);
 
-    public static float Toward(string id, float target) => Toward(ImGui.GetID(id), target, SmoothTime);
+    public static float Press(uint key, bool pressed, float pressedScale) =>
+        Toward(key, pressed ? pressedScale : 1f, pressed ? PressSmoothTime : ReleaseSmoothTime);
 
-    public static float Toward(uint key, float target) => Toward(key, target, SmoothTime);
+    public static float Toward(string id, float target) => Toward(ImGui.GetID(id), target);
+
+    public static float Toward(uint key, float target)
+    {
+        var pressingIn = Springs.TryGetValue(key, out var spring) ? target < spring.Value : target < 1f;
+        return Toward(key, target, pressingIn ? PressSmoothTime : ReleaseSmoothTime);
+    }
 
     private static float Toward(uint key, float target, float smoothTime)
     {
@@ -34,7 +40,7 @@ internal static class PressFx
             spring = new Spring(1f);
         }
 
-        var deltaSeconds = MathF.Min(ImGui.GetIO().DeltaTime, 0.1f);
+        var deltaSeconds = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         spring.Step(target, smoothTime, deltaSeconds);
         Springs[key] = spring;
         return spring.Value;

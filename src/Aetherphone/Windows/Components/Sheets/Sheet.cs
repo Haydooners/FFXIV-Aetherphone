@@ -53,7 +53,7 @@ internal static class SheetMetrics
     public const float FlingVelocity = 900f;
     public const float HomeVeil = 0.35f;
     public const float AppVeil = 0.45f;
-    public const float PresentSmoothTime = 0.22f;
+    public const float PresentSmoothTime = Motion.Sheet;
     private const float MinimumScale = 0.0001f;
 
     public static float VeilFor(bool insideApp) => insideApp ? AppVeil : HomeVeil;

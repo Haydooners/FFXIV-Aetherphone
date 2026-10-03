@@ -108,7 +108,6 @@ internal sealed partial class ChirperApp : IResumableApp
     private const float SummaryEmojiSize = 13f;
     private const float SummaryEmojiStep = 10f;
     private const int SummaryEmojiCount = 3;
-    private const float ReactionsExpandSmoothTime = 0.12f;
     private const float MoreButtonRadius = 14f;
     private const float FeedBottomSpacer = 110f;
     private const float ControlRowHeight = 36f;
@@ -121,8 +120,6 @@ internal sealed partial class ChirperApp : IResumableApp
     private const float QuoteAvatarRadius = 9f;
     private const float QuoteThumbSize = 44f;
     private const int QuoteBodyMaxLines = 3;
-    private const float SegmentSmoothTime = 0.09f;
-    private const float SendRevealSmoothTime = 0.07f;
     private const float RowHeight = 44f;
 
     private static readonly TextStyle NameStyle = new(1f, FontWeight.SemiBold);
@@ -147,7 +144,7 @@ internal sealed partial class ChirperApp : IResumableApp
     private static readonly TextStyle FeedTabIdleStyle = new(1.07f, FontWeight.Medium);
     private static readonly UnderlineTabStyle FeedTabsStyle = new(FeedTabStyle, FeedTabIdleStyle,
         ChirperInk.AccentLink, ChirperInk.SegmentIdleInk, ChirperInk.Accent, FeedTabUnderline, CellPadX,
-        SegmentSmoothTime);
+        Motion.Release);
     private static readonly TextStyle WordmarkStyle = new(1.4f, FontWeight.Bold);
     private static readonly TextStyle BadgeStyle = new(0.67f, FontWeight.Bold);
     private static readonly TextStyle PopoverRowStyle = new(0.97f, FontWeight.SemiBold);
@@ -1640,7 +1637,7 @@ internal sealed partial class ChirperApp : IResumableApp
         }
 
         var target = reactionsExpanded ? 1f : 0f;
-        reactionsExpand.Step(target, ReactionsExpandSmoothTime,
+        reactionsExpand.Step(target, Motion.Appear,
             MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds));
         if (!reactionsExpanded && reactionsExpand.IsResting(0f, 0.002f, 0.01f))
         {
@@ -1779,7 +1776,7 @@ internal sealed partial class ChirperApp : IResumableApp
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetForegroundDrawList();
-        var progress = Easing.EaseOutQuint(Math.Clamp(actions.Progress, 0f, 1f));
+        var progress = actions.Progress;
         var padX = 10f * scale;
         var padY = 6f * scale;
         var innerWidth = MathF.Max(1f, right - left - padX * 2f);
@@ -1849,7 +1846,7 @@ internal sealed partial class ChirperApp : IResumableApp
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetForegroundDrawList();
-        var progress = Easing.EaseOutQuint(Math.Clamp(actions.Progress, 0f, 1f));
+        var progress = actions.Progress;
         var width = RepostMenuWidth * scale;
         var rowHeight = RepostMenuRowHeight * scale;
         var pad = 5f * scale;

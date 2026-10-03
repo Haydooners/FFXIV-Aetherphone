@@ -23,7 +23,8 @@ internal sealed partial class SetupOverlay : IDisposable
     private const ImGuiWindowFlags OverlayFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
                                                   ImGuiWindowFlags.NoBackground;
 
-    private const float SlideSeconds = 0.5f;
+    private const float SlideLiveThreshold = 0.9f;
+    private const float SlideSettledEpsilon = 0.002f;
     private const float ExitSeconds = 0.7f;
     private const int DisplayNameMax = 32;
     private const int HandleMax = 15;
@@ -61,7 +62,7 @@ internal sealed partial class SetupOverlay : IDisposable
 
     private SetupPage page = SetupPage.Welcome;
     private SetupPage fromPage = SetupPage.Welcome;
-    private float slideClock = SlideSeconds;
+    private Spring pageSlide = new(1f);
     private int slideDirection = 1;
     private bool exiting;
     private float exitClock;
@@ -118,7 +119,7 @@ internal sealed partial class SetupOverlay : IDisposable
         }
 
         ConsumeOutcomes();
-        slideClock = MathF.Min(slideClock + delta, SlideSeconds);
+        pageSlide.Step(1f, Motion.PageSettle, delta);
         var exitProgress = 0f;
         if (exiting)
         {
@@ -134,16 +135,16 @@ internal sealed partial class SetupOverlay : IDisposable
         var theme = themes.Current;
         var scale = UiScale.Current;
         var rounding = theme.ScreenRounding * scale;
-        var backdropAlpha = 1f - Easing.EaseOutCubic(exitProgress);
+        var backdropAlpha = 1f - exitProgress;
         var contentAlpha = 1f - Easing.Clamp01(exitProgress * 1.8f);
         ImGui.SetCursorScreenPos(screen.Min);
         using (ImRaii.Child("##setupOverlay", screen.Size, false, OverlayFlags))
         {
             var drawList = ImGui.GetWindowDrawList();
             DrawBackdrop(drawList, screen, theme, backdropAlpha, rounding);
-            var slide = Easing.EaseOutQuint(Easing.Clamp01(slideClock / SlideSeconds));
-            var live = interactive && !exiting && slide >= 0.99f;
-            if (slide < 1f && fromPage != page)
+            var slide = Math.Clamp(pageSlide.Value, 0f, 1f);
+            var live = interactive && !exiting && slide >= SlideLiveThreshold;
+            if (slide < 1f - SlideSettledEpsilon && fromPage != page)
             {
                 var exitOffset = new Vector2(-slideDirection * screen.Width * 0.3f * slide, 0f);
                 using (Typography.WrapOffset(exitOffset.X))
@@ -262,7 +263,7 @@ internal sealed partial class SetupOverlay : IDisposable
         fromPage = page;
         page = target;
         slideDirection = direction;
-        slideClock = 0f;
+        pageSlide.SnapTo(0f);
     }
 
     private void Complete()

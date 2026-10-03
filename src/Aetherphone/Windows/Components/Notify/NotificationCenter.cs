@@ -35,8 +35,6 @@ internal sealed class NotificationCenter
     private const float TapSlop = 10f;
     private const float FailedSwipeTapFraction = 0.15f;
     private const float DragAxisThreshold = 6f;
-    private const float ExpandSmoothTime = 0.20f;
-    private const float SlideSmoothTime = 0.16f;
     private const float PillHeight = 26f;
     private const float PillPadX = 12f;
     private const float PillGap = 8f;
@@ -232,7 +230,7 @@ internal sealed class NotificationCenter
         foreach (var state in states.Values)
         {
             var target = state.Expanded ? 1f : 0f;
-            state.Expand.Step(target, ExpandSmoothTime, delta);
+            state.Expand.Step(target, Motion.Island, delta);
             if (state.Expand.IsResting(target, TransitionTiming.RestPositionEpsilon,
                     TransitionTiming.RestVelocityEpsilon))
             {
@@ -245,7 +243,7 @@ internal sealed class NotificationCenter
             return;
         }
 
-        slide.Step(slideGoal, SlideSmoothTime, delta);
+        slide.Step(slideGoal, Motion.Release, delta);
         if (slideRemoving)
         {
             if (slide.Value <= slideGoal + SlideRestDistance)

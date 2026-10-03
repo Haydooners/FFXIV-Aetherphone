@@ -16,8 +16,6 @@ internal sealed class AppSwitcher
     private const string BackdropLayerId = "switcherbackdrop";
     private const string ShadowLayerId = "switchershadow";
     private const string TopLayerId = "switchertop";
-    private const float RevealSmoothTime = 0.19f;
-    private const float CommitSmoothTime = 0.16f;
     private const float CommitDoneProgress = 0.992f;
     private const float BackdropVeil = 0.25f;
     private const float LabelHeightUnits = 28f;
@@ -29,14 +27,7 @@ internal sealed class AppSwitcher
     private const float SlideInFactor = 0.5f;
     private const float TapSlopUnits = 6f;
     private const float CloseFlingUnitsPerSecond = 900f;
-    private const float ScrollSmoothTime = 0.18f;
-    private const float HoverSmoothTime = 0.12f;
-    private const float PressInSmoothTime = 0.07f;
-    private const float PressOutSmoothTime = 0.16f;
-    private const float HoverLift = 0.01f;
-    private const float PressDepth = 0.02f;
-    private const float ReturnSmoothTime = 0.14f;
-    private const float ReflowSmoothTime = 0.16f;
+    private const float PressDepth = 1f - Motion.PressScaleCard;
     private const float FlyOffSmoothTime = 0.10f;
     private const float FlyOffClearanceFactor = 1.25f;
     private const float FlyOffTargetFactor = 1.75f;
@@ -163,7 +154,7 @@ internal sealed class AppSwitcher
 
     public void Advance(Rect screen, float delta)
     {
-        reveal.Step(open ? 1f : 0f, RevealSmoothTime, delta);
+        reveal.Step(open ? 1f : 0f, Motion.SwitcherReveal, delta);
         if (!IsActive)
         {
             return;
@@ -180,7 +171,7 @@ internal sealed class AppSwitcher
         layout = SwitcherGeometry.Layout(screen, UiScale.Current, cards.Count);
         if (committing is not null)
         {
-            commit.Step(1f, CommitSmoothTime, delta);
+            commit.Step(1f, Motion.Release, delta);
             if (commit.Value >= CommitDoneProgress)
             {
                 FinishCommit();
@@ -192,7 +183,7 @@ internal sealed class AppSwitcher
         if (!panning)
         {
             scrollTarget = Math.Clamp(scrollTarget, 0f, layout.MaxScroll);
-            scroll.Step(scrollTarget, ScrollSmoothTime, delta);
+            scroll.Step(scrollTarget, Motion.PageSettle, delta);
         }
 
         ComputeCardRects();
@@ -227,10 +218,10 @@ internal sealed class AppSwitcher
         for (var index = cards.Count - 1; index >= 0; index--)
         {
             var card = cards[index];
-            card.Slot.Step(index, ReflowSmoothTime, delta);
+            card.Slot.Step(index, Motion.Release, delta);
             var pressed = pressing && ReferenceEquals(card, pressCard);
-            card.Press.Step(pressed ? 1f : 0f, pressed ? PressInSmoothTime : PressOutSmoothTime, delta);
-            card.Hover.Step(card.Hovered && !drag.Active ? 1f : 0f, HoverSmoothTime, delta);
+            card.Press.Step(pressed ? 1f : 0f, pressed ? Motion.PressIn : Motion.Release, delta);
+            card.Hover.Step(card.Hovered && !drag.Active ? 1f : 0f, Motion.HoverLift, delta);
             if (card.FlyingOff)
             {
                 card.Lift.Step(layout.CardHeight * FlyOffTargetFactor, FlyOffSmoothTime, delta);
@@ -247,7 +238,7 @@ internal sealed class AppSwitcher
                 continue;
             }
 
-            card.Lift.Step(0f, ReturnSmoothTime, delta);
+            card.Lift.Step(0f, Motion.Appear, delta);
         }
     }
 
@@ -267,7 +258,7 @@ internal sealed class AppSwitcher
             }
 
             card.HitRect = rest;
-            var pointerScale = (1f + HoverLift * card.Hover.Value) * (1f - PressDepth * card.Press.Value);
+            var pointerScale = (1f + Motion.HoverLiftCard * card.Hover.Value) * (1f - PressDepth * card.Press.Value);
             var rect = SwitcherGeometry.Scaled(rest, pointerScale);
             var alpha = isCurrent ? 1f : revealValue;
             if (isCurrent && committing is null)

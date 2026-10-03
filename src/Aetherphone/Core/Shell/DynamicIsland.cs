@@ -19,10 +19,6 @@ internal sealed class DynamicIsland
     private const ImGuiWindowFlags IslandFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
                                                  ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoInputs;
 
-    private const float PresenceSmoothTime = 0.14f;
-    private const float SplitSmoothTime = 0.12f;
-    private const float ExpandSmoothTime = 0.20f;
-    private const float PulseSmoothTime = 0.14f;
     private const float PulseWidthScale = 1.12f;
     private const float PulseHoldSeconds = 0.14f;
     private const float CompactHeight = 36f;
@@ -138,9 +134,9 @@ internal sealed class DynamicIsland
 
         var delta = FrameClock.Delta;
         clock += delta;
-        presence.Step(primary == IslandActivity.None ? 0f : 1f, PresenceSmoothTime, delta);
-        split.Step(signals.Playback && primary != IslandActivity.Playback ? 1f : 0f, SplitSmoothTime, delta);
-        pulse.Step(clock < pulseUntil ? 1f : 0f, PulseSmoothTime, delta);
+        presence.Step(primary == IslandActivity.None ? 0f : 1f, Motion.Appear, delta);
+        split.Step(signals.Playback && primary != IslandActivity.Playback ? 1f : 0f, Motion.Island, delta);
+        pulse.Step(clock < pulseUntil ? 1f : 0f, Motion.Appear, delta);
         var presenceValue = Math.Clamp(presence.Value, 0f, 1f);
         var pulseValue = Math.Clamp(pulse.Value, 0f, 1f);
         if (primary == IslandActivity.None && presenceValue < 0.02f && pulseValue < 0.01f)
@@ -185,27 +181,27 @@ internal sealed class DynamicIsland
             expanded = false;
         }
 
-        expand.Step(expanded ? 1f : 0f, ExpandSmoothTime, delta);
-        var expandEased = Easing.SmoothStep(Math.Clamp(expand.Value, 0f, 1f));
-        var bounds = Swell(LerpRect(morphed, card, expandEased), pulseValue * (1f - expandEased));
+        expand.Step(expanded ? 1f : 0f, Motion.Island, delta);
+        var expandAmount = Math.Clamp(expand.Value, 0f, 1f);
+        var bounds = Swell(LerpRect(morphed, card, expandAmount), pulseValue * (1f - expandAmount));
         lastBounds = bounds;
-        lastExpanded = expandEased > 0.5f;
+        lastExpanded = expandAmount > 0.5f;
         var hovered = UiInteract.Hover(bounds.Min, bounds.Max);
         var accent = AccentFor(shownKind);
-        var compactAlpha = Math.Clamp(presenceValue * 1.6f - 0.6f, 0f, 1f) * (1f - expandEased);
+        var compactAlpha = Math.Clamp(presenceValue * 1.6f - 0.6f, 0f, 1f) * (1f - expandAmount);
         var drawList = ImGui.GetWindowDrawList();
-        DrawBubble(drawList, theme, navigation, bounds, scale, expandEased);
+        DrawBubble(drawList, theme, navigation, bounds, scale, expandAmount);
         var rounding = bounds.Height * 0.5f;
-        if (expandEased > 0.02f)
+        if (expandAmount > 0.02f)
         {
-            Elevation.Draw(drawList, bounds.Min, bounds.Max, rounding, scale, 5f + 6f * expandEased, 3f,
-                0.24f * expandEased);
+            Elevation.Draw(drawList, bounds.Min, bounds.Max, rounding, scale, 5f + 6f * expandAmount, 3f,
+                0.24f * expandAmount);
         }
 
         Squircle.Fill(drawList, bounds.Min, bounds.Max, rounding, ImGui.GetColorU32(theme.Glass));
-        if (expandEased > 0.01f)
+        if (expandAmount > 0.01f)
         {
-            Material.LiquidGlass(drawList, bounds.Min, bounds.Max, rounding, scale, GlassTone.Dark, 0f, expandEased);
+            Material.LiquidGlass(drawList, bounds.Min, bounds.Max, rounding, scale, GlassTone.Dark, 0f, expandAmount);
         }
 
         if (compactAlpha > 0.01f)
@@ -215,14 +211,14 @@ internal sealed class DynamicIsland
         }
 
         DrawCompact(drawList, bounds, scale, view, accent, compactAlpha);
-        var overControl = DrawExpanded(drawList, bounds, scale, theme, navigation, view, accent, expandEased);
-        HandleTap(navigation, bounds, hovered, overControl, expandEased, presenceValue, suppress);
+        var overControl = DrawExpanded(drawList, bounds, scale, theme, navigation, view, accent, expandAmount);
+        HandleTap(navigation, bounds, hovered, overControl, expandAmount, presenceValue, suppress);
     }
 
-    private void HandleTap(INavigator navigation, Rect bounds, bool hovered, bool overControl, float expandEased,
+    private void HandleTap(INavigator navigation, Rect bounds, bool hovered, bool overControl, float expandAmount,
         float presenceValue, bool suppress)
     {
-        if (expandEased < 0.5f)
+        if (expandAmount < 0.5f)
         {
             if (suppress || !hovered || presenceValue < ControlThreshold)
             {
@@ -616,17 +612,17 @@ internal sealed class DynamicIsland
     }
 
     private void DrawBubble(ImDrawListPtr drawList, PhoneTheme theme, INavigator navigation, Rect bounds, float scale,
-        float expandEased)
+        float expandAmount)
     {
         var splitValue = Math.Clamp(split.Value, 0f, 1f);
-        var visible = splitValue > 0.02f && expandEased < 0.6f;
+        var visible = splitValue > 0.02f && expandAmount < 0.6f;
         lastBubbleVisible = visible;
         if (!visible)
         {
             return;
         }
 
-        var alpha = Math.Clamp(splitValue * 1.4f, 0f, 1f) * (1f - expandEased);
+        var alpha = Math.Clamp(splitValue * 1.4f, 0f, 1f) * (1f - expandAmount);
         var radius = bounds.Height * 0.5f;
         var centerX = float.Lerp(bounds.Max.X - radius, bounds.Max.X + BubbleGap * scale + radius, splitValue);
         var center = new Vector2(centerX, bounds.Center.Y);

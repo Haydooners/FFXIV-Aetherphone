@@ -9,7 +9,6 @@ namespace Aetherphone.Core.Shell.Home;
 
 internal sealed class WidgetGallery
 {
-    private const float SlideSmoothTime = 0.24f;
     private const float HeaderUnits = 56f;
 
     private readonly HomeLayoutService layout;
@@ -47,7 +46,7 @@ internal sealed class WidgetGallery
 
     public void Draw(Rect screen, PhoneTheme theme, float delta, float scale)
     {
-        slide.Step(open ? 1f : 0f, SlideSmoothTime, delta);
+        slide.Step(open ? 1f : 0f, Motion.Sheet, delta);
         var eased = Math.Clamp(slide.Value, 0f, 1f);
         if (eased <= 0.001f)
         {

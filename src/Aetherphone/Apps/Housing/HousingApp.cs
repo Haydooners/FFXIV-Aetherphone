@@ -18,7 +18,6 @@ internal sealed partial class HousingApp : IPhoneApp
     private const float ContextBarHeight = 40f;
     private const float PhaseBarHeight = 26f;
     private const float FooterHeight = 34f;
-    private const float SheetSmoothTime = 0.16f;
     private const float MapSmoothTime = 0.11f;
     private const float ToastSeconds = 3.4f;
 
@@ -194,8 +193,8 @@ internal sealed partial class HousingApp : IPhoneApp
         zoomSpring.Step(zoomTarget, MapSmoothTime, deltaSeconds);
         panXSpring.Step(panTarget.X, MapSmoothTime, deltaSeconds);
         panYSpring.Step(panTarget.Y, MapSmoothTime, deltaSeconds);
-        sheetSpring.Step(sheetOpen ? 1f : 0f, SheetSmoothTime, deltaSeconds);
-        filterSpring.Step(filtersOpen ? 1f : 0f, SheetSmoothTime, deltaSeconds);
+        sheetSpring.Step(sheetOpen ? 1f : 0f, Motion.Sheet, deltaSeconds);
+        filterSpring.Step(filtersOpen ? 1f : 0f, Motion.Sheet, deltaSeconds);
         if (toastRemaining > 0f)
         {
             toastRemaining = MathF.Max(0f, toastRemaining - deltaSeconds);

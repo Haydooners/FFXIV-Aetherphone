@@ -13,7 +13,6 @@ internal static class IconAppearancePicker
     private const float PreviewTile = 32f;
     private const float LabelGap = 5f;
     private const float HighlightInset = 3f;
-    private const float HighlightSmoothTime = 0.13f;
     private const float HighlightFillAlpha = 0.14f;
     private const float HighlightStrokeAlpha = 0.55f;
 
@@ -117,7 +116,7 @@ internal static class IconAppearancePicker
         }
 
         var deltaSeconds = MathF.Min(ImGui.GetIO().DeltaTime, 0.1f);
-        return highlight.Step(selectedIndex, HighlightSmoothTime, deltaSeconds);
+        return highlight.Step(selectedIndex, Motion.Release, deltaSeconds);
     }
 
     private static string PreviewId()

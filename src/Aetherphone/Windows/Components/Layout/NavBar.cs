@@ -50,9 +50,9 @@ internal static class NavBarMetrics
     public static float GlassOpacity(float scrollY, float scale) =>
         Easing.Clamp01(scrollY / (GlassFadeDistance * MathF.Max(scale, MinimumScale)));
 
-    public static float LargeTitleAlpha(float progress) => 1f - Easing.SmoothStep(Easing.Clamp01(progress));
+    public static float LargeTitleAlpha(float progress) => 1f - Easing.Clamp01(progress);
 
-    public static float InlineTitleAlpha(float progress) => Easing.SmoothStep(Easing.Clamp01(progress));
+    public static float InlineTitleAlpha(float progress) => Easing.Clamp01(progress);
 
     public static float ButtonsWidth(int count, float scale) =>
         count <= 0 ? 0f : count * Metrics.Size.GlassButton * scale + (count - 1) * ButtonGap * scale;

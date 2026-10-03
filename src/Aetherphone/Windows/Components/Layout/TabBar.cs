@@ -26,12 +26,7 @@ internal sealed class TabBar
     public const float GlassOpacity = 0.86f;
     private const float HighlightTint = 0.22f;
     private const float HighlightRimAlpha = 0.16f;
-    private const float PressDepth = 0.07f;
-    private const float PressSmoothTime = 0.07f;
-    private const float ReleaseSmoothTime = 0.16f;
-    private const float HoverSmoothTime = 0.12f;
-    private const float HoverLift = 0.05f;
-    private const float HighlightSmoothTime = 0.16f;
+    private const float PressDepth = 1f - Motion.PressScaleControl;
     private const float MaxFrameSeconds = 0.1f;
     private const float BadgeScale = 0.8f;
     private const float BadgeOffsetX = 10f;
@@ -128,11 +123,11 @@ internal sealed class TabBar
             var fade = 1f - amount;
             var alpha = isActive ? 1f : fade * fade;
             var hovered = !compactMode && UiInteract.Hover(cell.Min, cell.Max);
-            hover[index].Step(hovered ? 1f : 0f, HoverSmoothTime, delta);
+            hover[index].Step(hovered ? 1f : 0f, Motion.HoverLift, delta);
             var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-            press[index].Step(pressed ? 1f : 0f, pressed ? PressSmoothTime : ReleaseSmoothTime, delta);
+            press[index].Step(pressed ? 1f : 0f, pressed ? Motion.PressIn : Motion.Release, delta);
             var itemScale = (1f - PressDepth * Math.Clamp(press[index].Value, 0f, 1f))
-                            * (1f + HoverLift * Math.Clamp(hover[index].Value, 0f, 1f));
+                            * (1f + Motion.HoverLiftIcon * Math.Clamp(hover[index].Value, 0f, 1f));
             poses[index] = new TabItemPose(iconCenter, itemScale, alpha);
             if (item.AnchorKey is { } anchorKey)
             {
@@ -240,7 +235,7 @@ internal sealed class TabBar
             return;
         }
 
-        highlightX.Step(targetX, HighlightSmoothTime, delta);
+        highlightX.Step(targetX, Motion.TabBar, delta);
     }
 
     private void DrawHighlight(ImDrawListPtr drawList, Rect activeCell, Vector4 accent, float alpha, float pressAmount,
@@ -266,11 +261,11 @@ internal sealed class TabBar
     {
         var circle = TabBarLayout.ActionCircle(area, scale);
         var hovered = UiInteract.Hover(circle.Min, circle.Max);
-        actionHover.Step(hovered ? 1f : 0f, HoverSmoothTime, delta);
+        actionHover.Step(hovered ? 1f : 0f, Motion.HoverLift, delta);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        actionPress.Step(pressed ? 1f : 0f, pressed ? PressSmoothTime : ReleaseSmoothTime, delta);
+        actionPress.Step(pressed ? 1f : 0f, pressed ? Motion.PressIn : Motion.Release, delta);
         var grow = (1f - PressDepth * Math.Clamp(actionPress.Value, 0f, 1f))
-                   * (1f + HoverLift * Math.Clamp(actionHover.Value, 0f, 1f));
+                   * (1f + Motion.HoverLiftIcon * Math.Clamp(actionHover.Value, 0f, 1f));
         var half = circle.Size * 0.5f * grow;
         var min = circle.Center - half;
         var max = circle.Center + half;

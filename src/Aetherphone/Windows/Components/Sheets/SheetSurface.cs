@@ -11,7 +11,6 @@ internal sealed class SheetSurface
     private const ImGuiWindowFlags OverlayFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
                                                  ImGuiWindowFlags.NoBackground;
 
-    private const float RevealSmoothTime = 0.16f;
     private const float MaxDim = 0.5f;
     private const float PanelRounding = 28f;
     private const float GrabberWidth = 36f;
@@ -68,7 +67,7 @@ internal sealed class SheetSurface
     internal void Draw(Rect screen, in SheetSkin skin, string title, float heightFraction, Action<Rect> drawContent)
     {
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        reveal.Step(open ? 1f : 0f, RevealSmoothTime, delta);
+        reveal.Step(open ? 1f : 0f, Motion.Sheet, delta);
         if (!open && reveal.IsResting(0f, 0.001f, 0.005f))
         {
             reveal.SnapTo(0f);
@@ -77,7 +76,6 @@ internal sealed class SheetSurface
 
         var scale = UiScale.Current;
         var opacity = Math.Clamp(reveal.Value, 0f, 1f);
-        var slide = Easing.EaseOutQuint(opacity);
 
         ImGui.SetCursorScreenPos(screen.Min);
         using (ImRaii.Child("##sheet" + id, screen.Size, false, OverlayFlags))
@@ -87,7 +85,7 @@ internal sealed class SheetSurface
                 ImGui.GetColorU32(new Vector4(0f, 0f, 0f, MaxDim * opacity)));
 
             var panelHeight = screen.Height * Math.Clamp(heightFraction, 0.2f, 0.95f);
-            var panelBottom = screen.Max.Y + panelHeight * (1f - slide);
+            var panelBottom = screen.Max.Y + panelHeight * (1f - opacity);
             var panelTop = panelBottom - panelHeight;
             var panelMin = new Vector2(screen.Min.X, panelTop);
             var panelMax = new Vector2(screen.Max.X, panelBottom);

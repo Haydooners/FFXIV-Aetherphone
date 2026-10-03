@@ -13,7 +13,6 @@ namespace Aetherphone.Core.Shell.Spotlight;
 internal sealed class SpotlightOverlay
 {
     private const string SearchAnchorKey = "home.search";
-    private const float SlideSmoothTime = 0.18f;
     private const float VeilDim = 0.35f;
     private const float InteractiveThreshold = 0.6f;
     private const float RevealStart = 0.45f;
@@ -27,7 +26,6 @@ internal sealed class SpotlightOverlay
     private const float SelectionAlpha = 0.12f;
     private const float PillHoverAlpha = 0.08f;
     private const float SeparatorAlpha = 0.07f;
-    private const float PressedScale = 0.93f;
     private const int MinimumQueryLength = 2;
     private const int QueryMaxLength = 64;
     private static readonly Vector4 Ink = new(1f, 1f, 1f, 1f);
@@ -86,7 +84,7 @@ internal sealed class SpotlightOverlay
 
     public void Draw(Rect screen, Rect content, PhoneTheme theme, INavigator navigation, float delta, float scale)
     {
-        slide.Step(open ? 1f : 0f, SlideSmoothTime, delta);
+        slide.Step(open ? 1f : 0f, Motion.SwitcherReveal, delta);
         var progress = Math.Clamp(slide.Value, 0f, 1f);
         if (progress <= 0.001f)
         {
@@ -235,7 +233,7 @@ internal sealed class SpotlightOverlay
                 new Vector2(centerX + cellWidth * 0.5f, cellBottom));
             var hovered = interactive && UiInteract.Hover(cell.Min, cell.Max);
             var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-            var press = PressFx.Scale(RecentPressIds[slot], pressed, PressedScale);
+            var press = PressFx.Scale(RecentPressIds[slot], pressed, Motion.PressScaleControl);
             if (hovered)
             {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -426,7 +424,7 @@ internal sealed class SpotlightOverlay
     {
         hovered = UiInteract.Hover(pill.Min, pill.Max);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(pressId, pressed, PressedScale);
+        var press = PressFx.Scale(pressId, pressed, Motion.PressScaleControl);
         var center = pill.Center;
         var half = pill.Size * (0.5f * press);
         Material.LiquidGlass(drawList, center - half, center + half, half.Y, scale, GlassTone.Light, brightness);

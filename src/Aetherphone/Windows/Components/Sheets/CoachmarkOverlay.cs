@@ -19,10 +19,6 @@ internal sealed class CoachmarkOverlay
     private static readonly Vector4 Ink = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 CardTone = new(0.12f, 0.12f, 0.15f, 0.92f);
     private const float DimStrength = 0.78f;
-    private const float PoseSmoothTime = 0.14f;
-    private const float SizeSmoothTime = 0.16f;
-    private const float BlendSmoothTime = 0.14f;
-    private const float DotSmoothTime = 0.16f;
 
     private Spring cardCenterX;
     private Spring cardTop;
@@ -51,7 +47,7 @@ internal sealed class CoachmarkOverlay
         var dl = ImGui.GetForegroundDrawList();
         var rounding = theme.ScreenRounding * scale;
         var alpha = Math.Clamp(presence * 1.5f, 0f, 1f);
-        var contentProgress = Easing.SmoothStep(Math.Clamp((textProgress - 0.12f) / 0.55f, 0f, 1f));
+        var contentProgress = Math.Clamp((textProgress - 0.12f) / 0.55f, 0f, 1f);
         var contentAlpha = contentProgress * alpha;
         var contentRise = (1f - contentProgress) * 7f * scale;
         var live = interactive && presence > 0.55f && textProgress > 0.45f;
@@ -65,8 +61,8 @@ internal sealed class CoachmarkOverlay
             hasHole = true;
         }
 
-        holeBlend.Step(hole.HasValue ? 1f : 0f, BlendSmoothTime, delta);
-        dotSlide.Step(index, DotSmoothTime, delta);
+        holeBlend.Step(hole.HasValue ? 1f : 0f, Motion.Appear, delta);
+        dotSlide.Step(index, Motion.Release, delta);
         var blend = Math.Clamp(holeBlend.Value, 0f, 1f);
         dl.PushClipRect(screen.Min, screen.Max, true);
         DrawDim(dl, screen, rounding, alpha, blend, scale, theme, step);
@@ -231,10 +227,10 @@ internal sealed class CoachmarkOverlay
             return;
         }
 
-        cardCenterX.Step(centerX, PoseSmoothTime, delta);
-        cardTop.Step(top, PoseSmoothTime, delta);
-        cardWidth.Step(width, SizeSmoothTime, delta);
-        cardHeight.Step(height, SizeSmoothTime, delta);
+        cardCenterX.Step(centerX, Motion.Appear, delta);
+        cardTop.Step(top, Motion.Appear, delta);
+        cardWidth.Step(width, Motion.Release, delta);
+        cardHeight.Step(height, Motion.Release, delta);
     }
 
     private Rect PoseRect(Vector2 origin, float pop)
@@ -296,7 +292,7 @@ internal sealed class CoachmarkOverlay
             }
             else
             {
-                arrowSlide.Step(arrowX, SizeSmoothTime, delta);
+                arrowSlide.Step(arrowX, Motion.Release, delta);
             }
 
             Arrow(dl, screen.Min.X + arrowSlide.Value, arrowUp ? card.Min.Y : card.Max.Y, 9f * scale, arrowUp,

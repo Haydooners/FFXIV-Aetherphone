@@ -17,8 +17,6 @@ internal sealed class NotificationBanner : IDisposable
         Exit,
     }
 
-    private const float EnterSmoothTime = 0.14f;
-    private const float ExitSmoothTime = 0.14f;
     private const float HoldSeconds = 4.0f;
     private const float SideMargin = 10f;
     private const float BannerHeight = 68f;
@@ -115,7 +113,7 @@ internal sealed class NotificationBanner : IDisposable
 
         if (stage == Stage.Enter)
         {
-            enter.Step(1f, EnterSmoothTime, deltaSeconds);
+            enter.Step(1f, Motion.Appear, deltaSeconds);
             if (enter.IsResting(1f, 0.004f, 0.05f))
             {
                 enter.SnapTo(1f);
@@ -126,7 +124,7 @@ internal sealed class NotificationBanner : IDisposable
             return;
         }
 
-        exit.Step(1f, ExitSmoothTime, deltaSeconds);
+        exit.Step(1f, Motion.Appear, deltaSeconds);
         if (!exit.IsResting(1f, TransitionTiming.RestPositionEpsilon, TransitionTiming.RestVelocityEpsilon))
         {
             return;
