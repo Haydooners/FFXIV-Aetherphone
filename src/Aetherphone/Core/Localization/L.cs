@@ -6422,6 +6422,17 @@ internal static class L
         public static readonly LocString Sweeper = new("games.sweeper", "Sweeper");
         public static readonly LocString Pairs = new("games.pairs", "Pairs");
         public static readonly LocString GemSwap = new("games.gemSwap", "Gem Swap");
+        public static readonly LocString Blitz = new("games.blitz", "Blitz");
+        public static readonly LocString GemSwapClassicHint =
+            new("games.gemSwapClassicHint", "Swap neighboring gems to line up three or more");
+        public static readonly LocString GemSwapBlitzHint =
+            new("games.gemSwapBlitzHint", "60 seconds on the clock. Matches fill the bar for extra time");
+        public static readonly LocString GemSwapTimeUp = new("games.gemSwapTimeUp", "Time!");
+        public static readonly LocString GemSwapBonusTime = new("games.gemSwapBonusTime", "+{0}s");
+        public static readonly LocString GemSwapFire = new("games.gemSwapFire", "Fire");
+        public static readonly LocString GemSwapFrost = new("games.gemSwapFrost", "Frost");
+        public static readonly LocString GemSwapGale = new("games.gemSwapGale", "Gale");
+        public static readonly LocString GemSwapStorm = new("games.gemSwapStorm", "Storm");
         public static readonly LocString Boom = new("games.boom", "Boom");
         public static readonly LocString Mines = new("games.mines", "Mines");
         public static readonly LocString Time = new("games.time", "Time");
