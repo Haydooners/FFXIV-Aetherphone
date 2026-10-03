@@ -93,11 +93,6 @@ internal sealed partial class ClockApp : IPhoneApp
 
     private void DrawRoot(Rect content, float scale)
     {
-        if (GuideIntents.Consume("clock.tab.alarms"))
-        {
-            activeTab = TabAlarms;
-        }
-
         var context = new PhoneContext(content, theme, navigation);
         AppHeader.Draw(context, DisplayName);
         DrawRootAction(content, scale);
@@ -106,7 +101,10 @@ internal sealed partial class ClockApp : IPhoneApp
         var segTop = content.Min.Y + AppHeader.Height * scale + Metrics.Space.Sm * scale;
         var segRow = new Rect(new Vector2(content.Min.X + segMargin, segTop),
             new Vector2(content.Max.X - segMargin, segTop + 30f * scale));
-        UiAnchors.Report("clock.tabs", segRow);
+        var segmentWidth = segRow.Width / tabOptions.Length;
+        UiAnchors.Report("clock.tab.alarms",
+            new Rect(new Vector2(segRow.Min.X + segmentWidth * TabAlarms, segRow.Min.Y),
+                new Vector2(segRow.Min.X + segmentWidth * (TabAlarms + 1), segRow.Max.Y)));
         tabOptions[TabWorld] = Loc.T(L.Clock.TabWorld);
         tabOptions[TabAlarms] = Loc.T(L.Clock.TabAlarms);
         tabOptions[TabStopwatch] = Loc.T(L.Clock.TabStopwatch);
