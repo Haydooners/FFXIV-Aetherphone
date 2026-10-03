@@ -219,7 +219,8 @@ internal sealed class PhoneServices : IDisposable
             new DirectoryInfo(Path.Combine(soundUserRoot, "Ringtones")));
         var notificationLibrary = new SoundLibrary(new DirectoryInfo(Path.Combine(soundBundledRoot, "Notifications")),
             new DirectoryInfo(Path.Combine(soundUserRoot, "Notifications")));
-        var sound = new SoundService(configuration, ringtoneLibrary, notificationLibrary, new SoundEffectPlayer());
+        var sound = new SoundService(configuration, ringtoneLibrary, notificationLibrary, new SoundEffectPlayer(),
+            Path.Combine(soundBundledRoot, SoundService.RingbackFile));
         var uiSound = new UiSoundService(configuration, new UiSoundPlayer(new DirectoryInfo(soundBundledRoot)));
         var uiSoundTicker = new FrameworkTicker(framework, 1000, uiSound.Maintain);
         UiFeedback.Bind(uiSound);
