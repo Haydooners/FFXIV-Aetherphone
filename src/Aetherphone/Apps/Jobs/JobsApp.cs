@@ -49,6 +49,7 @@ internal sealed partial class JobsApp : IPhoneApp
     private bool rowAnchorTaken;
     private bool categoryEditorOpen;
     private Rect colorButtonRect;
+    private Rect categoriesButtonRect;
     private bool pickerOpen;
 
     public JobsApp(GameData gameData, ITextureProvider textures, Configuration configuration, ConfirmService confirm,
@@ -156,7 +157,15 @@ internal sealed partial class JobsApp : IPhoneApp
         }
         else
         {
-            TourHolds.Release(Id);
+            if (sections.Length == 0)
+            {
+                TourHolds.Hold(Id);
+            }
+            else
+            {
+                TourHolds.Release(Id);
+            }
+
             var deltaTime = ImGui.GetIO().DeltaTime;
             sinceRefresh += deltaTime;
             var interval = RefreshIntervalSeconds;
@@ -231,7 +240,6 @@ internal sealed partial class JobsApp : IPhoneApp
             leftReserve: 0f);
 
         colorButtonRect = new Rect(buttonCenter - new Vector2(radius, radius), buttonCenter + new Vector2(radius, radius));
-        UiAnchors.Report("jobs.color", colorButtonRect);
         if (ui.IconButton(buttonCenter, radius, IconGlyph.Of(FontAwesomeIcon.Palette), ui.TitleInk,
                 Palette.WithAlpha(ui.TitleInk, 0.12f), 0.55f, Loc.T(L.Jobs.BackgroundColor)))
         {
@@ -243,13 +251,13 @@ internal sealed partial class JobsApp : IPhoneApp
             return;
         }
 
-        var categoriesRect = new Rect(categoriesCenter - new Vector2(radius, radius),
+        categoriesButtonRect = new Rect(categoriesCenter - new Vector2(radius, radius),
             categoriesCenter + new Vector2(radius, radius));
-        UiAnchors.Report("jobs.categories", categoriesRect);
+        UiAnchors.Report("jobs.categories", categoriesButtonRect);
         if (ui.IconButton(categoriesCenter, radius, IconGlyph.Of(FontAwesomeIcon.FolderPlus), ui.TitleInk,
                 Palette.WithAlpha(ui.TitleInk, 0.12f), 0.55f, Loc.T(L.Jobs.Categories)))
         {
-            menu.Toggle(CategoryMenuId, categoriesRect);
+            menu.Toggle(CategoryMenuId, categoriesButtonRect);
         }
     }
 
@@ -344,12 +352,6 @@ internal sealed partial class JobsApp : IPhoneApp
     {
         var rowRect = new Rect(new Vector2(contentRect.Min.X - Metrics.Space.Lg * scale, contentRect.Min.Y),
             new Vector2(contentRect.Max.X + Metrics.Space.Lg * scale, contentRect.Max.Y));
-        if (!rowAnchorTaken)
-        {
-            rowAnchorTaken = true;
-            UiAnchors.Report("jobs.row", rowRect);
-        }
-
         DrawJobRow(drawList, rowRect, contentRect, section, index, scale);
     }
 
@@ -362,6 +364,12 @@ internal sealed partial class JobsApp : IPhoneApp
         var menuCenter = new Vector2(contentRect.Max.X - menuRadius, contentRect.Center.Y);
         var menuHalf = new Vector2(menuRadius, menuRadius);
         var overMenu = hasMenu && UiInteract.Hover(menuCenter - menuHalf, menuCenter + menuHalf);
+        if (hasMenu && !rowAnchorTaken)
+        {
+            rowAnchorTaken = true;
+            UiAnchors.Report("jobs.row", rowRect);
+            UiAnchors.Report("jobs.row.menu", new Rect(menuCenter - menuHalf, menuCenter + menuHalf));
+        }
 
         var reorderable = section.IsCustom && section.Entries.Length > 1;
         var reorderRadius = RowReorderRadius * scale;

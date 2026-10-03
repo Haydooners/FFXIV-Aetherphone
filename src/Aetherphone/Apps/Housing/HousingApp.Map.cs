@@ -53,7 +53,15 @@ internal sealed partial class HousingApp
             return;
         }
 
-        TourHolds.Release(Id);
+        if (VisiblePlots().Count == 0)
+        {
+            TourHolds.Hold(Id);
+        }
+        else
+        {
+            TourHolds.Release(Id);
+        }
+
         DrawMapViewport(viewport, scale);
         DrawFooter(footer, scale);
         DrawSheet(area, viewport, scale);
@@ -94,8 +102,6 @@ internal sealed partial class HousingApp
             Push(HousingRoute.List);
         }
 
-        var watchExtent = new Vector2(buttonRadius, buttonRadius);
-        UiAnchors.Report("housing.watchlist", new Rect(watchCenter - watchExtent, watchCenter + watchExtent));
         if (HousingChrome.MapButton(watchCenter, buttonRadius, FontAwesomeIcon.Bookmark, ui,
                 Loc.T(L.Housing.Watchlist), false, false))
         {
@@ -166,7 +172,6 @@ internal sealed partial class HousingApp
 
     private void DrawPhaseBar(Rect bar, float scale)
     {
-        UiAnchors.Report("housing.phase", bar);
         var drawList = ImGui.GetWindowDrawList();
         var pad = 14f * scale;
         var plots = VisiblePlots();

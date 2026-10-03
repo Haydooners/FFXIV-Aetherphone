@@ -132,11 +132,6 @@ internal sealed class DailiesApp : IPhoneApp
             RefreshAuto();
         }
 
-        if (GuideIntents.Consume("dailies.tab.weekly"))
-        {
-            cadenceIndex = 1;
-        }
-
         var scale = UiScale.Current;
         var content = context.Content;
         var utcNow = DateTime.UtcNow;
@@ -213,6 +208,7 @@ internal sealed class DailiesApp : IPhoneApp
             AppPalettes.Dailies.MutedInk, TextStyles.Footnote);
 
         var heroHeight = (HeroTopPad + HeroRadius * 2f + HeroSubtitleGap + HeroBottomPad) * scale;
+        UiAnchors.Report("dailies.hero", new Rect(origin, origin + new Vector2(width, heroHeight)));
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, heroHeight));
     }
@@ -222,7 +218,8 @@ internal sealed class DailiesApp : IPhoneApp
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
         var stripRect = new Rect(origin, origin + new Vector2(width, SegmentBand * scale));
-        UiAnchors.Report("dailies.cadence", stripRect);
+        UiAnchors.Report("dailies.tab.weekly",
+            new Rect(new Vector2(stripRect.Center.X, stripRect.Min.Y), stripRect.Max));
         var cadenceLabels = new[] { Loc.T(L.Dailies.Daily), Loc.T(L.Dailies.Weekly) };
         cadenceIndex = SegmentStrip.Draw("dailies.cadence", stripRect, cadenceLabels, cadenceIndex, AppPalettes.Dailies,
             SegmentTrack, 0.92f);
@@ -250,7 +247,15 @@ internal sealed class DailiesApp : IPhoneApp
         ui.SectionLabel(Loc.T(autoGroup ? L.Dailies.AutoSection : L.Dailies.ManualSection),
             TextStyles.FootnoteEmphasized, 8f);
 
+        if (autoGroup)
+        {
+            var origin = ImGui.GetCursorScreenPos();
+            UiAnchors.Report("dailies.auto",
+                new Rect(origin, origin + new Vector2(ImGui.GetContentRegionAvail().X, count * RowHeight * scale)));
+        }
+
         var card = GroupCard.Begin(ui, count, RowHeight);
+        var rowAnchored = autoGroup;
         for (var index = 0; index < items.Length; index++)
         {
             if (!Matches(items[index], cadence, autoGroup))
@@ -258,7 +263,14 @@ internal sealed class DailiesApp : IPhoneApp
                 continue;
             }
 
-            DrawRow(card.NextRow(), items[index], index, utcNow, scale);
+            var row = card.NextRow();
+            if (!rowAnchored)
+            {
+                rowAnchored = true;
+                UiAnchors.Report("dailies.manual", RowBand(row, scale));
+            }
+
+            DrawRow(row, items[index], index, utcNow, scale);
         }
 
         card.End();
@@ -275,8 +287,7 @@ internal sealed class DailiesApp : IPhoneApp
         var tappable = item.Tracking == DailyTracking.Manual;
         var complete = tappable ? checkStore.IsChecked(item, utcNow) : status.Available && status.Complete;
 
-        var band = new Rect(new Vector2(row.Min.X - Metrics.Space.Lg * scale, row.Min.Y),
-            new Vector2(row.Max.X + Metrics.Space.Lg * scale, row.Max.Y));
+        var band = RowBand(row, scale);
         var innerLeft = row.Min.X;
         var innerRight = row.Max.X;
 
@@ -332,6 +343,10 @@ internal sealed class DailiesApp : IPhoneApp
             RefreshAuto();
         }
     }
+
+    private static Rect RowBand(Rect row, float scale) =>
+        new(new Vector2(row.Min.X - Metrics.Space.Lg * scale, row.Min.Y),
+            new Vector2(row.Max.X + Metrics.Space.Lg * scale, row.Max.Y));
 
     private static float DrawValue(Rect band, float innerRight, in DailyAutoStatus status, DailyTracking tracking,
         bool complete, float scale)
