@@ -8,6 +8,7 @@ internal enum IslandActivity : byte
     Call,
     Session,
     Playback,
+    PcMedia,
     Timer,
     Muster,
     Notice,
@@ -19,7 +20,8 @@ internal enum IslandNotice : byte
     LockPosition,
 }
 
-internal readonly record struct IslandSignals(bool Call, bool Session, bool Playback, bool Timer, bool Muster);
+internal readonly record struct IslandSignals(bool Call, bool Session, bool Playback, bool Timer, bool Muster,
+    bool PcMedia = false);
 
 internal static class IslandActivities
 {
@@ -43,6 +45,11 @@ internal static class IslandActivities
             return IslandActivity.Playback;
         }
 
+        if (signals.PcMedia)
+        {
+            return IslandActivity.PcMedia;
+        }
+
         if (signals.Timer)
         {
             return IslandActivity.Timer;
@@ -60,6 +67,7 @@ internal static class IslandActivities
             case IslandActivity.Session:
                 return "aetherstream";
             case IslandActivity.Playback:
+            case IslandActivity.PcMedia:
                 return "music";
             case IslandActivity.Timer:
                 return "clock";

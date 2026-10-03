@@ -95,13 +95,13 @@ internal sealed class PhoneShell : IDisposable
         banner = new NotificationBanner(notifications, VisibleAppId, PhoneVisible, router);
         notifications.Vibration += OnVibration;
         island = new DynamicIsland(services.Playback, calls, configuration, bundle.Video, services.Musters,
-            services.MusterLauncher);
+            services.MusterLauncher, services.PcMedia);
         var rateLimitPill = new RateLimitPill(services.Http, services.AethernetSession);
         shortcutPill = new ShortcutRunPill(services.ShortcutRunner);
         coinPill = new CoinEarnPill(services.Coins, configuration);
         coinFloats = new CoinEarnFloats(services.Coins);
         var controlCenter = new ControlCenter(configuration, themes, services.Playback, calls, navigation,
-            notifications, router, services.Coins, services.AethernetSession);
+            notifications, router, services.Coins, services.AethernetSession, services.PcMedia);
         minimizedPhone = new MinimizedPhone(services, router, navigation, services.MinimizedLayout);
         var spotlightIndex = new Spotlight.SpotlightIndex(apps, services.Installer, bundle.Contacts,
             services.DmLauncher, services.ChatInbox, services.ChatLog, services.LinkpearlLauncher,

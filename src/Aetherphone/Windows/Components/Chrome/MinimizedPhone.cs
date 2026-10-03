@@ -27,7 +27,7 @@ internal readonly struct MinimizedDrag
     }
 }
 
-internal sealed class MinimizedPhone : IDisposable
+internal sealed partial class MinimizedPhone : IDisposable
 {
     public const float BodyWidth = 82f;
     private const float MinBodyHeight = 156f;
@@ -132,6 +132,7 @@ internal sealed class MinimizedPhone : IDisposable
         MinimizedLayoutService layout)
     {
         playback = services.Playback;
+        pcMedia = services.PcMedia;
         calls = services.Calls;
         notifications = services.Notifications;
         configuration = services.Configuration;
@@ -467,6 +468,11 @@ internal sealed class MinimizedPhone : IDisposable
 
     private float DrawMusic(ImDrawListPtr dl, Rect screen, float y, float presence)
     {
+        if (ShowsPcMusic())
+        {
+            return DrawPcMusic(dl, screen, y, presence);
+        }
+
         var scale = frameScale;
         var compactHeight = MusicHeight * scale;
         var expandedHeight = MusicExpandedHeight * scale * frameExpandEased;
@@ -604,7 +610,7 @@ internal sealed class MinimizedPhone : IDisposable
 
         var callActive = view.State is CallState.Dialing or CallState.Connecting or CallState.Active;
         var callShown = callActive && layout.IsEnabled(MinimizedPart.Calls);
-        var musicShown = playback.IsActive && layout.IsEnabled(MinimizedPart.NowPlaying);
+        var musicShown = layout.IsEnabled(MinimizedPart.NowPlaying) && (playback.IsActive || ReadPcMusic());
         musicPresence.Step(musicShown ? 1f : 0f, Motion.Appear, delta);
         callPresence.Step(callShown ? 1f : 0f, Motion.Appear, delta);
         badge.Step(badgeAppId is null ? 0f : 1f, Motion.Appear, delta);

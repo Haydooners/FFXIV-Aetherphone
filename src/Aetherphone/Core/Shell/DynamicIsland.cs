@@ -5,6 +5,7 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Muster;
 using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Playback;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Video;
@@ -15,7 +16,7 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Core.Shell;
 
-internal sealed class DynamicIsland
+internal sealed partial class DynamicIsland
 {
     private const ImGuiWindowFlags IslandFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
                                                  ImGuiWindowFlags.NoBackground | ImGuiWindowFlags.NoInputs;
@@ -87,7 +88,7 @@ internal sealed class DynamicIsland
     private bool lastBubbleVisible;
 
     public DynamicIsland(PlaybackHub playback, CallHub calls, Configuration configuration, VideoSuite? video,
-        MusterStore? musters, MusterLauncher? musterLauncher)
+        MusterStore? musters, MusterLauncher? musterLauncher, PcMediaSource? pcMedia)
     {
         this.playback = playback;
         this.calls = calls;
@@ -95,6 +96,7 @@ internal sealed class DynamicIsland
         this.video = video;
         this.musters = musters;
         this.musterLauncher = musterLauncher;
+        this.pcMedia = pcMedia;
     }
 
     public void Pulse()
@@ -184,7 +186,7 @@ internal sealed class DynamicIsland
             ? IslandActivities.SoonestMuster(store.GoingMusters, store.Mine, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             : null;
         return new IslandSignals(call, session, playback.IsActive, TimerRemainingSeconds() > 0,
-            upcomingMuster is not null);
+            upcomingMuster is not null, ReadPcMedia(call || session || playback.IsActive));
     }
 
     private void DrawContent(Rect screen, PhoneTheme theme, INavigator navigation, in CallView view,
@@ -427,6 +429,9 @@ internal sealed class DynamicIsland
                 Equalizer.Draw(drawList, new Vector2(trailingRight - 3f * scale, bounds.Center.Y), scale,
                     bounds.Height * 0.44f, clock, accent, alpha, playback.IsPlaying);
                 break;
+            case IslandActivity.PcMedia:
+                DrawPcMediaCompact(drawList, bubbleCenter, bubbleRadius, trailingRight, bounds, scale, accent, alpha);
+                break;
             case IslandActivity.Timer:
                 var remaining = TimerRemainingSeconds();
                 DrawTimerRing(drawList, bubbleCenter, bubbleRadius - 3f * scale, 2f * scale, remaining, alpha);
@@ -593,6 +598,9 @@ internal sealed class DynamicIsland
 
                 break;
             }
+            case IslandActivity.PcMedia:
+                overControl = DrawPcMediaExpanded(drawList, bounds, scale, accent, alpha, active);
+                break;
             case IslandActivity.Timer:
             {
                 var remaining = TimerRemainingSeconds();
