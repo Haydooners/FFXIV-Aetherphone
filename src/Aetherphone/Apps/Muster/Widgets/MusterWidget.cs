@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Apps;
@@ -85,7 +84,7 @@ internal sealed class MusterWidget : IHomeWidget
 
     public WidgetRoute Target(in WidgetContext context)
     {
-        if (context.Size != WidgetSize.Small || rows.Count == 0)
+        if (context.Size != WidgetSize.Small || rows.Count == 0 || !store.IsSignedIn)
         {
             return WidgetRoute.App(AppKey);
         }
@@ -431,7 +430,7 @@ internal sealed class MusterWidget : IHomeWidget
     }
 
     private ref CachedText SubtitleCache(string id) =>
-        ref CollectionsMarshal.GetValueRefOrAddDefault(subtitles, id, out _);
+        ref WidgetCaches.Slot(subtitles, id);
 
     private static string Subtitle(ref CachedText cache, in Row row, long nowUnix)
     {

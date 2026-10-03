@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Home;
@@ -307,7 +306,6 @@ internal sealed class RemindersWidget : IHomeWidget
             if (clock - pair.Value >= CompletionGraceSeconds)
             {
                 completedAt.Remove(pair.Key);
-                return;
             }
         }
     }
@@ -366,7 +364,7 @@ internal sealed class RemindersWidget : IHomeWidget
             return Format(ref sampleCache, due);
         }
 
-        ref var cache = ref CollectionsMarshal.GetValueRefOrAddDefault(dueLabels, row.Item.Id, out _);
+        ref var cache = ref WidgetCaches.Slot(dueLabels, row.Item.Id);
         return Format(ref cache, due);
     }
 

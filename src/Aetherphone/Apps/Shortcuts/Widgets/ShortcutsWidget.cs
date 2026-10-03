@@ -286,13 +286,8 @@ internal sealed class ShortcutsWidget : IHomeWidget
 
     private string Monogram(string name)
     {
-        if (monograms.TryGetValue(name, out var cached))
-        {
-            return cached;
-        }
-
-        var monogram = ShortcutStore.Monogram(name);
-        monograms[name] = monogram;
+        ref var monogram = ref WidgetCaches.Slot(monograms, name);
+        monogram ??= ShortcutStore.Monogram(name);
         return monogram;
     }
 

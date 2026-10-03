@@ -22,7 +22,6 @@ internal sealed class MarketWatchWidget : IHomeWidget
     private const float IconUnits = 28f;
     private const float RowUnits = 40f;
     private const float DotUnits = 3f;
-    private static readonly Comparison<MarketAlert> AlertOrder = CompareAlerts;
 
     private sealed class RowText
     {
@@ -36,6 +35,7 @@ internal sealed class MarketWatchWidget : IHomeWidget
     private readonly Dictionary<MarketAlert, RowText> texts = new();
     private readonly CachedText[] samplePrices = new CachedText[4];
     private WidgetRefresh refresh;
+    private int[] ranks = Array.Empty<int>();
     private int triggered;
     private CachedText trailingText;
 
@@ -202,15 +202,7 @@ internal sealed class MarketWatchWidget : IHomeWidget
         }
 
         alerts.CopyInto(buffer);
-        buffer.Sort(AlertOrder);
-        triggered = 0;
-        for (var index = 0; index < buffer.Count; index++)
-        {
-            if (buffer[index].Triggered && buffer[index].Enabled)
-            {
-                triggered++;
-            }
-        }
+        Order();
 
         if (texts.Count > TextCacheLimit)
         {
@@ -248,22 +240,56 @@ internal sealed class MarketWatchWidget : IHomeWidget
         return cache.Store(key, text);
     }
 
-    private static int CompareAlerts(MarketAlert left, MarketAlert right)
+    private void Order()
     {
-        var leftHit = left.Triggered && left.Enabled;
-        var rightHit = right.Triggered && right.Enabled;
-        if (leftHit != rightHit)
+        var count = buffer.Count;
+        if (ranks.Length < count)
         {
-            return leftHit ? -1 : 1;
+            ranks = new int[count];
         }
 
-        if (left.Enabled != right.Enabled)
+        triggered = 0;
+        for (var index = 0; index < count; index++)
         {
-            return left.Enabled ? -1 : 1;
+            var rank = RankOf(buffer[index]);
+            ranks[index] = rank;
+            if (rank == 0)
+            {
+                triggered++;
+            }
         }
 
-        return string.Compare(left.ItemName, right.ItemName, StringComparison.CurrentCultureIgnoreCase);
+        for (var index = 1; index < count; index++)
+        {
+            var alert = buffer[index];
+            var rank = ranks[index];
+            var cursor = index - 1;
+            while (cursor >= 0 && Precedes(rank, alert, ranks[cursor], buffer[cursor]))
+            {
+                buffer[cursor + 1] = buffer[cursor];
+                ranks[cursor + 1] = ranks[cursor];
+                cursor--;
+            }
+
+            buffer[cursor + 1] = alert;
+            ranks[cursor + 1] = rank;
+        }
     }
+
+    private static int RankOf(MarketAlert alert)
+    {
+        if (!alert.Enabled)
+        {
+            return 2;
+        }
+
+        return alert.Triggered ? 0 : 1;
+    }
+
+    private static bool Precedes(int rank, MarketAlert alert, int otherRank, MarketAlert other) =>
+        rank != otherRank
+            ? rank < otherRank
+            : string.Compare(alert.ItemName, other.ItemName, StringComparison.CurrentCultureIgnoreCase) < 0;
 
     public void Dispose()
     {

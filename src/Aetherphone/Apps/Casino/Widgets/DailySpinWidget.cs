@@ -26,6 +26,7 @@ internal sealed class DailySpinWidget : IHomeWidget
     private WidgetRefresh fresh;
     private CachedText countdownText;
     private CachedText awardText;
+    private long expiredRefreshFor;
 
     public DailySpinWidget(CasinoSpinStore spin, AethernetSession session)
     {
@@ -78,8 +79,10 @@ internal sealed class DailySpinWidget : IHomeWidget
                 DrawAvailable(context, ink, body, accent);
                 return;
             case DailySpinClaim.Claimed:
-                DrawClaimed(context, ink, body, accent, answer!.NextSpinAtUnix,
-                    DateTimeOffset.UtcNow.ToUnixTimeSeconds(), DailySpinStatus.AwardOf(answer));
+                var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                RefreshWhenExpired(answer!.NextSpinAtUnix, nowUnix);
+                DrawClaimed(context, ink, body, accent, answer.NextSpinAtUnix, nowUnix,
+                    DailySpinStatus.AwardOf(answer));
                 return;
             case DailySpinClaim.Denied:
                 WidgetChrome.Message(context, ink, body, FontAwesomeIcon.Gift, accent,
@@ -149,6 +152,17 @@ internal sealed class DailySpinWidget : IHomeWidget
         WidgetText.Draw(drawList,
             new Vector2(body.Min.X, barRect.Min.Y - WidgetMetrics.Gutter * scale - lineHeight), awardLine,
             ink.Accent(accent), WidgetType.Headline, body.Width);
+    }
+
+    private void RefreshWhenExpired(long nextAtUnix, long nowUnix)
+    {
+        if (nowUnix < nextAtUnix || expiredRefreshFor == nextAtUnix)
+        {
+            return;
+        }
+
+        expiredRefreshFor = nextAtUnix;
+        spin.RefreshNow();
     }
 
     private void Freshen()

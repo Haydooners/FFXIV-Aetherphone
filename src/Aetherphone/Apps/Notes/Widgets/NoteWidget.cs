@@ -164,11 +164,9 @@ internal sealed class NoteWidget : IHomeWidget
 
     private NoteText TextFor(PhoneNote note)
     {
-        if (!texts.TryGetValue(note.Id, out var text))
-        {
-            text = new NoteText();
-            texts[note.Id] = text;
-        }
+        ref var slot = ref WidgetCaches.Slot(texts, note.Id);
+        slot ??= new NoteText();
+        var text = slot;
 
         if (ReferenceEquals(text.Body, note.Body))
         {

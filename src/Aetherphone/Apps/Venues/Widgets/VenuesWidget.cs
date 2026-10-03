@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Game;
@@ -139,7 +138,7 @@ internal sealed class VenuesWidget : IHomeWidget
 
         var confirmed = venue.IsConfirmedLive(nowUtc);
         var pill = WidgetText.Upper(confirmed ? L.Venues.LiveNow : L.Venues.OpenNow);
-        ref var cache = ref CollectionsMarshal.GetValueRefOrAddDefault(subtitles, venue.Id, out _);
+        ref var cache = ref WidgetCaches.Slot(subtitles, venue.Id);
         DrawText(context, ink, rowRect, thumb, venue.Title, Subtitle(ref cache, venue), pill, confirmed);
     }
 

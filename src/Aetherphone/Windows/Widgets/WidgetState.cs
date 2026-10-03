@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Home;
 using Dalamud.Bindings.ImGui;
@@ -20,6 +21,21 @@ internal sealed class WidgetStates<T> where T : class, new()
         state = new T();
         states[instanceKey] = state;
         return state;
+    }
+}
+
+internal static class WidgetCaches
+{
+    public const int Limit = 128;
+
+    public static ref TValue Slot<TKey, TValue>(Dictionary<TKey, TValue> cache, TKey key) where TKey : notnull
+    {
+        if (cache.Count >= Limit && !cache.ContainsKey(key))
+        {
+            cache.Clear();
+        }
+
+        return ref CollectionsMarshal.GetValueRefOrAddDefault(cache, key, out _)!;
     }
 }
 

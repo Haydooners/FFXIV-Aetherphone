@@ -41,7 +41,7 @@ internal sealed class LodestoneWidget : IHomeWidget
     private readonly WidgetOption[] options;
     private readonly NewsEntry?[] entries = new NewsEntry?[NewsCategories.All.Length];
     private readonly WidgetRefresh[] requests = new WidgetRefresh[NewsCategories.All.Length];
-    private readonly CachedText[] captions = new CachedText[NewsCategories.All.Length * MaxRows];
+    private readonly CachedText[] captions = new CachedText[NewsCategories.All.Length * (MaxRows + 1)];
     private readonly CachedText[] sampleCaptions = new CachedText[MaxRows];
 
     public LodestoneWidget(NewsService news, GameData gameData, RemoteImageCache images)
@@ -134,7 +134,7 @@ internal sealed class LodestoneWidget : IHomeWidget
             {
                 var item = items[first + index];
                 title = item.Title;
-                caption = Caption(ref captions[slot * MaxRows + index], item, category);
+                caption = Caption(ref captions[slot * (MaxRows + 1) + first + index], item, category);
             }
 
             var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Headline);
