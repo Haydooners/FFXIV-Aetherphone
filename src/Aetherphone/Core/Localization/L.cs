@@ -6871,6 +6871,17 @@ internal static class L
         public static readonly LocString Sweeper = new("games.sweeper", "Sweeper");
         public static readonly LocString Pairs = new("games.pairs", "Pairs");
         public static readonly LocString GemSwap = new("games.gemSwap", "Gem Swap");
+        public static readonly LocString Blitz = new("games.blitz", "Blitz");
+        public static readonly LocString GemSwapClassicHint =
+            new("games.gemSwapClassicHint", "Swap neighboring gems to line up three or more");
+        public static readonly LocString GemSwapBlitzHint =
+            new("games.gemSwapBlitzHint", "60 seconds on the clock. Matches fill the bar for extra time");
+        public static readonly LocString GemSwapTimeUp = new("games.gemSwapTimeUp", "Time!");
+        public static readonly LocString GemSwapBonusTime = new("games.gemSwapBonusTime", "+{0}s");
+        public static readonly LocString GemSwapFire = new("games.gemSwapFire", "Fire");
+        public static readonly LocString GemSwapFrost = new("games.gemSwapFrost", "Frost");
+        public static readonly LocString GemSwapGale = new("games.gemSwapGale", "Gale");
+        public static readonly LocString GemSwapStorm = new("games.gemSwapStorm", "Storm");
         public static readonly LocString Boom = new("games.boom", "Boom");
         public static readonly LocString Mines = new("games.mines", "Mines");
         public static readonly LocString Time = new("games.time", "Time");
@@ -7113,6 +7124,69 @@ internal static class L
         public static readonly LocString OnlinePickTarget = new("games.onlinePickTarget", "Tap a player to swap hands");
         public static readonly LocPlural OnlineBackToLobby = new("games.onlineBackToLobby", "Returning to the lobby in {0} second", "Returning to the lobby in {0} seconds");
         public static readonly LocString OnlineTapToSkip = new("games.onlineTapToSkip", "Tap to skip");
+    }
+
+    internal static class Coil
+    {
+        public static readonly LocString Title = new("coil.title", "Coil");
+        public static readonly LocString HowTo = new("coil.howTo", "Aim with the mouse and click to fire. Right-click or Space swaps marbles.");
+        public static readonly LocString Goal = new("coil.goal", "Match three or more to clear the chain before it reaches the vortex.");
+        public static readonly LocString StageClear = new("coil.stageClear", "Stage clear!");
+        public static readonly LocString Bonus = new("coil.bonus", "Clear bonus");
+        public static readonly LocString Chain = new("coil.chain", "Chain x{0}");
+        public static readonly LocString GapShot = new("coil.gapShot", "Gap shot!");
+        public static readonly LocString ReachedStage = new("coil.reachedStage", "Reached stage {0}");
+        public static readonly LocString PowerFreeze = new("coil.powerFreeze", "Freeze");
+        public static readonly LocString PowerSlow = new("coil.powerSlow", "Slow");
+        public static readonly LocString PowerReverse = new("coil.powerReverse", "Reverse");
+        public static readonly LocString PowerBlast = new("coil.powerBlast", "Blast");
+        public static readonly LocString PowerPrism = new("coil.powerPrism", "Prism");
+        public static readonly LocString PowerGuide = new("coil.powerGuide", "Guide");
+        public static readonly LocString StageWhirlpool = new("coil.stageWhirlpool", "Whirlpool");
+        public static readonly LocString StageMeander = new("coil.stageMeander", "Meander");
+        public static readonly LocString StageTwinCoil = new("coil.stageTwinCoil", "Twin Coil");
+        public static readonly LocString StageHeart = new("coil.stageHeart", "Heartstring");
+        public static readonly LocString StageZigzag = new("coil.stageZigzag", "Zigzag");
+        public static readonly LocString StageStarburst = new("coil.stageStarburst", "Starburst");
+        public static readonly LocString StageHourglass = new("coil.stageHourglass", "Hourglass");
+        public static readonly LocString StageClover = new("coil.stageClover", "Clover");
+        public static readonly LocString StageKeystone = new("coil.stageKeystone", "Keystone");
+        public static readonly LocString StagePaperclip = new("coil.stagePaperclip", "Paperclip");
+        public static readonly LocString StageFigureEight = new("coil.stageFigureEight", "Figure Eight");
+        public static readonly LocString StageRipple = new("coil.stageRipple", "Ripple");
+    }
+
+    internal static class Updraft
+    {
+        public static readonly LocString Title = new("updraft.title", "Updraft");
+        public static readonly LocString Hint = new("updraft.hint", "Steer with A and D, the arrow keys or the mouse");
+        public static readonly LocString Height = new("updraft.height", "Height");
+        public static readonly LocString Crystals = new("updraft.crystals", "Crystals");
+        public static readonly LocString Metres = new("updraft.metres", "{0} m");
+        public static readonly LocString ResultLine = new("updraft.resultLine", "{0} m climbed, {1} crystals");
+        public static readonly LocString PassedBest = new("updraft.passedBest", "New best height!");
+        public static readonly LocString SuperBounce = new("updraft.superBounce", "Super bounce!");
+        public static readonly LocString Feather = new("updraft.feather", "Feather!");
+        public static readonly LocString Shield = new("updraft.shield", "Shield!");
+        public static readonly LocString Blocked = new("updraft.blocked", "Blocked!");
+        public static readonly LocString Zap = new("updraft.zap", "Zap!");
+    }
+
+    internal static class Swoop
+    {
+        public static readonly LocString Title = new("swoop.title", "Swoop");
+        public static readonly LocString HowTo = new("swoop.howTo", "Hold to dive down the slopes, let go to soar");
+        public static readonly LocString Smooth = new("swoop.smooth", "Smooth!");
+        public static readonly LocString Thud = new("swoop.thud", "Thud!");
+        public static readonly LocString AirTime = new("swoop.airTime", "Air {0}s");
+        public static readonly LocString Fever = new("swoop.fever", "Fever");
+        public static readonly LocString FeverStart = new("swoop.feverStart", "Fever! Double points");
+        public static readonly LocString Island = new("swoop.island", "Island {0}!");
+        public static readonly LocString TimeBonus = new("swoop.timeBonus", "+{0}s");
+        public static readonly LocString Nightfall = new("swoop.nightfall", "Nightfall");
+        public static readonly LocString ResultTitle = new("swoop.resultTitle", "Good night");
+        public static readonly LocString ResultLine = new("swoop.resultLine", "{0} m · Island {1} · Best air {2}s");
+        public static readonly LocString Altitude = new("swoop.altitude", "{0} m");
     }
 
     internal static class Minimized
