@@ -7162,8 +7162,33 @@ internal static class L
     internal static class Jobs
     {
         public static readonly LocString LogInToView = new("jobs.logInToView", "Log in to view your jobs");
-        public static readonly LocString NoGearsets = new("jobs.noGearsets", "Create a gearset for a job in-game to see it here.");
-        public static readonly LocString NoGearset = new("jobs.noGearset", "No gearset");
+        public static readonly LocString LogInBody = new("jobs.logInBody", "Levels, EXP and gearsets for every job show up here once a character is logged in.");
+        public static readonly LocString CurrentJob = new("jobs.currentJob", "Current job");
+        public static readonly LocString TileLevel = new("jobs.tileLevel", "Lv {0}");
+        public static readonly LocString LevelValue = new("jobs.levelValue", "Level {0}");
+        public static readonly LocString Locked = new("jobs.locked", "Locked");
+        public static readonly LocString ExpProgress = new("jobs.expProgress", "{0} / {1} EXP");
+        public static readonly LocString ExpToGo = new("jobs.expToGo", "{0} EXP to level {1}");
+        public static readonly LocString RestedBonus = new("jobs.restedBonus", "Rested bonus {0} EXP");
+        public static readonly LocString LevelCap = new("jobs.levelCap", "Level cap reached");
+        public static readonly LocString AtCap = new("jobs.atCap", "At the level cap");
+        public static readonly LocString LevelsEarned = new("jobs.levelsEarned", "Levels earned");
+        public static readonly LocString OfTotal = new("jobs.ofTotal", "{0} of {1}");
+        public static readonly LocString Gearsets = new("jobs.gearsets", "Gearsets");
+        public static readonly LocString ItemLevel = new("jobs.itemLevel", "iLv {0}");
+        public static readonly LocString MainHandMissing = new("jobs.mainHandMissing", "Main hand missing");
+        public static readonly LocString SwitchTo = new("jobs.switchTo", "Switch to {0}");
+        public static readonly LocString Switching = new("jobs.switching", "Switching…");
+        public static readonly LocString NoGearsetTitle = new("jobs.noGearsetTitle", "No gearset yet");
+        public static readonly LocString NoGearsetBody = new("jobs.noGearsetBody", "Save a gearset for this job in game from the Character window to switch to it from here.");
+        public static readonly LocString LockedTitle = new("jobs.lockedTitle", "Not unlocked yet");
+        public static readonly LocString LockedStartsAt = new("jobs.lockedStartsAt", "Unlock it in game and it starts at level {0}.");
+        public static readonly LocString LockedBody = new("jobs.lockedBody", "Unlock it in game to start levelling it.");
+        public static readonly LocString EquipBusy = new("jobs.equipBusy", "You can't change gear right now. Try again out of combat.");
+        public static readonly LocString EquipFailed = new("jobs.equipFailed", "The game didn't switch gear. Try again in a moment.");
+        public static readonly LocString EmptyShelf = new("jobs.emptyShelf", "No gearsets here yet. Open a job and use a gearset's ··· menu to add one.");
+        public static readonly LocString MoveEarlier = new("jobs.moveEarlier", "Move earlier");
+        public static readonly LocString MoveLater = new("jobs.moveLater", "Move later");
         public static readonly LocString SectionTank = new("jobs.sectionTank", "Tank");
         public static readonly LocString SectionHealer = new("jobs.sectionHealer", "Healer");
         public static readonly LocString SectionMelee = new("jobs.sectionMelee", "Melee DPS");
@@ -7171,8 +7196,6 @@ internal static class L
         public static readonly LocString SectionMagicalRanged = new("jobs.sectionMagicalRanged", "Magical Ranged DPS");
         public static readonly LocString SectionHand = new("jobs.sectionHand", "Disciples of the Hand");
         public static readonly LocString SectionLand = new("jobs.sectionLand", "Disciples of the Land");
-        public static readonly LocString LevelItemLevel = new("jobs.levelItemLevel", "{0} · Lv{1} · iLv{2}");
-        public static readonly LocString LevelOnly = new("jobs.levelOnly", "{0} · Lv{1}");
         public static readonly LocString Active = new("jobs.active", "ACTIVE");
         public static readonly LocString BackgroundColor = new("jobs.backgroundColor", "Background color");
         public static readonly LocString CustomColor = new("jobs.customColor", "Custom color…");
@@ -7190,7 +7213,6 @@ internal static class L
         public static readonly LocString RemoveFromCategory = new("jobs.removeFromCategory", "Remove from category");
         public static readonly LocString DeleteCategory = new("jobs.deleteCategory", "Delete");
         public static readonly LocString DeleteCategoryConfirm = new("jobs.deleteCategoryConfirm", "Delete \"{0}\"? Its gearsets go back to their role sections.");
-        public static readonly LocString EmptyCategory = new("jobs.emptyCategory", "No gearsets here yet. Use a gearset's ··· menu to add one.");
         public static readonly LocString MoveUp = new("jobs.moveUp", "Move up");
         public static readonly LocString MoveDown = new("jobs.moveDown", "Move down");
     }
@@ -8817,6 +8839,10 @@ internal static class L
         public static readonly LocString InventoryOpenBody = new("onboarding.inventoryOpenBody", "Each row is one place your items live. Tap one to see everything in it.");
         public static readonly LocString InventoryWealthTitle = new("onboarding.inventoryWealthTitle", "Your wealth");
         public static readonly LocString InventoryWealthBody = new("onboarding.inventoryWealthBody", "Gil on you and your retainers, plus what your items would fetch on the market board. Tap for the breakdown.");
+        public static readonly LocString JobsHeroTitle = new("onboarding.jobsHeroTitle", "Your current job");
+        public static readonly LocString JobsHeroBody = new("onboarding.jobsHeroBody", "The ring fills as you earn EXP toward your next level.");
+        public static readonly LocString JobsOpenTitle = new("onboarding.jobsOpenTitle", "Every job");
+        public static readonly LocString JobsOpenBody = new("onboarding.jobsOpenBody", "Tap any job to see its EXP and gearsets.");
         public static readonly LocString JobsEquipTitle = new("onboarding.jobsEquipTitle", "Change jobs");
         public static readonly LocString JobsEquipBody = new("onboarding.jobsEquipBody", "Tap a gearset to equip it. Crafters and gatherers switch the same way.");
         public static readonly LocString JobsSortTitle = new("onboarding.jobsSortTitle", "File a gearset");
