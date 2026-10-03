@@ -71,7 +71,7 @@ internal sealed partial class AnnouncementsApp
         ConsumeReading(depth);
         SyncFilter();
 
-        var navBar = AppHeader.BeginLargeTitle(context);
+        var navBar = AppHeader.BeginLargeTitle(context, false);
         var body = navBar.Body;
         using (var surface = AppSurface.Begin(body))
         {

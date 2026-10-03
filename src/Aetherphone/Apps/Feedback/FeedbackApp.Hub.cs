@@ -26,7 +26,7 @@ internal sealed partial class FeedbackApp
     private void DrawHub(Rect area)
     {
         var context = new PhoneContext(area, theme, navigation);
-        var navBar = AppHeader.BeginLargeTitle(context);
+        var navBar = AppHeader.BeginLargeTitle(context, false);
         var body = navBar.Body;
         using (AppSurface.Begin(body))
         {

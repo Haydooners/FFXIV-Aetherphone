@@ -165,7 +165,7 @@ internal sealed partial class FeedbackApp : IPhoneApp
     private void DrawSignedOut(Rect content)
     {
         var context = new PhoneContext(content, theme, navigation);
-        var navBar = AppHeader.BeginLargeTitle(context);
+        var navBar = AppHeader.BeginLargeTitle(context, false);
         var body = navBar.Body;
         using (AppSurface.Begin(body))
         {

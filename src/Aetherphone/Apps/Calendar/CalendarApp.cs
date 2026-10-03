@@ -134,7 +134,7 @@ internal sealed partial class CalendarApp : IPhoneApp
     private void DrawMonth(Rect content, float scale)
     {
         var context = new PhoneContext(content, theme, navigation);
-        var navBar = AppHeader.BeginLargeTitle(context);
+        var navBar = AppHeader.BeginLargeTitle(context, false);
         var body = navBar.Body;
         using (AppSurface.Begin(body))
         {

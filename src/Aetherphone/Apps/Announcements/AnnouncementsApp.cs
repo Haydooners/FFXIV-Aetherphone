@@ -130,7 +130,7 @@ internal sealed partial class AnnouncementsApp : IPhoneApp
     private void DrawSignedOut(in PhoneContext context)
     {
         ui.Body(context.Content);
-        var navBar = AppHeader.BeginLargeTitle(context);
+        var navBar = AppHeader.BeginLargeTitle(context, false);
         if (AnnouncementsStatePanel.Draw(navBar.Body, ui, FontAwesomeIcon.UserLock,
                 Loc.T(L.Announcements.SignInTitle), Loc.T(L.Announcements.SignInRequired),
                 Loc.T(L.Announcements.OpenSettings)))

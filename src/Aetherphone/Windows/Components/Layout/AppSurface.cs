@@ -113,7 +113,7 @@ internal static class AppSurface
         NavBarConsumed = true;
         NavBarScrollY = freshVisit ? 0f : ImGui.GetScrollY();
         var style = ImGui.GetStyle();
-        var reserve = MathF.Max(0f, navBarInset - style.WindowPadding.Y - style.ItemSpacing.Y);
+        var reserve = MathF.Max(0f, navBarInset - ImGui.GetCursorPosY() - style.ItemSpacing.Y);
         ImGui.Dummy(new Vector2(0f, reserve));
     }
 
