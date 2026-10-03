@@ -14,6 +14,21 @@ internal static class LiveBackdropPlan
     public const int SmoothLevel = 1;
     public const float CompositeFeedbackBlend = 0.7f;
     public const float WorldFeedbackBlend = 1f;
+    public const float RegionPadding = 24f;
+    public const float SampleReach = 8f;
+
+    public static Rect Pad(Rect rect, float padding)
+    {
+        var grow = new Vector2(padding, padding);
+        return new Rect(rect.Min - grow, rect.Max + grow);
+    }
+
+    public static Rect Union(Rect first, Rect second) =>
+        new(Vector2.Min(first.Min, second.Min), Vector2.Max(first.Max, second.Max));
+
+    public static bool Covers(Rect region, Rect rect) =>
+        rect.Min.X >= region.Min.X && rect.Min.Y >= region.Min.Y &&
+        rect.Max.X <= region.Max.X && rect.Max.Y <= region.Max.Y;
 
     public static (int Width, int Height) LevelSize(Vector2 regionPixels, int level)
     {

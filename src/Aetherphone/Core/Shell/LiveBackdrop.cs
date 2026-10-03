@@ -32,6 +32,7 @@ internal sealed class LiveBackdrop : IDisposable
     private Rect requestScreen;
     private Vector4 requestBackground;
     private int requestFrame = -1;
+    private int surfaceRequestFrame = -1;
     private int lastWantedFrame = -1;
     private Rect passScreen;
     private int passFrame = -1;
@@ -50,6 +51,9 @@ internal sealed class LiveBackdrop : IDisposable
 
     public LiveGlassSource? ActiveSource => capture is null ? null : captureSource;
 
+    public bool WorldSourceWanted =>
+        !faulted && configuration.LiveGlass && configuration.LiveGlassSource == LiveGlassSource.World;
+
     public void Prepare()
     {
         if (faulted || !configuration.LiveGlass)
@@ -59,7 +63,8 @@ internal sealed class LiveBackdrop : IDisposable
         }
 
         var frame = ImGui.GetFrameCount();
-        var wanted = WallpaperBackdrop.Requested && frame - requestFrame <= FrameTolerance;
+        var surfaceWanted = frame - surfaceRequestFrame <= FrameTolerance;
+        var wanted = frame - requestFrame <= FrameTolerance && (WallpaperBackdrop.Requested || surfaceWanted);
         if (!wanted)
         {
             if (lastWantedFrame >= 0 && frame - lastWantedFrame > IdleFramesBeforeRelease)
@@ -95,16 +100,49 @@ internal sealed class LiveBackdrop : IDisposable
             return;
         }
 
-        requestScreen = screen;
         requestBackground = background;
-        requestFrame = ImGui.GetFrameCount();
-        if (requestFrame - passFrame > FrameTolerance || levels[SmoothIndex] is not { } smooth)
+        Request(screen);
+        if (FreshPass() is not { } smooth)
         {
             return;
         }
 
         WallpaperBackdrop.Record(passScreen, smooth.Handle, Vector2.Zero, Vector2.One, null);
     }
+
+    public bool TryRecordFor(Rect rect)
+    {
+        if (!WorldSourceWanted)
+        {
+            return false;
+        }
+
+        var scale = UiScale.Current;
+        surfaceRequestFrame = ImGui.GetFrameCount();
+        Request(LiveBackdropPlan.Pad(rect, LiveBackdropPlan.RegionPadding * scale));
+        if (FreshPass() is not { } smooth)
+        {
+            return false;
+        }
+
+        if (!LiveBackdropPlan.Covers(passScreen, LiveBackdropPlan.Pad(rect, LiveBackdropPlan.SampleReach * scale)))
+        {
+            return false;
+        }
+
+        WallpaperBackdrop.Record(passScreen, smooth.Handle, Vector2.Zero, Vector2.One, null);
+        return true;
+    }
+
+    private void Request(Rect region)
+    {
+        var frame = ImGui.GetFrameCount();
+        requestScreen = frame == requestFrame ? LiveBackdropPlan.Union(requestScreen, region) : region;
+        requestFrame = frame;
+    }
+
+    private IDrawListTextureWrap? FreshPass() =>
+        ImGui.GetFrameCount() - passFrame > FrameTolerance ? null : levels[SmoothIndex];
 
     public void Release()
     {

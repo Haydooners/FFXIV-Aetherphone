@@ -80,11 +80,32 @@ internal static class WallpaperRenderer
         DrawTexture(drawList, shape, quad, handle, size, entry, aspect, alpha);
     }
 
+    public static void DrawSingleRounded(ImDrawListPtr drawList, Rect rect, float radius, WallpaperEntry entry,
+        float aspect, float alpha, Vector4? fallback)
+    {
+        var extent = MathF.Max(rect.Width, rect.Height);
+        if (!Plugin.Wallpapers.TryGetTexture(entry.FilePath, extent, out var handle, out var size))
+        {
+            if (fallback is { } color)
+            {
+                Squircle.Fill(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(color));
+            }
+
+            return;
+        }
+
+        var (uv0, uv1) = entry.Crop.ComputeUv(size, aspect);
+        Squircle.FillImage(drawList, rect.Min, rect.Max, radius, handle, Tint(alpha), uv0, uv1);
+    }
+
+    private static uint Tint(float alpha) =>
+        alpha >= 1f ? 0xFFFFFFFFu : ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha));
+
     private static void DrawTexture(ImDrawListPtr drawList, Rect shape, Rect quad, ImTextureID handle,
         Vector2 textureSize, WallpaperEntry entry, float aspect, float alpha)
     {
         var (uv0, uv1) = entry.Crop.ComputeUv(textureSize, aspect);
-        var tint = alpha >= 1f ? 0xFFFFFFFFu : ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha));
+        var tint = Tint(alpha);
         var clipped = quad.Min != shape.Min || quad.Max != shape.Max;
         if (clipped)
         {

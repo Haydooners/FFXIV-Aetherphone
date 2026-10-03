@@ -275,9 +275,11 @@ internal sealed class PhoneShell : IDisposable
                 loading.Cancel();
             }
 
+            var backdrop = WallpaperBackdrop.Snapshot();
             morph.Draw(device, delta);
             HoverTooltip.Flush();
             ShellToast.Draw(device, themes.Chrome);
+            WallpaperBackdrop.Restore(backdrop);
             return;
         }
 
@@ -368,6 +370,10 @@ internal sealed class PhoneShell : IDisposable
         }
 
         overlays.DrawOverlays(chassis, theme, delta, state, !turn.Turning);
+        if (!turn.Turning)
+        {
+            DeviceChrome.DrawLiveBand(ImGui.GetForegroundDrawList(), chassis, UiScale.Current);
+        }
     }
 
     private Rect? TransparentBand(Rect screen)
