@@ -852,7 +852,6 @@ internal static class L
         public static readonly LocString Tradeable = new("collections.tradeable", "Tradeable");
         public static readonly LocString Yes = new("collections.yes", "Yes");
         public static readonly LocString No = new("collections.no", "No");
-        public static readonly LocString Community = new("collections.community", "Owned by players");
         public static readonly LocString Points = new("collections.points", "Points");
         public static readonly LocString CardStats = new("collections.cardStats", "Card stats");
         public static readonly LocString Owned = new("collections.owned", "Owned");
@@ -862,12 +861,51 @@ internal static class L
 
         public static readonly LocString LinkHint = new("collections.linkHint", "Link your character to see what you own.");
         public static readonly LocString CollectionPrivate = new("collections.collectionPrivate", "This collection is private on the Lodestone.");
-        public static readonly LocString CollectionNotTracked = new("collections.collectionNotTracked", "This collection can't be tracked from the Lodestone.");
         public static readonly LocString OwnedUnavailable = new("collections.ownedUnavailable", "Couldn't load your owned items right now.");
         public static readonly LocString Failed = new("collections.failed", "Couldn't reach FFXIV Collect.");
         public static readonly LocString TryAgain = new("collections.tryAgain", "Try again");
         public static readonly LocString NoResults = new("collections.noResults", "No items match your filters.");
         public static readonly LocString CompletePercent = new("collections.completePercent", "{0}% complete");
+        public static readonly LocString SearchAll = new("collections.searchAll", "Search every collection");
+        public static readonly LocString HeroCaption = new("collections.heroCaption", "Collected, read live from your game");
+        public static readonly LocPlural NewThisWeek = new("collections.newThisWeek", "{0} new this week", "{0} new this week");
+        public static readonly LocString SignedOutTitle = new("collections.signedOutTitle", "Log in to see your collection");
+        public static readonly LocString SignedOutHint = new("collections.signedOutHint", "What you own is read from the game while you play. You can still browse every item.");
+        public static readonly LocString RecentTitle = new("collections.recentTitle", "Recently unlocked");
+        public static readonly LocString WishlistTitle = new("collections.wishlistTitle", "Wishlist");
+        public static readonly LocString UpNextTitle = new("collections.upNextTitle", "Up next");
+        public static readonly LocString UpNextHint = new("collections.upNextHint", "Missing items that most collectors already own.");
+        public static readonly LocString StatePrivate = new("collections.statePrivate", "Private");
+        public static readonly LocString StateNotLinked = new("collections.stateNotLinked", "Not linked");
+        public static readonly LocString SeeAll = new("collections.seeAll", "See all");
+        public static readonly LocString NoResultsHint = new("collections.noResultsHint", "Try a different name, source or filter.");
+        public static readonly LocString Percent = new("collections.percent", "{0}%");
+        public static readonly LocString Sort = new("collections.sort", "Sort");
+        public static readonly LocString SortDefault = new("collections.sortDefault", "Game order");
+        public static readonly LocString SortNewest = new("collections.sortNewest", "Newest first");
+        public static readonly LocString SortRarest = new("collections.sortRarest", "Rarest first");
+        public static readonly LocString SortMostCollected = new("collections.sortMostCollected", "Most collected first");
+        public static readonly LocString AddToWishlist = new("collections.addToWishlist", "Add to wishlist");
+        public static readonly LocString RemoveFromWishlist = new("collections.removeFromWishlist", "Remove from wishlist");
+        public static readonly LocString AddedToWishlist = new("collections.addedToWishlist", "Added to your wishlist");
+        public static readonly LocString LinkInChat = new("collections.linkInChat", "Link in chat");
+        public static readonly LocString Rarity = new("collections.rarity", "Rarity");
+        public static readonly LocString RarityLine = new("collections.rarityLine", "Owned by {0} of tracked collectors");
+        public static readonly LocString RarityNote = new("collections.rarityNote", "Counted from public characters that track their collections, so it runs higher than across all players.");
+        public static readonly LocString QuestGiver = new("collections.questGiver", "Quest giver in {0}");
+        public static readonly LocString QuestDone = new("collections.questDone", "Completed");
+        public static readonly LocString ShowOnMap = new("collections.showOnMap", "Show on map");
+        public static readonly LocString MarketPrices = new("collections.marketPrices", "Market prices");
+        public static readonly LocString NotifyManyTitle = new("collections.notifyManyTitle", "New in your collection");
+        public static readonly LocString NotifyManyBody = new("collections.notifyManyBody", "{0} new items unlocked");
+        public static readonly LocString NotifyFallbackBody = new("collections.notifyFallbackBody", "Open Collections to see what you unlocked.");
+        public static readonly LocString NewMount = new("collections.newMount", "New mount");
+        public static readonly LocString NewMinion = new("collections.newMinion", "New minion");
+        public static readonly LocString NewEmote = new("collections.newEmote", "New emote");
+        public static readonly LocString NewOrchestrion = new("collections.newOrchestrion", "New orchestrion roll");
+        public static readonly LocString NewHairstyle = new("collections.newHairstyle", "New hairstyle");
+        public static readonly LocString NewFacewear = new("collections.newFacewear", "New facewear");
+        public static readonly LocString NewTriadCard = new("collections.newTriadCard", "New Triple Triad card");
     }
 
     internal static class Muster
