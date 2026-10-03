@@ -14,11 +14,24 @@ namespace Aetherphone.Apps.Settings.Pages;
 
 internal sealed class AppearancePage : ISettingsPage
 {
+    private static readonly SettingsEntry[] Searchable =
+    {
+        new(L.Settings.Theme),
+        new(L.Settings.Accent),
+        new(L.Settings.IconAppearance),
+        new(L.Settings.Wallpaper),
+        new(L.Settings.PhoneCase),
+        new(L.Home.Looks, L.Home.HomeScreen),
+        new(L.Home.ShowAppNames, L.Home.HomeScreen),
+        new(L.Home.ResetLayout, L.Home.HomeScreen),
+    };
+
     public string Title => Loc.T(L.Settings.Appearance);
     public string Summary => string.Empty;
     public FontAwesomeIcon Icon => FontAwesomeIcon.Palette;
     public Vector4 Tint => new(0.55f, 0.45f, 0.95f, 1f);
     public string? GuideAnchor => "settings.row.appearance";
+    public ReadOnlySpan<SettingsEntry> Entries => Searchable;
     private const float CardGap = Metrics.Space.Xl;
     private const float HeaderGap = Metrics.Space.Sm;
     private const float WallpaperRowHeight = 132f;

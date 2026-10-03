@@ -1907,6 +1907,9 @@ internal static class L
         public static readonly LocString NoResults = new("settings.noResults", "No settings match that");
         public static readonly LocString PhoneWidthReadout = new("settings.phoneWidthReadout", "{0} px wide");
         public static readonly LocString PhoneSizeHint = new("settings.phoneSizeHint", "Pick a preset here, or drag the corner grip of the phone for any size in between.");
+        public static readonly LocString Banners = new("settings.banners", "Banners");
+        public static readonly LocString Badges = new("settings.badges", "Badges");
+        public static readonly LocString RemoveApp = new("settings.removeApp", "Remove App");
     }
 
     internal static class Translate

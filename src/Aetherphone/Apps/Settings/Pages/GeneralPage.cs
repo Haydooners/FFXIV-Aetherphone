@@ -12,10 +12,26 @@ namespace Aetherphone.Apps.Settings.Pages;
 
 internal sealed class GeneralPage : ISettingsPage
 {
+    private static readonly SettingsEntry[] Searchable =
+    {
+        new(L.Settings.ShowInGpose),
+        new(L.Settings.ImportScreenshots),
+        new(L.Settings.MonthlyAlbums),
+        new(L.Settings.NativeFileDialog),
+        new(L.Settings.ShowSensitive),
+        new(L.Settings.MarketContextMenu),
+        new(L.Settings.LinkpearlContextMenu),
+        new(L.Settings.AutoTranslate),
+        new(L.Settings.Use24HourClock, L.Settings.ClockFormat),
+        new(L.Settings.OpenOnStartup, L.Settings.Startup),
+        new(L.Settings.OpenMinimized, L.Settings.Startup),
+    };
+
     public string Title => Loc.T(L.Settings.General);
     public string Summary => string.Empty;
     public FontAwesomeIcon Icon => FontAwesomeIcon.SlidersH;
     public Vector4 Tint => new(0.52f, 0.54f, 0.60f, 1f);
+    public ReadOnlySpan<SettingsEntry> Entries => Searchable;
     private readonly Configuration configuration;
     private readonly TranslationService translation;
     private readonly ConfirmService confirm;

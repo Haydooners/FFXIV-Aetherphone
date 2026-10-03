@@ -1,4 +1,5 @@
 using System.Globalization;
+using Aetherphone.Core.Localization;
 
 namespace Aetherphone.Apps.Settings;
 
@@ -24,4 +25,10 @@ internal static class SettingsSearch
 
     public static bool MatchesPage(CompareInfo compare, string title, string summary, string query) =>
         Matches(compare, title, query) || Matches(compare, summary, query);
+
+    public static bool MatchesEntry(CompareInfo compare, in SettingsEntry entry, string query) =>
+        query.Length > 0 && Matches(compare, Loc.T(entry.Label), query);
+
+    public static bool MatchesApp(CompareInfo compare, string displayName, string query) =>
+        query.Length > 0 && Matches(compare, displayName, query);
 }

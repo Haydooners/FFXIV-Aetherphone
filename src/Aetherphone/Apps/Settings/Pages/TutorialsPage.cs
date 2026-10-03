@@ -10,6 +10,13 @@ namespace Aetherphone.Apps.Settings.Pages;
 
 internal sealed class TutorialsPage : ISettingsPage
 {
+    private static readonly SettingsEntry[] Searchable =
+    {
+        new(L.Settings.TutorialsShow),
+        new(L.Settings.TutorialsReplay),
+        new(L.Settings.TutorialsReset),
+    };
+
     public string Title => Loc.T(L.Settings.Tutorials);
 
     public string Summary => configuration.TutorialsEnabled ? string.Empty : Loc.T(L.Settings.TutorialsOff);
@@ -17,6 +24,7 @@ internal sealed class TutorialsPage : ISettingsPage
     public FontAwesomeIcon Icon => FontAwesomeIcon.GraduationCap;
     public Vector4 Tint => new(0.62f, 0.42f, 0.96f, 1f);
     public string? GuideAnchor => "settings.row.tutorials";
+    public ReadOnlySpan<SettingsEntry> Entries => Searchable;
     private readonly Configuration configuration;
 
     public TutorialsPage(Configuration configuration)
