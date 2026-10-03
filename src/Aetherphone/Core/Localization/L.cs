@@ -4431,6 +4431,117 @@ internal static class L
             public static readonly LocString InviteBody = new("music.jam.inviteBody", "{0} invited you to listen together");
             public static readonly LocString InviteBodyTitled = new("music.jam.inviteBodyTitled", "{0} invited you to {1}");
             public static readonly LocString SomeoneName = new("music.jam.someoneName", "Someone");
+            public static readonly LocString HeroTitle = new("music.jam.heroTitle", "Listen together");
+            public static readonly LocString HeroBody = new("music.jam.heroBody",
+                "Start a Jam and everyone hears the same song at the same moment. Friends can add their picks to the shared queue.");
+            public static readonly LocString SignedOut = new("music.jam.signedOut",
+                "Sign in to Aethernet in Settings to start or join a Jam with friends.");
+            public static readonly LocString TitleHint = new("music.jam.titleHint", "Name your Jam (optional)");
+            public static readonly LocString Start = new("music.jam.start", "Start a Jam");
+            public static readonly LocString JoinHeader = new("music.jam.joinHeader", "Join with a code");
+            public static readonly LocString Join = new("music.jam.join", "Join");
+            public static readonly LocString Paste = new("music.jam.paste", "Paste");
+            public static readonly LocString CodeHint = new("music.jam.codeHint",
+                "Ask the host for their 6 character code. Letters and numbers, no spaces needed.");
+            public static readonly LocString CodeIncomplete = new("music.jam.codeIncomplete",
+                "Enter all 6 characters of the code");
+            public static readonly LocString Starting = new("music.jam.starting", "Starting your Jam…");
+            public static readonly LocString Joining = new("music.jam.joining", "Joining the Jam…");
+            public static readonly LocString PendingTitle = new("music.jam.pendingTitle", "Waiting for the host");
+            public static readonly LocString PendingBody = new("music.jam.pendingBody",
+                "The host needs to let you in. You start listening the moment they do.");
+            public static readonly LocString CancelRequest = new("music.jam.cancelRequest", "Cancel request");
+            public static readonly LocString CodeLabel = new("music.jam.codeLabel", "Jam code");
+            public static readonly LocString CopyCode = new("music.jam.copyCode", "Copy code");
+            public static readonly LocString CodeCopied = new("music.jam.codeCopied", "Code copied");
+            public static readonly LocString ShareCode = new("music.jam.shareCode", "Share");
+            public static readonly LocString ShareText = new("music.jam.shareText",
+                "Join my Jam in Aetherphone Music with the code {0}");
+            public static readonly LocString ShareCopied = new("music.jam.shareCopied",
+                "Invite copied, paste it anywhere");
+            public static readonly LocString InviteFriends = new("music.jam.inviteFriends", "Invite friends");
+            public static readonly LocString HostingYou = new("music.jam.hostingYou", "You're the host");
+            public static readonly LocString HostedBy = new("music.jam.hostedBy", "Hosted by {0}");
+            public static readonly LocString NothingPlayingHost = new("music.jam.nothingPlayingHost",
+                "Play any song and everyone hears it");
+            public static readonly LocString NothingPlayingGuest = new("music.jam.nothingPlayingGuest",
+                "Waiting for the host to pick a song");
+            public static readonly LocString Stale = new("music.jam.stale", "Waiting for the host to reconnect");
+            public static readonly LocString LocalHold = new("music.jam.localHold", "Paused on your phone");
+            public static readonly LocString CatchUp = new("music.jam.catchUp", "Catch up");
+            public static readonly LocString RequestsHeader = new("music.jam.requestsHeader", "Waiting to join");
+            public static readonly LocString Approve = new("music.jam.approve", "Let in");
+            public static readonly LocString Deny = new("music.jam.deny", "Decline");
+            public static readonly LocString MembersHeader = new("music.jam.membersHeader", "Listening");
+            public static readonly LocString You = new("music.jam.you", "You");
+            public static readonly LocString HostBadge = new("music.jam.hostBadge", "Host");
+            public static readonly LocString MakeHost = new("music.jam.makeHost", "Make host");
+            public static readonly LocString MakeHostBody = new("music.jam.makeHostBody",
+                "{0} will run the Jam and you become a guest.");
+            public static readonly LocString Remove = new("music.jam.remove", "Remove from Jam");
+            public static readonly LocString SettingsHeader = new("music.jam.settingsHeader", "Jam settings");
+            public static readonly LocString NameHint = new("music.jam.nameHint", "Jam name");
+            public static readonly LocString Save = new("music.jam.save", "Save");
+            public static readonly LocString Renamed = new("music.jam.renamed", "Jam renamed");
+            public static readonly LocString GuestsAdd = new("music.jam.guestsAdd", "Guests add songs");
+            public static readonly LocString GuestsAddHint = new("music.jam.guestsAddHint",
+                "Everyone can add to the shared queue");
+            public static readonly LocString GuestsControl = new("music.jam.guestsControl", "Guests control playback");
+            public static readonly LocString GuestsControlHint = new("music.jam.guestsControlHint",
+                "Everyone can play, pause and skip for the room");
+            public static readonly LocString Approval = new("music.jam.approval", "Approve new listeners");
+            public static readonly LocString ApprovalHint = new("music.jam.approvalHint",
+                "You let each person in before they hear anything");
+            public static readonly LocString Leave = new("music.jam.leave", "Leave Jam");
+            public static readonly LocString End = new("music.jam.end", "End Jam");
+            public static readonly LocString EndTitle = new("music.jam.endTitle", "End the Jam for everyone?");
+            public static readonly LocString EndBody = new("music.jam.endBody",
+                "Everyone stops listening together. Your music keeps playing on your phone.");
+            public static readonly LocString LeaveHostTitle = new("music.jam.leaveHostTitle", "Leave the Jam?");
+            public static readonly LocString LeaveHostBody = new("music.jam.leaveHostBody",
+                "The Jam keeps going and another listener becomes the host.");
+            public static readonly LocString HomeIdleBody = new("music.jam.homeIdleBody",
+                "Listen with friends in real time");
+            public static readonly LocString Open = new("music.jam.open", "Open");
+            public static readonly LocString JamWith = new("music.jam.jamWith", "Jam with {0}");
+            public static readonly LocString InviteSheetTitle = new("music.jam.inviteSheetTitle", "Invite to Jam");
+            public static readonly LocString InviteSearch = new("music.jam.inviteSearch", "Search contacts");
+            public static readonly LocString InviteFootnote = new("music.jam.inviteFootnote",
+                "Invites reach mutual contacts only. Share the code with anyone else.");
+            public static readonly LocString InviteAction = new("music.jam.inviteAction", "Invite");
+            public static readonly LocString Invited = new("music.jam.invited", "Invited");
+            public static readonly LocString InJam = new("music.jam.inJam", "In Jam");
+            public static readonly LocString InviteEmptyTitle = new("music.jam.inviteEmptyTitle",
+                "No mutual contacts yet");
+            public static readonly LocString InviteEmptyBody = new("music.jam.inviteEmptyBody",
+                "Invites work when you both saved each other's number. You can still share the code.");
+            public static readonly LocString InviteSent = new("music.jam.inviteSent", "Invite sent to {0}");
+            public static readonly LocString DeclineBadCode = new("music.jam.declineBadCode",
+                "No Jam matches that code");
+            public static readonly LocString DeclineFull = new("music.jam.declineFull", "That Jam is full");
+            public static readonly LocString DeclineDenied = new("music.jam.declineDenied",
+                "The host didn't let you in");
+            public static readonly LocString DeclineEnded = new("music.jam.declineEnded", "The Jam has ended");
+            public static readonly LocString DeclineBusy = new("music.jam.declineBusy",
+                "Too many tries. Wait a moment and try again");
+            public static readonly LocString DeclineKicked = new("music.jam.declineKicked",
+                "You were removed from the Jam");
+            public static readonly LocString DeclineConnectionLost = new("music.jam.declineConnectionLost",
+                "Lost the connection to the Jam");
+            public static readonly LocString DeclineNoResponse = new("music.jam.declineNoResponse",
+                "The Jam didn't respond. Try again");
+            public static readonly LocString DeclineOffline = new("music.jam.declineOffline",
+                "Connect to Aethernet to start or join a Jam");
+            public static readonly LocString RefusalPlayback = new("music.jam.refusalPlayback",
+                "Only the host can control playback");
+            public static readonly LocString RefusalQueue = new("music.jam.refusalQueue",
+                "The host isn't letting guests add songs");
+            public static readonly LocString RefusalNotYours = new("music.jam.refusalNotYours",
+                "You can only remove songs you added");
+            public static readonly LocString AddedToQueue = new("music.jam.addedToQueue", "Added to the Jam queue");
+            public static readonly LocString SwitchTitle = new("music.jam.switchTitle", "Join this Jam?");
+            public static readonly LocString SwitchBody = new("music.jam.switchBody",
+                "You will leave the Jam you're in now.");
         }
         internal static class PcMedia
         {
