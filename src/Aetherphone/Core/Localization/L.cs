@@ -1974,21 +1974,158 @@ internal static class L
         public static readonly LocString SectionSocial = new("changelog.sectionSocial", "Chirper and Aethergram");
         public static readonly LocString SectionAethergramVelvet = new("changelog.sectionAethergramVelvet", "Aethergram and Velvet");
         public static readonly LocString SectionChirperAethergramVelvet = new("changelog.sectionChirperAethergramVelvet", "Chirper, Aethergram and Velvet");
+        public static readonly LocString SectionWidgets = new("changelog.sectionWidgets", "Widgets");
+        public static readonly LocString SectionTours = new("changelog.sectionTours", "Setup and tours");
+        public static readonly LocString SectionSounds = new("changelog.sectionSounds", "Sounds");
 
         public static readonly LocString[] Release1042Phone =
         {
+            new("changelog.r1042.4",
+                "Overhauled the whole phone in liquid glass: the dock, folders, widgets, sheets and search pill show the wallpaper through them and catch the light from your cursor"),
+            new("changelog.r1042.5",
+                "Redrew every app icon as a painted, full-color set that stays sharp at every phone size, with Default, Dark, Tinted and Clear looks under App Icons in Settings"),
+            new("changelog.r1042.6",
+                "Rebuilt the Dynamic Island around live activities: calls, music and radio, MogCast watch-alongs, timers and meetups starting within the hour, with a tap to expand and control them"),
+            new("changelog.r1042.7",
+                "Rebuilt Control Center as glass tiles: Do Not Disturb, Silent Mode, Calls and Scroll While Idle share one Quick Toggles tile, and a long press opens a tile as a larger card"),
+            new("changelog.r1042.8",
+                "Rebuilt notifications in glass: banners slide in from the top, and Notification Center stacks each app's notifications, with a swipe to clear one"),
+            new("changelog.r1042.9",
+                "Rebuilt the app switcher as glass cards over the blurred wallpaper, with your home screen as the first card and a swipe up to close an app"),
+            new("changelog.r1042.10",
+                "Apps with tabs now use a floating glass tab bar, and Notes, Calendar and Settings have large titles that shrink as you scroll"),
+            new("changelog.r1042.11",
+                "Sheets now open at half or full height, and you can drag them between the two"),
+            new("changelog.r1042.12",
+                "Spotlight now drops out of the search pill, and folders grow out of their tile and dim the screen behind them"),
+            new("changelog.r1042.13",
+                "Hovering an app icon now lifts it and lights its edge, in place of the old magnifying effect"),
+            new("changelog.r1042.14",
+                "Laid out the side keys like a current iPhone: the Action button for Do Not Disturb and a Lock Position key on the left, the Side button and Camera Control on the right"),
+            new("changelog.r1042.15",
+                "Added Live glass (experimental) to the Display page in Settings: glass inside apps and on the mini phone blurs the game behind it"),
+            new("changelog.r1042.3",
+                "Replaced the built-in wallpapers with an original set of eight pairs, and a retired wallpaper you had picked switches to the closest new one"),
+            new("changelog.r1042.16",
+                "Wallpapers now load at the size they are drawn, so they stay crisp instead of shimmering"),
+            new("changelog.r1042.17",
+                "The battery percentage now sits inside the battery icon, and hovering the signal, Wi-Fi or battery icon shows what it measures"),
+            new("changelog.r1042.18",
+                "The phone emote now plays once when you open the phone, and walking off or cancelling it no longer brings it back"),
             new("changelog.r1042.0",
                 "The server info bar entry is now a phone icon with your unread count, in place of the Aetherphone name"),
             new("changelog.r1042.1",
                 "Hovering the server info bar entry now shows how many notifications are waiting and what a click does"),
-            new("changelog.r1042.3",
-                "Replaced the built-in wallpapers with an original set of eight pairs, and a retired wallpaper you had picked switches to the closest new one"),
+            new("changelog.r1042.19",
+                "Fixed the share sheet keeping a hidden window open over every app"),
+        };
+
+        public static readonly LocString[] Release1042Widgets =
+        {
+            new("changelog.r1042.20",
+                "Overhauled widgets from top to bottom: a widget for nearly every app in small, medium or large, all following your icon look"),
+            new("changelog.r1042.21",
+                "Rebuilt the widget gallery with search, a Featured row of live previews, and every widget size previewed at true scale before you add it"),
+            new("changelog.r1042.22",
+                "Added Smart Stacks: drop a widget onto another of the same size to stack up to ten, flip through them with the mouse wheel, and let Smart Rotate bring the right one forward"),
+            new("changelog.r1042.23",
+                "Added Edit Widget and Edit Stack sheets, and widgets now resize in place from their corner"),
+            new("changelog.r1042.24",
+                "Added media and people widgets: Now Playing, Now Watching, People, Chats, Linkpearl and Notifications"),
+            new("changelog.r1042.25",
+                "Added adventure widgets: Dailies, Ocean Fishing, Currencies, Job with gear set switching, live S rank Hunts, the Housing lottery and Teleport to your favorite aetherytes"),
+            new("changelog.r1042.26",
+                "Added community and utility widgets: Note, Reminders, Shortcuts, Quick Toggles, Muster, Venues, Market Watch, Daily Game, Daily Spin and Lodestone"),
+            new("changelog.r1042.27",
+                "Added Alarm, Timer, Month, Ventures, Weather Watch and Hydration widgets, and redesigned Clock, Calendar, Resets, Weather, Featured Photo, Activity and Aether Coin"),
+        };
+
+        public static readonly LocString[] Release1042Settings =
+        {
+            new("changelog.r1042.28",
+                "Redesigned Settings from top to bottom: a profile card at the top, rounder grouped cards, and a large title that shrinks as you scroll"),
+            new("changelog.r1042.29",
+                "Added search to Settings that finds options inside pages and installed apps, and highlights the matching row when you open it"),
+            new("changelog.r1042.30",
+                "Added an Apps group with a page for every app: its notification switches and sound, Open and Remove App"),
+            new("changelog.r1042.31",
+                "Added a Display page that gathers phone size, text size, Live glass, Lock Position and the mini phone"),
+            new("changelog.r1042.32",
+                "Added a Support page with the three Patreon tiers, what each one includes, a preview of the member look and badges, and a link to join each tier"),
+        };
+
+        public static readonly LocString[] Release1042Tours =
+        {
+            new("changelog.r1042.33",
+                "Redesigned first-run setup around the new app icon, with glass cards and pages that animate in"),
+            new("changelog.r1042.34",
+                "Rebuilt the welcome tour to teach by doing: open an app, swipe home, and tuck the phone into the mini phone and bring it back"),
+            new("changelog.r1042.35",
+                "Rebuilt every app tour around the app's main job, with steps you try on the real app instead of reading about it"),
+        };
+
+        public static readonly LocString[] Release1042Sounds =
+        {
+            new("changelog.r1042.36",
+                "Rebuilt every sound on the phone for a clean, modern feel, with eight new ringtones and twelve notification sounds, and a retired sound you had picked switches to its replacement"),
+            new("changelog.r1042.37",
+                "Added sounds for the delete, space and return keys, a soft pop when a message arrives in the chat you have open, and a ringback tone while your call rings"),
+            new("changelog.r1042.38",
+                "Added sound cues to every Gamba table and cabinet: chips, card deals, spinning wheels and reels, wins and losses"),
+        };
+
+        public static readonly LocString[] Release1042Polls =
+        {
+            new("changelog.r1042.39",
+                "Overhauled Polls from top to bottom: options fill in as result bars once you vote, and polls with a deadline show a live countdown"),
+            new("changelog.r1042.40",
+                "Added Undo vote, so tapping your own pick no longer takes your vote back by accident"),
+            new("changelog.r1042.41",
+                "Polls waiting for your vote now come first, then the ones closing soonest"),
+        };
+
+        public static readonly LocString[] Release1042Announcements =
+        {
+            new("changelog.r1042.42",
+                "Overhauled Announcements into a reading list grouped by day, with search, unread dots, Mark all as read, and Newer and Older links inside each announcement"),
+        };
+
+        public static readonly LocString[] Release1042Feedback =
+        {
+            new("changelog.r1042.43",
+                "Overhauled Feedback into a hub: pick Bug, Idea, Praise or Other for a composer made for that kind, and an unfinished draft is kept for later"),
+            new("changelog.r1042.44",
+                "Added Your Feedback: a list of what you sent, each with its status"),
+        };
+
+        public static readonly LocString[] Release1042Maps =
+        {
+            new("changelog.r1042.45",
+                "Overhauled Maps into a live map of the zone you are in: your position, aetheryte pins, and a glass drawer with search, favorites, recents and every region"),
+            new("changelog.r1042.46",
+                "Added place cards with Teleport and its gil cost, Favorite, Show on Map and a preview of the zone"),
+            new("changelog.r1042.47",
+                "Fixed Maps showing Unknown inside shared housing and other places without a zone name"),
+        };
+
+        public static readonly LocString[] Release1042Clock =
+        {
+            new("changelog.r1042.48",
+                "Alarms and timers now ring until you stop or snooze them, and open the phone with a full-screen alarm"),
+        };
+
+        public static readonly LocString[] Release1042Aethergram =
+        {
+            new("changelog.r1042.49",
+                "Moved messages into the tab bar, in place of the separate inbox button"),
         };
 
         public static readonly LocString[] Release1042MogCast =
         {
             new("changelog.r1042.2",
                 "Fixed MogCast dragging the game down to one frame per second for some players while it waited for a link"),
+            new("changelog.r1042.50",
+                "Fixed MogCast checking your clipboard every second; it now reads it only when it changes"),
         };
 
         public static readonly LocString[] Release1041MogCast =
