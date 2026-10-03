@@ -361,7 +361,7 @@ internal sealed class CurrenciesWidget : IHomeWidget
     private static Vector4 BarTint(float fraction) =>
         fraction >= WalletMath.NearFraction ? WalletArt.GoldInk : WalletAccent;
 
-    private string GilName() => Gil?.Name ?? string.Empty;
+    private string GilName() => Gil?.Name ?? Loc.T(L.WidgetsAdventure.CurrenciesName);
 
     public void Dispose()
     {

@@ -56,9 +56,14 @@ internal sealed class WalletService : IDisposable
     private void OnTick()
     {
         var contentId = characterWatch.CurrentContentId;
-        if (contentId == 0 || gameData.LocalPlayer is null)
+        if (contentId == 0)
         {
             Release();
+            return;
+        }
+
+        if (gameData.LocalPlayer is null)
+        {
             return;
         }
 
