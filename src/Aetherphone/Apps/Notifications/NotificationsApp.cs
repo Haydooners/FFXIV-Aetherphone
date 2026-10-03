@@ -38,6 +38,7 @@ internal sealed class NotificationsApp : IPhoneApp
     private readonly Core.Video.AetherStreamLauncher aetherStreamLauncher;
     private readonly Core.Hunts.HuntsLauncher huntsLauncher;
     private readonly Core.Jam.JamLauncher jamLauncher;
+    private readonly Core.Feedback.FeedbackLauncher feedbackLauncher;
     private NotificationCenter? center;
 
     public NotificationsApp(NotificationService notifications, SocialNotificationService socialNotifications,
@@ -47,9 +48,11 @@ internal sealed class NotificationsApp : IPhoneApp
         AnnouncementsLauncher announcementsLauncher, SafetyLauncher safetyLauncher,
         Core.Crypto.EncryptionSetupLauncher encryptionSetupLauncher, RadioLauncher radioLauncher,
         Core.Casino.CasinoLauncher casinoLauncher, Core.Video.AetherStreamLauncher aetherStreamLauncher,
-        Core.Hunts.HuntsLauncher huntsLauncher, Core.Jam.JamLauncher jamLauncher)
+        Core.Hunts.HuntsLauncher huntsLauncher, Core.Jam.JamLauncher jamLauncher,
+        Core.Feedback.FeedbackLauncher feedbackLauncher)
     {
         this.jamLauncher = jamLauncher;
+        this.feedbackLauncher = feedbackLauncher;
         this.radioLauncher = radioLauncher;
         this.casinoLauncher = casinoLauncher;
         this.aetherStreamLauncher = aetherStreamLauncher;
@@ -84,7 +87,7 @@ internal sealed class NotificationsApp : IPhoneApp
             new NotificationRouter(context.Navigation, notifications, socialNotifications, linkpearlLauncher,
                 velvetLauncher, dmLauncher, gramDmLauncher, socialLauncher, musterLauncher, yellowPagesLauncher,
                 announcementsLauncher, safetyLauncher, encryptionSetupLauncher, radioLauncher, casinoLauncher,
-                aetherStreamLauncher, huntsLauncher, jamLauncher));
+                aetherStreamLauncher, huntsLauncher, jamLauncher, feedbackLauncher));
         var scale = UiScale.Current;
         var content = context.Content;
         var body = new Rect(new Vector2(content.Min.X, content.Min.Y + AppHeader.Height * scale), content.Max);

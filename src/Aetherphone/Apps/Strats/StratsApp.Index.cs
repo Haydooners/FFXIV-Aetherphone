@@ -20,7 +20,6 @@ internal sealed partial class StratsApp
         DrawIndexHeader(area, scale);
         var top = area.Min.Y + AppHeader.Height * scale;
         var body = new Rect(new Vector2(area.Min.X, top), area.Max);
-        UiAnchors.Report("strats.fights", body);
         var manifest = manifestStore.Manifest;
         if (manifest is null)
         {
@@ -30,6 +29,7 @@ internal sealed partial class StratsApp
 
         using (AppSurface.Begin(body))
         {
+            var fightAnchorTaken = false;
             for (var groupIndex = 0; groupIndex < manifest.Groups.Length; groupIndex++)
             {
                 var group = manifest.Groups[groupIndex];
@@ -44,6 +44,12 @@ internal sealed partial class StratsApp
                 {
                     var fight = group.Fights[fightIndex];
                     var row = card.NextRow();
+                    if (!fightAnchorTaken)
+                    {
+                        fightAnchorTaken = true;
+                        UiAnchors.Report("strats.fight.first", row);
+                    }
+
                     if (SettingsRow.Disclosure(row, fight.Title, fight.Subtitle, theme, fight.Key))
                     {
                         OpenFight(fight);

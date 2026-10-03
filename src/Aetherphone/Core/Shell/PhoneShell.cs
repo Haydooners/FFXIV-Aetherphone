@@ -89,7 +89,7 @@ internal sealed class PhoneShell : IDisposable
             services.LinkpearlLauncher, services.VelvetLauncher, services.DmLauncher, services.GramDmLauncher,
             services.SocialLauncher, services.MusterLauncher, services.YellowPagesLauncher,
             services.AnnouncementsLauncher, services.SafetyLauncher, services.EncryptionSetup, services.RadioLauncher,
-            services.CasinoLauncher, services.AetherStreamLauncher, services.HuntsLauncher, services.JamLauncher);
+            services.CasinoLauncher, services.AetherStreamLauncher, services.HuntsLauncher, services.JamLauncher, services.FeedbackLauncher);
         MusterChatBridge.Bind(services.Musters, services.MusterLauncher, navigation);
         AdChatBridge.Bind(services.YellowPages, services.YellowPagesLauncher, navigation);
         banner = new NotificationBanner(notifications, VisibleAppId, PhoneVisible, router);
@@ -108,8 +108,10 @@ internal sealed class PhoneShell : IDisposable
             services.MarketIndex, services.MarketLauncher, services.Shortcuts, services.ShortcutRunner,
             services.Maps, services.StratsManifest, services.Venues, themes, calls, configuration);
         navigation.AppOpened += spotlightIndex.NoteLaunched;
-        home = new HomeScreen(apps, bundle.Widgets, services.Shortcuts, services.ShortcutRunner, configuration,
-            services.Confirm, spotlightIndex);
+        bundle.WidgetActions.Bind(navigation);
+        bundle.WidgetActions.BindNotifications(router);
+        home = new HomeScreen(apps, bundle.Widgets, bundle.WidgetActions, services.Shortcuts, services.ShortcutRunner,
+            configuration, services.Confirm, spotlightIndex);
         services.Installer.Bind(home.Layout);
         services.Looks.Bind(home.Layout);
         services.Shortcuts.Bind(home.Layout);

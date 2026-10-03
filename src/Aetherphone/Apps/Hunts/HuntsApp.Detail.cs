@@ -4,6 +4,7 @@ using Aetherphone.Core.Game;
 using Aetherphone.Core.Hunts;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Maps;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Runtime;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Venues;
@@ -398,6 +399,7 @@ internal sealed partial class HuntsApp
 
         var mapTop = origin.Y + labelSize.Y + labelGap;
         var stage = new Rect(new Vector2(mapLeft, mapTop), new Vector2(mapLeft + size, mapTop + size));
+        UiAnchors.Report("hunts.detail.map", stage);
 
         detailMapHovered = ImGui.IsMouseHoveringRect(stage.Min, stage.Max);
         ImGui.SetCursorScreenPos(stage.Min);

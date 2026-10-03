@@ -2,6 +2,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Radio;
 using Aetherphone.Core.Songs;
 using Aetherphone.Windows.Components;
@@ -155,6 +156,7 @@ internal sealed partial class MusicApp
         var railTop = bottom + Metrics.Space.Xs * scale;
         var row = new Rect(new Vector2(body.Min.X + inset, railTop),
             new Vector2(body.Max.X - inset, railTop + ChipRail.RowHeight * scale));
+        UiAnchors.Report("music.search.scopes", row);
         var tapped = searchScopeRail.Draw(row, ui, searchScopeLabels, searchScopeActive);
         if (tapped >= 0)
         {

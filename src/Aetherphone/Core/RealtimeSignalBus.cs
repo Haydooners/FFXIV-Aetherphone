@@ -51,6 +51,7 @@ internal sealed class RealtimeSignalBus
     public event Action? MusterPinged;
     public event Action? AnnouncementsPinged;
     public event Action? PollsPinged;
+    public event Action? FeedbackPinged;
     public event Action<ContentRemovalSignal>? ContentRemoved;
     public event Action<CasinoSignal>? CasinoReceived;
     public event Action<GameSignal>? GameReceived;
@@ -123,6 +124,11 @@ internal sealed class RealtimeSignalBus
     public void PublishPolls()
     {
         PollsPinged?.Invoke();
+    }
+
+    public void PublishFeedback()
+    {
+        FeedbackPinged?.Invoke();
     }
 
     public void PublishContentRemoved(ContentRemovalSignal removal)

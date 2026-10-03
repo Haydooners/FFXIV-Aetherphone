@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Songs;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -69,7 +70,8 @@ internal sealed partial class MusicApp
         var frame = BeginPage(context);
         using (AppSurface.BeginEdgeToEdge(frame.Body))
         {
-            if (DrawLibraryLink(scale, FontAwesomeIcon.ListUl, Loc.T(L.Music.LibraryPlaylists)))
+            if (DrawLibraryLink(scale, FontAwesomeIcon.ListUl, Loc.T(L.Music.LibraryPlaylists),
+                    "music.library.playlists"))
             {
                 Push(MusicRoute.Of(MusicScreen.LibraryPlaylists));
             }
@@ -106,10 +108,15 @@ internal sealed partial class MusicApp
         EndPage(in frame, context, Loc.T(L.Music.TabLibrary));
     }
 
-    private bool DrawLibraryLink(float scale, FontAwesomeIcon icon, string label)
+    private bool DrawLibraryLink(float scale, FontAwesomeIcon icon, string label, string? anchorKey = null)
     {
         var drawList = ImGui.GetWindowDrawList();
         var cell = FeedCell.Begin(drawList, LibraryRowHeight * scale, ui.HoverWash);
+        if (anchorKey is not null)
+        {
+            UiAnchors.Report(anchorKey, cell.Bounds);
+        }
+
         var inset = MusicUi.Inset * scale;
         var centerY = cell.Bounds.Min.Y + cell.Bounds.Height * 0.5f;
         var glyphBox = LibraryGlyphBox * scale;

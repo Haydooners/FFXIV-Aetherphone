@@ -10,13 +10,13 @@ internal static class AppHeader
 {
     public const float Height = Metrics.Size.Header;
 
-    private const float LargeTitleInset = Metrics.Space.Lg;
     private const float GlassReserveThreshold = 0.01f;
 
     private static bool BarHover(Vector2 min, Vector2 max) =>
         !UiInteract.InputBlocked && UiInteract.HoverWindowOnly(min, max);
     private const float ButtonGlyphScale = 0.62f;
     private const float BackPadX = 6f;
+    private const float BackHitWidth = 44f;
     private const float BackLabelGap = 4f;
     private const float BackLabelMaxFraction = 0.4f;
     private const float BackPressedAlpha = 0.55f;
@@ -53,12 +53,14 @@ internal static class AppHeader
         return BackButton.Draw(id, center, 15f * scale, color, hovered, scale);
     }
 
+    public static Rect BackRect(Rect content, float scale) =>
+        new(content.Min, new Vector2(content.Min.X + BackHitWidth * scale, content.Min.Y + Height * scale));
+
     private static void DrawBack(in PhoneContext context, Action? onBack, float scale, float rowCenterY)
     {
         var content = context.Content;
-        var hitMin = new Vector2(content.Min.X, content.Min.Y);
-        var hitMax = new Vector2(content.Min.X + 44f * scale, content.Min.Y + Height * scale);
-        var hovered = UiInteract.Hover(hitMin, hitMax);
+        var hit = BackRect(content, scale);
+        var hovered = UiInteract.Hover(hit.Min, hit.Max);
         var center = new Vector2(content.Min.X + 13f * scale, rowCenterY);
         var clicked = BackButton.Draw("appheader.back", center, 15f * scale, context.Theme.Accent, hovered, scale);
         if (!clicked)
@@ -125,7 +127,7 @@ internal static class AppHeader
         var scale = UiScale.Current;
         var content = context.Content;
         var titleBandTop = reserveInlineRow ? NavBarMetrics.InlineHeight * scale : 0f;
-        var inset = titleBandTop + NavBarMetrics.BandHeight * scale;
+        var inset = titleBandTop + (NavBarMetrics.BandHeight + NavBarMetrics.TitleGap) * scale;
         var body = new Rect(new Vector2(content.Min.X, content.Min.Y + inset), content.Max);
         AppSurface.ArmNavBar(body.Min.Y, inset);
         return new NavBarFrame(content, body, scale, titleBandTop);
@@ -171,8 +173,12 @@ internal static class AppHeader
                     new Vector2(content.Max.X, content.Min.Y + inlineHeight)));
             }
 
-            DrawLargeTitle(drawList, content, frame.TitleBandTop, frame.Body.Min.Y, title, style.Ink, scrollY,
-                progress, scale);
+            var titleReserve = frame.TitleBandTop > 0f
+                ? 0f
+                : NavBarMetrics.ButtonsWidth(buttonCount, scale) + Metrics.Space.GlassInset * scale;
+            DrawLargeTitle(drawList, content, frame.TitleBandTop,
+                frame.Body.Min.Y - NavBarMetrics.TitleGap * scale, titleReserve, title, style.Ink, scrollY, progress,
+                scale);
             var leftReserve = onBack is null
                 ? 0f
                 : DrawBackControl(drawList, content, backTitle, style.Accent, inlineHeight, scale, out backPressed);
@@ -209,7 +215,7 @@ internal static class AppHeader
     }
 
     private static void DrawLargeTitle(ImDrawListPtr drawList, Rect content, float titleBandTop, float bandBottom,
-        string title, Vector4 ink, float scrollY, float progress, float scale)
+        float rightReserve, string title, Vector4 ink, float scrollY, float progress, float scale)
     {
         var alpha = NavBarMetrics.LargeTitleAlpha(progress);
         if (alpha <= 0.001f)
@@ -218,10 +224,10 @@ internal static class AppHeader
         }
 
         var bandTop = content.Min.Y + titleBandTop;
-        var maxWidth = MathF.Max(1f, content.Width - LargeTitleInset * 2f * scale);
+        var maxWidth = MathF.Max(1f, content.Width - rightReserve);
         var fitted = Typography.FitText(title, maxWidth, TextStyles.LargeTitle);
         var size = Typography.Measure(fitted, TextStyles.LargeTitle);
-        var position = new Vector2(content.Min.X + LargeTitleInset * scale,
+        var position = new Vector2(content.Min.X,
             (bandTop + bandBottom - size.Y) * 0.5f - scrollY);
         drawList.PushClipRect(new Vector2(content.Min.X, bandTop), new Vector2(content.Max.X, bandBottom), true);
         Typography.Draw(drawList, position, fitted, ink with { W = ink.W * alpha }, TextStyles.LargeTitle);

@@ -3,6 +3,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Activity;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -166,6 +167,9 @@ internal sealed partial class ActivityApp
     private void DrawWeek(float scale)
     {
         ui.SectionLabel(Loc.T(L.Character.ThisWeek), TextStyles.FootnoteEmphasized, 6f);
+        var origin = ImGui.GetCursorScreenPos();
+        UiAnchors.Report("character.week", new Rect(origin,
+            origin + new Vector2(ImGui.GetContentRegionAvail().X, WeekLength * CompactRowHeight * scale)));
         var card = GroupCard.Begin(ui, WeekLength, CompactRowHeight);
         for (var slot = 0; slot < WeekLength; slot++)
         {

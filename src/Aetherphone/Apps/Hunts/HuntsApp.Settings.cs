@@ -35,7 +35,6 @@ internal sealed partial class HuntsApp
 
             var nativeMapMarkersCard = GroupCard.Begin(frameTheme, 1);
             var nativeMapMarkersRow = nativeMapMarkersCard.NextRow();
-            UiAnchors.Report("hunts.settings.nativeMapMarkers", nativeMapMarkersRow);
             var nativeMapMarkersValue = SettingsRow.Bool(nativeMapMarkersRow, Loc.T(L.Hunts.NativeMapMarkersLabel),
                 configuration.HuntsNativeMapMarkers, frameTheme, "hunts.settings.nativeMapMarkers");
             if (nativeMapMarkersValue != configuration.HuntsNativeMapMarkers)

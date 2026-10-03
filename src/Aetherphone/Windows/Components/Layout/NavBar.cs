@@ -36,6 +36,7 @@ internal static class NavBarMetrics
     public const float CollapseDistance = 60f;
     public const float GlassFadeDistance = 20f;
     public const float EdgeFadeHeight = 14f;
+    public const float TitleGap = 10f;
     public const float BarInsetY = 2f;
     public const float ChevronSize = 10f;
     public const float BackHitHeight = 44f;

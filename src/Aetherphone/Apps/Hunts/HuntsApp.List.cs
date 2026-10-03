@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Hunts;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -17,8 +18,8 @@ internal sealed partial class HuntsApp
     private static readonly Vector4 CappedBarColor = new(0.20f, 0.55f, 0.95f, 1f);
     private static readonly Vector4 UnmetBarColor = new(0.60f, 0.40f, 0.90f, 1f);
     private static readonly Vector4 SpawnedBarColor = new(0.95f, 0.78f, 0.20f, 1f);
-    private static readonly Vector4 RankSSColor = new(0.95f, 0.35f, 0.35f, 1f);
-    private static readonly Vector4 RankSColor = new(0.65f, 0.45f, 0.95f, 1f);
+    internal static readonly Vector4 RankSSColor = new(0.95f, 0.35f, 0.35f, 1f);
+    internal static readonly Vector4 RankSColor = new(0.65f, 0.45f, 0.95f, 1f);
     private static readonly Vector4 RankAColor = new(0.30f, 0.65f, 0.95f, 1f);
 
     private static readonly TimeSpan FilteredWindowsResortInterval = TimeSpan.FromSeconds(5);
@@ -34,9 +35,11 @@ internal sealed partial class HuntsApp
     private int filteredWindowsFilterRevision = -1;
     private string filteredWindowsSearchQuery = string.Empty;
     private DateTimeOffset filteredWindowsResortAt;
+    private bool listReadyForTour;
 
     private void DrawList(Rect body, float scale)
     {
+        listReadyForTour = false;
         using (AppSurface.Begin(body))
         {
             if (hunts.Failed)
@@ -60,10 +63,17 @@ internal sealed partial class HuntsApp
                 return;
             }
 
+            listReadyForTour = true;
             var card = GroupCard.Begin(ui, filteredWindows.Count, RowHeight);
             for (var index = 0; index < filteredWindows.Count; index++)
             {
-                DrawRow(card.NextRow(), filteredWindows[index], scale, now);
+                var row = card.NextRow();
+                if (index == 0)
+                {
+                    UiAnchors.Report("hunts.row.first", row);
+                }
+
+                DrawRow(row, filteredWindows[index], scale, now);
             }
 
             card.End();
@@ -438,7 +448,7 @@ internal sealed partial class HuntsApp
         return phaseLabel;
     }
 
-    private static string Prettify(string slug)
+    internal static string Prettify(string slug)
     {
         if (slug.Length == 0)
         {

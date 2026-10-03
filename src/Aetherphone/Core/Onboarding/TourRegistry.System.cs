@@ -6,66 +6,82 @@ internal static partial class TourRegistry
 {
     private static void AddSystemTours(Dictionary<string, GuideSequence> tours)
     {
-        Add(tours, "settings", 2,
+        Add(tours, "settings", 3,
             new[]
             {
-                GuideStep.Note(L.Onboarding.SettingsTitle, L.Onboarding.SettingsBody),
-                GuideStep.Point(L.Onboarding.SettingsAccountTitle, L.Onboarding.SettingsAccountBody,
-                    "settings.account"),
-                GuideStep.Point(L.Onboarding.SettingsAppearanceTitle, L.Onboarding.SettingsAppearanceBody,
-                    "settings.row.appearance"),
-                GuideStep.Point(L.Onboarding.SettingsTutorialsTitle, L.Onboarding.SettingsTutorialsBody,
+                GuideStep.Point(L.Onboarding.SettingsProfileTitle, L.Onboarding.SettingsProfileBody,
+                    "settings.account", GuideGesture.Tap),
+                GuideStep.Span(L.Onboarding.SettingsLookTitle, L.Onboarding.SettingsLookBody,
+                    "settings.row.appearance", "settings.row.display"),
+                GuideStep.TryUntil(L.Onboarding.SettingsSearchTitle, L.Onboarding.SettingsSearchBody,
+                    "settings.search", GuideGesture.Tap, "settings.row.tutorials"),
+                GuideStep.TryTap(L.Onboarding.SettingsFindToursTitle, L.Onboarding.SettingsFindToursBody,
                     "settings.row.tutorials"),
+                GuideStep.Point(L.Onboarding.SettingsReplayTitle, L.Onboarding.SettingsReplayBody,
+                    "settings.tutorials.actions", GuideGesture.None),
             });
-        Add(tours, "appstore", 1,
+        Add(tours, "appstore", 2,
             new[]
             {
-                GuideStep.Note(L.Apps.AppStore, L.Onboarding.AppStoreBody),
-                GuideStep.Point(L.Onboarding.AppStoreGetTitle, L.Onboarding.AppStoreGetBody, "appstore.row"),
-                GuideStep.Tap(L.Onboarding.AppStoreBrowseTitle, L.Onboarding.AppStoreBrowseBody, "appstore.tab.apps",
+                GuideStep.TryTap(L.Onboarding.AppStoreAppsTabTitle, L.Onboarding.AppStoreAppsTabBody,
                     "appstore.tab.apps"),
-                GuideStep.Point(L.Onboarding.AppStoreSearchTitle, L.Onboarding.AppStoreSearchBody,
+                GuideStep.TryTap(L.Onboarding.AppStoreCategoryTitle, L.Onboarding.AppStoreCategoryBody,
+                    "appstore.category"),
+                GuideStep.TryTap(L.Onboarding.AppStoreDetailTitle, L.Onboarding.AppStoreDetailBody, "appstore.row"),
+                GuideStep.Point(L.Onboarding.AppStoreInstallTitle, L.Onboarding.AppStoreInstallBody,
+                    "appstore.detail.get", GuideGesture.Tap),
+                GuideStep.TryTap(L.Onboarding.AppStoreFindTitle, L.Onboarding.AppStoreFindBody,
                     "appstore.tab.search"),
-                GuideStep.Note(L.Onboarding.AppStoreRemoveTitle, L.Onboarding.AppStoreRemoveBody),
             });
-        Add(tours, "shortcuts", 1,
+        Add(tours, "shortcuts", 2,
             new[]
             {
-                GuideStep.Note(L.Apps.Shortcuts, L.Onboarding.ShortcutsBody),
-                GuideStep.Point(L.Onboarding.ShortcutsNewTitle, L.Onboarding.ShortcutsNewBody, "shortcuts.new"),
-                GuideStep.Point(L.Onboarding.ShortcutsLibraryTitle, L.Onboarding.ShortcutsLibraryBody,
-                    "shortcuts.library"),
-                GuideStep.Point(L.Onboarding.ShortcutsImportTitle, L.Onboarding.ShortcutsImportBody,
-                    "shortcuts.import"),
-                GuideStep.Tap(L.Onboarding.ShortcutsPluginsTitle, L.Onboarding.ShortcutsPluginsBody, "shortcuts.tabs",
+                GuideStep.TryTap(L.Onboarding.ShortcutsStartTitle, L.Onboarding.ShortcutsStartBody, "shortcuts.new"),
+                GuideStep.Point(L.Onboarding.ShortcutsStepsTitle, L.Onboarding.ShortcutsStepsBody,
+                    "shortcuts.editor.add", GuideGesture.None),
+                GuideStep.Span(L.Onboarding.ShortcutsSaveTitle, L.Onboarding.ShortcutsSaveBody,
+                    "shortcuts.editor.name", "shortcuts.editor.save"),
+                GuideStep.TryTap(L.Onboarding.ShortcutsLeaveTitle, L.Onboarding.ShortcutsLeaveBody,
+                    "shortcuts.editor.back"),
+                GuideStep.TryTap(L.Onboarding.ShortcutsPluginsTabTitle, L.Onboarding.ShortcutsPluginsTabBody,
                     "shortcuts.tab.plugins"),
-                GuideStep.Note(L.Onboarding.ShortcutsHomeTitle, L.Onboarding.ShortcutsHomeBody),
+                GuideStep.Point(L.Onboarding.ShortcutsPluginRowTitle, L.Onboarding.ShortcutsPluginRowBody,
+                    "shortcuts.plugin.row", GuideGesture.Tap),
             });
-        Add(tours, "news", 2,
+        Add(tours, "news", 3,
             new[]
             {
-                GuideStep.Note(L.Apps.News, L.Onboarding.NewsBody),
-                GuideStep.Point(L.Onboarding.NewsCategoriesTitle, L.Onboarding.NewsCategoriesBody, "news.categories"),
-                GuideStep.Point(L.Onboarding.NewsReadTitle, L.Onboarding.NewsReadBody, "news.feed"),
-                GuideStep.Point(L.Onboarding.NewsRefreshTitle, L.Onboarding.NewsRefreshBody, "news.refresh"),
+                GuideStep.TryTap(L.Onboarding.NewsMaintenanceTitle, L.Onboarding.NewsMaintenanceBody,
+                    "news.tab.maintenance"),
+                GuideStep.Point(L.Onboarding.NewsWindowTitle, L.Onboarding.NewsWindowBody, "news.row",
+                    GuideGesture.None),
+                GuideStep.Point(L.Onboarding.NewsLatestTitle, L.Onboarding.NewsLatestBody, "news.refresh",
+                    GuideGesture.Tap),
             });
-        Add(tours, "feedback", 2,
+        Add(tours, "feedback", 4,
             new[]
             {
-                GuideStep.Note(L.Apps.Feedback, L.Onboarding.FeedbackIntroBody),
-                GuideStep.Point(L.Onboarding.FeedbackWriteTitle, L.Onboarding.FeedbackWriteBody, "feedback.input"),
-                GuideStep.Point(L.Onboarding.FeedbackSendTitle, L.Onboarding.FeedbackSendBody, "feedback.send"),
-                GuideStep.Note(L.Onboarding.FeedbackPrivacyTitle, L.Onboarding.FeedbackPrivacyBody),
+                GuideStep.TryTap(L.Onboarding.FeedbackKindTitle, L.Onboarding.FeedbackKindBody, "feedback.kind"),
+                GuideStep.TryTap(L.Onboarding.FeedbackMessageTitle, L.Onboarding.FeedbackMessageBody,
+                    "feedback.input"),
+                GuideStep.Point(L.Onboarding.FeedbackScreenshotsTitle, L.Onboarding.FeedbackScreenshotsBody,
+                    "feedback.attach", GuideGesture.Tap),
+                GuideStep.Point(L.Onboarding.FeedbackSubmitTitle, L.Onboarding.FeedbackSubmitBody, "feedback.send",
+                    GuideGesture.Tap),
             });
-        Add(tours, "health", 1,
+        Add(tours, "health", 2,
             new[]
             {
-                GuideStep.Note(L.Health.Title, L.Onboarding.HealthBody),
-                GuideStep.Point(L.Onboarding.HealthTodayTitle, L.Onboarding.HealthTodayBody, "health.today"),
-                GuideStep.Tap(L.Onboarding.HealthTabsTitle, L.Onboarding.HealthTabsBody, "health.tabs",
+                GuideStep.Point(L.Onboarding.HealthStepsTitle, L.Onboarding.HealthStepsBody, "health.today",
+                    GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.HealthWaterTabTitle, L.Onboarding.HealthWaterTabBody,
+                    "health.tab.water"),
+                GuideStep.Point(L.Onboarding.HealthDrinksTitle, L.Onboarding.HealthDrinksBody, "health.water.drinks",
+                    GuideGesture.Tap),
+                GuideStep.TryTap(L.Onboarding.HealthGoalsTabTitle, L.Onboarding.HealthGoalsTabBody,
                     "health.tab.goals"),
-                GuideStep.Note(L.Onboarding.HealthGoalsTitle, L.Onboarding.HealthGoalsBody),
-                GuideStep.Note(L.Onboarding.HealthPrivacyTitle, L.Onboarding.HealthPrivacyBody),
+                GuideStep.Point(L.Onboarding.HealthGoalTitle, L.Onboarding.HealthGoalBody, "health.goal",
+                    GuideGesture.None),
             });
     }
 }

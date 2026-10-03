@@ -16,7 +16,6 @@ internal sealed partial class MarketApp
         DrawRootTopBar(area, scale);
         var top = area.Min.Y + AppHeader.Height * scale;
         var scopeBar = new Rect(new Vector2(area.Min.X, top), new Vector2(area.Max.X, top + ScopeBarHeight * scale));
-        UiAnchors.Report("market.scope", scopeBar);
         DrawBrandedScopeBar(scopeBar);
         var searchTop = scopeBar.Max.Y + 2f * scale;
         var searchBar = new Rect(new Vector2(area.Min.X + 16f * scale, searchTop),
@@ -81,7 +80,13 @@ internal sealed partial class MarketApp
         for (var resultIndex = 0; resultIndex < results.Count; resultIndex++)
         {
             var price = market.AggregatedMin(results[resultIndex].Id, scope);
-            if (MarketRowViews.ItemRow(card.NextRow(), results[resultIndex], price, textures, frameTheme))
+            var row = card.NextRow();
+            if (resultIndex == 0)
+            {
+                UiAnchors.Report("market.result.first", row);
+            }
+
+            if (MarketRowViews.ItemRow(row, results[resultIndex], price, textures, frameTheme))
             {
                 OpenItem(results[resultIndex]);
             }

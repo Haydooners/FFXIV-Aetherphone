@@ -40,6 +40,7 @@ using Aetherphone.Apps.Venues;
 using Aetherphone.Apps.Wallet;
 using Aetherphone.Apps.YellowPages;
 using Aetherphone.Core.Aethernet;
+using Aetherphone.Core.Home;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Video;
@@ -96,17 +97,17 @@ internal static class AppRegistry
         apps.Add(new AethergramApp(services.AethernetSession, new AethernetApi(services.Http, services.AethernetSession, "aethergram"), services.Lodestone, services.RemoteImages, photoLibrary, services.SocialLauncher, services.GramDmLauncher, services.GameData, services.Configuration, services.SocialNotifications, services.Notifications, services.Http, services.KeyVault, services.ConversationKeys, services.ChatHistory, services.Visibility, services.RealtimeSignals, services.WallpaperImages, services.Confirm, services.Translation, services.Report, services.Conduct, services.Installer, services.EncryptionHelp));
         apps.Add(new VelvetShell(services.AethernetSession, new AethernetApi(services.Http, services.AethernetSession, "velvet"), services.Lodestone, services.Configuration, photoLibrary, services.Http, services.RemoteImages, services.Notifications, services.VelvetLauncher, services.SocialLauncher, services.GameData, services.SocialNotifications, services.KeyVault, services.ConversationKeys, services.ChatHistory, services.Visibility, services.RealtimeSignals, services.WallpaperImages, services.Confirm, services.Translation, services.Report, services.Conduct, services.Installer, services.EncryptionHelp));
         var feedbackNet = new AethernetApi(services.Http, services.AethernetSession, "feedback");
-        apps.Add(new FeedbackApp(services.AethernetSession, feedbackNet.Feedback, feedbackNet.Media, photoLibrary, services.Configuration, services.Confirm, services.WallpaperImages));
+        apps.Add(new FeedbackApp(services.AethernetSession, feedbackNet.Feedback, feedbackNet.Media, photoLibrary, services.Configuration, services.Confirm, services.WallpaperImages, services.RemoteImages, services.GameData, services.Notifications, services.RealtimeSignals, services.FeedbackLauncher));
         apps.Add(new PollsApp(services.AethernetSession, new AethernetApi(services.Http, services.AethernetSession, "polls").Polls, services.Installer, services.RealtimeSignals));
         apps.Add(new AnnouncementsApp(services.AethernetSession, new AethernetApi(services.Http, services.AethernetSession, "announcements").Announcements, services.Notifications, services.Configuration, services.AnnouncementsLauncher, services.Visibility, services.RealtimeSignals));
         apps.Add(new CameraApp(new PhotoCaptureService(), photoLibrary, services.Configuration, services.GameUiVisibility));
         apps.Add(new PhotosApp(photoLibrary, services.Confirm, services.Share, services.Configuration));
-        apps.Add(new SkywatcherApp(services.Weather, services.WeatherControl));
+        apps.Add(new SkywatcherApp(services.Weather, services.WeatherControl, services.Configuration));
         apps.Add(new VenuesApp(services.Venues, services.RemoteImages, services.Artwork, services.GameData, services.Configuration, services.Confirm, services.Translation));
         apps.Add(new StratsApp(services.StratsManifest, services.StratsGuides, services.RemoteImages, services.Configuration));
         apps.Add(new MusterApp(services.Musters, services.MusterLauncher, services.Aethernet, services.GameData, services.RemoteImages, services.Lodestone, services.Configuration, services.Confirm, services.Translation, services.Report, services.Conduct));
         apps.Add(new YellowPagesApp(services.YellowPages, services.AdInquiries, services.YellowPagesLauncher, services.SocialNotifications, services.Musters, new AethernetApi(services.Http, services.AethernetSession, "yellowpages"), services.GameData, services.RemoteImages, services.Lodestone, photoLibrary, services.WallpaperImages, services.Configuration, services.Confirm, services.Translation, services.Report, services.Conduct, services.EncryptionHelp, services.Http));
-        apps.Add(new MapsApp(services.Maps, services.Configuration));
+        apps.Add(new MapsApp(services.Maps, services.Configuration, services.ZoneMapTextures));
         apps.Add(new NewsApp(services.News, services.Media, services.Http, services.GameData));
         apps.Add(new CollectionsApp(services.Collections, services.Lodestone, services.Media, services.Http, services.GameData));
         apps.Add(new MarketApp(services.Market, services.MarketIndex, services.MarketAlerts, services.MarketLauncher, services.GameData, services.Textures, services.Configuration));
@@ -127,7 +128,7 @@ internal static class AppRegistry
         apps.Add(new FishingApp());
         apps.Add(new GamesApp(services.GameStats, services.GameData, services.Textures, services.Coins,
             services.CoinSessions, services.GameRooms));
-        apps.Add(new NotificationsApp(services.Notifications, services.SocialNotifications, services.LinkpearlLauncher, services.VelvetLauncher, services.DmLauncher, services.GramDmLauncher, services.SocialLauncher, services.MusterLauncher, services.YellowPagesLauncher, services.AnnouncementsLauncher, services.SafetyLauncher, services.EncryptionSetup, services.RadioLauncher, services.CasinoLauncher, services.AetherStreamLauncher, services.HuntsLauncher, services.JamLauncher));
+        apps.Add(new NotificationsApp(services.Notifications, services.SocialNotifications, services.LinkpearlLauncher, services.VelvetLauncher, services.DmLauncher, services.GramDmLauncher, services.SocialLauncher, services.MusterLauncher, services.YellowPagesLauncher, services.AnnouncementsLauncher, services.SafetyLauncher, services.EncryptionSetup, services.RadioLauncher, services.CasinoLauncher, services.AetherStreamLauncher, services.HuntsLauncher, services.JamLauncher, services.FeedbackLauncher));
         var calendarEvents = new CalendarEvents(services.Http, services.AethernetSession);
         apps.Add(new CalendarApp(services.Configuration, calendarEvents, services.Confirm));
         apps.Add(new Aetherphone.Apps.Coin.CoinApp(services.AethernetSession, services.Coins, services.CoinCatalog,
@@ -144,10 +145,18 @@ internal static class AppRegistry
             services.Configuration, services.Confirm, services.HuntsLauncher, services.HuntsMapMarkers));
         apps.Add(new SettingsApp(services, photoLibrary, apps));
 
+        var widgetServices = new WidgetServices
+        {
+            Phone = services,
+            Photos = photoLibrary,
+            Video = videoSuite,
+            Apps = apps,
+        };
         return new AppBundle
         {
             Apps = apps,
-            Widgets = WidgetCatalog.Build(services, photoLibrary, calendarEvents, apps),
+            Widgets = WidgetCatalog.Build(widgetServices, calendarEvents, messageStore),
+            WidgetActions = new WidgetActions(widgetServices),
             Photos = photoLibrary,
             Contacts = contactBook,
             MessagePopouts = messagePopouts,

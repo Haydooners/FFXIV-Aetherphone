@@ -4,7 +4,7 @@ namespace Aetherphone.Windows.Components;
 
 internal static class Squircle
 {
-    private const float Exponent = 4.2f;
+    public const float Exponent = 4.2f;
     private const int MinCornerSegments = 6;
     private const int MaxCornerSegments = 24;
     private const float SegmentError = 0.25f;
@@ -51,6 +51,40 @@ internal static class Squircle
         TracePath(drawList, min, max, box);
         drawList.PathFillConvex(tint);
         MapLinearUv(drawList, firstVertex, min, max, uv0, uv1);
+        BindTexture(drawList, firstCommand, texture);
+        drawList.AddDrawCmd();
+    }
+
+    public static void FillImageMapped(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius,
+        ImTextureID texture, in TextureMap map, uint topColor, uint bottomColor)
+    {
+        if (((topColor | bottomColor) & AlphaMask) == 0)
+        {
+            return;
+        }
+
+        var box = CornerBox(min, max, radius);
+        drawList.AddDrawCmd();
+        var firstCommand = drawList.CmdBuffer.Size - 1;
+        var firstVertex = drawList.VtxBuffer.Size;
+        if (box <= DegenerateBox)
+        {
+            drawList.AddRectFilled(min, max, topColor | AlphaMask);
+        }
+        else
+        {
+            TracePath(drawList, min, max, box);
+            drawList.PathFillConvex(topColor | AlphaMask);
+        }
+
+        var vertices = drawList.VtxBuffer.AsSpan();
+        for (var index = firstVertex; index < vertices.Length; index++)
+        {
+            ref var vertex = ref vertices[index];
+            vertex.Uv = map.At(vertex.Pos);
+        }
+
+        ShadeVertical(drawList, firstVertex, min.Y, max.Y, topColor, bottomColor);
         BindTexture(drawList, firstCommand, texture);
         drawList.AddDrawCmd();
     }

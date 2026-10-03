@@ -13,8 +13,8 @@ jobs:
         env:
           WEBHOOK_URL: ${{ secrets.COMMITS_WEBHOOK_URL }}
           # Pinned to the pushed commit: Discord's image proxy caches by URL, so a
-          # branch URL keeps serving the old icon long after Icon.png changes.
-          ICON: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/src/Aetherphone/Images/Icon.png
+          # branch URL keeps serving the old icon long after Emblem.png changes.
+          ICON: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/src/Aetherphone/Images/Emblem.png
         run: |
           set -euo pipefail
           if [ -z "${WEBHOOK_URL:-}" ]; then

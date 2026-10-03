@@ -8,6 +8,7 @@ using Aetherphone.Core.Notes;
 using Aetherphone.Core.Changelog;
 using Aetherphone.Core.ControlCenter;
 using Aetherphone.Core.Dailies;
+using Aetherphone.Core.Feedback;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Games;
 using Aetherphone.Core.Geography;
@@ -361,6 +362,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public List<string> YellowPagesPinnedInquiries { get; set; } = new();
     public List<string> YellowPagesArchivedInquiries { get; set; } = new();
     public List<uint> MapFavorites { get; set; } = new();
+    public List<uint> MapRecents { get; set; } = new();
+    public List<uint> SkywatcherZones { get; set; } = new();
     public uint HousingWorldId { get; set; }
     public uint HousingDistrictId { get; set; } = 339u;
     public int HousingWard { get; set; } = HousingDefaults.DefaultWard;
@@ -485,6 +488,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool TimeZoneManual { get; set; }
     public int ManualUtcOffsetMinutes { get; set; }
     public long LastFeedbackSentUnix { get; set; }
+    public Dictionary<string, FeedbackUpdateMarks> FeedbackMarks { get; set; } = new();
     public List<CalendarCustomEvent> CalendarCustomEvents { get; set; } = new();
     public List<CalendarEventGroup> CalendarGroups { get; set; } = new();
     public bool CalendarGameEventsInApp { get; set; } = true;

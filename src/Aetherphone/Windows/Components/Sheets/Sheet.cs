@@ -149,6 +149,16 @@ internal sealed class Sheet
         }
     }
 
+    public void YieldPointer()
+    {
+        if (dragging)
+        {
+            return;
+        }
+
+        pressed = false;
+    }
+
     public void CloseImmediately()
     {
         open = false;
@@ -285,7 +295,7 @@ internal sealed class Sheet
         largeDetent = detents.Resizable && target >= detents.Large;
     }
 
-    private static void DrawGrabber(ImDrawListPtr drawList, Rect panel, Vector4 ink, float scale)
+    public static void DrawGrabber(ImDrawListPtr drawList, Rect panel, Vector4 ink, float scale)
     {
         var width = SheetMetrics.GrabberWidth * scale;
         var height = SheetMetrics.GrabberHeight * scale;

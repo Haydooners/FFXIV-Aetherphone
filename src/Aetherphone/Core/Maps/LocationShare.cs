@@ -148,6 +148,8 @@ internal static class LocationShare
 
     public static (short Ward, short Plot, short Room) CurrentHousing() => ReadHousing();
 
+    public static uint CurrentHouseDistrict() => ReadIndoorHouseDistrict();
+
     public static bool IsIndoors()
     {
         try

@@ -117,13 +117,15 @@ internal sealed partial class MusicApp
 
     private void DrawTabBar(Rect area)
     {
-        tabItems[0] = new TabItem(Loc.T(L.Music.TabHome), IconGlyph.Of(FontAwesomeIcon.Home));
+        tabItems[0] = new TabItem(Loc.T(L.Music.TabHome), IconGlyph.Of(FontAwesomeIcon.Home),
+            AnchorKey: "music.tab.home");
         tabItems[1] = new TabItem(Loc.T(L.Music.TabNew), IconGlyph.Of(FontAwesomeIcon.ThLarge));
         tabItems[2] = new TabItem(Loc.T(L.Music.TabRadio), IconGlyph.Of(FontAwesomeIcon.BroadcastTower),
-            Badge: community.FollowedLiveCount, AnchorKey: "music.categories");
-        tabItems[3] = new TabItem(Loc.T(L.Music.TabLibrary), IconGlyph.Of(FontAwesomeIcon.LayerGroup));
+            Badge: community.FollowedLiveCount, AnchorKey: "music.tab.radio");
+        tabItems[3] = new TabItem(Loc.T(L.Music.TabLibrary), IconGlyph.Of(FontAwesomeIcon.LayerGroup),
+            AnchorKey: "music.tab.library");
         tabItems[4] = new TabItem(Loc.T(L.Common.Search), IconGlyph.Of(FontAwesomeIcon.Search),
-            AnchorKey: "music.search");
+            AnchorKey: "music.tab.search");
         var result = tabBar.Draw(area, ui, tabItems, (int)tab);
         if (result.Tapped < 0)
         {

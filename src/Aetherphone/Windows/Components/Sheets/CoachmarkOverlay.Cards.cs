@@ -9,7 +9,9 @@ namespace Aetherphone.Windows.Components;
 
 internal sealed partial class CoachmarkOverlay
 {
+    private const float StrandedSeconds = 0.6f;
     private static bool passthrough;
+    private float targetMissing;
     private bool anchorPressed;
 
     private const float HeroScale = 1.5f;
@@ -146,7 +148,9 @@ internal sealed partial class CoachmarkOverlay
         float alpha, float contentAlpha, float contentRise, float contentProgress, float blend, bool live, int index,
         int count, float scale, float delta)
     {
-        var isTap = (step.Advance == GuideAdvance.TapTarget && hole.HasValue) || step.IsAction;
+        targetMissing = hole.HasValue ? 0f : targetMissing + delta;
+        var stranded = step.IsAction && targetMissing > StrandedSeconds;
+        var isTap = (step.Advance == GuideAdvance.TapTarget && hole.HasValue) || (step.IsAction && !stranded);
         var size = MeasureCard(screen, step, isTap, scale);
         StepPose(CoachmarkTarget(screen, size, hole, scale), screen.Min, delta);
         var card = PoseRect(screen.Min, 0.94f + 0.06f * alpha);
@@ -334,7 +338,8 @@ internal sealed partial class CoachmarkOverlay
                 BrandMark.Lilac with { W = contentAlpha }, TextStyles.FootnoteEmphasized);
         }
 
-        if (index < count - 1 && SkipLabel(drawList, new Vector2(card.Max.X - pad, y + headerHeight * 0.5f), false,
+        if ((index < count - 1 || step.IsAction) &&
+            SkipLabel(drawList, new Vector2(card.Max.X - pad, y + headerHeight * 0.5f), false,
                 contentAlpha, live))
         {
             action = CoachmarkAction.Skip;
@@ -449,7 +454,8 @@ internal sealed partial class CoachmarkOverlay
             return false;
         }
 
-        var hovered = live && UiInteract.Hover(rect.Min, rect.Max);
+        var hovered = live && (passthrough ? UiInteract.HoverWindowOnly(rect.Min, rect.Max)
+            : UiInteract.Hover(rect.Min, rect.Max));
         MotionButton.Brand(drawList, rect, label, label, alpha, hovered, true, DisabledFill, InkQuiet);
         return hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
     }

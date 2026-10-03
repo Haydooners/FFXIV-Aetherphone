@@ -69,7 +69,7 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
     private const int MaxCaptionLength = 500;
     private const int MaxPhotoTags = 20;
     private const int MaxCommentLength = 500;
-    private const int NavTabCount = 3;
+    private const int NavTabCount = 4;
     private const int FilterToggleCount = 3;
     private const float TopBarIconSize = 26f;
     private const float LogoSize = 30f;
@@ -206,6 +206,7 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
     private SocialFeedScope activeScope = SocialFeedScope.ForYou;
     private SocialFeedScope latestScope = SocialFeedScope.Latest;
     private bool feedScrollTopPending;
+    private bool feedActionsAnchorPending;
     private bool commentFocusPending;
     private readonly PhotoComposeSession composeSession;
     private bool composeAvatarMode;
@@ -420,6 +421,7 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
                 ImGui.GetIO().DeltaTime, drawView);
         }
 
+        UpdateTourHold();
         if (avatarLightbox.Active)
         {
             avatarLightbox.Draw(screen, theme);
@@ -529,21 +531,9 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         if (!store.IsSignedIn)
         {
             DrawHomeTopBar(area);
-            TourHolds.Hold(Id);
             var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
             Typography.DrawCentered(body.Center, Loc.T(L.Aethergram.SetUpAccount), AethergramInk.MutedInk);
             return;
-        }
-
-        TourHolds.Release(Id);
-        if (GuideIntents.Consume("aethergram.tab.search"))
-        {
-            SelectTab(AethergramTab.Search);
-        }
-
-        if (GuideIntents.Consume("aethergram.tab.profile"))
-        {
-            SelectTab(AethergramTab.Profile);
         }
 
         using (TabBar.ReserveContent(scale))
@@ -566,6 +556,17 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         DrawBottomNav(area);
     }
 
+    private void UpdateTourHold()
+    {
+        if (store.IsSignedIn && router.Depth == 1 && activeTab == AethergramTab.Home)
+        {
+            TourHolds.Release(Id);
+            return;
+        }
+
+        TourHolds.Hold(Id);
+    }
+
     private void DrawFeedTab(Rect area)
     {
         var scale = UiScale.Current;
@@ -573,6 +574,7 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         DrawHomeTopBar(area);
         var top = area.Min.Y + AppHeader.Height * scale;
         var rowRect = new Rect(new Vector2(area.Min.X, top), new Vector2(area.Max.X, top + FeedTabRowHeight * scale));
+        UiAnchors.Report("aethergram.feeds", rowRect);
         var picked = UnderlineTabs.Draw(rowRect, Loc.T(L.Aethergram.ForYou), Loc.T(L.Social.FeedLatest),
             activeScope != SocialFeedScope.ForYou, ref tabSegment, Ink, FeedTabsStyle);
         if (picked >= 0)
@@ -960,8 +962,10 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
 
             pullToRefresh[scope].Draw(listRect, surface.Pull, surface.Dragging,
                 store.IsLoading(scope), Ink.MutedInk, () => RefreshFeed(scope));
+            var trayTop = ImGui.GetCursorScreenPos().Y;
             stories.DrawTray(theme, store.Me?.AvatarUrl, store.Me is { } me ? me.Name : string.Empty,
                 store.Me?.FrameId);
+            ReportStoryTray(listRect, trayTop, ImGui.GetCursorScreenPos().Y);
             if (snapshot.Length == 0)
             {
                 var failed = !store.IsLoading(scope) && store.FeedFailed(scope);
@@ -1002,6 +1006,7 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
                 }
 
                 var caughtUpAfterId = ranked ? store.CaughtUpAfterId : null;
+                feedActionsAnchorPending = UiAnchors.Recording;
                 for (var index = 0; index < snapshot.Length; index++)
                 {
                     var post = snapshot[index];
@@ -1036,6 +1041,7 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
                     }
                 }
 
+                feedActionsAnchorPending = false;
                 if (store.LoadingMore(scope))
                 {
                     InfiniteScroll.DrawLoadingRow(listRect.Center.X, Ink.MutedInk);
@@ -1048,6 +1054,30 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
                 }
             }
         }
+    }
+
+    private static void ReportStoryTray(Rect listRect, float trayTop, float trayBottom)
+    {
+        if (!UiAnchors.Recording || trayBottom <= trayTop || trayTop < listRect.Min.Y)
+        {
+            return;
+        }
+
+        UiAnchors.Report("aethergram.stories",
+            new Rect(new Vector2(listRect.Min.X, trayTop), new Vector2(listRect.Max.X, trayBottom)));
+    }
+
+    private void ReportFeedActions(float left, float right, float top, float bottom)
+    {
+        var visibleTop = ImGui.GetWindowPos().Y;
+        var visibleBottom = visibleTop + ImGui.GetWindowSize().Y - TabBar.ContentInset(UiScale.Current);
+        if (top < visibleTop || bottom > visibleBottom)
+        {
+            return;
+        }
+
+        feedActionsAnchorPending = false;
+        UiAnchors.Report("aethergram.card.actions", new Rect(new Vector2(left, top), new Vector2(right, bottom)));
     }
 
     private static void DrawSuggestionBanner(ImDrawListPtr drawList, float left, float top, float width, string label)
@@ -1282,6 +1312,11 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         var bookmarkMin = new Vector2(bookmarkCenter.X - iconSize, actionsTop);
         var bookmarkMax = new Vector2(bookmarkCenter.X + iconSize * 0.5f + 6f * scale, actionsTop + actionsHeight);
         var bookmarkHovered = UiInteract.Hover(bookmarkMin, bookmarkMax);
+        if (feedActionsAnchorPending && !detail)
+        {
+            ReportFeedActions(innerX, bookmarkMax.X, actionsTop, actionsTop + actionsHeight);
+        }
+
         if (bookmarkHovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -1558,20 +1593,21 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
 
         tabItems[(int)AethergramTab.Home] = new TabItem(Loc.T(L.Aethergram.Home), PhoneIcons.Home,
             PhoneIcons.HomeFilled);
-        tabItems[(int)AethergramTab.Search] = new TabItem(Loc.T(L.Aethergram.Search), PhoneIcons.Search,
-            AnchorKey: "aethergram.tab.search");
+        tabItems[(int)AethergramTab.Search] = new TabItem(Loc.T(L.Aethergram.Search), PhoneIcons.Search);
+        tabItems[(int)AethergramTab.Messages] = new TabItem(Loc.T(L.Aethergram.InboxTitle), PhoneIcons.Send,
+            PhoneIcons.SendFilled, dmStore.UnreadCount, "aethergram.inbox");
         tabItems[(int)AethergramTab.Profile] = new TabItem(Loc.T(L.Aethergram.Profile), PhoneIcons.User,
-            PhoneIcons.UserFilled, AnchorKey: "aethergram.tab.profile", CustomIcon: hasAvatar);
-        var inbox = new TabBarAction(PhoneIcons.Send, Loc.T(L.Aethergram.InboxTitle), dmStore.UnreadCount);
-        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab, inbox, this);
-        if (result.ActionTapped)
+            PhoneIcons.UserFilled, CustomIcon: hasAvatar);
+        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab, null, this);
+        UiAnchors.Report("aethergram.tabbar", tabBar.Bounds);
+        if (result.Tapped < 0)
         {
-            OpenInbox();
             return;
         }
 
-        if (result.Tapped < 0)
+        if (result.Tapped == (int)AethergramTab.Messages)
         {
+            OpenInbox();
             return;
         }
 

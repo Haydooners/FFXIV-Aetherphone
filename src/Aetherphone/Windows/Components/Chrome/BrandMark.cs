@@ -48,17 +48,13 @@ internal static class BrandMark
     private const float MoteSwayUnits = 9f;
     private static readonly Vector4[] MoteSeeds = BuildMoteSeeds();
 
-    private static readonly string SourcePath =
-        Path.Combine(Plugin.PluginInterface.AssemblyLocation.DirectoryName ?? string.Empty, "Images", "Icon.png");
-
-    private static readonly IDalamudTextureWrap?[] Levels = new IDalamudTextureWrap?[SlotCount];
-    private static readonly int[] Loading = new int[SlotCount];
+    private static readonly MarkSource Tile = new("Icon.png");
+    private static readonly MarkSource Emblem = new("Emblem.png");
     private static IDalamudTextureWrap? ambient;
     private static int ambientLoading;
     private static IDalamudTextureWrap? sheenTexture;
     private static int sheenLoading;
     private static int generation;
-    private static bool failed;
 
     public static bool TryDraw(ImDrawListPtr drawList, Vector2 center, float size, float alpha, float scale) =>
         TryDraw(drawList, center, size, alpha, scale, AutoSheen());
@@ -71,7 +67,7 @@ internal static class BrandMark
             return true;
         }
 
-        if (!TryResolve(TextureSizes.LevelFor(size), out var texture))
+        if (!TryResolve(Tile, TextureSizes.LevelFor(size), out var texture))
         {
             return false;
         }
@@ -88,6 +84,25 @@ internal static class BrandMark
             1f * scale);
         Squircle.StrokeDirectional(drawList, min, max, radius,
             ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.42f * alpha)), 1.3f * scale, RimLight, 2.2f);
+        return true;
+    }
+
+    public static bool TryDrawEmblem(ImDrawListPtr drawList, Vector2 center, float size, float alpha)
+    {
+        if (alpha <= 0.001f || size <= 1f)
+        {
+            return true;
+        }
+
+        if (!TryResolve(Emblem, TextureSizes.LevelFor(size), out var texture))
+        {
+            return false;
+        }
+
+        var half = new Vector2(size * 0.5f, size * 0.5f);
+        Glow(drawList, center, size * 0.8f, alpha);
+        drawList.AddImage(texture, center - half, center + half, Vector2.Zero, Vector2.One,
+            ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha)));
         return true;
     }
 
@@ -235,12 +250,8 @@ internal static class BrandMark
     public static void Dispose()
     {
         Interlocked.Increment(ref generation);
-        for (var slotIndex = 0; slotIndex < SlotCount; slotIndex++)
-        {
-            Interlocked.Exchange(ref Levels[slotIndex], null)?.Dispose();
-            Interlocked.Exchange(ref Loading[slotIndex], 0);
-        }
-
+        Tile.Dispose();
+        Emblem.Dispose();
         Interlocked.Exchange(ref ambient, null)?.Dispose();
         Interlocked.Exchange(ref ambientLoading, 0);
         Interlocked.Exchange(ref sheenTexture, null)?.Dispose();
@@ -259,38 +270,38 @@ internal static class BrandMark
         return (center - half, center + half);
     }
 
-    private static bool TryResolve(int level, out ImTextureID texture)
+    private static bool TryResolve(MarkSource source, int level, out ImTextureID texture)
     {
         texture = default;
-        if (failed)
+        if (source.Failed)
         {
             return false;
         }
 
-        if (Levels[level] is { } wrap)
+        if (source.Levels[level] is { } wrap)
         {
             texture = wrap.Handle;
             return true;
         }
 
-        if (Interlocked.CompareExchange(ref Loading[level], 1, 0) == 0)
+        if (Interlocked.CompareExchange(ref source.Loading[level], 1, 0) == 0)
         {
             var stamp = generation;
             var size = TextureSizes.SizeOf(level);
-            _ = Task.Run(() => BuildAsync(level, stamp, size, false));
+            _ = Task.Run(() => BuildAsync(source, level, stamp, size, false));
         }
 
         for (var distance = 1; distance < SlotCount; distance++)
         {
             var above = level + distance;
-            if (above < SlotCount && Levels[above] is { } larger)
+            if (above < SlotCount && source.Levels[above] is { } larger)
             {
                 texture = larger.Handle;
                 return true;
             }
 
             var below = level - distance;
-            if (below > TextureSizes.Native && Levels[below] is { } smaller)
+            if (below > TextureSizes.Native && source.Levels[below] is { } smaller)
             {
                 texture = smaller.Handle;
                 return true;
@@ -309,10 +320,10 @@ internal static class BrandMark
             return true;
         }
 
-        if (!failed && Interlocked.CompareExchange(ref ambientLoading, 1, 0) == 0)
+        if (!Tile.Failed && Interlocked.CompareExchange(ref ambientLoading, 1, 0) == 0)
         {
             var stamp = generation;
-            _ = Task.Run(() => BuildAsync(0, stamp, AmbientWidth, true));
+            _ = Task.Run(() => BuildAsync(Tile, 0, stamp, AmbientWidth, true));
         }
 
         return false;
@@ -386,14 +397,15 @@ internal static class BrandMark
         return seeds;
     }
 
-    private static async Task BuildAsync(int level, int stamp, int size, bool blurred)
+    private static async Task BuildAsync(MarkSource source, int level, int stamp, int size, bool blurred)
     {
         try
         {
-            var bytes = await File.ReadAllBytesAsync(SourcePath).ConfigureAwait(false);
+            var bytes = await File.ReadAllBytesAsync(source.Path).ConfigureAwait(false);
             var (pixels, width, height) = Bake(bytes, size, blurred);
             var wrap = await Plugin.TextureProvider.CreateFromRawAsync(RawImageSpecification.Rgba32(width, height),
-                pixels, $"Aetherphone.Brand.{(blurred ? "ambient" : size.ToString())}", CancellationToken.None).ConfigureAwait(false);
+                pixels, $"Aetherphone.Brand.{source.Name}.{(blurred ? "ambient" : size.ToString())}",
+                CancellationToken.None).ConfigureAwait(false);
             if (stamp != generation)
             {
                 wrap.Dispose();
@@ -402,7 +414,7 @@ internal static class BrandMark
 
             var previous = blurred
                 ? Interlocked.CompareExchange(ref ambient, wrap, null)
-                : Interlocked.CompareExchange(ref Levels[level], wrap, null);
+                : Interlocked.CompareExchange(ref source.Levels[level], wrap, null);
             if (previous is not null)
             {
                 wrap.Dispose();
@@ -410,8 +422,9 @@ internal static class BrandMark
         }
         catch (Exception exception)
         {
-            failed = true;
-            AepLog.Warning(exception, $"[Brand] failed to bake the {(blurred ? "ambient" : $"{size}px")} brand mark");
+            source.Failed = true;
+            AepLog.Warning(exception,
+                $"[Brand] failed to bake the {(blurred ? "ambient" : $"{size}px")} {source.Name} brand mark");
         }
     }
 
@@ -433,5 +446,30 @@ internal static class BrandMark
         var pixels = new byte[width * height * 4];
         image.CopyPixelDataTo(pixels);
         return (pixels, width, height);
+    }
+
+    private sealed class MarkSource
+    {
+        public readonly string Name;
+        public readonly string Path;
+        public readonly IDalamudTextureWrap?[] Levels = new IDalamudTextureWrap?[SlotCount];
+        public readonly int[] Loading = new int[SlotCount];
+        public volatile bool Failed;
+
+        public MarkSource(string fileName)
+        {
+            Name = System.IO.Path.GetFileNameWithoutExtension(fileName);
+            Path = System.IO.Path.Combine(Plugin.PluginInterface.AssemblyLocation.DirectoryName ?? string.Empty,
+                "Images", fileName);
+        }
+
+        public void Dispose()
+        {
+            for (var slotIndex = 0; slotIndex < SlotCount; slotIndex++)
+            {
+                Interlocked.Exchange(ref Levels[slotIndex], null)?.Dispose();
+                Interlocked.Exchange(ref Loading[slotIndex], 0);
+            }
+        }
     }
 }

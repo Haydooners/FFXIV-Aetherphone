@@ -80,6 +80,7 @@ internal sealed class InventoryApp : IPhoneApp
         ui.Backdrop(screen);
         if (gameData.LocalPlayer is null)
         {
+            TourHolds.Hold(Id);
             router.Reset();
             ui.Body(context.Content);
             DrawNavBar(context.Content, DisplayName, null);
@@ -88,6 +89,7 @@ internal sealed class InventoryApp : IPhoneApp
             return;
         }
 
+        TourHolds.Release(Id);
         MaybeRebuild();
         router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
     }
@@ -137,6 +139,7 @@ internal sealed class InventoryApp : IPhoneApp
         DrawNavBar(area, title, back);
         var scale = UiScale.Current;
         var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
+        UiAnchors.Report("inventory.source", body);
         var group = FindGroup(kind, title);
         using (AppSurface.Begin(body))
         {
@@ -202,6 +205,11 @@ internal sealed class InventoryApp : IPhoneApp
             var group = localScratch[index];
             var row = card.NextRow();
             var band = RowBand(row, scale);
+            if (index == 0)
+            {
+                UiAnchors.Report("inventory.storage", band);
+            }
+
             var hovered = DrawRowHover(band, scale, accentHover);
             if (DrawStorageRow(row, group.Kind, group.Title, string.Empty, group.Rows.Count, true, hovered, band.Min,
                     band.Max))
@@ -225,8 +233,6 @@ internal sealed class InventoryApp : IPhoneApp
 
         SectionLabel(Loc.T(L.Inventory.CachedSources));
         var scale = UiScale.Current;
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
         var accentHover = Palette.WithAlpha(ui.Accent, 0.10f);
         var card = GroupCard.Begin(ui, total, StorageRowHeight);
         for (var index = 0; index < cachedScratch.Count; index++)
@@ -259,8 +265,6 @@ internal sealed class InventoryApp : IPhoneApp
                 Loc.T(L.Inventory.FreeCompanyEmpty), -1, false, false, band.Min, band.Max);
         }
 
-        UiAnchors.Report("inventory.sources",
-            new Rect(origin, origin + new Vector2(width, total * StorageRowHeight * scale)));
         card.End();
     }
 
@@ -363,7 +367,6 @@ internal sealed class InventoryApp : IPhoneApp
         var height = HeroHeight * scale;
         var cardMin = origin;
         var cardMax = new Vector2(origin.X + width, origin.Y + height);
-        UiAnchors.Report("inventory.summary", new Rect(cardMin, cardMax));
         var rounding = 22f * scale;
         ui.Card(drawList, cardMin, cardMax, rounding, elevated: true);
         Material.TopGlow(drawList, cardMin, cardMax, rounding, ui.Accent, 0.78f, 0.10f);

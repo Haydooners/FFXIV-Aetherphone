@@ -96,6 +96,15 @@ internal static class SegmentStrip
         return result;
     }
 
+    public static Rect SegmentRect(Rect row, int index, int count, float trackHeight = TrackHeight)
+    {
+        var height = trackHeight * UiScale.Current;
+        var segmentWidth = row.Width / Math.Max(1, count);
+        var left = row.Min.X + index * segmentWidth;
+        return new Rect(new Vector2(left, row.Center.Y - height * 0.5f),
+            new Vector2(left + segmentWidth, row.Center.Y + height * 0.5f));
+    }
+
     private static float AnimateThumb(string id, int selected)
     {
         if (!Thumbs.TryGetValue(id, out var spring))
