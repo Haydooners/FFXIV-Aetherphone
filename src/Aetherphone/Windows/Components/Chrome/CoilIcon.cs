@@ -1,6 +1,6 @@
 using Dalamud.Bindings.ImGui;
 
-namespace Aetherphone.Apps.Games.Coil;
+namespace Aetherphone.Windows.Components;
 
 internal static class CoilIcon
 {
@@ -12,7 +12,7 @@ internal static class CoilIcon
         {
             var angle = -MathF.PI * 0.5f + link * 0.74f;
             var orbit = extent * (0.98f - link * 0.062f);
-            var marble = center + CoilShapes.Polar(angle) * orbit;
+            var marble = center + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * orbit;
             var size = extent * (0.2f - link * 0.009f);
             drawList.AddCircleFilled(marble, size, ink, 16);
             drawList.AddCircleFilled(marble - new Vector2(size * 0.32f, size * 0.32f), size * 0.3f, hole, 10);

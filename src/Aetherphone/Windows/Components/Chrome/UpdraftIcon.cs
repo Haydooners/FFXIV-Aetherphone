@@ -1,6 +1,6 @@
 using Dalamud.Bindings.ImGui;
 
-namespace Aetherphone.Apps.Games.Updraft;
+namespace Aetherphone.Windows.Components;
 
 internal static class UpdraftIcon
 {

@@ -1,10 +1,11 @@
 using Dalamud.Bindings.ImGui;
 
-namespace Aetherphone.Apps.Games.Swoop;
+namespace Aetherphone.Windows.Components;
 
 internal static class SwoopIcon
 {
     private const int HillColumns = 16;
+    private const int WingSegments = 18;
 
     public static void Draw(ImDrawListPtr drawList, Vector2 center, float extent, uint ink, uint hole)
     {
@@ -23,7 +24,23 @@ internal static class SwoopIcon
         drawList.AddTriangleFilled(bird + new Vector2(radius * 0.82f, -radius * 0.2f), bird + new Vector2(radius * 1.38f, radius * 0.02f),
             bird + new Vector2(radius * 0.82f, radius * 0.24f), ink);
         drawList.AddCircleFilled(bird + new Vector2(radius * 0.38f, -radius * 0.28f), radius * 0.2f, hole, 14);
-        SwoopShapes.Ellipse(drawList, bird + new Vector2(-radius * 0.22f, radius * 0.12f), radius * 0.46f, radius * 0.2f, -0.35f, hole, 18);
+        DrawWing(drawList, bird + new Vector2(-radius * 0.22f, radius * 0.12f), radius * 0.46f, radius * 0.2f, -0.35f, hole);
+    }
+
+    private static void DrawWing(ImDrawListPtr drawList, Vector2 center, float radiusX, float radiusY, float angle, uint color)
+    {
+        var cosine = MathF.Cos(angle);
+        var sine = MathF.Sin(angle);
+        drawList.PathClear();
+        for (var segment = 0; segment < WingSegments; segment++)
+        {
+            var theta = MathF.Tau * segment / WingSegments;
+            var localX = MathF.Cos(theta) * radiusX;
+            var localY = MathF.Sin(theta) * radiusY;
+            drawList.PathLineTo(new Vector2(center.X + localX * cosine - localY * sine, center.Y + localX * sine + localY * cosine));
+        }
+
+        drawList.PathFillConvex(color);
     }
 
     private static void DrawHills(ImDrawListPtr drawList, Vector2 center, float extent, uint ink)

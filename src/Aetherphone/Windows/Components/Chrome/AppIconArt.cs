@@ -1,6 +1,3 @@
-using Aetherphone.Apps.Games.Coil;
-using Aetherphone.Apps.Games.Swoop;
-using Aetherphone.Apps.Games.Updraft;
 using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Windows.Components;
