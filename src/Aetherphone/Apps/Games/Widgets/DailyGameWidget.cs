@@ -15,7 +15,10 @@ internal sealed class DailyGameWidget : IHomeWidget
 {
     private const string AppKey = "games";
     private const int RefreshMilliseconds = 20000;
+    private const int SlotCount = 3;
+    private const int SlotControlBase = 10;
     private const float IconUnits = 42f;
+    private const float SlotIconUnits = 40f;
     private const float BadgeUnits = 16f;
     private const float GradientLift = 0.08f;
     private const float GradientDrop = 0.28f;
@@ -24,9 +27,15 @@ internal sealed class DailyGameWidget : IHomeWidget
     private static readonly Vector4 Ember = AccentRing.Orange;
 
     private readonly GameStatsStore stats;
+    private readonly string[] slotIds = new string[SlotCount];
+    private readonly string[] slotTitles = new string[SlotCount];
+    private readonly Vector4[] slotAccents = new Vector4[SlotCount];
+    private readonly WidgetRoute[] slotRoutes = new WidgetRoute[SlotCount];
     private IMiniGame? game;
     private WidgetRefresh refresh;
     private CachedText streakText;
+    private int slotFilled;
+    private bool slotsRecent;
 
     public DailyGameWidget(GameStatsStore stats)
     {
@@ -37,7 +46,7 @@ internal sealed class DailyGameWidget : IHomeWidget
     public string DisplayName => Loc.T(L.WidgetsUtility.DailyGameName);
     public string Description => Loc.T(L.WidgetsUtility.DailyGameDescription);
     public string AppId => AppKey;
-    public WidgetSizeSet Sizes => WidgetSizeSet.Small;
+    public WidgetSizeSet Sizes => WidgetSizeSet.Small | WidgetSizeSet.Medium;
 
     public float Relevance(string config)
     {
@@ -74,16 +83,35 @@ internal sealed class DailyGameWidget : IHomeWidget
 
         var primary = colored ? ink.Fade(White) : ink.Primary;
         var secondary = colored ? ink.Fade(White, SecondaryAlpha) : ink.Secondary;
+        var content = WidgetMetrics.Content(context);
+        if (context.Size == WidgetSize.Small || slotFilled == 0)
+        {
+            DrawDaily(context, ink, game, content, primary, secondary, colored);
+            return;
+        }
+
+        var gutter = WidgetMetrics.Gutter * context.Scale;
+        var half = (content.Width - gutter) * 0.5f;
+        DrawDaily(context, ink, game, new Rect(content.Min, new Vector2(content.Min.X + half, content.Max.Y)),
+            primary, secondary, colored);
+        DrawSlots(context, ink, new Rect(new Vector2(content.Max.X - half, content.Min.Y), content.Max), primary,
+            secondary);
+    }
+
+    private void DrawDaily(in WidgetContext context, in WidgetInk ink, IMiniGame daily, Rect content,
+        Vector4 primary, Vector4 secondary, bool colored)
+    {
         var drawList = context.DrawList;
         var scale = context.Scale;
-        var content = WidgetMetrics.Content(context);
+        var accent = daily.Accent;
         var icon = IconUnits * scale;
         var iconMin = content.Min;
         var iconMax = iconMin + new Vector2(icon, icon);
-        if (!AppIconTile.TryDraw(drawList, game.Id, accent, iconMin, iconMax, icon * Metrics.Radius.TileFactor,
+        if (!AppIconTile.TryDraw(drawList, daily.Id, accent, iconMin, iconMax, icon * Metrics.Radius.TileFactor,
                 ink.Opacity, false, scale))
         {
-            AppIconArt.TryDraw(drawList, game.Id, (iconMin + iconMax) * 0.5f, icon, primary, Palette.Darken(accent, 0.16f));
+            AppIconArt.TryDraw(drawList, daily.Id, (iconMin + iconMax) * 0.5f, icon, primary,
+                Palette.Darken(accent, 0.16f));
         }
 
         var done = stats.DailyDone;
@@ -101,15 +129,47 @@ internal sealed class DailyGameWidget : IHomeWidget
         var eyebrowHeight = WidgetText.EyebrowHeight();
         var captionTop = content.Max.Y - captionHeight;
         var titleSpace = captionTop - (iconMax.Y + WidgetMetrics.Gutter * scale + eyebrowHeight);
-        var titleLines = WidgetText.Clamp(game.Title, WidgetType.Title, content.Width,
+        var titleLines = WidgetText.Clamp(daily.Title, WidgetType.Title, content.Width,
             Math.Clamp((int)(titleSpace / titleHeight), 1, 2));
         var titleTop = captionTop - titleLines.Length * titleHeight;
-        WidgetText.EyebrowFit(drawList, new Vector2(content.Min.X, titleTop - eyebrowHeight - WidgetMetrics.RowGap * scale),
+        WidgetText.EyebrowFit(drawList,
+            new Vector2(content.Min.X, titleTop - eyebrowHeight - WidgetMetrics.RowGap * scale),
             Loc.T(L.WidgetsUtility.TodaysGame), content.Width, secondary, scale);
         WidgetText.Lines(drawList, titleLines, new Vector2(content.Min.X, titleTop), primary,
             WidgetType.Title, titleHeight);
         WidgetText.Draw(drawList, new Vector2(content.Min.X, captionTop), Caption(done, streak), secondary,
             WidgetType.Caption, content.Width);
+    }
+
+    private void DrawSlots(in WidgetContext context, in WidgetInk ink, Rect area, Vector4 primary, Vector4 secondary)
+    {
+        var drawList = context.DrawList;
+        var scale = context.Scale;
+        WidgetText.EyebrowFit(drawList, area.Min,
+            slotsRecent ? Loc.T(L.GamesHub.ContinuePlaying) : Loc.T(L.Games.ShelfLatest), area.Width, secondary,
+            scale);
+        var top = area.Min.Y + WidgetText.EyebrowHeight() + WidgetMetrics.RowGap * scale * 2f;
+        var rowHeight = (area.Max.Y - top) / SlotCount;
+        var icon = MathF.Min(SlotIconUnits * scale, rowHeight - WidgetMetrics.RowGap * scale);
+        for (var index = 0; index < slotFilled; index++)
+        {
+            var rowTop = top + index * rowHeight;
+            var row = new Rect(new Vector2(area.Min.X, rowTop), new Vector2(area.Max.X, rowTop + rowHeight));
+            WidgetControls.Link(context, ink, SlotControlBase + index, row, slotRoutes[index]);
+            var iconMin = new Vector2(row.Min.X, row.Center.Y - icon * 0.5f);
+            var iconMax = iconMin + new Vector2(icon, icon);
+            if (!AppIconTile.TryDraw(drawList, slotIds[index], slotAccents[index], iconMin, iconMax,
+                    icon * Metrics.Radius.TileFactor, ink.Opacity, false, scale))
+            {
+                AppIconArt.TryDraw(drawList, slotIds[index], (iconMin + iconMax) * 0.5f, icon, primary,
+                    Palette.Darken(slotAccents[index], 0.16f));
+            }
+
+            var textLeft = iconMax.X + WidgetMetrics.RowGap * scale * 2f;
+            var lineHeight = WidgetText.LineHeight(WidgetType.Headline);
+            WidgetText.Draw(drawList, new Vector2(textLeft, row.Center.Y - lineHeight * 0.5f), slotTitles[index],
+                primary, WidgetType.Headline, area.Max.X - textLeft);
+        }
     }
 
     private void Refresh(in WidgetContext context)
@@ -119,7 +179,40 @@ internal sealed class DailyGameWidget : IHomeWidget
             return;
         }
 
-        game = context.Actions.App(AppKey) is GamesApp games ? games.DailyGame : null;
+        if (context.Actions.App(AppKey) is not GamesApp games)
+        {
+            game = null;
+            slotFilled = 0;
+            return;
+        }
+
+        game = games.DailyGame;
+        FillSlots(games.Library, game.Id);
+    }
+
+    private void FillSlots(GamesLibrary library, string dailyId)
+    {
+        slotFilled = 0;
+        slotsRecent = library.Recent.Length > 0;
+        var source = slotsRecent ? library.Recent : library.Latest;
+        for (var position = 0; position < source.Length && slotFilled < SlotCount; position++)
+        {
+            ref readonly var entry = ref library.Entries[source[position]];
+            if (entry.Online || string.Equals(entry.Id, dailyId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (!string.Equals(slotIds[slotFilled], entry.Id, StringComparison.Ordinal))
+            {
+                slotIds[slotFilled] = entry.Id;
+                slotRoutes[slotFilled] = WidgetRoute.Tab(AppKey, GamesApp.PlayRoute(entry.Id));
+            }
+
+            slotTitles[slotFilled] = library.Title(source[position]);
+            slotAccents[slotFilled] = library.Accent(source[position]);
+            slotFilled++;
+        }
     }
 
     private string Caption(bool done, int streak)
