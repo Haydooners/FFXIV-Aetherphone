@@ -57,6 +57,12 @@ internal sealed class CallSignalRouter : IDisposable
             return;
         }
 
+        if (message.Type.StartsWith(SignalType.RadioPrefix, StringComparison.Ordinal))
+        {
+            signals.PublishRadio(message);
+            return;
+        }
+
         switch (message.Type)
         {
             case SignalType.ChatPing:
