@@ -189,8 +189,8 @@ internal static class FeedbackArt
         var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var grow = PressFx.Scale(id, down, PressFx.ControlPressedScale);
         var half = rect.Size * 0.5f * grow;
-        var drawn = new Rect(rect.Center - half, rect.Center + half);
-        var clicked = ui.AccentPill(drawn, label, enabled, TextStyles.Headline);
-        return enabled && hovered && clicked;
+        ui.PaintAccentPill(new Rect(rect.Center - half, rect.Center + half), label, enabled, hovered,
+            TextStyles.Headline);
+        return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 }
