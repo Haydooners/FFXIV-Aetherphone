@@ -59,7 +59,7 @@ const map = {
   settings: icon("gear", "graphite", "Slate", { round: true, ink: SETTINGS_INK }),
   chirper: icon("feather", "colour", "Chirper"),
   aethergram: icon("aperture", "colour", "Aethergram", { round: true }),
-  velvet: icon("flame", "colour", "Velvet"),
+  velvet: icon("fire", "colour", "Velvet", { round: true }),
   polls: icon("chart-bar", "colour", "Indigo"),
   announcements: icon("megaphone", "colour", "Orange"),
   camera: icon("camera", "graphite", "Slate", { ink: WHITE }),
