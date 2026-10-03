@@ -50,11 +50,12 @@ internal sealed class TutorialsPage : ISettingsPage
 
             ImGui.Dummy(new Vector2(0f, 12f * scale));
             var actions = GroupCard.Begin(theme, 2);
-            var replay = SettingsRow.Disclosure(actions.NextRow(), Loc.T(L.Settings.TutorialsReplay), string.Empty,
-                theme);
-            var reset = SettingsRow.Disclosure(actions.NextRow(), Loc.T(L.Settings.TutorialsReset), string.Empty,
-                theme);
+            var replayRow = actions.NextRow();
+            var replay = SettingsRow.Disclosure(replayRow, Loc.T(L.Settings.TutorialsReplay), string.Empty, theme);
+            var resetRow = actions.NextRow();
+            var reset = SettingsRow.Disclosure(resetRow, Loc.T(L.Settings.TutorialsReset), string.Empty, theme);
             actions.End();
+            UiAnchors.Report("settings.tutorials.actions", new Rect(replayRow.Min, resetRow.Max));
             if (replay)
             {
                 OnboardingState.SetEnabled(true);

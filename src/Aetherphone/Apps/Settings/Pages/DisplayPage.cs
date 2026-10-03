@@ -25,6 +25,7 @@ internal sealed class DisplayPage : ISettingsPage
     public string Summary => string.Empty;
     public FontAwesomeIcon Icon => FontAwesomeIcon.Sun;
     public Vector4 Tint => new(0.13f, 0.56f, 0.96f, 1f);
+    public string? GuideAnchor => "settings.row.display";
     public ReadOnlySpan<SettingsEntry> Entries => Searchable;
     private const float CardGap = Metrics.Space.Xl;
     private const float PercentScale = 100f;
