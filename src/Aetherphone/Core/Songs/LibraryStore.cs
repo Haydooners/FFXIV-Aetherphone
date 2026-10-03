@@ -472,6 +472,27 @@ internal sealed class LibraryStore : IDisposable
         return songs.ToArray();
     }
 
+    public Song[] MostPlayedBefore(int max, long beforeUnix)
+    {
+        PlayRecord[] snapshot;
+        lock (gate)
+        {
+            snapshot = data.Plays.ToArray();
+        }
+
+        Array.Sort(snapshot, static (left, right) => right.Count.CompareTo(left.Count));
+        var songs = new List<Song>(Math.Min(max, snapshot.Length));
+        for (var index = 0; index < snapshot.Length && songs.Count < max; index++)
+        {
+            if (snapshot[index].LastPlayedUnix < beforeUnix)
+            {
+                songs.Add(snapshot[index].Song.ToSong());
+            }
+        }
+
+        return songs.ToArray();
+    }
+
     public int PlayCount(string videoId)
     {
         lock (gate)

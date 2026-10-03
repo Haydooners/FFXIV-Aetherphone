@@ -4,9 +4,12 @@ using YoutubeExplode.Common;
 
 namespace Aetherphone.Core.Songs;
 
+internal readonly record struct SongPlaylistHit(string PlaylistId, string Title, string Author, string ThumbnailUrl);
+
 internal sealed class SongSearchService : IDisposable
 {
     private const int MaxResults = 25;
+    private const int MaxPlaylistResults = 20;
     private const int MinSongSeconds = 30;
     private const int MaxSongSeconds = 360;
     private const int ResolverFetchCount = 40;
@@ -74,6 +77,44 @@ internal sealed class SongSearchService : IDisposable
 
             AepLog.Warning(exception, $"Song search failed for '{query}'");
             return Array.Empty<Song>();
+        }
+    }
+
+    public async Task<SongPlaylistHit[]> SearchPlaylistsAsync(string query, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return Array.Empty<SongPlaylistHit>();
+        }
+
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, cancellation.Token);
+        try
+        {
+            using (await throttle.EnterAsync(linked.Token).ConfigureAwait(false))
+            {
+                var results = new List<SongPlaylistHit>(MaxPlaylistResults);
+                await foreach (var playlist in youtube.Search.GetPlaylistsAsync(query, linked.Token)
+                                   .ConfigureAwait(false))
+                {
+                    results.Add(new SongPlaylistHit(playlist.Id.Value, playlist.Title,
+                        playlist.Author?.ChannelTitle ?? string.Empty, PickThumbnail(playlist.Thumbnails)));
+                    if (results.Count >= MaxPlaylistResults)
+                    {
+                        break;
+                    }
+                }
+
+                return results.ToArray();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            return Array.Empty<SongPlaylistHit>();
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, $"Playlist search failed for '{query}'");
+            return Array.Empty<SongPlaylistHit>();
         }
     }
 
