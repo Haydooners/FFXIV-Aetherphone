@@ -15,9 +15,6 @@ internal sealed partial class GamesApp
     private const float TileArtAspect = 0.82f;
     private const float TileLabelBlock = 42f;
     private const float TileRoundingFactor = 0.22f;
-    private const float TileLiftSmoothTime = 0.08f;
-    private const float TileHoverGrow = 1.04f;
-    private const float TilePressShrink = 0.96f;
     private const float TileEntranceLift = 14f;
     private const float BadgeHeight = 16f;
     private const float OnlineBadgeRadius = 9f;
@@ -28,11 +25,22 @@ internal sealed partial class GamesApp
     private const float FriendsChevronReserve = 28f;
     private const float FriendsTitleTop = 15f;
     private const float FriendsHintTop = 37f;
-    private const float HeroRounding = 28f;
+    private const float HeroRounding = 22f;
+    private const float HeroPadding = 18f;
+    private const float HeroIconSize = 76f;
+    private const float HeroIconGap = 14f;
+    private const float HeroIconBob = 3f;
+    private const float HeroPillHeight = 34f;
+    private const float HeroPillMinWidth = 92f;
+    private const float HeroChipHeight = 24f;
+    private const float HeroChipIcon = 11f;
+    private const float HeroEntranceLift = 18f;
+    private const float HeroChipGlassAlpha = 0.55f;
 
     private static readonly Vector4 BadgeFill = new(1f, 1f, 1f, 0.92f);
     private static readonly Vector4 OnlineBadgeFill = new(0f, 0f, 0f, 0.38f);
     private static readonly Vector4 HeroInk = new(0.97f, 0.97f, 0.99f, 1f);
+    private static readonly Vector4 HeroPillFill = new(1f, 1f, 1f, 0.96f);
     private static readonly Vector4 StreakEmber = new(0.98f, 0.72f, 0.34f, 1f);
 
     private static float TileHeight(float tileWidth, float scale) => tileWidth * TileArtAspect + TileLabelBlock * scale;
@@ -50,8 +58,9 @@ internal sealed partial class GamesApp
         ref readonly var entry = ref library.Entries[entryIndex];
         var hovered = interactive && UiInteract.Hover(rect.Min, rect.Max);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var target = pressed ? TilePressShrink : hovered ? TileHoverGrow : 1f;
-        var grow = lift.Step(target, TileLiftSmoothTime, frameSeconds) * (0.90f + 0.10f * Easing.EaseOutBack(appear));
+        var target = pressed ? Motion.PressScaleControl : hovered ? 1f + Motion.HoverLiftIcon : 1f;
+        var smoothTime = pressed ? Motion.PressIn : hovered ? Motion.HoverLift : Motion.Release;
+        var grow = lift.Step(target, smoothTime, frameSeconds) * (0.90f + 0.10f * Easing.EaseOutBack(appear));
         var entranceLift = (1f - Easing.EaseOutCubic(appear)) * TileEntranceLift * scale;
         var artHeight = rect.Width * TileArtAspect;
         var artCenter = new Vector2(rect.Center.X, rect.Min.Y + artHeight * 0.5f + entranceLift);
@@ -73,13 +82,6 @@ internal sealed partial class GamesApp
         drawList.PopClipRect();
         Squircle.Stroke(drawList, min, max, rounding,
             ImGui.GetColorU32(GamePalette.Lighten(accent, 0.45f) with { W = hovered ? 0.65f : 0.32f }), 1f * scale);
-        Material.Sheen(drawList, min, max, rounding, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.22f)), 1f * scale,
-            1.5f * scale);
-        if (hovered)
-        {
-            ProgressRing.Glow(artCenter, half.X * 0.6f, GamePalette.Lighten(accent, 0.5f), 0.45f);
-        }
-
         var iconSize = size.Y * 0.58f;
         if (entry.Online)
         {
@@ -130,6 +132,21 @@ internal sealed partial class GamesApp
         return AppIconArt.TryDraw(drawList, id, center, size, AccentRing.Ink, GamePalette.Darken(accent, 0.16f));
     }
 
+    private static void DrawEntryIcon(ImDrawListPtr drawList, in GameEntry entry, Vector4 accent, Vector2 center,
+        float size, float scale)
+    {
+        if (!entry.Online)
+        {
+            DrawGameIcon(drawList, entry.Id, accent, center, size, scale);
+            return;
+        }
+
+        var half = new Vector2(size, size) * 0.5f;
+        Squircle.FillVerticalGradient(drawList, center - half, center + half, size * Metrics.Radius.TileFactor,
+            ImGui.GetColorU32(GamePalette.Lighten(accent, 0.18f)), ImGui.GetColorU32(GamePalette.Darken(accent, 0.34f)));
+        OnlineGameArt.Draw(drawList, entry.OnlineKind, center, size * 0.62f, scale);
+    }
+
     private static void DrawNewBadge(ImDrawListPtr drawList, Vector2 topLeft, Vector4 accent, float scale)
     {
         var label = Loc.T(L.Games.BadgeNew);
@@ -146,23 +163,6 @@ internal sealed partial class GamesApp
         var radius = OnlineBadgeRadius * scale;
         drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(OnlineBadgeFill), 24);
         ProgressRing.CenterIcon(drawList, center, FontAwesomeIcon.UserFriends, AccentRing.Ink, radius * 0.95f);
-    }
-
-    private void DrawShelfHeading(string label, string trailing, float left, float y, float width, float scale)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        var trailingWidth = 0f;
-        if (trailing.Length > 0)
-        {
-            var trailingSize = Typography.Measure(trailing, TextStyles.Caption1);
-            trailingWidth = trailingSize.X + 8f * scale;
-            Typography.Draw(drawList, new Vector2(left + width - trailingSize.X, y + 5f * scale), trailing,
-                ui.MutedInk, TextStyles.Caption1);
-        }
-
-        Typography.Draw(drawList, new Vector2(left, y),
-            Typography.FitText(label, MathF.Max(1f, width - trailingWidth), TextStyles.Title3), ui.TitleInk,
-            TextStyles.Title3);
     }
 
     private readonly struct FriendsLayout
@@ -205,11 +205,16 @@ internal sealed partial class GamesApp
     {
         var drawList = ImGui.GetWindowDrawList();
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var rounding = Metrics.Radius.Card * scale;
-        ui.Card(drawList, rect.Min, rect.Max, rounding, hovered);
+        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var press = PressFx.Scale("games.friends.card", pressed, Motion.PressScaleCard);
+        var half = rect.Size * 0.5f * press;
+        var min = rect.Center - half;
+        var max = rect.Center + half;
+        var rounding = Metrics.Radius.Widget * scale;
+        ui.Card(drawList, min, max, rounding, true);
         if (hovered)
         {
-            Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
+            Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.HoverTint));
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
@@ -219,13 +224,8 @@ internal sealed partial class GamesApp
         var pitch = radius * FriendsMedallionPitch;
         for (var index = 0; index < kinds.Length; index++)
         {
-            var center = new Vector2(startX + index * pitch, rect.Center.Y);
-            var accent = OnlineGameArt.Accent(kinds[index]);
-            drawList.AddCircleFilled(center, radius + 2f * scale, ImGui.GetColorU32(ui.Palette.BackdropBottom), 36);
-            drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(GamePalette.Darken(accent, 0.34f)), 36);
-            drawList.AddCircle(center, radius, ImGui.GetColorU32(GamePalette.Lighten(accent, 0.35f) with { W = 0.6f }),
-                36, 1f * scale);
-            OnlineGameArt.Draw(drawList, kinds[index], center, radius * 1.25f, scale);
+            GamesHubArt.Medallion(drawList, kinds[index], new Vector2(startX + index * pitch, rect.Center.Y), radius,
+                ui.Palette.BackdropBottom, scale);
         }
 
         if (layout.Rooms > 0)
@@ -237,9 +237,8 @@ internal sealed partial class GamesApp
         }
         else
         {
-            ProgressRing.CenterIcon(drawList,
-                new Vector2(rect.Max.X - FriendsChevronReserve * scale * 0.55f, rect.Center.Y),
-                FontAwesomeIcon.ChevronRight, ui.MutedInk, 12f * scale);
+            PhoneIcon.Draw(drawList, new Vector2(rect.Max.X - FriendsChevronReserve * scale * 0.55f, rect.Center.Y),
+                PhoneIcons.ChevronRight, ui.MutedInk, 14f * scale);
         }
 
         var textLeft = rect.Min.X + layout.TextOffset;
@@ -258,79 +257,95 @@ internal sealed partial class GamesApp
         }
 
         var drawList = ImGui.GetWindowDrawList();
+        var pad = HeroPadding * scale;
+        var pillHeight = HeroPillHeight * scale;
+        var playLabel = Loc.T(L.Games.Play);
+        var pillWidth = MathF.Max(HeroPillMinWidth * scale,
+            GamesHubArt.PillWidth(playLabel, pillHeight, TextStyles.Headline));
+        var pillRect = new Rect(new Vector2(rect.Min.X + pad, rect.Max.Y - pad - pillHeight),
+            new Vector2(rect.Min.X + pad + pillWidth, rect.Max.Y - pad));
+        var overPill = UiInteract.Hover(pillRect.Min, pillRect.Max);
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var target = pressed ? 0.975f :
-            hovered ? 1.012f : 1f;
-        var grow = heroScale.Step(target, 0.085f, frameSeconds) * (0.94f + 0.06f * Easing.EaseOutBack(phase));
-        var lift = (1f - Easing.EaseOutCubic(phase)) * 18f * scale;
+        var pressed = hovered && !overPill && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var target = pressed ? Motion.PressScaleCard : hovered ? 1f + Motion.HoverLiftCard : 1f;
+        var smoothTime = pressed ? Motion.PressIn : hovered ? Motion.HoverLift : Motion.Release;
+        var grow = heroScale.Step(target, smoothTime, frameSeconds) * (0.94f + 0.06f * Easing.EaseOutBack(phase));
+        var lift = (1f - Easing.EaseOutCubic(phase)) * HeroEntranceLift * scale;
         var center = rect.Center + new Vector2(0f, lift);
         var half = rect.Size * 0.5f * grow;
         var min = center - half;
         var max = center + half;
-        var height = max.Y - min.Y;
         var rounding = HeroRounding * scale;
         var accent = game.Accent;
         Elevation.Floating(drawList, min, max, rounding, scale, phase * (hovered ? 1f : 0.8f));
-        var topTone = ImGui.GetColorU32(GamePalette.Lighten(accent, 0.34f));
-        var bottomTone = ImGui.GetColorU32(GamePalette.Darken(accent, 0.48f));
-        Squircle.FillVerticalGradient(drawList, min, max, rounding, topTone, bottomTone);
+        Squircle.FillVerticalGradient(drawList, min, max, rounding,
+            ImGui.GetColorU32(GamePalette.Lighten(accent, 0.30f)), ImGui.GetColorU32(GamePalette.Darken(accent, 0.50f)));
         drawList.PushClipRect(min, max, true);
         DrawHeroGlow(drawList, min, max, accent);
         DrawSheen(drawList, min, max, Pulse.Phase(5600.0), 0.05f, scale);
         drawList.PopClipRect();
-        var iconCenter = new Vector2(min.X + height * 0.40f,
-            center.Y + MathF.Sin((float)ImGui.GetTime() * 1.6f) * 3f * scale);
-        var iconSize = height * 0.52f;
-        drawList.AddCircleFilled(iconCenter + new Vector2(0f, iconSize * 0.10f), iconSize * 0.52f,
-            ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.22f)));
-        ProgressRing.Glow(iconCenter, iconSize * 0.5f, GamePalette.Lighten(accent, 0.45f), hovered ? 0.9f : 0.55f);
-        var ink = AccentRing.Ink;
-        if (!DrawGameIcon(drawList, game.Id, accent, iconCenter, iconSize, scale))
-        {
-            Typography.DrawCentered(drawList, iconCenter, game.Title, ink, TextStyles.Title1);
-        }
-
-        var textX = min.X + height * 0.72f;
-        var heroTextMaxWidth = MathF.Max(1f, max.X - textX - 12f * scale);
-        Typography.Draw(drawList, new Vector2(textX, center.Y - 34f * scale),
-            Typography.FitText(dailyEyebrow, heroTextMaxWidth, TextStyles.Caption2),
-            GamePalette.Lighten(accent, 0.62f), TextStyles.Caption2);
-        var heroTitleY = center.Y - 18f * scale;
-        var heroTitleSize = Typography.Measure(game.Title, TextStyles.Title2);
-        var heroTitleHovering = UiInteract.Hover(new Vector2(textX, heroTitleY),
-            new Vector2(textX + heroTextMaxWidth, heroTitleY + heroTitleSize.Y));
-        Marquee.DrawLeft(drawList, "games.hero.title", game.Title, textX, heroTitleY, heroTextMaxWidth,
-            TextStyles.Title2, ink, heroTitleHovering);
-        var genre = Loc.T(GameGenres.Label(game.Genre));
-        Typography.Draw(drawList, new Vector2(textX, center.Y + 8f * scale),
-            Typography.FitText(genre, heroTextMaxWidth, TextStyles.Footnote), ink with { W = 0.72f },
-            TextStyles.Footnote);
-        var playCenter = new Vector2(textX + 34f * scale, center.Y + 38f * scale);
-        var playClicked = GameHud.Button(playCenter, new Vector2(68f * scale, 28f * scale), Loc.T(L.Games.Play),
-            HeroInk, theme);
         Squircle.Stroke(drawList, min, max, rounding,
             ImGui.GetColorU32(GamePalette.Lighten(accent, 0.4f) with { W = 0.42f }), 1f * scale);
-        Material.Sheen(drawList, min, max, rounding, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.25f)), 1f * scale,
-            1.5f * scale);
+
+        var iconSize = HeroIconSize * scale;
+        var iconCenter = new Vector2(min.X + pad + iconSize * 0.5f,
+            min.Y + pad + iconSize * 0.5f + MathF.Sin((float)ImGui.GetTime() * 1.6f) * HeroIconBob * scale);
+        drawList.AddCircleFilled(iconCenter + new Vector2(0f, iconSize * 0.12f), iconSize * 0.5f,
+            ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.20f)));
+        ProgressRing.Glow(iconCenter, iconSize * 0.5f, GamePalette.Lighten(accent, 0.45f), hovered ? 0.9f : 0.55f);
+        if (!DrawGameIcon(drawList, game.Id, accent, iconCenter, iconSize, scale))
+        {
+            Typography.DrawCentered(drawList, iconCenter, game.Title, HeroInk, TextStyles.Title2);
+        }
+
+        var textLeft = min.X + pad + iconSize + HeroIconGap * scale;
+        var textWidth = MathF.Max(1f, max.X - pad - textLeft);
+        var eyebrowY = min.Y + pad + Metrics.Space.Xxs * scale;
+        Typography.Draw(drawList, new Vector2(textLeft, eyebrowY),
+            Typography.FitText(dailyEyebrow, textWidth, TextStyles.FootnoteEmphasized),
+            GamePalette.Lighten(accent, 0.62f), TextStyles.FootnoteEmphasized);
+        var titleY = eyebrowY + Typography.LineHeight(TextStyles.FootnoteEmphasized) + Metrics.Space.Xxs * scale;
+        var titleHeight = Typography.LineHeight(TextStyles.Title2);
+        var titleHovering = UiInteract.Hover(new Vector2(textLeft, titleY),
+            new Vector2(textLeft + textWidth, titleY + titleHeight));
+        Marquee.DrawLeft(drawList, "games.hero.title", game.Title, textLeft, titleY, textWidth, TextStyles.Title2,
+            HeroInk, titleHovering);
+        Typography.Draw(drawList, new Vector2(textLeft, titleY + titleHeight + Metrics.Space.Xxs * scale),
+            Typography.FitText(Loc.T(GameGenres.Label(game.Genre)), textWidth, TextStyles.Subheadline),
+            HeroInk with { W = 0.78f }, TextStyles.Subheadline);
+
+        var pillPress = PressFx.Scale("games.hero.play", overPill && ImGui.IsMouseDown(ImGuiMouseButton.Left),
+            Motion.PressScaleControl);
+        var pillHalf = pillRect.Size * 0.5f * pillPress;
+        var pillCenter = pillRect.Center + new Vector2(0f, lift);
+        Squircle.Fill(drawList, pillCenter - pillHalf, pillCenter + pillHalf, pillHalf.Y,
+            ImGui.GetColorU32(overPill ? BadgeFill : HeroPillFill));
+        Typography.DrawCentered(drawList, pillCenter, playLabel, GamePalette.Darken(accent, 0.35f),
+            TextStyles.Headline);
+        var chipWidth = DrawStreakChip(drawList, new Vector2(max.X - pad, pillCenter.Y), accent, scale);
         var best = library.Best(featuredIndex);
         if (best.Length > 0)
         {
-            DrawFrostedChip(drawList, new Vector2(max.X - 11f * scale, min.Y + 11f * scale), best, scale);
+            var bestLeft = pillRect.Max.X + Metrics.Space.Md * scale;
+            var chipReserve = chipWidth > 0f ? chipWidth + Metrics.Space.Sm * scale : 0f;
+            var bestWidth = MathF.Max(1f, max.X - pad - chipReserve - bestLeft);
+            var bestHeight = Typography.LineHeight(TextStyles.FootnoteEmphasized);
+            Typography.Draw(drawList, new Vector2(bestLeft, pillCenter.Y - bestHeight * 0.5f),
+                Typography.FitText(best, bestWidth, TextStyles.FootnoteEmphasized), HeroInk with { W = 0.86f },
+                TextStyles.FootnoteEmphasized);
         }
 
-        DrawStreakChip(drawList, new Vector2(min.X + 11f * scale, min.Y + 11f * scale), accent, scale);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        if (playClicked)
+        if (UiInteract.Click(pillRect.Min, pillRect.Max, overPill))
         {
             return true;
         }
 
-        return UiInteract.Click(rect.Min, rect.Max, hovered);
+        return !overPill && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private static void DrawHeroGlow(ImDrawListPtr drawList, Vector2 min, Vector2 max, Vector4 accent)
@@ -360,46 +375,31 @@ internal sealed partial class GamesApp
             ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha)));
     }
 
-    private void DrawStreakChip(ImDrawListPtr drawList, Vector2 topLeft, Vector4 accent, float scale)
+    private float DrawStreakChip(ImDrawListPtr drawList, Vector2 rightCenter, Vector4 accent, float scale)
     {
         var streak = stats.DailyStreak;
         if (streak <= 0)
         {
-            return;
+            return 0f;
         }
 
         var done = stats.DailyDone;
         var label = GameNumber.Label(streak);
-        var textSize = Typography.Measure(label, TextStyles.Caption1);
-        var iconSize = 10f * scale;
-        var chipHeight = 18f * scale;
-        var chipWidth = textSize.X + iconSize + 18f * scale;
-        var min = topLeft;
-        var max = new Vector2(topLeft.X + chipWidth, topLeft.Y + chipHeight);
-        Material.Frosted(drawList, min, max, chipHeight * 0.5f, scale);
-        var tint = done ? GamePalette.Lighten(accent, 0.5f) : StreakEmber;
-        if (done)
-        {
-            Squircle.Stroke(drawList, min, max, chipHeight * 0.5f, ImGui.GetColorU32(tint with { W = 0.6f }),
-                1f * scale);
-        }
-
-        var iconCenter = new Vector2(min.X + 9f * scale + iconSize * 0.5f, (min.Y + max.Y) * 0.5f);
+        var textSize = Typography.Measure(label, TextStyles.FootnoteEmphasized);
+        var iconSize = HeroChipIcon * scale;
+        var chipHeight = HeroChipHeight * scale;
+        var chipWidth = textSize.X + iconSize + chipHeight * 0.5f + Metrics.Space.Md * scale;
+        var min = new Vector2(rightCenter.X - chipWidth, rightCenter.Y - chipHeight * 0.5f);
+        var max = new Vector2(rightCenter.X, rightCenter.Y + chipHeight * 0.5f);
+        Material.AccentGlass(drawList, min, max, chipHeight * 0.5f, scale, GamePalette.Darken(accent, 0.45f),
+            HeroChipGlassAlpha);
+        var tint = done ? GamePalette.Lighten(accent, 0.6f) : StreakEmber;
+        var iconCenter = new Vector2(min.X + chipHeight * 0.5f, (min.Y + max.Y) * 0.5f);
         ProgressRing.CenterIcon(drawList, iconCenter, done ? FontAwesomeIcon.Check : FontAwesomeIcon.Fire, tint,
             iconSize);
-        Typography.DrawCentered(drawList,
-            new Vector2(iconCenter.X + iconSize * 0.5f + 3f * scale + textSize.X * 0.5f, (min.Y + max.Y) * 0.5f),
-            label, HeroInk, TextStyles.Caption1);
-    }
-
-    private static void DrawFrostedChip(ImDrawListPtr drawList, Vector2 topRight, string text, float scale)
-    {
-        var textSize = Typography.Measure(text, TextStyles.Caption1);
-        var chipWidth = textSize.X + 14f * scale;
-        var chipHeight = 18f * scale;
-        var min = new Vector2(topRight.X - chipWidth, topRight.Y);
-        var max = new Vector2(topRight.X, topRight.Y + chipHeight);
-        Material.Frosted(drawList, min, max, chipHeight * 0.5f, scale);
-        Typography.DrawCentered(drawList, (min + max) * 0.5f, text, HeroInk, TextStyles.Caption1);
+        Typography.Draw(drawList,
+            new Vector2(iconCenter.X + iconSize * 0.5f + Metrics.Space.Xxs * scale, (min.Y + max.Y - textSize.Y) * 0.5f),
+            label, HeroInk, TextStyles.FootnoteEmphasized);
+        return chipWidth;
     }
 }

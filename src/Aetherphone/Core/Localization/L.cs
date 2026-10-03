@@ -7836,10 +7836,7 @@ internal static class L
         public static readonly LocString GenreBrain = new("games.genreBrain", "Brain");
         public static readonly LocString GenreTabletop = new("games.genreTabletop", "Board & Cards");
         public static readonly LocString GenreFriends = new("games.genreFriends", "With friends");
-        public static readonly LocString FilterAll = new("games.filterAll", "All");
-        public static readonly LocString FilterNew = new("games.filterNew", "New");
         public static readonly LocString ShelfLatest = new("games.shelfLatest", "Latest additions");
-        public static readonly LocString ShelfRecent = new("games.shelfRecent", "Jump back in");
         public static readonly LocString LibraryHeading = new("games.libraryHeading", "All games");
         public static readonly LocString BadgeNew = new("games.badgeNew", "NEW");
         public static readonly LocString SearchHint = new("games.searchHint", "Search games");
@@ -7889,7 +7886,6 @@ internal static class L
         public static readonly LocString Pass = new("games.pass", "Pass");
         public static readonly LocString Whack = new("games.whack", "Whack");
         public static readonly LocString Snake = new("games.snake", "Snake");
-        public static readonly LocString Featured = new("games.featured", "Featured");
         public static readonly LocString Play = new("games.play", "Play");
         public static readonly LocString Sudoku = new("games.sudoku", "Sudoku");
         public static readonly LocString Chess = new("games.chess", "Chess");
@@ -7965,8 +7961,6 @@ internal static class L
         public static readonly LocString TSpinMini = new("games.tSpinMini", "T-Spin Mini");
         public static readonly LocString BackToBack = new("games.backToBack", "Back-to-Back");
         public static readonly LocString OnlineTitle = new("games.onlineTitle", "Play with friends");
-        public static readonly LocString OnlineHint = new("games.onlineHint", "Host a room, share the code, play together");
-        public static readonly LocString OnlineEyebrow = new("games.onlineEyebrow", "ONLINE");
         public static readonly LocString OnlineUno = new("games.onlineUno", "Uno");
         public static readonly LocString OnlineSignIn = new("games.onlineSignIn", "Sign in to Aethernet in Settings to play with friends");
         public static readonly LocString OnlineMyRooms = new("games.onlineMyRooms", "Your rooms");
@@ -8058,6 +8052,37 @@ internal static class L
         public static readonly LocString OnlinePickTarget = new("games.onlinePickTarget", "Tap a player to swap hands");
         public static readonly LocPlural OnlineBackToLobby = new("games.onlineBackToLobby", "Returning to the lobby in {0} second", "Returning to the lobby in {0} seconds");
         public static readonly LocString OnlineTapToSkip = new("games.onlineTapToSkip", "Tap to skip");
+    }
+
+    internal static class GamesHub
+    {
+        public static readonly LocString TabHome = new("gamesHub.tabHome", "Home");
+        public static readonly LocString TabRecords = new("gamesHub.tabRecords", "Records");
+        public static readonly LocString ContinuePlaying = new("gamesHub.continuePlaying", "Continue Playing");
+        public static readonly LocString SeeAll = new("gamesHub.seeAll", "See All");
+        public static readonly LocString ClearSearch = new("gamesHub.clearSearch", "Clear Search");
+        public static readonly LocString Browse = new("gamesHub.browse", "Browse");
+        public static readonly LocString PlayedOf = new("gamesHub.playedOf", "{0}/{1}");
+        public static readonly LocString StatPlayed = new("gamesHub.statPlayed", "Games played");
+        public static readonly LocString StatStreak = new("gamesHub.statStreak", "Day streak");
+        public static readonly LocString StatRecords = new("gamesHub.statRecords", "Records");
+        public static readonly LocString PersonalBests = new("gamesHub.personalBests", "Personal Bests");
+        public static readonly LocString RecordsEmptyTitle = new("gamesHub.recordsEmptyTitle", "No records yet");
+        public static readonly LocString RecordsEmptyHint = new("gamesHub.recordsEmptyHint", "Finish a game and your best result lands here.");
+        public static readonly LocString PlayToday = new("gamesHub.playToday", "Play Today's Game");
+        public static readonly LocString KindScore = new("gamesHub.kindScore", "Best score");
+        public static readonly LocString KindTime = new("gamesHub.kindTime", "Best time");
+        public static readonly LocString KindLevel = new("gamesHub.kindLevel", "Highest level");
+        public static readonly LocString KindStreak = new("gamesHub.kindStreak", "Win streak");
+        public static readonly LocString SignInTitle = new("gamesHub.signInTitle", "Sign in to play together");
+        public static readonly LocString OpenSettings = new("gamesHub.openSettings", "Open Settings");
+        public static readonly LocString Players = new("gamesHub.players", "Players");
+        public static readonly LocString Rules = new("gamesHub.rules", "Rules");
+        public static readonly LocString CodeHint = new("gamesHub.codeHint", "Share this code so friends can join.");
+        public static readonly LocString TourRecordsTitle = new("gamesHub.tourRecordsTitle", "Your records");
+        public static readonly LocString TourRecordsBody = new("gamesHub.tourRecordsBody", "Every personal best and your daily streak live here. Tap to have a look.");
+        public static readonly LocString TourSearchTitle = new("gamesHub.tourSearchTitle", "Find any game");
+        public static readonly LocString TourSearchBody = new("gamesHub.tourSearchBody", "Search by name, or browse a genre such as Puzzle or Arcade to see all of its games.");
     }
 
     internal static class Coil
@@ -9496,10 +9521,6 @@ internal static class L
         public static readonly LocString GamesDailyBody = new("onboarding.gamesDailyBody", "A new game takes this card every day. Tap it to play, and come back daily to build your streak.");
         public static readonly LocString GamesFriendsTitle = new("onboarding.gamesFriendsTitle", "Play with friends");
         public static readonly LocString GamesFriendsBody = new("onboarding.gamesFriendsBody", "Uno, Chess and 8-Ball Pool are played online. Tap here to host a room or join one with a code.");
-        public static readonly LocString GamesGenreTitle = new("onboarding.gamesGenreTitle", "Browse by genre");
-        public static readonly LocString GamesGenreBody = new("onboarding.gamesGenreBody", "Tap a genre such as Puzzle or Arcade to show only those games.");
-        public static readonly LocString GamesPickTitle = new("onboarding.gamesPickTitle", "Pick a game");
-        public static readonly LocString GamesPickBody = new("onboarding.gamesPickBody", "Tap any tile to play. Once you have played, your best result shows under its name.");
         public static readonly LocString CasinoIntroBody = new("onboarding.casinoIntroBody", "A casino floor played with chips you change from Aether Coin. No real money goes in, and none comes out.");
         public static readonly LocString CasinoChipBarTitle = new("onboarding.casinoChipBarTitle", "Chips and coin");
         public static readonly LocString CasinoChipBarBody = new("onboarding.casinoChipBarBody", "Your chips sit on the left and your coin on the right. Every 100 chips cost 1 coin.");

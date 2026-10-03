@@ -6,17 +6,14 @@ internal static partial class TourRegistry
 {
     private static void AddPlayTours(Dictionary<string, GuideSequence> tours)
     {
-        Add(tours, "games", 3,
+        Add(tours, "games", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.GamesDailyTitle, L.Onboarding.GamesDailyBody, "games.featured",
                     GuideGesture.Tap),
-                GuideStep.Point(L.Onboarding.GamesFriendsTitle, L.Onboarding.GamesFriendsBody, "games.friends",
-                    GuideGesture.Tap),
-                GuideStep.TryUntil(L.Onboarding.GamesGenreTitle, L.Onboarding.GamesGenreBody, "games.filters",
-                    GuideGesture.Tap, "games.filtered"),
-                GuideStep.Point(L.Onboarding.GamesPickTitle, L.Onboarding.GamesPickBody, "games.filtered",
-                    GuideGesture.Tap),
+                GuideStep.TryTap(L.Onboarding.GamesFriendsTitle, L.Onboarding.GamesFriendsBody, "games.tab.together"),
+                GuideStep.TryTap(L.GamesHub.TourRecordsTitle, L.GamesHub.TourRecordsBody, "games.tab.records"),
+                GuideStep.TryTap(L.GamesHub.TourSearchTitle, L.GamesHub.TourSearchBody, "games.tab.search"),
             });
         Add(tours, "casino", 2,
             new[]

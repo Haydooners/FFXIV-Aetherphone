@@ -105,31 +105,89 @@ public sealed class GamesLibraryTests
     }
 
     [Fact]
-    public void GenreFilterKeepsOnlyThatShelf()
+    public void GenreShelfKeepsOnlyThatGenreNewestFirst()
     {
         var library = Build(new Configuration());
 
-        var arcade = library.Filter(LibraryFilter.Arcade, string.Empty).ToArray();
-        var friends = library.Filter(LibraryFilter.Friends, string.Empty).ToArray();
+        var arcade = library.Genre(GameGenre.Arcade).ToArray();
+        var friends = library.Genre(GameGenre.Friends).ToArray();
 
         Assert.Equal(2, arcade.Length);
-        Assert.Equal(GameGenre.Arcade, library.Entries[arcade[0]].Genre);
-        Assert.Equal(GameGenre.Arcade, library.Entries[arcade[1]].Genre);
+        Assert.Equal("snake", library.Entries[arcade[0]].Id);
+        Assert.Equal("breakout", library.Entries[arcade[1]].Id);
         Assert.Equal(3, friends.Length);
         Assert.True(library.Entries[friends[0]].Online);
     }
 
     [Fact]
-    public void SearchMatchesTitlesCaseInsensitivelyAcrossEveryShelf()
+    public void SearchMatchesTitlesCaseInsensitively()
     {
         var library = Build(new Configuration());
 
-        var hits = library.Filter(LibraryFilter.Arcade, "  WORD ").ToArray();
-        var none = library.Filter(LibraryFilter.All, "zzz").ToArray();
+        var hits = library.Search("  WORD ").ToArray();
+        var none = library.Search("zzz").ToArray();
+        var blank = library.Search("   ").ToArray();
 
         Assert.Single(hits);
         Assert.Equal("wordrun", library.Entries[hits[0]].Id);
         Assert.Empty(none);
+        Assert.Empty(blank);
+    }
+
+    [Fact]
+    public void SearchMatchesTheGenreName()
+    {
+        var library = Build(new Configuration());
+
+        var hits = library.Search("board").ToArray();
+
+        Assert.Single(hits);
+        Assert.Equal("chess", library.Entries[hits[0]].Id);
+    }
+
+    [Fact]
+    public void RecordsListOnlyGamesWithABestMostRecentFirst()
+    {
+        var configuration = new Configuration();
+        configuration.GameStats.Add(new GameStatRecord { GameId = "snake", BestScore = 40, LastPlayedUnixSeconds = 100 });
+        configuration.GameStats.Add(new GameStatRecord { GameId = "chess", Streak = 2, LastPlayedUnixSeconds = 300 });
+        configuration.GameStats.Add(new GameStatRecord { GameId = "doom", LastPlayedUnixSeconds = 500 });
+        var library = Build(configuration);
+
+        var records = library.Records.ToArray();
+
+        Assert.Equal(2, records.Length);
+        Assert.Equal("chess", library.Entries[records[0]].Id);
+        Assert.Equal(RecordKind.Streak, library.BestKind(records[0]));
+        Assert.Equal("2", library.BestValue(records[0]));
+        Assert.Equal("snake", library.Entries[records[1]].Id);
+        Assert.Equal(RecordKind.Score, library.BestKind(records[1]));
+        Assert.Equal(3, library.PlayedCount);
+    }
+
+    [Fact]
+    public void RebuildPicksUpANewBest()
+    {
+        var configuration = new Configuration();
+        var library = Build(configuration);
+        var snake = library.IndexOf("snake");
+
+        Assert.Equal(RecordKind.None, library.BestKind(snake));
+        configuration.GameStats.Add(new GameStatRecord { GameId = "snake", BestScore = 12 });
+        library.Rebuild();
+
+        Assert.Equal(RecordKind.Score, library.BestKind(snake));
+        Assert.Equal("12", library.BestValue(snake));
+        Assert.Single(library.Records.ToArray());
+    }
+
+    [Fact]
+    public void IndexOfFindsOnlineEntriesAndRejectsUnknownIds()
+    {
+        var library = Build(new Configuration());
+
+        Assert.True(library.Entries[library.IndexOf("online.pool")].Online);
+        Assert.Equal(-1, library.IndexOf("nope"));
     }
 
     [Fact]
