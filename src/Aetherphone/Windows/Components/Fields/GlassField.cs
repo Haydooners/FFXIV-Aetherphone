@@ -29,8 +29,18 @@ internal static class GlassField
 
     public static bool Text(Rect field, string imguiId, string hint, ref string text, PhoneTheme theme, float scale,
         int maxLength, bool focus, ImGuiInputTextFlags flags) =>
-        Input(field, imguiId, hint, ref text, theme, TextInsetUnits * scale, TextInsetUnits * scale, maxLength, focus,
-            flags);
+        Input(field, imguiId, hint, ref text, theme, theme.TextMuted, TextInsetUnits * scale, TextInsetUnits * scale,
+            maxLength, focus, flags);
+
+    public static bool Title(Rect field, string imguiId, string hint, ref string text, PhoneTheme theme, float scale,
+        int maxLength, ImGuiInputTextFlags flags)
+    {
+        using (Plugin.Fonts.Push(TextStyles.Title2.Scale, TextStyles.Title2.Weight))
+        {
+            return Input(field, imguiId, hint, ref text, theme, theme.TextStrong, TextInsetUnits * scale,
+                TextInsetUnits * scale, maxLength, false, flags);
+        }
+    }
 
     public static void SearchGlyph(ImDrawListPtr drawList, Rect field, PhoneTheme theme, float scale, float alpha)
     {
@@ -51,7 +61,8 @@ internal static class GlassField
         var rightInset = hasText
             ? field.Max.X - (clearCenter.X - clearRadius - ClearTextGapUnits * scale)
             : TextInsetUnits * scale;
-        Input(field, imguiId, hint, ref text, theme, leftInset, rightInset, maxLength, focus, ImGuiInputTextFlags.None);
+        Input(field, imguiId, hint, ref text, theme, theme.TextMuted, leftInset, rightInset, maxLength, focus,
+            ImGuiInputTextFlags.None);
         if (!hasText)
         {
             return;
@@ -80,7 +91,7 @@ internal static class GlassField
     }
 
     private static bool Input(Rect field, string imguiId, string hint, ref string text, PhoneTheme theme,
-        float leftInset, float rightInset, int maxLength, bool focus, ImGuiInputTextFlags flags)
+        Vector4 hintColor, float leftInset, float rightInset, int maxLength, bool focus, ImGuiInputTextFlags flags)
     {
         var left = field.Min.X + leftInset;
         var width = MathF.Max(field.Max.X - rightInset - left, 1f);
@@ -97,7 +108,7 @@ internal static class GlassField
         using (ImRaii.PushColor(ImGuiCol.FrameBgHovered, Transparent))
         using (ImRaii.PushColor(ImGuiCol.FrameBgActive, Transparent))
         using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
-        using (ImRaii.PushColor(ImGuiCol.TextDisabled, theme.TextMuted))
+        using (ImRaii.PushColor(ImGuiCol.TextDisabled, hintColor))
         {
             return ImGui.InputTextWithHint(imguiId, hint, ref text, maxLength, flags);
         }

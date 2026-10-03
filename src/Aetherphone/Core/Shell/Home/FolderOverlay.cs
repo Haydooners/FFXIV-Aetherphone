@@ -170,8 +170,8 @@ internal sealed class FolderOverlay
             new Vector2(panel.Max.X - pad, nameTop + GlassField.HeightUnits * scale));
         GlassField.Surface(drawList, nameField, GlassField.Radius(nameField), scale,
             WallpaperLegibility.Strength(theme), 1f);
-        if (GlassField.Text(nameField, "##folderName", Loc.T(L.Home.NewFolder), ref nameBuffer, theme, scale,
-                NameMaxLength, false, ImGuiInputTextFlags.EnterReturnsTrue))
+        if (GlassField.Title(nameField, "##folderName", Loc.T(L.Home.NewFolder), ref nameBuffer, theme, scale,
+                NameMaxLength, ImGuiInputTextFlags.EnterReturnsTrue))
         {
             ApplyRename();
         }
