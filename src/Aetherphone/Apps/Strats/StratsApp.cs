@@ -171,7 +171,14 @@ internal sealed partial class StratsApp : IPhoneApp, ISpotlightFights
         setupOpen = selection.Fresh;
         setupReveal.SnapTo(setupOpen ? 1f : 0f);
         PrepareReading(selection.ReadingEntry);
-        router.Push(new StratsView(StratsScreen.Fight, fight.Key));
+        var view = new StratsView(StratsScreen.Fight, fight.Key);
+        if (router.Current.Screen == StratsScreen.Fight)
+        {
+            router.Replace(view);
+            return;
+        }
+
+        router.Push(view);
     }
 
     private void LeaveFight()

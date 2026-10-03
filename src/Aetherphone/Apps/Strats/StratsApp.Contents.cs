@@ -137,7 +137,7 @@ internal sealed partial class StratsApp
             return;
         }
 
-        if (surface.Dragging || ImGui.GetIO().MouseWheel != 0f)
+        if (surface.Dragging || ImGui.GetIO().MouseWheel != 0f || PressedOnSurface())
         {
             gliding = false;
             return;
@@ -151,6 +151,17 @@ internal sealed partial class StratsApp
             surface.JumpTo(target);
             gliding = false;
         }
+    }
+
+    private static bool PressedOnSurface()
+    {
+        if (!ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+        {
+            return false;
+        }
+
+        var min = ImGui.GetWindowPos();
+        return UiInteract.Hover(min, min + ImGui.GetWindowSize());
     }
 
     private void GlideTo(int entry)

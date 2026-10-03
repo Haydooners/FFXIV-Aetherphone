@@ -315,6 +315,7 @@ internal sealed partial class StratsApp
         if (!setupOpen)
         {
             UiAnchors.Report("strats.strategy", rect);
+            UiAnchors.Report("strats.role", rect);
         }
 
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
