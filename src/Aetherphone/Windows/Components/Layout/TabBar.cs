@@ -24,6 +24,8 @@ internal readonly record struct TabItemPose(Vector2 IconCenter, float Scale, flo
 internal sealed class TabBar
 {
     public const float GlassOpacity = 0.86f;
+    public const float FlatGlassOpacity = 0.95f;
+    private const float LayerHeadroomUnits = 12f;
     private const float HighlightTint = 0.22f;
     private const float HighlightRimAlpha = 0.16f;
     private const float PressDepth = 1f - Motion.PressScaleControl;
@@ -54,6 +56,8 @@ internal sealed class TabBar
     public float Shrink => shrink.Amount;
 
     public static float ContentInset(float scale) => TabBarLayout.ContentInset(scale);
+
+    private static float CurrentGlassOpacity => WallpaperBackdrop.Available ? GlassOpacity : FlatGlassOpacity;
 
     public static Rect ContentArea(Rect area, float scale) => TabBarLayout.ContentArea(area, scale);
 
@@ -95,9 +99,12 @@ internal sealed class TabBar
         var theme = ui.Theme;
         var backdrop = ui.BackdropColor;
         var tone = Material.ToneFor(backdrop);
+        var zone = TabBarLayout.Zone(area, scale);
+        var layerRect = new Rect(new Vector2(zone.Min.X, zone.Min.Y - LayerHeadroomUnits * scale), zone.Max);
+        using var layer = ScreenLayer.BeginPassive("tabbar", layerRect);
         var drawList = ImGui.GetWindowDrawList();
         var radius = capsule.Height * 0.5f;
-        Material.ThemedGlass(drawList, capsule.Min, capsule.Max, radius, scale, backdrop, GlassOpacity);
+        Material.ThemedGlass(drawList, capsule.Min, capsule.Max, radius, scale, backdrop, CurrentGlassOpacity);
 
         var activeCell = TabBarLayout.Cell(full, items.Length, activeIndex, scale);
         StepHighlight(activeCell.Center.X, delta);
@@ -269,7 +276,7 @@ internal sealed class TabBar
         var half = circle.Size * 0.5f * grow;
         var min = circle.Center - half;
         var max = circle.Center + half;
-        Material.ThemedGlass(drawList, min, max, half.Y, scale, backdrop, GlassOpacity);
+        Material.ThemedGlass(drawList, min, max, half.Y, scale, backdrop, CurrentGlassOpacity);
         var ink = tone == GlassTone.Dark ? StrongOnDarkGlass : ui.Theme.TextStrong;
         PhoneIcon.Draw(drawList, circle.Center, action.Glyph, ink, TabBarLayout.IconSize * scale * grow);
         if (action.Badge > 0)
