@@ -126,7 +126,7 @@ internal sealed partial class AppStoreApp : IPhoneApp, ISpotlightStoreApps
 
     public void OnClosed()
     {
-        installing.Clear();
+        FinishInstalls();
         router.Reset();
     }
 
@@ -319,6 +319,26 @@ internal sealed partial class AppStoreApp : IPhoneApp, ISpotlightStoreApps
             {
                 UiFeedback.Play(UiSound.Success);
             }
+        }
+    }
+
+    private void FinishInstalls()
+    {
+        if (installing.Count == 0)
+        {
+            return;
+        }
+
+        finished.Clear();
+        foreach (var pair in installing)
+        {
+            finished.Add(pair.Key);
+        }
+
+        installing.Clear();
+        for (var finishedIndex = 0; finishedIndex < finished.Count; finishedIndex++)
+        {
+            installer.Install(finished[finishedIndex]);
         }
     }
 
