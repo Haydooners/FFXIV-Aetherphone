@@ -37,7 +37,7 @@ internal static class WidgetGalleryPreview
         PhoneTheme theme, float scale, float delta)
     {
         Elevation.Floating(drawList, rect.Min, rect.Max, WidgetChrome.Radius(scale), scale);
-        widget.Draw(host.Preview(drawList, rect, theme, size, scale, delta));
+        widget.Draw(host.Preview(drawList, rect, theme, widget.Id, size, scale, delta));
     }
 
     public static void DrawStack(ImDrawListPtr drawList, WidgetHost host, IReadOnlyList<IHomeWidget> members,
