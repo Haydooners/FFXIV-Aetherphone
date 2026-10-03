@@ -71,7 +71,8 @@ internal sealed partial class MusicApp : IResumableApp
         WallpaperImageCache wallpaperImages, ConfirmService confirm, Configuration configuration,
         RemoteImageCache images, LodestoneService lodestone, GameData gameData, RadioLauncher launcher,
         SocialNotificationService socialNotifications, RolladeckService rolladeck, PcMediaSource pcMedia,
-        JamSession jam, JamLauncher jamLauncher, ContactBook contacts)
+        JamSession jam, JamLauncher jamLauncher, ContactBook contacts,
+        RadioRoomSession room)
     {
         this.radio = radio;
         this.songSearch = songSearch;
@@ -96,6 +97,8 @@ internal sealed partial class MusicApp : IResumableApp
         this.jamLauncher = jamLauncher;
         this.contacts = contacts;
         jamAccount = session;
+        this.room = room;
+        this.session = session;
         community = new CommunityRadioService(aethernet, session);
         kit = new MusicKit(ui, images, playback, library);
         routers = CreateRouters();
@@ -128,6 +131,7 @@ internal sealed partial class MusicApp : IResumableApp
 
     public void OnClosed()
     {
+        LeaveStationRoom();
     }
 
     public void Draw(in PhoneContext context)
@@ -151,7 +155,10 @@ internal sealed partial class MusicApp : IResumableApp
 
         TourHolds.Release(Id);
         rolladeck.EnsureFresh();
+        GateStationOverlays();
         DrawShell(content, screen, scale, delta);
+        DrawStationOverlays(screen);
+        TrackStationRoom();
     }
 
     public void Dispose()

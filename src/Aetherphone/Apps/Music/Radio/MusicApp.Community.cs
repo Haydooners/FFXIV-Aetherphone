@@ -4,6 +4,7 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Radio;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Music;
 
@@ -18,6 +19,7 @@ internal sealed partial class MusicApp
     private readonly bool[] tagFilterActive = new bool[MaxStationTags * 8 + 1];
     private readonly List<string> knownTags = new();
     private readonly List<CommunityStationDto> filteredStations = new();
+    private readonly Dictionary<string, RadioStationText> communityRowTexts = new(StringComparer.Ordinal);
     private string tagFilter = string.Empty;
 
     private enum LiveGroup : byte
@@ -205,6 +207,23 @@ internal sealed partial class MusicApp
         tagFilter = tapped == 0 || tagFilterActive[tapped] ? string.Empty : knownTags[tapped - 1];
     }
 
+    private RadioStationText RowTextFor(CommunityStationDto station)
+    {
+        if (!communityRowTexts.TryGetValue(station.Id, out var texts))
+        {
+            texts = new RadioStationText();
+            communityRowTexts[station.Id] = texts;
+        }
+
+        var now = ImGui.GetTime();
+        if (texts.NeedsRefresh(station, now))
+        {
+            texts.Refresh(station, now, OffAirMark(station), ScheduleLine(station), string.Empty);
+        }
+
+        return texts;
+    }
+
     private void DrawCommunityRow(float scale, CommunityStationDto station, float sideInset)
     {
         var rowHeight = CommunityRowHeight * scale;
@@ -218,19 +237,20 @@ internal sealed partial class MusicApp
         var artMax = artMin + new Vector2(artSize, artSize);
         DrawStationArt(drawList, artMin, artMax, station, 10f * scale);
 
+        var texts = RowTextFor(station);
         var current = IsCurrentCommunityStation(station);
         var textLeft = artMax.X + 12f * scale;
         var textWidth = max.X - inset - (current ? 34f : 8f) * scale - textLeft;
         var nameY = min.Y + 12f * scale;
-        var fittedName = Typography.FitText(station.Name, textWidth, TextStyles.BodyEmphasized);
+        var fittedName = texts.Name.Fit(station.Name, textWidth, TextStyles.BodyEmphasized);
         Typography.Draw(drawList, new Vector2(textLeft, nameY), fittedName, current ? ui.Accent : ui.TitleInk,
             TextStyles.BodyEmphasized);
 
         var statusY = min.Y + 33f * scale;
-        DrawLiveMark(drawList, new Vector2(textLeft, statusY), scale, station, textWidth);
+        DrawLiveMark(drawList, new Vector2(textLeft, statusY), scale, station, texts, textWidth);
 
         var nowPlaying = NowPlayingFor(station);
-        var subtitle = nowPlaying.Length > 0 ? nowPlaying : ScheduleLine(station);
+        var subtitle = nowPlaying.Length > 0 ? nowPlaying : texts.Schedule;
         if (subtitle.Length == 0)
         {
             subtitle = station.Description;
@@ -238,7 +258,7 @@ internal sealed partial class MusicApp
 
         if (subtitle.Length > 0)
         {
-            var fittedSubtitle = Typography.FitText(subtitle, textWidth, TextStyles.Caption1);
+            var fittedSubtitle = texts.Subtitle.Fit(subtitle, textWidth, TextStyles.Caption1);
             Typography.Draw(drawList, new Vector2(textLeft, min.Y + 47f * scale), fittedSubtitle, ui.MutedInk,
                 TextStyles.Caption1);
         }
@@ -272,20 +292,37 @@ internal sealed partial class MusicApp
     }
 
     private void DrawLiveMark(ImDrawListPtr drawList, Vector2 origin, float scale, CommunityStationDto station,
-        float available)
+        RadioStationText texts, float available)
     {
         if (!station.IsLive)
         {
-            var offAir = Typography.FitText(OffAirMark(station), available, TextStyles.Caption1);
+            var offAir = texts.Status.Fit(texts.OffAir, available, TextStyles.Caption1);
             Typography.Draw(drawList, origin, offAir, ui.MutedInk, TextStyles.Caption1);
             return;
         }
 
-        var label = string.Format(Loc.T(L.Music.ListeningCount), station.Listeners);
-        LivePill.Draw(drawList, origin, LiveLabel(label), ui.Theme.Danger, clock, scale);
+        var label = texts.Live.Prefixed(Loc.T(L.Music.LiveBadge), L.Music.ListeningCount, station.Listeners);
+        LivePill.Draw(drawList, origin, label, ui.Theme.Danger, clock, scale);
+        DrawLiveChatMark(drawList, new Vector2(origin.X + LivePill.Width(label, scale) + Metrics.Space.Sm * scale,
+            origin.Y), LivePill.Height(scale), origin.X + available, scale);
     }
 
-    private static string LiveLabel(string detail) => Loc.T(L.Music.LiveBadge) + " · " + detail;
+    private void DrawLiveChatMark(ImDrawListPtr drawList, Vector2 origin, float height, float right, float scale)
+    {
+        var label = Loc.T(L.Music.Live.LiveChat);
+        var glyphWidth = Metrics.Space.Lg * scale;
+        var labelWidth = Typography.Measure(label, TextStyles.Caption2).X;
+        if (origin.X + glyphWidth + labelWidth > right)
+        {
+            return;
+        }
+
+        var centerY = origin.Y + height * 0.5f;
+        AppSkin.Icon(drawList, new Vector2(origin.X + glyphWidth * 0.4f, centerY), IconGlyph.Of(FontAwesomeIcon.Comments),
+            ui.Accent, 0.6f);
+        Typography.Draw(drawList, new Vector2(origin.X + glyphWidth,
+            centerY - Typography.LineHeight(TextStyles.Caption2) * 0.5f), label, ui.Accent, TextStyles.Caption2);
+    }
 
     private static string OffAirMark(CommunityStationDto station)
     {
