@@ -85,6 +85,11 @@ internal sealed partial class HealthApp : IResumableApp, ITabRouteTarget
             ConsumePendingTab();
             digest.Refresh(tracker);
         }
+        else
+        {
+            weightSheet.CloseImmediately();
+            goalSheet.CloseImmediately();
+        }
 
         if (!ready || router.Depth > 1)
         {
