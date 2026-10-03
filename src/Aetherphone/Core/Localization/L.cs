@@ -1048,7 +1048,6 @@ internal static class L
 
     internal static class Strats
     {
-        public static readonly LocString Loading = new("strats.loading", "Loading fights");
         public static readonly LocString LoadFailed = new("strats.loadFailed", "The fight list did not load");
         public static readonly LocString LoadFailedHint = new("strats.loadFailedHint", "Check your connection and try again.");
         public static readonly LocString Retry = new("strats.retry", "Retry");
@@ -1058,7 +1057,6 @@ internal static class L
         public static readonly LocString GuideFailedHint = new("strats.guideFailedHint", "Check your connection and try again.");
         public static readonly LocString Strategy = new("strats.strategy", "Strategy");
         public static readonly LocString Role = new("strats.role", "Your role");
-        public static readonly LocString Section = new("strats.section", "Section");
         public static readonly LocString Orientation = new("strats.orientation", "Orientation");
         public static readonly LocString Timeline = new("strats.timeline", "Timeline");
         public static readonly LocString ShowTimeline = new("strats.showTimeline", "Show");
@@ -1068,7 +1066,6 @@ internal static class L
         public static readonly LocString WhatHappens = new("strats.whatHappens", "What happens");
         public static readonly LocString WhatToDo = new("strats.whatToDo", "What to do");
         public static readonly LocString ForYou = new("strats.forYou", "Your spot");
-        public static readonly LocString OpenOnSite = new("strats.openOnSite", "View on wtfdig.info");
         public static readonly LocString Resources = new("strats.resources", "More resources");
         public static readonly LocString Sources = new("strats.sources", "Sources");
         public static readonly LocString RoleTank = new("strats.roleTank", "Tank");
@@ -1076,6 +1073,26 @@ internal static class L
         public static readonly LocString RoleMelee = new("strats.roleMelee", "Melee");
         public static readonly LocString RoleRanged = new("strats.roleRanged", "Ranged");
         public static readonly LocString BackToTop = new("strats.backToTop", "Back to top");
+        public static readonly LocString Search = new("strats.search", "Search fights");
+        public static readonly LocString InThisDuty = new("strats.inThisDuty", "In this duty");
+        public static readonly LocString ContinueReading = new("strats.continueReading", "Continue reading");
+        public static readonly LocString NoMatches = new("strats.noMatches", "No fights match");
+        public static readonly LocString NoMatchesHint = new("strats.noMatchesHint",
+            "Try a short name like M9S, or part of the fight name.");
+        public static readonly LocString InProgress = new("strats.inProgress", "In progress");
+        public static readonly LocString Edit = new("strats.edit", "Edit");
+        public static readonly LocString Done = new("strats.done", "Done");
+        public static readonly LocString Contents = new("strats.contents", "Contents");
+        public static readonly LocString ContentsLegend = new("strats.contentsLegend",
+            "Marked mechanics have a job for your spot.");
+        public static readonly LocString ForYouSlot = new("strats.forYouSlot", "Your spot: {0}");
+        public static readonly LocString OpenFullDiagram = new("strats.openFullDiagram", "Open full diagram");
+        public static readonly LocString TourSetupTitle = new("strats.tourSetupTitle", "Your setup");
+        public static readonly LocString TourSetupBody = new("strats.tourSetupBody",
+            "Your strat and spot live here. Tap the card to change them, and tap Done to get back to reading.");
+        public static readonly LocString TourContentsTitle = new("strats.tourContentsTitle", "Contents");
+        public static readonly LocString TourContentsBody = new("strats.tourContentsBody",
+            "Jump to any mechanic from here. Strats also remembers where you stopped reading.");
     }
 
     internal static class Venues
