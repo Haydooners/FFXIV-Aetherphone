@@ -18,7 +18,7 @@ internal sealed class WallpaperLibrary : IDisposable
     private const int NightStartHour = 19;
     private const float DayNightSmoothTime = 0.6f;
     private const float ThemeSwitchSmoothTime = 0.35f;
-    private const int BrightnessSampleSize = 24;
+    public const int BrightnessSampleSize = 24;
     private const float BrightPixelThreshold = 0.65f;
     private const float DefaultBrightness = 0.35f;
     private const int BlurBakeWidth = 320;
@@ -47,6 +47,7 @@ internal sealed class WallpaperLibrary : IDisposable
     private readonly ConcurrentDictionary<string, IDalamudTextureWrap> blurred = new();
     private readonly ConcurrentDictionary<string, byte> blurring = new();
     private readonly ConcurrentDictionary<string, float> brightness = new();
+    private readonly ConcurrentDictionary<string, float[]> lumaGrids = new();
     private readonly ConcurrentDictionary<string, byte> failed = new();
     private readonly CancellationTokenSource cancellation = new();
     private Spring darknessSpring;
@@ -225,6 +226,8 @@ internal sealed class WallpaperLibrary : IDisposable
     private float BrightnessOfPath(string path) =>
         brightness.TryGetValue(path, out var value) ? value : DefaultBrightness;
 
+    public float[]? LumaGrid(string path) => lumaGrids.TryGetValue(path, out var grid) ? grid : null;
+
     public string AddCustom(string sourcePath, WallpaperCrop crop)
     {
         var id = "custom-" + Guid.NewGuid().ToString("N");
@@ -292,6 +295,7 @@ internal sealed class WallpaperLibrary : IDisposable
         }
 
         brightness.TryRemove(path, out _);
+        lumaGrids.TryRemove(path, out _);
         failed.TryRemove(path, out _);
         Entries = Rebuild();
     }
@@ -488,7 +492,9 @@ internal sealed class WallpaperLibrary : IDisposable
     {
         try
         {
-            brightness[path] = MeasureBrightness(bytes);
+            var (score, grid) = MeasureBrightness(bytes);
+            brightness[path] = score;
+            lumaGrids[path] = grid;
         }
         catch (Exception exception)
         {
@@ -496,10 +502,11 @@ internal sealed class WallpaperLibrary : IDisposable
         }
     }
 
-    private static float MeasureBrightness(byte[] bytes)
+    private static (float Score, float[] Grid) MeasureBrightness(byte[] bytes)
     {
         using var image = Image.Load<Rgba32>(ImageProcessor.SingleFrame, bytes);
         image.Mutate(context => context.Resize(BrightnessSampleSize, BrightnessSampleSize));
+        var grid = new float[BrightnessSampleSize * BrightnessSampleSize];
         var lumaSum = 0f;
         var brightCount = 0;
         image.ProcessPixelRows(accessor =>
@@ -511,6 +518,7 @@ internal sealed class WallpaperLibrary : IDisposable
                 {
                     var pixel = row[columnIndex];
                     var luma = (0.299f * pixel.R + 0.587f * pixel.G + 0.114f * pixel.B) / 255f;
+                    grid[rowIndex * BrightnessSampleSize + columnIndex] = luma;
                     lumaSum += luma;
                     if (luma >= BrightPixelThreshold)
                     {
@@ -522,6 +530,6 @@ internal sealed class WallpaperLibrary : IDisposable
         const float total = BrightnessSampleSize * BrightnessSampleSize;
         var mean = lumaSum / total;
         var brightFraction = brightCount / total;
-        return Math.Clamp(0.5f * mean + 0.5f * brightFraction, 0f, 1f);
+        return (Math.Clamp(0.5f * mean + 0.5f * brightFraction, 0f, 1f), grid);
     }
 }
