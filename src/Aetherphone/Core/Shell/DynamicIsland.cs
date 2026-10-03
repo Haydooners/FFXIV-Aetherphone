@@ -7,6 +7,7 @@ using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Playback;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
+using Aetherphone.Core.Timers;
 using Aetherphone.Core.Video;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -50,6 +51,7 @@ internal sealed class DynamicIsland
     private static readonly Vector4 MusterAccent = AppAccents.For("muster");
     private static readonly Vector4 CallAccent = new(0.20f, 0.78f, 0.35f, 1f);
     private static readonly Vector4 TimerAccent = new(1.00f, 0.62f, 0.18f, 1f);
+    private static readonly Vector4 GameTimerAccent = AppAccents.For("timers");
     private static readonly Vector4 Ink = new(0.98f, 0.98f, 0.99f, 1f);
     private static readonly Vector4 FocusAccent = new(0.42f, 0.40f, 0.95f, 1f);
     private static readonly Vector4 QuietInk = new(0.64f, 0.64f, 0.68f, 1f);
@@ -60,6 +62,10 @@ internal sealed class DynamicIsland
     private readonly VideoSuite? video;
     private readonly MusterStore? musters;
     private readonly MusterLauncher? musterLauncher;
+    private readonly GameTimers? gameTimers;
+    private RunningTimer upcomingGameTimer;
+    private long gameTimerCachedSeconds = -1;
+    private string gameTimerCachedText = string.Empty;
     private int timerCachedSeconds = -1;
     private string timerCachedText = string.Empty;
     private int musterCachedMinutes = -1;
@@ -87,8 +93,9 @@ internal sealed class DynamicIsland
     private bool lastBubbleVisible;
 
     public DynamicIsland(PlaybackHub playback, CallHub calls, Configuration configuration, VideoSuite? video,
-        MusterStore? musters, MusterLauncher? musterLauncher)
+        MusterStore? musters, MusterLauncher? musterLauncher, GameTimers? gameTimers = null)
     {
+        this.gameTimers = gameTimers;
         this.playback = playback;
         this.calls = calls;
         this.configuration = configuration;
@@ -183,8 +190,12 @@ internal sealed class DynamicIsland
         upcomingMuster = musters is { } store
             ? IslandActivities.SoonestMuster(store.GoingMusters, store.Mine, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             : null;
+        var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        upcomingGameTimer = gameTimers is { Enabled: true } timers
+            ? TimerBoard.Tally(timers.Characters, timers.Workshops, nowUnix).Soonest
+            : default;
         return new IslandSignals(call, session, playback.IsActive, TimerRemainingSeconds() > 0,
-            upcomingMuster is not null);
+            upcomingMuster is not null, TimerBoard.InIslandWindow(upcomingGameTimer, nowUnix));
     }
 
     private void DrawContent(Rect screen, PhoneTheme theme, INavigator navigation, in CallView view,
@@ -312,6 +323,8 @@ internal sealed class DynamicIsland
                 return TimerAccent;
             case IslandActivity.Muster:
                 return MusterAccent;
+            case IslandActivity.GameTimer:
+                return GameTimerAccent;
             case IslandActivity.Notice:
                 return FocusAccent;
             default:
@@ -364,6 +377,28 @@ internal sealed class DynamicIsland
         }
 
         return compact ? musterCachedCountdown : musterCachedStatus;
+    }
+
+    private static FontAwesomeIcon GameTimerIcon(in RunningTimer timer)
+    {
+        if (!timer.Voyage)
+        {
+            return FontAwesomeIcon.Briefcase;
+        }
+
+        return timer.Airship ? FontAwesomeIcon.Plane : FontAwesomeIcon.Anchor;
+    }
+
+    private string GameTimerText(in RunningTimer timer)
+    {
+        var remaining = Math.Max(0L, timer.EndUnix - DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        if (remaining != gameTimerCachedSeconds)
+        {
+            gameTimerCachedSeconds = remaining;
+            gameTimerCachedText = TimeText.MinutesSeconds((int)remaining);
+        }
+
+        return gameTimerCachedText;
     }
 
     private string ViewersText(int count)
@@ -446,6 +481,11 @@ internal sealed class DynamicIsland
                 break;
             case IslandActivity.Notice:
                 DrawNotice(drawList, bubbleCenter, bubbleRadius, trailingRight, bounds.Center.Y, scale, alpha);
+                break;
+            case IslandActivity.GameTimer:
+                DrawIconBubble(drawList, bubbleCenter, bubbleRadius, GameTimerIcon(upcomingGameTimer), accent, alpha);
+                DrawTrailingLabel(drawList, GameTimerText(upcomingGameTimer), trailingRight, bounds.Center.Y,
+                    trailingMaxWidth, accent, alpha);
                 break;
         }
     }
@@ -621,6 +661,20 @@ internal sealed class DynamicIsland
                 DrawLines(drawList, MusterText.HostLabel(muster), TextStyles.Headline, Ink,
                     MusterCountdown(muster, false), TextStyles.Subheadline, accent, textLeft, textWidth, centerY,
                     scale, alpha, false);
+                if (RoundButton(drawList, controlCenter, controlRadius, FontAwesomeIcon.ArrowRight, controlFill, Ink,
+                        alpha, active))
+                {
+                    OpenOwner(navigation);
+                }
+
+                break;
+            }
+            case IslandActivity.GameTimer:
+            {
+                DrawIconBubble(drawList, iconCenter, iconRadius, GameTimerIcon(upcomingGameTimer), accent, alpha);
+                DrawLines(drawList, upcomingGameTimer.Name, TextStyles.Headline, Ink,
+                    GameTimerText(upcomingGameTimer), TextStyles.Subheadline, accent, textLeft, textWidth, centerY,
+                    scale, alpha, true);
                 if (RoundButton(drawList, controlCenter, controlRadius, FontAwesomeIcon.ArrowRight, controlFill, Ink,
                         alpha, active))
                 {

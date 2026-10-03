@@ -92,7 +92,7 @@ internal sealed class DailiesApp : IPhoneApp, ITabRouteTarget
 
         outstandingCount = outstanding;
         fashionReportWindow = DailiesReader.ReadFashionReportWindow(utcNow);
-        nextJumboCactpot = DailiesReader.ReadNextJumboCactpot(utcNow);
+        nextJumboCactpot = DailiesReader.ReadNextJumboCactpot(utcNow, gameData.LocalRegionCode());
         sinceRefresh = 0f;
     }
 

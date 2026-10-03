@@ -123,7 +123,7 @@ internal static class AppRegistry
             screenWindow));
         apps.Add(new ShortcutsApp(services.Shortcuts, services.ShortcutRunner, services.Confirm, photoLibrary,
             services.WallpaperImages));
-        apps.Add(new TimersApp(services.Configuration));
+        apps.Add(new TimersApp(services.Configuration, services.GameTimers));
         apps.Add(new DailiesApp(services.Configuration, services.GameData));
         apps.Add(new FishingApp());
         apps.Add(new GamesApp(services.GameStats, services.GameData, services.Textures, services.Coins,

@@ -183,7 +183,8 @@ public sealed class Plugin : IDalamudPlugin
                     : default);
             phoneEmote = new PhoneEmoteController(Cfg, Framework, ObjectTable, Condition, DataManager,
                 () => services.Visibility.IsVisible);
-            timerNotifier = new TimerNotifier(Cfg, Framework, services.Notifications, services.Installer.Gate("timers"));
+            timerNotifier = new TimerNotifier(Cfg, Framework, services.Notifications, services.GameTimers,
+                services.Installer.Gate("timers"));
             calendarReminders = new CalendarReminderService(Cfg, Framework, services.Notifications,
                 services.Installer.Gate("calendar"));
             clockAlarms = new ClockAlarmService(Cfg, Framework, services.Notifications, services.AlarmRinger,

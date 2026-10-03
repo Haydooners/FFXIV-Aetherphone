@@ -41,7 +41,7 @@ public sealed class TourRegistryTests
         { "clock", (3, 5) },
         { "calendar", (3, 5) },
         { "calculator", (3, 2) },
-        { "timers", (3, 3) },
+        { "timers", (4, 3) },
         { "coin", (2, 5) },
         { "casino", (2, 5) },
         { "skywatcher", (3, 5) },

@@ -4,6 +4,7 @@ using Aetherphone.Core.Game;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
+using Aetherphone.Core.Timers;
 using Aetherphone.Windows.Components;
 using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
@@ -12,12 +13,12 @@ namespace Aetherphone.Apps.Timers.Widgets;
 
 internal sealed class VenturesWidget : IHomeWidget
 {
-    private const double ReadIntervalSeconds = 5.0;
     private const int MediumRows = 4;
     private const float BarUnits = 3f;
     private const float RelevanceSoonMinutes = 10f;
     private const double QuickVentureHours = 1.0;
     private const double ExplorationVentureHours = 18.0;
+    private const double SecondsPerHour = 3600.0;
     private static readonly Vector4 ReadyColor = AccentRing.Green;
     private static readonly int[] SampleMinutes = { 0, 42, 730, -1 };
 
@@ -36,32 +37,23 @@ internal sealed class VenturesWidget : IHomeWidget
         public double LengthHours;
     }
 
-    private readonly struct VentureLength
-    {
-        public readonly DateTime CompleteUtc;
-        public readonly double Hours;
-
-        public VentureLength(DateTime completeUtc, double hours)
-        {
-            CompleteUtc = completeUtc;
-            Hours = hours;
-        }
-    }
-
-    private readonly List<RetainerVenture> retainers = new();
-    private readonly Dictionary<ulong, VentureLength> lengths = new();
+    private readonly GameTimers timers;
     private VentureRow[] rows = new VentureRow[10];
     private int rowCount;
     private int readyCount;
     private int runningCount;
     private DateTime nextCompleteUtc;
     private bool known;
-    private double nextRead = double.MinValue;
     private readonly CachedText[] countdowns = new CachedText[MediumRows];
     private CachedText heroCountdown;
     private CachedText readyText;
     private CachedText summary;
     private CachedText readySummary;
+
+    public VenturesWidget(GameTimers timers)
+    {
+        this.timers = timers;
+    }
 
     public string Id => "timers.ventures";
     public string DisplayName => Loc.T(L.WidgetsTime.Ventures);
@@ -120,16 +112,9 @@ internal sealed class VenturesWidget : IHomeWidget
 
     private void Refresh(DateTime utcNow, bool preview)
     {
-        var time = ImGui.GetTime();
-        if (time >= nextRead)
-        {
-            nextRead = time + ReadIntervalSeconds;
-            known = RetainerReader.TryRead(retainers) && retainers.Count > 0;
-        }
-
+        known = Load(utcNow);
         if (known)
         {
-            Load(utcNow);
             return;
         }
 
@@ -144,23 +129,47 @@ internal sealed class VenturesWidget : IHomeWidget
         runningCount = 0;
     }
 
-    private void Load(DateTime utcNow)
+    private bool Load(DateTime utcNow)
     {
-        Ensure(retainers.Count);
-        for (var index = 0; index < retainers.Count; index++)
+        var characters = timers.Characters;
+        var count = 0;
+        for (var characterIndex = 0; characterIndex < characters.Count; characterIndex++)
         {
-            var venture = retainers[index];
-            rows[index] = new VentureRow
-            {
-                Name = venture.Name,
-                State = !venture.HasVenture ? VentureState.Idle :
-                    venture.CompleteUtc <= utcNow ? VentureState.Ready : VentureState.Running,
-                CompleteUtc = venture.CompleteUtc,
-                LengthHours = LengthOf(venture, utcNow),
-            };
+            count += characters[characterIndex].Retainers.Count;
         }
 
-        Finish(retainers.Count);
+        if (count == 0)
+        {
+            return false;
+        }
+
+        Ensure(count);
+        var written = 0;
+        for (var characterIndex = 0; characterIndex < characters.Count; characterIndex++)
+        {
+            var retainers = characters[characterIndex].Retainers;
+            for (var index = 0; index < retainers.Count; index++)
+            {
+                var retainer = retainers[index];
+                var completeUtc = retainer.CompleteUnix > 0
+                    ? DateTimeOffset.FromUnixTimeSeconds(retainer.CompleteUnix).UtcDateTime
+                    : DateTime.MinValue;
+                rows[written] = new VentureRow
+                {
+                    Name = retainer.Name,
+                    State = retainer.CompleteUnix <= 0 ? VentureState.Idle :
+                        completeUtc <= utcNow ? VentureState.Ready : VentureState.Running,
+                    CompleteUtc = completeUtc,
+                    LengthHours = retainer.DurationSeconds > 0
+                        ? retainer.DurationSeconds / SecondsPerHour
+                        : LengthGuess((completeUtc - utcNow).TotalHours),
+                };
+                written++;
+            }
+        }
+
+        Finish(written);
+        return true;
     }
 
     private void LoadSamples(DateTime utcNow)
@@ -360,18 +369,6 @@ internal sealed class VenturesWidget : IHomeWidget
 
         var remaining = (row.CompleteUtc - utcNow).TotalHours;
         return Math.Clamp(1f - (float)(remaining / row.LengthHours), 0f, 1f);
-    }
-
-    private double LengthOf(in RetainerVenture venture, DateTime utcNow)
-    {
-        if (lengths.TryGetValue(venture.RetainerId, out var known) && known.CompleteUtc == venture.CompleteUtc)
-        {
-            return known.Hours;
-        }
-
-        var hours = LengthGuess((venture.CompleteUtc - utcNow).TotalHours);
-        lengths[venture.RetainerId] = new VentureLength(venture.CompleteUtc, hours);
-        return hours;
     }
 
     private static double LengthGuess(double remainingHours) =>
