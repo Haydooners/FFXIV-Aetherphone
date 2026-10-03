@@ -15,6 +15,7 @@ internal struct GroupCard
     private readonly float startY;
     private readonly float totalHeight;
     private float rowOffset;
+    public float SeparatorInset;
 
     private GroupCard(Vector4 separator, float scale, float rowHeight, float left, float right, float startY,
         float totalHeight)
@@ -27,6 +28,7 @@ internal struct GroupCard
         this.startY = startY;
         this.totalHeight = totalHeight;
         rowOffset = 0f;
+        SeparatorInset = 0f;
     }
 
     public static GroupCard Begin(PhoneTheme theme, int rowCount, float rowHeight = DefaultRowHeight) =>
@@ -71,7 +73,7 @@ internal struct GroupCard
         var rowTop = startY + rowOffset * scale;
         if (rowOffset > 0f)
         {
-            var separatorX = left + Metrics.Space.Lg * scale;
+            var separatorX = left + (Metrics.Space.Lg + SeparatorInset) * scale;
             ImGui.GetWindowDrawList().AddLine(new Vector2(separatorX, rowTop), new Vector2(right, rowTop),
                 ImGui.GetColorU32(separator), Metrics.Stroke.Hairline);
         }
