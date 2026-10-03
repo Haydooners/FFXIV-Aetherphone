@@ -8,6 +8,8 @@ namespace Aetherphone.Windows.Components;
 
 internal sealed partial class CoachmarkOverlay
 {
+    private static bool passthrough;
+
     private const float HeroScale = 1.5f;
     private const float HeroDropUnits = 108f;
     private const float BurstSeconds = 1.1f;
@@ -108,7 +110,7 @@ internal sealed partial class CoachmarkOverlay
         float alpha, float contentAlpha, float contentRise, float contentProgress, float blend, bool live, int index,
         int count, float scale, float delta)
     {
-        var isTap = step.Advance == GuideAdvance.TapTarget && hole.HasValue;
+        var isTap = (step.Advance == GuideAdvance.TapTarget && hole.HasValue) || step.IsAction;
         var size = MeasureCard(screen, step, isTap, scale);
         StepPose(CoachmarkTarget(screen, size, hole, scale), screen.Min, delta);
         var card = PoseRect(screen.Min, 0.94f + 0.06f * alpha);
@@ -129,7 +131,7 @@ internal sealed partial class CoachmarkOverlay
 
         var action = DrawCard(drawList, step, card, alpha, contentAlpha, contentRise, isTap, live, index, count,
             scale);
-        if (isTap && live && hole is { } tapHole && UiInteract.Hover(tapHole.Min, tapHole.Max))
+        if (!step.IsAction && isTap && live && hole is { } tapHole && UiInteract.Hover(tapHole.Min, tapHole.Max))
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
             if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
@@ -145,7 +147,7 @@ internal sealed partial class CoachmarkOverlay
         float contentAlpha, float contentRise, float contentProgress, bool live, int index, int count, float scale,
         float delta)
     {
-        var size = MeasureCard(screen, step, false, scale);
+        var size = MeasureCard(screen, step, step.IsAction, scale);
         StepPose(EdgeCardTarget(screen, size, anchor, scale), screen.Min, delta);
         var card = PoseRect(screen.Min, 0.94f + 0.06f * alpha);
         var left = anchor.Center.X < screen.Center.X;
@@ -159,7 +161,8 @@ internal sealed partial class CoachmarkOverlay
         var ringRect = anchor.Inset(-3f * scale);
         Ring(drawList, ringRect, MathF.Min(ringRect.Width, ringRect.Height) * 0.45f, alpha * contentAlpha, scale);
         drawList.PopClipRect();
-        return DrawCard(drawList, step, card, alpha, contentAlpha, contentRise, false, live, index, count, scale);
+        return DrawCard(drawList, step, card, alpha, contentAlpha, contentRise, step.IsAction, live, index, count,
+            scale);
     }
 
     private Vector2 MeasureCard(Rect screen, in GuideStep step, bool isTap, float scale)
@@ -255,6 +258,12 @@ internal sealed partial class CoachmarkOverlay
         float contentAlpha, float contentRise, bool isTap, bool live, int index, int count, float scale)
     {
         var radius = CardRadiusUnits * scale;
+        passthrough = step.IsAction;
+        if (passthrough && live)
+        {
+            UiInteract.HoverOverlay(card);
+        }
+
         Elevation.Floating(drawList, card.Min, card.Max, radius, scale, alpha);
         Material.LiquidGlass(drawList, card.Min, card.Max, radius, scale, GlassTone.Dark, 0f, alpha);
         Material.TopGlow(drawList, card.Min, card.Max, radius, BrandMark.Violet, 0.4f, 0.12f * alpha);
@@ -302,7 +311,8 @@ internal sealed partial class CoachmarkOverlay
             var breath = 0.65f + 0.35f * Pulse.Wave(Pulse.Calm);
             Typography.DrawCentered(drawList,
                 new Vector2(card.Center.X, y + LineHeight(TextStyles.FootnoteEmphasized) * 0.5f),
-                Loc.T(L.Onboarding.TapToContinue), BrandMark.Lilac with { W = contentAlpha * breath },
+                Loc.T(step.IsAction ? L.Onboarding.TryItNow : L.Onboarding.TapToContinue),
+                BrandMark.Lilac with { W = contentAlpha * breath },
                 TextStyles.FootnoteEmphasized);
         }
 
@@ -366,7 +376,7 @@ internal sealed partial class CoachmarkOverlay
         var pad = new Vector2(8f * scale, 6f * scale);
         var min = center - size * 0.5f - pad;
         var max = center + size * 0.5f + pad;
-        var hovered = live && UiInteract.Hover(min, max);
+        var hovered = live && (passthrough ? UiInteract.HoverWindowOnly(min, max) : UiInteract.Hover(min, max));
         var ink = hovered ? Ink : InkQuiet;
         Typography.DrawCentered(drawList, center, label, ink with { W = ink.W * alpha }, TextStyles.FootnoteEmphasized);
         if (!hovered)
