@@ -474,7 +474,11 @@ internal sealed class PlayQueue
             return;
         }
 
-        upcoming.Sort(static (left, right) => left.ContextIndex.CompareTo(right.ContextIndex));
+        upcoming.Sort(static (left, right) =>
+        {
+            var byContext = left.ContextIndex.CompareTo(right.ContextIndex);
+            return byContext != 0 ? byContext : left.Id.CompareTo(right.Id);
+        });
         if (!hasCurrent || current.ContextIndex == AppendedContextIndex)
         {
             return;

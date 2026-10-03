@@ -190,6 +190,29 @@ public sealed class PlayQueueTests
     }
 
     [Fact]
+    public void UnshuffleRestoresTheOrderSongsWereAddedToTheEnd()
+    {
+        var queue = new PlayQueue();
+        var album = Album(20);
+        queue.SetContext(album, 0, false, string.Empty, string.Empty);
+        var added = new Song[20];
+        for (var index = 0; index < added.Length; index++)
+        {
+            added[index] = new Song("added" + index.ToString("D6"), "Added " + index, "Artist", string.Empty, 180);
+            queue.PlayLast(added[index]);
+        }
+
+        queue.SetShuffle(true);
+        queue.SetShuffle(false);
+
+        Assert.Equal(album[1].VideoId, queue.QueuedAt(0).Song.VideoId);
+        for (var index = 0; index < added.Length; index++)
+        {
+            Assert.Equal(added[index].VideoId, queue.QueuedAt(19 + index).Song.VideoId);
+        }
+    }
+
+    [Fact]
     public void HistoryIsCapped()
     {
         var queue = new PlayQueue();
