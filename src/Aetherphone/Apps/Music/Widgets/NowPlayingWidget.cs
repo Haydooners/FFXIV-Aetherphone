@@ -73,7 +73,7 @@ internal sealed class NowPlayingWidget : IHomeWidget
     private Vector4 washTo;
     private float washBlend = 1f;
     private float sinceRecents = RecentsRefreshSeconds;
-    private int frame = -1;
+    private WidgetFrame frame;
 
     public NowPlayingWidget(PlaybackHub playback, SongHistory history, MediaCache media, HttpService http)
     {
@@ -97,7 +97,7 @@ internal sealed class NowPlayingWidget : IHomeWidget
 
     public void Draw(in WidgetContext context)
     {
-        if (PeopleWidgetChrome.FirstThisFrame(ref frame))
+        if (frame.First())
         {
             Sync(context.Delta);
         }
@@ -112,7 +112,7 @@ internal sealed class NowPlayingWidget : IHomeWidget
             : WidgetInk.From(context);
         if (!active && !sample && !idle)
         {
-            PeopleWidgetChrome.Message(context, ink, WidgetMetrics.Content(context), MusicAppId,
+            WidgetChrome.Message(context, ink, WidgetMetrics.Content(context), MusicAppId,
                 Loc.T(L.WidgetsPeople.NotPlaying),
                 context.Size == WidgetSize.Small ? string.Empty : Loc.T(L.WidgetsPeople.MusicEmptyHint));
             return;
@@ -292,7 +292,7 @@ internal sealed class NowPlayingWidget : IHomeWidget
             var barBottom = controlsTop - WidgetMetrics.Gutter * scale;
             var bar = new Rect(new Vector2(column.Min.X, barBottom - ProgressHeight * scale),
                 new Vector2(column.Max.X, barBottom));
-            PeopleWidgetChrome.Progress(context, ink, bar, sample ? SampleProgress : Progress());
+            WidgetChrome.Bar(context.DrawList, bar, sample ? SampleProgress : Progress(), ink.Fill, ink.Primary);
         }
 
         var pitch = column.Width / 3f;
@@ -337,7 +337,7 @@ internal sealed class NowPlayingWidget : IHomeWidget
         var drawList = context.DrawList;
         var scale = context.Scale;
         var top = area.Min.Y + WidgetMetrics.Gutter * scale;
-        PeopleWidgetChrome.Separator(context, ink, area.Min.X, area.Max.X, top);
+        WidgetChrome.Separator(context, ink, area.Min.X, area.Max.X, top);
         top += WidgetMetrics.Gutter * 1.5f * scale;
         WidgetText.EyebrowFit(drawList, new Vector2(area.Min.X, top), Loc.T(L.WidgetsPeople.RecentlyPlayed),
             area.Width, ink.Secondary, scale);

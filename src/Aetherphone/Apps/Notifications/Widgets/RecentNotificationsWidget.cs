@@ -45,7 +45,7 @@ internal sealed class RecentNotificationsWidget : IHomeWidget
     private float sinceRebuild;
     private CultureInfo? samplesCulture;
     private long samplesMinute = -1;
-    private int frame = -1;
+    private WidgetFrame frame;
 
     public RecentNotificationsWidget(NotificationService notifications)
     {
@@ -62,7 +62,7 @@ internal sealed class RecentNotificationsWidget : IHomeWidget
 
     public void Draw(in WidgetContext context)
     {
-        if (PeopleWidgetChrome.FirstThisFrame(ref frame))
+        if (frame.First())
         {
             Advance(context.Delta);
         }
@@ -84,7 +84,7 @@ internal sealed class RecentNotificationsWidget : IHomeWidget
             content.Max);
         if (!sample && rowCount == 0)
         {
-            PeopleWidgetChrome.Message(context, ink, area, NotificationsAppId, Loc.T(L.WidgetsPeople.NoNotifications),
+            WidgetChrome.Message(context, ink, area, NotificationsAppId, Loc.T(L.WidgetsPeople.NoNotifications),
                 Loc.T(L.WidgetsPeople.CaughtUp));
             return;
         }
@@ -180,7 +180,7 @@ internal sealed class RecentNotificationsWidget : IHomeWidget
             row.Time, string.Empty, false, false);
         if (separator)
         {
-            PeopleWidgetChrome.Separator(context, ink, textLeft, area.Max.X, rowRect.Max.Y);
+            WidgetChrome.Separator(context, ink, textLeft, area.Max.X, rowRect.Max.Y);
         }
     }
 

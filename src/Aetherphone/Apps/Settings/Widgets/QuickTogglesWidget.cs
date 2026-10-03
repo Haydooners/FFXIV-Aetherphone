@@ -89,7 +89,7 @@ internal sealed class QuickTogglesWidget : IHomeWidget
         var scale = context.Scale;
         var cell = content.Width / MediumCount;
         var diameter = MathF.Min(WidgetMetrics.ControlLarge, cell / scale - WidgetMetrics.RowGap * 2f);
-        var lineHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Caption);
+        var lineHeight = WidgetText.SpacedLineHeight(WidgetType.Caption);
         var gap = WidgetMetrics.Gutter * scale;
         var block = diameter * scale + gap + lineHeight * LabelLines;
         var top = content.Center.Y - block * 0.5f;
@@ -99,8 +99,8 @@ internal sealed class QuickTogglesWidget : IHomeWidget
             var centerX = content.Min.X + cell * (index + 0.5f);
             var center = new Vector2(centerX, top + diameter * scale * 0.5f);
             var value = DrawToggle(context, ink, index, center, diameter);
-            var lines = UtilityWidgetKit.Clamp(Loc.T(Labels[index]), WidgetType.Caption, labelWidth, LabelLines);
-            UtilityWidgetKit.DrawCentered(drawList, lines, new Vector2(centerX, top + diameter * scale + gap),
+            var lines = WidgetText.Clamp(Loc.T(Labels[index]), WidgetType.Caption, labelWidth, LabelLines);
+            WidgetText.LinesCentered(drawList, lines, new Vector2(centerX, top + diameter * scale + gap),
                 value ? ink.Primary : ink.Secondary, WidgetType.Caption, lineHeight);
         }
     }

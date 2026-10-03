@@ -12,7 +12,7 @@ internal sealed class NoteWidget : IHomeWidget
 {
     private const string AppKey = "notes";
     private const string NoteKey = "note";
-    private const float RefreshSeconds = 1f;
+    private const int RefreshMilliseconds = 1000;
     private const int SampleHour = 18;
     private const int SampleMinute = 30;
 
@@ -28,13 +28,13 @@ internal sealed class NoteWidget : IHomeWidget
     {
         public string Config = string.Empty;
         public PhoneNote? Note;
-        public float Age = RefreshSeconds;
+        public WidgetRefresh Refresh;
     }
 
     private readonly Configuration configuration;
     private readonly WidgetOption[] options;
     private readonly Dictionary<Guid, NoteText> texts = new();
-    private readonly Dictionary<string, Selection> selections = new(StringComparer.Ordinal);
+    private readonly WidgetStates<Selection> selections = new();
     private CachedText sampleStamp;
 
     public NoteWidget(Configuration configuration)
@@ -52,7 +52,7 @@ internal sealed class NoteWidget : IHomeWidget
 
     public WidgetRoute Target(in WidgetContext context)
     {
-        var note = Resolve(context.InstanceKey, context.Config, 0f);
+        var note = Resolve(context.InstanceKey, context.Config);
         return note is null
             ? WidgetRoute.To(AppKey, WidgetRouteKind.NewNote, string.Empty)
             : WidgetRoute.To(AppKey, WidgetRouteKind.Note, note.Id.ToString());
@@ -67,7 +67,7 @@ internal sealed class NoteWidget : IHomeWidget
         var content = WidgetMetrics.Content(context);
         var body = new Rect(new Vector2(content.Min.X, headerBottom + WidgetMetrics.Gutter * context.Scale),
             content.Max);
-        var note = Resolve(context.InstanceKey, context.Config, context.Delta);
+        var note = Resolve(context.InstanceKey, context.Config);
         if (note is not null)
         {
             var text = TextFor(note);
@@ -87,7 +87,7 @@ internal sealed class NoteWidget : IHomeWidget
             return;
         }
 
-        UtilityWidgetKit.Message(context, ink, body, FontAwesomeIcon.StickyNote, accent,
+        WidgetChrome.Message(context, ink, body, FontAwesomeIcon.StickyNote, accent,
             Loc.T(L.WidgetsUtility.NoNotes), Loc.T(L.WidgetsUtility.NoNotesHint));
     }
 
@@ -97,41 +97,34 @@ internal sealed class NoteWidget : IHomeWidget
         var drawList = context.DrawList;
         var scale = context.Scale;
         var titleStyle = context.Size == WidgetSize.Small ? WidgetType.Headline : WidgetType.Title;
-        var titleHeight = UtilityWidgetKit.LineHeightOf(titleStyle);
-        var bodyHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Body);
-        var stampHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Caption);
+        var titleHeight = WidgetText.SpacedLineHeight(titleStyle);
+        var bodyHeight = WidgetText.SpacedLineHeight(WidgetType.Body);
+        var stampHeight = WidgetText.SpacedLineHeight(WidgetType.Caption);
         var stampTop = body.Max.Y - stampHeight;
-        var titleLines = UtilityWidgetKit.Clamp(title, titleStyle, body.Width, context.Size == WidgetSize.Small ? 2 : 1);
-        var top = UtilityWidgetKit.DrawLines(drawList, titleLines, body.Min, hasTitle ? ink.Primary : ink.Tertiary,
+        var titleLines = WidgetText.Clamp(title, titleStyle, body.Width, context.Size == WidgetSize.Small ? 2 : 1);
+        var top = WidgetText.Lines(drawList, titleLines, body.Min, hasTitle ? ink.Primary : ink.Tertiary,
             titleStyle, titleHeight);
         top += WidgetMetrics.RowGap * scale;
         var available = (int)((stampTop - WidgetMetrics.RowGap * scale - top) / bodyHeight);
         if (available > 0 && preview.Length > 0)
         {
-            var previewLines = UtilityWidgetKit.Clamp(preview, WidgetType.Body, body.Width, available);
-            UtilityWidgetKit.DrawLines(drawList, previewLines, new Vector2(body.Min.X, top), ink.Secondary,
+            var previewLines = WidgetText.Clamp(preview, WidgetType.Body, body.Width, available);
+            WidgetText.Lines(drawList, previewLines, new Vector2(body.Min.X, top), ink.Secondary,
                 WidgetType.Body, bodyHeight);
         }
 
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(body.Min.X, stampTop), stamp, ink.Tertiary,
+        WidgetText.Draw(drawList, new Vector2(body.Min.X, stampTop), stamp, ink.Tertiary,
             WidgetType.Caption, body.Width);
     }
 
-    private PhoneNote? Resolve(string instanceKey, string config, float delta)
+    private PhoneNote? Resolve(string instanceKey, string config)
     {
-        if (!selections.TryGetValue(instanceKey, out var selection))
-        {
-            selection = new Selection();
-            selections[instanceKey] = selection;
-        }
-
-        selection.Age += delta;
-        if (selection.Age < RefreshSeconds && ReferenceEquals(selection.Config, config))
+        var selection = selections.For(instanceKey);
+        if (!selection.Refresh.Due(RefreshMilliseconds) && ReferenceEquals(selection.Config, config))
         {
             return selection.Note;
         }
 
-        selection.Age = 0f;
         selection.Config = config;
         selection.Note = Find(config);
         return selection.Note;

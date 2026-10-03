@@ -32,19 +32,19 @@ internal sealed class ActivityWidget : IHomeWidget
 
     private sealed class Rings
     {
-        public readonly EasedValue[] Values = new EasedValue[RingCount];
-        public readonly EasedValue[] Bars = new EasedValue[WeekDays * RingCount];
+        public readonly WidgetEase[] Values = new WidgetEase[RingCount];
+        public readonly WidgetEase[] Bars = new WidgetEase[WeekDays * RingCount];
     }
 
     private readonly ActivityTracker tracker;
     private readonly Configuration configuration;
-    private readonly InstanceStates<Rings> rings = new();
+    private readonly WidgetStates<Rings> rings = new();
     private readonly float[] week = new float[WeekDays * RingCount];
     private readonly string[] weekKeys = new string[WeekDays];
     private readonly CachedText[] dayLabels = new CachedText[WeekDays];
     private readonly CachedText[] values = new CachedText[RingCount];
     private readonly float[] fractions = new float[RingCount];
-    private WidgetCadence weekCadence;
+    private WidgetRefresh weekCadence;
     private DateTime weekAnchor;
 
     public ActivityWidget(ActivityTracker tracker, Configuration configuration)
@@ -178,7 +178,7 @@ internal sealed class ActivityWidget : IHomeWidget
             var track = ink.KeepsOwnColors || ink.Mode == WidgetMode.Dark
                 ? color with { W = color.W * 0.22f }
                 : ink.Fill;
-            WidgetRings.Draw(context.DrawList, center, ringRadius - step * ring, thickness, fractions[ring], color,
+            WidgetChrome.Ring(context.DrawList, center, ringRadius - step * ring, thickness, fractions[ring], color,
                 track);
         }
     }
@@ -317,8 +317,8 @@ internal sealed class ActivityWidget : IHomeWidget
         var radius = (context.Size == WidgetSize.Small ? SmallRingUnits * 0.36f : SmallRingUnits * 0.5f) *
                      context.Scale;
         DrawRings(context, ink, new Vector2(content.Min.X + radius, content.Min.Y + radius), radius);
-        WidgetMessage.Draw(context, ink.Primary, ink.Secondary, Loc.T(L.WidgetsLife.ActivityUnavailable),
-            string.Empty);
+        WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, content.Min.Y + radius * 2f + WidgetMetrics.Gutter * context.Scale),
+            Loc.T(L.WidgetsLife.ActivityUnavailable), string.Empty);
     }
 
     private static LocString Label(int ring) => ring switch

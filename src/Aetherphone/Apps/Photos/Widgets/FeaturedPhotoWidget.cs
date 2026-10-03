@@ -62,11 +62,11 @@ internal sealed class FeaturedPhotoWidget : IHomeWidget
     private readonly ConcurrentDictionary<string, byte> failed = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTime> dates = new(StringComparer.Ordinal);
     private readonly List<(string Path, int Level)> evictions = new();
-    private readonly InstanceStates<Show> shows = new();
+    private readonly WidgetStates<Show> shows = new();
     private readonly CancellationTokenSource cancellation = new();
     private string[] paths = Array.Empty<string>();
-    private WidgetCadence listCadence;
-    private WidgetCadence evictCadence;
+    private WidgetRefresh listCadence;
+    private WidgetRefresh evictCadence;
 
     public FeaturedPhotoWidget(PhotoLibrary library)
     {
@@ -135,7 +135,7 @@ internal sealed class FeaturedPhotoWidget : IHomeWidget
         {
             if (!fading)
             {
-                WidgetShimmer.Block(context.DrawList, context.Bounds, radius, ink);
+                WidgetChrome.Redacted(context.DrawList, context.Bounds, ink, radius);
             }
         }
         else
@@ -286,7 +286,7 @@ internal sealed class FeaturedPhotoWidget : IHomeWidget
         var glyph = WidgetMetrics.GlyphSmall * 1.6f * context.Scale;
         AppIconTile.TryDrawGlyph(context.DrawList, "photos", new Vector2(content.Min.X + glyph * 0.5f,
             content.Min.Y + glyph * 0.5f), glyph, ink.Accent(AppAccents.For("photos")));
-        WidgetMessage.Draw(context, ink.Primary, ink.Secondary, Loc.T(L.Photos.NoPhotos),
+        WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, content.Min.Y + glyph + WidgetMetrics.Gutter * context.Scale), Loc.T(L.Photos.NoPhotos),
             Loc.T(L.Photos.UseCameraHint));
     }
 

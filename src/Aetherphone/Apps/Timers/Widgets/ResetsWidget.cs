@@ -172,8 +172,8 @@ internal sealed class ResetsWidget : IHomeWidget
             var top = listTop + index * rowHeight;
             if (index > 0)
             {
-                TimeWidgetParts.Separator(context.DrawList, ink, content.Min.X + (RowGlyphUnits + WidgetMetrics.Gutter) * scale,
-                    content.Max.X, top, scale);
+                WidgetChrome.Separator(context, ink, content.Min.X + (RowGlyphUnits + WidgetMetrics.Gutter) * scale,
+                    content.Max.X, top);
             }
 
             var row = new Rect(new Vector2(content.Min.X, top), new Vector2(content.Max.X, top + rowHeight));
@@ -232,15 +232,15 @@ internal sealed class ResetsWidget : IHomeWidget
         var drawList = context.DrawList;
         var remaining = moments[index] - utcNow;
         var fraction = 1f - (float)(remaining.TotalSeconds / Periods[index].TotalSeconds);
-        var thickness = TimeWidgetParts.RingThickness(radius, scale);
+        var thickness = WidgetChrome.RingThickness(radius, scale);
         var ringRadius = radius - thickness * 0.5f;
-        TimeWidgetParts.Ring(drawList, ink, center, ringRadius, thickness, fraction, Colors[index]);
+        WidgetChrome.Ring(drawList, ink, center, ringRadius, thickness, fraction, Colors[index]);
         var innerWidth = (ringRadius - thickness) * RingTextWidth;
         var text = WidgetText.Countdown(ref countdowns[index], remaining);
-        var style = TimeWidgetParts.Fitted(text, WidgetType.Title, innerWidth, true);
+        var style = WidgetText.FitStyle(text, WidgetType.Title, innerWidth, true);
         if (!withDetail)
         {
-            TimeWidgetParts.TabularCentered(drawList, center, text, ink.Primary, style, innerWidth);
+            WidgetText.TabularCentered(drawList, center, text, ink.Primary, style, innerWidth);
             return;
         }
 
@@ -248,7 +248,7 @@ internal sealed class ResetsWidget : IHomeWidget
         var textHeight = Typography.Measure(text, style).Y;
         var detailHeight = Typography.Measure(detail, WidgetType.Caption).Y;
         var top = center.Y - (textHeight + detailHeight) * 0.5f;
-        TimeWidgetParts.TabularCentered(drawList, new Vector2(center.X, top + textHeight * 0.5f), text, ink.Primary,
+        WidgetText.TabularCentered(drawList, new Vector2(center.X, top + textHeight * 0.5f), text, ink.Primary,
             style, innerWidth);
         var fitted = WidgetText.Fit(detail, innerWidth, WidgetType.Caption, out var detailScale);
         var detailWidth = Typography.Measure(fitted, detailScale, WidgetType.Caption.Weight).X;

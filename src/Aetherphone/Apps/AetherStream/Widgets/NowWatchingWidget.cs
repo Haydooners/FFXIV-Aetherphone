@@ -61,7 +61,7 @@ internal sealed class NowWatchingWidget : IHomeWidget
     private Clip previous;
     private float swap = 1f;
     private bool queued;
-    private int frame = -1;
+    private WidgetFrame frame;
     private CachedText elapsedText;
     private CachedText remainingText;
 
@@ -91,7 +91,7 @@ internal sealed class NowWatchingWidget : IHomeWidget
 
     public void Draw(in WidgetContext context)
     {
-        if (PeopleWidgetChrome.FirstThisFrame(ref frame))
+        if (frame.First())
         {
             Sync(context.Delta);
         }
@@ -104,7 +104,7 @@ internal sealed class NowWatchingWidget : IHomeWidget
         var content = WidgetMetrics.Content(context);
         if (!watching && !upNext && !sample)
         {
-            PeopleWidgetChrome.Message(context, ink, content, StreamAppId, Loc.T(L.WidgetsPeople.NothingPlaying),
+            WidgetChrome.Message(context, ink, content, StreamAppId, Loc.T(L.WidgetsPeople.NothingPlaying),
                 context.Size == WidgetSize.Small ? string.Empty : Loc.T(L.WidgetsPeople.WatchEmptyHint));
             return;
         }
@@ -187,8 +187,8 @@ internal sealed class NowWatchingWidget : IHomeWidget
             return;
         }
 
-        PeopleWidgetChrome.Progress(context, ink,
-            new Rect(new Vector2(content.Min.X, barTop), content.Max), Fraction(sample));
+        WidgetChrome.Bar(context.DrawList, new Rect(new Vector2(content.Min.X, barTop), content.Max), Fraction(sample),
+            ink.Fill, ink.Primary);
     }
 
     private void DrawMedium(in WidgetContext context, in WidgetInk ink, Rect content, bool sample, bool upNext)
@@ -224,7 +224,7 @@ internal sealed class NowWatchingWidget : IHomeWidget
         var barTop = controlCenter.Y - (ProgressHeight * scale + WidgetMetrics.RowGap * scale + captionHeight) * 0.5f;
         var bar = new Rect(new Vector2(content.Min.X, barTop),
             new Vector2(barRight, barTop + ProgressHeight * scale));
-        PeopleWidgetChrome.Progress(context, ink, bar, Fraction(sample));
+        WidgetChrome.Bar(context.DrawList, bar, Fraction(sample), ink.Fill, ink.Primary);
         var captionTop = bar.Max.Y + WidgetMetrics.RowGap * scale;
         var (position, duration) = Times(sample);
         var elapsed = WidgetText.Seconds(ref elapsedText, TimeSpan.FromSeconds(position));

@@ -76,7 +76,7 @@ internal sealed class TellsWidget : IHomeWidget
     private bool seenMask;
     private long nextCheckTicks;
     private float sinceRebuild;
-    private int frame = -1;
+    private WidgetFrame frame;
 
     public TellsWidget(ChatInbox inbox, ChatLog log, LodestoneService lodestone)
     {
@@ -95,7 +95,7 @@ internal sealed class TellsWidget : IHomeWidget
 
     public void Draw(in WidgetContext context)
     {
-        if (PeopleWidgetChrome.FirstThisFrame(ref frame))
+        if (frame.First())
         {
             Advance(context.Delta);
         }
@@ -124,7 +124,7 @@ internal sealed class TellsWidget : IHomeWidget
 
         if (rowCount == 0)
         {
-            PeopleWidgetChrome.Message(context, ink, area, LinkpearlAppId, Loc.T(L.WidgetsPeople.NoTells),
+            WidgetChrome.Message(context, ink, area, LinkpearlAppId, Loc.T(L.WidgetsPeople.NoTells),
                 Loc.T(L.WidgetsPeople.NoTellsHint));
             return;
         }
@@ -252,7 +252,7 @@ internal sealed class TellsWidget : IHomeWidget
             row.Muted, row.UnreadLabel.Length > 0);
         if (separator)
         {
-            PeopleWidgetChrome.Separator(context, ink, textLeft, area.Max.X, rowRect.Max.Y);
+            WidgetChrome.Separator(context, ink, textLeft, area.Max.X, rowRect.Max.Y);
         }
     }
 

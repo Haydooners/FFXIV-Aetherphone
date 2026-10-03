@@ -39,7 +39,7 @@ internal sealed unsafe class JobWidget : IHomeWidget
     private readonly int[] chosen = new int[ButtonCount];
     private readonly Dictionary<uint, string> abbreviations = new();
     private readonly Dictionary<uint, string> names = new();
-    private readonly EasedFraction[] rings = new EasedFraction[2];
+    private readonly WidgetStates<RingState> rings = new();
     private int gearsetCount;
     private int activeGearsetId = -1;
     private uint classJobId;
@@ -49,7 +49,7 @@ internal sealed unsafe class JobWidget : IHomeWidget
     private bool maxLevel;
     private bool hasJob;
     private long fastUntilTick;
-    private RefreshGate refresh;
+    private WidgetRefresh refresh;
     private CachedText levelText;
     private CachedText itemLevelText;
     private CachedText experienceText;
@@ -90,8 +90,8 @@ internal sealed unsafe class JobWidget : IHomeWidget
         if (!sample && (!loggedIn || !hasJob))
         {
             var top = WidgetChrome.Header(context, ink, AppId, L.WidgetsAdventure.JobName, JobsAccent);
-            AdventureWidgetArt.Message(context, ink, top, FontAwesomeIcon.UserCircle,
-                Loc.T(L.WidgetsAdventure.LogIn));
+            WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, top), FontAwesomeIcon.UserCircle, default,
+                Loc.T(L.WidgetsAdventure.LogIn), string.Empty);
             return;
         }
 
@@ -111,12 +111,12 @@ internal sealed unsafe class JobWidget : IHomeWidget
         var gutter = WidgetMetrics.Gutter * scale;
         var jobId = sample ? WidgetSamples.JobClassJobId : classJobId;
         var headerBottom = WidgetChrome.Header(context, ink, AppId, JobName(jobId), JobsAccent);
-        var headlineHeight = AdventureWidgetArt.LineHeight(WidgetType.Headline);
+        var headlineHeight = WidgetText.LineHeight(WidgetType.Headline);
         var lineTop = content.Max.Y - headlineHeight;
         WidgetText.Draw(context.DrawList, new Vector2(content.Min.X, lineTop), LevelText(sample), ink.Primary,
             WidgetType.Headline, content.Width * 0.55f);
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
-        AdventureWidgetArt.RightAligned(context.DrawList, content.Max.X,
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
+        WidgetText.DrawRight(context.DrawList, content.Max.X,
             lineTop + (headlineHeight - captionHeight) * 0.5f, ExperienceText(sample), ink.Secondary,
             WidgetType.Caption);
         var ringTop = headerBottom + gutter;
@@ -141,9 +141,9 @@ internal sealed unsafe class JobWidget : IHomeWidget
 
         var textLeft = top.Min.X + diameter + gutter * 1.5f;
         var textWidth = MathF.Max(1f, top.Max.X - textLeft);
-        var titleHeight = AdventureWidgetArt.LineHeight(WidgetType.Title);
-        var bodyHeight = AdventureWidgetArt.LineHeight(WidgetType.Body);
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
+        var titleHeight = WidgetText.LineHeight(WidgetType.Title);
+        var bodyHeight = WidgetText.LineHeight(WidgetType.Body);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         var gap = WidgetMetrics.RowGap * scale;
         var blockTop = top.Center.Y - (titleHeight + bodyHeight + captionHeight + gap * 2f) * 0.5f;
         WidgetText.Draw(drawList, new Vector2(textLeft, blockTop), JobName(jobId), ink.Primary, WidgetType.Title,
@@ -153,7 +153,7 @@ internal sealed unsafe class JobWidget : IHomeWidget
         var experienceWidth = Typography.Measure(experienceLabel, WidgetType.Caption).X;
         WidgetText.Draw(drawList, new Vector2(textLeft, levelTop), LevelText(sample), ink.Primary, WidgetType.Body,
             MathF.Max(1f, textWidth - experienceWidth - gutter));
-        AdventureWidgetArt.RightAligned(drawList, top.Max.X, levelTop + (bodyHeight - captionHeight) * 0.5f,
+        WidgetText.DrawRight(drawList, top.Max.X, levelTop + (bodyHeight - captionHeight) * 0.5f,
             experienceLabel, ink.Secondary, WidgetType.Caption);
         var itemLevelLabel = ItemLevelText(sample);
         if (itemLevelLabel.Length > 0)
@@ -169,9 +169,10 @@ internal sealed unsafe class JobWidget : IHomeWidget
         uint jobId)
     {
         var target = sample ? WidgetSamples.JobExperience : maxLevel ? 1f : experience;
-        var fraction = rings[context.Preview ? 1 : 0].Step(target, context.Delta);
-        AdventureWidgetArt.Ring(context, ink, center, radius, fraction, JobsAccent);
-        var inner = AdventureWidgetArt.RingInnerRadius(context, radius);
+        var fraction = rings.For(context).Fill.Fraction(target, context.Delta, !context.Preview);
+        WidgetChrome.Ring(context.DrawList, ink, center, radius, WidgetChrome.RingThickness(radius, context.Scale),
+            fraction, JobsAccent);
+        var inner = radius - WidgetChrome.RingThickness(radius, context.Scale);
         var half = inner * IconFraction * 0.5f;
         var size = half * 2f;
         if (!AdventureWidgetArt.GameIcon(context.DrawList, GameData.JobIconId(jobId), center - new Vector2(half),
@@ -461,5 +462,10 @@ internal sealed unsafe class JobWidget : IHomeWidget
 
     public void Dispose()
     {
+    }
+
+    private sealed class RingState
+    {
+        public WidgetEase Fill;
     }
 }

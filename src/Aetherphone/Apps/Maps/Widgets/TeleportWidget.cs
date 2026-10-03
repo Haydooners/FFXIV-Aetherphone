@@ -28,8 +28,8 @@ internal sealed class TeleportWidget : IHomeWidget
     private readonly Configuration configuration;
     private readonly IReadOnlyList<WidgetOption> options;
     private readonly uint[] chosen = new uint[SlotCount];
-    private RefreshGate availability;
-    private RefreshGate location;
+    private WidgetRefresh availability;
+    private WidgetRefresh location;
     private bool lifestreamAvailable;
     private string zone = string.Empty;
 
@@ -76,22 +76,22 @@ internal sealed class TeleportWidget : IHomeWidget
         {
             if (!loggedIn)
             {
-                AdventureWidgetArt.Message(context, ink, headerBottom, FontAwesomeIcon.UserCircle,
-                    Loc.T(L.WidgetsAdventure.LogIn));
+                WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, headerBottom), FontAwesomeIcon.UserCircle, default,
+                    Loc.T(L.WidgetsAdventure.LogIn), string.Empty);
                 return;
             }
 
             if (!lifestreamAvailable)
             {
-                AdventureWidgetArt.Message(context, ink, headerBottom, FontAwesomeIcon.Plug,
-                    Loc.T(L.WidgetsAdventure.NeedsLifestream));
+                WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, headerBottom), FontAwesomeIcon.Plug, default,
+                    Loc.T(L.WidgetsAdventure.NeedsLifestream), string.Empty);
                 return;
             }
 
             if (count == 0)
             {
-                AdventureWidgetArt.Message(context, ink, headerBottom, FontAwesomeIcon.Star,
-                    Loc.T(L.WidgetsAdventure.NoFavorites));
+                WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, headerBottom), FontAwesomeIcon.Star, default,
+                    Loc.T(L.WidgetsAdventure.NoFavorites), string.Empty);
                 return;
             }
         }
@@ -161,10 +161,10 @@ internal sealed class TeleportWidget : IHomeWidget
             return;
         }
 
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         var top = content.Min.Y + (headerBottom - content.Min.Y - captionHeight) * 0.5f;
         var fitted = Typography.FitText(zone, content.Width * 0.5f, WidgetType.Caption);
-        AdventureWidgetArt.RightAligned(context.DrawList, content.Max.X, top, fitted, ink.Secondary,
+        WidgetText.DrawRight(context.DrawList, content.Max.X, top, fitted, ink.Secondary,
             WidgetType.Caption);
     }
 

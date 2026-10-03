@@ -17,7 +17,7 @@ internal sealed class LodestoneWidget : IHomeWidget
 {
     private const string AppKey = "news";
     private const string CategoryKey = "category";
-    private const float RequestSeconds = 60f;
+    private const int RequestMilliseconds = 60000;
     private const int MaxRows = 6;
     private const float RowUnits = 36f;
     private const float HeroShare = 0.46f;
@@ -40,7 +40,7 @@ internal sealed class LodestoneWidget : IHomeWidget
     private readonly RemoteImageCache images;
     private readonly WidgetOption[] options;
     private readonly NewsEntry?[] entries = new NewsEntry?[NewsCategories.All.Length];
-    private readonly float[] sinceRequest = new float[NewsCategories.All.Length];
+    private readonly WidgetRefresh[] requests = new WidgetRefresh[NewsCategories.All.Length];
     private readonly CachedText[] captions = new CachedText[NewsCategories.All.Length * MaxRows];
     private readonly CachedText[] sampleCaptions = new CachedText[MaxRows];
 
@@ -54,10 +54,6 @@ internal sealed class LodestoneWidget : IHomeWidget
             new WidgetOption(CategoryKey, L.WidgetsUtility.NewsCategoryOption, CategoryChoices,
                 CategoryChoices[0].Value),
         };
-        for (var index = 0; index < sinceRequest.Length; index++)
-        {
-            sinceRequest[index] = RequestSeconds;
-        }
     }
 
     public string Id => "news.headlines";
@@ -84,7 +80,7 @@ internal sealed class LodestoneWidget : IHomeWidget
         var slot = (int)category;
         if (!context.Preview && context.Opacity > 0f)
         {
-            Request(slot, category, context.Delta);
+            Request(slot, category);
         }
 
         WidgetChrome.Container(context);
@@ -93,7 +89,7 @@ internal sealed class LodestoneWidget : IHomeWidget
         var scale = context.Scale;
         var content = WidgetMetrics.Content(context);
         var accent = AppAccents.For(AppKey);
-        var top = UtilityWidgetKit.Header(context, ink, AppKey, Loc.T(L.WidgetsUtility.LodestoneName), accent,
+        var top = WidgetChrome.Header(context, ink, AppKey, Loc.T(L.WidgetsUtility.LodestoneName), accent,
             Loc.T(CategoryLabels[slot]), ink.Secondary);
         var body = new Rect(new Vector2(content.Min.X, top + WidgetMetrics.RowGap * scale), content.Max);
         var entry = entries[slot];
@@ -141,12 +137,12 @@ internal sealed class LodestoneWidget : IHomeWidget
                 caption = Caption(ref captions[slot * MaxRows + index], item, category);
             }
 
-            var titleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Headline);
-            var captionHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Caption);
+            var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Headline);
+            var captionHeight = WidgetText.SpacedLineHeight(WidgetType.Caption);
             var textTop = rowRect.Center.Y - (titleHeight + captionHeight) * 0.5f;
-            UtilityWidgetKit.DrawFitted(drawList, new Vector2(rowRect.Min.X, textTop), title, ink.Primary,
+            WidgetText.Draw(drawList, new Vector2(rowRect.Min.X, textTop), title, ink.Primary,
                 WidgetType.Headline, rowRect.Width);
-            UtilityWidgetKit.DrawFitted(drawList, new Vector2(rowRect.Min.X, textTop + titleHeight), caption,
+            WidgetText.Draw(drawList, new Vector2(rowRect.Min.X, textTop + titleHeight), caption,
                 ink.Secondary, WidgetType.Caption, rowRect.Width);
             if (index < rows - 1)
             {
@@ -166,13 +162,13 @@ internal sealed class LodestoneWidget : IHomeWidget
         var (uv0, uv1) = ImageFit.Cover(texture.Size.X, texture.Size.Y, hero.Width, hero.Height);
         Squircle.FillImage(drawList, hero.Min, hero.Max, radius, texture.Handle, ImGui.GetColorU32(ink.ImageTint),
             uv0, uv1);
-        var titleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Headline);
+        var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Headline);
         var inset = WidgetMetrics.Gutter * scale;
-        var lines = UtilityWidgetKit.Clamp(item.Title, WidgetType.Headline, hero.Width - inset * 2f, 2);
+        var lines = WidgetText.Clamp(item.Title, WidgetType.Headline, hero.Width - inset * 2f, 2);
         var scrimTop = hero.Max.Y - lines.Length * titleHeight - inset * 2.5f;
         Squircle.FillVerticalGradient(drawList, new Vector2(hero.Min.X, scrimTop), hero.Max, radius,
             ImGui.GetColorU32(Black with { W = 0f }), ImGui.GetColorU32(ink.Fade(Black, ScrimAlpha)));
-        UtilityWidgetKit.DrawLines(drawList, lines,
+        WidgetText.Lines(drawList, lines,
             new Vector2(hero.Min.X + inset, hero.Max.Y - inset - lines.Length * titleHeight), ink.Fade(White),
             WidgetType.Headline, titleHeight);
     }
@@ -184,25 +180,23 @@ internal sealed class LodestoneWidget : IHomeWidget
         if (state is NewsState.Idle or NewsState.Loading)
         {
             var rows = Math.Clamp((int)(body.Height / (RowUnits * context.Scale)), 1, MaxRows);
-            UtilityWidgetKit.RedactedRows(context.DrawList, body, ink, rows, false, context.Scale);
+            WidgetChrome.RedactedRows(context, ink, body, rows, WidgetRowLead.None);
             return;
         }
 
         var line = state == NewsState.Failed ? L.WidgetsUtility.NewsFailed : L.WidgetsUtility.NewsEmpty;
-        UtilityWidgetKit.Message(context, ink, body, FontAwesomeIcon.Newspaper, accent, Loc.T(line), string.Empty);
+        WidgetChrome.Message(context, ink, body, FontAwesomeIcon.Newspaper, accent, Loc.T(line), string.Empty);
     }
 
-    private void Request(int slot, NewsCategory category, float delta)
+    private void Request(int slot, NewsCategory category)
     {
-        sinceRequest[slot] += delta;
         var entry = entries[slot];
         var waiting = entry is null || entry.State == NewsState.Idle;
-        if (!waiting && sinceRequest[slot] < RequestSeconds)
+        if (!requests[slot].Due(RequestMilliseconds) && !waiting)
         {
             return;
         }
 
-        sinceRequest[slot] = 0f;
         entries[slot] = news.Request(category, gameData.LodestoneLocale(), false);
     }
 

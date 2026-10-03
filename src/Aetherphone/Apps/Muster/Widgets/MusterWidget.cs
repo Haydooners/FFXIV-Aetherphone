@@ -16,8 +16,8 @@ namespace Aetherphone.Apps.Muster.Widgets;
 internal sealed class MusterWidget : IHomeWidget
 {
     private const string AppKey = MusterStore.AppId;
-    private const float RefreshSeconds = 2f;
-    private const float WatchSeconds = 1f;
+    private const int RefreshMilliseconds = 2000;
+    private const int WatchMilliseconds = 1000;
     private const int MaxEntries = 4;
     private const int MediumRows = 2;
     private const float IconDisc = 32f;
@@ -64,8 +64,8 @@ internal sealed class MusterWidget : IHomeWidget
     private readonly Dictionary<string, CachedText> subtitles = new(StringComparer.Ordinal);
     private readonly CachedText[] sampleSubtitles = new CachedText[2];
     private readonly object rsvpLock = new();
-    private float sinceRefresh = RefreshSeconds;
-    private float sinceWatch = WatchSeconds;
+    private WidgetRefresh refresh;
+    private WidgetRefresh watch;
     private MusterDto[]? seenGoing;
     private MusterDto? seenMine;
     private long sampleAnchor;
@@ -117,12 +117,12 @@ internal sealed class MusterWidget : IHomeWidget
         var signedIn = store.IsSignedIn;
         if (signedIn && !context.Preview && context.Opacity > 0f)
         {
-            Watch(context.Delta);
+            Watch();
         }
 
         if (signedIn)
         {
-            Refresh(context.Delta);
+            Refresh();
         }
 
         var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -133,7 +133,7 @@ internal sealed class MusterWidget : IHomeWidget
         if (!sample && !signedIn)
         {
             var top = WidgetChrome.Header(context, ink, AppKey, L.Apps.Muster, accent);
-            UtilityWidgetKit.Message(context, ink, new Rect(new Vector2(content.Min.X, top), content.Max),
+            WidgetChrome.Message(context, ink, new Rect(new Vector2(content.Min.X, top), content.Max),
                 FontAwesomeIcon.UserFriends, accent, Loc.T(L.WidgetsUtility.MusterSignIn), string.Empty);
             return;
         }
@@ -144,12 +144,12 @@ internal sealed class MusterWidget : IHomeWidget
             var area = new Rect(new Vector2(content.Min.X, top + WidgetMetrics.Gutter * context.Scale), content.Max);
             if (!store.Primed)
             {
-                UtilityWidgetKit.RedactedRows(context.DrawList, area, ink,
-                    context.Size == WidgetSize.Small ? 2 : MediumRows, context.Size != WidgetSize.Small, context.Scale);
+                WidgetChrome.RedactedRows(context, ink, area, context.Size == WidgetSize.Small ? 2 : MediumRows,
+                    context.Size == WidgetSize.Small ? WidgetRowLead.None : WidgetRowLead.Thumbnail);
                 return;
             }
 
-            UtilityWidgetKit.Message(context, ink, area, FontAwesomeIcon.UserFriends, accent,
+            WidgetChrome.Message(context, ink, area, FontAwesomeIcon.UserFriends, accent,
                 Loc.T(L.WidgetsUtility.NoMeetups), Loc.T(L.WidgetsUtility.NoMeetupsHint));
             return;
         }
@@ -175,9 +175,9 @@ internal sealed class MusterWidget : IHomeWidget
         if (started)
         {
             var live = Loc.T(L.Island.Live);
-            UtilityWidgetKit.DrawFitted(drawList, new Vector2(content.Min.X, top), live, ink.Accent(LiveColor),
+            WidgetText.Draw(drawList, new Vector2(content.Min.X, top), live, ink.Accent(LiveColor),
                 WidgetType.Title, content.Width);
-            top += UtilityWidgetKit.LineHeightOf(WidgetType.Title);
+            top += WidgetText.SpacedLineHeight(WidgetType.Title);
         }
         else
         {
@@ -187,16 +187,16 @@ internal sealed class MusterWidget : IHomeWidget
         }
 
         var caption = Caption(ref captionText, row, started);
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(content.Min.X, top), caption, ink.Secondary,
+        WidgetText.Draw(drawList, new Vector2(content.Min.X, top), caption, ink.Secondary,
             WidgetType.Caption, content.Width);
 
-        var hostHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Caption);
-        var titleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Headline);
+        var hostHeight = WidgetText.SpacedLineHeight(WidgetType.Caption);
+        var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Headline);
         var hostTop = content.Max.Y - hostHeight;
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(content.Min.X, hostTop), row.Host, ink.Tertiary,
+        WidgetText.Draw(drawList, new Vector2(content.Min.X, hostTop), row.Host, ink.Tertiary,
             WidgetType.Caption, content.Width);
-        var titleLines = UtilityWidgetKit.Clamp(row.Title, WidgetType.Headline, content.Width, 1);
-        UtilityWidgetKit.DrawLines(drawList, titleLines, new Vector2(content.Min.X, hostTop - titleHeight),
+        var titleLines = WidgetText.Clamp(row.Title, WidgetType.Headline, content.Width, 1);
+        WidgetText.Lines(drawList, titleLines, new Vector2(content.Min.X, hostTop - titleHeight),
             ink.Primary, WidgetType.Headline, titleHeight);
     }
 
@@ -233,16 +233,16 @@ internal sealed class MusterWidget : IHomeWidget
 
             var textLeft = discCenter.X + disc * 0.5f + WidgetMetrics.Gutter * scale;
             var textWidth = buttonRect.Min.X - WidgetMetrics.Gutter * scale - textLeft;
-            var titleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Headline);
-            var subtitleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Caption);
+            var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Headline);
+            var subtitleHeight = WidgetText.SpacedLineHeight(WidgetType.Caption);
             var textTop = rowRect.Center.Y - (titleHeight + subtitleHeight) * 0.5f;
-            UtilityWidgetKit.DrawFitted(drawList, new Vector2(textLeft, textTop), row.Title, ink.Primary,
+            WidgetText.Draw(drawList, new Vector2(textLeft, textTop), row.Title, ink.Primary,
                 WidgetType.Headline, textWidth);
             var started = nowUnix >= row.StartsAt;
             var subtitle = sample
                 ? Subtitle(ref sampleSubtitles[Math.Clamp(row.Sample, 0, 1)], row, nowUnix)
                 : Subtitle(ref SubtitleCache(row.Id), row, nowUnix);
-            UtilityWidgetKit.DrawFitted(drawList, new Vector2(textLeft, textTop + titleHeight), subtitle,
+            WidgetText.Draw(drawList, new Vector2(textLeft, textTop + titleHeight), subtitle,
                 started ? ink.Accent(LiveColor) : ink.Secondary, WidgetType.Caption, textWidth);
             DrawAction(context, ink, index, row, buttonRect, accent);
             if (index < count - 1)
@@ -259,8 +259,8 @@ internal sealed class MusterWidget : IHomeWidget
         if (row.Mine)
         {
             var label = WidgetText.Upper(L.Island.Hosting);
-            UtilityWidgetKit.Pill(context.DrawList, new Vector2(buttonRect.Max.X, buttonRect.Center.Y), label,
-                ink.Fill, ink.Accent(accent), context.Scale);
+            WidgetChrome.Pill(context.DrawList, buttonRect.Max.X, buttonRect.Center.Y, label, ink.Fill,
+                ink.Accent(accent), WidgetType.Eyebrow, context.Scale);
             return;
         }
 
@@ -307,15 +307,13 @@ internal sealed class MusterWidget : IHomeWidget
         return store.IsGoing(row.Dto.Id);
     }
 
-    private void Watch(float delta)
+    private void Watch()
     {
-        sinceWatch += delta;
-        if (sinceWatch < WatchSeconds)
+        if (!watch.Due(WatchMilliseconds))
         {
             return;
         }
 
-        sinceWatch = 0f;
         store.NoteWatched();
         if (!store.DirectoryLoadedOnce && !store.DirectoryLoading && !store.DirectoryFailed)
         {
@@ -323,17 +321,15 @@ internal sealed class MusterWidget : IHomeWidget
         }
     }
 
-    private void Refresh(float delta)
+    private void Refresh()
     {
-        sinceRefresh += delta;
         var going = store.GoingMusters;
         var mine = store.Mine;
-        if (sinceRefresh < RefreshSeconds && ReferenceEquals(going, seenGoing) && ReferenceEquals(mine, seenMine))
+        if (!refresh.Due(RefreshMilliseconds) && ReferenceEquals(going, seenGoing) && ReferenceEquals(mine, seenMine))
         {
             return;
         }
 
-        sinceRefresh = 0f;
         seenGoing = going;
         seenMine = mine;
         var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

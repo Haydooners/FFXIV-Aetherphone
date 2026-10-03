@@ -155,7 +155,7 @@ internal sealed class TimerWidget : IHomeWidget
 
         var textWidth = MathF.Max(1f, ringCenter.X - radius - WidgetMetrics.Gutter * scale - content.Min.X);
         var digits = Digits(phase, remaining);
-        var hero = TimeWidgetParts.Fitted(digits, WidgetType.DisplayCompact, textWidth, true);
+        var hero = WidgetText.FitStyle(digits, WidgetType.DisplayCompact, textWidth, true);
         var heroHeight = Typography.Measure(digits, hero).Y;
         var captionHeight = Typography.Measure("A", WidgetType.Caption).Y;
         var stackTop = (bodyTop + bodyBottom) * 0.5f - (heroHeight + captionHeight) * 0.5f;
@@ -182,7 +182,7 @@ internal sealed class TimerWidget : IHomeWidget
     {
         var scale = context.Scale;
         var drawList = context.DrawList;
-        var thickness = TimeWidgetParts.RingThickness(radius, scale);
+        var thickness = WidgetChrome.RingThickness(radius, scale);
         var ringRadius = radius - thickness * 0.5f;
         var fraction = phase switch
         {
@@ -190,7 +190,7 @@ internal sealed class TimerWidget : IHomeWidget
             TimerPhase.Done => 1f,
             _ => 0f,
         };
-        TimeWidgetParts.Ring(drawList, ink, center, ringRadius, thickness, fraction, accent);
+        WidgetChrome.Ring(drawList, ink, center, ringRadius, thickness, fraction, accent);
         if (!withText)
         {
             return;
@@ -198,12 +198,12 @@ internal sealed class TimerWidget : IHomeWidget
 
         var innerWidth = (ringRadius - thickness) * RingTextWidth;
         var digits = Digits(phase, remaining);
-        var style = TimeWidgetParts.Fitted(digits, WidgetType.Title, innerWidth, true);
+        var style = WidgetText.FitStyle(digits, WidgetType.Title, innerWidth, true);
         var digitsHeight = Typography.Measure(digits, style).Y;
         var caption = Caption(phase, endUtc, false);
         var captionHeight = Typography.Measure(caption, WidgetType.Caption).Y;
         var top = center.Y - (digitsHeight + RingCaptionGap * scale + captionHeight) * 0.5f;
-        TimeWidgetParts.TabularCentered(drawList, new Vector2(center.X, top + digitsHeight * 0.5f), digits,
+        WidgetText.TabularCentered(drawList, new Vector2(center.X, top + digitsHeight * 0.5f), digits,
             phase == TimerPhase.Idle ? ink.Secondary : ink.Primary, style, innerWidth);
         var fitted = WidgetText.Fit(caption, innerWidth, WidgetType.Caption, out var captionScale);
         var captionWidth = Typography.Measure(fitted, captionScale, WidgetType.Caption.Weight).X;

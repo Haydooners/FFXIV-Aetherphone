@@ -31,4 +31,11 @@ internal static class WidgetMetrics
         return new Rect(new Vector2(bounds.Min.X + inset, bounds.Min.Y + inset),
             new Vector2(bounds.Max.X - inset, bounds.Max.Y - inset));
     }
+
+    public static Rect Below(in WidgetContext context, float top)
+    {
+        var content = Content(context);
+        return new Rect(new Vector2(content.Min.X, MathF.Min(MathF.Max(top, content.Min.Y), content.Max.Y)),
+            content.Max);
+    }
 }

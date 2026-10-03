@@ -13,14 +13,24 @@ internal static class WidgetControls
     private const float HoverBoost = 1.5f;
     private const float LinkHoverAlpha = 0.55f;
     private const float LinkPressAlpha = 0.9f;
+    private const float DisabledFillAlpha = 0.5f;
 
     public static bool Button(in WidgetContext context, in WidgetInk ink, int controlId, Vector2 center,
-        float diameterUnits, FontAwesomeIcon icon, Vector4 accent = default)
+        float diameterUnits, FontAwesomeIcon icon, Vector4 accent = default, bool enabled = true)
     {
         var key = WidgetHits.Key(context, controlId);
         var radius = Math.Clamp(diameterUnits, WidgetMetrics.ControlSmall, WidgetMetrics.ControlLarge) * 0.5f *
                      context.Scale;
         var hitRect = new Rect(center - new Vector2(radius), center + new Vector2(radius));
+        if (!enabled)
+        {
+            Inert(context, key, hitRect);
+            context.DrawList.AddCircleFilled(center, radius,
+                ImGui.GetColorU32(ink.Fill with { W = ink.Fill.W * DisabledFillAlpha }), 40);
+            ProgressRing.CenterIcon(context.DrawList, center, icon, ink.Tertiary, radius * 2f * GlyphFraction);
+            return false;
+        }
+
         var fired = Interact(context, key, hitRect, out var hovered);
         var drawRadius = radius * WidgetHits.PressScale(key);
         var prominent = accent.W > 0f;
@@ -29,6 +39,26 @@ internal static class WidgetControls
         ProgressRing.CenterIcon(context.DrawList, center, icon, prominent ? ink.OnAccent : ink.Primary,
             drawRadius * 2f * GlyphFraction);
         return fired;
+    }
+
+    public static bool Pressable(in WidgetContext context, int controlId, Rect rect, out bool hovered,
+        out float pressScale)
+    {
+        var key = WidgetHits.Key(context, controlId);
+        pressScale = WidgetHits.PressScale(key);
+        return Interact(context, key, rect, out hovered);
+    }
+
+    public static Rect Scaled(Rect rect, float factor)
+    {
+        if (factor == 1f)
+        {
+            return rect;
+        }
+
+        var center = rect.Center;
+        var half = rect.Size * 0.5f * factor;
+        return new Rect(center - half, center + half);
     }
 
     public static bool Button(in WidgetContext context, in WidgetInk ink, int controlId, Rect rect,
@@ -144,15 +174,13 @@ internal static class WidgetControls
     private static Vector4 Hovered(Vector4 fill, bool hovered) =>
         hovered ? fill with { W = MathF.Min(1f, fill.W * HoverBoost) } : fill;
 
-    private static Rect Scaled(Rect rect, float factor)
+    private static void Inert(in WidgetContext context, int key, Rect hitRect)
     {
-        if (factor == 1f)
+        if (!context.Interactive)
         {
-            return rect;
+            return;
         }
 
-        var center = rect.Center;
-        var half = rect.Size * 0.5f * factor;
-        return new Rect(center - half, center + half);
+        WidgetHits.Register(key, hitRect);
     }
 }

@@ -14,7 +14,7 @@ namespace Aetherphone.Apps.Casino.Widgets;
 internal sealed class DailySpinWidget : IHomeWidget
 {
     private const string AppKey = "casino";
-    private const float FreshSeconds = 5f;
+    private const int FreshMilliseconds = 5000;
     private const float ButtonUnits = 30f;
     private const float BarUnits = 5f;
     private const long DaySeconds = 86_400;
@@ -23,7 +23,7 @@ internal sealed class DailySpinWidget : IHomeWidget
 
     private readonly CasinoSpinStore spin;
     private readonly AethernetSession session;
-    private float sinceFresh = FreshSeconds;
+    private WidgetRefresh fresh;
     private CachedText countdownText;
     private CachedText awardText;
 
@@ -47,7 +47,7 @@ internal sealed class DailySpinWidget : IHomeWidget
         var signedIn = session.IsSignedIn;
         if (signedIn && !context.Preview)
         {
-            Freshen(context.Delta);
+            Freshen();
         }
 
         WidgetChrome.Container(context);
@@ -67,7 +67,7 @@ internal sealed class DailySpinWidget : IHomeWidget
 
         if (!signedIn)
         {
-            UtilityWidgetKit.Message(context, ink, body, FontAwesomeIcon.Gift, accent,
+            WidgetChrome.Message(context, ink, body, FontAwesomeIcon.Gift, accent,
                 Loc.T(L.WidgetsUtility.CasinoSignIn), string.Empty);
             return;
         }
@@ -82,7 +82,7 @@ internal sealed class DailySpinWidget : IHomeWidget
                     DateTimeOffset.UtcNow.ToUnixTimeSeconds(), DailySpinStatus.AwardOf(answer));
                 return;
             case DailySpinClaim.Denied:
-                UtilityWidgetKit.Message(context, ink, body, FontAwesomeIcon.Gift, accent,
+                WidgetChrome.Message(context, ink, body, FontAwesomeIcon.Gift, accent,
                     Loc.T(L.WidgetsUtility.SpinUnavailable), string.Empty);
                 return;
             default:
@@ -99,9 +99,9 @@ internal sealed class DailySpinWidget : IHomeWidget
     {
         var drawList = context.DrawList;
         var scale = context.Scale;
-        var titleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Title);
-        var lines = UtilityWidgetKit.Clamp(Loc.T(L.WidgetsUtility.SpinReady), WidgetType.Title, body.Width, 2);
-        UtilityWidgetKit.DrawLines(drawList, lines, body.Min, ink.Primary, WidgetType.Title, titleHeight);
+        var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Title);
+        var lines = WidgetText.Clamp(Loc.T(L.WidgetsUtility.SpinReady), WidgetType.Title, body.Width, 2);
+        WidgetText.Lines(drawList, lines, body.Min, ink.Primary, WidgetType.Title, titleHeight);
         var buttonHeight = ButtonUnits * scale;
         var button = new Rect(new Vector2(body.Min.X, body.Max.Y - buttonHeight), body.Max);
         var claiming = spin.Claiming;
@@ -145,21 +145,19 @@ internal sealed class DailySpinWidget : IHomeWidget
         var awardLine = awardText.IsCurrent(award)
             ? awardText.Value
             : awardText.Store(award, Loc.T(L.WidgetsUtility.CoinsWon, NumberText.Group(award)));
-        var lineHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Headline);
-        UtilityWidgetKit.DrawFitted(drawList,
+        var lineHeight = WidgetText.SpacedLineHeight(WidgetType.Headline);
+        WidgetText.Draw(drawList,
             new Vector2(body.Min.X, barRect.Min.Y - WidgetMetrics.Gutter * scale - lineHeight), awardLine,
             ink.Accent(accent), WidgetType.Headline, body.Width);
     }
 
-    private void Freshen(float delta)
+    private void Freshen()
     {
-        sinceFresh += delta;
-        if (sinceFresh < FreshSeconds)
+        if (!fresh.Due(FreshMilliseconds))
         {
             return;
         }
 
-        sinceFresh = 0f;
         spin.EnsureFresh();
     }
 

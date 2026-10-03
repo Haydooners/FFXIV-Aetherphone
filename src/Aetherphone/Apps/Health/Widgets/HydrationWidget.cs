@@ -33,11 +33,11 @@ internal sealed class HydrationWidget : IHomeWidget
 
     private sealed class Glass
     {
-        public EasedValue Ring;
+        public WidgetEase Ring;
     }
 
     private readonly HealthTracker health;
-    private readonly InstanceStates<Glass> glasses = new();
+    private readonly WidgetStates<Glass> glasses = new();
     private CachedText countText;
     private CachedText volumeText;
     private CachedText drinksText;
@@ -88,7 +88,7 @@ internal sealed class HydrationWidget : IHomeWidget
         var sample = !tracking && context.Preview;
         if (!tracking && !sample)
         {
-            WidgetMessage.Draw(context, ink.Primary, ink.Secondary, Loc.T(L.WidgetsLife.HydrationUnavailable),
+            WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, headerBottom), Loc.T(L.WidgetsLife.HydrationUnavailable),
                 string.Empty);
             return;
         }
@@ -191,7 +191,7 @@ internal sealed class HydrationWidget : IHomeWidget
     {
         var thickness = radius * RingThicknessFactor;
         var track = ink.KeepsOwnColors || ink.Mode == WidgetMode.Dark ? water with { W = water.W * 0.22f } : ink.Fill;
-        WidgetRings.Draw(context.DrawList, center, radius - thickness * 0.5f, thickness, fraction, water, track);
+        WidgetChrome.Ring(context.DrawList, center, radius - thickness * 0.5f, thickness, fraction, water, track);
         var key = drinks * 1_000L + goal;
         var text = countText.IsCurrent(key)
             ? countText.Value

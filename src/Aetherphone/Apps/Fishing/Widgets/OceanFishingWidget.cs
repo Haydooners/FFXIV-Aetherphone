@@ -41,7 +41,7 @@ internal sealed class OceanFishingWidget : IHomeWidget
         new OceanVoyageSlot[VoyageCount], new OceanVoyageSlot[VoyageCount],
     };
 
-    private readonly RefreshGate[] gates = new RefreshGate[RouteCount];
+    private readonly WidgetRefresh[] gates = new WidgetRefresh[RouteCount];
     private readonly CachedText[] heroTexts = new CachedText[RouteCount];
     private readonly CachedText[] detailTexts = new CachedText[RouteCount];
     private readonly CachedText[] clockTexts = new CachedText[RouteCount * VoyageCount];
@@ -103,8 +103,8 @@ internal sealed class OceanFishingWidget : IHomeWidget
         WidgetText.Tabular(drawList, new Vector2(content.Min.X, headerBottom + WidgetMetrics.Gutter * scale * 0.5f),
             hero, next.BoardingNow ? ink.Accent(FishingAccent) : ink.Primary, heroStyle);
 
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
-        var headlineHeight = AdventureWidgetArt.LineHeight(WidgetType.Headline);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
+        var headlineHeight = WidgetText.LineHeight(WidgetType.Headline);
         var detailTop = content.Max.Y - captionHeight;
         var nameTop = detailTop - WidgetMetrics.RowGap * scale - headlineHeight;
         WidgetText.Draw(drawList, new Vector2(content.Min.X, nameTop), plan.RouteName, ink.Primary,
@@ -128,9 +128,9 @@ internal sealed class OceanFishingWidget : IHomeWidget
         var slots = voyages[routeIndex];
         if (slots[0].BoardingNow)
         {
-            var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
+            var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
             var top = content.Min.Y + (headerBottom - content.Min.Y - captionHeight) * 0.5f;
-            AdventureWidgetArt.RightAligned(context.DrawList, content.Max.X, top,
+            WidgetText.DrawRight(context.DrawList, content.Max.X, top,
                 WidgetText.Upper(L.Fishing.NowBoarding), ink.Accent(FishingAccent), WidgetType.Caption);
         }
 
@@ -162,14 +162,14 @@ internal sealed class OceanFishingWidget : IHomeWidget
             ? clockTexts[cacheIndex].Value
             : clockTexts[cacheIndex].Store(clockKey, TimeText.Clock(local));
         var relative = Relative(cacheIndex, slot, utcNow);
-        var bodyHeight = AdventureWidgetArt.LineHeight(WidgetType.Body);
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
+        var bodyHeight = WidgetText.LineHeight(WidgetType.Body);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         var blockTop = row.Center.Y - (bodyHeight + WidgetMetrics.RowGap * scale + captionHeight) * 0.5f;
         var subTop = blockTop + bodyHeight + WidgetMetrics.RowGap * scale;
-        var clockWidth = AdventureWidgetArt.TabularRight(drawList, row.Max.X, blockTop, clock, ink.Primary,
+        var clockWidth = WidgetText.TabularRight(drawList, row.Max.X, blockTop, clock, ink.Primary,
             WidgetType.Body);
         var relativeWidth = Typography.Measure(relative, WidgetType.Caption).X;
-        AdventureWidgetArt.RightAligned(drawList, row.Max.X, subTop, relative,
+        WidgetText.DrawRight(drawList, row.Max.X, subTop, relative,
             slot.BoardingNow ? ink.Accent(FishingAccent) : ink.Secondary, WidgetType.Caption);
 
         var textLeft = row.Min.X + badge + gutter;

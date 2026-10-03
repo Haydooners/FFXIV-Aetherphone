@@ -27,7 +27,7 @@ internal sealed class HousingLotteryWidget : IHomeWidget
     private readonly CachedText[] plotTexts = new CachedText[WatchedRows];
     private readonly CachedText[] placeTexts = new CachedText[WatchedRows];
     private readonly CachedText[] entryTexts = new CachedText[WatchedRows];
-    private RefreshGate refresh;
+    private WidgetRefresh refresh;
     private bool started;
     private bool known;
     private HousingLotteryPhase phase;
@@ -90,7 +90,7 @@ internal sealed class HousingLotteryWidget : IHomeWidget
         if (!known && !sample)
         {
             var top = WidgetChrome.Header(context, ink, AppId, L.Apps.Housing, HousingAccent);
-            AdventureWidgetArt.Message(context, ink, top, FontAwesomeIcon.Home, Loc.T(L.WidgetsAdventure.NoLottery));
+            WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, top), FontAwesomeIcon.Home, default, Loc.T(L.WidgetsAdventure.NoLottery), string.Empty);
             return;
         }
 
@@ -127,8 +127,8 @@ internal sealed class HousingLotteryWidget : IHomeWidget
         WidgetText.Tabular(drawList, new Vector2(column.Min.X, headerBottom + WidgetMetrics.Gutter * scale * 0.5f), hero,
             ink.Primary, fitted);
 
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
-        var bodyHeight = AdventureWidgetArt.LineHeight(WidgetType.Body);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
+        var bodyHeight = WidgetText.LineHeight(WidgetType.Body);
         var locationTop = column.Max.Y - captionHeight;
         WidgetText.Draw(drawList, new Vector2(column.Min.X, locationTop), Location(sample), ink.Secondary,
             WidgetType.Caption, column.Width);
@@ -160,7 +160,7 @@ internal sealed class HousingLotteryWidget : IHomeWidget
         var count = sample ? WidgetSamples.HousingPlots.Length : Math.Min(watched.Count, WatchedRows);
         if (count == 0)
         {
-            AdventureWidgetArt.Wrapped(drawList, body.Min, Loc.T(L.WidgetsAdventure.NoWatched), ink.Tertiary,
+            WidgetText.Wrapped(drawList, body.Min, Loc.T(L.WidgetsAdventure.NoWatched), ink.Tertiary,
                 WidgetType.Caption, body.Width, 4);
             return;
         }
@@ -190,8 +190,8 @@ internal sealed class HousingLotteryWidget : IHomeWidget
         var drawList = context.DrawList;
         var scale = context.Scale;
         var gutter = WidgetMetrics.Gutter * scale;
-        var headlineHeight = AdventureWidgetArt.LineHeight(WidgetType.Headline);
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
+        var headlineHeight = WidgetText.LineHeight(WidgetType.Headline);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         var gap = WidgetMetrics.RowGap * scale;
         var blockTop = row.Center.Y - (headlineHeight + gap + captionHeight) * 0.5f;
         var dot = DotUnits * scale;
@@ -207,7 +207,7 @@ internal sealed class HousingLotteryWidget : IHomeWidget
         }
 
         var entriesWidth = entriesText.Length > 0
-            ? AdventureWidgetArt.TabularRight(drawList, row.Max.X, blockTop, entriesText, ink.Secondary,
+            ? WidgetText.TabularRight(drawList, row.Max.X, blockTop, entriesText, ink.Secondary,
                 WidgetType.Body)
             : 0f;
         var key = district * 100000L + ward * 100L + plot;

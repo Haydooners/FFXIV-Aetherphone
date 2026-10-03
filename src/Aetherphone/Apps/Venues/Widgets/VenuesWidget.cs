@@ -17,8 +17,8 @@ namespace Aetherphone.Apps.Venues.Widgets;
 internal sealed class VenuesWidget : IHomeWidget
 {
     private const string AppKey = "venues";
-    private const float RefreshSeconds = 15f;
-    private const float FetchSeconds = 30f;
+    private const int RefreshMilliseconds = 15000;
+    private const int FetchMilliseconds = 30000;
     private const int MaxRows = 6;
     private const float ThumbUnits = 44f;
     private const float RowUnits = 54f;
@@ -33,8 +33,8 @@ internal sealed class VenuesWidget : IHomeWidget
     private readonly List<VenueEvent> live = new();
     private readonly Dictionary<string, CachedText> subtitles = new(StringComparer.Ordinal);
     private readonly LiveComparer liveOrder = new();
-    private float sinceRefresh = RefreshSeconds;
-    private float sinceFetch = FetchSeconds;
+    private WidgetRefresh refresh;
+    private WidgetRefresh fetch;
     private int seenVersion = -1;
     private VenueEvent? nextOpening;
     private CachedText countText;
@@ -62,10 +62,10 @@ internal sealed class VenuesWidget : IHomeWidget
     {
         if (!context.Preview && context.Opacity > 0f)
         {
-            Fetch(context.Delta);
+            Fetch();
         }
 
-        Refresh(context.Delta);
+        Refresh();
         WidgetChrome.Container(context);
         var ink = WidgetInk.From(context);
         var drawList = context.DrawList;
@@ -75,18 +75,18 @@ internal sealed class VenuesWidget : IHomeWidget
         var sample = context.Preview && live.Count == 0;
         var total = sample ? SampleCount : live.Count;
         var trailing = total > 0 ? WidgetText.Integer(ref countText, total) : string.Empty;
-        var top = UtilityWidgetKit.Header(context, ink, AppKey, Loc.T(L.Venues.LiveNowLabel), accent, trailing,
+        var top = WidgetChrome.Header(context, ink, AppKey, Loc.T(L.Venues.LiveNowLabel), accent, trailing,
             ink.Secondary);
         var body = new Rect(new Vector2(content.Min.X, top + WidgetMetrics.RowGap * scale), content.Max);
         if (total == 0)
         {
             if (venues.State is VenueState.Idle or VenueState.Loading && venues.Events.Count == 0)
             {
-                UtilityWidgetKit.RedactedRows(drawList, body, ink, Capacity(body, scale), true, scale);
+                WidgetChrome.RedactedRows(context, ink, body, Capacity(body, scale), WidgetRowLead.Thumbnail);
                 return;
             }
 
-            UtilityWidgetKit.Message(context, ink, body, FontAwesomeIcon.GlassCheers, accent,
+            WidgetChrome.Message(context, ink, body, FontAwesomeIcon.GlassCheers, accent,
                 Loc.T(L.WidgetsUtility.NoLiveVenues), NextOpening());
             return;
         }
@@ -162,17 +162,18 @@ internal sealed class VenuesWidget : IHomeWidget
     {
         var drawList = context.DrawList;
         var scale = context.Scale;
-        var pillWidth = UtilityWidgetKit.PillWidth(pill, scale);
+        var pillWidth = WidgetChrome.PillWidth(pill, WidgetType.Eyebrow, scale);
         var pillFill = confirmed ? ink.Accent(LiveColor) : ink.Fill;
         var pillText = confirmed ? ink.OnAccent : ink.Secondary;
-        UtilityWidgetKit.Pill(drawList, new Vector2(rowRect.Max.X, rowRect.Center.Y), pill, pillFill, pillText, scale);
+        WidgetChrome.Pill(drawList, rowRect.Max.X, rowRect.Center.Y, pill, pillFill, pillText, WidgetType.Eyebrow,
+            scale);
         var left = thumb.Max.X + WidgetMetrics.Gutter * scale;
         var width = rowRect.Max.X - pillWidth - WidgetMetrics.Gutter * scale - left;
-        var titleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Headline);
-        var subtitleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Caption);
+        var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Headline);
+        var subtitleHeight = WidgetText.SpacedLineHeight(WidgetType.Caption);
         var top = rowRect.Center.Y - (titleHeight + subtitleHeight) * 0.5f;
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(left, top), title, ink.Primary, WidgetType.Headline, width);
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(left, top + titleHeight), subtitle, ink.Secondary,
+        WidgetText.Draw(drawList, new Vector2(left, top), title, ink.Primary, WidgetType.Headline, width);
+        WidgetText.Draw(drawList, new Vector2(left, top + titleHeight), subtitle, ink.Secondary,
             WidgetType.Caption, width);
     }
 
@@ -186,27 +187,23 @@ internal sealed class VenuesWidget : IHomeWidget
     private static int Capacity(Rect body, float scale) =>
         Math.Clamp((int)(body.Height / (RowUnits * scale)), 1, MaxRows);
 
-    private void Fetch(float delta)
+    private void Fetch()
     {
-        sinceFetch += delta;
-        if (sinceFetch < FetchSeconds)
+        if (!fetch.Due(FetchMilliseconds))
         {
             return;
         }
 
-        sinceFetch = 0f;
         venues.EnsureFresh(false);
     }
 
-    private void Refresh(float delta)
+    private void Refresh()
     {
-        sinceRefresh += delta;
-        if (sinceRefresh < RefreshSeconds && seenVersion == venues.Version)
+        if (!refresh.Due(RefreshMilliseconds) && seenVersion == venues.Version)
         {
             return;
         }
 
-        sinceRefresh = 0f;
         seenVersion = venues.Version;
         live.Clear();
         nextOpening = null;

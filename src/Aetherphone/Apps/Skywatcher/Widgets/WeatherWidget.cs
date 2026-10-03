@@ -27,7 +27,7 @@ internal sealed class WeatherWidget : IHomeWidget
     private readonly List<WeatherWindow> forecast = new(ForecastWindows);
     private readonly CachedText[] whenLabels = new CachedText[StripColumns];
     private readonly CachedText[] untilLabels = new CachedText[ListRows];
-    private WidgetCadence cadence;
+    private WidgetRefresh cadence;
     private CachedText changeLine;
     private string zone = string.Empty;
     private bool sample;
@@ -261,7 +261,8 @@ internal sealed class WeatherWidget : IHomeWidget
         var detail = inWorld || context.Size == WidgetSize.Small
             ? string.Empty
             : Loc.T(L.WidgetsLife.WeatherUnavailableDetail);
-        WidgetMessage.Draw(context, weatherInk.Primary, weatherInk.Secondary, title, detail);
+        WidgetChrome.Message(context, WidgetMetrics.Below(context, content.Min.Y + radius * 2f + WidgetMetrics.Gutter * context.Scale), weatherInk.Primary,
+            weatherInk.Secondary, title, detail);
     }
 
     private string ZoneLabel() => zone.Length > 0 ? zone : Loc.T(L.Home.Eorzea);

@@ -39,13 +39,13 @@ internal sealed class WeatherWatchWidget : IHomeWidget
     private sealed class Watch
     {
         public readonly Slot[] Slots = { new(), new(), new() };
-        public WidgetCadence Cadence;
+        public WidgetRefresh Cadence;
         public string Config = string.Empty;
         public bool Sample;
     }
 
     private readonly WeatherService weather;
-    private readonly InstanceStates<Watch> watches = new();
+    private readonly WidgetStates<Watch> watches = new();
     private readonly List<WeatherWindow> scratch = new(ForecastWindows);
     private readonly WidgetOption[] options;
 

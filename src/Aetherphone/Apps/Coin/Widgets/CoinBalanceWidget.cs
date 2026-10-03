@@ -28,14 +28,15 @@ internal sealed class CoinBalanceWidget : IHomeWidget
     private sealed class Purse
     {
         public RollingValue Balance;
-        public EasedValue Bar;
+        public WidgetFrame BalanceFrame;
+        public WidgetEase Bar;
         public CachedText BalanceText;
     }
 
     private readonly CoinStore coins;
     private readonly AethernetSession session;
-    private readonly InstanceStates<Purse> purses = new();
-    private WidgetCadence freshCadence;
+    private readonly WidgetStates<Purse> purses = new();
+    private WidgetRefresh freshCadence;
     private CachedText todayText;
     private CachedText streakText;
     private bool checkInPending;
@@ -66,7 +67,7 @@ internal sealed class CoinBalanceWidget : IHomeWidget
         var sample = context.Preview && (!signedIn || wallet is null);
         if (!signedIn && !sample)
         {
-            WidgetMessage.Draw(context, ink.Primary, ink.Secondary, Loc.T(L.Coin.SignInTitle),
+            WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, headerBottom), Loc.T(L.Coin.SignInTitle),
                 context.Size == WidgetSize.Small ? string.Empty : Loc.T(L.Coin.SignInHint));
             return;
         }
@@ -85,7 +86,7 @@ internal sealed class CoinBalanceWidget : IHomeWidget
         var paused = !sample && wallet!.Paused;
         var streak = sample ? SampleStreak : wallet!.StreakDays;
         var purse = purses.For(context.InstanceKey);
-        purse.Balance.Update((int)Math.Clamp(balance, 0, int.MaxValue), context.Delta);
+        purse.Balance.Update((int)Math.Clamp(balance, 0, int.MaxValue), purse.BalanceFrame.Delta(context.Delta));
         var fraction = cap > 0 ? Math.Clamp(earned / (float)cap, 0f, 1f) : 0f;
         var barFraction = purse.Bar.Step(fraction, context.Delta, !context.Preview);
         if (context.Size == WidgetSize.Small)

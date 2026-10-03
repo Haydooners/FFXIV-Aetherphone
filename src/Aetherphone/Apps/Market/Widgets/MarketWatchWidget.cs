@@ -16,7 +16,7 @@ namespace Aetherphone.Apps.Market.Widgets;
 internal sealed class MarketWatchWidget : IHomeWidget
 {
     private const string AppKey = "market";
-    private const float RefreshSeconds = 2f;
+    private const int RefreshMilliseconds = 2000;
     private const int MaxRows = 7;
     private const int TextCacheLimit = 64;
     private const float IconUnits = 28f;
@@ -35,7 +35,7 @@ internal sealed class MarketWatchWidget : IHomeWidget
     private readonly List<MarketAlert> buffer = new();
     private readonly Dictionary<MarketAlert, RowText> texts = new();
     private readonly CachedText[] samplePrices = new CachedText[4];
-    private float sinceRefresh = RefreshSeconds;
+    private WidgetRefresh refresh;
     private int triggered;
     private CachedText trailingText;
 
@@ -55,7 +55,7 @@ internal sealed class MarketWatchWidget : IHomeWidget
 
     public void Draw(in WidgetContext context)
     {
-        Refresh(context.Delta);
+        Refresh();
         WidgetChrome.Container(context);
         var ink = WidgetInk.From(context);
         var drawList = context.DrawList;
@@ -66,13 +66,13 @@ internal sealed class MarketWatchWidget : IHomeWidget
         var sample = context.Preview && buffer.Count == 0;
         var shownTriggered = sample ? 1 : triggered;
         var trailing = shownTriggered > 0 ? Trailing(shownTriggered) : string.Empty;
-        var top = UtilityWidgetKit.Header(context, ink, AppKey, Loc.T(L.WidgetsUtility.MarketName), accentRaw,
+        var top = WidgetChrome.Header(context, ink, AppKey, Loc.T(L.WidgetsUtility.MarketName), accentRaw,
             trailing, accent);
         var body = new Rect(new Vector2(content.Min.X, top + WidgetMetrics.RowGap * scale), content.Max);
         var total = sample ? WidgetSamples.MarketItems.Length : buffer.Count;
         if (total == 0)
         {
-            UtilityWidgetKit.Message(context, ink, body, FontAwesomeIcon.Coins, accentRaw,
+            WidgetChrome.Message(context, ink, body, FontAwesomeIcon.Coins, accentRaw,
                 Loc.T(L.WidgetsUtility.NoAlerts), Loc.T(L.WidgetsUtility.NoAlertsHint));
             return;
         }
@@ -173,11 +173,11 @@ internal sealed class MarketWatchWidget : IHomeWidget
 
         var left = icon.Max.X + WidgetMetrics.Gutter * scale;
         var width = priceLeft - WidgetMetrics.Gutter * scale - left;
-        var titleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Headline);
-        var ruleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Caption);
+        var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Headline);
+        var ruleHeight = WidgetText.SpacedLineHeight(WidgetType.Caption);
         var top = rowRect.Center.Y - (titleHeight + ruleHeight) * 0.5f;
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(left, top), name, ink.Primary, WidgetType.Headline, width);
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(left, top + titleHeight), rule, ink.Secondary,
+        WidgetText.Draw(drawList, new Vector2(left, top), name, ink.Primary, WidgetType.Headline, width);
+        WidgetText.Draw(drawList, new Vector2(left, top + titleHeight), rule, ink.Secondary,
             WidgetType.Caption, width);
     }
 
@@ -194,15 +194,13 @@ internal sealed class MarketWatchWidget : IHomeWidget
         return new Rect(min, min + new Vector2(side, side));
     }
 
-    private void Refresh(float delta)
+    private void Refresh()
     {
-        sinceRefresh += delta;
-        if (sinceRefresh < RefreshSeconds)
+        if (!refresh.Due(RefreshMilliseconds))
         {
             return;
         }
 
-        sinceRefresh = 0f;
         alerts.CopyInto(buffer);
         buffer.Sort(AlertOrder);
         triggered = 0;

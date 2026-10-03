@@ -70,7 +70,7 @@ internal sealed class ChatsWidget : IHomeWidget
     private int seenArchived = -1;
     private float sinceCheck = RefreshSeconds;
     private float sinceRebuild;
-    private int frame = -1;
+    private WidgetFrame frame;
 
     public ChatsWidget(DirectMessagesStore store, Configuration configuration, AethernetSession session,
         RemoteImageCache images)
@@ -92,7 +92,7 @@ internal sealed class ChatsWidget : IHomeWidget
     public void Draw(in WidgetContext context)
     {
         var signedIn = session.IsSignedIn;
-        if (PeopleWidgetChrome.FirstThisFrame(ref frame))
+        if (frame.First())
         {
             Advance(context.Delta, signedIn);
         }
@@ -119,7 +119,7 @@ internal sealed class ChatsWidget : IHomeWidget
             content.Max);
         if (!signedIn && !sample)
         {
-            PeopleWidgetChrome.Message(context, ink, area, MessageAppId, Loc.T(L.WidgetsPeople.SignInHint),
+            WidgetChrome.Message(context, ink, area, MessageAppId, Loc.T(L.WidgetsPeople.SignInHint),
                 string.Empty);
             return;
         }
@@ -136,11 +136,11 @@ internal sealed class ChatsWidget : IHomeWidget
         {
             if (!store.ConversationsLoaded)
             {
-                PeopleWidgetChrome.Placeholder(context, ink, area, count);
+                WidgetChrome.RedactedRows(context, ink, area, count, WidgetRowLead.Avatar);
                 return;
             }
 
-            PeopleWidgetChrome.Message(context, ink, area, MessageAppId, Loc.T(L.WidgetsPeople.NoChats),
+            WidgetChrome.Message(context, ink, area, MessageAppId, Loc.T(L.WidgetsPeople.NoChats),
                 Loc.T(L.WidgetsPeople.NoChatsHint));
             return;
         }
@@ -234,7 +234,7 @@ internal sealed class ChatsWidget : IHomeWidget
             row.Muted, row.UnreadLabel.Length > 0);
         if (separator)
         {
-            PeopleWidgetChrome.Separator(context, ink, textLeft, area.Max.X, rowRect.Max.Y);
+            WidgetChrome.Separator(context, ink, textLeft, area.Max.X, rowRect.Max.Y);
         }
     }
 

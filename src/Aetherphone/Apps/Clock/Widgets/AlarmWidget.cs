@@ -211,7 +211,7 @@ internal sealed class AlarmWidget : IHomeWidget
         var moment = snoozed ? snoozeLocal : rows[0].Next;
         var label = snoozed ? SnoozedLabel() : LabelOf(rows[0]);
         var clock = TimeText.Clock(moment);
-        var hero = TimeWidgetParts.Fitted(clock, WidgetType.DisplayCompact, content.Width, true);
+        var hero = WidgetText.FitStyle(clock, WidgetType.DisplayCompact, content.Width, true);
         var heroHeight = Typography.Measure(clock, hero).Y;
         var labelHeight = Typography.Measure("A", WidgetType.Headline).Y;
         var whenHeight = Typography.Measure("A", WidgetType.Caption).Y;
@@ -262,7 +262,7 @@ internal sealed class AlarmWidget : IHomeWidget
             var top = listTop + index * rowHeight;
             if (index > 0)
             {
-                TimeWidgetParts.Separator(drawList, ink, content.Min.X, content.Max.X, top, scale);
+                WidgetChrome.Separator(context, ink, content.Min.X, content.Max.X, top);
             }
 
             DrawRow(context, ink, new Rect(new Vector2(content.Min.X, top), new Vector2(content.Max.X, top + rowHeight)),
@@ -316,7 +316,7 @@ internal sealed class AlarmWidget : IHomeWidget
         var titleTop = headerBottom + WidgetMetrics.Gutter * scale;
         var small = context.Size == WidgetSize.Small;
         var textWidth = small ? content.Width : content.Width * 0.5f;
-        var titleHeight = TimeWidgetParts.Wrapped(drawList, new Vector2(content.Min.X, titleTop), label, ink.Primary,
+        var titleHeight = WidgetText.Wrapped(drawList, new Vector2(content.Min.X, titleTop), label, ink.Primary,
             WidgetType.Title, textWidth, small ? 1 : 2);
         WidgetText.Draw(drawList, new Vector2(content.Min.X, titleTop + titleHeight + WidgetMetrics.RowGap * scale),
             TimeText.Clock(now), ink.Secondary, WidgetType.Caption, textWidth);
@@ -354,7 +354,7 @@ internal sealed class AlarmWidget : IHomeWidget
     private void DrawEmpty(in WidgetContext context, in WidgetInk ink, Rect area)
     {
         var anyAlarms = configuration.Alarms.Count > 0;
-        TimeWidgetParts.Empty(context, ink, area, FontAwesomeIcon.BellSlash,
+        WidgetChrome.Message(context, ink, area, FontAwesomeIcon.BellSlash, default,
             Loc.T(anyAlarms ? L.WidgetsTime.AlarmsOff : L.WidgetsTime.NoAlarms), Loc.T(L.WidgetsTime.NoAlarmsHint));
     }
 

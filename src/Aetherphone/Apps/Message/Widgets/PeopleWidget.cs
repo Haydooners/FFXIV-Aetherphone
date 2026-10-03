@@ -15,8 +15,8 @@ internal sealed class PeopleWidget : IHomeWidget
 {
     private const string MessageAppId = "message";
     private const string PersonKey = "person";
-    private const float RefreshSeconds = 3f;
-    private const float ForcedRefreshSeconds = 30f;
+    private const int RefreshMilliseconds = 3000;
+    private const long ForcedRefreshMilliseconds = 30000;
     private const int Capacity = 48;
     private const int Columns = 4;
     private const int MediumCount = 4;
@@ -63,9 +63,8 @@ internal sealed class PeopleWidget : IHomeWidget
     private int seenContactsVersion = -1;
     private int seenFavorites = -1;
     private int seenPinned = -1;
-    private float sinceCheck = RefreshSeconds;
-    private float sinceRebuild;
-    private int frame = -1;
+    private WidgetRefresh check;
+    private long rebuiltAt;
 
     public PeopleWidget(DirectMessagesStore store, ContactBook contacts, Configuration configuration,
         AethernetSession session, RemoteImageCache images)
@@ -112,11 +111,7 @@ internal sealed class PeopleWidget : IHomeWidget
 
     public void Draw(in WidgetContext context)
     {
-        if (PeopleWidgetChrome.FirstThisFrame(ref frame))
-        {
-            Advance(context.Delta, context.Preview);
-        }
-
+        Advance(context.Preview);
         WidgetChrome.Container(context);
         var ink = WidgetInk.From(context);
         var content = WidgetMetrics.Content(context);
@@ -124,7 +119,7 @@ internal sealed class PeopleWidget : IHomeWidget
         var sample = context.Preview && (!signedIn || people.Count == 0);
         if (!signedIn && !sample)
         {
-            PeopleWidgetChrome.Message(context, ink, content, MessageAppId, Loc.T(L.WidgetsPeople.SignInHint),
+            WidgetChrome.Message(context, ink, content, MessageAppId, Loc.T(L.WidgetsPeople.SignInHint),
                 string.Empty);
             return;
         }
@@ -137,7 +132,7 @@ internal sealed class PeopleWidget : IHomeWidget
                 return;
             }
 
-            PeopleWidgetChrome.Message(context, ink, content, MessageAppId, Loc.T(L.WidgetsPeople.NoPeople),
+            WidgetChrome.Message(context, ink, content, MessageAppId, Loc.T(L.WidgetsPeople.NoPeople),
                 context.Size == WidgetSize.Small ? string.Empty : Loc.T(L.WidgetsPeople.NoPeopleHint));
             return;
         }
@@ -160,16 +155,13 @@ internal sealed class PeopleWidget : IHomeWidget
         DrawGrid(context, ink, new Rect(new Vector2(content.Min.X, gridTop), content.Max), rows, sample);
     }
 
-    private void Advance(float delta, bool preview)
+    private void Advance(bool preview)
     {
-        sinceCheck += delta;
-        sinceRebuild += delta;
-        if (sinceCheck < RefreshSeconds)
+        if (!check.Due(RefreshMilliseconds))
         {
             return;
         }
 
-        sinceCheck = 0f;
         if (!session.IsSignedIn)
         {
             if (people.Count > 0)
@@ -190,7 +182,7 @@ internal sealed class PeopleWidget : IHomeWidget
                       || contacts.Version != seenContactsVersion
                       || configuration.MessageFavoriteContacts.Count != seenFavorites
                       || configuration.MessagePinnedChats.Count != seenPinned
-                      || sinceRebuild >= ForcedRefreshSeconds;
+                      || Environment.TickCount64 - rebuiltAt >= ForcedRefreshMilliseconds;
         if (changed)
         {
             Rebuild(conversations);
@@ -199,7 +191,7 @@ internal sealed class PeopleWidget : IHomeWidget
 
     private void Rebuild(ConversationDto[] conversations)
     {
-        sinceRebuild = 0f;
+        rebuiltAt = Environment.TickCount64;
         seenConversations = conversations;
         seenContactsVersion = contacts.Version;
         seenFavorites = configuration.MessageFavoriteContacts.Count;

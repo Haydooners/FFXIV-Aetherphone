@@ -143,7 +143,7 @@ internal sealed class ClockWidget : IHomeWidget
         var textLeft = faceCenter.X + faceRadius + WidgetMetrics.Gutter * 2f * scale;
         var textWidth = MathF.Max(1f, content.Max.X - textLeft);
         var clock = TimeText.Clock(reading.Moment);
-        var hero = TimeWidgetParts.Fitted(clock, WidgetType.DisplayCompact, textWidth, true);
+        var hero = WidgetText.FitStyle(clock, WidgetType.DisplayCompact, textWidth, true);
         var heroHeight = Typography.Measure(clock, hero).Y;
         var dateText = HeroDate(reading.Moment);
         var dateHeight = Typography.Measure(dateText, WidgetType.Body).Y;
@@ -165,7 +165,7 @@ internal sealed class ClockWidget : IHomeWidget
         for (var index = 0; index < visible; index++)
         {
             var top = listTop + index * rowHeight;
-            TimeWidgetParts.Separator(drawList, ink, content.Min.X, content.Max.X, top, scale);
+            WidgetChrome.Separator(context, ink, content.Min.X, content.Max.X, top);
             DrawRow(context, ink, new Rect(new Vector2(content.Min.X, top), new Vector2(content.Max.X, top + rowHeight)),
                 index, utcNow);
         }

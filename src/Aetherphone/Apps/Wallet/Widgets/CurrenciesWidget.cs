@@ -35,19 +35,15 @@ internal sealed class CurrenciesWidget : IHomeWidget
     private readonly CharacterWatch characterWatch;
     private readonly ActivityTracker activity;
     private readonly WalletEntry?[] tomestones = new WalletEntry?[TomestoneSlots];
-    private readonly EasedFraction[] tomestoneBars = new EasedFraction[TomestoneSlots * 2];
+    private readonly WidgetStates<Purse> purses = new();
     private readonly CachedText[] tomestoneAmounts = new CachedText[TomestoneSlots];
     private readonly CachedText[] tomestoneCaptions = new CachedText[TomestoneSlots];
     private WalletEntry? gil;
     private WalletSection[] sections = Array.Empty<WalletSection>();
     private WalletEntry[] entries = Array.Empty<WalletEntry>();
     private CachedText[] entryAmounts = Array.Empty<CachedText>();
-    private EasedFraction[] entryBars = Array.Empty<EasedFraction>();
     private ulong builtFor = ulong.MaxValue;
-    private RefreshGate refresh;
-    private RollingValue liveGil;
-    private RollingValue previewGil;
-    private CachedText gilText;
+    private WidgetRefresh refresh;
     private CachedText earnedText;
 
     public CurrenciesWidget(GameData gameData, CharacterWatch characterWatch, ActivityTracker activity)
@@ -84,8 +80,8 @@ internal sealed class CurrenciesWidget : IHomeWidget
         if (!loggedIn && !sample)
         {
             var top = WidgetChrome.Header(context, ink, AppId, L.WidgetsAdventure.CurrenciesName, WalletAccent);
-            AdventureWidgetArt.Message(context, ink, top, FontAwesomeIcon.UserCircle,
-                Loc.T(L.WidgetsAdventure.LogIn));
+            WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, top), FontAwesomeIcon.UserCircle, default,
+                Loc.T(L.WidgetsAdventure.LogIn), string.Empty);
             return;
         }
 
@@ -128,7 +124,6 @@ internal sealed class CurrenciesWidget : IHomeWidget
 
         entries = new WalletEntry[total];
         entryAmounts = new CachedText[total];
-        entryBars = new EasedFraction[total * 2];
         tomestones[0] = null;
         tomestones[1] = null;
         var cursor = 0;
@@ -215,8 +210,8 @@ internal sealed class CurrenciesWidget : IHomeWidget
         var earned = EarnedText(sample);
         if (earned.Length > 0)
         {
-            var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
-            AdventureWidgetArt.RightAligned(drawList, content.Max.X, heroTop + heroHeight - captionHeight * 1.2f, earned,
+            var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
+            WidgetText.DrawRight(drawList, content.Max.X, heroTop + heroHeight - captionHeight * 1.2f, earned,
                 ink.Secondary, WidgetType.Caption);
         }
 
@@ -232,19 +227,9 @@ internal sealed class CurrenciesWidget : IHomeWidget
     {
         var target = sample ? WidgetSamples.Gil : gil?.Amount ?? 0;
         var clamped = (int)Math.Clamp(target, 0, int.MaxValue);
-        int shown;
-        if (context.Preview)
-        {
-            previewGil.Update(clamped, context.Delta);
-            shown = previewGil.Display;
-        }
-        else
-        {
-            liveGil.Update(clamped, context.Delta);
-            shown = liveGil.Display;
-        }
-
-        var text = WidgetText.Number(ref gilText, shown);
+        var purse = purses.For(context);
+        purse.Gil.Update(clamped, purse.GilFrame.Delta(context.Delta));
+        var text = WidgetText.Number(ref purse.GilText, purse.Gil.Display);
         var width = WidgetText.TabularWidth(text, style);
         var fitted = width > maxWidth && width > 0f ? new TextStyle(style.Scale * maxWidth / width, style.Weight) : style;
         WidgetText.Tabular(context.DrawList, topLeft, text, ink.Primary, fitted);
@@ -264,7 +249,7 @@ internal sealed class CurrenciesWidget : IHomeWidget
             return;
         }
 
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         var left = drawn ? column.Min.X + icon + WidgetMetrics.RowGap * 2f * scale : column.Min.X;
         WidgetText.Draw(context.DrawList, new Vector2(left, bottom - icon * 0.5f - captionHeight * 0.5f), earned,
             ink.Secondary, WidgetType.Caption, MathF.Max(1f, column.Max.X - left));
@@ -282,8 +267,8 @@ internal sealed class CurrenciesWidget : IHomeWidget
         var scale = context.Scale;
         var gutter = WidgetMetrics.Gutter * scale;
         var icon = IconUnits * scale;
-        var headlineHeight = AdventureWidgetArt.LineHeight(WidgetType.Headline);
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
+        var headlineHeight = WidgetText.LineHeight(WidgetType.Headline);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         var bar = BarUnits * scale;
         var blockHeight = headlineHeight + WidgetMetrics.RowGap * 2f * scale + bar + WidgetMetrics.RowGap * scale +
                           captionHeight;
@@ -293,7 +278,7 @@ internal sealed class CurrenciesWidget : IHomeWidget
             new Vector2(row.Min.X + icon, top + headlineHeight * 0.5f + icon * 0.5f), 0f, ink);
         var amount = sample ? WidgetSamples.CurrencyAmount(slot) : entry.Amount;
         var amountText = WidgetText.Number(ref tomestoneAmounts[slot], amount);
-        var amountWidth = AdventureWidgetArt.TabularRight(drawList, row.Max.X, top, amountText, ink.Primary,
+        var amountWidth = WidgetText.TabularRight(drawList, row.Max.X, top, amountText, ink.Primary,
             WidgetType.Headline);
         var nameLeft = row.Min.X + icon + gutter;
         WidgetText.Draw(drawList, new Vector2(nameLeft, top), entry.Name, ink.Primary, WidgetType.Headline,
@@ -305,10 +290,10 @@ internal sealed class CurrenciesWidget : IHomeWidget
         var fraction = weekly
             ? weeklyCap > 0 ? weeklyAmount / (float)weeklyCap : 0f
             : entry.Cap > 0 ? amount / (float)entry.Cap : 0f;
-        var barIndex = slot + (context.Preview ? TomestoneSlots : 0);
         var barTop = top + headlineHeight + WidgetMetrics.RowGap * 2f * scale;
-        AdventureWidgetArt.Bar(drawList, new Rect(new Vector2(row.Min.X, barTop), new Vector2(row.Max.X, barTop + bar)),
-            tomestoneBars[barIndex].Step(fraction, context.Delta), ink.Fill, ink.Accent(WalletAccent));
+        WidgetChrome.Bar(drawList, new Rect(new Vector2(row.Min.X, barTop), new Vector2(row.Max.X, barTop + bar)),
+            purses.For(context).TomestoneBars[slot].Fraction(fraction, context.Delta, !context.Preview), ink.Fill,
+            ink.Accent(WalletAccent));
         var caption = Caption(slot, weekly, weeklyAmount, weeklyCap, amount, entry.Cap);
         WidgetText.Draw(drawList, new Vector2(row.Min.X, barTop + bar + WidgetMetrics.RowGap * scale), caption,
             ink.Secondary, WidgetType.Caption, row.Width);
@@ -331,8 +316,9 @@ internal sealed class CurrenciesWidget : IHomeWidget
         var columnWidth = (grid.Width - gutter * 2f) / GridColumns;
         var icon = GridIconUnits * scale;
         var bar = GridBarUnits * scale;
-        var bodyHeight = AdventureWidgetArt.LineHeight(WidgetType.Body);
+        var bodyHeight = WidgetText.LineHeight(WidgetType.Body);
         var visible = Math.Min(entries.Length, rows * GridColumns);
+        var bars = purses.For(context).EntryBars(entries.Length);
         for (var index = 0; index < visible; index++)
         {
             var entry = entries[index];
@@ -357,10 +343,9 @@ internal sealed class CurrenciesWidget : IHomeWidget
 
             var fraction = entry.Cap > 0 ? amount / (float)entry.Cap : 0f;
             var barTop = textTop + bodyHeight + WidgetMetrics.RowGap * scale;
-            var barIndex = index * 2 + (context.Preview ? 1 : 0);
-            AdventureWidgetArt.Bar(drawList,
+            WidgetChrome.Bar(drawList,
                 new Rect(new Vector2(textLeft, barTop), new Vector2(textRight, barTop + bar)),
-                entryBars[barIndex].Step(fraction, context.Delta), ink.Fill, ink.Accent(WalletAccent));
+                bars[index].Fraction(fraction, context.Delta, !context.Preview), ink.Fill, ink.Accent(WalletAccent));
         }
     }
 
@@ -399,5 +384,24 @@ internal sealed class CurrenciesWidget : IHomeWidget
 
     public void Dispose()
     {
+    }
+
+    private sealed class Purse
+    {
+        public readonly WidgetEase[] TomestoneBars = new WidgetEase[TomestoneSlots];
+        public RollingValue Gil;
+        public WidgetFrame GilFrame;
+        public CachedText GilText;
+        private WidgetEase[] entryBars = Array.Empty<WidgetEase>();
+
+        public WidgetEase[] EntryBars(int count)
+        {
+            if (entryBars.Length != count)
+            {
+                entryBars = new WidgetEase[count];
+            }
+
+            return entryBars;
+        }
     }
 }

@@ -16,7 +16,8 @@ internal sealed class RemindersWidget : IHomeWidget
 {
     private const string AppKey = "notes";
     private const string RemindersTab = "notes.tab.reminders";
-    private const float RefreshSeconds = 1f;
+    private const int RefreshMilliseconds = 1000;
+    private const float CheckRadius = 10f;
     private const double CompletionGraceSeconds = 1.4;
     private const float CompletionFillSeconds = 0.2f;
     private const float RowMinimumHeight = 30f;
@@ -51,7 +52,7 @@ internal sealed class RemindersWidget : IHomeWidget
     private readonly Dictionary<Guid, double> completedAt = new();
     private readonly Dictionary<Guid, CachedText> dueLabels = new();
     private readonly CachedText[] sampleDue = new CachedText[3];
-    private float sinceRefresh = RefreshSeconds;
+    private WidgetRefresh refresh;
     private int seenCount = -1;
     private int openCount;
     private int dueTodayCount;
@@ -98,7 +99,7 @@ internal sealed class RemindersWidget : IHomeWidget
 
     public void Draw(in WidgetContext context)
     {
-        Refresh(context.Delta);
+        Refresh();
         WidgetChrome.Container(context);
         var ink = WidgetInk.From(context);
         var sample = context.Preview && configuration.Reminders.Count == 0;
@@ -132,12 +133,12 @@ internal sealed class RemindersWidget : IHomeWidget
 
         var summary = sample ? source[0].Title : Summary(source);
         var summaryColor = !sample && overdueCount > 0 ? ink.Accent(OverdueColor) : ink.Secondary;
-        var summaryHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Caption);
-        var titleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Headline);
+        var summaryHeight = WidgetText.SpacedLineHeight(WidgetType.Caption);
+        var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Headline);
         var summaryTop = content.Max.Y - summaryHeight;
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(content.Min.X, summaryTop), summary, summaryColor,
+        WidgetText.Draw(drawList, new Vector2(content.Min.X, summaryTop), summary, summaryColor,
             WidgetType.Caption, content.Width);
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(content.Min.X, summaryTop - titleHeight),
+        WidgetText.Draw(drawList, new Vector2(content.Min.X, summaryTop - titleHeight),
             Loc.T(L.WidgetsUtility.RemindersName), accent, WidgetType.Headline, content.Width);
     }
 
@@ -148,23 +149,23 @@ internal sealed class RemindersWidget : IHomeWidget
         var content = WidgetMetrics.Content(context);
         var accentRaw = AppAccents.For(AppKey);
         var accent = ink.Accent(accentRaw);
-        var headerBottom = UtilityWidgetKit.Header(context, ink, AppKey, Loc.T(L.WidgetsUtility.RemindersName),
+        var headerBottom = WidgetChrome.Header(context, ink, AppKey, Loc.T(L.WidgetsUtility.RemindersName),
             accentRaw, open > 0 ? WidgetText.Integer(ref countText, open) : string.Empty, accent);
         var body = new Rect(new Vector2(content.Min.X, headerBottom + WidgetMetrics.Gutter * 0.5f * scale),
             content.Max);
         if (source.Count == 0)
         {
-            UtilityWidgetKit.Message(context, ink, body, FontAwesomeIcon.CheckCircle, accentRaw,
+            WidgetChrome.Message(context, ink, body, FontAwesomeIcon.CheckCircle, accentRaw,
                 Loc.T(L.WidgetsUtility.AllDone), Loc.T(L.WidgetsUtility.AllDoneHint));
             return;
         }
 
-        var titleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Body);
-        var dueHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Caption);
+        var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Body);
+        var dueHeight = WidgetText.SpacedLineHeight(WidgetType.Caption);
         var rowHeight = MathF.Max(RowMinimumHeight * scale, titleHeight + dueHeight);
         var capacity = Math.Clamp((int)(body.Height / rowHeight), 1, MaxRows);
         var count = Math.Min(capacity, source.Count);
-        var radius = UtilityWidgetKit.CheckRadius * scale;
+        var radius = CheckRadius * scale;
         var textLeft = body.Min.X + radius * 2f + WidgetMetrics.Gutter * scale;
         var now = ImGui.GetTime();
         var route = WidgetRoute.Tab(AppKey, RemindersTab);
@@ -178,7 +179,7 @@ internal sealed class RemindersWidget : IHomeWidget
             var circleCenter = new Vector2(body.Min.X + radius, rowRect.Center.Y);
             var hit = new Rect(circleCenter - new Vector2(radius * 1.6f), circleCenter + new Vector2(radius * 1.6f));
             var done = row.Item is { Done: true };
-            if (UtilityWidgetKit.Press(context, index * 2 + 1, hit, out var hovered, out var pressScale) &&
+            if (WidgetControls.Pressable(context, index * 2 + 1, hit, out var hovered, out var pressScale) &&
                 row.Item is { } item)
             {
                 Toggle(item, now);
@@ -187,7 +188,7 @@ internal sealed class RemindersWidget : IHomeWidget
 
             var fill = done ? Fill(row.Item!, now) : 0f;
             var circleRadius = radius * pressScale * (hovered ? 1.06f : 1f);
-            UtilityWidgetKit.CheckCircle(drawList, circleCenter, circleRadius, fill, accent, ink, scale);
+            WidgetChrome.CheckCircle(drawList, ink, circleCenter, circleRadius, fill, accentRaw, scale);
             DrawRowText(context, ink, row, textLeft, rowRect, titleHeight, dueHeight, done);
             if (index < count - 1)
             {
@@ -205,16 +206,16 @@ internal sealed class RemindersWidget : IHomeWidget
         var title = row.Title;
         if (row.Due is not { } due)
         {
-            UtilityWidgetKit.DrawFitted(drawList, new Vector2(left, rowRect.Center.Y - titleHeight * 0.5f), title,
+            WidgetText.Draw(drawList, new Vector2(left, rowRect.Center.Y - titleHeight * 0.5f), title,
                 done ? ink.Tertiary : ink.Primary, WidgetType.Body, width);
             return;
         }
 
         var top = rowRect.Center.Y - (titleHeight + dueHeight) * 0.5f;
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(left, top), title, done ? ink.Tertiary : ink.Primary,
+        WidgetText.Draw(drawList, new Vector2(left, top), title, done ? ink.Tertiary : ink.Primary,
             WidgetType.Body, width);
         var overdue = !done && due < DateTime.Now;
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(left, top + titleHeight), DueLabel(row, due),
+        WidgetText.Draw(drawList, new Vector2(left, top + titleHeight), DueLabel(row, due),
             overdue ? ink.Accent(OverdueColor) : ink.Secondary, WidgetType.Caption, width);
     }
 
@@ -232,7 +233,7 @@ internal sealed class RemindersWidget : IHomeWidget
         }
 
         configuration.Save();
-        sinceRefresh = RefreshSeconds;
+        refresh.Expire();
     }
 
     private float Fill(ReminderItem item, double now)
@@ -245,16 +246,14 @@ internal sealed class RemindersWidget : IHomeWidget
         return Math.Clamp((float)(now - at) / CompletionFillSeconds, 0f, 1f);
     }
 
-    private void Refresh(float delta)
+    private void Refresh()
     {
-        sinceRefresh += delta;
         var reminders = configuration.Reminders;
-        if (sinceRefresh < RefreshSeconds && seenCount == reminders.Count)
+        if (!refresh.Due(RefreshMilliseconds) && seenCount == reminders.Count)
         {
             return;
         }
 
-        sinceRefresh = 0f;
         seenCount = reminders.Count;
         rows.Clear();
         openCount = 0;

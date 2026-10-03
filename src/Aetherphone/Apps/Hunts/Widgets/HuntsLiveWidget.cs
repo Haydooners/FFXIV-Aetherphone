@@ -45,8 +45,8 @@ internal sealed class HuntsLiveWidget : IHomeWidget
     private int liveCount;
     private int openCount;
     private string namesLanguage = string.Empty;
-    private RefreshGate refresh;
-    private RefreshGate activate;
+    private WidgetRefresh refresh;
+    private WidgetRefresh activate;
     private CachedText eyebrowText;
     private string eyebrowSource = string.Empty;
     private CachedText openText;
@@ -98,27 +98,27 @@ internal sealed class HuntsLiveWidget : IHomeWidget
 
         if (!setUp)
         {
-            AdventureWidgetArt.Message(context, ink, headerBottom, FontAwesomeIcon.Crosshairs,
-                Loc.T(L.WidgetsAdventure.HuntsSetUp));
+            WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, headerBottom), FontAwesomeIcon.Crosshairs, default,
+                Loc.T(L.WidgetsAdventure.HuntsSetUp), string.Empty);
             return;
         }
 
         if (hunts.Failed && !hunts.Loaded)
         {
-            AdventureWidgetArt.Message(context, ink, headerBottom, FontAwesomeIcon.CloudDownloadAlt,
-                Loc.T(L.WidgetsAdventure.HuntsFailed));
+            WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, headerBottom), FontAwesomeIcon.CloudDownloadAlt, default,
+                Loc.T(L.WidgetsAdventure.HuntsFailed), string.Empty);
             return;
         }
 
         if (!hunts.Loaded)
         {
-            AdventureWidgetArt.Placeholder(context, ink, body, RowsFor(context, body));
+            WidgetChrome.RedactedRows(context, ink, body, RowsFor(context, body), WidgetRowLead.None);
             return;
         }
 
         if (liveCount == 0)
         {
-            AdventureWidgetArt.Message(context, ink, headerBottom, FontAwesomeIcon.Crosshairs,
+            WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, headerBottom), FontAwesomeIcon.Crosshairs, default,
                 Loc.T(L.WidgetsAdventure.NoneLive), OpenWindowsText());
             return;
         }
@@ -161,14 +161,14 @@ internal sealed class HuntsLiveWidget : IHomeWidget
         var drawList = context.DrawList;
         var scale = context.Scale;
         var gutter = WidgetMetrics.Gutter * scale;
-        var headlineHeight = AdventureWidgetArt.LineHeight(WidgetType.Headline);
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
+        var headlineHeight = WidgetText.LineHeight(WidgetType.Headline);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         var gap = WidgetMetrics.RowGap * scale;
         var blockTop = row.Center.Y - (headlineHeight + gap + captionHeight) * 0.5f;
         var badgeWidth = DrawRank(drawList, ink, rank, new Vector2(row.Min.X, row.Center.Y), scale);
         var textLeft = row.Min.X + badgeWidth + gutter;
         var agoWidth = ago.Length > 0
-            ? AdventureWidgetArt.TabularRight(drawList, row.Max.X, row.Center.Y - captionHeight * 0.5f, ago,
+            ? WidgetText.TabularRight(drawList, row.Max.X, row.Center.Y - captionHeight * 0.5f, ago,
                 ink.Secondary, WidgetType.Caption)
             : 0f;
         var textWidth = MathF.Max(1f, row.Max.X - agoWidth - gutter - textLeft);

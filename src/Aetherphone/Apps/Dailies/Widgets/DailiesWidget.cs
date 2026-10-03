@@ -48,8 +48,8 @@ internal sealed class DailiesWidget : IHomeWidget
     private readonly CachedText[] countTexts = new CachedText[2];
     private readonly CachedText[] heroTexts = new CachedText[2];
     private readonly CachedText[] tallyTexts = new CachedText[2];
-    private readonly EasedFraction[] rings = new EasedFraction[4];
-    private RefreshGate refresh;
+    private readonly WidgetStates<RingState> rings = new();
+    private WidgetRefresh refresh;
     private bool hasData;
 
     public DailiesWidget(Configuration configuration, GameData gameData)
@@ -111,8 +111,8 @@ internal sealed class DailiesWidget : IHomeWidget
         if (!loggedIn && !sample)
         {
             var top = Header(context, ink, cadence);
-            AdventureWidgetArt.Message(context, ink, top, FontAwesomeIcon.UserCircle,
-                Loc.T(L.WidgetsAdventure.LogIn));
+            WidgetChrome.Message(context, ink, WidgetMetrics.Below(context, top), FontAwesomeIcon.UserCircle, default,
+                Loc.T(L.WidgetsAdventure.LogIn), string.Empty);
             return;
         }
 
@@ -138,7 +138,7 @@ internal sealed class DailiesWidget : IHomeWidget
         var gutter = WidgetMetrics.Gutter * scale;
         var headerBottom = Header(context, ink, cadence);
         var resetText = ResetText(cadence, utcNow);
-        var captionHeight = AdventureWidgetArt.LineHeight(WidgetType.Caption);
+        var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         var captionTop = content.Max.Y - captionHeight;
         WidgetText.Draw(context.DrawList, new Vector2(content.Min.X, captionTop), resetText, ink.Secondary,
             WidgetType.Caption, content.Width);
@@ -189,8 +189,8 @@ internal sealed class DailiesWidget : IHomeWidget
             : heroTexts[heroIndex].IsCurrent(remaining)
                 ? heroTexts[heroIndex].Value
                 : heroTexts[heroIndex].Store(remaining, Loc.T(L.WidgetsAdventure.ToDo, remaining));
-        var titleHeight = AdventureWidgetArt.LineHeight(WidgetType.Title);
-        var tallyHeight = AdventureWidgetArt.LineHeight(WidgetType.Body);
+        var titleHeight = WidgetText.LineHeight(WidgetType.Title);
+        var tallyHeight = WidgetText.LineHeight(WidgetType.Body);
         var blockTop = ringCenter.Y - (titleHeight + WidgetMetrics.RowGap * scale + tallyHeight) * 0.5f;
         WidgetText.Draw(drawList, new Vector2(textLeft, blockTop), title, ink.Primary, WidgetType.Title, textWidth);
         var tallyKey = doneCount * 1000L + trackedCount;
@@ -215,9 +215,9 @@ internal sealed class DailiesWidget : IHomeWidget
         Rect content, float headerBottom)
     {
         var text = ResetText(cadence, utcNow);
-        var height = AdventureWidgetArt.LineHeight(WidgetType.Caption);
+        var height = WidgetText.LineHeight(WidgetType.Caption);
         var top = content.Min.Y + (headerBottom - content.Min.Y - height) * 0.5f;
-        AdventureWidgetArt.RightAligned(context.DrawList, content.Max.X, top, text, ink.Secondary, WidgetType.Caption);
+        WidgetText.DrawRight(context.DrawList, content.Max.X, top, text, ink.Secondary, WidgetType.Caption);
     }
 
     private void DrawRing(in WidgetContext context, in WidgetInk ink, DailyCadence cadence, bool sample,
@@ -225,10 +225,10 @@ internal sealed class DailiesWidget : IHomeWidget
     {
         CountProgress(cadence, sample, out var trackedCount, out var doneCount);
         var target = trackedCount == 0 ? 1f : doneCount / (float)trackedCount;
-        var ringIndex = CadenceIndex(cadence) + (context.Preview ? 2 : 0);
-        var fraction = rings[ringIndex].Step(target, context.Delta);
-        AdventureWidgetArt.Ring(context, ink, center, radius, fraction, DailiesAccent);
-        var inner = AdventureWidgetArt.RingInnerRadius(context, radius);
+        var fraction = rings.For(context).Fill.Fraction(target, context.Delta, !context.Preview);
+        WidgetChrome.Ring(context.DrawList, ink, center, radius, WidgetChrome.RingThickness(radius, context.Scale), fraction,
+            DailiesAccent);
+        var inner = radius - WidgetChrome.RingThickness(radius, context.Scale);
         var remaining = trackedCount - doneCount;
         if (remaining <= 0)
         {
@@ -303,22 +303,22 @@ internal sealed class DailiesWidget : IHomeWidget
                 ? valueTexts[itemIndex].Value
                 : valueTexts[itemIndex].Store(key,
                     string.Concat(progress.ToString(Loc.Culture), "/", goal.ToString(Loc.Culture)));
-            var height = AdventureWidgetArt.LineHeight(WidgetType.Caption);
-            var width = AdventureWidgetArt.TabularRight(drawList, row.Max.X, row.Center.Y - height * 0.5f, text,
+            var height = WidgetText.LineHeight(WidgetType.Caption);
+            var width = WidgetText.TabularRight(drawList, row.Max.X, row.Center.Y - height * 0.5f, text,
                 ink.Secondary, WidgetType.Caption);
             textRight = row.Max.X - width - gutter;
         }
         else
         {
             var mark = MarkUnits * scale;
-            AdventureWidgetArt.Mark(drawList, ink, new Vector2(row.Max.X - WidgetMetrics.ControlSmall * scale * 0.5f,
-                row.Center.Y), mark, isDone, item.Accent, scale);
+            WidgetChrome.CheckCircle(drawList, ink, new Vector2(row.Max.X - WidgetMetrics.ControlSmall * scale * 0.5f,
+                row.Center.Y), mark * 0.5f, isDone ? 1f : 0f, item.Accent, scale);
             textRight = row.Max.X - WidgetMetrics.ControlSmall * scale - gutter;
         }
 
         var textLeft = row.Min.X + badge + gutter;
         var name = Loc.T(item.Label);
-        var nameHeight = AdventureWidgetArt.LineHeight(WidgetType.Body);
+        var nameHeight = WidgetText.LineHeight(WidgetType.Body);
         WidgetText.Draw(drawList, new Vector2(textLeft, row.Center.Y - nameHeight * 0.5f), name,
             isDone ? ink.Secondary : ink.Primary, WidgetType.Body, MathF.Max(1f, textRight - textLeft));
     }
@@ -410,5 +410,10 @@ internal sealed class DailiesWidget : IHomeWidget
 
     public void Dispose()
     {
+    }
+
+    private sealed class RingState
+    {
+        public WidgetEase Fill;
     }
 }

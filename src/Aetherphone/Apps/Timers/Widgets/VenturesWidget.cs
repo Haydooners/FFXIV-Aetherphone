@@ -90,7 +90,7 @@ internal sealed class VenturesWidget : IHomeWidget
             content.Max);
         if (rowCount == 0)
         {
-            TimeWidgetParts.Unavailable(context, ink, body.Min.Y, Loc.T(L.WidgetsTime.VenturesUnavailable));
+            WidgetChrome.Message(context, ink, body, Loc.T(L.WidgetsTime.VenturesUnavailable), string.Empty);
             return;
         }
 
@@ -248,7 +248,7 @@ internal sealed class VenturesWidget : IHomeWidget
         }
 
         var text = WidgetText.Countdown(ref heroCountdown, nextCompleteUtc - utcNow);
-        var style = TimeWidgetParts.Fitted(text, WidgetType.DisplayCompact, body.Width, true);
+        var style = WidgetText.FitStyle(text, WidgetType.DisplayCompact, body.Width, true);
         var height = Typography.Measure(text, style).Y;
         WidgetText.Tabular(drawList, new Vector2(body.Min.X, labelTop - height), text, ink.Primary, style);
         WidgetText.Draw(drawList, new Vector2(body.Min.X, labelTop), Loc.T(L.WidgetsTime.NextVenture), ink.Primary,

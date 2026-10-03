@@ -16,7 +16,7 @@ internal sealed class ShortcutsWidget : IHomeWidget
 {
     private const string AppKey = "shortcuts";
     private const int MaxSlots = 8;
-    private const float RefreshSeconds = 1f;
+    private const int RefreshMilliseconds = 1000;
     private const float GlyphUnits = 20f;
     private const float RingUnits = 9f;
     private const float GradientShift = 0.12f;
@@ -55,13 +55,13 @@ internal sealed class ShortcutsWidget : IHomeWidget
         public string Config = string.Empty;
         public int Stamp = -1;
         public int Count;
-        public float Age = RefreshSeconds;
+        public WidgetRefresh Refresh;
     }
 
     private readonly ShortcutStore store;
     private readonly ShortcutRunner runner;
     private readonly WidgetOption[] options;
-    private readonly Dictionary<string, Slots> slotsByInstance = new(StringComparer.Ordinal);
+    private readonly WidgetStates<Slots> slotsByInstance = new();
     private readonly Dictionary<string, string> monograms = new(StringComparer.Ordinal);
     private int stamp;
 
@@ -93,7 +93,7 @@ internal sealed class ShortcutsWidget : IHomeWidget
             WidgetSize.Medium => 4,
             _ => MaxSlots,
         };
-        var slots = Resolve(context.InstanceKey, context.Config, context.Delta);
+        var slots = Resolve(context.InstanceKey, context.Config);
         var sample = slots.Count == 0 && context.Preview;
         var count = sample ? capacity : Math.Min(capacity, slots.Count);
         var ink = WidgetInk.From(context);
@@ -101,7 +101,7 @@ internal sealed class ShortcutsWidget : IHomeWidget
         if (count == 0)
         {
             WidgetChrome.Container(context);
-            UtilityWidgetKit.Message(context, ink, WidgetMetrics.Content(context), FontAwesomeIcon.Bolt,
+            WidgetChrome.Message(context, ink, WidgetMetrics.Content(context), FontAwesomeIcon.Bolt,
                 AppAccents.For(AppKey), Loc.T(L.WidgetsUtility.NoShortcuts), Loc.T(L.WidgetsUtility.NoShortcutsHint));
             return;
         }
@@ -144,13 +144,13 @@ internal sealed class ShortcutsWidget : IHomeWidget
             WidgetChrome.Container(context);
         }
 
-        var fired = UtilityWidgetKit.Press(context, 0, context.Bounds, out _, out var pressScale);
+        var fired = WidgetControls.Pressable(context, 0, context.Bounds, out _, out var pressScale);
         if (fired)
         {
             Activate(tile, run);
         }
 
-        var content = UtilityWidgetKit.Scaled(WidgetMetrics.Content(context), pressScale);
+        var content = WidgetControls.Scaled(WidgetMetrics.Content(context), pressScale);
         var textColor = colored ? ink.Fade(White) : ink.Primary;
         DrawFace(context, ink, content, tile, run, textColor, WidgetType.Title, 2);
     }
@@ -158,14 +158,14 @@ internal sealed class ShortcutsWidget : IHomeWidget
     private void DrawGridTile(in WidgetContext context, in WidgetInk ink, int index, Rect rect, in Tile tile,
         in ShortcutRunView run)
     {
-        var fired = UtilityWidgetKit.Press(context, index, rect, out var hovered, out var pressScale);
+        var fired = WidgetControls.Pressable(context, index, rect, out var hovered, out var pressScale);
         if (fired)
         {
             Activate(tile, run);
         }
 
         var drawList = context.DrawList;
-        var drawRect = UtilityWidgetKit.Scaled(rect, pressScale);
+        var drawRect = WidgetControls.Scaled(rect, pressScale);
         var radius = WidgetMetrics.InnerRadius(context);
         var colored = ink.Mode is WidgetMode.FullColor or WidgetMode.Dark;
         Vector4 top;
@@ -216,8 +216,8 @@ internal sealed class ShortcutsWidget : IHomeWidget
                 ImGui.GetColorU32(textColor), 1.5f * scale);
         }
 
-        var lineHeight = UtilityWidgetKit.LineHeightOf(nameStyle);
-        var lines = UtilityWidgetKit.Clamp(tile.Name, nameStyle, face.Width, maxLines);
+        var lineHeight = WidgetText.SpacedLineHeight(nameStyle);
+        var lines = WidgetText.Clamp(tile.Name, nameStyle, face.Width, maxLines);
         var available = (int)((face.Max.Y - face.Min.Y - glyph) / lineHeight);
         if (available <= 0)
         {
@@ -226,10 +226,10 @@ internal sealed class ShortcutsWidget : IHomeWidget
 
         if (lines.Length > available)
         {
-            lines = UtilityWidgetKit.Clamp(tile.Name, nameStyle, face.Width, available);
+            lines = WidgetText.Clamp(tile.Name, nameStyle, face.Width, available);
         }
 
-        UtilityWidgetKit.DrawLines(drawList, lines, new Vector2(face.Min.X, face.Max.Y - lines.Length * lineHeight),
+        WidgetText.Lines(drawList, lines, new Vector2(face.Min.X, face.Max.Y - lines.Length * lineHeight),
             textColor, nameStyle, lineHeight);
     }
 
@@ -296,21 +296,14 @@ internal sealed class ShortcutsWidget : IHomeWidget
         return monogram;
     }
 
-    private Slots Resolve(string instanceKey, string config, float delta)
+    private Slots Resolve(string instanceKey, string config)
     {
-        if (!slotsByInstance.TryGetValue(instanceKey, out var slots))
-        {
-            slots = new Slots();
-            slotsByInstance[instanceKey] = slots;
-        }
-
-        slots.Age += delta;
-        if (slots.Age < RefreshSeconds && slots.Stamp == stamp && ReferenceEquals(slots.Config, config))
+        var slots = slotsByInstance.For(instanceKey);
+        if (!slots.Refresh.Due(RefreshMilliseconds) && slots.Stamp == stamp && ReferenceEquals(slots.Config, config))
         {
             return slots;
         }
 
-        slots.Age = 0f;
         slots.Stamp = stamp;
         slots.Config = config;
         Fill(slots, config);

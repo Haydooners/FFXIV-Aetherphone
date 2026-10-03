@@ -34,7 +34,13 @@ internal struct CachedText
 
 internal static class WidgetText
 {
+    public const float LineSpacing = 1.2f;
+
     private const int DigitCacheCapacity = 12;
+    private const int ClampCacheCapacity = 128;
+    private const float FitStep = 0.05f;
+    private const string LineProbe = "Ag";
+    private const string Ellipsis = "…";
 
     private struct DigitAdvance
     {
@@ -43,13 +49,155 @@ internal static class WidgetText
         public float Advance;
     }
 
+    private readonly record struct ClampKey(string Text, float MaxWidth, int MaxLines, float Scale, FontWeight Weight);
+
     private static readonly DigitAdvance[] DigitAdvances = new DigitAdvance[DigitCacheCapacity];
+    private static readonly Dictionary<ClampKey, string[]> ClampCache = new();
     private static int digitCount;
     private static int digitGeneration = -1;
+    private static int clampGeneration = -1;
+
+    public static string[] NoLines { get; } = Array.Empty<string>();
 
     public static string Upper(LocString entry) => Loc.Upper(Loc.T(entry));
 
     public static string Upper(string text) => Loc.Upper(text);
+
+    public static float LineHeight(in TextStyle style) => Typography.Measure(LineProbe, style).Y;
+
+    public static float SpacedLineHeight(in TextStyle style) => LineHeight(style) * LineSpacing;
+
+    public static string[] Clamp(string text, in TextStyle style, float maxWidth, int maxLines)
+    {
+        if (string.IsNullOrEmpty(text) || maxLines <= 0 || maxWidth <= 0f)
+        {
+            return NoLines;
+        }
+
+        var generation = Plugin.Fonts.Generation;
+        if (generation != clampGeneration)
+        {
+            clampGeneration = generation;
+            ClampCache.Clear();
+        }
+
+        var key = new ClampKey(text, MathF.Round(maxWidth), maxLines, style.Scale, style.Weight);
+        if (ClampCache.TryGetValue(key, out var cached))
+        {
+            return cached;
+        }
+
+        if (ClampCache.Count >= ClampCacheCapacity)
+        {
+            ClampCache.Clear();
+        }
+
+        var wrapped = Typography.WrapText(text, style, maxWidth);
+        string[] lines;
+        if (wrapped.Length <= maxLines)
+        {
+            lines = wrapped;
+        }
+        else
+        {
+            lines = new string[maxLines];
+            for (var index = 0; index < maxLines - 1; index++)
+            {
+                lines[index] = wrapped[index];
+            }
+
+            var last = wrapped[maxLines - 1].TrimEnd();
+            lines[maxLines - 1] = Typography.FitText(string.Concat(last, Ellipsis), maxWidth, style);
+        }
+
+        ClampCache[key] = lines;
+        return lines;
+    }
+
+    public static float Lines(ImDrawListPtr drawList, string[] lines, Vector2 topLeft, Vector4 color,
+        in TextStyle style, float lineHeight)
+    {
+        var top = topLeft.Y;
+        for (var index = 0; index < lines.Length; index++)
+        {
+            Typography.Draw(drawList, new Vector2(topLeft.X, top), lines[index], color, style);
+            top += lineHeight;
+        }
+
+        return top;
+    }
+
+    public static float LinesCentered(ImDrawListPtr drawList, string[] lines, Vector2 topCenter, Vector4 color,
+        in TextStyle style, float lineHeight)
+    {
+        var top = topCenter.Y;
+        for (var index = 0; index < lines.Length; index++)
+        {
+            var width = Typography.Measure(lines[index], style).X;
+            Typography.Draw(drawList, new Vector2(topCenter.X - width * 0.5f, top), lines[index], color, style);
+            top += lineHeight;
+        }
+
+        return top;
+    }
+
+    public static float Wrapped(ImDrawListPtr drawList, Vector2 topLeft, string text, Vector4 color,
+        in TextStyle style, float maxWidth, int maxLines)
+    {
+        var lines = Clamp(text, style, maxWidth, maxLines);
+        var lineHeight = LineHeight(style);
+        Lines(drawList, lines, topLeft, color, style, lineHeight);
+        return lines.Length * lineHeight;
+    }
+
+    public static float WrappedHeight(string text, in TextStyle style, float maxWidth, int maxLines) =>
+        Clamp(text, style, maxWidth, maxLines).Length * LineHeight(style);
+
+    public static float DrawRight(ImDrawListPtr drawList, float right, float top, string text, Vector4 color,
+        in TextStyle style)
+    {
+        var width = Typography.Measure(text, style).X;
+        Typography.Draw(drawList, new Vector2(right - width, top), text, color, style);
+        return width;
+    }
+
+    public static float TabularRight(ImDrawListPtr drawList, float right, float top, string text, Vector4 color,
+        in TextStyle style)
+    {
+        var width = TabularWidth(text, style);
+        Tabular(drawList, new Vector2(right - width, top), text, color, style);
+        return width;
+    }
+
+    public static TextStyle FitStyle(string text, in TextStyle style, float maxWidth, bool tabular)
+    {
+        var width = tabular ? TabularWidth(text, style) : Typography.Measure(text, style).X;
+        if (width <= maxWidth || width <= 0f)
+        {
+            return style;
+        }
+
+        var factor = MathF.Floor(maxWidth / width / FitStep) * FitStep;
+        return new TextStyle(style.Scale * MathF.Max(FitStep, factor), style.Weight);
+    }
+
+    public static float TabularCentered(ImDrawListPtr drawList, Vector2 center, string text, Vector4 color,
+        in TextStyle style, float maxWidth)
+    {
+        var fitted = FitStyle(text, style, maxWidth, true);
+        var width = TabularWidth(text, fitted);
+        var height = Typography.Measure(text, fitted).Y;
+        Tabular(drawList, new Vector2(center.X - width * 0.5f, center.Y - height * 0.5f), text, color, fitted);
+        return height;
+    }
+
+    public static void Centered(ImDrawListPtr drawList, float centerX, float top, float maxWidth, string text,
+        Vector4 color, in TextStyle style)
+    {
+        var fitted = Fit(text, maxWidth, style, out var fittedScale);
+        var width = Typography.Measure(fitted, fittedScale, style.Weight).X;
+        Typography.Draw(drawList, new Vector2(centerX - width * 0.5f, top), fitted, color, fittedScale, style.Weight);
+    }
 
     public static string Fit(string text, float maxWidth, in TextStyle style, out float fittedScale)
     {
@@ -61,7 +209,7 @@ internal static class WidgetText
     public static float Draw(ImDrawListPtr drawList, Vector2 position, string text, Vector4 color,
         in TextStyle style, float maxWidth)
     {
-        var fitted = Fit(text, maxWidth, style, out var scale);
+        var fitted = Fit(text, MathF.Max(1f, maxWidth), style, out var scale);
         Typography.Draw(drawList, position, fitted, color, scale, style.Weight);
         return Typography.Measure(fitted, scale, style.Weight).Y;
     }

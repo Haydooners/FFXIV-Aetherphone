@@ -14,7 +14,7 @@ namespace Aetherphone.Apps.Games.Widgets;
 internal sealed class DailyGameWidget : IHomeWidget
 {
     private const string AppKey = "games";
-    private const float RefreshSeconds = 20f;
+    private const int RefreshMilliseconds = 20000;
     private const float IconUnits = 42f;
     private const float BadgeUnits = 16f;
     private const float GradientLift = 0.08f;
@@ -25,7 +25,7 @@ internal sealed class DailyGameWidget : IHomeWidget
 
     private readonly GameStatsStore stats;
     private IMiniGame? game;
-    private float sinceRefresh = RefreshSeconds;
+    private WidgetRefresh refresh;
     private CachedText streakText;
 
     public DailyGameWidget(GameStatsStore stats)
@@ -56,7 +56,7 @@ internal sealed class DailyGameWidget : IHomeWidget
         if (game is null)
         {
             WidgetChrome.Container(context);
-            UtilityWidgetKit.Message(context, ink, WidgetMetrics.Content(context), FontAwesomeIcon.Gamepad,
+            WidgetChrome.Message(context, ink, WidgetMetrics.Content(context), FontAwesomeIcon.Gamepad,
                 AppAccents.For(AppKey), Loc.T(L.Apps.Games), string.Empty);
             return;
         }
@@ -96,31 +96,29 @@ internal sealed class DailyGameWidget : IHomeWidget
                 done ? primary : colored ? ink.Fade(White) : ink.Accent(Ember), badge);
         }
 
-        var captionHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Caption);
-        var titleHeight = UtilityWidgetKit.LineHeightOf(WidgetType.Title);
+        var captionHeight = WidgetText.SpacedLineHeight(WidgetType.Caption);
+        var titleHeight = WidgetText.SpacedLineHeight(WidgetType.Title);
         var eyebrowHeight = WidgetText.EyebrowHeight();
         var captionTop = content.Max.Y - captionHeight;
         var titleSpace = captionTop - (iconMax.Y + WidgetMetrics.Gutter * scale + eyebrowHeight);
-        var titleLines = UtilityWidgetKit.Clamp(game.Title, WidgetType.Title, content.Width,
+        var titleLines = WidgetText.Clamp(game.Title, WidgetType.Title, content.Width,
             Math.Clamp((int)(titleSpace / titleHeight), 1, 2));
         var titleTop = captionTop - titleLines.Length * titleHeight;
         WidgetText.EyebrowFit(drawList, new Vector2(content.Min.X, titleTop - eyebrowHeight - WidgetMetrics.RowGap * scale),
             Loc.T(L.WidgetsUtility.TodaysGame), content.Width, secondary, scale);
-        UtilityWidgetKit.DrawLines(drawList, titleLines, new Vector2(content.Min.X, titleTop), primary,
+        WidgetText.Lines(drawList, titleLines, new Vector2(content.Min.X, titleTop), primary,
             WidgetType.Title, titleHeight);
-        UtilityWidgetKit.DrawFitted(drawList, new Vector2(content.Min.X, captionTop), Caption(done, streak), secondary,
+        WidgetText.Draw(drawList, new Vector2(content.Min.X, captionTop), Caption(done, streak), secondary,
             WidgetType.Caption, content.Width);
     }
 
     private void Refresh(in WidgetContext context)
     {
-        sinceRefresh += context.Delta;
-        if (game is not null && sinceRefresh < RefreshSeconds)
+        if (!refresh.Due(RefreshMilliseconds) && game is not null)
         {
             return;
         }
 
-        sinceRefresh = 0f;
         game = context.Actions.App(AppKey) is GamesApp games ? games.DailyGame : null;
     }
 

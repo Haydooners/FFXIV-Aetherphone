@@ -109,7 +109,7 @@ internal sealed class UpNextWidget : IHomeWidget
             now.Date, accent, mask, sample ? null : feed, true, scale);
 
         var separatorY = gridBottom + WidgetMetrics.Gutter * scale;
-        TimeWidgetParts.Separator(drawList, ink, content.Min.X, content.Max.X, separatorY, scale);
+        WidgetChrome.Separator(context, ink, content.Min.X, content.Max.X, separatorY);
         var labelTop = separatorY + WidgetMetrics.Gutter * scale;
         WidgetText.Eyebrow(drawList, new Vector2(content.Min.X, labelTop), L.WidgetsTime.UpNext, ink.Secondary,
             scale);
@@ -150,7 +150,7 @@ internal sealed class UpNextWidget : IHomeWidget
 
         if (rows.Length == 0)
         {
-            TimeWidgetParts.Empty(context, ink, area, FontAwesomeIcon.CalendarAlt, Loc.T(L.Home.NoEvents),
+            WidgetChrome.Message(context, ink, area, FontAwesomeIcon.CalendarAlt, default, Loc.T(L.Home.NoEvents),
                 string.Empty);
             return;
         }
