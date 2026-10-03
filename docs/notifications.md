@@ -17,9 +17,10 @@ This doc walks the full notification pipeline on the client: how a notification 
 | src/Aetherphone/Core/Notifications/SoundTokens.cs | `file:` and `silent` token format |
 | src/Aetherphone/Core/Notifications/SoundEffectPlayer.cs | NAudio playback, one-shots and the ringtone loop |
 | src/Aetherphone/Core/Social/SocialActivity.cs | Numbered social type catalog and body text |
-| src/Aetherphone/Windows/Components/NotificationCenter.cs | Stacked list, expand, swipe to delete |
-| src/Aetherphone/Windows/Components/NotificationCard.cs | Single card rendering |
-| src/Aetherphone/Windows/Components/NotificationBanner.cs | Drop-down banner over the screen |
+| src/Aetherphone/Core/Notifications/NotificationGroups.cs | Pure per-app grouping, stack math, summary counts |
+| src/Aetherphone/Windows/Components/Notify/NotificationCenter.cs | Stacked list, expand, swipe to clear, summary pill |
+| src/Aetherphone/Windows/Components/Notify/NotificationCard.cs | Glass card rendering and the one app icon method |
+| src/Aetherphone/Windows/Components/Notify/NotificationBanner.cs | Drop-down glass banner over the screen |
 | src/Aetherphone/Apps/Notifications/NotificationsApp.cs | The Notifications app that hosts the center |
 | src/Aetherphone/Apps/Settings/Pages/NotificationsPage.cs | Settings: quiet while busy, global banner switch, per-app list |
 | src/Aetherphone/Apps/Settings/Pages/AppNotificationPage.cs | Settings: one channel's enable, banner, and sound |
@@ -103,11 +104,13 @@ Both call `NotificationService.MarkAllRead()` on open (`NotificationsApp.OnOpene
 
 Behavior, all in `NotificationCenter`:
 
-- **Stacking**: `BuildGroups` walks `Recent` newest-first and buckets by `StackKey`. A collapsed group shows the newest card on top with up to `MaxPeek` = 2 peeked card edges behind it and a count badge (`NotificationCard.DrawCountBadge`).
-- **Expanding**: tapping a collapsed multi-item group expands it under a header with a "Show less" action. Groups with fewer than two items are forced collapsed by `SyncStates`.
-- **Swipe to delete**: dragging a card left reveals a delete affordance; releasing past `SwipeCommitFraction` (42% of the card width) commits the removal. Swiping a collapsed group card removes the whole group (`NotificationService.RemoveGroup`); swiping an expanded row removes one item (`NotificationService.Remove`). Vertical drags scroll instead; the axis lock decides after 6 logical pixels of movement.
-- **Tap**: a tap (small total movement) on a single card calls `NotificationRouter.Open`. A tap on a collapsed group expands it first.
-- **Clear all**: the pill above the list calls `NotificationService.Clear()`.
+- **Grouping**: `NotificationGroups.Rebuild` (src/Aetherphone/Core/Notifications/NotificationGroups.cs) walks `Recent` newest-first and buckets by `StackKey`; groups run newest arrival first and items inside a group run newest first. The center rebuilds only when `NotificationService.Version` or the UI language changes, so no grouping work happens per frame.
+- **Stacking**: a collapsed group shows the newest card as a full glass card with up to two more layers stacked behind it (`NotificationGroups.MaxVisibleLayers` = 3), each layer 6 units lower and scaled by 0.94 per step, and an "n more" caption under the stack (`NotificationGroups.HiddenCount` = count minus one).
+- **Expanding**: tapping a collapsed multi-item stack expands it under a header that carries the sender title, a glass "Clear All" pill for that group, and a "Show Less" action; tapping the header collapses it again. Groups with fewer than two items are forced collapsed by `SyncStates`.
+- **Swipe to clear**: dragging a card left reveals a "Clear" action (`RevealWidth` = 84 units); releasing past half of it parks the card open, and a tap on the action clears that one card. Releasing past `SwipeCommitFraction` (42% of the card width) clears it straight away. Swiping a collapsed stack acts on the whole group (`NotificationService.RemoveGroup`); swiping an expanded row acts on one item (`NotificationService.Remove`). Tapping anywhere else closes the revealed action. Vertical drags scroll instead; the axis lock decides after 6 logical pixels of movement.
+- **Tap**: a tap (small total movement) on a single card calls `NotificationRouter.Open`. A tap on a collapsed stack expands it first.
+- **Summary pill**: a glass capsule above the list shows how many notifications are waiting and how old the oldest one is, with a "Clear All" action that calls `NotificationService.Clear()`.
+- **Surfaces**: every card, pill and the banner draw through `Material.LiquidGlass` in `GlassTone.Dark` (the banner picks `GlassTone.Light` over a bright app background). The app icon is drawn in exactly one place, `NotificationCard.DrawAppIcon`.
 
 ## Banners
 
@@ -120,6 +123,7 @@ Rules, all in `OnPresented` and the stage machine:
 - At most `MaxQueued` = 4 banners wait in line; extras are dropped.
 - A banner holds for `HoldSeconds` = 4 (paused while hovered or dragged), then animates out.
 - Tap opens the notification through `NotificationRouter`; dragging up past a distance or velocity threshold dismisses it.
+- The banner is a 68 unit glass card with a 24 unit radius that springs in from above the status bar and back out over 0.14 seconds; it shows the 36 unit app icon, the title, one line of body and the clock time through `TimeText.Clock`.
 
 ## Channels and per-app settings
 

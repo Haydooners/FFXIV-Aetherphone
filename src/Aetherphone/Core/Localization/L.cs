@@ -5745,6 +5745,13 @@ internal static class L
         public static readonly LocString Empty = new("notifications.empty", "No notifications");
         public static readonly LocString ClearAll = new("notifications.clearAll", "Clear All");
         public static readonly LocString ShowLess = new("notifications.showLess", "Show Less");
+        public static readonly LocString Clear = new("notifications.clear", "Clear");
+        public static readonly LocString More = new("notifications.more", "{0} more");
+
+        public static readonly LocPlural Waiting = new("notifications.waiting",
+            "{0} notification waiting", "{0} notifications waiting");
+
+        public static readonly LocString Oldest = new("notifications.oldest", "Oldest {0}");
     }
 
     internal static class Timers

@@ -19,6 +19,7 @@ internal sealed class NotificationService : IDisposable
     private readonly Dictionary<string, DateTime> lastSoundAt = new();
     private long sequence;
     public int UnreadCount { get; private set; }
+    public int Version { get; private set; }
     public IReadOnlyList<PhoneNotification> Recent => recent;
     public Func<string, bool>? AppAvailability { get; set; }
     public event Action? Changed;
@@ -72,7 +73,7 @@ internal sealed class NotificationService : IDisposable
         }
 
         ClampUnread();
-        Changed?.Invoke();
+        RaiseChanged();
     }
 
     public void RemoveApp(string appId)
@@ -100,7 +101,7 @@ internal sealed class NotificationService : IDisposable
         }
 
         ClampUnread();
-        Changed?.Invoke();
+        RaiseChanged();
     }
 
     public void Notify(PhoneNotification notification)
@@ -170,7 +171,7 @@ internal sealed class NotificationService : IDisposable
             }
         }
 
-        Changed?.Invoke();
+        RaiseChanged();
     }
 
     private bool ShouldPlaySound(string stackKey)
@@ -220,7 +221,7 @@ internal sealed class NotificationService : IDisposable
         }
 
         UnreadCount = 0;
-        Changed?.Invoke();
+        RaiseChanged();
     }
 
     public void Remove(long id)
@@ -239,7 +240,7 @@ internal sealed class NotificationService : IDisposable
 
             recent.RemoveAt(index);
             ClampUnread();
-            Changed?.Invoke();
+            RaiseChanged();
             return;
         }
     }
@@ -269,7 +270,7 @@ internal sealed class NotificationService : IDisposable
         }
 
         ClampUnread();
-        Changed?.Invoke();
+        RaiseChanged();
     }
 
     public void Clear()
@@ -281,6 +282,12 @@ internal sealed class NotificationService : IDisposable
 
         recent.Clear();
         UnreadCount = 0;
+        RaiseChanged();
+    }
+
+    private void RaiseChanged()
+    {
+        Version++;
         Changed?.Invoke();
     }
 
