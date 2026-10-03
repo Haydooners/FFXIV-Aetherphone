@@ -90,7 +90,7 @@ internal sealed partial class MusicApp : IResumableApp
         this.rolladeck = rolladeck;
         this.downloads = downloads;
         community = new CommunityRadioService(aethernet, session);
-        kit = new MusicKit(ui, images, playback, library);
+        kit = new MusicKit(ui, images, playback, library) { Downloads = downloads };
         routers = CreateRouters();
         drawView = DrawView;
         popPage = PopPage;
