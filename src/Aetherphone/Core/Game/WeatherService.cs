@@ -9,16 +9,22 @@ internal readonly record struct WeatherEntry(byte Id, string Name, string Englis
 
 internal readonly record struct WeatherWindow(WeatherEntry Weather, int MinutesFromNow, bool IsCurrent, int StartBell);
 
+internal readonly record struct WeatherZone(uint TerritoryId, string Name);
+
 internal sealed class WeatherService
 {
     private const long RealSecondsPerEorzeaHour = 175;
     private const long RealSecondsPerWindow = 1400;
     private const long RealSecondsPerEorzeaDay = 4200;
+    private const uint TownUse = 0;
+    private const uint OverworldUse = 1;
     private readonly IDataManager data;
     private readonly IClientState clientState;
     private readonly Dictionary<byte, WeatherEntry> entries = new();
     private readonly List<WeatherEntry> zoneWeathers = new();
     private readonly List<WeatherChance> chances = new();
+    private readonly Dictionary<uint, WeatherChance[]> territoryChances = new();
+    private readonly Dictionary<uint, string> territoryNames = new();
     private uint cachedTerritory = uint.MaxValue;
 
     private readonly record struct WeatherChance(byte Id, int Cumulative);
@@ -87,6 +93,70 @@ internal sealed class WeatherService
             var windowBell = (int)(timestamp / RealSecondsPerEorzeaHour % 24);
             into.Add(new WeatherWindow(entry, minutes, index == 0, windowBell));
         }
+    }
+
+    public uint CurrentTerritory => clientState.TerritoryType;
+
+    public string ZoneName(uint territoryId)
+    {
+        if (territoryNames.TryGetValue(territoryId, out var cached))
+        {
+            return cached;
+        }
+
+        var name = string.Empty;
+        if (territoryId != 0 && data.GetExcelSheet<TerritoryType>().TryGetRow(territoryId, out var territory))
+        {
+            name = territory.PlaceName.Value.Name.ExtractText();
+        }
+
+        territoryNames[territoryId] = name;
+        return name;
+    }
+
+    public void Forecast(uint territoryId, List<WeatherWindow> into, int count)
+    {
+        into.Clear();
+        var zoneChances = ChancesFor(territoryId);
+        if (zoneChances.Length == 0)
+        {
+            return;
+        }
+
+        var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var startUnix = nowUnix - nowUnix % RealSecondsPerWindow;
+        for (var index = 0; index < count; index++)
+        {
+            var timestamp = startUnix + index * RealSecondsPerWindow;
+            var entry = Entry(Resolve(zoneChances, ForecastTarget(timestamp)));
+            var minutes = (int)((timestamp - nowUnix) / 60);
+            var windowBell = (int)(timestamp / RealSecondsPerEorzeaHour % 24);
+            into.Add(new WeatherWindow(entry, minutes, index == 0, windowBell));
+        }
+    }
+
+    public void WeatherZones(List<WeatherZone> into)
+    {
+        into.Clear();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var territory in data.GetExcelSheet<TerritoryType>())
+        {
+            var use = territory.TerritoryIntendedUse.RowId;
+            if (use != TownUse && use != OverworldUse || territory.WeatherRate.RowId == 0)
+            {
+                continue;
+            }
+
+            var name = territory.PlaceName.Value.Name.ExtractText();
+            if (name.Length == 0 || !seen.Add(name) || ChancesFor(territory.RowId).Length == 0)
+            {
+                continue;
+            }
+
+            into.Add(new WeatherZone(territory.RowId, name));
+        }
+
+        into.Sort(static (left, right) => string.Compare(left.Name, right.Name, StringComparison.CurrentCulture));
     }
 
     public WeatherEntry Entry(byte id)
@@ -171,6 +241,50 @@ internal sealed class WeatherService
         }
 
         return false;
+    }
+
+    private WeatherChance[] ChancesFor(uint territoryId)
+    {
+        if (territoryChances.TryGetValue(territoryId, out var cached))
+        {
+            return cached;
+        }
+
+        var built = new List<WeatherChance>();
+        if (territoryId != 0 && data.GetExcelSheet<TerritoryType>().TryGetRow(territoryId, out var territory) &&
+            data.GetExcelSheet<WeatherRate>().TryGetRow(territory.WeatherRate.RowId, out var rate))
+        {
+            var cumulative = 0;
+            for (var index = 0; index < rate.Rate.Count; index++)
+            {
+                var id = (byte)rate.Weather[index].RowId;
+                var chance = rate.Rate[index];
+                if (id == 0 || chance <= 0)
+                {
+                    continue;
+                }
+
+                cumulative += chance;
+                built.Add(new WeatherChance(id, cumulative));
+            }
+        }
+
+        var result = built.ToArray();
+        territoryChances[territoryId] = result;
+        return result;
+    }
+
+    private static byte Resolve(WeatherChance[] zoneChances, uint target)
+    {
+        for (var index = 0; index < zoneChances.Length; index++)
+        {
+            if (target < zoneChances[index].Cumulative)
+            {
+                return zoneChances[index].Id;
+            }
+        }
+
+        return zoneChances.Length > 0 ? zoneChances[^1].Id : (byte)0;
     }
 
     private byte Resolve(uint target)

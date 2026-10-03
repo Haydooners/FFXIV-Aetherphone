@@ -1,6 +1,10 @@
+using Aetherphone.Apps.Activity.Widgets;
 using Aetherphone.Apps.Calendar.Widgets;
 using Aetherphone.Apps.Clock.Widgets;
-using Aetherphone.Apps.Skywatcher;
+using Aetherphone.Apps.Coin.Widgets;
+using Aetherphone.Apps.Health.Widgets;
+using Aetherphone.Apps.Photos.Widgets;
+using Aetherphone.Apps.Skywatcher.Widgets;
 using Aetherphone.Apps.Timers.Widgets;
 using Aetherphone.Core.Home;
 
@@ -14,17 +18,19 @@ internal static class WidgetCatalog
         var calendarFeed = new CalendarWidgetFeed(phone.Configuration, services.CalendarEvents);
         var widgets = new List<IHomeWidget>
         {
-            new SkywatcherWidget(phone.Weather),
+            new WeatherWidget(phone.Weather),
             new ClockWidget(phone.Configuration),
             new AlarmWidget(phone.Configuration, phone.AlarmRinger),
             new TimerWidget(phone.Configuration, phone.AlarmRinger),
             new UpNextWidget(calendarFeed),
             new MonthWidget(),
-            new PhotosWidget(services.Photos),
+            new FeaturedPhotoWidget(services.Photos),
             new ResetsWidget(),
             new VenturesWidget(),
-            new ActivityRingsWidget(phone.Activity, phone.Configuration),
-            new CoinWidget(phone.Coins, phone.AethernetSession),
+            new ActivityWidget(phone.Activity, phone.Configuration),
+            new CoinBalanceWidget(phone.Coins, phone.AethernetSession),
+            new WeatherWatchWidget(phone.Weather),
+            new HydrationWidget(phone.Health),
         };
 
         return new WidgetRegistry(widgets, services.Apps);

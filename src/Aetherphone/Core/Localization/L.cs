@@ -8837,6 +8837,36 @@ internal static class L
         public static readonly LocString Discord             = new("rolladeck.discord",             "Discord");
     }
 
+    internal static class WidgetsLife
+    {
+        public static readonly LocString WeatherName = new("widgetsLife.weatherName", "Weather");
+        public static readonly LocString EorzeaShort = new("widgetsLife.eorzeaShort", "ET");
+        public static readonly LocString ChangeIn = new("widgetsLife.changeIn", "{0} in {1}");
+        public static readonly LocString SteadyForNow = new("widgetsLife.steadyForNow", "Steady for a while");
+        public static readonly LocString WeatherUnavailable = new("widgetsLife.weatherUnavailable", "Log in to see the weather");
+        public static readonly LocString WeatherUnavailableDetail = new("widgetsLife.weatherUnavailableDetail", "The forecast follows the zone you are in.");
+        public static readonly LocString ZonesName = new("widgetsLife.zonesName", "Weather Watch");
+        public static readonly LocString ZonesDescription = new("widgetsLife.zonesDescription", "Current weather in three zones you choose.");
+        public static readonly LocString ZoneFirst = new("widgetsLife.zoneFirst", "First zone");
+        public static readonly LocString ZoneSecond = new("widgetsLife.zoneSecond", "Second zone");
+        public static readonly LocString ZoneThird = new("widgetsLife.zoneThird", "Third zone");
+        public static readonly LocString CurrentLocation = new("widgetsLife.currentLocation", "Current Location");
+        public static readonly LocString NotInWorld = new("widgetsLife.notInWorld", "Not in the world");
+        public static readonly LocString FeaturedName = new("widgetsLife.featuredName", "Featured Photo");
+        public static readonly LocString FeaturedDescription = new("widgetsLife.featuredDescription", "One of your photos, slowly drifting by.");
+        public static readonly LocString ActivityUnavailable = new("widgetsLife.activityUnavailable", "Log in to a character to fill your rings");
+        public static readonly LocString ThisWeek = new("widgetsLife.thisWeek", "This week");
+        public static readonly LocString LevelsOf = new("widgetsLife.levelsOf", "{0}/{1} Lv");
+        public static readonly LocString DutiesOf = new("widgetsLife.dutiesOf", "{0}/{1} duties");
+        public static readonly LocString GilOf = new("widgetsLife.gilOf", "{0}/{1} gil");
+        public static readonly LocString CoinDescription = new("widgetsLife.coinDescription", "Your balance, today's earnings and a quick check-in.");
+        public static readonly LocString CheckInReady = new("widgetsLife.checkInReady", "Check-in ready");
+        public static readonly LocString HydrationDescription = new("widgetsLife.hydrationDescription", "Log water in one tap and keep up with today's goal.");
+        public static readonly LocString HydrationUnavailable = new("widgetsLife.hydrationUnavailable", "Log in to a character to track water");
+        public static readonly LocString GoalReached = new("widgetsLife.goalReached", "Goal reached");
+        public static readonly LocString DrinksOf = new("widgetsLife.drinksOf", "{0} of {1} drinks");
+    }
+
     internal static class Widgets
     {
         public static readonly LocString WeatherDescription = new("widgets.weatherDescription", "Eorzea weather where you are, and the forecast ahead.");
