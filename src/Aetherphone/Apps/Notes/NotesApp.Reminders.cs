@@ -158,7 +158,7 @@ internal sealed partial class NotesApp
         }
         else
         {
-            ui.Card(drawList, min, max, radius, true);
+            ui.Card(drawList, min, max, radius);
         }
 
         var pad = TilePad * scale;
@@ -380,7 +380,7 @@ internal sealed partial class NotesApp
         var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var fitted = Typography.FitText(label, rect.Width, TextStyles.Body);
         var size = Typography.Measure(fitted, TextStyles.Body);
-        var ink = down ? Palette.WithAlpha(theme.Accent, 0.55f) : theme.Accent;
+        var ink = down ? Palette.WithAlpha(ui.Accent, 0.55f) : ui.Accent;
         Typography.Draw(drawList, new Vector2(rect.Max.X - size.X, rect.Center.Y - size.Y * 0.5f), fitted, ink,
             TextStyles.Body);
         if (hovered)
