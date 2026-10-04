@@ -2280,6 +2280,8 @@ internal static class L
                 "Fixed some Community Radio station pages opening blank"),
             new("changelog.r1042.81",
                 "Fixed radio stations that went silent after connecting; they now reconnect on their own"),
+            new("changelog.r1042.154",
+                "Fixed the game freezing completely when pausing or resuming a song"),
         };
 
         public static readonly LocString[] Release1042Widgets =

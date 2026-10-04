@@ -7068,6 +7068,7 @@
   "changelog.r1042.79": "Adicionado Retrospectiva: minutos ouvidos, músicas e artistas mais ouvidos da semana, do mês, do ano ou de todos os tempos",
   "changelog.r1042.80": "Adicionado o nivelamento de volume, que mantém todas as músicas no mesmo volume",
   "changelog.r1042.81": "Corrigidas estações de rádio que ficavam em silêncio depois de conectar; agora elas se reconectam sozinhas",
+  "changelog.r1042.154": "Corrigido o jogo que podia congelar completamente ao pausar ou retomar uma música",
   "changelog.r1042.6": "Dynamic Island reconstruída em torno de atividades ao vivo: chamadas, música e rádio, sessões do MogCast, timers e encontros que começam dentro de uma hora, com um toque para expandir e controlar",
   "changelog.r1042.7": "Central de Controle reconstruída com blocos de vidro: Não perturbe, Modo silencioso, Chamadas e Rolar em espera dividem um bloco de Alternadores rápidos, e um toque longo abre um bloco como cartão maior",
   "changelog.r1042.8": "Notificações reconstruídas em vidro: os banners deslizam do topo, e a Central de Notificações empilha as notificações de cada app, com um deslize para limpar uma",

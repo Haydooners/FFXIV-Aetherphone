@@ -206,8 +206,9 @@ internal sealed class SongPlayer : IDisposable
             session++;
             paused = false;
             ResetTrackState();
-            ReleaseOutputIfIdle();
         }
+
+        ReleaseOutputIfIdle();
     }
 
     public void Prefetch(in Song song)
@@ -418,9 +419,10 @@ internal sealed class SongPlayer : IDisposable
             currentVoice = voice;
             durationSeconds = (float)voice.DurationSeconds;
             Interlocked.Increment(ref liveVoices);
-            mixer.AddMixerInput(voice);
             state = SongPlaybackState.Playing;
         }
+
+        mixer.AddMixerInput(voice);
 
         if (fullAudio is { } audio)
         {
@@ -557,6 +559,7 @@ internal sealed class SongPlayer : IDisposable
             AepLog.Warning(arguments.Exception, "Song output device stopped");
         }
 
+        IWavePlayer stopped;
         lock (gate)
         {
             if (output is null || !ReferenceEquals(sender, output))
@@ -564,18 +567,29 @@ internal sealed class SongPlayer : IDisposable
                 return;
             }
 
-            output.PlaybackStopped -= OnOutputStopped;
-            output.Dispose();
-            output = null;
+            stopped = DetachOutput(output);
             var now = Environment.TickCount64;
-            if (arguments.Exception is null || paused || now - lastOutputRecoveryAt < OutputRecoveryIntervalMilliseconds)
+            if (arguments.Exception is not null && !paused &&
+                now - lastOutputRecoveryAt >= OutputRecoveryIntervalMilliseconds)
             {
-                return;
+                lastOutputRecoveryAt = now;
+                RecoverOutput();
             }
-
-            lastOutputRecoveryAt = now;
-            RecoverOutput();
         }
+
+        DisposeInBackground(stopped);
+    }
+
+    private IWavePlayer DetachOutput(IWavePlayer detached)
+    {
+        detached.PlaybackStopped -= OnOutputStopped;
+        output = null;
+        return detached;
+    }
+
+    private static void DisposeInBackground(IWavePlayer player)
+    {
+        _ = Task.Run(player.Dispose);
     }
 
     private void RecoverOutput()
@@ -597,6 +611,7 @@ internal sealed class SongPlayer : IDisposable
 
     private void ReleaseOutputIfIdle()
     {
+        IWavePlayer idle;
         lock (gate)
         {
             if (output is null || Volatile.Read(ref liveVoices) > 0 || state != SongPlaybackState.Stopped)
@@ -604,10 +619,10 @@ internal sealed class SongPlayer : IDisposable
                 return;
             }
 
-            output.PlaybackStopped -= OnOutputStopped;
-            output.Dispose();
-            output = null;
+            idle = DetachOutput(output);
         }
+
+        DisposeInBackground(idle);
     }
 
     private float LevelFor(string videoId)
@@ -867,16 +882,16 @@ internal sealed class SongPlayer : IDisposable
             Thread.Sleep(20);
         }
 
+        IWavePlayer? remaining = null;
         lock (gate)
         {
             if (output is not null)
             {
-                output.PlaybackStopped -= OnOutputStopped;
-                output.Dispose();
-                output = null;
+                remaining = DetachOutput(output);
             }
         }
 
+        remaining?.Dispose();
         if (Volatile.Read(ref liveVoices) > 0)
         {
             AepLog.Warning("Song worker did not exit in time; skipping MediaFoundation shutdown.");

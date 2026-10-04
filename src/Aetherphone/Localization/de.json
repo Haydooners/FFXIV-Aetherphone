@@ -7068,6 +7068,7 @@
   "changelog.r1042.79": "Rückblick hinzugefügt: gehörte Minuten, Top-Songs und Top-Künstler für Woche, Monat, Jahr oder insgesamt",
   "changelog.r1042.80": "Lautstärkeausgleich hinzugefügt, der jeden Song gleich laut abspielt",
   "changelog.r1042.81": "Behoben, dass Radiosender nach dem Verbinden verstummten; sie verbinden sich jetzt selbst neu",
+  "changelog.r1042.154": "Behoben, dass das Spiel beim Pausieren oder Fortsetzen eines Songs komplett einfrieren konnte",
   "changelog.r1042.6": "Die Dynamic Island rund um Live-Aktivitäten neu aufgebaut: Anrufe, Musik und Radio, gemeinsames Schauen in MogCast, Timer und Treffen, die innerhalb der nächsten Stunde beginnen, mit einem Tippen zum Aufklappen und Steuern",
   "changelog.r1042.7": "Das Kontrollzentrum als Glaskacheln neu aufgebaut: Nicht stören, Lautlos, Anrufe und Scrollen im Leerlauf teilen sich eine Kachel Schnellschalter, und langes Drücken öffnet eine Kachel als größere Karte",
   "changelog.r1042.8": "Benachrichtigungen in Glas neu aufgebaut: Banner gleiten von oben herein, und die Mitteilungszentrale stapelt die Benachrichtigungen jeder App, mit einem Wischen zum Löschen einer einzelnen",

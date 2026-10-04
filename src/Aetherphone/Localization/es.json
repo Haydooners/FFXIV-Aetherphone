@@ -7068,6 +7068,7 @@
   "changelog.r1042.79": "Añadido Resumen: minutos escuchados, canciones y artistas más escuchados de la semana, el mes, el año o de siempre",
   "changelog.r1042.80": "Añadida la nivelación de volumen, que mantiene todas las canciones al mismo volumen",
   "changelog.r1042.81": "Corregidas las emisoras que se quedaban en silencio tras conectar; ahora se reconectan solas",
+  "changelog.r1042.154": "Corregido que el juego pudiera congelarse por completo al pausar o reanudar una canción",
   "changelog.r1042.6": "Reconstruida la Dynamic Island en torno a actividades en vivo: llamadas, música y radio, sesiones de MogCast, temporizadores y quedadas que empiezan en menos de una hora, con un toque para ampliarlas y controlarlas",
   "changelog.r1042.7": "Reconstruido el Centro de Control con mosaicos de cristal: No molestar, Modo silencio, Llamadas y Desplazar en reposo comparten un mosaico de Conmutadores rápidos, y una pulsación larga abre un mosaico como tarjeta más grande",
   "changelog.r1042.8": "Reconstruidas las notificaciones en cristal: los avisos se deslizan desde arriba y el Centro de notificaciones apila las notificaciones de cada app, con un deslizamiento para borrar una",
