@@ -131,7 +131,7 @@ internal sealed partial class MarketApp
             return max.Y;
         }
 
-        MarketArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var left = origin.X + pad;
         var right = max.X - pad;
         var headerTop = origin.Y + pad;

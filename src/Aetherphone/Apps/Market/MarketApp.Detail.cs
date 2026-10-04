@@ -139,12 +139,12 @@ internal sealed partial class MarketApp
 
         var heroHeight = (HeroIconSize + Metrics.Space.Lg * 2f) * scale;
         var heroMax = new Vector2(origin.X + width, origin.Y + heroHeight);
-        MarketArt.Card(drawList, ui, origin, heroMax, scale);
+        ui.Card(drawList, origin, heroMax, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         Skeleton.Row(drawList, new Rect(origin + new Vector2(pad, pad), heroMax - new Vector2(pad, pad)), scale);
         var chartTop = heroMax.Y + Metrics.Space.Md * scale;
         var chartMax = new Vector2(origin.X + width, chartTop + (ChartHeight + ChartHeaderHeight) * scale);
-        MarketArt.Card(drawList, ui, new Vector2(origin.X, chartTop), chartMax, scale);
+        ui.Card(drawList, new Vector2(origin.X, chartTop), chartMax, Metrics.Radius.Grouped * scale);
         Skeleton.Bar(drawList, new Vector2(origin.X + pad, chartTop + pad), chartMax - new Vector2(pad, pad),
             Metrics.Radius.Md * scale);
         return chartMax.Y;
@@ -274,7 +274,7 @@ internal sealed partial class MarketApp
             return max.Y;
         }
 
-        MarketArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var columnWidth = width * 0.5f;
         var range = RangeLabel(chartRange);
@@ -293,7 +293,7 @@ internal sealed partial class MarketApp
             snapshot.UnitsForSale > 0 ? MarketFormat.Gil(snapshot.UnitsForSale) : "-", scale);
         for (var rowIndex = 1; rowIndex < StatRows; rowIndex++)
         {
-            MarketArt.Hairline(drawList, ui, origin.X + pad, max.X - pad, origin.Y + rowIndex * cellHeight);
+            FeedCell.Hairline(drawList, origin.X + pad, max.X - pad, origin.Y + rowIndex * cellHeight, ui.Hairline);
         }
 
         drawList.AddLine(new Vector2(origin.X + columnWidth, origin.Y + pad),
@@ -340,7 +340,7 @@ internal sealed partial class MarketApp
             return max.Y;
         }
 
-        MarketArt.Card(drawList, ui, new Vector2(origin.X, top), max, scale);
+        ui.Card(drawList, new Vector2(origin.X, top), max, Metrics.Radius.Grouped * scale);
         var drawn = 0;
         if (hasVendor)
         {
@@ -376,7 +376,8 @@ internal sealed partial class MarketApp
         var tileSize = InsightTileSize * scale;
         if (rowIndex > 0)
         {
-            MarketArt.Hairline(drawList, ui, left + pad + tileSize + MarketArt.TextGap * scale, left + width - pad, top);
+            FeedCell.Hairline(drawList, left + pad + tileSize + MarketArt.TextGap * scale, left + width - pad, top,
+                ui.Hairline);
         }
 
         var centerY = top + rowHeight * 0.5f;
@@ -413,7 +414,7 @@ internal sealed partial class MarketApp
         UiAnchors.Report("market.worlds", new Rect(new Vector2(origin.X, cardTop), max));
         if (ImGui.IsRectVisible(new Vector2(origin.X, cardTop), max))
         {
-            MarketArt.Card(drawList, ui, new Vector2(origin.X, cardTop), max, scale);
+            ui.Card(drawList, new Vector2(origin.X, cardTop), max, Metrics.Radius.Grouped * scale);
             var highest = offers[shown - 1].Cheapest;
             var here = gameData.WorldName(gameData.LocalCurrentWorldId);
             for (var offerIndex = 0; offerIndex < shown; offerIndex++)
