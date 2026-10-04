@@ -6,6 +6,7 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Casino.Tables;
 
@@ -75,7 +76,10 @@ internal sealed class TableDoor
         {
             for (var index = 0; index < knocks.Length; index++)
             {
-                DrawKnockRow(ui, knocks[index], scale);
+                using (ImRaii.PushId(index))
+                {
+                    DrawKnockRow(ui, knocks[index], scale);
+                }
             }
         }
 
@@ -90,7 +94,10 @@ internal sealed class TableDoor
         {
             for (var index = 0; index < seated.Length; index++)
             {
-                DrawSeatedRow(ui, seated[index], scale);
+                using (ImRaii.PushId(index))
+                {
+                    DrawSeatedRow(ui, seated[index], scale);
+                }
             }
         }
 
