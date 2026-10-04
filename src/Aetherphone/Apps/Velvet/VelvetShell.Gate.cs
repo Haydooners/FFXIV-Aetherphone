@@ -46,10 +46,11 @@ internal sealed partial class VelvetShell
             Loc.T(L.Velvet.GateConsent), VelvetTheme.MutedInk, TextStyles.Subheadline, textWidth);
 
         var buttonWidth = MathF.Min(area.Width - 48f * scale, 300f * scale);
-        var buttonHeight = 46f * scale;
+        var buttonHeight = Button.LargeHeight * scale;
         var enterMin = new Vector2(area.Center.X - buttonWidth * 0.5f, area.Max.Y - buttonHeight * 2f - 30f * scale);
         var enterRect = new Rect(enterMin, new Vector2(enterMin.X + buttonWidth, enterMin.Y + buttonHeight));
-        if (ui.PillButton(enterRect, gateBusy ? Loc.T(L.Velvet.GateWorking) : Loc.T(L.Velvet.GateEnterAction), true) &&
+        if (Button.Draw(enterRect, gateBusy ? Loc.T(L.Velvet.GateWorking) : Loc.T(L.Velvet.GateEnterAction),
+                VelvetTheme.Ink) &&
             !gateBusy)
         {
             AcceptGate();
@@ -57,7 +58,7 @@ internal sealed partial class VelvetShell
 
         var leaveRect = new Rect(new Vector2(enterMin.X, enterRect.Max.Y + 10f * scale),
             new Vector2(enterMin.X + buttonWidth, enterRect.Max.Y + 10f * scale + buttonHeight));
-        if (ui.GhostButton(leaveRect, Loc.T(L.Velvet.GateLeave)))
+        if (Button.Draw(leaveRect, Loc.T(L.Velvet.GateLeave), VelvetTheme.Ink, ButtonStyle.Gray))
         {
             navigation.GoHome();
         }
