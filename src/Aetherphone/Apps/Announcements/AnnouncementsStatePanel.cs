@@ -13,18 +13,14 @@ internal static class AnnouncementsStatePanel
     private const float TileToTitle = 20f;
     private const float TitleToHint = 6f;
     private const float HintToAction = 22f;
-    private const float ActionHeight = 40f;
+    private const float ActionHeight = Button.LargeHeight;
     private const float ActionPadding = 44f;
     private const float ActionMinWidth = 140f;
     private const float MaxTextWidth = 280f;
     private const float SideMargin = 32f;
     private const float VerticalBias = 0.42f;
     private const float TextLineSpacing = 1.25f;
-    private const float ActionHoverDarken = 0.12f;
     private const string ActionId = "announcements.state.action";
-
-    private static readonly Vector4 OnAccentInk = new(1f, 1f, 1f, 1f);
-    private static readonly Vector4 HoverShade = new(0f, 0f, 0f, 1f);
 
     public static bool Draw(Rect body, AppSkin ui, FontAwesomeIcon icon, string title, string hint, string action)
     {
@@ -67,26 +63,6 @@ internal static class AnnouncementsStatePanel
         var actionTop = cursorY + HintToAction * scale;
         var rest = new Rect(new Vector2(centerX - width * 0.5f, actionTop),
             new Vector2(centerX + width * 0.5f, actionTop + ActionHeight * scale));
-        return DrawAction(drawList, rest, action, ui.Accent);
-    }
-
-    private static bool DrawAction(ImDrawListPtr drawList, Rect rest, string label, Vector4 accent)
-    {
-        var hovered = UiInteract.Hover(rest.Min, rest.Max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(ActionId, pressed, PressFx.ControlPressedScale);
-        var half = rest.Size * 0.5f * press;
-        var min = rest.Center - half;
-        var max = rest.Center + half;
-        var fill = hovered ? Palette.Mix(accent, HoverShade, ActionHoverDarken) : accent;
-        Squircle.Fill(drawList, min, max, (max.Y - min.Y) * 0.5f, ImGui.GetColorU32(fill));
-        var fitted = Typography.FitText(label, MathF.Max(1f, rest.Width - rest.Height), TextStyles.Headline);
-        Typography.DrawCentered(drawList, rest.Center, fitted, OnAccentInk, TextStyles.Headline);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(rest.Min, rest.Max, hovered);
+        return Button.Draw(drawList, rest, action, ui.Ink, ButtonStyle.Prominent, id: ActionId);
     }
 }

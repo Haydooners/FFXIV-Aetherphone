@@ -13,7 +13,7 @@ internal sealed class PhoneCaseDetailPage : ISettingsPage
 {
     private const float HeroWidthFraction = 0.58f;
     private const float HeroPreviewScale = 0.85f;
-    private const float ApplyHeight = 50f;
+    private const float ApplyHeight = Button.LargeHeight;
 
     public string Title => CatalogLabels.PhoneCase(option.Id);
     public string Summary => string.Empty;
@@ -113,41 +113,26 @@ internal sealed class PhoneCaseDetailPage : ISettingsPage
         ImGui.Dummy(new Vector2(width, height));
         var button = new Rect(origin, origin + new Vector2(width, height));
         var drawList = ImGui.GetWindowDrawList();
-        var radius = height * 0.5f;
-        var applied = option.Id == configuration.PhoneCaseName;
-        if (applied)
+        var ink = ControlInk.From(theme);
+        if (option.Id == configuration.PhoneCaseName)
         {
-            Squircle.Fill(drawList, button.Min, button.Max, radius, ImGui.GetColorU32(theme.SurfaceMuted));
-            DrawApplyLabel(drawList, button, Loc.T(L.Settings.CaseApplied), theme.TextMuted, scale, true);
+            var face = Button.Surface(drawList, button, ink, ButtonStyle.Gray, ButtonRole.Normal, true, false,
+                ImGui.GetID("case.applied"));
+            DrawApplyLabel(drawList, face.Face, Loc.T(L.Settings.CaseApplied), theme.TextMuted, scale);
             return;
         }
 
-        var hovered = UiInteract.Hover(button.Min, button.Max);
-        var fill = hovered ? Palette.Lighten(theme.Accent, 0.10f) : theme.Accent;
-        Squircle.Fill(drawList, button.Min, button.Max, radius, ImGui.GetColorU32(fill));
-        DrawApplyLabel(drawList, button, Loc.T(L.Settings.CaseApply), AccentRing.Ink, scale, false);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(button.Min, button.Max, hovered))
+        if (Button.Draw(drawList, button, Loc.T(L.Settings.CaseApply), ink, ButtonStyle.Prominent))
         {
             Apply();
         }
     }
 
-    private static void DrawApplyLabel(ImDrawListPtr drawList, Rect button, string label, Vector4 ink, float scale,
-        bool withCheck)
+    private static void DrawApplyLabel(ImDrawListPtr drawList, Rect button, string label, Vector4 ink, float scale)
     {
         var labelSize = Typography.Measure(label, TextStyles.Headline);
-        if (!withCheck)
-        {
-            Typography.Draw(drawList, button.Center - labelSize * 0.5f, label, ink, TextStyles.Headline);
-            return;
-        }
-
-        var iconGap = 8f * scale;
+        var iconGap
+ = 8f * scale;
         var iconSize = labelSize.Y * 0.8f;
         var contentWidth = iconSize + iconGap + labelSize.X;
         var startX = button.Center.X - contentWidth * 0.5f;

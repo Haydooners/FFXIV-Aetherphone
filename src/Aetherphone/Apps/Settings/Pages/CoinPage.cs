@@ -25,9 +25,10 @@ internal sealed class CoinPage : ISettingsPage
 
     public void Draw(in PhoneContext context, Rect body)
     {
-        var scale = UiScale.Current;
         var theme = context.Theme;
         ui.Theme = theme;
+        var palette = AppPalettes.PhotosThemed(theme) with { Accent = Tint };
+        ui.Palette = palette;
         store.EnsureFresh();
         using (AppSurface.Begin(body))
         {
@@ -39,16 +40,16 @@ internal sealed class CoinPage : ISettingsPage
                 return;
             }
 
-            CoinHero.Draw(wallet, AppPalettes.Coin);
-            ImGui.Dummy(new Vector2(0f, 8f * scale));
+            CoinHero.Draw(wallet, palette);
+            SettingsForm.Gap(Metrics.Space.Sm);
             if (!wallet.Paused)
             {
-                CoinHero.DrawToday(wallet, AppPalettes.Coin);
-                ImGui.Dummy(new Vector2(0f, 8f * scale));
+                CoinHero.DrawToday(wallet, palette);
+                SettingsForm.Gap(Metrics.Space.Sm);
             }
 
             SettingsSection.Hint(Loc.T(L.Coin.AboutWhat), theme);
-            ImGui.Dummy(new Vector2(0f, 8f * scale));
+            SettingsForm.Gap(Metrics.Space.Sm);
 
             var entries = store.Entries;
             if (entries.Length > 0)
@@ -64,7 +65,7 @@ internal sealed class CoinPage : ISettingsPage
                 }
             }
 
-            ImGui.Dummy(new Vector2(0f, 16f * scale));
+            SettingsForm.Gap(Metrics.Space.Lg);
         }
     }
 

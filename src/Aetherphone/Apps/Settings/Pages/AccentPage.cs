@@ -14,6 +14,7 @@ internal sealed class AccentPage : ISettingsPage
     private const string FieldId = "##settingsAccentHex";
     private const int HexDigitCount = 6;
     private const float PickerHeight = 210f;
+    private static readonly Vector4 Transparent = new(0f, 0f, 0f, 0f);
 
     public string Title => Loc.T(L.Settings.Accent);
     public string Summary => CatalogLabels.Accent(configuration.AccentName);
@@ -66,9 +67,9 @@ internal sealed class AccentPage : ISettingsPage
         var width = ImGui.GetContentRegionAvail().X;
         var height = Metrics.Size.FieldHeight * scale;
         var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, origin, new Vector2(origin.X + width, origin.Y + height),
-            Metrics.Radius.Field * scale, ImGui.GetColorU32(theme.GroupedCard));
-        var chipRadius = height * 0.5f - Metrics.Space.Xs * scale;
+        var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
+        var chipRadius = SearchBar.Capsule(field).Height * 0.5f - Metrics.Space.Xxs * scale;
         var chipCenter = new Vector2(origin.X + Metrics.Space.Md * scale + chipRadius, origin.Y + height * 0.5f);
         drawList.AddCircleFilled(chipCenter, chipRadius, ImGui.GetColorU32(picker.ToRgb()), 24);
         drawList.AddCircle(chipCenter, chipRadius, ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.18f)), 24,
@@ -80,7 +81,9 @@ internal sealed class AccentPage : ISettingsPage
         var inputLeft = hashLeft + hashSize.X + Metrics.Space.Xxs * scale;
         ImGui.SetCursorScreenPos(new Vector2(inputLeft, origin.Y + height * 0.5f - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(origin.X + width - Metrics.Space.Md * scale - inputLeft);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0f, 0f))
+        using (ImRaii.PushColor(ImGuiCol.FrameBg, Transparent)
+                   .Push(ImGuiCol.FrameBgHovered, Transparent)
+                   .Push(ImGuiCol.FrameBgActive, Transparent)
                    .Push(ImGuiCol.Text, theme.TextStrong))
         {
             if (ImGui.InputText(FieldId, ref hexDigits, HexDigitCount,

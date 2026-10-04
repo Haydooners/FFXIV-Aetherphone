@@ -24,9 +24,9 @@ internal sealed partial class CalendarApp
 {
     private const float ModeStripHeight = 34f;
     private const float ModeStripMaxWidth = 220f;
-    private const float ChevronRadius = 17f;
+    private const float ChevronRadius = RoundButton.RegularRadius;
+
     private const float ChevronGap = 8f;
-    private const float ChevronFillAlpha = 0.07f;
     private const float SlideFraction = 0.32f;
     private const float StripGap = 14f;
     private const float GridGap = 10f;
@@ -106,7 +106,7 @@ internal sealed partial class CalendarApp
         var strip = new Rect(origin, new Vector2(origin.X + stripWidth, origin.Y + height));
         var current = (int)mode;
         var picked = SegmentStrip.Draw("calendar.mode", strip, modeLabels, current,
-            Palette.WithAlpha(ui.TitleInk, ChevronFillAlpha), ui.Accent, ui.MutedInk, AccentRing.Ink,
+            Surfaces.Fill(ui.TitleInk, FillLevel.Tertiary), ui.Accent, ui.MutedInk, AccentRing.Ink,
             ModeStripHeight, TextStyles.SubheadlineEmphasized.Scale);
         if (picked != current && picked >= 0)
         {
@@ -120,16 +120,14 @@ internal sealed partial class CalendarApp
             var centerY = origin.Y + height * 0.5f;
             var nextCenter = new Vector2(origin.X + width - radius, centerY);
             var previousCenter = new Vector2(nextCenter.X - radius * 2f - ChevronGap * scale, centerY);
-            var fill = Palette.WithAlpha(ui.TitleInk, ChevronFillAlpha);
-            var delta = ImGui.GetIO().DeltaTime;
-            if (HoverButton.Circle(drawList, "calendar.previousMonth", previousCenter, radius,
-                    FontAwesomeIcon.ChevronLeft, fill, ui.Accent, delta, 1f, true, Loc.T(L.Calendar.PreviousMonth)))
+            if (CalendarArt.RoundIcon(drawList, ui, "calendar.previousMonth", previousCenter, radius,
+                    FontAwesomeIcon.ChevronLeft, Loc.T(L.Calendar.PreviousMonth), true))
             {
                 ShiftMonth(-1);
             }
 
-            if (HoverButton.Circle(drawList, "calendar.nextMonth", nextCenter, radius, FontAwesomeIcon.ChevronRight,
-                    fill, ui.Accent, delta, 1f, true, Loc.T(L.Calendar.NextMonth)))
+            if (CalendarArt.RoundIcon(drawList, ui, "calendar.nextMonth", nextCenter, radius,
+                    FontAwesomeIcon.ChevronRight, Loc.T(L.Calendar.NextMonth), true))
             {
                 ShiftMonth(1);
             }
@@ -226,7 +224,7 @@ internal sealed partial class CalendarApp
     {
         var max = new Vector2(origin.X + width, origin.Y + EmptyCardHeight * scale);
         var row = new Rect(origin, max);
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var hovered = CalendarArt.RowWash(drawList, ui, row, scale);
         var pad = Metrics.Space.Lg * scale;
         var tileSize = EmptyTileSize * scale;
@@ -335,7 +333,7 @@ internal sealed partial class CalendarApp
             return max.Y;
         }
 
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         for (var index = 0; index < count; index++)
         {

@@ -86,8 +86,8 @@ internal sealed partial class PhotosApp
     private float DrawSectionTitle(ImDrawListPtr drawList, float left, float right, float top, string title,
         float scale)
     {
-        PhotosChrome.SectionTitle(drawList, left, right, top, title, ui.TitleInk, scale);
-        return top + PhotosChrome.SectionTitleHeight * scale;
+        return top + CardSectionHeader.Draw(drawList, new Vector2(left, top), MathF.Max(1f, right - left), title,
+            ui.TitleInk);
     }
 
     private float DrawPinnedSection(ImDrawListPtr drawList, float left, float right, float top, float scale)

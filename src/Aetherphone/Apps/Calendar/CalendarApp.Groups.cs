@@ -93,7 +93,7 @@ internal sealed partial class CalendarApp
     private float DrawGameGroupCard(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var max = new Vector2(origin.X + width, origin.Y + GroupCardHeight(scale));
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var header = new Rect(origin, new Vector2(max.X, origin.Y + GroupHeaderHeight * scale));
         DrawGroupHeader(drawList, header, GameTint, FontAwesomeIcon.Crown, Loc.T(L.Calendar.GameEvents),
             Loc.T(L.Calendar.GameEventsBody), false, scale);
@@ -123,7 +123,7 @@ internal sealed partial class CalendarApp
 
         var keys = KeysFor(group.Id);
         var color = CalendarColors.Resolve(group.ColorIndex, ui.Accent);
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var header = new Rect(origin, new Vector2(max.X, origin.Y + GroupHeaderHeight * scale));
         if (DrawGroupHeader(drawList, header, color, FontAwesomeIcon.CalendarAlt, group.Name,
                 CountLabel(keys, group.Id), true, scale))
@@ -274,7 +274,7 @@ internal sealed partial class CalendarApp
             var tilesTop = cursorY + CalendarArt.CardGap * scale;
             var tilesCard = new Vector2(origin.X + width,
                 tilesTop + (CalendarArt.ToggleTileHeight + Metrics.Space.Lg * 2f) * scale);
-            CalendarArt.Card(drawList, ui, new Vector2(origin.X, tilesTop), tilesCard, scale);
+            ui.Card(drawList, new Vector2(origin.X, tilesTop), tilesCard, Metrics.Radius.Grouped * scale);
             DrawVisibilityTiles(drawList, origin.X, tilesTop + Metrics.Space.Lg * scale, width, EditorAppKey, EditorWidgetKey,
                 ref editGroupInApp, ref editGroupInWidget, CalendarColors.Resolve(editGroupColor, ui.Accent), scale);
             cursorY = tilesCard.Y;
@@ -283,7 +283,7 @@ internal sealed partial class CalendarApp
                 var deleteTop = cursorY + CalendarArt.SectionGap * scale;
                 var deleteRow = new Rect(new Vector2(origin.X, deleteTop),
                     new Vector2(origin.X + width, deleteTop + CalendarArt.FieldRowHeight * scale));
-                CalendarArt.Card(drawList, ui, deleteRow.Min, deleteRow.Max, scale);
+                ui.Card(drawList, deleteRow.Min, deleteRow.Max, Metrics.Radius.Grouped * scale);
                 var hovered = CalendarArt.RowWash(drawList, ui, deleteRow, scale);
                 Typography.DrawCentered(drawList, deleteRow.Center, Loc.T(L.Calendar.DeleteGroup), ui.Theme.Danger,
                     TextStyles.Body);
@@ -317,7 +317,7 @@ internal sealed partial class CalendarApp
     {
         var rowHeight = CalendarArt.FieldRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight);
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var color = CalendarColors.Resolve(editGroupColor, ui.Accent);
         var dotRadius = DotRadius * scale * 1.4f;
@@ -344,7 +344,7 @@ internal sealed partial class CalendarApp
     private float DrawSwatchCard(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var max = new Vector2(origin.X + width, origin.Y + SwatchRowHeight * scale);
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var count = CalendarColors.Count;
         var step = (width - pad * 2f) / count;

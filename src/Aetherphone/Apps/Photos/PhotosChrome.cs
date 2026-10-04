@@ -8,7 +8,6 @@ namespace Aetherphone.Apps.Photos;
 
 internal static class PhotosChrome
 {
-    public const float SectionTitleHeight = 44f;
     public const float BadgeRadius = 13f;
 
     private const float GlassDiscAlpha = 0.30f;
@@ -68,7 +67,6 @@ internal static class PhotosChrome
     public static void Cover(ImDrawListPtr drawList, IDalamudTextureWrap? texture, Vector2 min, Vector2 max,
         float rounding, AppSkin ui, float scale, bool hovered)
     {
-        Elevation.Card(drawList, min, max, rounding, scale, hovered ? 1f : 0.75f);
         if (texture is null)
         {
             Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(Placeholder(ui)));
@@ -180,16 +178,6 @@ internal static class PhotosChrome
             SelectionRingStroke * scale);
         drawList.AddCircleFilled(center, glyph * 0.5f, ImGui.GetColorU32(White), 24);
         PhoneIcon.Draw(drawList, center, PhoneIcons.CircleCheckFilled, accent, glyph);
-    }
-
-    public static void SectionTitle(ImDrawListPtr drawList, float left, float right, float top, string title,
-        Vector4 ink, float scale)
-    {
-        var titleHeight = Typography.LineHeight(TextStyles.Title3);
-        var fitted = Typography.FitText(title, MathF.Max(1f, right - left), TextStyles.Title3);
-        Typography.Draw(drawList,
-            new Vector2(left, top + SectionTitleHeight * scale - titleHeight - Metrics.Space.Sm * scale), fitted, ink,
-            TextStyles.Title3);
     }
 
     public static void TopScrim(ImDrawListPtr drawList, Vector2 min, Vector2 max, float height, float alpha = 1f)

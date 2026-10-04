@@ -16,9 +16,7 @@ internal sealed class SupportCard
     private const float TextGap = 14f;
     private const float ButtonsTopGap = 16f;
     private const float ButtonGap = 12f;
-    private const float ButtonHeight = 48f;
-    private const float ButtonGrow = 3f;
-    private const float ButtonPressSink = 2f;
+    private const float ButtonHeight = Button.LargeHeight;
     private const float ContentGap = 10f;
     private const float ArrowSlide = 5f;
     private const int FloatingIcons = 10;
@@ -38,10 +36,10 @@ internal sealed class SupportCard
     private static readonly Vector4 CoffeeInk = new(0.130f, 0.090f, 0.040f, 1f);
     private static readonly Vector4 White = Vector4.One;
 
-    private static readonly ButtonStyle Patreon = new("##settings.support.patreon", AepConstants.PatreonUrl,
+    private static readonly SupportLink Patreon = new("##settings.support.patreon", AepConstants.PatreonUrl,
         FontAwesomeIcon.HandHoldingHeart, FontAwesomeIcon.Heart, PatreonCoral, Accent.Violet, White, PatreonSoft);
 
-    private static readonly ButtonStyle Coffee = new("##settings.support.coffee", AepConstants.BuyMeACoffeeUrl,
+    private static readonly SupportLink Coffee = new("##settings.support.coffee", AepConstants.BuyMeACoffeeUrl,
         FontAwesomeIcon.MugHot, FontAwesomeIcon.MugHot, CoffeeYellow, CoffeeAmber, CoffeeInk, CoffeeYellow);
 
     private long patreonBurstTick = long.MinValue / 2;
@@ -65,7 +63,7 @@ internal sealed class SupportCard
         var buttonGap = ButtonGap * scale;
         var height = padding + topHeight + ButtonsTopGap * scale + buttonHeight * 2f + buttonGap + padding;
         var max = origin + new Vector2(width, height);
-        var rounding = Metrics.Radius.Card * scale;
+        var rounding = Metrics.Radius.Grouped * scale;
 
         Squircle.FillVerticalGradient(drawList, origin, max, rounding,
             ImGui.GetColorU32(Palette.Mix(theme.GroupedCard, PatreonCoral, 0.16f)),
@@ -73,8 +71,8 @@ internal sealed class SupportCard
         drawList.PushClipRect(origin, max, true);
         DrawFloatingIcons(drawList, origin, max, scale);
         drawList.PopClipRect();
-        Material.EdgeSquircle(drawList, origin, max, rounding, scale);
-        Squircle.Stroke(drawList, origin, max, rounding, ImGui.GetColorU32(Palette.WithAlpha(PatreonCoral, 0.35f)),
+        Squircle.Stroke(
+drawList, origin, max, rounding, ImGui.GetColorU32(Palette.WithAlpha(PatreonCoral, 0.35f)),
             1.2f * scale);
         DrawComet(drawList, origin, max, rounding, scale);
 
@@ -93,67 +91,45 @@ internal sealed class SupportCard
 
         var buttonSize = new Vector2(width - padding * 2f, buttonHeight);
         var firstButton = new Vector2(origin.X + padding, max.Y - padding - buttonHeight * 2f - buttonGap);
-        DrawButton(drawList, Patreon, Loc.T(L.Settings.SupportOnPatreon), firstButton, buttonSize, beat,
+        DrawButton(drawList, theme, Patreon, Loc.T(L.Settings.SupportOnPatreon), firstButton, buttonSize, beat,
             ref patreonBurstTick);
-        DrawButton(drawList, Coffee, Loc.T(L.Settings.BuyMeACoffee),
+        DrawButton(drawList, theme, Coffee, Loc.T(L.Settings.BuyMeACoffee),
             firstButton + new Vector2(0f, buttonHeight + buttonGap), buttonSize, beat, ref coffeeBurstTick);
 
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height));
     }
 
-    private static void DrawButton(ImDrawListPtr drawList, in ButtonStyle style, string label, Vector2 slot,
-        Vector2 size, float beat, ref long burstTick)
+    private static void DrawButton(ImDrawListPtr drawList, PhoneTheme theme, in SupportLink link, string label,
+        Vector2 slot, Vector2 size, float beat, ref long burstTick)
     {
         var scale = UiScale.Current;
-        var slotMax = slot + size;
-        var hovered = UiInteract.Hover(slot, slotMax);
-        var hover = HoverFx.Amount(style.Id, hovered);
-        var press = 1f - PressFx.Toward(style.Id, hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left) ? 0f : 1f);
+        var slotRect = new Rect(slot, slot + size);
+        var hovered = UiInteract.Hover(slotRect.Min, slotRect.Max);
+        var hover = HoverFx.Amount(link.Id, hovered);
         if (hovered)
         {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            HoverTooltip.Show(new Rect(slot, slotMax), Loc.T(L.Settings.SupportHint));
+            HoverTooltip.Show(slotRect, Loc.T(L.Settings.SupportHint));
             if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
             {
-                ImGui.SetClipboardText(style.Url);
+                ImGui.SetClipboardText(link.Url);
                 ShellToast.Show();
             }
         }
 
-        if (UiInteract.Click(slot, slotMax, hovered))
+        if (UiInteract.Click(slotRect.Min, slotRect.Max, hovered))
         {
-            UrlActions.OpenInBrowser(style.Url);
+            UrlActions.OpenInBrowser(link.Url);
             burstTick = Environment.TickCount64;
         }
 
-        var grow = (ButtonGrow * hover - ButtonPressSink * press) * scale;
-        var min = slot - new Vector2(grow, grow);
-        var max = slotMax + new Vector2(grow, grow);
-        var rounding = (max.Y - min.Y) * 0.5f;
-        var breath = 0.55f + 0.45f * Pulse.Wave(Pulse.Breath);
-        for (var layer = 4; layer >= 1; layer--)
-        {
-            var spread = layer * 3f * scale;
-            var alpha = 0.05f * layer * breath * (1f + 1.2f * hover);
-            Squircle.Fill(drawList, min - new Vector2(spread, spread), max + new Vector2(spread, spread),
-                rounding + spread, ImGui.GetColorU32(Palette.WithAlpha(style.Left, alpha)));
-        }
-
-        var left = Palette.Darken(Palette.Lighten(style.Left, 0.14f * hover), 0.12f * press);
-        var right = Palette.Darken(Palette.Lighten(style.Right, 0.14f * hover), 0.12f * press);
-        Squircle.FillHorizontalGradient(drawList, min, max, rounding, ImGui.GetColorU32(left),
-            ImGui.GetColorU32(right));
-        Material.Sheen(drawList, min, max, rounding, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.30f)), 1f,
-            1.5f * scale);
-        Sweep(drawList, min, max - min, hover, scale);
-        Squircle.Stroke(drawList, min, max, rounding,
-            ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.18f + 0.30f * hover)), 1.2f * scale);
-        DrawButtonContent(drawList, style, label, min, max, hover, beat, scale);
-        DrawBurst(drawList, style, (min + max) * 0.5f, burstTick, scale);
+        var face = Button.Surface(drawList, slotRect, ControlInk.From(theme).WithAccent(link.Fill),
+            ButtonStyle.Prominent, ButtonRole.Normal, true, hovered, ImGui.GetID(link.Id));
+        DrawButtonContent(drawList, link, label, face.Face.Min, face.Face.Max, hover, beat, scale);
+        DrawBurst(drawList, link, face.Face.Center, burstTick, scale);
     }
 
-    private static void DrawButtonContent(ImDrawListPtr drawList, in ButtonStyle style, string label, Vector2 min,
+    private static void DrawButtonContent(ImDrawListPtr drawList, in SupportLink style, string label, Vector2 min,
         Vector2 max, float hover, float beat, float scale)
     {
         var iconHeight = Typography.LineHeight(TextStyles.Headline) * 0.9f;
@@ -173,33 +149,6 @@ internal sealed class SupportCard
         x += labelSize.X + gap;
         ProgressRing.CenterIcon(drawList, new Vector2(x + arrowWidth * 0.5f + ArrowSlide * scale * hover, midY),
             FontAwesomeIcon.ArrowRight, Palette.WithAlpha(style.Ink, 0.55f + 0.45f * hover), arrowWidth);
-    }
-
-    private static void Sweep(ImDrawListPtr drawList, Vector2 origin, Vector2 size, float hover, float scale)
-    {
-        var period = hover > 0.5f ? 1400.0 : 3200.0;
-        var window = hover > 0.5f ? 0.8f : 0.35f;
-        var phase = Pulse.Phase(period);
-        if (phase > window)
-        {
-            return;
-        }
-
-        var sweep = phase / window;
-        var slant = size.Y * 0.6f;
-        var bandHalf = 18f * scale;
-        var centerX = origin.X - bandHalf - slant + sweep * (size.X + slant + bandHalf * 2f);
-        drawList.PushClipRect(origin, origin + size, true);
-        const int strokes = 18;
-        for (var stroke = -strokes; stroke <= strokes; stroke++)
-        {
-            var alpha = 0.18f * (1f - MathF.Abs(stroke) / (float)strokes);
-            var x = centerX + stroke * bandHalf / strokes;
-            drawList.AddLine(new Vector2(x + slant, origin.Y), new Vector2(x, origin.Y + size.Y),
-                ImGui.GetColorU32(new Vector4(1f, 1f, 1f, alpha)), 1.4f * scale);
-        }
-
-        drawList.PopClipRect();
     }
 
     private static void DrawFloatingIcons(ImDrawListPtr drawList, Vector2 min, Vector2 max, float scale)
@@ -273,7 +222,7 @@ internal sealed class SupportCard
         return new Vector2(min.X, max.Y - (distance - width));
     }
 
-    private static void DrawBurst(ImDrawListPtr drawList, in ButtonStyle style, Vector2 center, long burstTick,
+    private static void DrawBurst(ImDrawListPtr drawList, in SupportLink style, Vector2 center, long burstTick,
         float scale)
     {
         var elapsed = Environment.TickCount64 - burstTick;
@@ -295,12 +244,12 @@ internal sealed class SupportCard
         }
     }
 
-    private readonly record struct ButtonStyle(
+    private readonly record struct SupportLink(
         string Id,
         string Url,
         FontAwesomeIcon Icon,
         FontAwesomeIcon BurstIcon,
-        Vector4 Left,
+        Vector4 Fill,
         Vector4 Right,
         Vector4 Ink,
         Vector4 Burst);

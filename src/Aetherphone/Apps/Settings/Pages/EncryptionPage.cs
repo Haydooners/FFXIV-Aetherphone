@@ -8,7 +8,6 @@ using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Interface;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Settings.Pages;
 
@@ -31,6 +30,7 @@ internal sealed class EncryptionPage : ISettingsPage, IDisposable
     public FontAwesomeIcon Icon => FontAwesomeIcon.Lock;
     public Vector4 Tint => new(0.38f, 0.66f, 0.42f, 1f);
 
+    private const int RecoveryCodeMaxLength = 64;
     private readonly AethernetSession session;
     private readonly KeyVault vault;
     private readonly EncryptionVaultActions actions;
@@ -120,34 +120,24 @@ internal sealed class EncryptionPage : ISettingsPage, IDisposable
         });
     }
 
-    private void DrawUnavailable(PhoneTheme theme)
+    private static void DrawUnavailable(PhoneTheme theme)
     {
-        ImGui.Dummy(new Vector2(0f, 8f * UiScale.Current));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Encryption.NotSignedIn));
-        }
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsForm.Body(Loc.T(L.Encryption.NotSignedIn), theme);
     }
 
-    private void DrawUnsupported(PhoneTheme theme)
+    private static void DrawUnsupported(PhoneTheme theme)
     {
-        ImGui.Dummy(new Vector2(0f, 8f * UiScale.Current));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Encryption.UnsupportedBody));
-        }
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsForm.Body(Loc.T(L.Encryption.UnsupportedBody), theme);
     }
 
-    private void DrawProvisioning(PhoneTheme theme)
+    private static void DrawProvisioning(PhoneTheme theme)
     {
-        var scale = UiScale.Current;
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Encryption.Intro));
-            ImGui.Dummy(new Vector2(0f, 4f * scale));
-            Typography.Wrapped(Loc.T(L.Encryption.SettingUp));
-        }
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsForm.Body(Loc.T(L.Encryption.Intro), theme);
+        SettingsForm.Gap(Metrics.Space.Xs);
+        SettingsForm.Body(Loc.T(L.Encryption.SettingUp), theme);
     }
 
     private void DrawLocked(PhoneTheme theme)
@@ -158,17 +148,13 @@ internal sealed class EncryptionPage : ISettingsPage, IDisposable
             return;
         }
 
-        var scale = UiScale.Current;
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(vault.LocalKeyUnreadable
-                ? Loc.T(L.Encryption.UnreadableKeyBody)
-                : Loc.T(L.Encryption.LockedNoRecoveryBody));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 12f * scale));
-        if (ThemeButton.Draw(Loc.T(L.Encryption.NewKeyButton), theme) && !actions.Busy)
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsForm.Body(vault.LocalKeyUnreadable
+            ? Loc.T(L.Encryption.UnreadableKeyBody)
+            : Loc.T(L.Encryption.LockedNoRecoveryBody), theme);
+        SettingsForm.Gap(Metrics.Space.Xl);
+        if (SettingsForm.Button(Loc.T(L.Encryption.NewKeyButton), theme, ButtonStyle.Gray, ButtonRole.Destructive)
+            && !actions.Busy)
         {
             actions.AskResetWithoutRecovery();
         }
@@ -176,24 +162,20 @@ internal sealed class EncryptionPage : ISettingsPage, IDisposable
 
     private void DrawLockedRecover(PhoneTheme theme)
     {
-        var scale = UiScale.Current;
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Encryption.LockedRecoverBody));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 10f * scale));
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsForm.Body(Loc.T(L.Encryption.LockedRecoverBody), theme);
+        SettingsForm.Gap(Metrics.Space.Md);
         DrawCodeInput(theme);
-        ImGui.Dummy(new Vector2(0f, 10f * scale));
-        if (ThemeButton.Draw(Loc.T(L.Encryption.RecoveryUnlockButton), theme)
-            && !actions.Busy && RecoveryKey.Canonicalize(actions.CodeEntry).Length > 0)
+        SettingsForm.Gap(Metrics.Space.Xl);
+        if (SettingsForm.Button(Loc.T(L.Encryption.RecoveryUnlockButton), theme, ButtonStyle.Prominent,
+                enabled: RecoveryKey.Canonicalize(actions.CodeEntry).Length > 0) && !actions.Busy)
         {
             actions.BeginRecover();
         }
 
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
-        if (ThemeButton.Draw(Loc.T(L.Encryption.NewKeyButton), theme) && !actions.Busy)
+        SettingsForm.Gap(Metrics.Space.Sm);
+        if (SettingsForm.Button(Loc.T(L.Encryption.NewKeyButton), theme, ButtonStyle.Gray, ButtonRole.Destructive)
+            && !actions.Busy)
         {
             actions.AskReset();
         }
@@ -201,166 +183,114 @@ internal sealed class EncryptionPage : ISettingsPage, IDisposable
 
     private void DrawCodeInput(PhoneTheme theme)
     {
-        var scale = UiScale.Current;
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Plain(Loc.T(L.Encryption.RecoveryCodeLabel));
-        }
-
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var height = 34f * scale;
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, origin, new Vector2(origin.X + width, origin.Y + height), 9f * scale,
-            ImGui.GetColorU32(theme.GroupedCard));
-        ImGui.SetCursorScreenPos(new Vector2(origin.X + 12f * scale,
-            origin.Y + height * 0.5f - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(width - 24f * scale);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0f, 0f)).Push(ImGuiCol.Text, theme.TextStrong))
-        {
-            ImGui.InputText("##recoveryCode", ref actions.CodeEntry, 64);
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
+        SettingsSection.Header(Loc.T(L.Encryption.RecoveryCodeLabel), theme);
+        SettingsForm.TextField("##recoveryCode", string.Empty, ref actions.CodeEntry, theme, RecoveryCodeMaxLength);
     }
 
     private void DrawGeneratedCode(PhoneTheme theme)
     {
-        var scale = UiScale.Current;
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsForm.Title(Loc.T(L.Encryption.RecoverySaveTitle), theme);
+        SettingsForm.Gap(Metrics.Space.Lg);
+        DrawCopyableCode(actions.GeneratedCode, theme);
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsSection.Hint(Loc.T(L.Encryption.RecoverySaveBody), theme);
+        SettingsForm.Gap(Metrics.Space.Xl);
+        if (SettingsForm.Button(Loc.T(L.Encryption.RecoveryCopy), theme))
         {
-            Typography.Wrapped(Loc.T(L.Encryption.RecoverySaveTitle));
+            CopyCode(actions.GeneratedCode);
         }
 
-        ImGui.Dummy(new Vector2(0f, 10f * scale));
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var height = 46f * scale;
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, origin, new Vector2(origin.X + width, origin.Y + height), 10f * scale,
-            ImGui.GetColorU32(theme.GroupedCard));
-        Typography.DrawCentered(new Vector2(origin.X + width * 0.5f, origin.Y + height * 0.5f), actions.GeneratedCode,
-            theme.TextStrong, 1.15f, FontWeight.SemiBold);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
-
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        if (ThemeButton.Draw(Loc.T(L.Encryption.RecoveryCopy), theme))
-        {
-            ImGui.SetClipboardText(actions.GeneratedCode);
-            ShellToast.Show();
-        }
-
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Encryption.RecoverySaveBody));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 12f * scale));
-        if (ThemeButton.Draw(Loc.T(L.Encryption.RecoverySavedButton), theme))
+        SettingsForm.Gap(Metrics.Space.Sm);
+        if (SettingsForm.Button(Loc.T(L.Encryption.RecoverySavedButton), theme, ButtonStyle.Prominent))
         {
             actions.AcknowledgeGeneratedCode();
         }
     }
 
+    private static void DrawCopyableCode(string code, PhoneTheme theme)
+    {
+        if (SettingsForm.CodeCard(code, theme))
+        {
+            CopyCode(code);
+        }
+    }
+
+    private static void CopyCode(string code)
+    {
+        ImGui.SetClipboardText(code);
+        ShellToast.Show();
+    }
+
     private void DrawRecoverySection(PhoneTheme theme)
     {
-        var scale = UiScale.Current;
         var unsaved = vault.UnsavedRecoveryCode;
         if (unsaved is not null)
         {
-            DrawUnsavedCodeSection(theme, unsaved, scale);
+            DrawUnsavedCodeSection(theme, unsaved);
             return;
         }
 
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
-        {
-            Typography.Plain(Loc.T(L.Encryption.RecoverySectionTitle));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 4f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(vault.RecoveryConfigured
-                ? Loc.T(L.Encryption.RecoveryConfiguredBody)
-                : Loc.T(L.Encryption.RecoveryNotSetBody));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
+        SettingsForm.Gap(Metrics.Space.Lg);
+        SettingsSection.Header(Loc.T(L.Encryption.RecoverySectionTitle), theme);
         var label = vault.RecoveryConfigured
             ? Loc.T(L.Encryption.RecoveryRegenerateButton)
             : Loc.T(L.Encryption.RecoverySetupButton);
-        if (ThemeButton.Draw(label, theme) && !actions.Busy)
+        if (SettingsForm.ActionCard(label, theme.Accent, theme, !actions.Busy))
         {
             actions.BeginCreateRecoveryCode();
         }
+
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsSection.Hint(vault.RecoveryConfigured
+            ? Loc.T(L.Encryption.RecoveryConfiguredBody)
+            : Loc.T(L.Encryption.RecoveryNotSetBody), theme);
     }
 
     private void DrawActive(PhoneTheme theme)
     {
-        var scale = UiScale.Current;
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Encryption.Intro));
-            ImGui.Dummy(new Vector2(0f, 4f * scale));
-            Typography.Wrapped(Loc.T(L.Encryption.ActiveHint));
-            ImGui.Dummy(new Vector2(0f, 4f * scale));
-            Typography.Wrapped(Loc.T(L.Encryption.NewDeviceHint));
-            ImGui.Dummy(new Vector2(0f, 2f * scale));
-            Typography.Plain(Loc.T(L.Encryption.KeyVersion, vault.KeyVersion));
-        }
-
+        SettingsForm.Gap(Metrics.Space.Xs);
+        SettingsForm.Body(Loc.T(L.Encryption.Intro), theme);
+        SettingsForm.Gap(Metrics.Space.Xs);
+        SettingsForm.Body(Loc.T(L.Encryption.ActiveHint), theme);
+        SettingsForm.Gap(Metrics.Space.Xs);
+        SettingsForm.Body(Loc.T(L.Encryption.NewDeviceHint), theme);
+        SettingsForm.Gap(Metrics.Space.Xs);
+        SettingsForm.Note(Loc.T(L.Encryption.KeyVersion, vault.KeyVersion), theme);
         if (vault.LocalCacheUnavailable)
         {
-            ImGui.Dummy(new Vector2(0f, 8f * scale));
-            using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-            {
-                Typography.Wrapped(Loc.T(L.Encryption.LocalStoreUnavailable));
-            }
+            SettingsForm.Gap(Metrics.Space.Sm);
+            SettingsForm.Note(Loc.T(L.Encryption.LocalStoreUnavailable), theme);
         }
 
         DrawRecoverySection(theme);
         DrawRestoreOlderSection(theme);
-
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
-        if (ThemeButton.Draw(Loc.T(L.Encryption.ResetButton), theme) && !actions.Busy)
+        SettingsForm.Gap(Metrics.Space.Xl);
+        if (SettingsForm.ActionCard(Loc.T(L.Encryption.ResetButton), theme.Danger, theme, !actions.Busy))
         {
             actions.AskReset();
         }
     }
 
-    private void DrawUnsavedCodeSection(PhoneTheme theme, string code, float scale)
+    private void DrawUnsavedCodeSection(PhoneTheme theme, string code)
     {
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
+        SettingsForm.Gap(Metrics.Space.Xl);
         if (actions.VerifyingSavedCode)
         {
-            using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
-            {
-                Typography.Plain(Loc.T(L.Encryption.GuideVerifyTitle));
-            }
-
-            ImGui.Dummy(new Vector2(0f, 4f * scale));
-            using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-            {
-                Typography.Wrapped(Loc.T(L.Encryption.GuideVerifyBody, actions.ExpectedVerifyGroup ?? string.Empty));
-            }
-
-            ImGui.Dummy(new Vector2(0f, 8f * scale));
-            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            ImGui.InputText("##encryptionVerifySettings", ref actions.VerifyEntry, 64);
-            ImGui.Dummy(new Vector2(0f, 10f * scale));
-            if (ThemeButton.Draw(Loc.T(L.Encryption.GuideVerifyConfirm), theme))
+            SettingsForm.Heading(Loc.T(L.Encryption.GuideVerifyTitle), theme);
+            SettingsForm.Gap(Metrics.Space.Xs);
+            SettingsForm.Body(Loc.T(L.Encryption.GuideVerifyBody, actions.ExpectedVerifyGroup ?? string.Empty), theme);
+            SettingsForm.Gap(Metrics.Space.Md);
+            SettingsForm.TextField("##encryptionVerifySettings", string.Empty, ref actions.VerifyEntry, theme,
+                RecoveryCodeMaxLength);
+            SettingsForm.Gap(Metrics.Space.Lg);
+            if (SettingsForm.Button(Loc.T(L.Encryption.GuideVerifyConfirm), theme, ButtonStyle.Prominent))
             {
                 actions.TryConfirmSavedCode();
             }
 
-            ImGui.Dummy(new Vector2(0f, 6f * scale));
-            if (ThemeButton.Draw(Loc.T(L.Encryption.GuideShowAgain), theme))
+            SettingsForm.Gap(Metrics.Space.Sm);
+            if (SettingsForm.Button(Loc.T(L.Encryption.GuideShowAgain), theme))
             {
                 actions.VerifyingSavedCode = false;
                 actions.Status = string.Empty;
@@ -369,32 +299,19 @@ internal sealed class EncryptionPage : ISettingsPage, IDisposable
             return;
         }
 
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
+        SettingsForm.Heading(Loc.T(L.Encryption.RecoverySaveTitle), theme);
+        SettingsForm.Gap(Metrics.Space.Xs);
+        SettingsForm.Body(Loc.T(L.Encryption.SaveCodeIntro), theme);
+        SettingsForm.Gap(Metrics.Space.Md);
+        DrawCopyableCode(code, theme);
+        SettingsForm.Gap(Metrics.Space.Lg);
+        if (SettingsForm.Button(Loc.T(L.Encryption.RecoveryCopy), theme))
         {
-            Typography.Plain(Loc.T(L.Encryption.RecoverySaveTitle));
+            CopyCode(code);
         }
 
-        ImGui.Dummy(new Vector2(0f, 4f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Encryption.SaveCodeIntro));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
-        {
-            Typography.Plain(code);
-        }
-
-        ImGui.Dummy(new Vector2(0f, 10f * scale));
-        if (ThemeButton.Draw(Loc.T(L.Encryption.RecoveryCopy), theme))
-        {
-            ImGui.SetClipboardText(code);
-            ShellToast.Show();
-        }
-
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
-        if (ThemeButton.Draw(Loc.T(L.Encryption.GuideWroteItDown), theme))
+        SettingsForm.Gap(Metrics.Space.Sm);
+        if (SettingsForm.Button(Loc.T(L.Encryption.GuideWroteItDown), theme, ButtonStyle.Prominent))
         {
             actions.VerifyingSavedCode = true;
             actions.Status = string.Empty;
@@ -409,44 +326,35 @@ internal sealed class EncryptionPage : ISettingsPage, IDisposable
             return;
         }
 
-        var scale = UiScale.Current;
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
+        SettingsForm.Gap(Metrics.Space.Lg);
+        SettingsSection.Header(Loc.T(L.Encryption.RestoreOlderTitle), theme);
+        if (actions.HasArchivedEscrows && !restoreEntryOpen)
         {
-            Typography.Plain(Loc.T(L.Encryption.RestoreOlderTitle));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 4f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Encryption.RestoreOlderBody));
-            if (olderKeysHeldHere > 0)
-            {
-                Typography.Wrapped(Loc.T(L.Encryption.OlderKeysHeldHere, olderKeysHeldHere));
-            }
-        }
-
-        if (!actions.HasArchivedEscrows)
-        {
-            return;
-        }
-
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        if (!restoreEntryOpen)
-        {
-            if (ThemeButton.Draw(Loc.T(L.Encryption.RestoreOlderButton), theme) && !actions.Busy)
+            if (SettingsForm.ActionCard(Loc.T(L.Encryption.RestoreOlderButton), theme.Accent, theme, !actions.Busy))
             {
                 actions.CodeEntry = string.Empty;
                 restoreEntryOpen = true;
             }
 
+            SettingsForm.Gap(Metrics.Space.Sm);
+        }
+
+        SettingsSection.Hint(Loc.T(L.Encryption.RestoreOlderBody), theme);
+        if (olderKeysHeldHere > 0)
+        {
+            SettingsSection.Hint(Loc.T(L.Encryption.OlderKeysHeldHere, olderKeysHeldHere), theme);
+        }
+
+        if (!actions.HasArchivedEscrows || !restoreEntryOpen)
+        {
             return;
         }
 
+        SettingsForm.Gap(Metrics.Space.Md);
         DrawCodeInput(theme);
-        ImGui.Dummy(new Vector2(0f, 10f * scale));
-        if (ThemeButton.Draw(Loc.T(L.Encryption.RestoreOlderConfirm), theme)
-            && !actions.Busy && RecoveryKey.Canonicalize(actions.CodeEntry).Length > 0)
+        SettingsForm.Gap(Metrics.Space.Lg);
+        if (SettingsForm.Button(Loc.T(L.Encryption.RestoreOlderConfirm), theme, ButtonStyle.Prominent,
+                enabled: RecoveryKey.Canonicalize(actions.CodeEntry).Length > 0) && !actions.Busy)
         {
             actions.BeginRestorePreviousKeys();
         }
@@ -460,11 +368,8 @@ internal sealed class EncryptionPage : ISettingsPage, IDisposable
             return;
         }
 
-        ImGui.Dummy(new Vector2(0f, 8f * UiScale.Current));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(message);
-        }
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsForm.Body(message, theme);
     }
 
     public void Dispose()

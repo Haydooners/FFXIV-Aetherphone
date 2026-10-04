@@ -138,7 +138,7 @@ internal sealed partial class NotesApp
         var origin = ImGui.GetCursorScreenPos();
         var height = TitleCardHeight * scale;
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, origin, origin + new Vector2(width, height), Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, origin + new Vector2(width, height), Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var radius = CheckRadius * scale;
         var checkCenter = new Vector2(origin.X + pad + radius, origin.Y + height * 0.5f);
@@ -189,7 +189,7 @@ internal sealed partial class NotesApp
         var height = headerHeight + reveal;
         var drawList = ImGui.GetWindowDrawList();
         var cardMax = origin + new Vector2(width, height);
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
         DrawDateHeader(drawList, new Rect(origin, origin + new Vector2(width, headerHeight)), scale);
         if (reveal > 0f)
         {
@@ -249,7 +249,7 @@ internal sealed partial class NotesApp
             var top = rect.Center.Y - (bodyHeight + footHeight) * 0.5f;
             Typography.Draw(drawList, new Vector2(labelLeft, top), label, ui.TitleInk, TextStyles.Body);
             var summary = Typography.FitText(DateSummary(), labelWidth, TextStyles.Footnote);
-            Typography.Draw(drawList, new Vector2(labelLeft, top + bodyHeight), summary, theme.Accent,
+            Typography.Draw(drawList, new Vector2(labelLeft, top + bodyHeight), summary, ui.Accent,
                 TextStyles.Footnote);
         }
         else
@@ -347,17 +347,11 @@ internal sealed partial class NotesApp
 
     private bool MonthArrow(ImDrawListPtr drawList, Vector2 center, float radius, FontAwesomeIcon icon, string tip)
     {
-        var hit = new Vector2(radius, radius);
-        var hovered = UiInteract.Hover(center - hit, center + hit);
-        if (hovered)
-        {
-            drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(ui.HoverTint), 24);
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        AppSkin.Icon(drawList, center, IconGlyph.Of(icon), theme.Accent, 0.6f);
-        HoverTooltip.Show(new Rect(center - hit, center + hit), tip);
-        return UiInteract.Click(center - hit, center + hit, hovered);
+        var clicked = RoundButton.Draw(drawList, ImGui.GetID(tip), center, radius, ui.Ink, ButtonStyle.Plain, true,
+            false, out var face);
+        AppSkin.Icon(drawList, center, IconGlyph.Of(icon), ui.Accent, 0.6f * face.Face.Width / (radius * 2f));
+        HoverTooltip.Show(new Rect(center - new Vector2(radius, radius), center + new Vector2(radius, radius)), tip);
+        return clicked;
     }
 
     private string MonthTitle()
@@ -408,14 +402,14 @@ internal sealed partial class NotesApp
             var hovered = UiInteract.Hover(center - hit, center + hit);
             if (selected)
             {
-                drawList.AddCircleFilled(center, circle, ImGui.GetColorU32(theme.Accent), 32);
+                drawList.AddCircleFilled(center, circle, ImGui.GetColorU32(ui.Accent), 32);
             }
             else if (hovered)
             {
                 drawList.AddCircleFilled(center, circle, ImGui.GetColorU32(ui.HoverTint), 32);
             }
 
-            var ink = selected ? White : isToday ? theme.Accent : ui.TitleInk;
+            var ink = selected ? White : isToday ? ui.Accent : ui.TitleInk;
             if (!selected && date < today)
             {
                 ink = Palette.WithAlpha(ink, ink.W * PastDayAlpha);
@@ -446,7 +440,7 @@ internal sealed partial class NotesApp
         var tile = DateTileSize * scale;
         var tileMin = new Vector2(left, centerY - tile * 0.5f);
         IconTile.FillShaded(drawList, tileMin, tileMin + new Vector2(tile, tile), tile * Metrics.Radius.TileFactor,
-            theme.Accent);
+            ui.Accent);
         PhoneIcon.Draw(drawList, tileMin + new Vector2(tile, tile) * 0.5f, PhoneIcons.Clock, White,
             tile * TileGlyphFraction);
 
