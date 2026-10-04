@@ -21,7 +21,7 @@ internal sealed partial class NewsApp
     private const float MediaGap = 18f;
     private const float ParagraphGap = 12f;
     private const float ActionGap = 22f;
-    private const float ActionHeight = 46f;
+    private const float ActionHeight = Button.LargeHeight;
     private const int NextStoryCount = 3;
     private const float LoadingOffset = 120f;
     private const float LoadingRadius = 13f;
@@ -118,7 +118,7 @@ internal sealed partial class NewsApp
             var texture = Banner(story.Item.Image, width, out var reveal, out var failed);
             var height = NewsArt.BannerHeight(texture, width);
             NewsArt.Banner(drawList, ui, texture, failed, reveal, new Vector2(left, cursorY),
-                new Vector2(left + width, cursorY + height), NewsArt.CardRadius * scale, ImDrawFlags.RoundCornersAll,
+                new Vector2(left + width, cursorY + height), Metrics.Radius.Grouped * scale, ImDrawFlags.RoundCornersAll,
                 scale);
             cursorY += height + MediaGap * scale;
         }
@@ -157,7 +157,7 @@ internal sealed partial class NewsApp
         cursorY += ActionGap * scale;
         var action = new Rect(new Vector2(left, cursorY), new Vector2(left + width, cursorY + ActionHeight * scale));
         if (story.Item.Url.Length > 0 &&
-            NewsArt.AccentButton(drawList, action, Loc.T(L.News.ReadOnLodestone), ui.Accent, ReadButtonId))
+            Button.Draw(drawList, action, Loc.T(L.News.ReadOnLodestone), ui.Ink, id: ReadButtonId))
         {
             OpenOnLodestone(story);
         }
@@ -184,7 +184,7 @@ internal sealed partial class NewsApp
         }
 
         var cursorY = top + NewsArt.SectionTopGap * scale;
-        cursorY += NewsArt.SectionHeader(drawList, new Vector2(left, cursorY), width, MoreInLabel(feed.Category),
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width, MoreInLabel(feed.Category),
             ui.TitleInk) + NewsArt.SectionHeaderGap * scale;
         var anchorTaken = true;
         return DrawRowGroup(drawList, left, cursorY, width, feed, rowBuffer.AsSpan(0, count), ref anchorTaken, scale);

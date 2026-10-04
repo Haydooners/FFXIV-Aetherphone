@@ -10,13 +10,11 @@ namespace Aetherphone.Apps.News;
 
 internal static class NewsArt
 {
-    public const float CardRadius = Metrics.Radius.Widget;
-    public const float GroupRadius = Metrics.Radius.Grouped;
     public const float BannerAspect = 188f / 720f;
     public const float BannerAspectMin = 0.2f;
     public const float BannerAspectMax = 0.75f;
     public const float SectionTopGap = 24f;
-    public const float SectionHeaderGap = 8f;
+    public const float SectionHeaderGap = 4f;
     public const float BarHeight = 5f;
     public const float ChevronSize = 4.5f;
 
@@ -33,22 +31,18 @@ internal static class NewsArt
     private const float StateTileToTitle = 20f;
     private const float StateTitleToHint = 6f;
     private const float StateHintToAction = 22f;
-    private const float StateActionHeight = 40f;
+    private const float StateActionHeight = Button.RegularHeight;
     private const float StateActionPadding = 44f;
     private const float StateActionMinWidth = 140f;
     private const float StateMaxText = 280f;
     private const float StateSideMargin = 32f;
     private const float StateVerticalBias = 0.42f;
     private const float StateLineSpacing = 1.25f;
-    private const float ActionHoverDarken = 0.12f;
     private const float PillPadX = 8f;
     private const float PillPadY = 3f;
     private const float PillFillAlpha = 0.18f;
     private const float BarTrackAlpha = 0.26f;
     private const string StateActionId = "news.state.action";
-
-    private static readonly Vector4 OnAccentInk = new(1f, 1f, 1f, 1f);
-    private static readonly Vector4 HoverShade = new(0f, 0f, 0f, 1f);
 
     public static float BannerHeight(IDalamudTextureWrap? texture, float width)
     {
@@ -128,13 +122,6 @@ internal static class NewsArt
         Typography.DrawCentered(drawList, (min + max) * 0.5f, label, color, TextStyles.FootnoteEmphasized);
     }
 
-    public static float SectionHeader(ImDrawListPtr drawList, Vector2 origin, float width, string label, Vector4 ink)
-    {
-        var fitted = Typography.FitText(label, MathF.Max(1f, width), TextStyles.Title3);
-        Typography.Draw(drawList, origin, fitted, ink, TextStyles.Title3);
-        return Typography.LineHeight(TextStyles.Title3);
-    }
-
     public static Rect Lift(ImDrawListPtr drawList, AppSkin ui, Rect rest, string id, bool hovered, float radius)
     {
         var eased = HoverFx.Amount(id, hovered);
@@ -143,7 +130,7 @@ internal static class NewsArt
         var factor = (1f + Motion.HoverLiftCard * eased) * press;
         var half = rest.Size * 0.5f * factor;
         var card = new Rect(rest.Center - half, rest.Center + half);
-        ui.Card(drawList, card.Min, card.Max, radius * factor, true);
+        ui.Card(drawList, card.Min, card.Max, radius * factor);
         return card;
     }
 
@@ -165,7 +152,6 @@ internal static class NewsArt
         var tileMin = new Vector2(centerX - tile * 0.5f, top);
         var tileMax = tileMin + new Vector2(tile, tile);
         var radius = tile * Metrics.Radius.TileFactor;
-        Elevation.IconRest(drawList, tileMin, tileMax, radius, scale);
         IconTile.FillShaded(drawList, tileMin, tileMax, radius, IconTile.Surface(ui.Accent));
         ProgressRing.CenterIcon(drawList, (tileMin + tileMax) * 0.5f, icon, AccentRing.Ink, tile * StateGlyphFraction);
         var cursorY = Typography.DrawWrappedCentered(drawList, title, TextStyles.Title3, ui.TitleInk,
@@ -186,26 +172,6 @@ internal static class NewsArt
         var actionTop = cursorY + StateHintToAction * scale;
         var rest = new Rect(new Vector2(centerX - width * 0.5f, actionTop),
             new Vector2(centerX + width * 0.5f, actionTop + StateActionHeight * scale));
-        return AccentButton(drawList, rest, action, ui.Accent, StateActionId);
-    }
-
-    public static bool AccentButton(ImDrawListPtr drawList, Rect rest, string label, Vector4 accent, string id)
-    {
-        var hovered = UiInteract.Hover(rest.Min, rest.Max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(id, pressed, PressFx.ControlPressedScale);
-        var half = rest.Size * 0.5f * press;
-        var min = rest.Center - half;
-        var max = rest.Center + half;
-        var fill = hovered ? Palette.Mix(accent, HoverShade, ActionHoverDarken) : accent;
-        Squircle.Fill(drawList, min, max, (max.Y - min.Y) * 0.5f, ImGui.GetColorU32(fill));
-        var fitted = Typography.FitText(label, MathF.Max(1f, rest.Width - rest.Height), TextStyles.Headline);
-        Typography.DrawCentered(drawList, rest.Center, fitted, OnAccentInk, TextStyles.Headline);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(rest.Min, rest.Max, hovered);
+        return Button.Draw(drawList, rest, action, ui.Ink, id: StateActionId);
     }
 }
