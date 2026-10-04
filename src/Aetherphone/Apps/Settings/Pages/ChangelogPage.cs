@@ -169,9 +169,7 @@ internal sealed class ChangelogPage : ISettingsPage
         var textLeft = innerLeft + BulletColumn * scale;
         var max = new Vector2(right, origin.Y + layout.CardHeight);
         var rounding = CardRounding * scale;
-        Elevation.Card(drawList, origin, max, rounding, scale);
         Squircle.Fill(drawList, origin, max, rounding, ImGui.GetColorU32(theme.GroupedCard));
-        Material.TopGlow(drawList, origin, max, rounding, theme.Accent, 0.5f, isLatest ? 0.14f : 0.09f);
         Material.EdgeSquircle(drawList, origin, max, rounding, scale);
         var versionTop = origin.Y + CardPaddingY * scale;
         Typography.Draw(drawList, new Vector2(innerLeft, versionTop), layout.VersionLabel, theme.Accent,

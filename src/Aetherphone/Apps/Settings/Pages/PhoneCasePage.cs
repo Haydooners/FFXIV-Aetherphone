@@ -216,11 +216,6 @@ internal sealed class PhoneCasePage : ISettingsPage
         var selected = option.Id == configuration.PhoneCaseName;
         var radius = CardRadius * scale;
         var hovered = !overArrow && UiInteract.Hover(card.Min, card.Max);
-        if (selected)
-        {
-            Elevation.Floating(drawList, card.Min, card.Max, radius, scale, 0.7f);
-        }
-
         var fill = hovered && draggingRail < 0 ? Palette.Lighten(theme.GroupedCard, 0.04f) : theme.GroupedCard;
         Squircle.Fill(drawList, card.Min, card.Max, radius, ImGui.GetColorU32(fill));
         Material.EdgeSquircle(drawList, card.Min, card.Max, radius, scale);
