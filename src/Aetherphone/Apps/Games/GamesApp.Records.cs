@@ -22,7 +22,7 @@ internal sealed partial class GamesApp
     private const float SummaryLabelGap = 2f;
     private const float DailyRowHeight = 72f;
     private const float DailyIconSize = 44f;
-    private const float DailyPillHeight = 30f;
+    private const float DailyPillHeight = Button.SmallHeight;
     private const float RecordRowHeight = 62f;
     private const float RecordIconSize = 40f;
     private const float RecordIconGap = 12f;
@@ -80,7 +80,7 @@ internal sealed partial class GamesApp
         var min = new Vector2(left, top);
         var max = new Vector2(left + width, top + height);
         var rounding = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, min, max, rounding, true);
+        ui.Card(drawList, min, max, rounding);
         GamesHubArt.ReportAnchor("games.records.summary", new Rect(min, max));
         var column = width / SummaryColumns;
         var played = library.PlayedCount;
@@ -151,11 +151,11 @@ internal sealed partial class GamesApp
         var done = stats.DailyDone;
         var pillHeight = DailyPillHeight * scale;
         var pillLabel = Loc.T(L.Games.Play);
-        var pillWidth = GamesHubArt.PillWidth(pillLabel, pillHeight, TextStyles.Headline);
+        var pillWidth = GamesHubArt.ButtonWidth(pillLabel, pillHeight);
         var pad = Metrics.Space.Lg * scale;
         var pillRect = new Rect(new Vector2(max.X - pad - pillWidth, top + (height - pillHeight) * 0.5f),
             new Vector2(max.X - pad, top + (height + pillHeight) * 0.5f));
-        ui.Card(drawList, min, max, rounding, true);
+        ui.Card(drawList, min, max, rounding);
         var iconSize = DailyIconSize * scale;
         var iconCenter = new Vector2(min.X + pad + iconSize * 0.5f, top + height * 0.5f);
         DrawGameIcon(drawList, game.Id, game.Accent, iconCenter, iconSize, scale);
@@ -177,8 +177,7 @@ internal sealed partial class GamesApp
             return max.Y;
         }
 
-        if (GamesHubArt.Pill(drawList, "games.records.daily", pillRect, pillLabel, ui.Accent, AccentRing.Ink,
-                TextStyles.Headline))
+        if (Button.Draw(drawList, pillRect, pillLabel, ui.Ink, id: "games.records.daily"))
         {
             OpenGame(game);
         }

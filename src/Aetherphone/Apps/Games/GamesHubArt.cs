@@ -10,56 +10,31 @@ namespace Aetherphone.Apps.Games;
 
 internal static class GamesHubArt
 {
-    public const float SectionHeight = 34f;
+    public const float SectionHeight = CardSectionHeader.HeightUnits;
     public const float SectionGap = 22f;
     private const float SeeAllChevron = 11f;
     private const float SeeAllGap = 4f;
-    private const float PillHoverDarken = 0.10f;
     private const float StateTileSize = 76f;
     private const float StateGlyphSize = 34f;
     private const float StateLift = 44f;
     private const float StateTitleGap = 18f;
     private const float StateHintGap = 6f;
     private const float StateActionGap = 20f;
-    private const float StateActionHeight = 40f;
+    private const float StateActionHeight = Button.RegularHeight;
     private const float StateActionMinWidth = 150f;
     private const float StateTextInset = 56f;
     private const float StateMaxText = 290f;
     private const float MedallionRim = 2f;
     private const float MedallionArt = 1.3f;
 
-    private static readonly Vector4 Black = new(0f, 0f, 0f, 1f);
-
-    public static bool Pill(ImDrawListPtr drawList, string id, Rect rect, string label, Vector4 fill, Vector4 ink,
-        in TextStyle style, bool enabled = true)
-    {
-        var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(id, pressed, Motion.PressScaleControl);
-        var half = rect.Size * 0.5f * press;
-        var min = rect.Center - half;
-        var max = rect.Center + half;
-        var tone = !enabled ? Palette.WithAlpha(fill, fill.W * 0.4f)
-            : hovered ? Palette.Mix(fill, Black with { W = fill.W }, PillHoverDarken) : fill;
-        Squircle.Fill(drawList, min, max, (max.Y - min.Y) * 0.5f, ImGui.GetColorU32(tone));
-        var fitted = Typography.FitText(label, MathF.Max(1f, rect.Width - rect.Height * 0.6f), style);
-        Typography.DrawCentered(drawList, rect.Center, fitted, enabled ? ink : Palette.WithAlpha(ink, 0.6f), style);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
-    }
-
-    public static float PillWidth(string label, float height, in TextStyle style) =>
-        Typography.Measure(label, style).X + height * 1.1f;
+    public static float ButtonWidth(string label, float height) =>
+        Typography.Measure(label, Button.LabelStyle(height)).X + height;
 
     public static bool Section(ImDrawListPtr drawList, AppSkin ui, float left, float top, float width, string title,
         string action, string id)
     {
         var scale = UiScale.Current;
-        var height = SectionHeight * scale;
+        var height = CardSectionHeader.HeightUnits * scale;
         var centerY = top + height * 0.5f;
         var actionWidth = 0f;
         var clicked = false;
@@ -84,11 +59,8 @@ internal static class GamesHubArt
             ReportAnchor(id, new Rect(min, max));
         }
 
-        var titleWidth = MathF.Max(1f, width - actionWidth - Metrics.Space.Md * scale);
-        var fitted = Typography.FitText(title, titleWidth, TextStyles.Title3);
-        var titleHeight = Typography.Measure(fitted, TextStyles.Title3).Y;
-        Typography.Draw(drawList, new Vector2(left, centerY - titleHeight * 0.5f), fitted, ui.TitleInk,
-            TextStyles.Title3);
+        var reserve = actionWidth > 0f ? actionWidth + Metrics.Space.Md * scale : 0f;
+        CardSectionHeader.Draw(drawList, new Vector2(left, top), width, title, ui.TitleInk, reserve);
         return clicked;
     }
 
@@ -118,10 +90,10 @@ internal static class GamesHubArt
 
         var height = StateActionHeight * scale;
         var width = MathF.Min(maxWidth, MathF.Max(StateActionMinWidth * scale,
-            PillWidth(action, height, TextStyles.Headline)));
+            ButtonWidth(action, height)));
         var top = hintBottom + StateActionGap * scale;
         var rect = new Rect(new Vector2(centerX - width * 0.5f, top), new Vector2(centerX + width * 0.5f, top + height));
-        return Pill(drawList, id, rect, action, ui.Accent, AccentRing.Ink, TextStyles.Headline);
+        return Button.Draw(drawList, rect, action, ui.Ink, id: id);
     }
 
     public static void Medallion(ImDrawListPtr drawList, string kind, Vector2 center, float radius, Vector4 rim,
