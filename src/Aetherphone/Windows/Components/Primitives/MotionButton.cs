@@ -13,7 +13,7 @@ internal static class MotionButton
     public static readonly Vector4 BrandHoverTop = new(0.72f, 0.58f, 1f, 1f);
     public static readonly Vector4 BrandHoverBottom = new(0.56f, 0.40f, 1f, 1f);
 
-    private const int MotionSlots = 64;
+    private const int MotionSlots = 128;
     private const int StaleFrames = 30;
     private const float HoverLiftScale = 0.03f;
     private const float PressDepthScale = 0.045f;
