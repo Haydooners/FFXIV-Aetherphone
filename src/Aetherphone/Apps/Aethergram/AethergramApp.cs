@@ -1128,6 +1128,7 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         var removeLeft = approveRect.Max.X + TagPromptPillGap * scale;
         var removeRect = new Rect(new Vector2(removeLeft, pillTop), new Vector2(removeLeft + pillWidth, pillTop + pillHeight));
         var busy = string.Equals(tagDecisionPostId, post.Id, StringComparison.Ordinal);
+        ImGui.PushID(post.Id);
         if (DrawAccentPill(approveRect, Loc.T(L.PhotoTag.Approve), !busy))
         {
             DecideTag(post, tag, true);
@@ -1137,6 +1138,8 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         {
             DecideTag(post, tag, false);
         }
+
+        ImGui.PopID();
     }
 
     private void DrawGramCard(PostDto post, bool detail = false, string? suggestion = null, bool showPinned = false)

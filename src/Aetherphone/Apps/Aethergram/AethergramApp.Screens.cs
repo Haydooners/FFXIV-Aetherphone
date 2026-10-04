@@ -336,6 +336,7 @@ internal sealed partial class AethergramApp
         var pillWidth = RequestPillWidth * scale;
         var confirmRect = new Rect(row.Trailing.Min, new Vector2(row.Trailing.Min.X + pillWidth, row.Trailing.Max.Y));
         var deleteRect = new Rect(new Vector2(row.Trailing.Max.X - pillWidth, row.Trailing.Min.Y), row.Trailing.Max);
+        ImGui.PushID(user.Id);
         if (DrawAccentPill(confirmRect, Loc.T(L.Social.Confirm)))
         {
             store.AcceptFollowRequest(user);
@@ -345,6 +346,8 @@ internal sealed partial class AethergramApp
         {
             store.DeclineFollowRequest(user);
         }
+
+        ImGui.PopID();
 
         if (row.Tapped)
         {
