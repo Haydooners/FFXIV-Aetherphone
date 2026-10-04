@@ -185,7 +185,7 @@ internal sealed partial class CoinApp
         if (rule.PeriodCap > 0)
         {
             var barTop = cursorY + EarnBarGap * scale;
-            var fraction = Math.Clamp(rule.EarnedThisPeriod / (float)rule.PeriodCap, 0f, 1f);
+            var fraction = CoinGoals.Progress(rule);
             CoinArt.Bar(drawList, new Vector2(textLeft, barTop), new Vector2(textRight, barTop + EarnBarHeight * scale),
                 fraction, Palette.WithAlpha(ui.TitleInk, EarnBarTrackAlpha), ui.Accent);
         }

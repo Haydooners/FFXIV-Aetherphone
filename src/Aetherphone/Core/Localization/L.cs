@@ -2522,6 +2522,12 @@ internal static class L
                 "Overhauled Aether Coin with Wallet, Shop, Items and History tabs, a Today card with your daily cap and a 7 day chart, and every way to earn in one list"),
             new("changelog.r1042.133",
                 "Added product pages to the coin shop that preview the item on your own portrait or name, and Saving for, which keeps a goal and shows how many coins are left"),
+            new("changelog.r1042.147",
+                "The welcome bonus now arrives with the first coins you earn anywhere, not only from the check-in button"),
+            new("changelog.r1042.148",
+                "The streak bonus now starts on your first day and reaches its top of 35 coins on day 7, when the week of dots fills"),
+            new("changelog.r1042.149",
+                "Daily goals can now all be finished, and the daily ring fills as you complete them instead of measuring against the daily cap"),
         };
 
         public static readonly LocString[] Release1042Health =
@@ -8484,8 +8490,9 @@ internal static class L
         public static readonly LocString RulePost = new("coin.rulePost", "A post that lasted");
         public static readonly LocString RuleCommentsDaily = new("coin.ruleCommentsDaily", "Comments that lasted");
         public static readonly LocString RuleCheckinHint = new("coin.ruleCheckinHint", "Open the app and tap the button, once a day");
-        public static readonly LocString RuleStreakHint = new("coin.ruleStreakHint", "Grows 4 a day up to 20; one missed day a week is forgiven");
-        public static readonly LocString RuleWelcomeHint = new("coin.ruleWelcomeHint", "A one-time gift on your first check-in");
+        public static readonly LocString RuleStreakHint = new("coin.ruleStreakHint", "Grows 5 a day up to 35; one missed day a week is forgiven");
+        public static readonly LocString RuleWelcomeHint = new("coin.ruleWelcomeHint", "A one-time gift with the first coins you earn");
+        public static readonly LocString RuleCasinoDailyHint = new("coin.ruleCasinoDailyHint", "Spin the wheel once a day; any spin counts");
         public static readonly LocString RuleCallHint = new("coin.ruleCallHint", "Answered calls of two minutes or more where both of you talk, up to two people a day");
         public static readonly LocString RuleChatHint = new("coin.ruleChatHint", "Send a message to someone in a private chat, up to four people a day");
         public static readonly LocString RulePostHint = new("coin.rulePostHint", "One chirp or gram that stays up for an hour, once a day");

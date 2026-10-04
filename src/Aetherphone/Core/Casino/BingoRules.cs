@@ -36,7 +36,20 @@ internal static class BingoRules
 
     public const int FullMask = (1 << Cells) - 1;
 
-    public static readonly int[] StageRateTenths = { 2847, 3780, 8149 };
+    private static readonly int[] BandFloors = { 1, 2, 3, 5, 12, 20, 30, 50, 80 };
+
+    private static readonly int[][] BandRateTenths =
+    {
+        new[] { 3506, 4655, 10037 },
+        new[] { 3126, 4151, 8949 },
+        new[] { 3028, 4020, 8667 },
+        new[] { 2981, 3959, 8535 },
+        new[] { 2952, 3919, 8450 },
+        new[] { 2919, 3876, 8357 },
+        new[] { 2882, 3827, 8251 },
+        new[] { 2868, 3809, 8211 },
+        new[] { 2833, 3762, 8109 },
+    };
 
     public static readonly int[] CardCells =
     {
@@ -117,8 +130,24 @@ internal static class BingoRules
         }
 
         var scaled = cardsInPlay < PrizeCardCap ? cardsInPlay : PrizeCardCap;
-        var prize = (StageRateTenths[stage] * (long)scaled + 9) / 10;
+        var prize = (BandRateTenths[BandFor(scaled)][stage] * (long)scaled + 9) / 10;
         return prize > MaxSingleWin ? MaxSingleWin : prize;
+    }
+
+    private static int BandFor(int scaledCards)
+    {
+        var band = 0;
+        for (var index = 1; index < BandFloors.Length; index++)
+        {
+            if (scaledCards < BandFloors[index])
+            {
+                break;
+            }
+
+            band = index;
+        }
+
+        return band;
     }
 
     public static void PrizeLadder(int cardsInPlay, Span<long> ladder)
