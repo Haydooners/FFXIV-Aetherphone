@@ -219,7 +219,9 @@ internal sealed partial class AetherStreamApp
             var requests = watchAlong.PendingRequests;
             for (var index = 0; index < requests.Count; index++)
             {
+                ImGui.PushID(index);
                 DrawRequestRow(requests[index], scale);
+                ImGui.PopID();
             }
         }
 

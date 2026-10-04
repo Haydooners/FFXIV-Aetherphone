@@ -120,7 +120,9 @@ internal sealed partial class AetherStreamApp
             SectionLabel(Loc.T(L.AetherStream.QueueSuggestionsHeader));
             for (var index = 0; index < suggestions.Count; index++)
             {
+                ImGui.PushID(index);
                 DrawSuggestionRow(drawList, suggestions[index], scale);
+                ImGui.PopID();
             }
 
             Gap(Metrics.Space.Sm);
