@@ -20,6 +20,7 @@ internal sealed partial class DailiesApp
 {
     private const float RowWashRadius = 12f;
     private const float EditButtonRadius = RoundButton.SmallRadius;
+    private const float EditHitRadius = 20f;
     private const float EditGlyph = 13f;
     private const float HiddenAlpha = 0.45f;
     private const float UnavailableAlpha = 0.6f;
@@ -135,12 +136,15 @@ internal sealed partial class DailiesApp
         ButtonStyle style, string tooltip, float scale)
     {
         var radius = EditButtonRadius * scale;
-        var clicked = RoundButton.Draw(drawList, id, center, radius, ink, style, true, false, out var face);
+        var extent = new Vector2(radius, radius);
+        var hit = new Rect(center - new Vector2(EditHitRadius * scale), center + new Vector2(EditHitRadius * scale));
+        var hovered = UiInteract.Hover(hit.Min, hit.Max);
+        var face = RoundButton.Surface(drawList, new Rect(center - extent, center + extent), ink, style, true, hovered,
+            id);
         var grow = face.Face.Width / MathF.Max(radius * 2f, 0.0001f);
         ProgressRing.CenterIcon(drawList, center, icon, face.LabelInk, EditGlyph * scale * grow);
-        var extent = new Vector2(radius, radius);
-        HoverTooltip.Show(new Rect(center - extent, center + extent), tooltip, HoverLabelSide.Above);
-        return clicked;
+        HoverTooltip.Show(hit, tooltip, HoverLabelSide.Above);
+        return UiInteract.Click(hit.Min, hit.Max, hovered, false);
     }
 
     private void DrawAutoCard(int rows, float width, float delta, float scale)
