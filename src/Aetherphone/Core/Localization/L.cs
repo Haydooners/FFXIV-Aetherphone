@@ -2177,473 +2177,473 @@ internal static class L
         public static readonly LocString SectionTours = new("changelog.sectionTours", "Setup and tours");
         public static readonly LocString SectionSounds = new("changelog.sectionSounds", "Sounds");
 
-        public static readonly LocString[] Release1042Phone =
+        public static readonly LocString[] Release1100Phone =
         {
-            new("changelog.r1042.4",
+            new("changelog.r1100.4",
                 "Overhauled the whole phone in liquid glass: the dock, folders, widgets, sheets and search pill show the wallpaper through them and catch the light from your cursor"),
-            new("changelog.r1042.5",
+            new("changelog.r1100.5",
                 "Redrew every app icon as a painted, full-color set that stays sharp at every phone size"),
-            new("changelog.r1042.150",
+            new("changelog.r1100.150",
                 "Unified the buttons, search fields, cards and section headers in every app, so the whole phone shares one look and one press and hover feel"),
-            new("changelog.r1042.6",
+            new("changelog.r1100.6",
                 "Rebuilt the Dynamic Island around live activities: calls, music and radio, MogCast watch-alongs, timers and meetups starting within the hour, with a tap to expand and control them"),
-            new("changelog.r1042.7",
+            new("changelog.r1100.7",
                 "Rebuilt Control Center as glass tiles: Do Not Disturb, Silent Mode, Calls and Scroll While Idle share one Quick Toggles tile, and a long press opens a tile as a larger card"),
-            new("changelog.r1042.8",
+            new("changelog.r1100.8",
                 "Rebuilt notifications in glass: banners slide in from the top, and Notification Center stacks each app's notifications, with a swipe to clear one"),
-            new("changelog.r1042.9",
+            new("changelog.r1100.9",
                 "Rebuilt the app switcher as glass cards over the blurred wallpaper, with your home screen as the first card and a swipe up to close an app"),
-            new("changelog.r1042.82",
+            new("changelog.r1100.82",
                 "Rebuilt the minimized phone so it never changes size: a large clock over your wallpaper, and one glass card that flips between your widget pages and turns into music or call controls while they play"),
-            new("changelog.r1042.83",
+            new("changelog.r1100.83",
                 "The minimap now shows the clock, notification banners, and music or call controls"),
-            new("changelog.r1042.10",
+            new("changelog.r1100.10",
                 "Apps with tabs now use a floating glass tab bar, and Notes, Calendar and Settings have large titles that shrink as you scroll"),
-            new("changelog.r1042.11",
+            new("changelog.r1100.11",
                 "Sheets now open at half or full height, and you can drag them between the two"),
-            new("changelog.r1042.12",
+            new("changelog.r1100.12",
                 "Spotlight now fades in over the dimmed home screen, and folders grow out of their tile and dim the screen behind them"),
-            new("changelog.r1042.13",
+            new("changelog.r1100.13",
                 "Hovering an app icon now lifts it and lights its edge, in place of the old magnifying effect"),
-            new("changelog.r1042.14",
+            new("changelog.r1100.14",
                 "Rearranged the side keys: the Action button for Do Not Disturb and a Lock Position key on the left, the Side button and Camera Control on the right"),
-            new("changelog.r1042.51",
+            new("changelog.r1100.51",
                 "Added four app icon looks: Default, Dark, Tinted and Clear, under App Icons in Settings, saved with each Look"),
-            new("changelog.r1042.15",
+            new("changelog.r1100.15",
                 "Added Live glass (experimental) to the Display page in Settings: glass inside apps and on the mini phone blurs the game behind it"),
-            new("changelog.r1042.152",
+            new("changelog.r1100.152",
                 "Reworked the report reasons in every app to match the community rules, from spam and harassment to stolen art, doxxing and ban evasion, and each app only lists the reasons that apply to it"),
-            new("changelog.r1042.153",
+            new("changelog.r1100.153",
                 "Picking a report reason now shows a short line explaining what it covers"),
-            new("changelog.r1042.3",
+            new("changelog.r1100.3",
                 "Replaced the built-in wallpapers with an original set of eight pairs, and a retired wallpaper you had picked switches to the closest new one"),
-            new("changelog.r1042.16",
+            new("changelog.r1100.16",
                 "Wallpapers now load at the size they are drawn, so they stay crisp instead of shimmering"),
-            new("changelog.r1042.17",
+            new("changelog.r1100.17",
                 "The battery percentage now sits inside the battery icon, and hovering the signal, Wi-Fi or battery icon shows what it measures"),
-            new("changelog.r1042.18",
+            new("changelog.r1100.18",
                 "The phone emote now plays once when you open the phone, and walking off or cancelling it no longer brings it back"),
-            new("changelog.r1042.0",
+            new("changelog.r1100.0",
                 "The server info bar entry is now a phone icon with your unread count, in place of the Aetherphone name"),
-            new("changelog.r1042.1",
+            new("changelog.r1100.1",
                 "Hovering the server info bar entry now shows how many notifications are waiting and what a click does"),
-            new("changelog.r1042.19",
+            new("changelog.r1100.19",
                 "Fixed the share sheet keeping a hidden window open over every app"),
         };
 
-        public static readonly LocString[] Release1042Music =
+        public static readonly LocString[] Release1100Music =
         {
-            new("changelog.r1042.52",
+            new("changelog.r1100.52",
                 "Overhauled Music from top to bottom: five tabs for Home, New, Radio, Library and Search, a floating mini player, and a full-screen Now Playing that takes its colors from the artwork"),
-            new("changelog.r1042.53",
+            new("changelog.r1100.53",
                 "Added Up Next: play next, play last, drag songs to reorder, repeat all or one, and autoplay that keeps the music going when the queue runs out"),
-            new("changelog.r1042.54",
+            new("changelog.r1100.54",
                 "Added synced lyrics that follow along with the song; tap a line to jump to it"),
-            new("changelog.r1042.55",
+            new("changelog.r1100.55",
                 "Added crossfade between songs and a sleep timer"),
-            new("changelog.r1042.56",
+            new("changelog.r1100.56",
                 "Added playlists you can reorder, rename, describe and give a cover"),
-            new("changelog.r1042.57",
+            new("changelog.r1100.57",
                 "Added playlist import: paste a YouTube playlist link to bring the whole list into Music"),
-            new("changelog.r1042.58",
+            new("changelog.r1100.58",
                 "Added loved songs, followed artists and downloads for offline listening"),
-            new("changelog.r1042.59",
+            new("changelog.r1100.59",
                 "Added picks and daily mixes on Home built from what you play, plus new releases, charts and genres in New"),
-            new("changelog.r1042.60",
+            new("changelog.r1100.60",
                 "Added search across songs, playlists, artists, radio stations and your own library"),
-            new("changelog.r1042.61",
+            new("changelog.r1100.61",
                 "Added Jam: start one, share the code, and friends hear the same song in sync, with a shared queue and reactions"),
-            new("changelog.r1042.62",
+            new("changelog.r1100.62",
                 "Added thousands more world radio stations now that AAC, HLS and Opus streams play"),
-            new("changelog.r1042.63",
+            new("changelog.r1100.63",
                 "Added live chat to Community Radio, with song requests, a pinned host notice, reactions and moderation tools"),
-            new("changelog.r1042.64",
+            new("changelog.r1100.64",
                 "Added what Spotify, foobar2000 or your browser is playing on your PC to Music, the Dynamic Island and Control Center, with pause and skip"),
-            new("changelog.r1042.65",
+            new("changelog.r1100.65",
                 "Your keyboard media keys now pause and skip the phone's music"),
-            new("changelog.r1042.77",
+            new("changelog.r1100.77",
                 "Added chat to Jam, and Nearby Jams you can join with a tap when a host lets people nearby find theirs"),
-            new("changelog.r1042.78",
+            new("changelog.r1100.78",
                 "Added Friends listening on Home: see what your friends are playing, play it yourself or join their Jam. Sharing stays off until you turn it on"),
-            new("changelog.r1042.79",
+            new("changelog.r1100.79",
                 "Added Replay: minutes listened, top songs and top artists for the week, month, year or all time"),
-            new("changelog.r1042.80",
+            new("changelog.r1100.80",
                 "Added Sound Check, which keeps every song at the same volume"),
-            new("changelog.r1042.85",
+            new("changelog.r1100.85",
                 "Added Stop playing: tap the stop button on the paused mini player, or use Stop playing in the Output sheet"),
-            new("changelog.r1042.136",
+            new("changelog.r1100.136",
                 "Added shuffle, repeat and a volume slider for the app playing on your PC, plus a Source button to choose which app Music follows"),
-            new("changelog.r1042.137",
+            new("changelog.r1100.137",
                 "An app on your PC that stays paused for 15 minutes now hides until it plays again"),
-            new("changelog.r1042.138",
+            new("changelog.r1100.138",
                 "Album art in the Dynamic Island is now a rounded square that matches the Island's shape"),
-            new("changelog.r1042.139",
+            new("changelog.r1100.139",
                 "The Now Playing widget now shows and controls what is playing on your PC when the phone is not playing music"),
-            new("changelog.r1042.66",
+            new("changelog.r1100.66",
                 "Your playlists, recently played songs and favorite stations carry over to the new Music automatically"),
-            new("changelog.r1042.67",
+            new("changelog.r1100.67",
                 "Fixed some Community Radio station pages opening blank"),
-            new("changelog.r1042.81",
+            new("changelog.r1100.81",
                 "Fixed radio stations that went silent after connecting; they now reconnect on their own"),
-            new("changelog.r1042.154",
+            new("changelog.r1100.154",
                 "Fixed the game freezing completely when pausing or resuming a song"),
         };
 
-        public static readonly LocString[] Release1042Widgets =
+        public static readonly LocString[] Release1100Widgets =
         {
-            new("changelog.r1042.20",
+            new("changelog.r1100.20",
                 "Overhauled widgets from top to bottom: a widget for nearly every app in small, medium or large, all following your icon look"),
-            new("changelog.r1042.21",
+            new("changelog.r1100.21",
                 "Rebuilt the widget gallery with search, a Featured row of live previews, and every widget size previewed at true scale before you add it"),
-            new("changelog.r1042.22",
+            new("changelog.r1100.22",
                 "Added Smart Stacks: drop a widget onto another of the same size to stack up to ten, flip through them with the mouse wheel, and let Smart Rotate bring the right one forward"),
-            new("changelog.r1042.23",
+            new("changelog.r1100.23",
                 "Added Edit Widget and Edit Stack sheets, and widgets now resize in place from their corner"),
-            new("changelog.r1042.24",
+            new("changelog.r1100.24",
                 "Added media and people widgets: Now Playing, Now Watching, People, Chats, Linkpearl and Notifications"),
-            new("changelog.r1042.25",
+            new("changelog.r1100.25",
                 "Added adventure widgets: Dailies, Ocean Fishing, Currencies, Job with gear set switching, live S rank Hunts, the Housing lottery and Teleport to your favorite aetherytes"),
-            new("changelog.r1042.26",
+            new("changelog.r1100.26",
                 "Added community and utility widgets: Note, Reminders, Shortcuts, Quick Toggles, Muster, Venues, Market Watch, Daily Game, Daily Spin and Lodestone"),
-            new("changelog.r1042.27",
+            new("changelog.r1100.27",
                 "Added Alarm, Timer, Month, Ventures, Weather Watch and Hydration widgets, and redesigned Clock, Calendar, Resets, Weather, Featured Photo, Activity and Aether Coin"),
         };
 
-        public static readonly LocString[] Release1042Settings =
+        public static readonly LocString[] Release1100Settings =
         {
-            new("changelog.r1042.28",
+            new("changelog.r1100.28",
                 "Redesigned Settings from top to bottom: a profile card at the top, rounder grouped cards, and a large title that shrinks as you scroll"),
-            new("changelog.r1042.29",
+            new("changelog.r1100.29",
                 "Added search to Settings that finds options inside pages and installed apps, and highlights the matching row when you open it"),
-            new("changelog.r1042.30",
+            new("changelog.r1100.30",
                 "Added an Apps group with a page for every app: its notification switches and sound, Open and Remove App"),
-            new("changelog.r1042.31",
+            new("changelog.r1100.31",
                 "Added a Display page that gathers phone size, text size, Live glass, Lock Position and the mini phone"),
-            new("changelog.r1042.32",
+            new("changelog.r1100.32",
                 "Added a Support page with the three Patreon tiers, what each one includes, a preview of the member look and badges, and a link to join each tier"),
         };
 
-        public static readonly LocString[] Release1042Tours =
+        public static readonly LocString[] Release1100Tours =
         {
-            new("changelog.r1042.33",
+            new("changelog.r1100.33",
                 "Redesigned first-run setup around the new app icon, with glass cards and pages that animate in"),
-            new("changelog.r1042.34",
+            new("changelog.r1100.34",
                 "Rebuilt the welcome tour to teach by doing: open an app, swipe home, and tuck the phone into the mini phone and bring it back"),
-            new("changelog.r1042.35",
+            new("changelog.r1100.35",
                 "Rebuilt every app tour around the app's main job, with steps you try on the real app instead of reading about it"),
         };
 
-        public static readonly LocString[] Release1042Sounds =
+        public static readonly LocString[] Release1100Sounds =
         {
-            new("changelog.r1042.36",
+            new("changelog.r1100.36",
                 "Rebuilt every sound on the phone for a clean, modern feel, with eight new ringtones and twelve notification sounds, and a retired sound you had picked switches to its replacement"),
-            new("changelog.r1042.37",
+            new("changelog.r1100.37",
                 "Added sounds for the delete, space and return keys, a soft pop when a message arrives in the chat you have open, and a ringback tone while your call rings"),
-            new("changelog.r1042.38",
+            new("changelog.r1100.38",
                 "Added sound cues to every Gamba table and cabinet: chips, card deals, spinning wheels and reels, wins and losses"),
         };
 
-        public static readonly LocString[] Release1042Polls =
+        public static readonly LocString[] Release1100Polls =
         {
-            new("changelog.r1042.39",
+            new("changelog.r1100.39",
                 "Overhauled Polls from top to bottom: options fill in as result bars once you vote, and polls with a deadline show a live countdown"),
-            new("changelog.r1042.40",
+            new("changelog.r1100.40",
                 "Added Undo vote, so tapping your own pick no longer takes your vote back by accident"),
-            new("changelog.r1042.41",
+            new("changelog.r1100.41",
                 "Polls waiting for your vote now come first, then the ones closing soonest"),
         };
 
-        public static readonly LocString[] Release1042Announcements =
+        public static readonly LocString[] Release1100Announcements =
         {
-            new("changelog.r1042.42",
+            new("changelog.r1100.42",
                 "Overhauled Announcements into a reading list grouped by day, with search, unread dots, Mark all as read, and Newer and Older links inside each announcement"),
         };
 
-        public static readonly LocString[] Release1042Feedback =
+        public static readonly LocString[] Release1100Feedback =
         {
-            new("changelog.r1042.43",
+            new("changelog.r1100.43",
                 "Overhauled Feedback into a hub: pick Bug, Idea, Praise or Other for a composer made for that kind, and an unfinished draft is kept for later"),
-            new("changelog.r1042.44",
+            new("changelog.r1100.44",
                 "Added Your Feedback: a list of what you sent, each with its status"),
         };
 
-        public static readonly LocString[] Release1042Maps =
+        public static readonly LocString[] Release1100Maps =
         {
-            new("changelog.r1042.45",
+            new("changelog.r1100.45",
                 "Overhauled Maps into a live map of the zone you are in: your position, aetheryte pins, and a glass drawer with search, favorites, recents and every region"),
-            new("changelog.r1042.46",
+            new("changelog.r1100.46",
                 "Added place cards with Teleport and its gil cost, Favorite, Show on Map and a preview of the zone"),
-            new("changelog.r1042.47",
+            new("changelog.r1100.47",
                 "Fixed Maps showing Unknown inside shared housing and other places without a zone name"),
         };
 
-        public static readonly LocString[] Release1042Wallet =
+        public static readonly LocString[] Release1100Wallet =
         {
-            new("changelog.r1042.87",
+            new("changelog.r1100.87",
                 "Overhauled Wallet: a gil card with today's and this week's change, a weekly tomestone ring, rings around each currency that fill toward its cap, and a Near Cap card when something is about to max out"),
-            new("changelog.r1042.88",
+            new("changelog.r1100.88",
                 "Added a history of every gain and spend for each character, with where it happened and a 30 day balance chart for each currency"),
-            new("changelog.r1042.89",
+            new("changelog.r1100.89",
                 "Grand Company seals now use the real cap for your rank"),
         };
 
-        public static readonly LocString[] Release1042Dailies =
+        public static readonly LocString[] Release1100Dailies =
         {
-            new("changelog.r1042.90",
+            new("changelog.r1100.90",
                 "Overhauled Dailies into a checklist with Daily and Weekly tiles that show what is left and when each list resets"),
-            new("changelog.r1042.91",
+            new("changelog.r1100.91",
                 "Added your own daily and weekly tasks, Edit List to hide the ones you never do, and an optional reminder before reset while something is still open"),
-            new("changelog.r1042.92",
+            new("changelog.r1100.92",
                 "Ticked tasks are now kept for each character"),
         };
 
-        public static readonly LocString[] Release1042Activity =
+        public static readonly LocString[] Release1100Activity =
         {
-            new("changelog.r1042.93",
+            new("changelog.r1100.93",
                 "Overhauled Activity around three daily rings for experience, duties and gil, with a week strip, streaks, weekly trends and awards for your best days"),
-            new("changelog.r1042.94",
+            new("changelog.r1100.94",
                 "Added a day view with a card and a 7 day chart for each ring, and a Goals page with large plus and minus buttons"),
-            new("changelog.r1042.159",
+            new("changelog.r1100.159",
                 "Added a goal for max level jobs: the tomestones and scrips you earn fill the Progress ring once a job reaches the level cap, so your rings and streaks keep going at endgame"),
         };
 
-        public static readonly LocString[] Release1042Notifications =
+        public static readonly LocString[] Release1100Notifications =
         {
-            new("changelog.r1042.95",
+            new("changelog.r1100.95",
                 "Overhauled Notifications with Today, Yesterday and Earlier sections, a filter for each app and a new empty screen"),
-            new("changelog.r1042.96",
+            new("changelog.r1100.96",
                 "Added muting an app for an hour or for the rest of the day, and a Do Not Disturb button right in the list"),
-            new("changelog.r1042.97",
+            new("changelog.r1100.97",
                 "Clear All now asks before it clears"),
         };
 
-        public static readonly LocString[] Release1042Market =
+        public static readonly LocString[] Release1100Market =
         {
-            new("changelog.r1042.98",
+            new("changelog.r1100.98",
                 "Overhauled Market: a watchlist with 7 day sparklines and change pills, and item pages with a sale chart for 1, 7 or 30 days, a stats grid and prices world by world"),
-            new("changelog.r1042.99",
+            new("changelog.r1100.99",
                 "Added price alerts you set with a gil amount, listed on their own page and shown first in the widget"),
         };
 
-        public static readonly LocString[] Release1042Hunts =
+        public static readonly LocString[] Release1100Hunts =
         {
-            new("changelog.r1042.100",
+            new("changelog.r1100.100",
                 "Overhauled Hunts around what is up right now: live marks with a map preview and Go, then open windows, a spawn timeline on each mark and the same mark on every world"),
-            new("changelog.r1042.101",
+            new("changelog.r1100.101",
                 "Added Trains, which shows every A rank zone by zone for a world, and per-mark alerts set right on the mark"),
         };
 
-        public static readonly LocString[] Release1042Housing =
+        public static readonly LocString[] Release1100Housing =
         {
-            new("changelog.r1042.102",
+            new("changelog.r1100.102",
                 "Overhauled Housing: your world's lottery countdown, open plots in every district at a glance, a full screen ward map with plot cards, and a list of every open plot"),
-            new("changelog.r1042.103",
+            new("changelog.r1100.103",
                 "Plot details now open on a crop of the district map around the plot, and watched plots show their phase progress and reminder"),
-            new("changelog.r1042.110",
+            new("changelog.r1100.110",
                 "Added aethernet shard and market board markers to the housing maps, and plots no longer read Stale while the data is current, contributed by YozoraCho"),
         };
 
-        public static readonly LocString[] Release1042Jobs =
+        public static readonly LocString[] Release1100Jobs =
         {
-            new("changelog.r1042.104",
+            new("changelog.r1100.104",
                 "Overhauled Jobs into a progression hub: your current job with its EXP ring and rested bonus, every job grouped by role, and your gearset categories as shelves"),
-            new("changelog.r1042.105",
+            new("changelog.r1100.105",
                 "Added a page for each job with EXP to the next level, its gearsets and a Switch button; switching now explains why when it cannot happen, like in combat"),
         };
 
-        public static readonly LocString[] Release1042Strats =
+        public static readonly LocString[] Release1100Strats =
         {
-            new("changelog.r1042.106",
+            new("changelog.r1100.106",
                 "Overhauled Strats as a reader: the fight you are in and the one you last read up top, a setup card for your strat and spot, and a Contents sheet to jump between mechanics"),
-            new("changelog.r1042.107",
+            new("changelog.r1100.107",
                 "Strats now remembers where you stopped in each fight and keeps each fight's scroll position"),
         };
 
-        public static readonly LocString[] Release1042Calendar =
+        public static readonly LocString[] Release1100Calendar =
         {
-            new("changelog.r1042.114",
+            new("changelog.r1100.114",
                 "Overhauled Calendar: a month grid that slides between months with colored event dots, an Upcoming list that counts down in-game events, and a details page for every event"),
-            new("changelog.r1042.115",
+            new("changelog.r1100.115",
                 "Added events that repeat every day, week, two weeks or month, event length and notes, and a color for each group that carries into the widgets"),
         };
 
-        public static readonly LocString[] Release1042Notes =
+        public static readonly LocString[] Release1100Notes =
         {
-            new("changelog.r1042.116",
+            new("changelog.r1100.116",
                 "Overhauled Notes with pinned notes, date sections, search and a full page editor, and Recently Deleted keeps deleted notes for 30 days"),
-            new("changelog.r1042.117",
+            new("changelog.r1100.117",
                 "Reminders now have Today, Scheduled, All and Completed lists, overdue dates in red, and one tap dates like Tomorrow or Next Week"),
         };
 
-        public static readonly LocString[] Release1042Calculator =
+        public static readonly LocString[] Release1100Calculator =
         {
-            new("changelog.r1042.118",
+            new("changelog.r1100.118",
                 "Overhauled Calculator with a new keypad, digits that shrink to fit, and a history of your sums grouped by day"),
-            new("changelog.r1042.119",
+            new("changelog.r1100.119",
                 "Added typing on your keyboard while the pointer is over the phone, copy and paste, and swiping across the display to delete a digit"),
         };
 
-        public static readonly LocString[] Release1042Shortcuts =
+        public static readonly LocString[] Release1100Shortcuts =
         {
-            new("changelog.r1042.120",
+            new("changelog.r1100.120",
                 "Overhauled Shortcuts with a library of colored tiles you tap to run, and an editor where each step is a block you drag into order"),
-            new("changelog.r1042.121",
+            new("changelog.r1100.121",
                 "Added a Gallery of starter shortcuts for everyday use, your party and getting around Eorzea"),
         };
 
-        public static readonly LocString[] Release1042News =
+        public static readonly LocString[] Release1100News =
         {
-            new("changelog.r1042.122",
+            new("changelog.r1100.122",
                 "Overhauled News with a top story, day sections, story pages and a Status tab"),
-            new("changelog.r1042.123",
+            new("changelog.r1100.123",
                 "Added a live maintenance countdown in your local time, with a banner on Topics while maintenance is running or coming up"),
         };
 
-        public static readonly LocString[] Release1042Photos =
+        public static readonly LocString[] Release1100Photos =
         {
-            new("changelog.r1042.124",
+            new("changelog.r1100.124",
                 "Overhauled Photos with Library and Collections tabs, a Years, Months, Days and All switch, and a full screen viewer with a thumbnail strip, swipe between photos and a More menu"),
-            new("changelog.r1042.125",
+            new("changelog.r1100.125",
                 "New Camera shots remember the zone they were taken in, so Collections now has Places and each day shows where you were"),
         };
 
-        public static readonly LocString[] Release1042Camera =
+        public static readonly LocString[] Release1100Camera =
         {
-            new("changelog.r1042.126",
+            new("changelog.r1100.126",
                 "Overhauled Camera with glass controls, a swipeable mode dial, a 3 or 10 second self-timer with a countdown, and a thumbnail that opens your newest photo"),
         };
 
-        public static readonly LocString[] Release1042Muster =
+        public static readonly LocString[] Release1100Muster =
         {
-            new("changelog.r1042.127",
+            new("changelog.r1100.127",
                 "Overhauled Muster: Discover shows musters as posters colored by activity, Plans keeps everything you are going to, and each muster has a page with a big I'm going button and status tiles"),
-            new("changelog.r1042.128",
+            new("changelog.r1100.128",
                 "Creating a muster now shows a live preview of its poster, with an activity grid, one tap location and sliders for start time and length"),
         };
 
-        public static readonly LocString[] Release1042Venues =
+        public static readonly LocString[] Release1100Venues =
         {
-            new("changelog.r1042.129",
+            new("changelog.r1100.129",
                 "Overhauled Venues with venue pages showing Go there, Website, Discord and Copy address, the whole week's hours in your local time, and Favorites split into Open now and Coming up"),
-            new("changelog.r1042.130",
+            new("changelog.r1100.130",
                 "Live venues now show the performer on their own line, apart from the venue's hours, and stream titles full of decorative symbols read cleanly"),
-            new("changelog.r1042.131",
+            new("changelog.r1100.131",
                 "Dragging a venue carousel or rail now scrolls only that row instead of moving the whole phone, and the page dots are clickable"),
         };
 
-        public static readonly LocString[] Release1042Coin =
+        public static readonly LocString[] Release1100Coin =
         {
-            new("changelog.r1042.132",
+            new("changelog.r1100.132",
                 "Overhauled Aether Coin with Wallet, Shop, Items and History tabs, a Today card with your daily cap and a 7 day chart, and every way to earn in one list"),
-            new("changelog.r1042.133",
+            new("changelog.r1100.133",
                 "Added product pages to the coin shop that preview the item on your own portrait or name, and Saving for, which keeps a goal and shows how many coins are left"),
-            new("changelog.r1042.155",
+            new("changelog.r1100.155",
                 "Added daily quests to Aether Coin: three new quests every day across games, friends and the rest of the phone, each paying coins when you tap Claim"),
-            new("changelog.r1042.156",
+            new("changelog.r1100.156",
                 "Listening to community radio now counts toward the daily radio quest"),
-            new("changelog.r1042.147",
+            new("changelog.r1100.147",
                 "The welcome bonus now arrives with the first coins you earn anywhere, not only from the check-in button"),
-            new("changelog.r1042.148",
+            new("changelog.r1100.148",
                 "The streak bonus now starts on your first day and reaches its top of 35 coins on day 7, when the week of dots fills"),
-            new("changelog.r1042.149",
+            new("changelog.r1100.149",
                 "Daily goals can now all be finished, and the daily ring fills as you complete them instead of measuring against the daily cap"),
         };
 
-        public static readonly LocString[] Release1042Message =
+        public static readonly LocString[] Release1100Message =
         {
-            new("changelog.r1042.157",
+            new("changelog.r1100.157",
                 "Added an Audio button to calls: turn the call up to 200%, give each person their own volume or mute them just for you, adjust your microphone level, and switch speaker or microphone without hanging up"),
-            new("changelog.r1042.158",
+            new("changelog.r1100.158",
                 "Fixed the Speaker picker for calls, which always played through the system default device"),
         };
 
-        public static readonly LocString[] Release1042Health =
+        public static readonly LocString[] Release1100Health =
         {
-            new("changelog.r1042.134",
+            new("changelog.r1100.134",
                 "Overhauled Health with a Summary of highlights and charts for each metric, a water glass that fills as you drink, and goal rings"),
-            new("changelog.r1042.135",
+            new("changelog.r1100.135",
                 "Added a weight log for your character with charts over a week, month, 6 months or a year, and a single welcome page in place of the setup steps"),
         };
 
-        public static readonly LocString[] Release1042AppStore =
+        public static readonly LocString[] Release1100AppStore =
         {
-            new("changelog.r1042.142",
+            new("changelog.r1100.142",
                 "Overhauled the App Store with an App of the Day card that shows the app's live widget, app pages with live widget previews and What's New, and search"),
-            new("changelog.r1042.143",
+            new("changelog.r1100.143",
                 "Sorted the App Store into clearer categories such as Out in the World, Your Character, Community and News & Info, and built-in apps now appear as Built in"),
-            new("changelog.r1042.144",
+            new("changelog.r1100.144",
                 "Notifications is now a built-in app that cannot be removed, so its settings always stay reachable"),
         };
 
-        public static readonly LocString[] Release1042Casino =
+        public static readonly LocString[] Release1100Casino =
         {
-            new("changelog.r1042.145",
+            new("changelog.r1100.145",
                 "Overhauled the Gamba lobby with a chip card, a Tonight card showing today's result against your loss limit, live rooms and a Jump back in shelf"),
-            new("changelog.r1042.146",
+            new("changelog.r1100.146",
                 "Fixed the daily loss limit, which could not be saved; you can now set, change or remove your own limit and see how much room is left tonight"),
         };
 
-        public static readonly LocString[] Release1042Games =
+        public static readonly LocString[] Release1100Games =
         {
-            new("changelog.r1042.140",
+            new("changelog.r1100.140",
                 "Overhauled the Games hub with a daily challenge card, Continue Playing, a shelf for each genre, and Play with friends, Records and Search tabs"),
-            new("changelog.r1042.141",
+            new("changelog.r1100.141",
                 "The Daily Game widget has a new medium size that lists your recent games, one tap to jump back in"),
-            new("changelog.r1042.68",
+            new("changelog.r1100.68",
                 "Added Coil to Games: shoot marbles into a chain rolling toward the drain and match three before it gets there, across twelve tracks with power-ups"),
-            new("changelog.r1042.69",
+            new("changelog.r1100.69",
                 "Added Updraft to Games: bounce up through the clouds from dawn to the aurora, riding golden clouds and dodging storm clouds"),
-            new("changelog.r1042.70",
+            new("changelog.r1100.70",
                 "Added Swoop to Games: hold to dive down the hills, let go to launch off the next one, and reach each island before the sun sets"),
-            new("changelog.r1042.71",
+            new("changelog.r1100.71",
                 "Added Blitz to Gem Swap: a 60-second mode where matches earn extra time and four element powers clear the board"),
-            new("changelog.r1042.72",
+            new("changelog.r1100.72",
                 "Added Line, Burst and Prism gems to Gem Swap, which combine with each other for bigger clears"),
-            new("changelog.r1042.111",
+            new("changelog.r1100.111",
                 "Fixed Bubbles losing your score when you restart or leave before the game ends, contributed by jambalong"),
         };
 
-        public static readonly LocString[] Release1042Clock =
+        public static readonly LocString[] Release1100Clock =
         {
-            new("changelog.r1042.112",
+            new("changelog.r1100.112",
                 "Overhauled Clock: an Eorzea time card painted with the sky of the current bell, world clocks with day and night dials, and 75 cities to pick from"),
-            new("changelog.r1042.113",
+            new("changelog.r1100.113",
                 "Added alarms that ring at an Eorzean time, a wheel time picker, a snooze length for each alarm, best and worst laps on the stopwatch, and recent timers you can start in one tap"),
-            new("changelog.r1042.48",
+            new("changelog.r1100.48",
                 "Alarms and timers now ring until you stop or snooze them, and open the phone with a full-screen alarm"),
         };
 
-        public static readonly LocString[] Release1042Aethergram =
+        public static readonly LocString[] Release1100Aethergram =
         {
-            new("changelog.r1042.49",
+            new("changelog.r1100.49",
                 "Moved messages into the tab bar, in place of the separate inbox button"),
         };
 
-        public static readonly LocString[] Release1042Skywatcher =
+        public static readonly LocString[] Release1100Skywatcher =
         {
-            new("changelog.r1042.73",
+            new("changelog.r1100.73",
                 "Overhauled Skywatcher with living skies: drifting fog, soft layered clouds, rain at two depths, lightning that lights up the clouds, snow, dust, heat haze and starry nights, all fading smoothly as the weather turns"),
-            new("changelog.r1042.74",
+            new("changelog.r1100.74",
                 "Rebuilt the forecast around a large Eorzea clock that tucks away as you scroll, an hourly summary, a day timeline for every weather window, Sun and This Window tiles, and Weather Odds showing when each weather comes next"),
-            new("changelog.r1042.75",
+            new("changelog.r1100.75",
                 "Added Zones: keep any zone on a live sky card, search to add more, and tap one for its full forecast"),
-            new("changelog.r1042.76",
+            new("changelog.r1100.76",
                 "The weather widgets on the home screen now show the same living skies"),
-            new("changelog.r1042.84",
+            new("changelog.r1100.84",
                 "Added the extra weathers a zone can show beyond its forecast to Control, like snow in Limsa Lominsa, each marked with a star"),
-            new("changelog.r1042.108",
+            new("changelog.r1100.108",
                 "Browse every zone by region in Zones, Field Operations included, each with its weather right now, contributed by Deldee"),
-            new("changelog.r1042.109",
+            new("changelog.r1100.109",
                 "Skywatcher and its widgets now update the moment you change zones or the weather turns, contributed by Deldee"),
         };
 
-        public static readonly LocString[] Release1042MogCast =
+        public static readonly LocString[] Release1100MogCast =
         {
-            new("changelog.r1042.2",
+            new("changelog.r1100.2",
                 "Fixed MogCast dragging the game down to one frame per second for some players while it waited for a link"),
-            new("changelog.r1042.50",
+            new("changelog.r1100.50",
                 "Fixed MogCast checking your clipboard every second; it now reads it only when it changes"),
-            new("changelog.r1042.151",
+            new("changelog.r1100.151",
                 "Fixed MogCast showing your previous character's account in watch parties after you switched characters"),
         };
 
