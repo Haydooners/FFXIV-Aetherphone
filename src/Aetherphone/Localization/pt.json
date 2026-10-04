@@ -7060,6 +7060,7 @@
   "changelog.r1041.12": "As festas agora ficam abertas por cinco minutos com a tela escura quando a fila acaba, em vez de fechar",
   "changelog.r1041.13": "A tela agora lembra onde você a colocou em cada lugar",
   "changelog.r1041.14": "Corrigidos arquivos locais que não reproduziam quando o caminho era colado entre aspas",
+  "changelog.r1103.0": "Corrigida a prévia “Como você vai aparecer” em Apoiar o Aetherphone que não mostrava a moldura do Patreon de cada nível",
   "changelog.r1102.0": "Corrigido o ícone da barra de informações do servidor que continuava na tela depois que o jogo ocultava a barra, a entrada agora mostra o ícone do Aethernet em vez de um telefone",
   "changelog.r1102.1": "Corrigidos os botões no topo das janelas destacadas do Linkpearl e do ChocoChat que se sobrepunham",
   "changelog.r1101.0": "Corrigida a música que você está tocando não aparecer no seu Título da placa quando “Compartilhar o que eu ouço” estava desligado",

@@ -2177,6 +2177,12 @@ internal static class L
         public static readonly LocString SectionTours = new("changelog.sectionTours", "Setup and tours");
         public static readonly LocString SectionSounds = new("changelog.sectionSounds", "Sounds");
 
+        public static readonly LocString[] Release1103Settings =
+        {
+            new("changelog.r1103.0",
+                "Fixed the How you will look preview on Support Aetherphone not showing each tier's Patreon frame"),
+        };
+
         public static readonly LocString[] Release1102Messaging =
         {
             new("changelog.r1102.1",
