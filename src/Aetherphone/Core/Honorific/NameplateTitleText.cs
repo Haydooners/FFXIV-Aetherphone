@@ -8,9 +8,10 @@ internal static class NameplateTitleText
 {
     public const int MaxLength = 32;
     public const string Separator = " · ";
-    public const string NowPlayingMark = "♪ ";
     private const char Ellipsis = '…';
     private const char HandleMark = '@';
+    private const char TokenOpen = '[';
+    private const char TokenClose = ']';
 
     public static string Fit(string text)
     {
@@ -23,43 +24,112 @@ internal static class NameplateTitleText
         return string.Concat(trimmed.AsSpan(0, MaxLength - 1).TrimEnd(), Ellipsis.ToString());
     }
 
-    public static string Pair(string lead, string detail)
+    public static string Render(string template, in NameplateValues values)
     {
-        var cleanDetail = detail.Trim();
-        return cleanDetail.Length == 0 ? Fit(lead) : Fit(string.Concat(lead, Separator, cleanDetail));
-    }
-
-    public static string NowPlaying(string title, string artist)
-    {
-        var cleanTitle = title.Trim();
-        var cleanArtist = artist.Trim();
-        if (cleanTitle.Length == 0)
+        if (template.Length == 0)
         {
             return string.Empty;
         }
 
-        if (cleanArtist.Length > 0)
+        var builder = new StringBuilder(template.Length + 32);
+        var index = 0;
+        while (index < template.Length)
         {
-            var full = string.Concat(NowPlayingMark, cleanTitle, Separator, cleanArtist);
-            if (full.Length <= MaxLength)
+            var character = template[index];
+            var close = character == TokenOpen ? template.IndexOf(TokenClose, index + 1) : -1;
+            if (close < 0)
             {
-                return full;
+                builder.Append(character);
+                index++;
+                continue;
+            }
+
+            var token = template.AsSpan(index, close - index + 1);
+            if (!TryValue(token, values, out var value))
+            {
+                builder.Append(token);
+                index = close + 1;
+                continue;
+            }
+
+            if (value.Length == 0)
+            {
+                TrimTrailingSeparator(builder);
+            }
+            else
+            {
+                builder.Append(value.Trim());
+            }
+
+            index = close + 1;
+        }
+
+        return Clean(builder.ToString());
+    }
+
+    public static string RenderFitted(string template, in NameplateValues values)
+    {
+        var text = Render(template, values);
+        if (text.Length > MaxLength && values.Artist.Length > 0)
+        {
+            text = Render(template, values with { Artist = string.Empty });
+        }
+
+        return Fit(text);
+    }
+
+    private static bool TryValue(ReadOnlySpan<char> token, in NameplateValues values, out string value)
+    {
+        value = token switch
+        {
+            NameplateStatusCatalog.CodeToken => values.Code,
+            NameplateStatusCatalog.NameToken => values.Name,
+            NameplateStatusCatalog.StationToken => values.Station,
+            NameplateStatusCatalog.TypeToken => values.Type,
+            NameplateStatusCatalog.HandleToken => values.Handle.TrimStart(HandleMark),
+            NameplateStatusCatalog.SongToken => values.Song,
+            NameplateStatusCatalog.ArtistToken => values.Artist,
+            _ => null!,
+        };
+        return value is not null;
+    }
+
+    private static void TrimTrailingSeparator(StringBuilder builder)
+    {
+        var start = builder.Length - Separator.Length;
+        if (start < 0)
+        {
+            return;
+        }
+
+        for (var offset = 0; offset < Separator.Length; offset++)
+        {
+            if (builder[start + offset] != Separator[offset])
+            {
+                return;
             }
         }
 
-        return Fit(string.Concat(NowPlayingMark, cleanTitle));
+        builder.Length = start;
     }
 
-    public static string Handle(string handle)
+    private static string Clean(string text)
     {
-        var clean = handle.Trim().TrimStart(HandleMark);
-        return clean.Length == 0 ? string.Empty : Fit(string.Concat(HandleMark.ToString(), clean));
-    }
+        var trimmed = text.Trim();
+        if (trimmed.StartsWith(Separator.TrimStart(), StringComparison.Ordinal))
+        {
+            trimmed = trimmed[Separator.TrimStart().Length..].TrimStart();
+        }
 
-    public static string AppTag(string appName, string handle)
-    {
-        var clean = handle.Trim().TrimStart(HandleMark);
-        return clean.Length == 0 ? string.Empty : Pair(appName, string.Concat(HandleMark.ToString(), clean));
+        for (var index = 0; index < trimmed.Length; index++)
+        {
+            if (char.IsLetterOrDigit(trimmed[index]))
+            {
+                return trimmed;
+            }
+        }
+
+        return string.Empty;
     }
 
     public static string ToJson(in NameplateTitle title)

@@ -6,63 +6,71 @@ namespace Aetherphone.Tests;
 
 public sealed class NameplateTitleTextTests
 {
+    private static readonly NameplateValues Song =
+        NameplateValues.Empty with { Song = "Answers", Artist = "Susan Calloway" };
+
     [Fact]
-    public void ShortTextIsKept()
+    public void PlaceholdersFillIn()
     {
-        Assert.Equal("Jam · 4KX 9QP", NameplateTitleText.Pair("Jam", "4KX 9QP"));
+        var values = NameplateValues.Empty with { Code = "4KX 9QP", Name = "Lofi Night" };
+
+        Assert.Equal("Jam · 4KX 9QP", NameplateTitleText.Render("Jam · [code]", values));
+        Assert.Equal("Lofi Night (4KX 9QP)", NameplateTitleText.Render("[name] ([code])", values));
+    }
+
+    [Fact]
+    public void UserTextAroundPlaceholdersIsKept()
+    {
+        var values = NameplateValues.Empty with { Handle = "@mira" };
+
+        Assert.Equal("My Velvet: mira", NameplateTitleText.Render("My Velvet: [handle]", values));
+    }
+
+    [Fact]
+    public void EmptyValueTakesItsSeparatorWithIt()
+    {
+        Assert.Equal("On air", NameplateTitleText.Render("On air · [station]", NameplateValues.Empty));
+    }
+
+    [Fact]
+    public void UnknownPlaceholdersStayAsWritten()
+    {
+        Assert.Equal("Hi [there]", NameplateTitleText.Render("Hi [there]", NameplateValues.Empty));
+    }
+
+    [Fact]
+    public void TextWithoutLettersOrDigitsIsEmpty()
+    {
+        Assert.Equal(string.Empty, NameplateTitleText.Render("@[handle]", NameplateValues.Empty));
+        Assert.Equal(string.Empty, NameplateTitleText.Render(string.Empty, Song));
+    }
+
+    [Fact]
+    public void LongSongDropsTheArtistBeforeCutting()
+    {
+        var fits = NameplateTitleText.RenderFitted("♪ [song] · [artist]", Song);
+        var dropped = NameplateTitleText.RenderFitted("♪ [song] · [artist]",
+            Song with { Song = "Flow (Feast of the Ancients)" });
+
+        Assert.Equal("♪ Answers · Susan Calloway", fits);
+        Assert.Equal("♪ Flow (Feast of the Ancients)", dropped);
     }
 
     [Fact]
     public void LongTextIsCutToHonorificLimit()
     {
-        var fitted = NameplateTitleText.Pair("Hosting", "Moonlit Bards of Ul'dah Night Out");
+        var fitted = NameplateTitleText.RenderFitted("Hosting · [type]",
+            NameplateValues.Empty with { Type = "Moonlit Bards of Ul'dah Night Out" });
 
         Assert.Equal(NameplateTitleText.MaxLength, fitted.Length);
         Assert.EndsWith("…", fitted);
     }
 
     [Fact]
-    public void EmptyDetailLeavesOnlyTheLead()
-    {
-        Assert.Equal("On air", NameplateTitleText.Pair("On air", "  "));
-    }
-
-    [Fact]
-    public void NowPlayingDropsTheArtistBeforeCuttingTheSong()
-    {
-        var withArtist = NameplateTitleText.NowPlaying("Answers", "Susan Calloway");
-        var withoutArtist = NameplateTitleText.NowPlaying("Flow (Feast of the Ancients)", "Susan Calloway");
-
-        Assert.Equal("♪ Answers · Susan Calloway", withArtist);
-        Assert.Equal("♪ Flow (Feast of the Ancients)", withoutArtist);
-    }
-
-    [Fact]
-    public void NowPlayingWithoutTitleIsEmpty()
-    {
-        Assert.Equal(string.Empty, NameplateTitleText.NowPlaying(" ", "Artist"));
-    }
-
-    [Fact]
-    public void HandleGetsExactlyOneMark()
-    {
-        Assert.Equal("@mira", NameplateTitleText.Handle("@mira"));
-        Assert.Equal("@mira", NameplateTitleText.Handle("mira"));
-        Assert.Equal(string.Empty, NameplateTitleText.Handle("@"));
-    }
-
-    [Fact]
-    public void AppTagNamesTheApp()
-    {
-        Assert.Equal("Chirper · @mira", NameplateTitleText.AppTag("Chirper", "mira"));
-        Assert.Equal(string.Empty, NameplateTitleText.AppTag("Velvet", string.Empty));
-    }
-
-    [Fact]
     public void JsonRoundTripsThroughTheReader()
     {
         var look = new TitleLook(new Vector3(1f, 0.5f, 0f), new Vector3(0.1f, 0.2f, 0.3f), null, 12, 1);
-        var title = new NameplateTitle(NameplateTitleKind.Jam, "Jam · 4KX 9QP", look, true);
+        var title = new NameplateTitle(NameplateStatus.Jam, "Jam · 4KX 9QP", look, true);
 
         var json = NameplateTitleText.ToJson(title);
         var read = NameplateTitleText.TryReadTitle(json, out var text, out var readLook);

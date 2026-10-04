@@ -1,18 +1,5 @@
 namespace Aetherphone.Core.Honorific;
 
-internal enum NameplateTitleKind : byte
-{
-    None,
-    MogCast,
-    Jam,
-    RadioOnAir,
-    Muster,
-    AppTag,
-    Busy,
-    NowPlaying,
-    Handle,
-}
-
 internal readonly record struct TitleLook(
     Vector3 Color,
     Vector3? Glow,
@@ -23,9 +10,22 @@ internal readonly record struct TitleLook(
     public static TitleLook Solid(Vector3 color, Vector3 glow) => new(color, glow, null, null, null);
 }
 
-internal readonly record struct NameplateTitle(NameplateTitleKind Kind, string Text, TitleLook Look, bool Prefix)
+internal readonly record struct NameplateTitle(NameplateStatus Kind, string Text, TitleLook Look, bool Prefix)
 {
-    public static readonly NameplateTitle None = new(NameplateTitleKind.None, string.Empty, default, false);
+    public static readonly NameplateTitle None = new(NameplateStatus.None, string.Empty, default, false);
 
-    public bool IsNone => Kind == NameplateTitleKind.None;
+    public bool IsNone => Kind == NameplateStatus.None;
+}
+
+internal readonly record struct NameplateValues(
+    string Code,
+    string Name,
+    string Station,
+    string Type,
+    string Handle,
+    string Song,
+    string Artist)
+{
+    public static readonly NameplateValues Empty = new(string.Empty, string.Empty, string.Empty, string.Empty,
+        string.Empty, string.Empty, string.Empty);
 }

@@ -18,12 +18,17 @@ internal sealed class NameplateTitleService : IDisposable
 {
     public const string ChirperAppId = "chirper";
     public const string AethergramAppId = "aethergram";
-    private const string MusicAppId = "music";
-    private const string VideoAppId = "aetherstream";
     private const float EvaluateSeconds = 1f;
     private const float VerifySeconds = 5f;
     private const float ProbeSeconds = 10f;
+    private const string VelvetAppId = "velvet";
     private const string SampleCode = "4KX9QP";
+    private const string SampleJamName = "Lofi Night";
+    private const string SampleStation = "Gridania FM";
+    private const string SampleHandle = "yourname";
+    private const string SampleSong = "Answers";
+    private const string SampleArtist = "Susan Calloway";
+    private static readonly Vector4 CustomInk = new(1f, 1f, 1f, 1f);
 
     private readonly Configuration configuration;
     private readonly IFramework framework;
@@ -68,6 +73,7 @@ internal sealed class NameplateTitleService : IDisposable
         this.musters = musters;
         this.calls = calls;
         this.bridge = bridge;
+        signedOutSettings.Normalize();
         settings = signedOutSettings;
         framework.Update += OnUpdate;
         clientState.TerritoryChanged += OnTerritoryChanged;
@@ -88,6 +94,8 @@ internal sealed class NameplateTitleService : IDisposable
         apps = phoneApps;
     }
 
+    public void Refresh() => evaluateTimer = EvaluateSeconds;
+
     public void Commit()
     {
         if (settingsContentId != 0)
@@ -96,7 +104,7 @@ internal sealed class NameplateTitleService : IDisposable
         }
 
         configuration.Save();
-        evaluateTimer = EvaluateSeconds;
+        Refresh();
         if (applied && settings.Style == NameplateTitleStyle.MatchMine && ownLook is null)
         {
             bridge.TryClearLocalTitle();
@@ -106,10 +114,44 @@ internal sealed class NameplateTitleService : IDisposable
         }
     }
 
-    private NameplateTitle Example() =>
-        Build(NameplateTitleKind.Jam,
-            NameplateTitleText.Pair(Loc.T(L.Nameplate.Jam), PartyCode.Display(SampleCode)),
-            AppAccents.For(MusicAppId));
+    public static string DefaultTemplate(NameplateStatus status)
+    {
+        ref readonly var info = ref NameplateStatusCatalog.For(status);
+        return info.DefaultTemplate is { } template ? Loc.T(template) : string.Empty;
+    }
+
+    public string TemplateFor(NameplateStatus status)
+    {
+        var custom = settings.Template(status);
+        return custom.Length > 0 || status == NameplateStatus.Custom ? custom : DefaultTemplate(status);
+    }
+
+    public NameplateTitle Sample(NameplateStatus status)
+    {
+        var handle = ResolveHandle(HandleAppId(status));
+        var values = new NameplateValues(PartyCode.Display(SampleCode), SampleJamName, SampleStation,
+            Loc.T(MusterCategories.Label(MusterCategories.Roleplay)), handle.Length > 0 ? handle : SampleHandle,
+            SampleSong, SampleArtist);
+        return Compose(status, values);
+    }
+
+    private NameplateTitle Example()
+    {
+        var order = settings.Order;
+        for (var index = 0; index < order.Length; index++)
+        {
+            if (settings.Shows(order[index]))
+            {
+                var sample = Sample(order[index]);
+                if (!sample.IsNone)
+                {
+                    return sample;
+                }
+            }
+        }
+
+        return Sample(NameplateStatus.Jam);
+    }
 
     public void Dispose()
     {
@@ -215,6 +257,7 @@ internal sealed class NameplateTitleService : IDisposable
             configuration.NameplateTitleByCharacter[contentId] = stored;
         }
 
+        stored.Normalize();
         settings = stored;
         ownLook = null;
     }
@@ -284,79 +327,57 @@ internal sealed class NameplateTitleService : IDisposable
 
     private NameplateTitle Resolve()
     {
-        if (settings.Shows(NameplateStatus.MogCast) && watchAlong is { IsHosting: true, IsPartyOpen: true } party &&
-            party.RoomCode.Length > 0)
+        var order = settings.Order;
+        for (var index = 0; index < order.Length; index++)
         {
-            return Build(NameplateTitleKind.MogCast,
-                NameplateTitleText.Pair(Loc.T(L.Apps.AetherStream), PartyCode.Display(party.RoomCode)),
-                AppAccents.For(VideoAppId));
-        }
-
-        if (settings.Shows(NameplateStatus.Jam) && jam.IsHost)
-        {
-            var detail = settings.JamShowsName && jam.Title.Length > 0 ? jam.Title : jam.DisplayCode;
-            if (detail.Length > 0)
+            var status = order[index];
+            if (!settings.Shows(status))
             {
-                return Build(NameplateTitleKind.Jam, NameplateTitleText.Pair(Loc.T(L.Nameplate.Jam), detail),
-                    AppAccents.For(MusicAppId));
-            }
-        }
-
-        var room = radioRooms.Room;
-        if (settings.Shows(NameplateStatus.RadioOnAir) && room.IsDj && room.IsLive)
-        {
-            var station = playback.RadioActive ? playback.Radio.CurrentStation : string.Empty;
-            return Build(NameplateTitleKind.RadioOnAir,
-                NameplateTitleText.Pair(Loc.T(L.Nameplate.OnAir), station), AccentRing.Orange);
-        }
-
-        if (settings.Shows(NameplateStatus.Muster) && HostedMusterLive() is { } muster)
-        {
-            return Build(NameplateTitleKind.Muster,
-                NameplateTitleText.Pair(Loc.T(L.Nameplate.Hosting),
-                    Loc.T(MusterCategories.Label(muster.Category))),
-                AppAccents.For(MusterStore.AppId));
-        }
-
-        var appTag = ResolveAppTag();
-        if (!appTag.IsNone)
-        {
-            return appTag;
-        }
-
-        if (settings.Shows(NameplateStatus.Busy))
-        {
-            if (calls.Snapshot().InCall)
-            {
-                return Build(NameplateTitleKind.Busy, Loc.T(L.Nameplate.OnACall), AccentRing.Slate);
+                continue;
             }
 
-            if (configuration.DoNotDisturb)
+            var title = ResolveStatus(status);
+            if (!title.IsNone)
             {
-                return Build(NameplateTitleKind.Busy, Loc.T(L.Nameplate.DoNotDisturb), AccentRing.Slate);
-            }
-        }
-
-        if (settings.Shows(NameplateStatus.NowPlaying) && configuration.ShareListeningActivity)
-        {
-            var song = ResolveNowPlaying();
-            if (song.Length > 0)
-            {
-                return Build(NameplateTitleKind.NowPlaying, song, AppAccents.For(MusicAppId));
-            }
-        }
-
-        if (settings.Shows(NameplateStatus.Handle))
-        {
-            var appId = settings.HandleApp == NameplateHandleApp.Aethergram ? AethergramAppId : ChirperAppId;
-            var handle = NameplateTitleText.Handle(ResolveHandle(appId));
-            if (handle.Length > 0)
-            {
-                return Build(NameplateTitleKind.Handle, handle, AppAccents.For(appId));
+                return title;
             }
         }
 
         return NameplateTitle.None;
+    }
+
+    private NameplateTitle ResolveStatus(NameplateStatus status)
+    {
+        switch (status)
+        {
+            case NameplateStatus.MogCast when watchAlong is { IsHosting: true, IsPartyOpen: true } party &&
+                                              party.RoomCode.Length > 0:
+                return Compose(status, NameplateValues.Empty with { Code = PartyCode.Display(party.RoomCode) });
+            case NameplateStatus.Jam when jam.IsHost && jam.DisplayCode.Length > 0:
+                return Compose(status, NameplateValues.Empty with { Code = jam.DisplayCode, Name = jam.Title });
+            case NameplateStatus.RadioOnAir when radioRooms.Room is { IsDj: true, IsLive: true }:
+                return Compose(status, NameplateValues.Empty with
+                {
+                    Station = playback.RadioActive ? playback.Radio.CurrentStation : string.Empty,
+                });
+            case NameplateStatus.Muster when HostedMusterLive() is { } muster:
+                return Compose(status, NameplateValues.Empty with
+                {
+                    Type = Loc.T(MusterCategories.Label(muster.Category)),
+                });
+            case NameplateStatus.Chirper or NameplateStatus.Aethergram or NameplateStatus.Velvet:
+                return ResolveAppTag(status);
+            case NameplateStatus.InCall when calls.Snapshot().InCall:
+            case NameplateStatus.DoNotDisturb when configuration.DoNotDisturb:
+            case NameplateStatus.Custom:
+                return Compose(status, NameplateValues.Empty);
+            case NameplateStatus.NowPlaying when configuration.ShareListeningActivity:
+                return ResolveNowPlaying();
+            case NameplateStatus.Handle:
+                return ResolveIdleHandle();
+            default:
+                return NameplateTitle.None;
+        }
     }
 
     private MusterDto? HostedMusterLive()
@@ -372,39 +393,66 @@ internal sealed class NameplateTitleService : IDisposable
         return now >= mine.StartsAtUnix && now < mine.EndsAtUnix ? mine : null;
     }
 
-    private NameplateTitle ResolveAppTag()
+    private NameplateTitle ResolveAppTag(NameplateStatus status)
     {
-        var app = foregroundApp();
-        if (app is not INameplateHandleSource source || !settings.Shows(source.TagStatus))
+        if (foregroundApp() is not INameplateHandleSource source || source.TagStatus != status)
         {
             return NameplateTitle.None;
         }
 
-        var text = NameplateTitleText.AppTag(app.DisplayName, source.ResolveNameplateHandle());
-        return text.Length == 0 ? NameplateTitle.None : Build(NameplateTitleKind.AppTag, text, app.Accent);
+        var handle = source.ResolveNameplateHandle();
+        return handle.Length == 0
+            ? NameplateTitle.None
+            : Compose(status, NameplateValues.Empty with { Handle = handle });
     }
 
-    private string ResolveNowPlaying()
+    private NameplateTitle ResolveIdleHandle()
+    {
+        var handle = ResolveHandle(HandleAppId(NameplateStatus.Handle));
+        return handle.Length == 0
+            ? NameplateTitle.None
+            : Compose(NameplateStatus.Handle, NameplateValues.Empty with { Handle = handle });
+    }
+
+    private NameplateTitle ResolveNowPlaying()
     {
         if (playback.IsPlaying)
         {
             if (playback.SongActive)
             {
-                return NameplateTitleText.NowPlaying(playback.Title, playback.Subtitle);
+                return Compose(NameplateStatus.NowPlaying,
+                    NameplateValues.Empty with { Song = playback.Title, Artist = playback.Subtitle });
             }
 
             var track = playback.RadioNowPlaying;
-            return NameplateTitleText.NowPlaying(track.Length > 0 ? track : playback.Title, string.Empty);
+            return Compose(NameplateStatus.NowPlaying,
+                NameplateValues.Empty with { Song = track.Length > 0 ? track : playback.Title });
         }
 
         if (!settings.IncludePcMedia)
         {
-            return string.Empty;
+            return NameplateTitle.None;
         }
 
         ref readonly var media = ref pcMedia.Current;
-        return media.IsPlaying ? NameplateTitleText.NowPlaying(media.Title, media.Artist) : string.Empty;
+        return media.IsPlaying && media.Title.Length > 0
+            ? Compose(NameplateStatus.NowPlaying,
+                NameplateValues.Empty with { Song = media.Title, Artist = media.Artist })
+            : NameplateTitle.None;
     }
+
+    private string HandleAppId(NameplateStatus status) => status switch
+    {
+        NameplateStatus.Chirper => ChirperAppId,
+        NameplateStatus.Aethergram => AethergramAppId,
+        NameplateStatus.Velvet => VelvetAppId,
+        _ => settings.HandleApp switch
+        {
+            NameplateHandleApp.Aethergram => AethergramAppId,
+            NameplateHandleApp.Velvet => VelvetAppId,
+            _ => ChirperAppId,
+        },
+    };
 
     private string ResolveHandle(string appId)
     {
@@ -421,18 +469,27 @@ internal sealed class NameplateTitleService : IDisposable
             }
         }
 
-        return session.CurrentUser?.Handle ?? string.Empty;
+        return string.Equals(appId, VelvetAppId, StringComparison.Ordinal)
+            ? string.Empty
+            : session.CurrentUser?.Handle ?? string.Empty;
     }
 
-    private NameplateTitle Build(NameplateTitleKind kind, string text, Vector4 accent)
+    private NameplateTitle Compose(NameplateStatus status, in NameplateValues values)
     {
+        var text = NameplateTitleText.RenderFitted(TemplateFor(status), values);
         if (text.Length == 0)
         {
             return NameplateTitle.None;
         }
 
-        return new NameplateTitle(kind, text, LookFor(accent), settings.Prefix);
+        var accent = status == NameplateStatus.Custom ? CustomInk : TintFor(status);
+        return new NameplateTitle(status, text, LookFor(accent), settings.Prefix);
     }
+
+    private Vector4 TintFor(NameplateStatus status) =>
+        status == NameplateStatus.Handle
+            ? AppAccents.For(HandleAppId(status))
+            : NameplateStatusCatalog.For(status).Tint;
 
     private TitleLook LookFor(Vector4 accent)
     {

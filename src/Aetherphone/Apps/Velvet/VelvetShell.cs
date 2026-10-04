@@ -159,7 +159,11 @@ internal sealed partial class VelvetShell : IResumableApp, ITabIconDrawer, IName
 
     public NameplateStatus TagStatus => NameplateStatus.Velvet;
 
-    public string ResolveNameplateHandle() => store.Me?.Handle ?? string.Empty;
+    public string ResolveNameplateHandle()
+    {
+        store.EnsureMe();
+        return store.Me?.Handle ?? string.Empty;
+    }
 
     public string Glyph => "Ve";
 

@@ -295,7 +295,7 @@ internal static class SettingsRow
         return interactive && UiInteract.Click(row.Min, row.Max, hovered);
     }
 
-    private static Vector2 DrawIconTile(Rect row, FontAwesomeIcon icon, Vector4 tint, PhoneTheme theme, bool hovered,
+    public static Vector2 DrawIconTile(Rect row, FontAwesomeIcon icon, Vector4 tint, PhoneTheme theme, bool hovered,
         bool badge, float scale)
     {
         var drawList = ImGui.GetWindowDrawList();

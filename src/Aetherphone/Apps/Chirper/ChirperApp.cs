@@ -162,7 +162,7 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer, INamep
     public Vector4 Accent => AppAccents.For(Id);
     public string DisplayName => Loc.T(L.Apps.Chirper);
 
-    public NameplateStatus TagStatus => NameplateStatus.SocialApps;
+    public NameplateStatus TagStatus => NameplateStatus.Chirper;
 
     public string ResolveNameplateHandle()
     {

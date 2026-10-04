@@ -115,7 +115,7 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer, INa
     public Vector4 Accent => AppAccents.For(Id);
     public string DisplayName => Loc.T(L.Apps.Aethergram);
 
-    public NameplateStatus TagStatus => NameplateStatus.SocialApps;
+    public NameplateStatus TagStatus => NameplateStatus.Aethergram;
 
     public string ResolveNameplateHandle()
     {

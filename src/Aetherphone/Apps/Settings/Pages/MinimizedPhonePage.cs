@@ -203,13 +203,13 @@ internal sealed class MinimizedPhonePage : ISettingsPage
         var labelSize = Typography.Measure(label, TextStyles.BodyEmphasized);
         Marquee.DrawLeftAuto(rowId, label, row.Min.X, row.Center.Y - labelSize.Y * 0.5f, labelMaxWidth,
             TextStyles.BodyEmphasized, slot.Enabled ? theme.TextStrong : theme.TextMuted);
-        if (ReorderButton(upCenter, radius, FontAwesomeIcon.ChevronUp, theme, ordinal > 0))
+        if (SettingsReorder.Button(upCenter, radius, FontAwesomeIcon.ChevronUp, theme, ordinal > 0))
         {
             moveIndex = index;
             moveDelta = -1;
         }
 
-        if (ReorderButton(downCenter, radius, FontAwesomeIcon.ChevronDown, theme, ordinal < count - 1))
+        if (SettingsReorder.Button(downCenter, radius, FontAwesomeIcon.ChevronDown, theme, ordinal < count - 1))
         {
             moveIndex = index;
             moveDelta = 1;
@@ -221,25 +221,6 @@ internal sealed class MinimizedPhonePage : ISettingsPage
         {
             layout.SetEnabled(index, enabled);
         }
-    }
-
-    private static bool ReorderButton(Vector2 center, float radius, FontAwesomeIcon icon, PhoneTheme theme,
-        bool enabled)
-    {
-        var min = center - new Vector2(radius, radius);
-        var max = center + new Vector2(radius, radius);
-        var drawList = ImGui.GetWindowDrawList();
-        var hovered = enabled && UiInteract.Hover(min, max);
-        if (hovered)
-        {
-            drawList.AddCircleFilled(center, radius,
-                ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.10f)), 24);
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        var ink = enabled ? theme.TextMuted : Palette.WithAlpha(theme.TextMuted, theme.TextMuted.W * 0.25f);
-        ProgressRing.CenterIcon(drawList, center, icon, ink, radius);
-        return enabled && UiInteract.Click(min, max, hovered);
     }
 
     private void ApplyPendingMove()
