@@ -148,7 +148,7 @@ internal sealed partial class CasinoApp
         var height = pad * 2f + radius * 2f;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        CoinArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
 
         var center = new Vector2(min.X + pad + radius, min.Y + pad + radius);
         var thickness = GaugeThickness * scale;
@@ -252,7 +252,7 @@ internal sealed partial class CasinoApp
                      lineGap + footnote + lineGap + buttonHeight;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        CoinArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
 
         var ceiling = CasinoLimitPicker.CeilingFor(state.DailyBuyInCap);
         var left = min.X + pad;

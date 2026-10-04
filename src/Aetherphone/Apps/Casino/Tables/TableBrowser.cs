@@ -12,7 +12,7 @@ namespace Aetherphone.Apps.Casino.Tables;
 
 internal sealed class TableBrowser
 {
-    private const float PillHeight = 44f;
+    private const float PillHeight = Button.LargeHeight;
     private const float RowGap = 10f;
     private const float FieldHeight = 40f;
     private const int TokenBufferLength = 80;
@@ -111,7 +111,7 @@ internal sealed class TableBrowser
         var height = 12f * scale + titleSize.Y + 6f * scale + hintSize.Y + 12f * scale
             + PillHeight * scale + 12f * scale;
         var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var rounding = Metrics.Radius.Card * scale;
+        var rounding = Metrics.Radius.Grouped * scale;
         ui.Card(drawList, card.Min, card.Max, rounding);
         Squircle.Stroke(drawList, card.Min, card.Max, rounding,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
@@ -145,8 +145,9 @@ internal sealed class TableBrowser
         var height = block.Y + pad * 2f;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, 16f * scale,
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), message, ui.TitleInk, TextStyles.Footnote,
             width - pad * 2f);
@@ -223,7 +224,7 @@ internal sealed class TableBrowser
         var height = block.Y + pad * 2f;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), text, ui.MutedInk, TextStyles.Footnote,
             width - pad * 2f);
         ImGui.SetCursorScreenPos(origin);
@@ -237,7 +238,7 @@ internal sealed class TableBrowser
         var drawList = ImGui.GetWindowDrawList();
         var height = 60f * scale;
         var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var rounding = Metrics.Radius.Card * scale;
+        var rounding = Metrics.Radius.Grouped * scale;
         var hovered = UiInteract.Hover(row.Min, row.Max);
         ui.Card(drawList, row.Min, row.Max, rounding);
         if (hovered)
@@ -280,8 +281,7 @@ internal sealed class TableBrowser
         var pillWidth = 110f * scale;
         var fieldMin = new Vector2(origin.X, fieldTop);
         var fieldMax = new Vector2(origin.X + width - pillWidth - 8f * scale, fieldTop + FieldHeight * scale);
-        Squircle.Fill(drawList, fieldMin, fieldMax, Metrics.Radius.Field * scale,
-            ImGui.GetColorU32(ui.FieldSurface));
+        SearchBar.Surface(drawList, new Rect(fieldMin, fieldMax), ui.Ink);
         ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + 10f * scale,
             (fieldMin.Y + fieldMax.Y) * 0.5f - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(fieldMax.X - fieldMin.X - 20f * scale);
@@ -292,8 +292,10 @@ internal sealed class TableBrowser
                 TokenBufferLength);
         }
 
-        var pillRect = new Rect(new Vector2(fieldMax.X + 8f * scale, fieldTop),
-            new Vector2(origin.X + width, fieldTop + FieldHeight * scale));
+        var pillHeight = Button.RegularHeight * scale;
+        var pillTop = (fieldMin.Y + fieldMax.Y - pillHeight) * 0.5f;
+        var pillRect = new Rect(new Vector2(fieldMax.X + 8f * scale, pillTop),
+            new Vector2(origin.X + width, pillTop + pillHeight));
         var parsed = CasinoShare.TryParse(tokenBuffer, out var tableId);
         if (ui.PillButton(pillRect, Loc.T(L.Casino.JoinAction), true,
                 parsed && !tables.IntentInFlight) && parsed)

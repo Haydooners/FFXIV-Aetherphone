@@ -149,8 +149,8 @@ internal sealed partial class CasinoApp
     private float SectionTitle(ImDrawListPtr drawList, Vector2 origin, float width, string title, float scale)
     {
         var top = origin.Y + CoinArt.SectionGap * scale;
-        return top + CoinArt.SectionHeader(drawList, new Vector2(origin.X, top), width, title, ui.TitleInk, 0f,
-            scale) + CoinArt.HeaderGap * scale;
+        return top + CardSectionHeader.Draw(drawList, new Vector2(origin.X, top), width, title, ui.TitleInk) +
+               CoinArt.HeaderGap * scale;
     }
 
     private float DrawRecordsCard(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
@@ -159,7 +159,7 @@ internal sealed partial class CasinoApp
         var rowHeight = RecordRowHeight * scale;
         var min = new Vector2(origin.X, top);
         var max = new Vector2(origin.X + width, top + rowHeight * 3f);
-        CoinArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         if (DrawRecordRow(drawList, RowAt(min, max.X, rowHeight, 0), FontAwesomeIcon.Receipt, AccentRing.Indigo,
                 L.Casino.HistoryRow, L.Casino.HistoryRowHint, false, scale))
         {

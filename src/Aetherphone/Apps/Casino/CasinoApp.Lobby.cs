@@ -298,7 +298,7 @@ internal sealed partial class CasinoApp
         var max = new Vector2(origin.X + width, origin.Y + height);
         UiAnchors.Report("casino.tonight", new Rect(min, max));
         var hovered = CasinoArt.PressCard(ImGui.GetID("casino.tonight"), min, max, out var cardMin, out var cardMax);
-        CoinArt.Card(drawList, ui, cardMin, cardMax, scale);
+        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Grouped * scale);
 
         var left = min.X + pad;
         var right = max.X - pad;
@@ -415,7 +415,7 @@ internal sealed partial class CasinoApp
         var max = new Vector2(origin.X + width, origin.Y + height);
         UiAnchors.Report("casino.spin", new Rect(min, max));
         var hovered = CasinoArt.PressCard(ImGui.GetID("casino.spin"), min, max, out var cardMin, out var cardMax);
-        CoinArt.Card(drawList, ui, cardMin, cardMax, scale);
+        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Grouped * scale);
 
         var pad = Metrics.Space.Lg * scale;
         var tile = SpinTile * scale;
@@ -496,7 +496,7 @@ internal sealed partial class CasinoApp
     {
         var hovered = CasinoArt.PressCard(ImGui.GetID(RoomOf(gameId)), card.Min, card.Max, out var cardMin,
             out var cardMax);
-        CoinArt.Card(drawList, ui, cardMin, cardMax, scale);
+        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Grouped * scale);
         var pad = LivePad * scale;
         var tile = LiveTile * scale;
         var tileCenter = new Vector2(card.Min.X + pad + tile * 0.5f, card.Min.Y + pad + tile * 0.5f);
@@ -587,7 +587,7 @@ internal sealed partial class CasinoApp
     {
         var gameId = FloorGameIds[gameIndex];
         var hovered = CasinoArt.PressCard(ImGui.GetID(gameId), card.Min, card.Max, out var cardMin, out var cardMax);
-        CoinArt.Card(drawList, ui, cardMin, cardMax, scale);
+        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Grouped * scale);
         var pad = GridPad * scale;
         var tile = GridTile * scale;
         var tileCenter = new Vector2(card.Min.X + pad + tile * 0.5f, card.Min.Y + pad + tile * 0.5f);

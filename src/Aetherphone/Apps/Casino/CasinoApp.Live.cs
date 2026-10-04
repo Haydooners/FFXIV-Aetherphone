@@ -29,12 +29,12 @@ internal sealed partial class CasinoApp
             var width = ScrollLayout.StableContentWidth();
             var cursorY = DrawStakeNotice(origin, width, scale);
             var roomsTop = cursorY + CoinArt.HeaderGap * scale +
-                           CoinArt.SectionHeader(drawList, new Vector2(origin.X, cursorY), width,
-                               Loc.T(L.Casino.LiveRoomsHeading), ui.TitleInk, 0f, scale);
+                           CardSectionHeader.Draw(drawList, new Vector2(origin.X, cursorY), width,
+                               Loc.T(L.Casino.LiveRoomsHeading), ui.TitleInk);
             var rowHeight = LiveRowHeight * scale;
             var roomsMin = new Vector2(origin.X, roomsTop);
             var roomsMax = new Vector2(origin.X + width, roomsTop + rowHeight * 2f);
-            CoinArt.Card(drawList, ui, roomsMin, roomsMax, scale);
+            ui.Card(drawList, roomsMin, roomsMax, Metrics.Radius.Grouped * scale);
             if (DrawLiveRoomRow(drawList, RowAt(roomsMin, roomsMax.X, rowHeight, 0), CasinoGames.Wheel,
                     L.Casino.GameWheel, false, scale))
             {
@@ -116,7 +116,7 @@ internal sealed partial class CasinoApp
         var rowHeight = HouseRowHeight * scale;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight * count);
-        CoinArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var drawn = 0;
         for (var order = 0; order < tierOrder.Length; order++)
         {

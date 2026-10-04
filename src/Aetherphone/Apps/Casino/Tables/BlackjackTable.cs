@@ -19,7 +19,7 @@ internal sealed class BlackjackTable
     private const float PadX = 16f;
     private const float StatusRowHeight = 22f;
     private const float BannerHeight = 30f;
-    private const float ActionBarHeight = 46f;
+    private const float ActionBarHeight = Button.LargeHeight;
     private const float BetFlightSeconds = 0.4f;
     private const float PlatePopSeconds = 0.2f;
     private const float SettleFlightSeconds = 0.55f;
@@ -1322,7 +1322,7 @@ internal sealed class BlackjackTable
         var height = titleSize.Y + block.Y + pad * 2f + 6f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), title, ui.TitleInk,
             TextStyles.SubheadlineEmphasized);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad + titleSize.Y + 6f * scale), hint,

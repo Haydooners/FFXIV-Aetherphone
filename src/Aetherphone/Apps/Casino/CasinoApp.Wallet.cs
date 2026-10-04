@@ -73,7 +73,7 @@ internal sealed partial class CasinoApp
         var height = pad * 2f + disc + rowGap * 0.5f + caption + value + rowGap + caption + rowGap + buttonHeight;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        CoinArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
 
         var stack = casino.State?.Sitting?.Stack ?? 0;
         var balance = coins.Wallet?.Balance ?? 0;
@@ -178,7 +178,7 @@ internal sealed partial class CasinoApp
         var rowHeight = RecordRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight);
         var row = new Rect(origin, max);
-        CoinArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var hovered = CoinArt.RowInteraction(drawList, ui, row, scale);
         var pad = Metrics.Space.Lg * scale;
         var tile = RecordTile * scale;
