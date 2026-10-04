@@ -83,6 +83,17 @@ public sealed class NameplateTitleSettingsTests
     }
 
     [Fact]
+    public void NormalizeClampsTheTurnInterval()
+    {
+        var settings = new NameplateTitleSettings { TurnSeconds = 0 };
+
+        settings.Normalize();
+
+        Assert.Equal(NameplateLongTitles.TakeTurns, settings.LongTitles);
+        Assert.Equal(NameplateTitleSettings.MinimumTurnSeconds, settings.TurnSeconds);
+    }
+
+    [Fact]
     public void BlankTemplateFallsBackToDefault()
     {
         var settings = new NameplateTitleSettings();

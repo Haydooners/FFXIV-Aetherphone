@@ -76,6 +76,50 @@ public sealed class NameplateTitleTextTests
     }
 
     [Fact]
+    public void EmptyLeadingValueTakesTheFollowingSeparator()
+    {
+        var noSong = Song with { Song = string.Empty };
+
+        Assert.Equal("♪ Susan Calloway", NameplateTitleText.Render("♪ [song] · [artist]", noSong));
+        Assert.Equal("On air · live", NameplateTitleText.Render("On air · [station] · live", NameplateValues.Empty));
+    }
+
+    [Fact]
+    public void FittingSongIsASingleTurn()
+    {
+        Assert.Equal(new[] { "♪ Answers · Susan Calloway" }, NameplateTitleText.Turns("♪ [song] · [artist]", Song));
+        Assert.Empty(NameplateTitleText.Turns("♪ [song] · [artist]", NameplateValues.Empty));
+    }
+
+    [Fact]
+    public void SongAndArtistTakeTurnsWhenTogetherTheyDoNotFit()
+    {
+        var turns = NameplateTitleText.Turns("♪ [song] · [artist]", Song with { Song = "Tomorrow and Tomorrow" });
+
+        Assert.Equal(new[] { "♪ Tomorrow and Tomorrow", "♪ Susan Calloway" }, turns);
+    }
+
+    [Fact]
+    public void VeryLongSongIsPagedAtWordBreaksWithoutCutting()
+    {
+        const string song = "Footfalls (from FINAL FANTASY XIV: Endwalker Original Soundtrack)";
+
+        var turns = NameplateTitleText.Turns("♪ [song] · [artist]", NameplateValues.Empty with { Song = song });
+
+        Assert.True(turns.Length > 1);
+        var joined = string.Empty;
+        for (var index = 0; index < turns.Length; index++)
+        {
+            Assert.True(turns[index].Length <= NameplateTitleText.MaxLength);
+            Assert.DoesNotContain("…", turns[index]);
+            Assert.StartsWith("♪ ", turns[index]);
+            joined = index == 0 ? turns[index][2..] : joined + " " + turns[index][2..];
+        }
+
+        Assert.Equal(song, joined);
+    }
+
+    [Fact]
     public void JsonRoundTripsThroughTheReader()
     {
         var look = new TitleLook(new Vector3(1f, 0.5f, 0f), new Vector3(0.1f, 0.2f, 0.3f), null, 12, 1);

@@ -8291,6 +8291,13 @@ internal static class L
         public static readonly LocString NowPlaying = new("nameplate.nowPlaying", "Now playing");
         public static readonly LocString NowPlayingHint = new("nameplate.nowPlayingHint", "The song you are playing. Needs Share what I listen to, in Music settings.");
         public static readonly LocString PcMedia = new("nameplate.pcMedia", "Include music from your PC");
+        public static readonly LocString LongTitles = new("nameplate.longTitles", "Long titles");
+        public static readonly LocString TakeTurns = new("nameplate.takeTurns", "Take turns");
+        public static readonly LocString Shorten = new("nameplate.shorten", "Shorten");
+        public static readonly LocString TakeTurnsHint = new("nameplate.takeTurnsHint", "When the song and artist do not fit, they take turns on your title, and a long name shows in parts. Nothing gets cut off.");
+        public static readonly LocString ShortenHint = new("nameplate.shortenHint", "Drops the artist first, then cuts the song name short to fit.");
+        public static readonly LocString SwitchEvery = new("nameplate.switchEvery", "Switch every");
+        public static readonly LocString TurnSeconds = new("nameplate.turnSeconds", "{0}s");
         public static readonly LocString Handle = new("nameplate.handle", "Social handle");
         public static readonly LocString HandleHint = new("nameplate.handleHint", "Your handle, when nothing above it is active.");
         public static readonly LocString HandleApp = new("nameplate.handleApp", "Use the handle from");

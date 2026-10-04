@@ -37,9 +37,18 @@ internal enum NameplateHandleApp
     Velvet,
 }
 
+internal enum NameplateLongTitles
+{
+    TakeTurns,
+    Shorten,
+}
+
 internal sealed class NameplateTitleSettings
 {
     public const int MaxTemplateLength = 64;
+    public const int MinimumTurnSeconds = 4;
+    public const int MaximumTurnSeconds = 30;
+    public const int DefaultTurnSeconds = 10;
 
     public bool Enabled { get; set; }
     public NameplateStatus Statuses { get; set; } = NameplateStatus.Default;
@@ -52,6 +61,8 @@ internal sealed class NameplateTitleSettings
     public bool Prefix { get; set; }
     public bool IncludePcMedia { get; set; }
     public NameplateHandleApp HandleApp { get; set; }
+    public NameplateLongTitles LongTitles { get; set; }
+    public int TurnSeconds { get; set; } = DefaultTurnSeconds;
 
     public bool Shows(NameplateStatus status) => (Statuses & status) != 0;
 
@@ -86,6 +97,7 @@ internal sealed class NameplateTitleSettings
 
     public void Normalize()
     {
+        TurnSeconds = Math.Clamp(TurnSeconds, MinimumTurnSeconds, MaximumTurnSeconds);
         var catalog = NameplateStatusCatalog.All;
         if (Order.Length == 0)
         {

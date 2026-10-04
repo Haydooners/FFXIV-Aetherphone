@@ -12,6 +12,8 @@ internal static class NameplateTitleText
     private const char HandleMark = '@';
     private const char TokenOpen = '[';
     private const char TokenClose = ']';
+    private const string ProbeText = "X";
+    private const int MinimumPageLength = 8;
 
     public static string Fit(string text)
     {
@@ -52,20 +54,86 @@ internal static class NameplateTitleText
                 continue;
             }
 
-            if (value.Length == 0)
-            {
-                TrimTrailingSeparator(builder);
-            }
-            else
+            index = close + 1;
+            if (value.Length > 0)
             {
                 builder.Append(value.Trim());
+                continue;
             }
 
-            index = close + 1;
+            if (!TrimTrailingSeparator(builder) &&
+                template.AsSpan(index).StartsWith(Separator, StringComparison.Ordinal))
+            {
+                index += Separator.Length;
+            }
         }
 
         return Clean(builder.ToString());
     }
+
+    public static string[] Turns(string template, in NameplateValues values)
+    {
+        var whole = Render(template, values);
+        if (whole.Length <= MaxLength)
+        {
+            return whole.Length == 0 ? Array.Empty<string>() : new[] { whole };
+        }
+
+        var turns = new List<string>(4);
+        AddPages(turns, template, values with { Artist = string.Empty }, values.Song, false);
+        AddPages(turns, template, values with { Song = string.Empty }, values.Artist, true);
+        return turns.Count == 0 ? new[] { Fit(whole) } : turns.ToArray();
+    }
+
+    private static void AddPages(List<string> turns, string template, in NameplateValues values, string text,
+        bool artist)
+    {
+        var token = artist ? NameplateStatusCatalog.ArtistToken : NameplateStatusCatalog.SongToken;
+        var trimmed = text.Trim();
+        if (trimmed.Length == 0 || !template.Contains(token, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var budget = MaxLength - (Render(template, With(values, artist, ProbeText)).Length - ProbeText.Length);
+        if (budget < MinimumPageLength)
+        {
+            turns.Add(Fit(Render(template, With(values, artist, trimmed))));
+            return;
+        }
+
+        var start = 0;
+        while (start < trimmed.Length)
+        {
+            var length = PageLength(trimmed, start, budget);
+            var page = Render(template, With(values, artist, trimmed.Substring(start, length)));
+            if (page.Length > 0)
+            {
+                turns.Add(page);
+            }
+
+            start += length;
+            while (start < trimmed.Length && trimmed[start] == ' ')
+            {
+                start++;
+            }
+        }
+    }
+
+    private static int PageLength(string text, int start, int budget)
+    {
+        var remaining = text.Length - start;
+        if (remaining <= budget)
+        {
+            return remaining;
+        }
+
+        var space = text.LastIndexOf(' ', start + budget, budget + 1);
+        return space > start ? space - start : budget;
+    }
+
+    private static NameplateValues With(in NameplateValues values, bool artist, string text) =>
+        artist ? values with { Artist = text } : values with { Song = text };
 
     public static string RenderFitted(string template, in NameplateValues values)
     {
@@ -96,23 +164,24 @@ internal static class NameplateTitleText
         return value is not null;
     }
 
-    private static void TrimTrailingSeparator(StringBuilder builder)
+    private static bool TrimTrailingSeparator(StringBuilder builder)
     {
         var start = builder.Length - Separator.Length;
         if (start < 0)
         {
-            return;
+            return false;
         }
 
         for (var offset = 0; offset < Separator.Length; offset++)
         {
             if (builder[start + offset] != Separator[offset])
             {
-                return;
+                return false;
             }
         }
 
         builder.Length = start;
+        return true;
     }
 
     private static string Clean(string text)

@@ -26,7 +26,7 @@ internal sealed class NameplateTitleService : IDisposable
     private const string SampleJamName = "Lofi Night";
     private const string SampleStation = "Gridania FM";
     private const string SampleHandle = "yourname";
-    private const string SampleSong = "Answers";
+    private const string SampleSong = "Tomorrow and Tomorrow";
     private const string SampleArtist = "Susan Calloway";
     private const string SampleGame = "Coil";
     private const long SampleChips = 1250;
@@ -58,6 +58,9 @@ internal sealed class NameplateTitleService : IDisposable
     private string appliedJson = string.Empty;
     private string appliedText = string.Empty;
     private TitleLook? ownLook;
+    private string trackSong = string.Empty;
+    private string trackArtist = string.Empty;
+    private double trackSeconds;
 
     public NameplateTitleService(Configuration configuration, IFramework framework, IClientState clientState,
         IObjectTable objectTable, AethernetSession session, PlaybackHub playback, PcMediaSource pcMedia,
@@ -88,6 +91,7 @@ internal sealed class NameplateTitleService : IDisposable
     public string CharacterName { get; private set; } = string.Empty;
     public NameplateTitleSettings Settings => settings;
     public bool HasOwnLook => ownLook.HasValue;
+    public long TurnTick => Environment.TickCount64 / (settings.TurnSeconds * 1000L);
 
     public void Bind(WatchAlongSession watchAlongSession, Func<IPhoneApp?> foreground, IReadOnlyList<IPhoneApp> phoneApps)
     {
@@ -134,7 +138,9 @@ internal sealed class NameplateTitleService : IDisposable
         var values = new NameplateValues(PartyCode.Display(SampleCode), SampleJamName, SampleStation,
             Loc.T(MusterCategories.Label(MusterCategories.Roleplay)), handle.Length > 0 ? handle : SampleHandle,
             SampleSong, SampleArtist, SampleGame, ChipCount(SampleChips));
-        return Compose(status, values);
+        return status == NameplateStatus.NowPlaying
+            ? ComposeNowPlaying(values, Environment.TickCount64 / 1000.0)
+            : Compose(status, values);
     }
 
     private NameplateTitle Example()
@@ -182,6 +188,7 @@ internal sealed class NameplateTitleService : IDisposable
     private void OnUpdate(IFramework updatingFramework)
     {
         var delta = (float)updatingFramework.UpdateDelta.TotalSeconds;
+        trackSeconds += delta;
         if (bridge.ConsumeDisposing())
         {
             Available = false;
@@ -432,13 +439,11 @@ internal sealed class NameplateTitleService : IDisposable
         {
             if (playback.SongActive)
             {
-                return Compose(NameplateStatus.NowPlaying,
-                    NameplateValues.Empty with { Song = playback.Title, Artist = playback.Subtitle });
+                return ComposeTrack(playback.Title, playback.Subtitle);
             }
 
             var track = playback.RadioNowPlaying;
-            return Compose(NameplateStatus.NowPlaying,
-                NameplateValues.Empty with { Song = track.Length > 0 ? track : playback.Title });
+            return ComposeTrack(track.Length > 0 ? track : playback.Title, string.Empty);
         }
 
         if (!settings.IncludePcMedia)
@@ -448,9 +453,38 @@ internal sealed class NameplateTitleService : IDisposable
 
         ref readonly var media = ref pcMedia.Current;
         return media.IsPlaying && media.Title.Length > 0
-            ? Compose(NameplateStatus.NowPlaying,
-                NameplateValues.Empty with { Song = media.Title, Artist = media.Artist })
+            ? ComposeTrack(media.Title, media.Artist)
             : NameplateTitle.None;
+    }
+
+    private NameplateTitle ComposeTrack(string song, string artist)
+    {
+        if (!string.Equals(song, trackSong, StringComparison.Ordinal) ||
+            !string.Equals(artist, trackArtist, StringComparison.Ordinal))
+        {
+            trackSong = song;
+            trackArtist = artist;
+            trackSeconds = 0;
+        }
+
+        return ComposeNowPlaying(NameplateValues.Empty with { Song = song, Artist = artist }, trackSeconds);
+    }
+
+    private NameplateTitle ComposeNowPlaying(in NameplateValues values, double seconds)
+    {
+        if (settings.LongTitles == NameplateLongTitles.Shorten)
+        {
+            return Compose(NameplateStatus.NowPlaying, values);
+        }
+
+        var turns = NameplateTitleText.Turns(TemplateFor(NameplateStatus.NowPlaying), values);
+        if (turns.Length == 0)
+        {
+            return NameplateTitle.None;
+        }
+
+        var turn = (long)(seconds / settings.TurnSeconds) % turns.Length;
+        return Compose(NameplateStatus.NowPlaying, turns[turn]);
     }
 
     private string HandleAppId(NameplateStatus status) => status switch
@@ -486,9 +520,11 @@ internal sealed class NameplateTitleService : IDisposable
             : session.CurrentUser?.Handle ?? string.Empty;
     }
 
-    private NameplateTitle Compose(NameplateStatus status, in NameplateValues values)
+    private NameplateTitle Compose(NameplateStatus status, in NameplateValues values) =>
+        Compose(status, NameplateTitleText.RenderFitted(TemplateFor(status), values));
+
+    private NameplateTitle Compose(NameplateStatus status, string text)
     {
-        var text = NameplateTitleText.RenderFitted(TemplateFor(status), values);
         if (text.Length == 0)
         {
             return NameplateTitle.None;

@@ -14,11 +14,16 @@ internal sealed class NameplateStatusPage : ISettingsPage
     private readonly NameplateTitleService titles;
     private readonly NameplateStage stage = new();
     private readonly string[] handleLabels = new string[3];
+    private readonly string[] longTitleLabels = new string[2];
     private NameplateStatus status = NameplateStatus.Jam;
     private string buffer = string.Empty;
     private bool editing;
     private string sampleTemplate = string.Empty;
     private NameplateTitle sample = NameplateTitle.None;
+    private long sampleTick;
+    private int turnSecondsShown;
+    private string turnSecondsTemplate = string.Empty;
+    private string turnSecondsLine = string.Empty;
     private string lengthSource = string.Empty;
     private string lengthTemplate = string.Empty;
     private string lengthLine = string.Empty;
@@ -69,9 +74,11 @@ internal sealed class NameplateStatusPage : ISettingsPage
     private void DrawPreview(PhoneTheme theme, float scale)
     {
         var template = titles.TemplateFor(status);
-        if (!ReferenceEquals(template, sampleTemplate))
+        var tick = status == NameplateStatus.NowPlaying ? titles.TurnTick : 0L;
+        if (!ReferenceEquals(template, sampleTemplate) || tick != sampleTick)
         {
             sampleTemplate = template;
+            sampleTick = tick;
             sample = titles.Sample(status);
         }
 
@@ -162,6 +169,7 @@ internal sealed class NameplateStatusPage : ISettingsPage
                 titles.Commit();
             }
 
+            DrawLongTitles(theme, scale);
             return;
         }
 
@@ -187,6 +195,69 @@ internal sealed class NameplateStatusPage : ISettingsPage
         settings.HandleApp = (NameplateHandleApp)picked;
         sampleTemplate = string.Empty;
         titles.Commit();
+    }
+
+    private void DrawLongTitles(PhoneTheme theme, float scale)
+    {
+        var settings = titles.Settings;
+        var takeTurns = settings.LongTitles == NameplateLongTitles.TakeTurns;
+        ImGui.Dummy(new Vector2(0f, Metrics.Space.Xl * scale));
+        SettingsSection.Header(Loc.T(L.Nameplate.LongTitles), theme);
+        longTitleLabels[0] = Loc.T(L.Nameplate.TakeTurns);
+        longTitleLabels[1] = Loc.T(L.Nameplate.Shorten);
+        var card = GroupCard.Begin(theme, takeTurns ? 3 : 1);
+        var picked = SegmentStrip.Draw("nameplate.longTitles", card.NextRow(), longTitleLabels,
+            (int)settings.LongTitles, theme);
+        if (takeTurns)
+        {
+            DrawTurnSeconds(ref card, theme);
+        }
+
+        card.End();
+        ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
+        SettingsSection.Hint(Loc.T(takeTurns ? L.Nameplate.TakeTurnsHint : L.Nameplate.ShortenHint), theme);
+        if (picked == (int)settings.LongTitles)
+        {
+            return;
+        }
+
+        settings.LongTitles = (NameplateLongTitles)picked;
+        sampleTemplate = string.Empty;
+        titles.Commit();
+    }
+
+    private void DrawTurnSeconds(ref GroupCard card, PhoneTheme theme)
+    {
+        const float smallest = NameplateTitleSettings.MinimumTurnSeconds;
+        const float span = NameplateTitleSettings.MaximumTurnSeconds - NameplateTitleSettings.MinimumTurnSeconds;
+        var settings = titles.Settings;
+        SettingsRow.Info(card.NextRow(), Loc.T(L.Nameplate.SwitchEvery), TurnSecondsLine(settings.TurnSeconds),
+            theme, "nameplate.switchEvery");
+        var slider = Slider.Draw("nameplate.turnSeconds", card.NextRow(), (settings.TurnSeconds - smallest) / span,
+            theme, 0f, 0f);
+        var seconds = (int)MathF.Round(smallest + slider.Value * span);
+        if ((slider.Dragging || slider.Released) && seconds != settings.TurnSeconds)
+        {
+            settings.TurnSeconds = seconds;
+        }
+
+        if (slider.Released)
+        {
+            titles.Commit();
+        }
+    }
+
+    private string TurnSecondsLine(int seconds)
+    {
+        var template = Loc.T(L.Nameplate.TurnSeconds);
+        if (seconds != turnSecondsShown || !ReferenceEquals(template, turnSecondsTemplate))
+        {
+            turnSecondsShown = seconds;
+            turnSecondsTemplate = template;
+            turnSecondsLine = string.Format(template, seconds);
+        }
+
+        return turnSecondsLine;
     }
 
     private string LengthLine()
