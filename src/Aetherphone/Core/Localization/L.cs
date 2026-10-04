@@ -2177,6 +2177,12 @@ internal static class L
         public static readonly LocString SectionTours = new("changelog.sectionTours", "Setup and tours");
         public static readonly LocString SectionSounds = new("changelog.sectionSounds", "Sounds");
 
+        public static readonly LocString[] Release1101Settings =
+        {
+            new("changelog.r1101.0",
+                "Fixed the song you are playing not showing on your Nameplate Title unless Share what I listen to was on"),
+        };
+
         public static readonly LocString[] Release1100Phone =
         {
             new("changelog.r1100.4",
