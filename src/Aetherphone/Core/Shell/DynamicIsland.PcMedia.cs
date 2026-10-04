@@ -10,6 +10,7 @@ internal sealed partial class DynamicIsland
     private const float PcControlRadius = 15f;
     private const float PcControlStride = 31f;
     private const float ArtRadiusFraction = 0.22f;
+    private const float CompactArtFraction = 0.84f;
 
     private readonly PcMediaSource? pcMedia;
     private MediaSessionSnapshot pcSnapshot = MediaSessionSnapshot.Empty;
@@ -34,9 +35,10 @@ internal sealed partial class DynamicIsland
     private void DrawPcMediaCompact(ImDrawListPtr drawList, Vector2 bubbleCenter, float bubbleRadius,
         float trailingRight, Rect bounds, float scale, Vector4 accent, float alpha)
     {
-        var texture = pcMedia?.Artwork(pcSnapshot, bubbleRadius * 2f);
-        var side = bubbleRadius * 2f;
-        PcMediaView.DrawArt(drawList, bubbleCenter - new Vector2(bubbleRadius, bubbleRadius), side,
+        var artRadius = bubbleRadius * CompactArtFraction;
+        var side = artRadius * 2f;
+        var texture = pcMedia?.Artwork(pcSnapshot, side);
+        PcMediaView.DrawArt(drawList, bubbleCenter - new Vector2(artRadius, artRadius), side,
             side * ArtRadiusFraction, texture, pcSnapshot, accent, alpha);
         Equalizer.Draw(drawList, new Vector2(trailingRight - 3f * scale, bounds.Center.Y), scale,
             bounds.Height * 0.44f, clock, accent, alpha, pcSnapshot.IsPlaying);
