@@ -85,17 +85,16 @@ internal sealed partial class CoinApp
 
         CoinArt.Card(drawList, ui, min, max, scale);
         var capped = wallet.DailyCap > 0 && wallet.EarnedToday >= wallet.DailyCap;
+        var goalsComplete = dailyTotal > 0 && dailyDone >= dailyTotal;
         var tint = capped ? CappedTint : ui.Accent;
         var ringCenter = new Vector2(min.X + pad + radius, min.Y + pad + upperHeight * 0.5f);
         var thickness = RingThickness * scale;
         ProgressRing.Track(drawList, ringCenter, radius - thickness * 0.5f, thickness,
             Palette.WithAlpha(tint, RingTrackAlpha));
-        var target = wallet.DailyCap > 0
-            ? Math.Clamp((float)((double)wallet.EarnedToday / wallet.DailyCap), 0f, 1f)
-            : 0f;
+        var target = capped ? 1f : CoinGoals.Progress(wallet.Rules, false);
         var shown = Math.Clamp(Step(ref capFill, target, Motion.Sheet), 0f, 1f);
         ProgressRing.Fill(drawList, ringCenter, radius - thickness * 0.5f, thickness, shown, tint);
-        if (capped)
+        if (capped || goalsComplete)
         {
             ProgressRing.CenterIcon(drawList, ringCenter, FontAwesomeIcon.Check, tint, radius * 0.62f);
         }
