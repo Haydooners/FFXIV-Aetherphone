@@ -7061,6 +7061,7 @@
   "changelog.r1041.13": "A tela agora lembra onde você a colocou em cada lugar",
   "changelog.r1041.14": "Corrigidos arquivos locais que não reproduziam quando o caminho era colado entre aspas",
   "changelog.r1101.0": "Corrigida a música que você está tocando não aparecer no seu Título da placa quando “Compartilhar o que eu ouço” estava desligado",
+  "changelog.r1101.1": "Corrigido o ícone da barra de informações do servidor que continuava na tela depois que o jogo ocultava a barra, a entrada agora mostra o ícone do Aethernet em vez de um telefone",
   "changelog.r1100.0": "A entrada na barra de informações do servidor agora é um ícone de telefone com o número de notificações não lidas, no lugar do nome Aetherphone",
   "changelog.r1100.1": "Passar o mouse sobre a entrada na barra de informações do servidor agora mostra quantas notificações estão esperando e o que um clique faz",
   "changelog.r1100.2": "Corrigido MogCast derrubando o jogo para um quadro por segundo em alguns jogadores enquanto esperava um link",

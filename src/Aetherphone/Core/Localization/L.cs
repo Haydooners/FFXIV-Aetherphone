@@ -2177,6 +2177,12 @@ internal static class L
         public static readonly LocString SectionTours = new("changelog.sectionTours", "Setup and tours");
         public static readonly LocString SectionSounds = new("changelog.sectionSounds", "Sounds");
 
+        public static readonly LocString[] Release1101Phone =
+        {
+            new("changelog.r1101.1",
+                "Fixed the server info bar icon staying on screen after the game hid the bar, the entry now shows the Aethernet icon instead of a phone"),
+        };
+
         public static readonly LocString[] Release1101Settings =
         {
             new("changelog.r1101.0",

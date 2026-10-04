@@ -7061,6 +7061,7 @@
   "changelog.r1041.13": "Der Bildschirm merkt sich jetzt an jedem Ort, wo du ihn platziert hast",
   "changelog.r1041.14": "Behoben, dass lokale Dateien nicht abgespielt wurden, wenn ihr Pfad mit Anführungszeichen eingefügt wurde",
   "changelog.r1101.0": "Behoben, dass das Lied, das du gerade spielst, nicht in deinem Namenstitel erschien, wenn „Teilen, was ich höre“ aus war",
+  "changelog.r1101.1": "Behoben, dass das Symbol in der Serverinfoleiste sichtbar blieb, nachdem das Spiel die Leiste ausgeblendet hatte, der Eintrag zeigt jetzt das Aethernet-Symbol statt eines Telefons",
   "changelog.r1100.0": "Der Eintrag in der Serverinfoleiste ist jetzt ein Telefonsymbol mit der Anzahl deiner ungelesenen Benachrichtigungen, anstelle des Namens Aetherphone",
   "changelog.r1100.1": "Wenn du den Eintrag in der Serverinfoleiste mit der Maus überfährst, siehst du jetzt, wie viele Benachrichtigungen warten und was ein Klick bewirkt",
   "changelog.r1100.2": "Behoben, dass MogCast bei manchen Spielern das Spiel auf ein Bild pro Sekunde ausgebremst hat, während es auf einen Link wartete",
