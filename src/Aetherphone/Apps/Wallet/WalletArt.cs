@@ -13,7 +13,6 @@ namespace Aetherphone.Apps.Wallet;
 internal static class WalletArt
 {
     public const float RowHeight = 62f;
-    public const float SectionHeaderHeight = 40f;
     public const float SectionGap = 22f;
     public const float HeaderGap = 6f;
     public const float DialSize = 42f;
@@ -47,20 +46,6 @@ internal static class WalletArt
     private const float ChartFillAlpha = 0.16f;
     private const float ChartDot = 3.6f;
     private const float ChartGuideAlpha = 0.08f;
-
-    public static void Card(ImDrawListPtr drawList, AppSkin ui, Vector2 min, Vector2 max, float scale) =>
-        ui.Card(drawList, min, max, Metrics.Radius.Widget * scale, true);
-
-    public static float SectionHeader(ImDrawListPtr drawList, Vector2 origin, float width, string title, Vector4 ink,
-        float trailingReserve, float scale)
-    {
-        var height = SectionHeaderHeight * scale;
-        var fitted = Typography.FitText(title, MathF.Max(1f, width - trailingReserve), TextStyles.Title3);
-        var size = Typography.Measure(fitted, TextStyles.Title3);
-        Typography.Draw(drawList, new Vector2(origin.X, origin.Y + (height - size.Y) * 0.5f), fitted, ink,
-            TextStyles.Title3);
-        return height;
-    }
 
     public static Vector4 LevelInk(CapLevel level, Vector4 accent) =>
         level is CapLevel.Near or CapLevel.Full ? GoldInk : accent;
@@ -115,10 +100,6 @@ internal static class WalletArt
         return true;
     }
 
-    public static void Hairline(ImDrawListPtr drawList, AppSkin ui, float left, float right, float y) =>
-        drawList.AddLine(new Vector2(left, y), new Vector2(right, y), ImGui.GetColorU32(ui.Hairline),
-            Metrics.Stroke.Hairline);
-
     public static float Value(ImDrawListPtr drawList, float right, float centerY, string value, Vector4 ink)
     {
         if (value.Length == 0)
@@ -166,7 +147,7 @@ internal static class WalletArt
     public static void Panel(ImDrawListPtr drawList, AppSkin ui, Vector2 origin, float width, float height,
         FontAwesomeIcon icon, string title, string body, float scale)
     {
-        Card(drawList, ui, origin, new Vector2(origin.X + width, origin.Y + height), scale);
+        ui.Card(drawList, origin, new Vector2(origin.X + width, origin.Y + height), Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var tileSize = StateTileSize * scale;
         var tileMin = new Vector2(origin.X + pad, origin.Y + pad);

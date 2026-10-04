@@ -180,7 +180,7 @@ internal sealed partial class WalletApp
         }
 
         var row = new Rect(min, max);
-        WalletArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var hovered = WalletArt.RowInteraction(drawList, ui, row, scale);
         var done = limited.WeeklyAmount >= limited.WeeklyCap;
         var tint = done ? WalletArt.GoldInk : ui.Accent;
