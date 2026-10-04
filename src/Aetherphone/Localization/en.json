@@ -7008,6 +7008,7 @@
   "changelog.r1042.3": "Replaced the built-in wallpapers with an original set of eight pairs, and a retired wallpaper you had picked switches to the closest new one",
   "changelog.r1042.4": "Overhauled the whole phone in liquid glass: the dock, folders, widgets, sheets and search pill show the wallpaper through them and catch the light from your cursor",
   "changelog.r1042.5": "Redrew every app icon as a painted, full-color set that stays sharp at every phone size",
+  "changelog.r1042.150": "Unified the buttons, search fields, cards and section headers in every app, so the whole phone shares one look and one press and hover feel",
   "changelog.r1042.51": "Added four app icon looks: Default, Dark, Tinted and Clear, under App Icons in Settings, saved with each Look",
   "changelog.r1042.52": "Overhauled Music from top to bottom: five tabs for Home, New, Radio, Library and Search, a floating mini player, and a full-screen Now Playing that takes its colors from the artwork",
   "changelog.r1042.53": "Added Up Next: play next, play last, drag songs to reorder, repeat all or one, and autoplay that keeps the music going when the queue runs out",
