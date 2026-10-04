@@ -10,7 +10,6 @@ namespace Aetherphone.Apps.Fishing;
 
 internal static class FishingArt
 {
-    public const float CardRadius = 22f;
     public const float CardPadding = 16f;
     public const float CardGap = 14f;
     private const float CapsulePadX = 8f;

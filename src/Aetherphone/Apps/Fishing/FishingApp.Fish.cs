@@ -130,9 +130,10 @@ internal sealed partial class FishingApp
         var width = ImGui.GetContentRegionAvail().X;
         var field = new Rect(origin, origin + new Vector2(width, GlassField.HeightUnits * scale));
         UiAnchors.Report("fishing.search", field);
-        SearchBar.Surface(ImGui.GetWindowDrawList(), field, ControlInk.From(theme));
+        var ink = ui.Ink;
+        SearchBar.Surface(ImGui.GetWindowDrawList(), field, ink);
         GlassField.Search(ImGui.GetWindowDrawList(), field, "##fishingSearch", Loc.T(L.Fishing.SearchHint),
-            ref search, theme, scale, SearchMaxLength, false);
+            ref search, ink.Ink, ink.Muted, scale, SearchMaxLength, false);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, (GlassField.HeightUnits + SearchGap) * scale));
         if (string.Equals(search, builtSearch, StringComparison.Ordinal))
@@ -317,7 +318,7 @@ internal sealed partial class FishingApp
 
     private void DrawFishSection(string title, int[] rows, int count, long nowUnix, float scale, bool anchorFirst)
     {
-        ui.SectionLabel(title, TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(title, ui.TitleInk);
         var card = GroupCard.Begin(ui, count, FishRowHeight);
         card.SeparatorInset = (FishIconSize + RowGap) * scale;
         for (var index = 0; index < count; index++)

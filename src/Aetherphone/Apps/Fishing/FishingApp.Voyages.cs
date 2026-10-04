@@ -26,7 +26,7 @@ internal sealed partial class FishingApp
     private const float HeroStopTile = 26f;
     private const float HeroFishRow = 44f;
     private const float HeroFishIcon = 32f;
-    private const float HeroBellSize = 34f;
+    private const float HeroBellSize = RoundButton.RegularRadius * 2f;
     private const float HeroBarHeight = 4f;
     private const float UpcomingRowHeight = 60f;
     private const float UpcomingTile = 34f;
@@ -116,10 +116,10 @@ internal sealed partial class FishingApp
         var overBell = showBell && UiInteract.Hover(bellRect.Min, bellRect.Max);
         var hovered = !overBell && UiInteract.Hover(card.Min, card.Max);
         var drawn = FishingArt.Pressed(card, ImGui.GetID("fishing.hero"), hovered);
-        ui.Card(drawList, drawn.Min, drawn.Max, FishingArt.CardRadius * scale, elevated: true);
+        ui.Card(drawList, drawn.Min, drawn.Max, Metrics.Radius.Grouped * scale);
         if (hovered)
         {
-            Squircle.Fill(drawList, drawn.Min, drawn.Max, FishingArt.CardRadius * scale,
+            Squircle.Fill(drawList, drawn.Min, drawn.Max, Metrics.Radius.Grouped * scale,
                 ImGui.GetColorU32(ui.HoverWash));
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
@@ -282,7 +282,7 @@ internal sealed partial class FishingApp
 
     private void DrawUpcoming(long nowUnix, float scale)
     {
-        ui.SectionLabel(Loc.T(L.Fishing.Upcoming), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Fishing.Upcoming), ui.TitleInk);
         var card = GroupCard.Begin(ui, VoyageCount - 1, UpcomingRowHeight);
         card.SeparatorInset = (UpcomingTile + RowGap) * scale;
         for (var index = 1; index < VoyageCount; index++)
