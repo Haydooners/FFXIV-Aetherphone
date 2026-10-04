@@ -37,6 +37,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Changelog;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Games;
 using Aetherphone.Core.Localization;
@@ -87,6 +88,7 @@ internal sealed partial class GamesApp : IPhoneApp, ITabRouteTarget
     private static readonly string[] TabIds = [HomeTabRoute, TogetherTabRoute, RecordsTabRoute, SearchTabRoute];
 
     private readonly GameStatsStore stats;
+    private readonly Configuration configuration;
     private readonly Core.Coins.CoinStore coins;
     private readonly Core.Coins.CoinGameSessionTracker coinSessions;
     private readonly Windows.Components.CoinFloat coinFloats = new();
@@ -115,13 +117,15 @@ internal sealed partial class GamesApp : IPhoneApp, ITabRouteTarget
     public string Id => "games";
     public string DisplayName => Loc.T(L.Apps.Games);
     public string Glyph => ">";
-    public int BadgeCount => 0;
+    public int BadgeCount => configuration.HasUnseenFeaturePin(NewFeaturePins.Games) ? 1 : 0;
+    public bool BadgeAsDot => true;
 
     public GamesApp(GameStatsStore stats, GameData gameData, ITextureProvider textures,
         Core.Coins.CoinStore coins, Core.Coins.CoinGameSessionTracker coinSessions,
-        GameRoomsStore gameRooms)
+        GameRoomsStore gameRooms, Configuration configuration)
     {
         this.stats = stats;
+        this.configuration = configuration;
         this.coins = coins;
         this.coinSessions = coinSessions;
         this.gameRooms = gameRooms;
@@ -178,6 +182,7 @@ internal sealed partial class GamesApp : IPhoneApp, ITabRouteTarget
 
     public void OnOpened()
     {
+        configuration.MarkFeaturePinSeen(NewFeaturePins.Games);
         router.Reset();
         tab = GamesTab.Home;
         RebuildLayout();

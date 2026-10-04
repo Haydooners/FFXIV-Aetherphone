@@ -3,6 +3,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Changelog;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Jam;
@@ -35,7 +36,8 @@ internal sealed partial class MusicApp : IResumableApp
     public Vector4 Accent => AppAccents.For(Id);
     public string DisplayName => Loc.T(L.Apps.Music);
     public string Glyph => "M";
-    public int BadgeCount => socialNotifications.UnseenCount(Id);
+    public int BadgeCount => socialNotifications.UnseenCount(Id)
+        + (configuration.HasUnseenFeaturePin(NewFeaturePins.Music) ? 1 : 0);
     public bool HasBadge => true;
     public bool BadgeAsDot => true;
 
@@ -126,6 +128,7 @@ internal sealed partial class MusicApp : IResumableApp
         playlistPicker.Close();
         LoadFavoriteRadioStations();
         socialNotifications.MarkSeen(Id);
+        configuration.MarkFeaturePinSeen(NewFeaturePins.Music);
         rolladeck.EnsureFresh();
         OnLiveDjsOpened();
         ConsumeLaunchRequests();
@@ -136,6 +139,7 @@ internal sealed partial class MusicApp : IResumableApp
         ResumeNowPlaying();
         LoadFavoriteRadioStations();
         socialNotifications.MarkSeen(Id);
+        configuration.MarkFeaturePinSeen(NewFeaturePins.Music);
         rolladeck.EnsureFresh();
         ConsumeLaunchRequests();
     }

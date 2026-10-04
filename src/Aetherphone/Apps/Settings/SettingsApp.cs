@@ -1,6 +1,7 @@
 using Aetherphone.Apps.Settings.Pages;
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Changelog;
 using Aetherphone.Core.Crypto;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Moderation;
@@ -21,7 +22,8 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
     public string Id => "settings";
     public string DisplayName => Loc.T(L.Apps.Settings);
     public string Glyph => "S";
-    public int BadgeCount => configuration.HasUnseenChangelog ? 1 : 0;
+    public int BadgeCount => (configuration.HasUnseenChangelog ? 1 : 0)
+        + (configuration.HasUnseenFeaturePin(NewFeaturePins.Nameplate) ? 1 : 0);
     public bool HasBadge => true;
     public bool BadgeAsDot => true;
     public bool WantsSystemTheme => true;
@@ -88,7 +90,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         var general = new GeneralPage(configuration, services.Translation, confirm);
         var tutorials = new TutorialsPage(configuration);
         callsPage = new CallsPage(calls, configuration);
-        var nameplatePage = new NameplateTitlePage(services.NameplateTitles, this);
+        var nameplatePage = new NameplateTitlePage(services.NameplateTitles, configuration, this);
         var notificationSoundPage = new SoundSettingsPage(sound, SoundKind.Notification, L.Settings.NotificationSound,
             FontAwesomeIcon.Bell, new Vector4(0.98f, 0.27f, 0.25f, 1f), "settings.notificationVolume",
             () => configuration.NotificationSound, token =>
@@ -208,6 +210,11 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         if (page == changelogPage)
         {
             configuration.MarkChangelogSeen();
+        }
+
+        if (page is NameplateTitlePage)
+        {
+            configuration.MarkFeaturePinSeen(NewFeaturePins.Nameplate);
         }
 
         router.Push(page);
