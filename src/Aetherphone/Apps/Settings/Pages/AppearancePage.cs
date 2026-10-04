@@ -3,6 +3,7 @@ using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Wallpapers;
@@ -111,7 +112,9 @@ internal sealed class AppearancePage : ISettingsPage
     {
         SettingsSection.Header(Loc.T(L.Settings.Theme), theme);
         var card = GroupCard.Begin(theme, 1);
-        var modeIndex = SegmentStrip.Draw("settings.themeMode", card.NextRow(), modeLabels, CurrentModeIndex(), theme);
+        var modeRow = card.NextRow();
+        UiAnchors.Report("settings.appearance.theme", modeRow);
+        var modeIndex = SegmentStrip.Draw("settings.themeMode", modeRow, modeLabels, CurrentModeIndex(), theme);
         card.End();
         var mode = ModeOrder[modeIndex];
         if (mode == configuration.ThemeMode)

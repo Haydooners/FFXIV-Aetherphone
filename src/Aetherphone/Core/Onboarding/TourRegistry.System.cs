@@ -6,19 +6,18 @@ internal static partial class TourRegistry
 {
     private static void AddSystemTours(Dictionary<string, GuideSequence> tours)
     {
-        Add(tours, "settings", 3,
+        Add(tours, "settings", 4,
             new[]
             {
                 GuideStep.Point(L.Onboarding.SettingsProfileTitle, L.Onboarding.SettingsProfileBody,
                     "settings.account", GuideGesture.Tap),
-                GuideStep.Span(L.Onboarding.SettingsLookTitle, L.Onboarding.SettingsLookBody,
-                    "settings.row.appearance", "settings.row.display"),
-                GuideStep.TryUntil(L.Onboarding.SettingsSearchTitle, L.Onboarding.SettingsSearchBody,
-                    "settings.search", GuideGesture.Tap, "settings.row.tutorials"),
-                GuideStep.TryTap(L.Onboarding.SettingsFindToursTitle, L.Onboarding.SettingsFindToursBody,
-                    "settings.row.tutorials"),
-                GuideStep.Point(L.Onboarding.SettingsReplayTitle, L.Onboarding.SettingsReplayBody,
-                    "settings.tutorials.actions", GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.SettingsAppearanceTitle, L.Onboarding.SettingsAppearanceBody,
+                    "settings.row.appearance"),
+                GuideStep.Point(L.Onboarding.SettingsThemeTitle, L.Onboarding.SettingsThemeBody,
+                    "settings.appearance.theme", GuideGesture.None),
+                GuideStep.TryTap(L.Onboarding.SettingsBackTitle, L.Onboarding.SettingsBackBody, "settings.back"),
+                GuideStep.Point(L.Onboarding.SettingsSearchTitle, L.Onboarding.SettingsSearchBody,
+                    "settings.search", GuideGesture.None),
             });
         Add(tours, "appstore", 2,
             new[]
