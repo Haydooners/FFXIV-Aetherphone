@@ -52,7 +52,7 @@ internal sealed class TabBar
     private Spring[] hover = Array.Empty<Spring>();
     private Spring[] press = Array.Empty<Spring>();
     private TabItemPose[] poses = Array.Empty<TabItemPose>();
-    private Spring highlightX;
+    private Spring highlightSlot;
     private Spring actionHover;
     private Spring actionPress;
     private bool highlightSettled;
@@ -109,8 +109,8 @@ internal sealed class TabBar
         Material.ThemedGlass(drawList, capsule.Min, capsule.Max, radius, scale, backdrop, CurrentGlassOpacity);
 
         var activeCell = TabBarLayout.Cell(capsule, items.Length, activeIndex, scale);
-        StepHighlight(activeCell.Center.X, delta);
-        DrawHighlight(drawList, activeCell, ui.Accent, Math.Clamp(press[activeIndex].Value, 0f, 1f), scale);
+        StepHighlight(activeIndex, delta);
+        DrawHighlight(drawList, activeCell, activeIndex, ui.Accent, Math.Clamp(press[activeIndex].Value, 0f, 1f), scale);
 
         var inactiveInk = tone == GlassTone.Dark ? MutedOnDarkGlass : theme.TextMuted;
         var result = TabBarResult.None;
@@ -197,22 +197,23 @@ internal sealed class TabBar
         poses = new TabItemPose[count];
     }
 
-    private void StepHighlight(float targetX, float delta)
+    private void StepHighlight(int targetSlot, float delta)
     {
         if (!highlightSettled)
         {
-            highlightX.SnapTo(targetX);
+            highlightSlot.SnapTo(targetSlot);
             highlightSettled = true;
             return;
         }
 
-        highlightX.Step(targetX, Motion.TabBar, delta);
+        highlightSlot.Step(targetSlot, Motion.TabBar, delta);
     }
 
-    private void DrawHighlight(ImDrawListPtr drawList, Rect activeCell, Vector4 accent, float pressAmount, float scale)
+    private void DrawHighlight(ImDrawListPtr drawList, Rect activeCell, int activeIndex, Vector4 accent,
+        float pressAmount, float scale)
     {
         var highlight = TabBarLayout.Highlight(activeCell, scale)
-            .Translate(new Vector2(highlightX.Value - activeCell.Center.X, 0f));
+            .Translate(new Vector2((highlightSlot.Value - activeIndex) * activeCell.Width, 0f));
         var half = highlight.Size * 0.5f * (1f - PressDepth * pressAmount);
         var min = highlight.Center - half;
         var max = highlight.Center + half;
