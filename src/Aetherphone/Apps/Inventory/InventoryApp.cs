@@ -24,7 +24,6 @@ internal sealed partial class InventoryApp : IPhoneApp
     private const float RowHoverAlpha = 0.06f;
     private const float RowPressAlpha = 0.12f;
     private const float SectionTopGap = 22f;
-    private const float SectionHeaderGap = 8f;
     private const float SectionHeaderInset = 4f;
     private const float CardGap = 14f;
     private const float BottomPad = 28f;
@@ -328,13 +327,7 @@ internal sealed partial class InventoryApp : IPhoneApp
     private void SectionHeader(string label, float gapUnits, float scale)
     {
         ImGui.Dummy(new Vector2(0f, gapUnits * scale));
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ScrollLayout.StableContentWidth();
-        var fitted = Typography.FitText(label, MathF.Max(1f, width - SectionHeaderInset * scale), TextStyles.Title3);
-        var size = Typography.Measure(fitted, TextStyles.Title3);
-        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(origin.X + SectionHeaderInset * scale, origin.Y),
-            fitted, ui.TitleInk, TextStyles.Title3);
-        ImGui.Dummy(new Vector2(width, size.Y + SectionHeaderGap * scale));
+        CardSectionHeader.Flow(label, ui.TitleInk);
     }
 
     private Rect BeginGroup(float height)
@@ -342,7 +335,7 @@ internal sealed partial class InventoryApp : IPhoneApp
         var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
         var rect = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        ui.Card(ImGui.GetWindowDrawList(), rect.Min, rect.Max, Metrics.Radius.Grouped * UiScale.Current, true);
+        ui.Card(ImGui.GetWindowDrawList(), rect.Min, rect.Max, Metrics.Radius.Grouped * UiScale.Current);
         return rect;
     }
 
