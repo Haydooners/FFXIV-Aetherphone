@@ -19,18 +19,16 @@ internal readonly struct PatreonTier
     public readonly string Name;
     public readonly Vector4 Accent;
     public readonly bool Popular;
-    public readonly string FrameId;
     public readonly string[] BadgeIds;
     public readonly string JoinUrl;
     public readonly PatreonPerk[] Perks;
 
-    public PatreonTier(string name, Vector4 accent, bool popular, string frameId, string[] badgeIds,
+    public PatreonTier(string name, Vector4 accent, bool popular, string[] badgeIds,
         string joinUrl, PatreonPerk[] perks)
     {
         Name = name;
         Accent = accent;
         Popular = popular;
-        FrameId = frameId;
         BadgeIds = badgeIds;
         JoinUrl = joinUrl;
         Perks = perks;
@@ -54,20 +52,20 @@ internal static class PatreonTiers
 
     public static readonly PatreonTier[] All =
     {
-        new("Shard", ShardTeal, false, "", MemberBadges, ShardCheckout, new[]
+        new("Shard", ShardTeal, false, MemberBadges, ShardCheckout, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkColoredName),
             new PatreonPerk(L.Settings.SupportPerkFrame),
         }),
-        new("Crystal", CrystalViolet, true, "", MemberBadges, CrystalCheckout, new[]
+        new("Crystal", CrystalViolet, true, MemberBadges, CrystalCheckout, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkEarlyAccess),
             new PatreonPerk(L.Settings.SupportPerkColoredName),
             new PatreonPerk(L.Settings.SupportPerkFrame),
         }),
-        new("Cluster", ClusterGold, false, "", GildedBadges, ClusterCheckout, new[]
+        new("Cluster", ClusterGold, false, GildedBadges, ClusterCheckout, new[]
         {
             new PatreonPerk(L.Settings.SupportPerkDiscordRole),
             new PatreonPerk(L.Settings.SupportPerkEarlyAccess),

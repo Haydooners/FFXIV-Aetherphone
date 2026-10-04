@@ -120,7 +120,7 @@ internal sealed record FrameDescriptorDto(
     int ScalePercent = 138,
     BadgeTranslationDto[]? Translations = null);
 
-internal sealed record FrameCatalogDto(FrameDescriptorDto[] Frames);
+internal sealed record FrameCatalogDto(FrameDescriptorDto[] Frames, string[]? PatreonFrames = null);
 
 internal sealed record InventoryItemDto(
     string Id,

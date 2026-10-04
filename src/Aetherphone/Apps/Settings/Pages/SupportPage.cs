@@ -94,8 +94,9 @@ internal sealed class SupportPage : ISettingsPage
         var drawList = ImGui.GetWindowDrawList();
         var radius = PreviewAvatarRadius * scale;
         var center = new Vector2(row.Min.X + radius, row.Center.Y);
-        var tier = PatreonTiers.All[Math.Clamp(previewTier, 0, PatreonTiers.All.Length - 1)];
-        var frame = tier.FrameId.Length > 0 ? frames.Find(tier.FrameId) : null;
+        var tierIndex = Math.Clamp(previewTier, 0, PatreonTiers.All.Length - 1);
+        var tier = PatreonTiers.All[tierIndex];
+        var frame = frames.FindPatreonFrame(tierIndex);
         var user = session.CurrentUser;
         if (user is not null)
         {
