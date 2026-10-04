@@ -18,7 +18,6 @@ using Aetherphone.Windows;
 using Aetherphone.Windows.Components;
 using Dalamud.Interface;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Settings.Pages;
 
@@ -199,7 +198,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
 
         DrawIdentityHeader(user, theme, scale);
         DrawCharacterMismatch(user, theme, scale);
-        ImGui.Dummy(new Vector2(0f, 20f * scale));
+        SettingsForm.Gap(Metrics.Space.Xl);
         var details = GroupCard.Begin(theme, 2);
         SettingsRow.Info(details.NextRow(), Loc.T(L.Account.CharacterLabel), user.Name, theme);
         SettingsRow.Info(details.NextRow(), Loc.T(L.Account.HomeWorldLabel), user.World, theme);
@@ -207,7 +206,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
 
         DrawCommunityBadgesSection(theme, scale);
         DrawPatreonSection(theme, scale);
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
+        SettingsForm.Gap(Metrics.Space.Lg);
         var links = GroupCard.Begin(theme, 4);
         if (SettingsRow.Link(links.NextRow(), namePage.Icon, namePage.Tint, namePage.Title, namePage.Summary, theme))
         {
@@ -236,7 +235,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         links.End();
 
         DrawAccountsSection(theme, scale, true);
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
+        SettingsForm.Gap(Metrics.Space.Lg);
         var signOut = GroupCard.Begin(theme, 1);
         if (SettingsRow.Action(signOut.NextRow(), Loc.T(L.Account.SignOut), theme.Danger, theme))
         {
@@ -244,7 +243,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         }
 
         signOut.End();
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
+        SettingsForm.Gap(Metrics.Space.Lg);
         var deleteAccount = GroupCard.Begin(theme, 1);
         if (SettingsRow.Action(deleteAccount.NextRow(), Loc.T(L.Account.DeleteAccount), theme.Danger, theme))
         {
@@ -252,9 +251,9 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         }
 
         deleteAccount.End();
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
+        SettingsForm.Gap(Metrics.Space.Sm);
         SettingsSection.Hint(Loc.T(L.Account.DeleteAccountHint), theme);
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
+        SettingsForm.Gap(Metrics.Space.Lg);
     }
 
     private void DrawIdentityHeader(UserDto user, PhoneTheme theme, float scale)
@@ -310,7 +309,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
 
     private void DrawCommunityBadgesSection(PhoneTheme theme, float scale)
     {
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
+        SettingsForm.Gap(Metrics.Space.Lg);
         SettingsSection.Header(Loc.T(L.Account.BadgesSection), theme);
         SettingsSection.Hint(Loc.T(L.Loadout.SettingsMoved), theme);
     }
@@ -324,25 +323,20 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
             return;
         }
 
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
+        SettingsForm.Gap(Metrics.Space.Lg);
         SettingsSection.Header(Loc.T(L.Account.PatreonSection), theme);
         if (patreonFlow.Waiting)
         {
-            using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-            {
-                Typography.Wrapped(Loc.T(L.Account.PatreonWaitingBody));
-            }
-
-            ImGui.Dummy(new Vector2(0f, 10f * scale));
-            var spacing = 8f * scale;
-            var half = (ImGui.GetContentRegionAvail().X - spacing) * 0.5f;
-            if (ThemeButton.Draw(Loc.T(L.Account.PatreonOpen), theme, half))
+            SettingsForm.Body(Loc.T(L.Account.PatreonWaitingBody), theme);
+            SettingsForm.Gap(Metrics.Space.Md);
+            SettingsForm.ButtonPair(Loc.T(L.Account.PatreonOpen), Loc.T(L.Common.Cancel), theme, out var openAgain,
+                out var cancel);
+            if (openAgain)
             {
                 patreonFlow.OpenAgain();
             }
 
-            ImGui.SameLine(0f, spacing);
-            if (ThemeButton.Draw(Loc.T(L.Common.Cancel), theme, half))
+            if (cancel)
             {
                 patreonFlow.Cancel();
             }
@@ -363,7 +357,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
             card.End();
             if (!status.Entitled)
             {
-                ImGui.Dummy(new Vector2(0f, 8f * scale));
+                SettingsForm.Gap(Metrics.Space.Sm);
                 SettingsSection.Hint(Loc.T(L.Account.PatreonInactiveHint), theme);
             }
 
@@ -379,7 +373,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         }
 
         linkCard.End();
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
+        SettingsForm.Gap(Metrics.Space.Sm);
         SettingsSection.Hint(Loc.T(L.Account.PatreonHint), theme);
     }
 
@@ -449,7 +443,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         if (signedIn)
         {
             var canAdd = session.PlayingContentId != 0;
-            ImGui.Dummy(new Vector2(0f, 10f * scale));
+            SettingsForm.Gap(Metrics.Space.Md);
             var actions = GroupCard.Begin(theme, canAdd ? 2 : 1);
             if (canAdd && SettingsRow.Link(actions.NextRow(), FontAwesomeIcon.Plus, Tint, Loc.T(L.Account.AddAccount),
                     string.Empty, theme))
@@ -467,11 +461,11 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         }
         else
         {
-            ImGui.Dummy(new Vector2(0f, 8f * scale));
+            SettingsForm.Gap(Metrics.Space.Sm);
             SettingsSection.Hint(Loc.T(L.Account.SwitchHint), theme);
         }
 
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
+        SettingsForm.Gap(Metrics.Space.Xs);
         if (switchTo != 0)
         {
             SwitchAccount(switchTo);
@@ -781,10 +775,8 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         var player = gameData.LocalPlayer;
         if (player is null)
         {
-            Typography.DrawCentered(
-                new Vector2(ImGui.GetContentRegionAvail().X * 0.5f + ImGui.GetCursorScreenPos().X,
-                    ImGui.GetCursorScreenPos().Y + 80f * UiScale.Current), Loc.T(L.Account.LogInFirst),
-                theme.TextMuted);
+            SettingsForm.Gap(Metrics.Space.Xxl);
+            SettingsForm.Body(Loc.T(L.Account.LogInFirst), theme);
             return;
         }
 
@@ -817,32 +809,24 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         var world = gameData.WorldName(gameData.LocalHomeWorldId);
         var ready = !flow.Busy && name.Length > 0 && world.Length > 0;
         DrawAccountsSection(theme, scale, false);
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Account.SignInIntro));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 12f * scale));
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsForm.Body(Loc.T(L.Account.SignInIntro), theme);
+        SettingsForm.Gap(Metrics.Space.Md);
         DrawIdentityCard(name, world, theme);
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
-        if (ThemeButton.Primary(Loc.T(L.Account.XivSignIn), theme) && ready)
+        SettingsForm.Gap(Metrics.Space.Xl);
+        if (SettingsForm.Button(Loc.T(L.Account.XivSignIn), theme, ButtonStyle.Prominent) && ready)
         {
             flow.StartXivAuth(name, world);
         }
 
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
-        if (ThemeButton.Draw(Loc.T(L.Account.SignIn), theme) && ready)
+        SettingsForm.Gap(Metrics.Space.Sm);
+        if (SettingsForm.Button(Loc.T(L.Account.SignIn), theme) && ready)
         {
             flow.StartLodestone(name, world);
         }
 
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Account.LodestoneHint));
-        }
-
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsSection.Hint(Loc.T(L.Account.LodestoneHint), theme);
         DrawStatus(theme);
     }
 
@@ -850,22 +834,16 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
     {
         var scale = UiScale.Current;
         DrawAccountsSection(theme, scale, false);
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Account.RisingStonesIntro));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 12f * scale));
-        DrawRisingStonesUuidField(theme, scale);
-        ImGui.Dummy(new Vector2(0f, 6f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Account.RisingStonesUuidHint));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 14f * scale));
-        if (ThemeButton.Primary(Loc.T(L.Account.RisingStonesSignIn), theme) && !flow.Busy && risingStonesUuid.Length > 0)
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsForm.Body(Loc.T(L.Account.RisingStonesIntro), theme);
+        SettingsForm.Gap(Metrics.Space.Md);
+        SettingsForm.TextField("##risingStonesUuid", Loc.T(L.Account.RisingStonesUuidLabel), ref risingStonesUuid,
+            theme, SignInFlow.RisingStonesUuidMaxLength, ImGuiInputTextFlags.CharsDecimal);
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsSection.Hint(Loc.T(L.Account.RisingStonesUuidHint), theme);
+        SettingsForm.Gap(Metrics.Space.Xl);
+        if (SettingsForm.Button(Loc.T(L.Account.RisingStonesSignIn), theme, ButtonStyle.Prominent,
+                enabled: risingStonesUuid.Length > 0) && !flow.Busy)
         {
             flow.StartRisingStones(risingStonesUuid);
         }
@@ -873,79 +851,55 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         DrawStatus(theme);
     }
 
-    private void DrawRisingStonesUuidField(PhoneTheme theme, float scale)
-    {
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var height = 44f * scale;
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, origin, new Vector2(origin.X + width, origin.Y + height), 9f * scale,
-            ImGui.GetColorU32(theme.GroupedCard));
-        ImGui.SetCursorScreenPos(new Vector2(origin.X + 12f * scale,
-            origin.Y + height * 0.5f - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(width - 24f * scale);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0f, 0f)).Push(ImGuiCol.Text, theme.TextStrong))
-        {
-            ImGui.InputTextWithHint("##risingStonesUuid", Loc.T(L.Account.RisingStonesUuidLabel),
-                ref risingStonesUuid, SignInFlow.RisingStonesUuidMaxLength, ImGuiInputTextFlags.CharsDecimal);
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
-    }
-
     private void DrawRisingStonesVerifyStep(PhoneTheme theme)
     {
-        var scale = UiScale.Current;
-        ImGui.Dummy(new Vector2(0f, 4f * scale));
-        using (Plugin.Fonts.Push(1.3f, FontWeight.SemiBold))
-        {
-            using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
-            {
-                Typography.Plain(Loc.T(L.Account.RisingStonesVerifyTitle));
-            }
-        }
+        DrawChallenge(theme, Loc.T(L.Account.RisingStonesVerifyTitle), Loc.T(L.Account.RisingStonesVerifyIntro),
+            Loc.T(L.Account.RisingStonesStep2), Loc.T(L.Account.RisingStonesStep3),
+            Loc.T(L.Account.RisingStonesOpen), RisingStonesProfileSettingsUrl);
+    }
 
-        ImGui.Dummy(new Vector2(0f, 4f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Account.RisingStonesVerifyIntro));
-        }
+    private void DrawVerifyStep(PhoneTheme theme)
+    {
+        DrawChallenge(theme, Loc.T(L.Account.VerifyTitle), Loc.T(L.Account.VerifyIntro), Loc.T(L.Account.Step2),
+            Loc.T(L.Account.Step3), Loc.T(L.Account.OpenProfile), LodestoneProfileUrl);
+    }
 
+    private void DrawChallenge(PhoneTheme theme, string title, string intro, string secondStep, string thirdStep,
+        string openLabel, string openUrl)
+    {
+        SettingsForm.Gap(Metrics.Space.Xxs);
+        SettingsForm.Title(title, theme);
+        SettingsForm.Gap(Metrics.Space.Xs);
+        SettingsForm.Body(intro, theme);
         var code = flow.ChallengeCode;
-        ImGui.Dummy(new Vector2(0f, 10f * scale));
-        if (DrawCodeCard(theme, code))
+        SettingsForm.Gap(Metrics.Space.Lg);
+        if (SettingsForm.CodeCard(code, theme))
         {
             ImGui.SetClipboardText(code);
         }
 
-        ImGui.Dummy(new Vector2(0f, 12f * scale));
-        DrawStepRow("1", Loc.T(L.Account.Step1), theme);
-        DrawStepRow("2", Loc.T(L.Account.RisingStonesStep2), theme);
-        DrawStepRow("3", Loc.T(L.Account.RisingStonesStep3), theme);
-        DrawStepRow("4", Loc.T(L.Account.Step4), theme);
-        ImGui.Dummy(new Vector2(0f, 12f * scale));
-        var spacing = 8f * scale;
-        var half = (ImGui.GetContentRegionAvail().X - spacing) * 0.5f;
-        if (ThemeButton.Draw(Loc.T(L.Account.CopyCode), theme, half))
+        SettingsForm.Gap(Metrics.Space.Lg);
+        SettingsForm.Steps(theme, Loc.T(L.Account.Step1), secondStep, thirdStep, Loc.T(L.Account.Step4));
+        SettingsForm.Gap(Metrics.Space.Xl);
+        SettingsForm.ButtonPair(Loc.T(L.Account.CopyCode), openLabel, theme, out var copy, out var open);
+        if (copy)
         {
             ImGui.SetClipboardText(code);
         }
 
-        ImGui.SameLine(0f, spacing);
-        if (ThemeButton.Draw(Loc.T(L.Account.RisingStonesOpen), theme, half))
+        if (open)
         {
-            UrlActions.OpenInBrowser(RisingStonesProfileSettingsUrl);
+            UrlActions.OpenInBrowser(openUrl);
         }
 
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        if (ThemeButton.Primary(Loc.T(L.Account.VerifyAdded), theme) && !flow.Busy)
+        SettingsForm.Gap(Metrics.Space.Sm);
+        if (SettingsForm.Button(Loc.T(L.Account.VerifyAdded), theme, ButtonStyle.Prominent) && !flow.Busy)
         {
             flow.VerifyChallenge();
         }
 
-        ImGui.Dummy(new Vector2(0f, 2f * scale));
-        if (ThemeButton.Ghost(Loc.T(L.Common.Cancel), theme))
+        SettingsForm.Gap(Metrics.Space.Sm);
+        if (SettingsForm.Button(Loc.T(L.Common.Cancel), theme, ButtonStyle.Plain))
         {
             ResetFlow();
         }
@@ -955,192 +909,46 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
 
     private void DrawXivAuthStep(PhoneTheme theme)
     {
-        var scale = UiScale.Current;
-        ImGui.Dummy(new Vector2(0f, 4f * scale));
-        using (Plugin.Fonts.Push(1.3f, FontWeight.SemiBold))
-        {
-            using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
-            {
-                Typography.Plain(Loc.T(L.Account.XivTitle));
-            }
-        }
-
-        ImGui.Dummy(new Vector2(0f, 4f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Account.XivIntro));
-        }
-
+        SettingsForm.Gap(Metrics.Space.Xxs);
+        SettingsForm.Title(Loc.T(L.Account.XivTitle), theme);
+        SettingsForm.Gap(Metrics.Space.Xs);
+        SettingsForm.Body(Loc.T(L.Account.XivIntro), theme);
         var xivUserCode = flow.XivUserCode;
         if (xivUserCode.Length > 0)
         {
-            ImGui.Dummy(new Vector2(0f, 10f * scale));
-            if (DrawCodeCard(theme, xivUserCode))
+            SettingsForm.Gap(Metrics.Space.Lg);
+            if (SettingsForm.CodeCard(xivUserCode, theme))
             {
                 ImGui.SetClipboardText(xivUserCode);
             }
         }
 
-        ImGui.Dummy(new Vector2(0f, 12f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Account.XivWaiting));
-        }
-
-        ImGui.Dummy(new Vector2(0f, 12f * scale));
-        var spacing = 8f * scale;
-        var half = (ImGui.GetContentRegionAvail().X - spacing) * 0.5f;
-        if (ThemeButton.Draw(Loc.T(L.Account.XivOpen), theme, half) && flow.XivVerificationUri is { } verificationUri)
+        SettingsForm.Gap(Metrics.Space.Md);
+        SettingsSection.Hint(Loc.T(L.Account.XivWaiting), theme);
+        SettingsForm.Gap(Metrics.Space.Xl);
+        SettingsForm.ButtonPair(Loc.T(L.Account.XivOpen), Loc.T(L.Common.Cancel), theme, out var open,
+            out var cancel);
+        if (open && flow.XivVerificationUri is { } verificationUri)
         {
             UrlActions.OpenInBrowser(verificationUri);
         }
 
-        ImGui.SameLine(0f, spacing);
-        if (ThemeButton.Draw(Loc.T(L.Common.Cancel), theme, half))
+        if (cancel)
         {
             flow.CancelXivAuth();
         }
     }
 
-    private void DrawVerifyStep(PhoneTheme theme)
-    {
-        var scale = UiScale.Current;
-        ImGui.Dummy(new Vector2(0f, 4f * scale));
-        using (Plugin.Fonts.Push(1.3f, FontWeight.SemiBold))
-        {
-            using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
-            {
-                Typography.Plain(Loc.T(L.Account.VerifyTitle));
-            }
-        }
-
-        ImGui.Dummy(new Vector2(0f, 4f * scale));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(Loc.T(L.Account.VerifyIntro));
-        }
-
-        var code = flow.ChallengeCode;
-        ImGui.Dummy(new Vector2(0f, 10f * scale));
-        if (DrawCodeCard(theme, code))
-        {
-            ImGui.SetClipboardText(code);
-        }
-
-        ImGui.Dummy(new Vector2(0f, 12f * scale));
-        DrawStepRow("1", Loc.T(L.Account.Step1), theme);
-        DrawStepRow("2", Loc.T(L.Account.Step2), theme);
-        DrawStepRow("3", Loc.T(L.Account.Step3), theme);
-        DrawStepRow("4", Loc.T(L.Account.Step4), theme);
-        ImGui.Dummy(new Vector2(0f, 12f * scale));
-        var spacing = 8f * scale;
-        var half = (ImGui.GetContentRegionAvail().X - spacing) * 0.5f;
-        if (ThemeButton.Draw(Loc.T(L.Account.CopyCode), theme, half))
-        {
-            ImGui.SetClipboardText(code);
-        }
-
-        ImGui.SameLine(0f, spacing);
-        if (ThemeButton.Draw(Loc.T(L.Account.OpenProfile), theme, half))
-        {
-            UrlActions.OpenInBrowser(LodestoneProfileUrl);
-        }
-
-        ImGui.Dummy(new Vector2(0f, 8f * scale));
-        if (ThemeButton.Primary(Loc.T(L.Account.VerifyAdded), theme) && !flow.Busy)
-        {
-            flow.VerifyChallenge();
-        }
-
-        ImGui.Dummy(new Vector2(0f, 2f * scale));
-        if (ThemeButton.Ghost(Loc.T(L.Common.Cancel), theme))
-        {
-            ResetFlow();
-        }
-
-        DrawStatus(theme);
-    }
-
     private static void DrawIdentityCard(string name, string world, PhoneTheme theme)
     {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var width = ImGui.GetContentRegionAvail().X;
-        var padding = 12f * scale;
-        var start = ImGui.GetCursorScreenPos();
-        var label = Loc.T(L.Account.SigningInAs);
-        var identity = Typography.FitText($"{name}@{world}", width - padding * 2f, 1.05f, FontWeight.SemiBold);
-        var labelSize = Typography.Measure(label, 0.82f);
-        var identitySize = Typography.Measure(identity, 1.05f, FontWeight.SemiBold);
-        var height = padding * 2f + labelSize.Y + 4f * scale + identitySize.Y;
-        var max = new Vector2(start.X + width, start.Y + height);
-        Squircle.Fill(drawList, start, max, 12f * scale, ImGui.GetColorU32(theme.GroupedCard));
-        Typography.Draw(new Vector2(start.X + padding, start.Y + padding), label, theme.TextMuted, 0.82f);
-        Typography.Draw(new Vector2(start.X + padding, start.Y + padding + labelSize.Y + 4f * scale), identity,
-            theme.TextStrong, 1.05f, FontWeight.SemiBold);
-        ImGui.SetCursorScreenPos(start);
-        ImGui.Dummy(new Vector2(width, height));
-    }
-
-    private static bool DrawCodeCard(PhoneTheme theme, string value)
-    {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var width = ImGui.GetContentRegionAvail().X;
-        var height = 52f * scale;
-        var start = ImGui.GetCursorScreenPos();
-        var max = new Vector2(start.X + width, start.Y + height);
-        var hovered = UiInteract.Hover(start, max);
-        var radius = 14f * scale;
-        var background = hovered ? Palette.Mix(theme.GroupedCard, theme.Accent, 0.14f) : theme.GroupedCard;
-        Squircle.Fill(drawList, start, max, radius, ImGui.GetColorU32(background));
-        Squircle.Stroke(drawList, start, max, radius, ImGui.GetColorU32(Palette.WithAlpha(theme.Accent, 0.55f)),
-            1.4f * scale);
-        var codeSize = Typography.Measure(value, 1.55f, FontWeight.SemiBold);
-        var center = new Vector2((start.X + max.X) * 0.5f, (start.Y + max.Y) * 0.5f);
-        Typography.Draw(center - codeSize * 0.5f, value, theme.Accent, 1.55f, FontWeight.SemiBold);
-        ImGui.SetCursorScreenPos(start);
-        ImGui.Dummy(new Vector2(width, height));
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(start, max, hovered);
-    }
-
-    private static void DrawStepRow(string number, string text, PhoneTheme theme)
-    {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var lineHeight = ImGui.GetTextLineHeight();
-        var lineStep = lineHeight + 3f * scale;
-        var badgeDiameter = 22f * scale;
-        var gap = 12f * scale;
-        var start = ImGui.GetCursorScreenPos();
-        var available = ImGui.GetContentRegionAvail().X;
-        var textLeft = start.X + badgeDiameter + gap;
-        var wrapWidth = MathF.Max(40f * scale, available - badgeDiameter - gap);
-        var badgeCenter = new Vector2(start.X + badgeDiameter * 0.5f, start.Y + lineHeight * 0.5f);
-        drawList.AddCircleFilled(badgeCenter, badgeDiameter * 0.5f, ImGui.GetColorU32(theme.Accent));
-        var luminance = Palette.Luminance(theme.Accent);
-        var ink = luminance > 0.6f ? new Vector4(0.10f, 0.10f, 0.12f, 1f) : new Vector4(1f, 1f, 1f, 1f);
-        var numberSize = Typography.Measure(number, 0.85f, FontWeight.Bold);
-        Typography.Draw(badgeCenter - (numberSize * 0.5f), number, ink, 0.85f, FontWeight.Bold);
-        var lineY = start.Y;
-        var lines = Typography.WrapText(text, 1f, FontWeight.Regular, wrapWidth);
-        for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
-        {
-            if (lineIndex > 0)
-            {
-                lineY += lineStep;
-            }
-
-            Typography.Draw(new Vector2(textLeft, lineY), lines[lineIndex], theme.TextStrong);
-        }
-        var bottom = MathF.Max(start.Y + badgeDiameter, lineY + lineHeight);
-        ImGui.SetCursorScreenPos(start);
-        ImGui.Dummy(new Vector2(available, (bottom - start.Y) + 10f * scale));
+        SettingsSection.Header(Loc.T(L.Account.SigningInAs), theme);
+        var card = GroupCard.Begin(theme, 1);
+        var row = card.NextRow();
+        var identity = Typography.FitText($"{name}@{world}", row.Width, TextStyles.BodyEmphasized);
+        var size = Typography.Measure(identity, TextStyles.BodyEmphasized);
+        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(row.Min.X, row.Center.Y - size.Y * 0.5f), identity,
+            theme.TextStrong, TextStyles.BodyEmphasized);
+        card.End();
     }
 
     private void DrawStatus(PhoneTheme theme)
@@ -1151,11 +959,8 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
             return;
         }
 
-        ImGui.Dummy(new Vector2(0f, 8f * UiScale.Current));
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Wrapped(message);
-        }
+        SettingsForm.Gap(Metrics.Space.Sm);
+        SettingsForm.Body(message, theme);
     }
 
     private void StartMe()
