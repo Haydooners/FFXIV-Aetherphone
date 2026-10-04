@@ -19,6 +19,18 @@ internal static unsafe class WalletReader
     private const uint SerpentSealItemId = 21;
     private const uint FlameSealItemId = 22;
     private const int GroupCount = 6;
+    private const uint PurpleCrafterScripItemId = 33913;
+    private const uint PurpleGathererScripItemId = 33914;
+    private const uint OrangeCrafterScripItemId = 41784;
+    private const uint OrangeGathererScripItemId = 41785;
+
+    private static readonly uint[] EndgameScripItemIds =
+    {
+        PurpleCrafterScripItemId,
+        PurpleGathererScripItemId,
+        OrangeCrafterScripItemId,
+        OrangeGathererScripItemId,
+    };
 
     private readonly struct Definition
     {
@@ -36,10 +48,10 @@ internal static unsafe class WalletReader
 
     private static readonly Definition[] Definitions =
     {
-        new(33913, ScripCap, WalletGroup.Scrips),
-        new(33914, ScripCap, WalletGroup.Scrips),
-        new(41784, ScripCap, WalletGroup.Scrips),
-        new(41785, ScripCap, WalletGroup.Scrips),
+        new(PurpleCrafterScripItemId, ScripCap, WalletGroup.Scrips),
+        new(PurpleGathererScripItemId, ScripCap, WalletGroup.Scrips),
+        new(OrangeCrafterScripItemId, ScripCap, WalletGroup.Scrips),
+        new(OrangeGathererScripItemId, ScripCap, WalletGroup.Scrips),
         new(28063, SkybuildersCap, WalletGroup.Scrips),
         new(27, HuntCap, WalletGroup.Hunt),
         new(10307, HuntCap, WalletGroup.Hunt),
@@ -66,6 +78,28 @@ internal static unsafe class WalletReader
     {
         var manager = InventoryManager.Instance();
         return manager is null ? 0 : manager->GetGil();
+    }
+
+    public static long EndgameCurrencyTotal(List<uint> tomestoneItemIds)
+    {
+        var manager = InventoryManager.Instance();
+        if (manager is null)
+        {
+            return 0;
+        }
+
+        var total = 0L;
+        for (var index = 0; index < tomestoneItemIds.Count; index++)
+        {
+            total += manager->GetTomestoneCount(tomestoneItemIds[index]);
+        }
+
+        for (var index = 0; index < EndgameScripItemIds.Length; index++)
+        {
+            total += manager->GetInventoryItemCount(EndgameScripItemIds[index], false, true, true, 0);
+        }
+
+        return total;
     }
 
     public static WalletSection[] BuildSections(GameData gameData, uint sealItemId)

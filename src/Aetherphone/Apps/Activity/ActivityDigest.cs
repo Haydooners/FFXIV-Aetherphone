@@ -21,7 +21,8 @@ internal sealed class ActivityDigest
     public readonly string[] RingDetails = new string[WeekLength * ActivityGoals.RingCount];
     public readonly string[] PlayTexts = new string[WeekLength];
     public readonly string[] CollectibleTexts = new string[WeekLength];
-    public readonly string[] Units = new string[ActivityGoals.RingCount];
+    public readonly string[] Units = new string[ActivityGoalSteps.GoalCount];
+    public readonly bool[] EndgameSlots = new bool[WeekLength];
     public readonly bool[] TrendRising = new bool[ActivityStats.MetricCount];
     public readonly string[] TrendValues = new string[ActivityStats.MetricCount];
     public readonly bool[] AwardEarned = new bool[ActivityAwards.Count];
@@ -44,6 +45,9 @@ internal sealed class ActivityDigest
 
     public void Invalidate() => built = false;
 
+    public string RingUnit(int slot, int ring) =>
+        ring == 0 && EndgameSlots[slot] ? Units[ActivityGoalSteps.EndgameGoal] : Units[ring];
+
     public void Refresh(ActivityTracker tracker, in ActivityTargets targets)
     {
         var candidate = KeyFor(tracker, targets);
@@ -64,7 +68,8 @@ internal sealed class ActivityDigest
         var session = tracker.Session;
         var records = tracker.Records;
         var dayHash = HashCode.Combine(today.Date, today.ExpGained, today.LevelsGained, today.DutiesCompleted,
-            today.GilEarned, today.PlaySeconds / MinuteSeconds, today.MountsGained + today.MinionsGained);
+            today.GilEarned, today.PlaySeconds / MinuteSeconds, today.MountsGained + today.MinionsGained,
+            HashCode.Combine(today.EndgameEarned, today.Capped));
         var sessionHash = HashCode.Combine(session.ExpGained, session.DutiesCompleted, session.GilEarned,
             session.PlaySeconds / MinuteSeconds, tracker.SessionStartedUnix);
         var contextHash = HashCode.Combine(targets, tracker.Days.Count, records.BestStreak, records.PerfectDays,
@@ -80,6 +85,7 @@ internal sealed class ActivityDigest
         Units[0] = Loc.Upper(Loc.T(L.Character.UnitLevels));
         Units[1] = Loc.Upper(Loc.T(L.Character.UnitDuties));
         Units[2] = Loc.Upper(Loc.T(L.Character.UnitGil));
+        Units[ActivityGoalSteps.EndgameGoal] = Loc.Upper(Loc.T(L.Character.UnitEndgame));
         for (var slot = 0; slot < WeekLength; slot++)
         {
             var date = todayDate.AddDays(slot - TodaySlot);
@@ -111,6 +117,7 @@ internal sealed class ActivityDigest
                 Fractions[offset + ring] = 0f;
             }
 
+            EndgameSlots[slot] = false;
             RingValues[offset] = Pair(Levels(0f), Levels(targets.Levels));
             RingValues[offset + 1] = Pair(Number(0), Number(targets.Duties));
             RingValues[offset + 2] = Pair(Compact(0), Compact(targets.Gil));
@@ -127,13 +134,9 @@ internal sealed class ActivityDigest
             Fractions[offset + ring] = ActivityGoals.Fraction(targets, day, ring);
         }
 
-        RingValues[offset] = Pair(Levels(day.LevelUnitsGained), Levels(targets.Levels));
+        BuildProgress(slot, offset, day, targets);
         RingValues[offset + 1] = Pair(Number(day.DutiesCompleted), Number(targets.Duties));
         RingValues[offset + 2] = Pair(Compact(day.GilEarned), Compact(targets.Gil));
-        var experience = Loc.T(L.Character.ExperienceDetail, "+" + Compact(day.ExpGained));
-        RingDetails[offset] = day.LevelsGained > 0
-            ? string.Concat(experience, " · ", Loc.Plural(L.Character.LevelUps, day.LevelsGained))
-            : experience;
         RingDetails[offset + 1] = Loc.T(L.Character.PercentOfGoal, PercentValue(Fractions[offset + 1]));
         RingDetails[offset + 2] = Loc.T(L.Character.GilDetail, "+" + Number(day.GilEarned));
         PlayTexts[slot] = day.PlaySeconds > 0 ? Duration(day.PlaySeconds) : string.Empty;
@@ -141,6 +144,24 @@ internal sealed class ActivityDigest
             ? string.Concat(Loc.T(L.Character.Mounts), " ", Number(day.MountsGained), " · ",
                 Loc.T(L.Character.Minions), " ", Number(day.MinionsGained))
             : string.Empty;
+    }
+
+    private void BuildProgress(int slot, int offset, ActivityDay day, in ActivityTargets targets)
+    {
+        var endgame = ActivityGoals.ShowsEndgame(targets, day);
+        EndgameSlots[slot] = endgame;
+        if (endgame)
+        {
+            RingValues[offset] = Pair(Number(day.EndgameEarned), Number(targets.Endgame));
+            RingDetails[offset] = Loc.T(L.Character.EndgameDetail, "+" + Number(day.EndgameEarned));
+            return;
+        }
+
+        RingValues[offset] = Pair(Levels(day.LevelUnitsGained), Levels(targets.Levels));
+        var experience = Loc.T(L.Character.ExperienceDetail, "+" + Compact(day.ExpGained));
+        RingDetails[offset] = day.LevelsGained > 0
+            ? string.Concat(experience, " · ", Loc.Plural(L.Character.LevelUps, day.LevelsGained))
+            : experience;
     }
 
     private void BuildTrends(IReadOnlyList<ActivityDay> days, DateTime todayDate)

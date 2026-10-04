@@ -6,7 +6,7 @@ namespace Aetherphone.Tests;
 public sealed class ActivityLogicTests
 {
     private static readonly DateTime Today = new(2026, 10, 3);
-    private static readonly ActivityTargets Targets = new(1f, 3, 50000);
+    private static readonly ActivityTargets Targets = new(1f, 3, 50000, 200);
 
     private static ActivityDay Day(int daysAgo, float levels = 0f, int duties = 0, long gil = 0, long play = 0,
         long exp = 0, int levelsGained = 0) =>
@@ -123,17 +123,19 @@ public sealed class ActivityLogicTests
     }
 
     [Theory]
-    [InlineData(0, 1, 1.5f, 3, 50000L)]
-    [InlineData(0, -5, 0.5f, 3, 50000L)]
-    [InlineData(1, 1, 1f, 4, 50000L)]
-    [InlineData(1, 20, 1f, 10, 50000L)]
-    [InlineData(2, 1, 1f, 3, 100000L)]
-    [InlineData(2, -1, 1f, 3, 25000L)]
-    public void GoalStepsMoveOneNotchAndClamp(int ring, int delta, float levels, int duties, long gil)
+    [InlineData(0, 1, 1.5f, 3, 50000L, 200L)]
+    [InlineData(0, -5, 0.5f, 3, 50000L, 200L)]
+    [InlineData(1, 1, 1f, 4, 50000L, 200L)]
+    [InlineData(1, 20, 1f, 10, 50000L, 200L)]
+    [InlineData(2, 1, 1f, 3, 100000L, 200L)]
+    [InlineData(2, -1, 1f, 3, 25000L, 200L)]
+    [InlineData(3, 1, 1f, 3, 50000L, 300L)]
+    [InlineData(3, -20, 1f, 3, 50000L, 50L)]
+    public void GoalStepsMoveOneNotchAndClamp(int goal, int delta, float levels, int duties, long gil, long endgame)
     {
-        var index = ActivityGoalSteps.IndexOf(ring, Targets);
-        var next = ActivityGoalSteps.With(ring, index + delta, Targets);
-        Assert.Equal(new ActivityTargets(levels, duties, gil), next);
+        var index = ActivityGoalSteps.IndexOf(goal, Targets);
+        var next = ActivityGoalSteps.With(goal, index + delta, Targets);
+        Assert.Equal(new ActivityTargets(levels, duties, gil, endgame), next);
     }
 
     [Fact]
@@ -150,5 +152,37 @@ public sealed class ActivityLogicTests
         Assert.Equal(2f, ActivityGoals.Fraction(Targets, day, 1), 4);
         Assert.Equal(0.5f, ActivityGoals.Fraction(Targets, day, 2), 4);
         Assert.False(ActivityGoals.AllClosed(Targets, day));
+    }
+
+    [Fact]
+    public void EndgameCurrencyFillsTheProgressRing()
+    {
+        var day = Day(0, duties: 3, gil: 50000);
+        day.EndgameEarned = 200;
+        Assert.Equal(1f, ActivityGoals.Fraction(Targets, day, 0), 4);
+        Assert.True(ActivityGoals.AllClosed(Targets, day));
+    }
+
+    [Fact]
+    public void LevelsAndEndgameCurrencyAddUp()
+    {
+        var day = Day(0, 0.5f);
+        day.EndgameEarned = 100;
+        Assert.Equal(1f, ActivityGoals.ProgressFraction(Targets, day), 4);
+    }
+
+    [Fact]
+    public void ProgressShowsEndgameOnACappedJobOrWhenCurrencyLeads()
+    {
+        var idle = Day(0);
+        Assert.False(ActivityGoals.ShowsEndgame(Targets, idle));
+        idle.Capped = true;
+        Assert.True(ActivityGoals.ShowsEndgame(Targets, idle));
+
+        var leveling = Day(0, 0.5f);
+        leveling.Capped = true;
+        Assert.False(ActivityGoals.ShowsEndgame(Targets, leveling));
+        leveling.EndgameEarned = 150;
+        Assert.True(ActivityGoals.ShowsEndgame(Targets, leveling));
     }
 }
