@@ -14,14 +14,13 @@ internal sealed partial class AetherStreamApp
     private const float MediaRowHeight = 62f;
     private const float MediaThumbHeight = 44f;
     private const float ThumbAspect = 16f / 9f;
-    private const float ButtonHeight = 46f;
-    private const float SmallButtonHeight = 36f;
+    private const float ButtonHeight = Button.LargeHeight;
+    private const float SmallButtonHeight = Button.RegularHeight;
+    private const float RoundGlyphFraction = 0.9f;
     private const int MaxSheetActions = 8;
 
     private static readonly Vector4 WhiteInk = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 StageBacking = new(0f, 0f, 0f, 0.45f);
-    private static readonly TextStyle ButtonStyle = TextStyles.Headline;
-    private static readonly TextStyle SmallButtonStyle = TextStyles.SubheadlineEmphasized;
     private static readonly TextStyle SectionStyle = TextStyles.FootnoteEmphasized;
 
     private static void PassiveProgress(ImDrawListPtr drawList, Rect track, float fraction, Vector4 accent,
@@ -163,24 +162,34 @@ internal sealed partial class AetherStreamApp
     private static void SectionLabel(string label) => SocialChrome.DrawSectionLabel(label, Ink, SectionStyle);
 
     private bool PrimaryButton(Rect rect, string label, bool enabled = true) =>
-        SocialPill.Accent(ImGui.GetWindowDrawList(), rect, label, Ink, ButtonStyle, rect.Height * 0.5f, enabled)
-        && enabled;
+        Button.Draw(rect, label, ui.Ink, ButtonStyle.Prominent, enabled: enabled);
 
-    private static bool QuietButton(Rect rect, string label) =>
-        SocialPill.Flat(ImGui.GetWindowDrawList(), rect, label, Ink.ButtonFill, Ink.ButtonHover, default,
-            Ink.TitleInk, ButtonStyle, rect.Height * 0.5f);
+    private bool QuietButton(Rect rect, string label) => Button.Draw(rect, label, ui.Ink, ButtonStyle.Gray);
 
-    private static bool DangerButton(Rect rect, string label) =>
-        SocialPill.Flat(ImGui.GetWindowDrawList(), rect, label, Palette.WithAlpha(Ink.Danger, 0.12f),
-            Palette.WithAlpha(Ink.Danger, 0.20f), default, Ink.Danger, ButtonStyle, rect.Height * 0.5f);
+    private bool DangerButton(Rect rect, string label) =>
+        Button.Draw(rect, label, ui.Ink, ButtonStyle.Tinted, ButtonRole.Destructive);
 
-    private static bool SmallButton(Rect rect, string label, bool accent)
+    private bool SmallButton(Rect rect, string label, bool accent) =>
+        Button.Draw(rect, label, ui.Ink, accent ? ButtonStyle.Prominent : ButtonStyle.Gray);
+
+    private static float SmallButtonWidth(string label) => Button.WidthFor(label, ButtonSize.Regular);
+
+    private bool StreamRoundButton(ImDrawListPtr drawList, string id, Vector2 center, float radius,
+        FontAwesomeIcon icon, ButtonStyle style, string tooltip = "", HoverLabelSide side = HoverLabelSide.Below,
+        Vector4? accent = null, bool enabled = true)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        return accent
-            ? SocialPill.Accent(drawList, rect, label, Ink, SmallButtonStyle, rect.Height * 0.5f)
-            : SocialPill.Flat(drawList, rect, label, Ink.ButtonFill, Ink.ButtonHover, default, Ink.TitleInk,
-                SmallButtonStyle, rect.Height * 0.5f);
+        var ink = accent is { } tone ? ui.Ink.WithAccent(tone) : ui.Ink;
+        var clicked = RoundButton.Draw(drawList, ImGui.GetID(id), center, radius, ink, style, enabled, false,
+            out var face);
+        var grow = face.Face.Width / MathF.Max(radius * 2f, 0.0001f);
+        ProgressRing.CenterIcon(drawList, center, icon, face.LabelInk, radius * RoundGlyphFraction * grow);
+        if (tooltip.Length > 0)
+        {
+            var extent = new Vector2(radius, radius);
+            HoverTooltip.Show(new Rect(center - extent, center + extent), tooltip, side);
+        }
+
+        return clicked;
     }
 
     private static bool TextLink(Vector2 center, string label, Vector4 ink)
@@ -255,18 +264,13 @@ internal sealed partial class AetherStreamApp
 
     private static void TintedCard(ImDrawListPtr drawList, Rect card, Vector4 tint)
     {
-        var rounding = Metrics.Radius.Card * UiScale.Current;
+        var rounding = Metrics.Radius.Grouped * UiScale.Current;
         Squircle.Fill(drawList, card.Min, card.Max, rounding, ImGui.GetColorU32(Palette.WithAlpha(tint, 0.10f)));
-        Squircle.Stroke(drawList, card.Min, card.Max, rounding, ImGui.GetColorU32(Palette.WithAlpha(tint, 0.30f)),
-            1f);
     }
 
-    private static void GlassCard(ImDrawListPtr drawList, Rect card)
-    {
-        var rounding = Metrics.Radius.Card * UiScale.Current;
-        Squircle.Fill(drawList, card.Min, card.Max, rounding, ImGui.GetColorU32(Ink.FieldFill));
-        Squircle.Stroke(drawList, card.Min, card.Max, rounding, ImGui.GetColorU32(Ink.ChipStroke), 1f);
-    }
+    private void GlassCard(ImDrawListPtr drawList, Rect card) =>
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * UiScale.Current);
+
 
     private void BeginActions(SheetPurpose purpose, string title)
     {

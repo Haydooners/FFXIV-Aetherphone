@@ -11,7 +11,7 @@ namespace Aetherphone.Apps.AetherStream;
 internal sealed partial class AetherStreamApp
 {
     private const float SetupCardHeight = 74f;
-    private const float SetupButtonHeight = 46f;
+    private const float SetupButtonHeight = Button.LargeHeight;
 
     private bool setupDismissed;
     private bool setupChecked;
@@ -97,7 +97,7 @@ internal sealed partial class AetherStreamApp
                     ? string.Format(Loc.T(L.AetherStream.SetupInstallSized), DependencySetup.FormatMegabytes(pending))
                     : Loc.T(L.AetherStream.SetupInstall);
 
-        if (AppSkin.PillButton(button, label, true, !busy, accentedTheme) && !busy)
+        if (Button.Draw(button, label, ui.Ink, ButtonStyle.Prominent, enabled: !busy))
         {
             dependencyWork.Run("install components",
                 async token => await dependencies.EnsureReadyAsync(token).ConfigureAwait(false));

@@ -45,6 +45,7 @@ internal enum StreamTab : byte
 internal sealed partial class AetherStreamApp : IPhoneApp
 {
     private const int TabCount = 3;
+    private const float HeaderIconSize = 20f;
 
     private static readonly SocialInk Ink = new(AppPalettes.AetherStream);
     private static readonly TextStyle WordmarkStyle = TextStyles.Title2;
@@ -267,19 +268,16 @@ internal sealed partial class AetherStreamApp : IPhoneApp
         Typography.Draw(drawList, new Vector2(titleLeft, header.Center.Y - titleHeight * 0.5f), title, Ink.TitleInk,
             WordmarkStyle);
 
-        var delta = ImGui.GetIO().DeltaTime;
         UiAnchors.Report("aetherstream.screen",
             new Rect(screenCenter - new Vector2(radius, radius), screenCenter + new Vector2(radius, radius)));
-        if (HoverButton.Circle(drawList, "aetherstream.header.settings", settingsCenter, radius * 0.82f,
-                FontAwesomeIcon.Cog, AppSkin.Transparent, Ink.TitleInk, delta, 1f, true,
-                Loc.T(L.AetherStream.SettingsTitle)))
+        if (SocialChrome.DrawHeaderIcon(drawList, settingsCenter, radius, PhoneIcons.Settings, HeaderIconSize,
+                Loc.T(L.AetherStream.SettingsTitle), Ink, Ink.TitleInk))
         {
             router.Push(new StreamRoute(StreamScreen.Settings));
         }
 
-        if (HoverButton.Circle(drawList, "aetherstream.header.screen", screenCenter, radius * 0.82f,
-                FontAwesomeIcon.Tv, AppSkin.Transparent, Ink.TitleInk, delta, 1f, true,
-                Loc.T(L.AetherStream.Screen)))
+        if (SocialChrome.DrawHeaderIcon(drawList, screenCenter, radius, IconGlyph.Of(FontAwesomeIcon.Tv),
+                HeaderIconSize, Loc.T(L.AetherStream.Screen), Ink, Ink.TitleInk))
         {
             router.Push(new StreamRoute(StreamScreen.Screen));
         }
