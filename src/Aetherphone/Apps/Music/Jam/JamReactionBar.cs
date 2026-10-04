@@ -12,7 +12,6 @@ internal static class JamReactionBar
 
     private const float GlyphSize = 22f;
     private const float HoverGrow = 1.14f;
-    private const float HoverFillAlpha = 0.10f;
     private const float LifetimeSeconds = 2.6f;
     private const float RiseHeight = 150f;
     private const float RisingSize = 30f;
@@ -36,11 +35,10 @@ internal static class JamReactionBar
         "music.jam.react.4", "music.jam.react.5", "music.jam.react.6", "music.jam.react.7",
     ];
 
-    public static int Draw(ImDrawListPtr drawList, Rect row, GlassTone tone, Vector4 ink, float scale,
-        bool interactive = true)
+    public static int Draw(ImDrawListPtr drawList, Rect row, Vector4 ink, float scale, bool interactive = true)
     {
         var radius = row.Height * 0.5f;
-        Material.LiquidGlass(drawList, row.Min, row.Max, radius, scale, tone, 0f);
+        Squircle.Fill(drawList, row.Min, row.Max, radius, ImGui.GetColorU32(Surfaces.Fill(ink, FillLevel.Tertiary)));
         var slot = row.Width / JamReactions.MaxKinds;
         var hitRadius = MathF.Min(radius, slot * 0.5f);
         var tapped = -1;
@@ -54,7 +52,7 @@ internal static class JamReactionBar
             if (hovered)
             {
                 drawList.AddCircleFilled(center, hitRadius,
-                    ImGui.GetColorU32(Palette.WithAlpha(ink, HoverFillAlpha)), 24);
+                    ImGui.GetColorU32(Surfaces.Fill(ink, FillLevel.Secondary)), 24);
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
             }
 

@@ -12,7 +12,7 @@ namespace Aetherphone.Apps.Music;
 internal sealed partial class MusicApp
 {
     private const float HostCardPad = 14f;
-    private const float HostButtonHeight = 32f;
+    private const float HostButtonHeight = Button.RegularHeight;
     private const int PinComposerMaxLines = 3;
     private const float PinFieldBaseHeight = 36f;
 
@@ -71,7 +71,7 @@ internal sealed partial class MusicApp
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var title = live ? Loc.T(L.Music.Live.OnAirTitle) : Loc.T(L.Music.Live.OffAirTitle);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), hostTitleFit.Fit(title, innerWidth,
             TextStyles.Headline), ui.TitleInk, TextStyles.Headline);
@@ -120,7 +120,7 @@ internal sealed partial class MusicApp
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         hostPinnedText.Draw(drawList, new Vector2(min.X + pad, min.Y + (height - hostPinnedText.Height) * 0.5f),
             pinned is null ? ui.MutedInk : ui.TitleInk, TextStyles.Subheadline);
         var unpin = false;
@@ -166,8 +166,8 @@ internal sealed partial class MusicApp
         var canPin = pinEditor.HasContent && room.IsAttached && room.CanModerate;
         var buttonMin = new Vector2(field.Max.X + Metrics.Space.Sm * scale, field.Max.Y - buttonHeight
             - (fieldHeight - buttonHeight) * 0.5f * (pinEditor.LineCount > 1 ? 0f : 1f));
-        var pinTapped = AppSkin.PillButton(new Rect(buttonMin, buttonMin + new Vector2(buttonWidth, buttonHeight)),
-            buttonLabel, true, canPin, theme);
+        var pinTapped = Button.Draw(new Rect(buttonMin, buttonMin + new Vector2(buttonWidth, buttonHeight)),
+            buttonLabel, ui.Ink, ButtonStyle.Prominent, enabled: canPin);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, fieldHeight + Metrics.Space.Sm * scale));
         if ((submitted || pinTapped) && canPin && room.Pin(pinEditor.Text))

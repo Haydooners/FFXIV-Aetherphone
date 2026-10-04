@@ -42,7 +42,7 @@ internal sealed partial class MusicApp
         var composerHeight = LiveChatTranscript.ComposerBaseHeight * scale + growth;
         var card = BeginJamBlock(listHeight + composerHeight);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var list = new Rect(card.Min, new Vector2(card.Max.X, card.Min.Y + listHeight));
         var composer = new Rect(new Vector2(card.Min.X, list.Max.Y), card.Max);
         if (transcript.Count == 0)

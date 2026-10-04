@@ -134,10 +134,10 @@ internal sealed partial class MusicApp
             var infoMin = new Vector2(origin.X + sidePadding, cursorY);
             var infoMax = new Vector2(origin.X + sidePadding + contentWidth, cursorY + infoCardHeight);
             var infoHovered = venueEntry != null && UiInteract.Hover(infoMin, infoMax);
-            ui.Card(drawList, infoMin, infoMax, 10f * scale, elevated: false);
+            ui.Card(drawList, infoMin, infoMax, Metrics.Radius.Grouped * scale);
             if (infoHovered)
             {
-                Squircle.Fill(drawList, infoMin, infoMax, 10f * scale, ImGui.GetColorU32(ui.HoverTint));
+                Squircle.Fill(drawList, infoMin, infoMax, Metrics.Radius.Grouped * scale, ImGui.GetColorU32(ui.HoverTint));
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
             }
 

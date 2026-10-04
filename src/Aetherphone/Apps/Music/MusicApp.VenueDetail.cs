@@ -79,7 +79,7 @@ internal sealed partial class MusicApp
             {
                 var cardMin = new Vector2(origin.X + sidePadding, ImGui.GetCursorScreenPos().Y);
                 var cardMax = new Vector2(origin.X + sidePadding + contentWidth, cardMin.Y + 52f * scale);
-                ui.Card(drawList, cardMin, cardMax, 10f * scale, elevated: false);
+                ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Grouped * scale);
 
                 if (!string.IsNullOrEmpty(address))
                 {
@@ -112,7 +112,7 @@ internal sealed partial class MusicApp
                 var nowPlayingCardHeight = 64f * scale;
                 var nowPlayingMin = new Vector2(origin.X + sidePadding, nowPlayingCursor.Y);
                 var nowPlayingMax = new Vector2(origin.X + sidePadding + contentWidth, nowPlayingCursor.Y + nowPlayingCardHeight);
-                ui.Card(drawList, nowPlayingMin, nowPlayingMax, 10f * scale, elevated: false);
+                ui.Card(drawList, nowPlayingMin, nowPlayingMax, Metrics.Radius.Grouped * scale);
 
                 var nowPlayingLabel = Loc.T(L.Rolladeck.LiveNow);
                 var nowPlayingLabelSize = Typography.Measure(nowPlayingLabel, TextStyles.Caption1);
@@ -152,7 +152,7 @@ internal sealed partial class MusicApp
                 var eventCardHeight = 64f * scale;
                 var eventMin = new Vector2(origin.X + sidePadding, eventCursor.Y);
                 var eventMax = new Vector2(origin.X + sidePadding + contentWidth, eventCursor.Y + eventCardHeight);
-                ui.Card(drawList, eventMin, eventMax, 10f * scale, elevated: false);
+                ui.Card(drawList, eventMin, eventMax, Metrics.Radius.Grouped * scale);
 
                 var eventLabelSize = Typography.Measure(eventLabel, TextStyles.Caption1);
                 Typography.Draw(drawList, new Vector2(eventMin.X + 14f * scale, eventMin.Y + 10f * scale),

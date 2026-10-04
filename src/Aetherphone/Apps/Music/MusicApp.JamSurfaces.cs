@@ -15,16 +15,14 @@ internal sealed partial class MusicApp
     private const float JamHomeTile = 40f;
     private const float JamHomeTileGlyphScale = 1.05f;
     private const float JamHomeStackRadius = 13f;
-    private const float JamHomeOpenHeight = 30f;
-    private const float JamHomeOpenPadX = 16f;
+    private const float JamHomeOpenHeight = Button.SmallHeight;
     private const float JamHomeChevronScale = 0.7f;
     private const float JamHomeLiveDot = 3.5f;
     private const float JamHomeHoverAlpha = 0.06f;
     private const float JamHomeMusicGlyphScale = 0.62f;
-    private const float JamBadgePillHeight = 34f;
+    private const float JamBadgePillHeight = Button.RegularHeight;
     private const float JamBadgeStackRadius = 10f;
     private const float JamBadgeGlyphScale = 0.78f;
-    private const float JamBadgeHoverAlpha = 0.10f;
     private const float JamBadgeCodeAlpha = 0.62f;
     private const int JamBadgeStackMax = 3;
     private const int JamHomeSegments = 16;
@@ -53,9 +51,9 @@ internal sealed partial class MusicApp
     {
         var card = BeginJamBlock(JamHomeCompactHeight * scale);
         var drawList = ImGui.GetWindowDrawList();
-        var rounding = Metrics.Radius.Card * scale;
+        var rounding = Metrics.Radius.Grouped * scale;
         var hovered = UiInteract.Hover(card.Min, card.Max);
-        Material.ThemedGlass(drawList, card.Min, card.Max, rounding, scale, theme);
+        ui.Card(drawList, card.Min, card.Max, rounding);
         if (hovered)
         {
             Squircle.Fill(drawList, card.Min, card.Max, rounding,
@@ -98,10 +96,9 @@ internal sealed partial class MusicApp
         var card = BeginJamBlock(pad + eyebrowHeight + Metrics.Space.Xs * scale + titleHeight + lineHeight
             + Metrics.Space.Md * scale + stackRow + pad);
         var drawList = ImGui.GetWindowDrawList();
-        var rounding = Metrics.Radius.Card * scale;
+        var rounding = Metrics.Radius.Grouped * scale;
         var hovered = UiInteract.Hover(card.Min, card.Max);
-        Material.ThemedGlass(drawList, card.Min, card.Max, rounding, scale, theme);
-        Material.TopGlow(drawList, card.Min, card.Max, rounding, ui.Accent, JamGlowCoverage, JamGlowStrength);
+        ui.Card(drawList, card.Min, card.Max, rounding);
         if (hovered)
         {
             Squircle.Fill(drawList, card.Min, card.Max, rounding,
@@ -134,14 +131,13 @@ internal sealed partial class MusicApp
         JamAvatarStack.Draw(drawList, new Vector2(left, rowCenter), stackRadius, jamMembers, jamMemberNames,
             JamStackMax, jamOverflowLabel, ui.Palette.BackdropBottom, theme, images, lodestone, scale);
         var openLabel = Loc.T(L.Music.Jam.Open);
-        var openWidth = Typography.Measure(openLabel, TextStyles.SubheadlineEmphasized).X + JamHomeOpenPadX * 2f * scale;
+        var openWidth = Button.WidthFor(openLabel, ButtonSize.Small);
         var openHeight = JamHomeOpenHeight * scale;
         var open = new Rect(new Vector2(right - openWidth, rowCenter - openHeight * 0.5f),
             new Vector2(right, rowCenter + openHeight * 0.5f));
-        Squircle.Fill(drawList, open.Min, open.Max, openHeight * 0.5f, ImGui.GetColorU32(ui.Accent));
-        Typography.DrawCentered(drawList, open.Center, openLabel, AccentRing.Ink, TextStyles.SubheadlineEmphasized);
+        var openTapped = Button.Draw(drawList, open, openLabel, ui.Ink, ButtonStyle.Prominent, id: "music.jam.home.open");
         EndJamBlock();
-        if (UiInteract.Click(card.Min, card.Max, hovered))
+        if (openTapped || UiInteract.Click(card.Min, card.Max, hovered))
         {
             OpenJamLobby();
         }
@@ -191,13 +187,8 @@ internal sealed partial class MusicApp
         var pillMax = pillMin + new Vector2(pillWidth, pillHeight);
         var radius = pillHeight * 0.5f;
         var hovered = UiInteract.Hover(pillMin, pillMax);
-        Material.LiquidGlass(drawList, pillMin, pillMax, radius, scale, GlassTone.Dark, 0f);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, pillMin, pillMax, radius,
-                ImGui.GetColorU32(Palette.WithAlpha(JamBadgeInk, JamBadgeHoverAlpha)));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
+        Button.Surface(drawList, new Rect(pillMin, pillMax), ui.Ink with { Ink = JamBadgeInk }, ButtonStyle.Gray,
+            ButtonRole.Normal, true, hovered, ImGui.GetID("music.jam.badge"));
 
         var cursor = pillMin.X + radius;
         var right = pillMax.X - radius;
@@ -231,7 +222,7 @@ internal sealed partial class MusicApp
 
         var barTop = pillMax.Y + gap;
         var bar = new Rect(new Vector2(min.X, barTop), new Vector2(min.X + width, barTop + JamReactionBar.Height * scale));
-        var kind = JamReactionBar.Draw(drawList, bar, GlassTone.Dark, JamBadgeInk, scale);
+        var kind = JamReactionBar.Draw(drawList, bar, JamBadgeInk, scale);
         if (kind >= 0)
         {
             jam.React(kind);

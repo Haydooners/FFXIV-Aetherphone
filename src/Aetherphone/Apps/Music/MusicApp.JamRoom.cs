@@ -119,9 +119,7 @@ internal sealed partial class MusicApp
         var card = BeginJamBlock(pad + eyebrowHeight + Metrics.Space.Xs * scale + codeHeight + Metrics.Space.Lg * scale
             + titleHeight + subtitleHeight + Metrics.Space.Lg * scale + buttonHeight + pad);
         var drawList = ImGui.GetWindowDrawList();
-        var rounding = Metrics.Radius.Card * scale;
-        ui.Card(drawList, card.Min, card.Max, rounding, true);
-        Material.TopGlow(drawList, card.Min, card.Max, rounding, ui.Accent, JamGlowCoverage, JamGlowStrength);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var left = card.Min.X + pad;
         var right = card.Max.X - pad;
         var top = card.Min.Y + pad;
@@ -195,7 +193,7 @@ internal sealed partial class MusicApp
         JamGap(Metrics.Space.Md);
         var block = BeginJamBlock(JamNowPlayingHeight * scale);
         var drawList = ImGui.GetWindowDrawList();
-        var rounding = Metrics.Radius.Md * scale;
+        var rounding = Metrics.Radius.Grouped * scale;
         ui.Card(drawList, block.Min, block.Max, rounding);
         var side = ArtworkTile.Side(ArtworkTile.RowArt);
         var pad = (block.Height - side) * 0.5f;
@@ -239,7 +237,7 @@ internal sealed partial class MusicApp
         JamGap(Metrics.Space.Md);
         var block = BeginJamBlock(JamReactionBar.Height * scale);
         var drawList = ImGui.GetWindowDrawList();
-        var kind = JamReactionBar.Draw(drawList, block, Material.ToneFor(theme), ui.TitleInk, scale);
+        var kind = JamReactionBar.Draw(drawList, block, ui.TitleInk, scale);
         if (kind >= 0)
         {
             jam.React(kind);
