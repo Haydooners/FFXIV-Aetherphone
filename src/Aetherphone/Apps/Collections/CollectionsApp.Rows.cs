@@ -28,7 +28,7 @@ internal sealed partial class CollectionsApp
         var scale = UiScale.Current;
         var rowHeight = RowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rows.Count * rowHeight);
-        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         for (var index = 0; index < rows.Count; index++)
         {
             var row = rows[index];

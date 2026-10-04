@@ -21,14 +21,14 @@ internal sealed partial class HealthApp
     private const float WeightAxisHeight = 22f;
     private const float WeightRangeWidth = 176f;
     private const float AxisLabelGap = 8f;
-    private const float LogPillHeight = 48f;
+    private const float LogPillHeight = Button.LargeHeight;
     private const float HistoryRowHeight = 48f;
     private const float SheetPadX = 20f;
     private const float SheetTitleHeight = 30f;
     private const float SheetValueHeight = 64f;
     private const float SheetRulerHeight = 72f;
     private const float SheetGap = 14f;
-    private const float SheetButtonHeight = 48f;
+    private const float SheetButtonHeight = Button.LargeHeight;
     private const float SheetStepRadius = 20f;
     private const float RulerStepPixels = 9f;
     private const float RulerMajorHeight = 26f;
@@ -79,7 +79,7 @@ internal sealed partial class HealthApp
             cursorY += HealthArt.TileGap * scale;
             var pill = new Rect(new Vector2(origin.X, cursorY),
                 new Vector2(origin.X + width, cursorY + LogPillHeight * scale));
-            if (ui.AccentPill(pill, Loc.T(L.Health.LogWeight), true, TextStyles.Headline))
+            if (Button.Draw(pill, Loc.T(L.Health.LogWeight), ui.Ink))
             {
                 OpenWeightSheet();
             }
@@ -98,7 +98,7 @@ internal sealed partial class HealthApp
         var pad = HealthArt.CardPad * scale;
         var height = pad * 2f + (WeightChartHeader + WeightPlotHeight + WeightAxisHeight) * scale;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, origin, max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var left = origin.X + pad;
         var right = max.X - pad;
         var headerTop = origin.Y + pad;
@@ -204,7 +204,7 @@ internal sealed partial class HealthApp
         var cursorY = SectionTop(drawList, left, top, width, Loc.T(L.Health.History), scale);
         var rowHeight = HistoryRowHeight * scale;
         var max = new Vector2(left + width, cursorY + rowHeight * rows);
-        ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Grouped * scale);
         while (weightRemoveIds.Count < rows)
         {
             weightRemoveIds.Add("health.weight.remove." + weightRemoveIds.Count);
@@ -223,9 +223,8 @@ internal sealed partial class HealthApp
 
             var centerY = rowTop + rowHeight * 0.5f;
             var removeCenter = new Vector2(max.X - pad - RemoveRadius * scale, centerY);
-            if (HoverButton.Circle(drawList, weightRemoveIds[row], removeCenter, RemoveRadius * scale,
-                    FontAwesomeIcon.Times, Palette.WithAlpha(ui.TitleInk, 0f), ui.MutedInk, HealthArt.FrameDelta(), 1f,
-                    true, Loc.T(L.Health.RemoveEntry), HoverLabelSide.Above))
+            if (GlyphButton(drawList, weightRemoveIds[row], removeCenter, RemoveRadius * scale,
+                    FontAwesomeIcon.Times, ui.Accent, ButtonStyle.Plain, true, Loc.T(L.Health.RemoveEntry), ui.MutedInk))
             {
                 removed = weightDigest.RowEntries[row];
             }
@@ -300,7 +299,7 @@ internal sealed partial class HealthApp
         DrawRuler(drawList, ruler, ink, range, frame.Interactive, scale);
         y += (SheetRulerHeight + SheetGap * 2f) * scale;
         var button = new Rect(new Vector2(left, y), new Vector2(right, y + SheetButtonHeight * scale));
-        if (frame.Interactive && ui.AccentPill(button, Loc.T(L.Health.Add), true, TextStyles.Headline))
+        if (frame.Interactive && Button.Draw(button, Loc.T(L.Health.Add), ui.Ink))
         {
             tracker.LogWeight(HealthFormat.WeightToKg(weightDraft, Units));
             UiFeedback.Play(UiSound.Success);

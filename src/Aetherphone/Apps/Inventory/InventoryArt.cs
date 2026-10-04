@@ -29,7 +29,7 @@ internal static class InventoryArt
     private const float StateTitleGap = 18f;
     private const float StateHintGap = 6f;
     private const float StateActionGap = 20f;
-    private const float StateActionHeight = 40f;
+    private const float StateActionHeight = Button.LargeHeight;
     private const float StateActionPadding = 40f;
     private const float StateActionMinWidth = 140f;
     private const float StateMaxTextWidth = 280f;
@@ -192,7 +192,7 @@ internal static class InventoryArt
         var top = bottom + StateActionGap * scale;
         var rect = new Rect(new Vector2(centerX - width * 0.5f, top),
             new Vector2(centerX + width * 0.5f, top + StateActionHeight * scale));
-        return ui.AccentPill(rect, actionLabel, true, TextStyles.Headline);
+        return Button.Draw(rect, actionLabel, ui.Ink);
     }
 
     public static uint SkeletonInk(float phase)

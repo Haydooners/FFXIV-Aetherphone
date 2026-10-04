@@ -20,9 +20,7 @@ internal sealed partial class HealthApp
     private const float VesselWidth = 62f;
     private const float VesselHeight = 100f;
     private const float HeroTextGap = 18f;
-    private const float AddButtonRadius = 22f;
-    private const float AddGlyphFraction = 0.42f;
-    private const float AddWashAlpha = 0.22f;
+    private const float AddButtonRadius = RoundButton.RegularRadius;
     private const float HighlightGlyph = 22f;
     private const float HighlightBarHeight = 8f;
     private const float HighlightRowGap = 10f;
@@ -191,26 +189,8 @@ internal sealed partial class HealthApp
     }
 
     private bool AddButton(ImDrawListPtr drawList, Vector2 center, float radius, Vector4 tint, string id,
-        string tooltip)
-    {
-        var hit = new Vector2(radius, radius);
-        var hovered = UiInteract.Hover(center - hit, center + hit);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale(id, pressed, PressFx.ControlPressedScale);
-        var drawn = hit * grow;
-        Material.ThemedGlass(drawList, center - drawn, center + drawn, radius * grow, UiScale.Current,
-            ui.Palette.BackdropTop);
-        Squircle.Fill(drawList, center - drawn, center + drawn, radius * grow,
-            ImGui.GetColorU32(Palette.WithAlpha(tint, hovered ? AddWashAlpha * 1.5f : AddWashAlpha)));
-        ProgressRing.CenterIcon(drawList, center, FontAwesomeIcon.Plus, tint, radius * 2f * AddGlyphFraction * grow);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            HoverTooltip.Show(id, new Rect(center - hit, center + hit), tooltip, HoverLabelSide.Above);
-        }
-
-        return UiInteract.Click(center - hit, center + hit, hovered);
-    }
+        string tooltip) =>
+        GlyphButton(drawList, id, center, radius, FontAwesomeIcon.Plus, tint, ButtonStyle.Tinted, true, tooltip);
 
     private float DrawHighlights(ImDrawListPtr drawList, float left, float top, float width, float scale)
     {

@@ -17,7 +17,7 @@ internal static class CollectionsArt
     private const float StateTitleGap = 18f;
     private const float StateHintGap = 6f;
     private const float StateActionGap = 20f;
-    private const float StateActionHeight = 40f;
+    private const float StateActionHeight = Button.LargeHeight;
     private const float StateActionPadding = 40f;
     private const float StateActionMinWidth = 140f;
     private const float StateMaxTextWidth = 280f;
@@ -105,7 +105,7 @@ internal static class CollectionsArt
         var top = bottom + StateActionGap * scale;
         var rect = new Rect(new Vector2(centerX - width * 0.5f, top),
             new Vector2(centerX + width * 0.5f, top + StateActionHeight * scale));
-        return ui.AccentPill(rect, actionLabel, true, TextStyles.Headline);
+        return Button.Draw(rect, actionLabel, ui.Ink);
     }
 
     public static float PanelHeight(string title, string hint, float width, float scale)
@@ -123,7 +123,7 @@ internal static class CollectionsArt
     {
         var height = PanelHeight(title, hint, width, scale);
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = PanelPad * scale;
         var tileSize = PanelTileSize * scale;
         var tileCenter = new Vector2(origin.X + pad + tileSize * 0.5f, origin.Y + pad + tileSize * 0.5f);
@@ -146,13 +146,6 @@ internal static class CollectionsArt
 
     private static float PanelTextWidth(float width, float scale) =>
         MathF.Max(1f, width - (PanelPad * 2f + PanelTileSize + PanelTileGap) * scale);
-
-    public static float SectionHeader(ImDrawListPtr drawList, Vector2 origin, float width, string title, Vector4 ink)
-    {
-        var fitted = Typography.FitText(title, width, TextStyles.Title3);
-        Typography.Draw(drawList, origin, fitted, ink, TextStyles.Title3);
-        return Typography.Measure(fitted, TextStyles.Title3).Y;
-    }
 
     public static void Ring(ImDrawListPtr drawList, Vector2 center, float radius, float thickness, float fraction,
         Vector4 track, Vector4 fill, string label, Vector4 ink, in TextStyle style, string widest)

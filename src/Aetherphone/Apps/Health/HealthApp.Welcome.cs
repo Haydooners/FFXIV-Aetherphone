@@ -17,7 +17,7 @@ internal sealed partial class HealthApp
     private const float FeatureGlyph = 36f;
     private const float FeatureGap = 14f;
     private const float FeatureRowGap = 18f;
-    private const float StartPillHeight = 50f;
+    private const float StartPillHeight = Button.LargeHeight;
 
     private static readonly LocString[] FeatureTitles =
     {
@@ -58,7 +58,7 @@ internal sealed partial class HealthApp
             cursorY += HealthArt.TileGap * scale;
             var pill = new Rect(new Vector2(origin.X, cursorY),
                 new Vector2(origin.X + width, cursorY + StartPillHeight * scale));
-            if (ui.AccentPill(pill, Loc.T(L.Health.GetStarted), true, TextStyles.Headline))
+            if (Button.Draw(pill, Loc.T(L.Health.GetStarted), ui.Ink))
             {
                 FinishSetup();
             }
@@ -84,7 +84,7 @@ internal sealed partial class HealthApp
         var height = pad * 2f + glyph + WelcomeHeroGap * scale + titleHeight + HealthArt.LineGap * 2f * scale +
                      bodyHeight;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        Material.ThemedGlass(drawList, origin, max, Metrics.Radius.Widget * scale, scale, ui.Palette.BackdropTop);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var centerX = origin.X + width * 0.5f;
         var top = origin.Y + pad;
         HealthArt.GlyphTile(drawList, new Vector2(centerX, top + glyph * 0.5f), glyph, ui.Accent,
@@ -110,7 +110,7 @@ internal sealed partial class HealthApp
         }
 
         var max = new Vector2(left + width, top + height);
-        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Grouped * scale);
         var cursorY = top + pad;
         for (var index = 0; index < FeatureTitles.Length; index++)
         {

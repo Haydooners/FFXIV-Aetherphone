@@ -103,7 +103,7 @@ internal sealed partial class HuntsApp
         var headerHovered = UiInteract.Hover(origin, headerMax);
 
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, origin, max, HuntsArt.CardRadius * scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         if (headerHovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);

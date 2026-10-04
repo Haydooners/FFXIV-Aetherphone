@@ -14,7 +14,7 @@ internal sealed partial class HuntsApp
 {
     private const string RegisterUrl = "https://faloop.app/register";
     private const float AccountHeroTile = 56f;
-    private const float AccountButtonHeight = 42f;
+    private const float AccountButtonHeight = Button.LargeHeight;
     private const float CenteredLineSpacing = 1.25f;
     private const string CenteredProbe = "Ay";
 
@@ -87,7 +87,7 @@ internal sealed partial class HuntsApp
         var height = pad + tile + HuntsArt.RowGap * scale + titleHeight + HuntsArt.LineGap * scale * 2f + bodyHeight +
                      pad;
         var card = new Rect(origin, origin + new Vector2(width, height));
-        ui.Card(drawList, card.Min, card.Max, HuntsArt.CardRadius * scale, elevated: true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var tileMin = new Vector2(card.Center.X - tile * 0.5f, card.Min.Y + pad);
         IconTile.FillShaded(drawList, tileMin, tileMin + new Vector2(tile, tile), tile * Metrics.Radius.TileFactor,
             IconTile.Surface(tint));

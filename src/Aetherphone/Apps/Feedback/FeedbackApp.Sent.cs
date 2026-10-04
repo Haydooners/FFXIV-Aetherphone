@@ -86,7 +86,7 @@ internal sealed partial class FeedbackApp
             new Vector2(centerX + actionWidth * 0.5f, top + actionHeight));
         if (!store.HistoryVisible)
         {
-            if (FeedbackArt.PressPill(ui, primary, Loc.T(L.Feedback.Done), true, "feedback.sent.done"))
+            if (Button.Draw(primary, Loc.T(L.Feedback.Done), ui.Ink, id: "feedback.sent.done"))
             {
                 router.Pop();
             }
@@ -94,7 +94,7 @@ internal sealed partial class FeedbackApp
             return;
         }
 
-        if (FeedbackArt.PressPill(ui, primary, Loc.T(L.Feedback.ViewYourFeedback), true, "feedback.sent.view"))
+        if (Button.Draw(primary, Loc.T(L.Feedback.ViewYourFeedback), ui.Ink, id: "feedback.sent.view"))
         {
             router.Push(FeedbackRoute.History);
             return;

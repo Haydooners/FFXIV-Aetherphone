@@ -19,10 +19,8 @@ namespace Aetherphone.Apps.Dailies;
 internal sealed partial class DailiesApp
 {
     private const float RowWashRadius = 12f;
-    private const float EditButtonRadius = 14f;
-    private const float EditHitRadius = 20f;
+    private const float EditButtonRadius = RoundButton.SmallRadius;
     private const float EditGlyph = 13f;
-    private const float EditWashAlpha = 0.14f;
     private const float HiddenAlpha = 0.45f;
     private const float UnavailableAlpha = 0.6f;
     private const FontAwesomeIcon CustomIcon = FontAwesomeIcon.ListUl;
@@ -129,11 +127,20 @@ internal sealed partial class DailiesApp
     private void DrawSectionHeader(string title, float width, float scale)
     {
         var origin = ImGui.GetCursorScreenPos();
-        var height = TimersArt.SectionHeaderHeight * scale;
-        var titleHeight = Typography.LineHeight(TextStyles.Title3);
-        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(origin.X, origin.Y + (height - titleHeight) * 0.5f),
-            Typography.FitText(title, width, TextStyles.Title3), ui.TitleInk, TextStyles.Title3);
+        var height = CardSectionHeader.Draw(ImGui.GetWindowDrawList(), origin, width, title, ui.TitleInk);
         Advance(origin, width, height, 0f, scale);
+    }
+
+    private bool EditButton(ImDrawListPtr drawList, uint id, Vector2 center, FontAwesomeIcon icon, in ControlInk ink,
+        ButtonStyle style, string tooltip, float scale)
+    {
+        var radius = EditButtonRadius * scale;
+        var clicked = RoundButton.Draw(drawList, id, center, radius, ink, style, true, false, out var face);
+        var grow = face.Face.Width / MathF.Max(radius * 2f, 0.0001f);
+        ProgressRing.CenterIcon(drawList, center, icon, face.LabelInk, EditGlyph * scale * grow);
+        var extent = new Vector2(radius, radius);
+        HoverTooltip.Show(new Rect(center - extent, center + extent), tooltip, HoverLabelSide.Above);
+        return clicked;
     }
 
     private void DrawAutoCard(int rows, float width, float delta, float scale)
@@ -320,9 +327,9 @@ internal sealed partial class DailiesApp
         if (editing)
         {
             var center = new Vector2(row.Max.X - EditButtonRadius * scale, row.Center.Y);
-            var deleted = DailiesArt.RoundButton(drawList, ImGui.GetID($"dailies.delete.{task.Id}"), center,
-                EditButtonRadius * scale, EditHitRadius * scale, FontAwesomeIcon.Minus, TileInk, ui.Theme.Danger,
-                1f, EditGlyph * scale, Loc.T(L.Dailies.Delete));
+            var deleted = EditButton(drawList, ImGui.GetID($"dailies.delete.{task.Id}"), center,
+                FontAwesomeIcon.Minus, ui.Ink.WithAccent(ui.Theme.Danger), ButtonStyle.Prominent,
+                Loc.T(L.Dailies.Delete), scale);
             DrawPlainRow(drawList, row, CustomIcon, ui.Accent, task.Title, string.Empty,
                 center.X - EditButtonRadius * scale, 1f, scale);
             if (!deleted)
@@ -404,10 +411,9 @@ internal sealed partial class DailiesApp
     private float DrawHideButton(ImDrawListPtr drawList, Rect row, string itemId, bool hidden, float scale)
     {
         var center = new Vector2(row.Max.X - EditButtonRadius * scale, row.Center.Y);
-        var ink = hidden ? ui.MutedInk : ui.Accent;
-        var clicked = DailiesArt.RoundButton(drawList, ImGui.GetID($"dailies.hide.{itemId}"), center,
-            EditButtonRadius * scale, EditHitRadius * scale, hidden ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye,
-            ink, ink, EditWashAlpha, EditGlyph * scale, Loc.T(hidden ? L.Dailies.Show : L.Dailies.Hide));
+        var clicked = EditButton(drawList, ImGui.GetID($"dailies.hide.{itemId}"), center,
+            hidden ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye, ui.Ink,
+            hidden ? ButtonStyle.Gray : ButtonStyle.Tinted, Loc.T(hidden ? L.Dailies.Show : L.Dailies.Hide), scale);
         if (clicked)
         {
             tracker.SetHidden(itemId, !hidden);

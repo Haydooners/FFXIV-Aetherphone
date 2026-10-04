@@ -79,9 +79,10 @@ internal sealed partial class InventoryApp
         var width = ScrollLayout.StableContentWidth();
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
         UiAnchors.Report("inventory.search", field);
-        SearchBar.Surface(drawList, field, ControlInk.From(frameTheme));
-        GlassField.Search(drawList, field, "##inventorySearch", Loc.T(L.Inventory.Search), ref query, frameTheme,
-            scale, SearchMaxLength, false);
+        var ink = ui.Ink;
+        SearchBar.Surface(drawList, field, ink);
+        GlassField.Search(drawList, field, "##inventorySearch", Loc.T(L.Inventory.Search), ref query, ink.Ink,
+            ink.Muted, scale, SearchMaxLength, false);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, field.Height + SearchBottomGap * scale));
     }
@@ -119,8 +120,8 @@ internal sealed partial class InventoryApp
         var press = PressFx.Scale(HeroId, pressed, Motion.PressScaleCard);
         var center = rest.Center;
         var half = new Vector2(width, height) * 0.5f * press;
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, center - half, center + half, radius * press, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, center - half, center + half, radius * press);
         Material.TopGlow(drawList, center - half, center + half, radius, ui.Accent, HeroGlowCoverage, HeroGlowStrength);
 
         var left = rest.Min.X + pad;
@@ -340,8 +341,8 @@ internal sealed partial class InventoryApp
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var press = PressFx.Scale(TidyId, pressed, Motion.PressScaleCard);
         var half = new Vector2(width, height) * 0.5f * press;
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, rest.Center - half, rest.Center + half, radius * press, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, rest.Center - half, rest.Center + half, radius * press);
         var tileCenter = new Vector2(rest.Min.X + pad + TidyTile * 0.5f * scale, rest.Center.Y);
         InventoryArt.Tile(drawList, tileCenter, TidyTile * scale, ui.Accent, FontAwesomeIcon.LayerGroup, scale, true);
         var textLeft = tileCenter.X + TidyTile * 0.5f * scale + StorageTileGap * scale;
@@ -377,8 +378,7 @@ internal sealed partial class InventoryApp
         var origin = ImGui.GetCursorScreenPos();
         var heroHeight = (HeroPad * 2f + HeroTile + HeroDividerGap * 2f + HeroValueTile) * scale +
                          Typography.LineHeight(TextStyles.Title1);
-        ui.Card(drawList, origin, new Vector2(origin.X + width, origin.Y + heroHeight), Metrics.Radius.Widget * scale,
-            true);
+        ui.Card(drawList, origin, new Vector2(origin.X + width, origin.Y + heroHeight), Metrics.Radius.Grouped * scale);
         ImGui.Dummy(new Vector2(width, heroHeight));
         ImGui.Dummy(new Vector2(0f, SectionTopGap * scale));
         var rowHeight = StorageRowHeight(scale);

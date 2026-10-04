@@ -75,7 +75,7 @@ internal sealed partial class FishingApp
         var height = SummaryHeight * scale;
         var origin = ImGui.GetCursorScreenPos();
         var card = new Rect(origin, origin + new Vector2(width, height));
-        ui.Card(drawList, card.Min, card.Max, FishingArt.CardRadius * scale, elevated: true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var pad = FishingArt.CardPadding * scale;
         var tile = StopTile * scale;
         FishingArt.TimeTile(drawList, new Vector2(card.Min.X + pad + tile * 0.5f, card.Center.Y), tile,
@@ -122,7 +122,7 @@ internal sealed partial class FishingApp
         var origin = ImGui.GetCursorScreenPos();
         var card = new Rect(origin, origin + new Vector2(width, height));
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, card.Min, card.Max, FishingArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var left = card.Min.X + pad;
         var right = card.Max.X - pad;
         var tile = StopTile * scale;

@@ -20,8 +20,6 @@ internal sealed partial class AppStoreApp
     private const float StatePillWidth = 68f;
     private const float StatePillHeight = 28f;
     private const float PillCaptionGap = 3f;
-    private const float PillRestAlpha = 0.12f;
-    private const float PillHoverAlpha = 0.20f;
     private const float PillInkLift = 0.30f;
     private const float DisabledAlpha = 0.45f;
     private const float RingRadius = 11f;
@@ -29,7 +27,7 @@ internal sealed partial class AppStoreApp
     private const float RingStop = 3f;
     private const float RingTrackAlpha = 0.18f;
     private const float HairlineAlpha = 0.06f;
-    private const float SectionTitleGap = 10f;
+    private const float SectionTitleGap = 4f;
     private const float SectionGap = 28f;
     private const float BottomBreathing = 28f;
     private const string PillIdScope = "appstore.pill";
@@ -64,13 +62,13 @@ internal sealed partial class AppStoreApp
         bool seeAll, out bool seeAllTapped)
     {
         seeAllTapped = false;
-        var titleHeight = Typography.LineHeight(TextStyles.Title3);
+        var bandHeight = CardSectionHeader.HeightUnits * UiScale.Current;
         var reserve = 0f;
         if (seeAll)
         {
             var label = Loc.T(L.Store.SeeAll);
             var size = Typography.Measure(label, TextStyles.Body);
-            var min = new Vector2(origin.X + width - size.X, origin.Y + (titleHeight - size.Y) * 0.5f);
+            var min = new Vector2(origin.X + width - size.X, origin.Y + (bandHeight - size.Y) * 0.5f);
             var max = min + size;
             var hovered = UiInteract.Hover(min, max);
             if (hovered)
@@ -84,10 +82,8 @@ internal sealed partial class AppStoreApp
             reserve = size.X + Metrics.Space.Md * UiScale.Current;
         }
 
-        Typography.Draw(drawList, origin,
-            Typography.FitText(title, MathF.Max(1f, width - reserve), TextStyles.Title3), ui.TitleInk,
-            TextStyles.Title3);
-        return origin.Y + titleHeight + SectionTitleGap * UiScale.Current;
+        var height = CardSectionHeader.Draw(drawList, origin, width, title, ui.TitleInk, reserve);
+        return origin.Y + height + SectionTitleGap * UiScale.Current;
     }
 
     private float DrawRowCard(ImDrawListPtr drawList, Vector2 origin, float width, IReadOnlyList<IPhoneApp> entries,
@@ -205,7 +201,7 @@ internal sealed partial class AppStoreApp
             TextStyles.Headline, ui.TitleInk, textHovering);
         Marquee.DrawLeft(new MarqueeId("appstore.row.subtitle.", app.Id), subtitle, textLeft,
             nameY + nameHeight + RowLineGap * scale, textWidth, TextStyles.Footnote, ui.MutedInk, textHovering);
-        DrawStatePill(drawList, pill, app, overPill, Palette.WithAlpha(ui.TitleInk, 1f),
+        DrawStatePill(drawList, pill, app, overPill, ui.Ink,
             Palette.Lighten(app.Accent, PillInkLift), scale);
         if (builtIn)
         {
@@ -218,7 +214,7 @@ internal sealed partial class AppStoreApp
         return UiInteract.Click(row.Min, row.Max, hovered);
     }
 
-    private void DrawStatePill(ImDrawListPtr drawList, Rect pill, IPhoneApp app, bool hovered, Vector4 fillInk,
+    private void DrawStatePill(ImDrawListPtr drawList, Rect pill, IPhoneApp app, bool hovered, in ControlInk ink,
         Vector4 labelInk, float scale)
     {
         if (installing.TryGetValue(app.Id, out var progress))
@@ -231,25 +227,23 @@ internal sealed partial class AppStoreApp
         var self = string.Equals(app.Id, StoreAppId, StringComparison.Ordinal);
         var enabled = !(installed && self);
         var active = hovered && enabled;
-        float press;
+        uint key;
         using (ImRaii.PushId(PillIdScope))
         {
-            press = PressFx.Scale(ImGui.GetID(app.Id), active && ImGui.IsMouseDown(ImGuiMouseButton.Left));
+            key = ImGui.GetID(app.Id);
         }
 
-        var half = pill.Size * 0.5f * press;
-        var body = new Rect(pill.Center - half, pill.Center + half);
-        var alpha = enabled ? 1f : DisabledAlpha;
-        Squircle.Fill(drawList, body.Min, body.Max, body.Height * 0.5f,
-            ImGui.GetColorU32(Palette.WithAlpha(fillInk, (active ? PillHoverAlpha : PillRestAlpha) * alpha)));
-        Typography.DrawCentered(drawList, body.Center, Loc.T(installed ? L.Store.Open : L.Store.Get),
-            Palette.WithAlpha(labelInk, alpha), TextStyles.FootnoteEmphasized);
+        var face = Button.Surface(drawList, pill, ink, ButtonStyle.Gray, ButtonRole.Normal, enabled, active, key);
+        var style = Button.LabelStyle(face.Face.Height);
+        var label = Typography.FitText(Loc.T(installed ? L.Store.Open : L.Store.Get),
+            MathF.Max(1f, face.Face.Width - face.Face.Height * 0.5f), style);
+        Typography.DrawCentered(drawList, face.Face.Center, label,
+            Palette.WithAlpha(labelInk, labelInk.W * (enabled ? 1f : DisabledAlpha)), style);
         if (!active)
         {
             return;
         }
 
-        ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         if (!UiInteract.Click(pill.Min, pill.Max, true))
         {
             return;

@@ -85,8 +85,8 @@ internal sealed partial class DailiesApp
         var min = center - half;
         var max = center + half;
         var drawList = ImGui.GetWindowDrawList();
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, min, max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, min, max, radius);
         Material.AccentGlass(drawList, min, max, radius, scale, ui.Accent, TileGlassOpacity * selected);
         if (hovered && selected < 1f)
         {

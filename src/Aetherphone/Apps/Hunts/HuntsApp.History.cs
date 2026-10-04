@@ -94,7 +94,7 @@ internal sealed partial class HuntsApp
         for (var dayIndex = 0; dayIndex < historyDays.Count; dayIndex++)
         {
             var day = historyDays[dayIndex];
-            ui.SectionLabel(historyDayTitles[dayIndex], TextStyles.FootnoteEmphasized, 6f);
+            CardSectionHeader.Flow(historyDayTitles[dayIndex], ui.TitleInk);
             var card = GroupCard.Begin(ui, day.Count, HistoryRowHeight);
             card.SeparatorInset = HistoryTileSize + HuntsArt.RowGap;
             for (var offset = 0; offset < day.Count; offset++)

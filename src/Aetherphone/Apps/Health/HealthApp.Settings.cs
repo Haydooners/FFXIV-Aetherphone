@@ -59,11 +59,11 @@ internal sealed partial class HealthApp
     private float DrawUnitsCard(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var cursorY = origin.Y;
-        cursorY += HealthArt.SectionHeader(drawList, new Vector2(origin.X, cursorY), width, Loc.T(L.Health.Units),
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(origin.X, cursorY), width, Loc.T(L.Health.Units),
             ui.TitleInk) + HealthArt.HeaderGap * scale;
         var pad = UnitsCardPad * scale;
         var max = new Vector2(origin.X + width, cursorY + pad * 2f + UnitsStripHeight * scale);
-        ui.Card(drawList, new Vector2(origin.X, cursorY), max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, new Vector2(origin.X, cursorY), max, Metrics.Radius.Grouped * scale);
         unitLabels[0] = Loc.T(L.Health.UnitEorzean);
         unitLabels[1] = Loc.T(L.Health.UnitMetric);
         unitLabels[2] = Loc.T(L.Health.UnitImperial);

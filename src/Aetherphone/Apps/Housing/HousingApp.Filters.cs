@@ -12,7 +12,9 @@ namespace Aetherphone.Apps.Housing;
 internal sealed partial class HousingApp
 {
     private const int FilterSectionCount = 6;
-    private const float FilterSegmentHeight = 34f;
+    private const float FilterSegmentHeight = 32f;
+
+    private readonly string[] filterSegmentLabels = new string[2];
 
     private static readonly int[] EntryCaps = [0, 3, 10, 25];
 
@@ -73,8 +75,11 @@ internal sealed partial class HousingApp
         DrawFilterSummary(drawList, left, right, y, frame.Interactive, scale);
         y += Typography.LineHeight(TextStyles.Subheadline) + Metrics.Space.Md * scale;
         var segment = new Rect(new Vector2(left, y), new Vector2(right, y + FilterSegmentHeight * scale));
-        var picked = HousingChrome.Segment(segment, Loc.T(L.Housing.ShowAvailableOnly), Loc.T(L.Housing.ShowAllPlots),
-            filters.ShowAllPlots ? 1 : 0, ui, true);
+        filterSegmentLabels[0] = Loc.T(L.Housing.ShowAvailableOnly);
+        filterSegmentLabels[1] = Loc.T(L.Housing.ShowAllPlots);
+        var picked = SegmentStrip.Draw("housing.filters.scope", segment, filterSegmentLabels,
+            filters.ShowAllPlots ? 1 : 0, Surfaces.Fill(ui.Ink, FillLevel.Tertiary), ui.Accent, ui.MutedInk,
+            AccentRing.Ink, FilterSegmentHeight);
         if (frame.Interactive && picked == 1 != filters.ShowAllPlots)
         {
             filters.ShowAllPlots = picked == 1;

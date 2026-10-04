@@ -104,8 +104,8 @@ internal sealed partial class InventoryApp
         var block = nameHeight + valueHeight + HeroLineGap * scale + placesHeight + hqHeight;
         var height = pad * 2f + MathF.Max(iconSize, block);
         var max = new Vector2(origin.X + width, origin.Y + height);
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, origin, max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, origin, max, radius);
         Material.TopGlow(drawList, origin, max, radius, ui.Accent, HeroGlowCoverage, HeroGlowStrength);
         var iconMin = new Vector2(origin.X + pad, origin.Y + (height - iconSize) * 0.5f);
         InventoryArt.ItemIcon(drawList, textures, item.Info.IconId, item.HighQualityQuantity == item.Quantity,
@@ -237,7 +237,7 @@ internal sealed partial class InventoryApp
         var vendorBlock = detailVendor.Length > 0 ? StorageLineGap * 2f * scale + subHeight : 0f;
         var height = pad * 2f + marketBlock + vendorBlock;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var left = origin.X + pad;
         var right = max.X - pad;
         var lineY = origin.Y + pad;
@@ -292,14 +292,14 @@ internal sealed partial class InventoryApp
         ImGui.Dummy(new Vector2(0f, CardGap * scale));
         var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
-        var height = Metrics.Size.Pill * scale;
+        var height = Button.LargeHeight * scale;
         var showMarket = item.Info.Marketable && frameNavigation.IsAvailable(MarketAppId);
         var gap = ActionGap * scale;
         var copyWidth = showMarket ? (width - gap) * 0.5f : width;
         if (showMarket)
         {
             var marketRect = new Rect(origin, new Vector2(origin.X + copyWidth, origin.Y + height));
-            if (ui.AccentPill(marketRect, Loc.T(L.Inventory.CheckMarket), true, TextStyles.Headline))
+            if (Button.Draw(marketRect, Loc.T(L.Inventory.CheckMarket), ui.Ink))
             {
                 UiFeedback.Play(UiSound.Tap);
                 marketLauncher.RequestItem(item.ItemId);
@@ -309,7 +309,8 @@ internal sealed partial class InventoryApp
 
         var copyLeft = showMarket ? origin.X + copyWidth + gap : origin.X;
         var copyRect = new Rect(new Vector2(copyLeft, origin.Y), new Vector2(copyLeft + copyWidth, origin.Y + height));
-        if (ui.ActionPill(copyRect, Loc.T(L.Inventory.CopyName), true, TextStyles.Headline))
+        var copyStyle = showMarket ? ButtonStyle.Tinted : ButtonStyle.Prominent;
+        if (Button.Draw(copyRect, Loc.T(L.Inventory.CopyName), ui.Ink, copyStyle))
         {
             ImGui.SetClipboardText(item.Info.Name);
             UiFeedback.Play(UiSound.Success);
@@ -370,8 +371,8 @@ internal sealed partial class InventoryApp
         var tileSize = SummaryTile * scale;
         var height = pad * 2f + MathF.Max(tileSize, block);
         var max = new Vector2(origin.X + width, origin.Y + height);
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, origin, max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, origin, max, radius);
         Material.TopGlow(drawList, origin, max, radius, InventoryArt.AccentFor(source.Kind), HeroGlowCoverage,
             HeroGlowStrength);
         var tileCenter = new Vector2(origin.X + pad + tileSize * 0.5f, origin.Y + height * 0.5f);

@@ -21,7 +21,7 @@ internal sealed partial class HousingApp
     private const float SectionLabelGap = 8f;
     private const float LeadTileHeight = 64f;
     private const float LeadTileGap = 8f;
-    private const float ActionHeight = 44f;
+    private const float ActionHeight = Button.LargeHeight;
     private const float SelectedRing = 2f;
     private const float WardLegendDot = 3.5f;
 
@@ -280,7 +280,7 @@ internal sealed partial class HousingApp
             var ward = index + 1;
             var selected = ward == current;
             var hovered = interactive && UiInteract.HoverWindowOnly(cellMin, cellMax);
-            var fill = selected ? ui.Accent : hovered ? Palette.Mix(ui.FieldSurface, ui.TitleInk, 0.06f) : ui.FieldSurface;
+            var fill = selected ? ui.Accent : Surfaces.Fill(ui.Ink, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
             Squircle.Fill(drawList, cellMin, cellMax, rounding, ImGui.GetColorU32(fill));
             var centerX = (cellMin.X + cellMax.X) * 0.5f;
             var hasOpenings = counts[index] > 0;
@@ -373,8 +373,8 @@ internal sealed partial class HousingApp
         y += HousingArt.SectionGap * scale;
         var existing = housing.Watch.FindReminder(reminderPlot);
         var primary = new Rect(new Vector2(left, y), new Vector2(right, y + ActionHeight * scale));
-        if (HousingChrome.PillButton(primary, Loc.T(L.Housing.SetReminder), true, ui, true,
-                plot is not null && frame.Interactive) && plot is not null)
+        if (Button.Draw(primary, Loc.T(L.Housing.SetReminder), ui.Ink, overlay: true,
+                enabled: plot is not null && frame.Interactive) && plot is not null)
         {
             SaveReminder(plot);
         }
@@ -425,7 +425,7 @@ internal sealed partial class HousingApp
                 Motion.PressScaleControl);
             var center = (min + max) * 0.5f;
             var half = (max - min) * 0.5f * press;
-            var fill = selected ? ui.Accent : hovered ? Palette.Mix(ui.FieldSurface, ui.TitleInk, 0.06f) : ui.FieldSurface;
+            var fill = selected ? ui.Accent : Surfaces.Fill(ui.Ink, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
             Squircle.Fill(drawList, center - half, center + half, rounding, ImGui.GetColorU32(fill));
             var minutes = choices[index];
             var hours = minutes >= 60 && minutes % 60 == 0;

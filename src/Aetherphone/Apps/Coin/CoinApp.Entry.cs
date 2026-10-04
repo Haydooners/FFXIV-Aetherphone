@@ -111,7 +111,7 @@ internal sealed partial class CoinApp
             var buttonHeight = CoinArt.LargeCapsuleHeight * scale;
             var rect = new Rect(new Vector2(origin.X, cursorY), new Vector2(origin.X + width, cursorY + buttonHeight));
             if (CoinArt.Capsule(drawList, ui, ImGui.GetID("coin.entry.open"), rect, Loc.T(L.Coin.OpenSource), CapsuleTone.Tinted,
-                    true, TextStyles.Headline))
+                    true))
             {
                 UiFeedback.Play(UiSound.Tap);
                 navigation.Open(appId);

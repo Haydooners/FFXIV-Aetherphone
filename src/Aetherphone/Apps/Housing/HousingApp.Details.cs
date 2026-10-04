@@ -18,9 +18,10 @@ internal sealed partial class HousingApp
 {
     private const float SnippetHeight = 168f;
     private const float SnippetZoom = 3.2f;
+    private const float SnippetChipAlpha = 0.86f;
     private const float FactRowHeight = 46f;
     private const float DetailPad = 16f;
-    private const float DetailButtonHeight = 44f;
+    private const float DetailButtonHeight = Button.LargeHeight;
     private const float DetailButtonGap = 10f;
 
     private readonly List<HousingFact> plotFacts = new();
@@ -138,7 +139,7 @@ internal sealed partial class HousingApp
         var height = SnippetHeight * scale;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        var radius = Metrics.Radius.Widget * scale;
+        var radius = Metrics.Radius.Grouped * scale;
         var aspect = height / MathF.Max(1f, width);
         var spanX = 1f / SnippetZoom;
         var spanY = spanX * aspect;
@@ -165,7 +166,8 @@ internal sealed partial class HousingApp
         var chipMin = new Vector2(min.X + Metrics.Space.Md * scale, max.Y - Metrics.Space.Md * scale - chipHeight);
         var chipMax = new Vector2(MathF.Min(max.X - Metrics.Space.Md * scale, chipMin.X + labelSize.X + chipPad * 2f),
             chipMin.Y + chipHeight);
-        Material.ThemedGlass(drawList, chipMin, chipMax, chipHeight * 0.5f, scale, ui.Palette.BackdropTop);
+        Squircle.Fill(drawList, chipMin, chipMax, chipHeight * 0.5f,
+            ImGui.GetColorU32(ui.BackdropColor with { W = SnippetChipAlpha }));
         Typography.Draw(drawList, new Vector2(chipMin.X + chipPad, chipMin.Y + (chipHeight - labelSize.Y) * 0.5f),
             Typography.FitText(placeText, chipMax.X - chipMin.X - chipPad * 2f, TextStyles.Footnote), ui.TitleInk,
             TextStyles.Footnote);
@@ -185,7 +187,7 @@ internal sealed partial class HousingApp
                      HousingArt.BarHeight * scale + Typography.LineHeight(TextStyles.Footnote);
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        HousingArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var left = min.X + pad;
         var right = max.X - pad;
         var hue = stillReported ? HousingMarkers.PhaseColor(phase, ui.Accent) : AppPalettes.HousingResults;
@@ -215,7 +217,7 @@ internal sealed partial class HousingApp
         var gap = DetailButtonGap * scale;
         var top = origin.Y + Metrics.Space.Md * scale;
         var travel = new Rect(new Vector2(origin.X, top), new Vector2(origin.X + width, top + height));
-        if (HousingChrome.PillButton(travel, Loc.T(L.Housing.TravelHere), true, ui))
+        if (Button.Draw(travel, Loc.T(L.Housing.TravelHere), ui.Ink))
         {
             TravelTo(key);
         }
@@ -225,7 +227,7 @@ internal sealed partial class HousingApp
         var watched = housing.Watch.IsWatched(key);
         var watchRect = new Rect(new Vector2(origin.X, top), new Vector2(origin.X + half, top + height));
         var remindRect = new Rect(new Vector2(watchRect.Max.X + gap, top), new Vector2(origin.X + width, top + height));
-        if (HousingChrome.PillButton(watchRect, Loc.T(watched ? L.Housing.Unwatch : L.Housing.Watch), false, ui))
+        if (Button.Draw(watchRect, Loc.T(watched ? L.Housing.Unwatch : L.Housing.Watch), ui.Ink, ButtonStyle.Gray))
         {
             if (plot is not null)
             {
@@ -243,7 +245,7 @@ internal sealed partial class HousingApp
 
         var reminder = housing.Watch.FindReminder(key);
         var remindLabel = reminder is { Notified: false } ? Loc.T(L.Housing.ReminderSet) : Loc.T(L.Housing.RemindMe);
-        if (HousingChrome.PillButton(remindRect, remindLabel, false, ui, false, plot?.PhaseEndsUtc is not null))
+        if (Button.Draw(remindRect, remindLabel, ui.Ink, ButtonStyle.Gray, enabled: plot?.PhaseEndsUtc is not null))
         {
             OpenReminderSheet(key);
         }
@@ -261,7 +263,7 @@ internal sealed partial class HousingApp
         var rowHeight = FactRowHeight * scale;
         var min = new Vector2(origin.X, cursorY);
         var max = new Vector2(origin.X + width, cursorY + rowHeight * facts.Count);
-        HousingArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var lineHeight = Typography.LineHeight(TextStyles.Body);
         for (var index = 0; index < facts.Count; index++)

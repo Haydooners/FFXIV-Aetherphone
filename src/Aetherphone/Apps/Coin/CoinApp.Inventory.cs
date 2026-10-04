@@ -275,7 +275,7 @@ internal sealed partial class CoinApp
         var half = new Vector2(size, size) * 0.5f * press;
         var drawMin = center - half;
         var drawMax = center + half;
-        var radius = Metrics.Radius.Lg * scale;
+        var radius = Metrics.Radius.Grouped * scale;
         CoinArt.Card(drawList, ui, drawMin, drawMax, scale);
         if (hovered)
         {
@@ -299,7 +299,7 @@ internal sealed partial class CoinApp
 
         if (selected)
         {
-            Squircle.Stroke(drawList, drawMin, drawMax, Metrics.Radius.Widget * scale, ImGui.GetColorU32(ui.Accent),
+            Squircle.Stroke(drawList, drawMin, drawMax, radius, ImGui.GetColorU32(ui.Accent),
                 SwatchSelectedStroke * scale);
             var check = SwatchCheck * scale;
             var checkCenter = new Vector2(drawMax.X - check * 0.5f - Metrics.Space.Xs * scale,
@@ -391,7 +391,7 @@ internal sealed partial class CoinApp
 
         var label = worn ? NumberText.Group(item.Slot) : Loc.T(L.Loadout.Wear);
         if (CoinArt.Capsule(drawList, ui, ImGui.GetID(item.Id), pill, label,
-                worn ? CapsuleTone.Filled : CapsuleTone.Tinted, !inventory.Equipping, TextStyles.SubheadlineEmphasized))
+                worn ? CapsuleTone.Filled : CapsuleTone.Tinted, !inventory.Equipping))
         {
             UiFeedback.Play(worn ? UiSound.ToggleOff : UiSound.ToggleOn);
             inventory.Equip(LoadoutStore.BadgeKind, item.Id, worn ? 0 : null);
@@ -425,11 +425,11 @@ internal sealed partial class CoinApp
         string actionId, float scale)
     {
         var bottom = CoinArt.DrawPanel(ui, origin, width, icon, ui.Accent, title, hint, scale);
-        var height = CoinArt.CapsuleHeight * scale * 1.15f;
+        var height = CoinArt.LargeCapsuleHeight * scale;
         var top = bottom + Metrics.Space.Md * scale;
         var rect = new Rect(new Vector2(origin.X, top), new Vector2(origin.X + width, top + height));
         if (CoinArt.Capsule(ImGui.GetWindowDrawList(), ui, ImGui.GetID(actionId), rect, Loc.T(L.Coin.BrowseShop),
-                CapsuleTone.Tinted, true, TextStyles.Headline))
+                CapsuleTone.Tinted, true))
         {
             UiFeedback.Play(UiSound.Tap);
             SelectTab(CoinTab.Shop);

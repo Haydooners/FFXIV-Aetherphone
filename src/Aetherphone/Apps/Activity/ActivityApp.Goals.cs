@@ -18,10 +18,8 @@ internal sealed partial class ActivityApp
     private const float GoalRingThickness = 9f;
     private const float GoalControlTop = 18f;
     private const float GoalControlHeight = 56f;
-    private const float GoalButtonRadius = 24f;
-    private const float GoalButtonGlyph = 1.15f;
-    private const float GoalButtonWashAlpha = 0.20f;
-    private const float GoalDisabledAlpha = 0.35f;
+    private const float GoalButtonRadius = RoundButton.RegularRadius;
+    private const float GoalButtonGlyph = 0.9f;
     private const float GoalHeaderGap = 14f;
 
     private readonly Spring[] goalFills = new Spring[ActivityGoals.RingCount];
@@ -63,7 +61,7 @@ internal sealed partial class ActivityApp
         var ringRadius = GoalRingRadius * scale;
         var height = pad * 2f + ringRadius * 2f + GoalControlTop * scale + GoalControlHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, origin, max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var tint = ActivityArt.Tint(ring);
         var today = tracker.Today;
         var fraction = ActivityGoals.Fraction(targets, today, ring);
@@ -128,25 +126,11 @@ internal sealed partial class ActivityApp
         string id)
     {
         var drawList = ImGui.GetWindowDrawList();
-        var hit = new Vector2(radius, radius);
-        var hovered = enabled && UiInteract.Hover(center - hit, center + hit);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale(id, pressed, PressFx.ControlPressedScale);
-        var drawn = hit * grow;
-        var alpha = enabled ? 1f : GoalDisabledAlpha;
-        Material.ThemedGlass(drawList, center - drawn, center + drawn, radius * grow, UiScale.Current,
-            ui.Palette.BackdropTop, alpha);
-        var wash = hovered ? GoalButtonWashAlpha * 1.5f : GoalButtonWashAlpha;
-        Squircle.Fill(drawList, center - drawn, center + drawn, radius * grow,
-            ImGui.GetColorU32(Palette.WithAlpha(tint, wash * alpha)));
-        ProgressRing.CenterIcon(drawList, center, icon, Palette.WithAlpha(tint, alpha),
-            radius * GoalButtonGlyph * grow * 0.6f);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return enabled && UiInteract.Click(center - hit, center + hit, hovered);
+        var clicked = RoundButton.Draw(drawList, ImGui.GetID(id), center, radius, ui.Ink.WithAccent(tint),
+            ButtonStyle.Tinted, enabled, false, out var face);
+        var grow = face.Face.Width / MathF.Max(radius * 2f, 0.0001f);
+        ProgressRing.CenterIcon(drawList, center, icon, face.LabelInk, radius * GoalButtonGlyph * grow);
+        return clicked;
     }
 
     private string GoalValue(int ring)

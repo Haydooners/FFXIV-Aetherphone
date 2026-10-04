@@ -212,7 +212,7 @@ internal sealed partial class HousingApp
         var labelMax = MathF.Max(1f, row.Width - controlWidth - 12f * scale);
         Typography.Draw(drawList, new Vector2(row.Min.X, row.Center.Y - Typography.LineHeight(TextStyles.Body) * 0.5f),
             Typography.FitText(label, labelMax, TextStyles.Body), frameTheme.TextStrong, TextStyles.Body);
-        var height = 28f * scale;
+        var height = RoundButton.SmallRadius * 2f * scale;
         var control = new Rect(new Vector2(row.Max.X - controlWidth, row.Center.Y - height * 0.5f),
             new Vector2(row.Max.X, row.Center.Y + height * 0.5f));
         return HousingChrome.NumberStepper(control, id, value, minimum, maximum, step,

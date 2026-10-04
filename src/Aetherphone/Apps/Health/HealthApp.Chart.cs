@@ -44,7 +44,7 @@ internal sealed partial class HealthApp
         var pad = HealthArt.CardPad * scale;
         var height = pad * 2f + (ChartHeaderHeight + ChartPlotHeight + ChartAxisHeight) * scale;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, origin, max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var left = origin.X + pad;
         var right = max.X - pad;
         var headerTop = origin.Y + pad;

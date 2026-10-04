@@ -18,22 +18,17 @@ internal static class FeedbackArt
     private const float StateGap = 14f;
     private const float StateHintGap = 6f;
     private const float StateActionGap = 20f;
-    private const float StateActionHeight = 40f;
+    private const float StateActionHeight = Button.LargeHeight;
     private const float StateActionPad = 44f;
     private const float StateMaxTextWidth = 290f;
     private const float CheckShortArm = 0.36f;
     private const float CheckLongArm = 0.64f;
-    private const float DisabledFillAlpha = 0.35f;
-    private const float DisabledInkAlpha = 0.7f;
-    private const float HoverDarken = 0.12f;
     private const float SpinnerRadius = 8f;
     private const float SpinnerGap = 8f;
     private const float SpinnerThickness = 2.2f;
     private const float SpinnerTrackAlpha = 0.3f;
     private const float SpinnerArc = 1.9f;
     private const double SpinnerSpeed = 6.5;
-
-    private static readonly Vector4 Black = new(0f, 0f, 0f, 1f);
 
     private static readonly Vector2 CheckStart = new(-0.40f, 0.02f);
     private static readonly Vector2 CheckCorner = new(-0.12f, 0.30f);
@@ -134,43 +129,34 @@ internal static class FeedbackArt
         var actionTop = cursorY + StateActionGap * scale;
         var rect = new Rect(new Vector2(centerX - width * 0.5f, actionTop),
             new Vector2(centerX + width * 0.5f, actionTop + StateActionHeight * scale));
-        return PressPill(ui, rect, actionLabel, true, actionId);
+        return Button.Draw(rect, actionLabel, ui.Ink, id: actionId);
     }
 
-    public static bool SendPill(AppSkin ui, Rect rect, string label, bool enabled, bool busy, string id)
+    public static bool SendButton(AppSkin ui, Rect rect, string label, bool enabled, bool busy, string id)
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale(id, down, PressFx.ControlPressedScale);
-        var half = rect.Size * 0.5f * new Vector2(grow, grow);
-        var min = rect.Center - half;
-        var max = rect.Center + half;
-        var active = enabled || busy;
-        var fill = !active ? Palette.WithAlpha(ui.Accent, DisabledFillAlpha)
-            : hovered ? Palette.Mix(ui.Accent, Black, HoverDarken) : ui.Accent;
-        Squircle.Fill(drawList, min, max, (max.Y - min.Y) * 0.5f, ImGui.GetColorU32(fill));
-        var ink = active ? AccentRing.Ink : AccentRing.Ink with { W = DisabledInkAlpha };
-        var spinnerRadius = busy ? SpinnerRadius * scale : 0f;
-        var spinnerSlot = busy ? spinnerRadius * 2f + SpinnerGap * scale : 0f;
-        var maxLabel = MathF.Max(1f, max.X - min.X - (max.Y - min.Y) - spinnerSlot);
-        var fitted = Typography.FitText(label, maxLabel, TextStyles.Headline);
-        var size = Typography.Measure(fitted, TextStyles.Headline);
-        var startX = (min.X + max.X - size.X - spinnerSlot) * 0.5f;
-        var centerY = (min.Y + max.Y) * 0.5f;
-        if (busy)
+        var face = Button.Surface(drawList, rect, ui.Ink, ButtonStyle.Prominent, ButtonRole.Normal, enabled || busy,
+            hovered, ImGui.GetID(id));
+        if (!busy)
         {
-            DrawSpinner(drawList, new Vector2(startX + spinnerRadius, centerY), spinnerRadius, ink, scale);
+            Button.DrawLabel(drawList, face, label);
+            return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
         }
 
-        Typography.Draw(drawList, new Vector2(startX + spinnerSlot, centerY - size.Y * 0.5f), fitted, ink,
-            TextStyles.Headline);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
+        var bounds = face.Face;
+        var style = Button.LabelStyle(bounds.Height);
+        var spinnerRadius = SpinnerRadius * scale;
+        var spinnerSlot = spinnerRadius * 2f + SpinnerGap * scale;
+        var maxLabel = MathF.Max(1f, bounds.Width - bounds.Height - spinnerSlot);
+        var fitted = Typography.FitText(label, maxLabel, style);
+        var size = Typography.Measure(fitted, style);
+        var startX = bounds.Center.X - (size.X + spinnerSlot) * 0.5f;
+        DrawSpinner(drawList, new Vector2(startX + spinnerRadius, bounds.Center.Y), spinnerRadius, face.LabelInk,
+            scale);
+        Typography.Draw(drawList, new Vector2(startX + spinnerSlot, bounds.Center.Y - size.Y * 0.5f), fitted,
+            face.LabelInk, style);
         return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
@@ -181,16 +167,5 @@ internal static class FeedbackArt
         var start = (float)(ImGui.GetTime() * SpinnerSpeed % (MathF.PI * 2f));
         drawList.PathArcTo(center, radius, start, start + SpinnerArc, 16);
         drawList.PathStroke(ImGui.GetColorU32(ink), ImDrawFlags.None, thickness);
-    }
-
-    public static bool PressPill(AppSkin ui, Rect rect, string label, bool enabled, string id)
-    {
-        var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale(id, down, PressFx.ControlPressedScale);
-        var half = rect.Size * 0.5f * grow;
-        ui.PaintAccentPill(new Rect(rect.Center - half, rect.Center + half), label, enabled, hovered,
-            TextStyles.Headline);
-        return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 }

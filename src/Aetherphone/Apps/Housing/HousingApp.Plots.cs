@@ -233,7 +233,7 @@ internal sealed partial class HousingApp
         var rowHeight = HousingArt.RowHeight * scale;
         var min = new Vector2(origin.X, top);
         var max = new Vector2(origin.X + width, top + rowHeight * count);
-        HousingArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var marker = HousingArt.TileSize * scale;
         for (var index = 0; index < count; index++)

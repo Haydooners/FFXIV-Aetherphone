@@ -16,7 +16,7 @@ namespace Aetherphone.Apps.Collections;
 internal sealed partial class CollectionsApp
 {
     private const float ControlGap = 12f;
-    private const float SegmentHeight = 34f;
+    private const float SegmentHeight = 32f;
     private const float ProgressCardHeight = 84f;
     private const float ProgressPad = 16f;
     private const float ProgressBarHeight = 8f;
@@ -132,7 +132,7 @@ internal sealed partial class CollectionsApp
         float scale)
     {
         var max = new Vector2(origin.X + width, origin.Y + ProgressCardHeight * scale);
-        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var fraction = total > 0 ? Math.Clamp(count / (float)total, 0f, 1f) : 0f;
         RefreshProgressLabels(count, total, fraction);
         var pad = ProgressPad * scale;
@@ -332,7 +332,7 @@ internal sealed partial class CollectionsApp
     {
         var rowHeight = RowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + filtered.Count * rowHeight);
-        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var clipTop = ImGui.GetWindowPos().Y;
         var clipBottom = clipTop + ImGui.GetWindowHeight();
         var first = Math.Max(0, (int)MathF.Floor((clipTop - origin.Y) / rowHeight));

@@ -24,7 +24,7 @@ internal sealed partial class HealthApp
     private const float KindSelectedAlpha = 0.20f;
     private const float KindHoverAlpha = 0.08f;
     private const float ServingRowHeight = 56f;
-    private const float AddPillHeight = 48f;
+    private const float AddPillHeight = Button.LargeHeight;
     private const float LogRowHeight = 48f;
     private const float LogGlyph = 26f;
     private const float LogTimeWidth = 72f;
@@ -94,7 +94,7 @@ internal sealed partial class HealthApp
     private float DrawWaterOverview(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var max = new Vector2(origin.X + width, origin.Y + WaterHeroHeight * scale);
-        ui.Card(drawList, origin, max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var tint = HealthArt.Tint(HealthMetric.Water);
         var pad = HealthArt.CardPad * scale;
         var count = (int)digest.Live(HealthMetric.Water);
@@ -158,7 +158,7 @@ internal sealed partial class HealthApp
         var height = pad * 2f + (KindTileHeight + ServingRowHeight + AddPillHeight) * scale + gap * 2f;
         var origin = new Vector2(left, cursorY);
         var max = new Vector2(left + width, cursorY + height);
-        ui.Card(drawList, origin, max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var tint = HealthArt.Tint(HealthMetric.Water);
         var inner = width - pad * 2f;
         var tileWidth = (inner - gap * (DrinkKeys.All.Length - 1)) / DrinkKeys.All.Length;
@@ -191,7 +191,7 @@ internal sealed partial class HealthApp
 
         rowTop += ServingRowHeight * scale + gap;
         var pill = new Rect(new Vector2(left + pad, rowTop), new Vector2(max.X - pad, rowTop + AddPillHeight * scale));
-        if (ui.AccentPill(pill, AddPillLabel(), true, TextStyles.Headline))
+        if (Button.Draw(pill, AddPillLabel(), ui.Ink))
         {
             LogServing();
         }
@@ -269,7 +269,7 @@ internal sealed partial class HealthApp
         var count = day.Drinks.Count;
         var rowHeight = LogRowHeight * scale;
         var max = new Vector2(left + width, cursorY + rowHeight * count);
-        ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Grouped * scale);
         var pad = HealthArt.CardPad * scale;
         HydrationEntry? removed = null;
         for (var row = 0; row < count; row++)
@@ -285,9 +285,8 @@ internal sealed partial class HealthApp
 
             var centerY = rowTop + rowHeight * 0.5f;
             var removeCenter = new Vector2(max.X - pad - RemoveRadius * scale, centerY);
-            if (HoverButton.Circle(drawList, logRemoveIds[entryIndex], removeCenter, RemoveRadius * scale,
-                    FontAwesomeIcon.Times, Palette.WithAlpha(ui.TitleInk, 0f), ui.MutedInk, HealthArt.FrameDelta(), 1f,
-                    true, Loc.T(L.Health.RemoveDrink), HoverLabelSide.Above))
+            if (GlyphButton(drawList, logRemoveIds[entryIndex], removeCenter, RemoveRadius * scale,
+                    FontAwesomeIcon.Times, ui.Accent, ButtonStyle.Plain, true, Loc.T(L.Health.RemoveDrink), ui.MutedInk))
             {
                 removed = entry;
             }

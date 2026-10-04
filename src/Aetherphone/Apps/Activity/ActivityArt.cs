@@ -162,13 +162,6 @@ internal static class ActivityArt
         drawList.AddLine(new Vector2(center.X - size * 0.5f, center.Y + size), tip, color, thickness);
     }
 
-    public static float SectionHeader(ImDrawListPtr drawList, Vector2 origin, float width, string title, Vector4 ink)
-    {
-        var fitted = Typography.FitText(title, width, TextStyles.Title3);
-        Typography.Draw(drawList, origin, fitted, ink, TextStyles.Title3);
-        return Typography.LineHeight(TextStyles.Title3);
-    }
-
     public static void GlyphTile(ImDrawListPtr drawList, Vector2 center, float size, Vector4 tint,
         FontAwesomeIcon icon)
     {
@@ -192,7 +185,7 @@ internal static class ActivityArt
     {
         var height = StateHeight(title, body, width, scale);
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, origin, max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = CardPad * scale;
         var tileSize = StateTileSize * scale;
         GlyphTile(drawList, new Vector2(origin.X + pad + tileSize * 0.5f, origin.Y + pad + tileSize * 0.5f), tileSize,
