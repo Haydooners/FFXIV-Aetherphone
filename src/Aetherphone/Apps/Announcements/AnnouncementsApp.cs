@@ -258,7 +258,7 @@ internal sealed partial class AnnouncementsApp : IPhoneApp
         var factor = (1f + Motion.HoverLiftCard * eased) * press;
         var half = rest.Size * 0.5f * factor;
         var card = new Rect(rest.Center - half, rest.Center + half);
-        ui.Card(drawList, card.Min, card.Max, rounding * factor, true);
+        ui.Card(drawList, card.Min, card.Max, rounding * factor);
         return card;
     }
 
