@@ -270,7 +270,7 @@ internal sealed partial class ClockApp
             var liftRadius = WorldLiftRadius * scale;
             var cardFill = ui.Palette.CardFill;
             var opaque = Vector4.Lerp(ui.Palette.BackdropTop, cardFill with { W = 1f }, cardFill.W * 2f) with { W = 1f };
-            ui.Card(drawList, lifted.Min, lifted.Max, liftRadius, elevated: true);
+            ui.Card(drawList, lifted.Min, lifted.Max, liftRadius);
             Squircle.Fill(drawList, lifted.Min, lifted.Max, liftRadius, ImGui.GetColorU32(opaque));
             Squircle.Stroke(drawList, lifted.Min, lifted.Max, liftRadius, ImGui.GetColorU32(ui.Palette.CardStroke),
                 scale);

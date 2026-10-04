@@ -84,7 +84,7 @@ internal sealed class AppSkin
             ImGui.GetColorU32(Vector4.Lerp(Palette.BloomTop, Palette.BloomBottom, bottomFraction)));
     }
 
-    public void Card(ImDrawListPtr drawList, Vector2 min, Vector2 max, float rounding, bool elevated = false)
+    public void Card(ImDrawListPtr drawList, Vector2 min, Vector2 max, float rounding)
     {
         Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(Palette.CardFill));
         Squircle.Stroke(drawList, min, max, rounding, ImGui.GetColorU32(Palette.CardStroke), 1f);
