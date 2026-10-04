@@ -19,6 +19,7 @@ internal static class SettingsRow
     private const float RowWashRadius = 8f;
     private const float HighlightScrollRatio = 0.5f;
     private const float MinimumWashAlpha = 0.002f;
+    private const float ValueShareCap = 0.4f;
 
     public static float ChevronReserve(float scale) =>
         (NavBarMetrics.ChevronSize * ChevronWidthFactor + ChevronGap) * scale;
@@ -214,7 +215,8 @@ internal static class SettingsRow
         else
         {
             var valueFullWidth = Typography.Measure(value, TextStyles.Body).X;
-            labelCap = MathF.Max(1f, available - midGap - valueFullWidth);
+            var valueReserve = MathF.Min(valueFullWidth, available * ValueShareCap);
+            labelCap = MathF.Max(1f, available - midGap - valueReserve);
         }
 
         var labelSize = Typography.Measure(label, TextStyles.BodyEmphasized);
