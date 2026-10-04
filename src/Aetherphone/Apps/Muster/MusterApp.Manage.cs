@@ -177,8 +177,11 @@ internal sealed partial class MusterApp
             var row = new Rect(new Vector2(left + pad, rowTop), new Vector2(cardMax.X - pad, rowTop + rowHeight));
             if (ImGui.IsRectVisible(row.Min, row.Max))
             {
-                DrawAttendeeRow(drawList, attendees[index], attendeeIdentities[index], attendeeNameKeys[index], row,
-                    scale);
+                using (ImRaii.PushId(index))
+                {
+                    DrawAttendeeRow(drawList, attendees[index], attendeeIdentities[index], attendeeNameKeys[index],
+                        row, scale);
+                }
             }
         }
 
