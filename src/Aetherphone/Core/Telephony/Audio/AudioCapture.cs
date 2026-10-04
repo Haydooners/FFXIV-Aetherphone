@@ -8,9 +8,11 @@ internal sealed class AudioCapture : IDisposable
 {
     private const int Bitrate = 28000;
     public const float GateOpenRms = 0.018f;
+    public const float MaximumGain = 2f;
     private const float GateCloseRms = 0.010f;
     private const int HangoverFrames = 12;
     private readonly object gate = new();
+    private readonly object deviceGate = new();
     private readonly IOpusEncoder encoder;
     private readonly byte[] accumulator = new byte[OpusAudio.FrameBytes * 4];
     private readonly byte[] packet = new byte[OpusAudio.MaxPacketBytes];
@@ -20,6 +22,8 @@ internal sealed class AudioCapture : IDisposable
     private bool gateOpen;
     private WaveInEvent? waveIn;
     private volatile bool muted;
+    private volatile float gain = 1f;
+    private bool closed;
     private volatile float level;
 
     public AudioCapture()
@@ -37,7 +41,26 @@ internal sealed class AudioCapture : IDisposable
 
     public float Level => level;
 
+    public float Gain
+    {
+        get => gain;
+        set => gain = Math.Clamp(value, 0f, MaximumGain);
+    }
+
     public void Start(int deviceIndex)
+    {
+        lock (deviceGate)
+        {
+            if (closed)
+            {
+                return;
+            }
+
+            Open(deviceIndex);
+        }
+    }
+
+    private void Open(int deviceIndex)
     {
         Stop();
         try
@@ -141,6 +164,7 @@ internal sealed class AudioCapture : IDisposable
     private void EncodeFrame()
     {
         var pcm = MemoryMarshal.Cast<byte, short>(accumulator.AsSpan(0, OpusAudio.FrameBytes));
+        ApplyGain(pcm, gain);
         var rms = Rms(pcm);
         level = rms;
         UpdateGate(rms);
@@ -179,6 +203,19 @@ internal sealed class AudioCapture : IDisposable
         }
     }
 
+    private static void ApplyGain(Span<short> pcm, float factor)
+    {
+        if (factor == 1f)
+        {
+            return;
+        }
+
+        for (var index = 0; index < pcm.Length; index++)
+        {
+            pcm[index] = (short)Math.Clamp(pcm[index] * factor, short.MinValue, short.MaxValue);
+        }
+    }
+
     private static float Rms(ReadOnlySpan<short> pcm)
     {
         if (pcm.Length == 0)
@@ -198,6 +235,11 @@ internal sealed class AudioCapture : IDisposable
 
     public void Dispose()
     {
+        lock (deviceGate)
+        {
+            closed = true;
+        }
+
         Stop();
         (encoder as IDisposable)?.Dispose();
     }

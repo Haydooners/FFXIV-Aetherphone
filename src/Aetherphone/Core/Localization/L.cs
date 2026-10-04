@@ -1875,7 +1875,12 @@ internal static class L
         public static readonly LocString Speaker = new("phone.speaker", "Speaker");
         public static readonly LocString SystemDefault = new("phone.systemDefault", "System default");
         public static readonly LocString DeviceFallback = new("phone.deviceFallback", "Microphone {0}");
-        public static readonly LocString AudioHint = new("phone.audioHint", "Audio plays on your system default output device. Use headphones to avoid echo. A device change applies to your next call.");
+        public static readonly LocString Audio = new("phone.audio", "Audio");
+        public static readonly LocString AudioTitle = new("phone.audioTitle", "Call Audio");
+        public static readonly LocString CallVolume = new("phone.callVolume", "Call volume");
+        public static readonly LocString MicVolume = new("phone.micVolume", "Microphone volume");
+        public static readonly LocString MuteForMe = new("phone.muteForMe", "Mute for me");
+        public static readonly LocString AudioDevicesHint = new("phone.audioDevicesHint", "Use headphones to avoid echo. Device and volume changes apply right away, even during a call.");
         public static readonly LocString IncomingCallBody = new("phone.incomingCallBody", "Incoming call");
         public static readonly LocString Decline = new("phone.decline", "Decline");
         public static readonly LocString Accept = new("phone.accept", "Accept");
@@ -2540,6 +2545,14 @@ internal static class L
                 "The streak bonus now starts on your first day and reaches its top of 35 coins on day 7, when the week of dots fills"),
             new("changelog.r1042.149",
                 "Daily goals can now all be finished, and the daily ring fills as you complete them instead of measuring against the daily cap"),
+        };
+
+        public static readonly LocString[] Release1042Message =
+        {
+            new("changelog.r1042.157",
+                "Added an Audio button to calls: turn the call up to 200%, give each person their own volume or mute them just for you, adjust your microphone level, and switch speaker or microphone without hanging up"),
+            new("changelog.r1042.158",
+                "Fixed the Speaker picker for calls, which always played through the system default device"),
         };
 
         public static readonly LocString[] Release1042Health =

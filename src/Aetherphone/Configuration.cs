@@ -332,6 +332,10 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool CallsEnabled { get; set; }
     public string CallInputDevice { get; set; } = string.Empty;
     public string CallOutputDevice { get; set; } = string.Empty;
+    public float CallOutputVolume { get; set; } = 1f;
+    public float CallInputGain { get; set; } = 1f;
+    public Dictionary<string, float> CallPeerVolumes { get; set; } = new();
+    public HashSet<string> CallPeerMuted { get; set; } = new();
     public List<CallLogEntry> CallLog { get; set; } = new();
     public long CallLogSeenUnix { get; set; }
     public MarketScopeKind MarketScope { get; set; } = MarketScopeKind.DataCenter;

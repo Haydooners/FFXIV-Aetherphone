@@ -42,6 +42,7 @@ internal static class ChangelogData
             new(L.Apps.Games, L.Changelog.Release1042Games),
             new(L.Apps.AppStore, L.Changelog.Release1042AppStore),
             new(L.Apps.Casino, L.Changelog.Release1042Casino),
+            new(L.Apps.Message, L.Changelog.Release1042Message),
             new(L.Apps.Skywatcher, L.Changelog.Release1042Skywatcher),
             new(L.Apps.Aethergram, L.Changelog.Release1042Aethergram),
             new(L.Apps.AetherStream, L.Changelog.Release1042MogCast),
