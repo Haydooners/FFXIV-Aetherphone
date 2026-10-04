@@ -40,10 +40,9 @@ internal static class VenueCard
     private const float RailRounding = 18f;
     private const float RailPad = 11f;
     private const float RailScrimShare = 0.66f;
-    private const float ShadowOpacity = 0.35f;
     private const float RimAlpha = 0.30f;
     private const float RimWeight = 1.5f;
-    private const float ActionButtonHeight = 36f;
+    private const float ActionButtonHeight = Button.RegularHeight;
     private const float FeaturedRounding = 22f;
     private const float FeaturedPad = 14f;
     private const float FeaturedScrimShare = 0.72f;
@@ -113,9 +112,9 @@ internal static class VenueCard
     public static VenueCardAction DrawFeed(ImDrawListPtr drawList, AppSkin ui, Rect card, VenueEvent venue,
         in VenueCardText text, bool favorite, in VenueArt art, bool actions, float scale)
     {
-        var radius = VenuesArt.CardRadius(scale);
+        var radius = Metrics.Radius.Grouped * scale;
         var hovered = UiInteract.Hover(card.Min, card.Max);
-        VenuesArt.Card(drawList, ui, card.Min, card.Max, scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var hero = new Rect(card.Min, new Vector2(card.Max.X, card.Min.Y + HeroHeight(card.Width, scale)));
         drawList.PushClipRect(hero.Min, hero.Max, true);
         VenueImage.Cover(drawList, new Rect(hero.Min, hero.Max + new Vector2(0f, radius)), radius, venue,
@@ -179,8 +178,8 @@ internal static class VenueCard
         if (venue.CanTeleport)
         {
             var rect = new Rect(new Vector2(left, row.Min.Y), new Vector2(left + split, row.Max.Y));
-            if (VenuesArt.PillButton(drawList, ui, rect, key + 1u, Loc.T(L.Travel.GoThere),
-                    PhoneIcons.NavigationFilled, true))
+            if (VenuesArt.Action(drawList, ui, rect, key + 1u, Loc.T(L.Travel.GoThere),
+                    PhoneIcons.NavigationFilled, false, ButtonStyle.Prominent))
             {
                 action = VenueCardAction.Teleport;
             }
@@ -191,8 +190,8 @@ internal static class VenueCard
         if (hasTwitch)
         {
             var rect = new Rect(new Vector2(left, row.Min.Y), new Vector2(left + split, row.Max.Y));
-            if (VenuesArt.PillButton(drawList, ui, rect, key + 2u, Loc.T(L.Venues.WatchOnTwitch),
-                    PhoneIcons.ExternalLink, false))
+            if (VenuesArt.Action(drawList, ui, rect, key + 2u, Loc.T(L.Venues.WatchOnTwitch),
+                    PhoneIcons.ExternalLink, false, ButtonStyle.Gray))
             {
                 action = VenueCardAction.Twitch;
             }
@@ -381,7 +380,6 @@ internal static class VenueCard
         var grow = HoverLift * scale * eased -
                    rest.Width * 0.5f * (1f - PressFx.Scale(id, pressed, PressFx.CardPressedScale));
         var card = new Rect(rest.Min - new Vector2(grow, grow), rest.Max + new Vector2(grow, grow));
-        Elevation.Card(drawList, card.Min, card.Max, rounding, scale, ShadowOpacity * (1f + eased));
         return card;
     }
 
