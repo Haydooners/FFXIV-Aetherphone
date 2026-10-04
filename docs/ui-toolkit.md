@@ -38,7 +38,6 @@ A component used by exactly one app does not belong here. It lives in that app, 
 | src/Aetherphone/Windows/Components/Social/SocialInk.cs | Social ink token set derived from any `AppPalette` (accent link/deep/wash, faint ink, glass, chips, button fills) |
 | src/Aetherphone/Windows/Components/Social/SocialChrome.cs | Glass back chip screen header, top bar icon buttons with knockout count badges, inline stats, section labels, bar backdrop |
 | src/Aetherphone/Windows/Components/Social/UnderlineTabs.cs | Sliding underline tabs: a text pair or an icon row |
-| src/Aetherphone/Windows/Components/Social/SocialPill.cs | Accent gradient, outline, flat and icon pills |
 | src/Aetherphone/Windows/Components/Social/SocialUserRow.cs | Avatar + badged name + subtitle row with a trailing slot for a pill |
 | src/Aetherphone/Windows/Components/Social/SocialProfilePages.cs | Social confirm/report plumbing (block, delete post/comment) plus handle validation and list titles |
 | src/Aetherphone/Windows/Components/Social/FeedFilterSheet.cs | Bottom sheet of iOS toggles plus a region chip row and a Done pill for feed filters |
@@ -250,6 +249,10 @@ A tap only registers if the pointer traveled less than the drag slop, so panning
 
 | Widget | One-liner |
 | --- | --- |
+| `Button.Draw(rect, label, ink, style, role)` | The one labelled button: Prominent, Tinted, Gray or Plain capsule with shared hover and press motion; `ui.Ink` or `ControlInk.From(theme)` supplies the colours (src/Aetherphone/Windows/Components/Fields/Button.cs) |
+| `RoundButton.Icon(drawList, center, radius, glyph, ink, style)` | Content-layer circular icon button in the same styles (src/Aetherphone/Windows/Components/Fields/RoundButton.cs) |
+| `SearchBar.Surface` / `SearchBar.Draw` | Filled 36 tall capsule behind a search or text field (src/Aetherphone/Windows/Components/Fields/SearchBar.cs) |
+| `Surfaces.Fill(ink, FillLevel)` | Content fill ladder derived from the title ink, right in dark and light (src/Aetherphone/Windows/Components/Primitives/Surfaces.cs) |
 | `EmptyState.Draw(body, ui, glyph, title, hint)` | Centered icon, title, and wrapped hint for empty lists; takes a `PhoneIcons` glyph or a `FontAwesomeIcon` (src/Aetherphone/Windows/Components/Fields/EmptyState.cs) |
 | `AvatarView.Draw` / `AvatarView.DrawRemote` | Circular avatar with monogram fallback, loading pulse, and fade-in (src/Aetherphone/Windows/Components/AvatarView.cs) |
 | `SoftWrapField.Multiline(id, ref value, maxLength, size, wrapWidth)` | Multiline composer input; wraps visually without inserting real newlines, supports `MentionAutocomplete` (src/Aetherphone/Windows/Components/SoftWrapField.cs) |
@@ -301,6 +304,8 @@ To move, scale or fade a whole screen, do not paint it at a shifted rect or a sm
 | Inset a card inside an edge-to-edge surface | shift both edges by `FeedCell.PadX * scale` |
 | Size rows inside a scroll region | `ScrollLayout.StableContentWidth()` |
 | Render a long feed | `FeedVirtualizer` + `InfiniteScroll.ReachedBottom` |
+| Draw a labelled button | `Button.Draw` (or the AppSkin pill helpers that forward to it) |
+| Put a round icon button on a card | `RoundButton.Icon` (glass `GlassCircle` only in the navigation layer) |
 | Make a rect clickable | `UiInteract.HoverClick` (or `Hover` + `Click`) |
 | Flip a boolean setting | `Toggle.Draw` |
 | Offer filters in a row | `ChipRail` |
@@ -311,7 +316,7 @@ To move, scale or fade a whole screen, do not paint it at a shifted rect or a sm
 | Head a social sub-screen | `SocialChrome.DrawScreenHeader` (glass back chip, left or centred title) |
 | Put icon buttons in a social top bar | `SocialChrome.DrawHeaderIcon` + `HeaderSlot` (count badge built in) |
 | Switch between two feeds or an icon tab row | `UnderlineTabs.Draw` / `UnderlineTabs.DrawIcons` |
-| Draw a Follow, Edit profile or Send button | `SocialPill.Accent` / `Outline` / `Flat` |
+| Draw a Follow, Edit profile or Send button | `Button.Draw` (Prominent, Tinted or Gray) |
 | List people with a follow pill | `SocialUserRow.Draw` and fill the returned `Trailing` rect |
 | Anchor a popover to a row and dismiss it on tap-outside | `ActionReveal<TPanel>` + `PopoverSurface.DrawGlass` |
 | Format a like or follower count | `CountText.Compact` |

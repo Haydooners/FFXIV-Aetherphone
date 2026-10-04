@@ -96,16 +96,12 @@ internal sealed partial class TimersApp : IPhoneApp
         out Rect headerRect, out Rect bellRect)
     {
         var origin = ImGui.GetCursorScreenPos();
-        var height = TimersArt.SectionHeaderHeight * scale;
+        var drawList = ImGui.GetWindowDrawList();
+        var bellSpan = bellId is null ? 0f : TimersArt.BellHitRadius * 2f * scale;
+        var height = CardSectionHeader.Draw(drawList, origin, width, title, ui.TitleInk, bellSpan);
         headerRect = new Rect(origin, origin + new Vector2(width, height));
         bellRect = default;
-        var drawList = ImGui.GetWindowDrawList();
         var centerY = origin.Y + height * 0.5f;
-        var bellSpan = bellId is null ? 0f : TimersArt.BellHitRadius * 2f * scale;
-        var fitted = Typography.FitText(title, MathF.Max(1f, width - bellSpan), TextStyles.Title3);
-        var titleHeight = Typography.Measure(fitted, TextStyles.Title3).Y;
-        Typography.Draw(drawList, new Vector2(origin.X, centerY - titleHeight * 0.5f), fitted, ui.TitleInk,
-            TextStyles.Title3);
         var clicked = false;
         if (bellId is not null)
         {

@@ -135,8 +135,8 @@ internal sealed partial class ActivityApp
         var half = rect.Size * 0.5f * press;
         var min = rect.Center - half;
         var max = rect.Center + half;
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, min, max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, min, max, radius);
         if (hovered)
         {
             Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(ui.HoverTint));
@@ -203,7 +203,7 @@ internal sealed partial class ActivityApp
     private float SectionTop(ImDrawListPtr drawList, float left, float top, float width, string title, float scale)
     {
         var cursorY = top + ActivityArt.SectionGap * scale;
-        cursorY += ActivityArt.SectionHeader(drawList, new Vector2(left, cursorY), width, title, ui.TitleInk);
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width, title, ui.TitleInk);
         return cursorY + ActivityArt.HeaderGap * scale;
     }
 
@@ -228,8 +228,8 @@ internal sealed partial class ActivityApp
     private void DrawStatTile(ImDrawListPtr drawList, Rect rect, Vector4 tint, FontAwesomeIcon icon, string label,
         string value, bool lit, float scale)
     {
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, rect.Min, rect.Max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, rect.Min, rect.Max, radius);
         if (lit)
         {
             Material.TopGlow(drawList, rect.Min, rect.Max, radius, tint, TileGlowCoverage, TileGlowStrength);
@@ -278,7 +278,7 @@ internal sealed partial class ActivityApp
 
     private void DrawTrendTile(ImDrawListPtr drawList, Rect rect, int metric, float scale)
     {
-        ui.Card(drawList, rect.Min, rect.Max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, rect.Min, rect.Max, Metrics.Radius.Grouped * scale);
         var pad = ActivityArt.CardPad * scale;
         var tint = metric < ActivityGoals.RingCount ? ActivityArt.Tint(metric) : Accent.Blue;
         var rising = digest.TrendRising[metric];
@@ -305,16 +305,16 @@ internal sealed partial class ActivityApp
         var headerTop = top + ActivityArt.SectionGap * scale;
         var since = Typography.FitText(digest.SessionSince, width * 0.45f, TextStyles.Footnote);
         var sinceSize = Typography.Measure(since, TextStyles.Footnote);
-        var titleHeight = Typography.LineHeight(TextStyles.Title3);
-        Typography.Draw(drawList, new Vector2(left + width - sinceSize.X, headerTop + titleHeight - sinceSize.Y),
-            since, ui.MutedInk, TextStyles.Footnote);
-        ActivityArt.SectionHeader(drawList, new Vector2(left, headerTop), width - sinceSize.X - HintGap * scale,
-            Loc.T(L.Character.ThisSession), ui.TitleInk);
-        var cardTop = headerTop + titleHeight + ActivityArt.HeaderGap * scale;
+        var bandHeight = CardSectionHeader.Draw(drawList, new Vector2(left, headerTop), width,
+            Loc.T(L.Character.ThisSession), ui.TitleInk, sinceSize.X + HintGap * scale);
+        Typography.Draw(drawList,
+            new Vector2(left + width - sinceSize.X, headerTop + (bandHeight - sinceSize.Y) * 0.5f), since,
+            ui.MutedInk, TextStyles.Footnote);
+        var cardTop = headerTop + bandHeight + ActivityArt.HeaderGap * scale;
         var pad = ActivityArt.CardPad * scale;
         var cell = SessionCellHeight * scale;
         var max = new Vector2(left + width, cardTop + cell * 2f + pad);
-        ui.Card(drawList, new Vector2(left, cardTop), max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, new Vector2(left, cardTop), max, Metrics.Radius.Grouped * scale);
         var cellWidth = (width - pad * 2f) * 0.5f;
         var originY = cardTop + pad * 0.5f;
         DrawSessionCell(drawList, new Vector2(left + pad, originY), cellWidth, cell, Accent.Blue,
@@ -361,8 +361,8 @@ internal sealed partial class ActivityApp
         var half = rect.Size * 0.5f * press;
         var min = rect.Center - half;
         var max = rect.Center + half;
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, min, max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, min, max, radius);
         if (hovered)
         {
             Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(ui.HoverTint));

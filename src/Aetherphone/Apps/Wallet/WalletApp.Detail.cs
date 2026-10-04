@@ -90,7 +90,7 @@ internal sealed partial class WalletApp
         var level = entry.Level;
         var tint = WalletArt.LevelInk(level, ui.Accent);
         var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, origin, max, radius, true);
+        ui.Card(drawList, origin, max, radius);
         Material.TopGlow(drawList, origin, max, radius, tint, DetailGlowCoverage, DetailGlowStrength);
 
         var centerX = origin.X + width * 0.5f;
@@ -144,7 +144,7 @@ internal sealed partial class WalletApp
         var height = pad * 2f + eyebrowHeight + headlineHeight + gap + barHeight + gap + statusHeight;
         var min = new Vector2(origin.X, top);
         var max = new Vector2(origin.X + width, top + height);
-        WalletArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var done = entry.WeeklyAmount >= entry.WeeklyCap;
         var tint = done ? WalletArt.GoldInk : ui.Accent;
         var left = min.X + pad;
@@ -187,7 +187,7 @@ internal sealed partial class WalletApp
             return max.Y;
         }
 
-        WalletArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var left = min.X + pad;
         var right = max.X - pad;
         var netWidth = 0f;

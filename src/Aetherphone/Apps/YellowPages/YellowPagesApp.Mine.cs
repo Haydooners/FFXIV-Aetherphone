@@ -73,11 +73,11 @@ internal sealed partial class YellowPagesApp
     private void DrawEmptyAction(Rect listRect, string label, float scale, Action onTap)
     {
         var drawList = ImGui.GetWindowDrawList();
-        var width = Typography.Measure(label, TextStyles.SubheadlineEmphasized).X + 48f * scale;
+        var width = Button.WidthFor(label, ButtonSize.Regular);
         var top = listRect.Min.Y + 150f * scale;
         var rect = new Rect(new Vector2(listRect.Center.X - width * 0.5f, top),
-            new Vector2(listRect.Center.X + width * 0.5f, top + 40f * scale));
-        if (SocialPill.Accent(drawList, rect, label, Ink, TextStyles.SubheadlineEmphasized, rect.Height * 0.5f))
+            new Vector2(listRect.Center.X + width * 0.5f, top + Button.RegularHeight * scale));
+        if (Button.Draw(drawList, rect, label, ui.Ink, ButtonStyle.Prominent))
         {
             onTap();
         }

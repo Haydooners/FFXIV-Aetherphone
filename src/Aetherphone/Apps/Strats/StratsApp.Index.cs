@@ -124,7 +124,7 @@ internal sealed partial class StratsApp
     private float DrawIndexSearch(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Search(drawList, field, "##stratsSearch", Loc.T(L.Strats.Search), ref indexQuery, theme, scale,
             SearchMaxLength, false);
         return field.Max.Y;
@@ -208,7 +208,7 @@ internal sealed partial class StratsApp
         var min = rect.Center - half;
         var max = rect.Center + half;
         var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, min, max, radius, true);
+        ui.Card(drawList, min, max, radius);
         Material.TopGlow(drawList, min, max, radius, ui.Accent, FeatureGlowCoverage,
             hovered ? FeatureGlowHover : FeatureGlowRest);
         if (hovered)

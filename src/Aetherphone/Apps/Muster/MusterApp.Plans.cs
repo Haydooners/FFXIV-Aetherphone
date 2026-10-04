@@ -82,8 +82,7 @@ internal sealed partial class MusterApp
     private float DrawHosting(ImDrawListPtr drawList, MusterDto mine, float left, float top, float width,
         long nowUnix, float scale)
     {
-        var cursorY = MusterArt.SectionHeader(drawList, ui, new Vector2(left, top), width,
-            Loc.T(L.Muster.HostingSection), scale);
+        var cursorY = top + CardSectionHeader.Draw(drawList, new Vector2(left, top), width, Loc.T(L.Muster.HostingSection), ui.TitleInk);
         var poster = new MusterPoster
         {
             Category = mine.Category,
@@ -117,11 +116,10 @@ internal sealed partial class MusterApp
             return top;
         }
 
-        var cursorY = MusterArt.SectionHeader(drawList, ui, new Vector2(left, top), width,
-            Loc.T(L.Muster.StatGoing), scale);
+        var cursorY = top + CardSectionHeader.Draw(drawList, new Vector2(left, top), width, Loc.T(L.Muster.StatGoing), ui.TitleInk);
         var rowHeight = MusterArt.RowHeight * scale;
         var max = new Vector2(left + width, cursorY + going.Count * rowHeight);
-        MusterArt.Card(drawList, ui, new Vector2(left, cursorY), max, scale);
+        ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         for (var index = 0; index < going.Count; index++)
         {
@@ -131,7 +129,7 @@ internal sealed partial class MusterApp
             var textLeft = left + pad + (TimeTileSize + MusterArt.TextGap) * scale;
             if (index > 0)
             {
-                MusterArt.Hairline(drawList, ui, textLeft, max.X, rowTop);
+                FeedCell.Hairline(drawList, textLeft, max.X, rowTop, ui.Hairline);
             }
 
             if (!ImGui.IsRectVisible(row.Min, row.Max))

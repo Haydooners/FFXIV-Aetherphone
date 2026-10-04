@@ -9,7 +9,6 @@ namespace Aetherphone.Apps.Housing;
 
 internal static class HousingArt
 {
-    public const float SectionHeaderHeight = 40f;
     public const float SectionGap = 22f;
     public const float HeaderGap = 6f;
     public const float RowHeight = 62f;
@@ -30,7 +29,7 @@ internal static class HousingArt
     private const float StateTitleGap = 18f;
     private const float StateHintGap = 6f;
     private const float StateActionGap = 20f;
-    private const float StateActionHeight = 40f;
+    private const float StateActionHeight = Button.LargeHeight;
     private const float StateActionPad = 44f;
     private const float StateActionMinWidth = 150f;
     private const float StateMaxText = 280f;
@@ -39,11 +38,6 @@ internal static class HousingArt
     private const float StackDividerInset = 8f;
     private const float GlyphScale = 0.95f;
     private const float DoneMargin = 8f;
-    private const float CircleHoverMix = 0.08f;
-    private const float DisabledAlpha = 0.45f;
-
-    public static void Card(ImDrawListPtr drawList, AppSkin ui, Vector2 min, Vector2 max, float scale) =>
-        ui.Card(drawList, min, max, Metrics.Radius.Widget * scale, true);
 
     public static FontAwesomeIcon DistrictIcon(uint districtId) => districtId switch
     {
@@ -77,13 +71,9 @@ internal static class HousingArt
         string trailing, AppSkin ui, out bool trailingClicked, float scale)
     {
         trailingClicked = false;
-        var height = SectionHeaderHeight * scale;
         var trailingSize = trailing.Length > 0 ? Typography.Measure(trailing, TextStyles.Body) : Vector2.Zero;
         var reserve = trailing.Length > 0 ? trailingSize.X + TextGap * scale : 0f;
-        var fitted = Typography.FitText(title, MathF.Max(1f, width - reserve), TextStyles.Title3);
-        var size = Typography.Measure(fitted, TextStyles.Title3);
-        Typography.Draw(drawList, new Vector2(origin.X, origin.Y + (height - size.Y) * 0.5f), fitted, ui.TitleInk,
-            TextStyles.Title3);
+        var height = CardSectionHeader.Draw(drawList, origin, width, title, ui.TitleInk, reserve);
         if (trailing.Length == 0)
         {
             return height;
@@ -221,7 +211,7 @@ internal static class HousingArt
         var top = bottom + StateActionGap * scale;
         var rect = new Rect(new Vector2(centerX - width * 0.5f, top),
             new Vector2(centerX + width * 0.5f, top + StateActionHeight * scale));
-        return HousingChrome.PillButton(rect, actionLabel, true, ui, overlay);
+        return Button.Draw(rect, actionLabel, ui.Ink, overlay: overlay);
     }
 
     public static bool GlassCircle(ImDrawListPtr drawList, string id, Vector2 center, float radius, string glyph,
@@ -302,30 +292,12 @@ internal static class HousingArt
         AppSkin ui, string tooltip, bool active, bool enabled = true, bool overlay = false)
     {
         var hit = new Vector2(radius, radius);
-        var hovered = enabled && HousingChrome.Hover(center - hit, center + hit, overlay);
-        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale(id, down, PressFx.ControlPressedScale);
-        var fill = active ? ui.Accent : ui.FieldSurface;
-        if (hovered)
-        {
-            fill = Palette.Mix(fill, ui.TitleInk, CircleHoverMix);
-        }
-
-        if (!enabled)
-        {
-            fill = Palette.WithAlpha(fill, fill.W * DisabledAlpha);
-        }
-
-        drawList.AddCircleFilled(center, radius * grow, ImGui.GetColorU32(fill), 32);
-        var ink = active ? AccentRing.Ink : enabled ? ui.TitleInk : ui.MutedInk;
-        AppSkin.Icon(drawList, center, glyph, ink, GlyphScale * grow);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
+        var clicked = RoundButton.Draw(drawList, id, center, radius, ui.Ink,
+            active ? ButtonStyle.Prominent : ButtonStyle.Gray, enabled, overlay, out var face);
+        var grow = face.Face.Width / MathF.Max(radius * 2f, 0.0001f);
+        AppSkin.Icon(drawList, center, glyph, face.LabelInk, GlyphScale * grow);
         HoverTooltip.Show(new Rect(center - hit, center + hit), tooltip, HoverLabelSide.Above);
-        return enabled && UiInteract.Click(center - hit, center + hit, hovered);
+        return clicked;
     }
 
     public static bool SheetHeader(ImDrawListPtr drawList, Rect content, string title, string doneLabel,

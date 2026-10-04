@@ -78,7 +78,7 @@ internal sealed partial class NewsApp
         var press = PressFx.Scale(BannerId, pressed, PressFx.CardPressedScale);
         var half = rest.Size * 0.5f * press;
         var card = new Rect(rest.Center - half, rest.Center + half);
-        Material.AccentGlass(drawList, card.Min, card.Max, NewsArt.CardRadius * scale * press, scale,
+        Material.AccentGlass(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale * press, scale,
             StatusColor(pick.Status), HeroGlassOpacity);
         var pad = Metrics.Space.Lg * scale;
         var subInk = Palette.WithAlpha(HeroInk, HeroSubAlpha);
@@ -157,7 +157,7 @@ internal sealed partial class NewsApp
                 cursorY += NewsArt.SectionTopGap * scale;
             }
 
-            cursorY += NewsArt.SectionHeader(drawList, new Vector2(left, cursorY), width, StatusLabel(status),
+            cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width, StatusLabel(status),
                 ui.TitleInk) + NewsArt.SectionHeaderGap * scale;
             cursorY = DrawRowGroup(drawList, left, cursorY, width, feed, rowBuffer.AsSpan(0, count), ref anchorTaken,
                 scale);
@@ -235,7 +235,7 @@ internal sealed partial class NewsApp
         var press = interactive ? PressFx.Scale(HeroId, pressed, PressFx.CardPressedScale) : 1f;
         var half = rest.Size * 0.5f * press;
         var card = new Rect(rest.Center - half, rest.Center + half);
-        Material.AccentGlass(drawList, card.Min, card.Max, NewsArt.CardRadius * scale * press, scale,
+        Material.AccentGlass(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale * press, scale,
             StatusColor(status), HeroGlassOpacity);
         var subInk = Palette.WithAlpha(HeroInk, HeroSubAlpha);
         var cursorY = top + pad;
@@ -296,7 +296,7 @@ internal sealed partial class NewsApp
         var height = pad * 2f + MathF.Max(glyphRadius * 2f, titleHeight + subtitleHeight);
         var min = new Vector2(left, top);
         var max = new Vector2(left + width, top + height);
-        Material.AccentGlass(drawList, min, max, NewsArt.CardRadius * scale, scale, AccentRing.Green,
+        Material.AccentGlass(drawList, min, max, Metrics.Radius.Grouped * scale, scale, AccentRing.Green,
             HeroGlassOpacity);
         var center = new Vector2(left + pad + glyphRadius, (min.Y + max.Y) * 0.5f);
         drawList.AddCircleFilled(center, glyphRadius, ImGui.GetColorU32(HeroInk with { W = HeroGlyphAlpha }), 32);

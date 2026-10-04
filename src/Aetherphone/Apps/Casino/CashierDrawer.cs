@@ -24,7 +24,7 @@ internal sealed class CashierDrawer
     private const float SectionGap = 10f;
     private const float SummaryRowHeight = 22f;
     private const float CardPad = 12f;
-    private const float PillHeight = 44f;
+    private const float PillHeight = Button.LargeHeight;
     private const float HintGap = 6f;
     private const float LotHeight = 42f;
     private const float LotGap = 8f;
@@ -309,8 +309,7 @@ internal sealed class CashierDrawer
         var height = rows * SummaryRowHeight * scale + CardPad * 2f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + innerWidth, y + height);
-        Squircle.Fill(drawList, min, max, Metrics.Radius.Card * scale, ImGui.GetColorU32(ui.Palette.CardFill));
-        Material.EdgeSquircle(drawList, min, max, Metrics.Radius.Card * scale, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
 
         var rowY = min.Y + CardPad * scale;
         var balanceText = NumberText.Group(wallet?.Balance ?? 0);
@@ -357,8 +356,7 @@ internal sealed class CashierDrawer
         var height = titleSize.Y + hintBlock.Y + pad * 2f + 6f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + innerWidth, y + height);
-        Squircle.Fill(drawList, min, max, Metrics.Radius.Card * scale, ImGui.GetColorU32(ui.Palette.CardFill));
-        Material.EdgeSquircle(drawList, min, max, Metrics.Radius.Card * scale, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), title, ui.Accent,
             TextStyles.FootnoteEmphasized);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad + titleSize.Y + 6f * scale), hint,
@@ -374,9 +372,9 @@ internal sealed class CashierDrawer
         var height = block.Y + pad * 2f;
         var min = new Vector2(left, y);
         var max = new Vector2(left + innerWidth, y + height);
-        Squircle.Fill(drawList, min, max, Metrics.Radius.Card * scale,
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, Metrics.Radius.Card * scale,
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), message, ui.TitleInk,
             TextStyles.Footnote, innerWidth - pad * 2f);
@@ -458,8 +456,8 @@ internal sealed class CashierDrawer
             : Loc.T(L.Casino.NotEnoughCoins);
         var confirmRect = new Rect(new Vector2(left, y), new Vector2(left + innerWidth, y + PillHeight * scale));
         var canConfirm = interactive && amountValid && !busy;
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("cashier.confirm"), confirmRect, label,
-                CasinoCapsuleTone.Filled, canConfirm, TextStyles.Headline, true))
+        if (Button.Draw(drawList, confirmRect, label, ui.Ink, ButtonStyle.Prominent, enabled: canConfirm,
+                overlay: true, id: "cashier.confirm"))
         {
             AskStake(sittingOpen, amount);
         }
@@ -539,9 +537,8 @@ internal sealed class CashierDrawer
         var stackText = NumberText.Group(sitting.Stack);
         var rect = new Rect(new Vector2(left, y), new Vector2(left + innerWidth, y + PillHeight * scale));
         var canCashOut = interactive && !store.MovingMoney;
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("cashier.cashout"), rect,
-                Loc.T(L.Casino.CashOutFor, stackText), CasinoCapsuleTone.Tinted, canCashOut, TextStyles.Headline,
-                true))
+        if (Button.Draw(drawList, rect, Loc.T(L.Casino.CashOutFor, stackText), ui.Ink, ButtonStyle.Tinted,
+                enabled: canCashOut, overlay: true, id: "cashier.cashout"))
         {
             confirm.Ask(new ConfirmRequest
             {

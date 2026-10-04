@@ -23,19 +23,12 @@ internal sealed partial class PollsApp
     private const float LeaderIconSize = 13f;
     private const float LeaderIconGap = 6f;
     private const float FooterGap = 14f;
-    private const float FooterHitHeight = 32f;
-    private const float UndoPadX = 10f;
     private const float RevealStaggerSeconds = 0.05f;
     private const float FailureSeconds = 4f;
     private const float FailureFadeSeconds = 0.4f;
     private const float RevealEpsilon = 0.01f;
-    private const float TrackAlphaOpen = 0.08f;
-    private const float TrackAlphaResults = 0.05f;
-    private const float StrokeAlphaOpen = 0.10f;
     private const float FillAlphaMine = 0.92f;
     private const float FillAlphaWinner = 0.70f;
-    private const float FillAlphaLeader = 0.20f;
-    private const float FillAlphaOther = 0.13f;
     private const float RingAlphaResults = 0.35f;
 
     private float[] rowHeights = Array.Empty<float>();
@@ -89,7 +82,7 @@ internal sealed partial class PollsApp
         }
 
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
         DrawMeta(drawList, poll, text, innerLeft, innerRight, chipCenterY, scale, nowUnix);
         Typography.DrawWrappedLeft(new Vector2(innerLeft, questionTop), text.Question, ui.TitleInk,
             TextStyles.Title3, innerWidth);
@@ -204,13 +197,9 @@ internal sealed partial class PollsApp
         var max = row.Center + half;
         var radius = MathF.Min((max.Y - min.Y) * 0.5f, Metrics.Size.TapTarget * scale * 0.5f);
 
-        var trackAlpha = TrackAlphaOpen + (TrackAlphaResults - TrackAlphaOpen) * reveal;
-        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(Palette.WithAlpha(PollsArt.White, trackAlpha)));
-        if (reveal < 1f)
-        {
-            Squircle.Stroke(drawList, min, max, radius,
-                ImGui.GetColorU32(Palette.WithAlpha(PollsArt.White, StrokeAlphaOpen * (1f - reveal))), 1f);
-        }
+        var track = Vector4.Lerp(Surfaces.Fill(ui.TitleInk, FillLevel.Tertiary),
+            Surfaces.Fill(ui.TitleInk, FillLevel.Quaternary), reveal);
+        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(track));
 
         var selection = motion.Selection[optionIndex].Step(mine ? 1f : 0f, Motion.Release, deltaSeconds);
         var fillTarget = reveal > RevealEpsilon && motion.RevealAge >= optionIndex * RevealStaggerSeconds
@@ -264,7 +253,7 @@ internal sealed partial class PollsApp
 
     private Vector4 FillColor(bool closed, bool leader, float selection)
     {
-        var muted = Palette.WithAlpha(PollsArt.White, leader ? FillAlphaLeader : FillAlphaOther);
+        var muted = Surfaces.Fill(ui.TitleInk, leader ? FillLevel.Primary : FillLevel.Secondary);
         if (closed && leader)
         {
             muted = Palette.WithAlpha(ui.Accent, FillAlphaWinner);
@@ -329,26 +318,15 @@ internal sealed partial class PollsApp
     private float DrawUndo(ImDrawListPtr drawList, PollDto poll, float right, float centerY, float scale)
     {
         var label = Loc.T(L.Polls.UndoVote);
-        var size = Typography.Measure(label, TextStyles.FootnoteEmphasized);
-        var width = size.X + UndoPadX * 2f * scale;
-        var hitHalf = FooterHitHeight * scale * 0.5f;
-        var min = new Vector2(right - width + UndoPadX * scale, centerY - hitHalf);
-        var max = new Vector2(right + UndoPadX * scale, centerY + hitHalf);
+        var width = Button.WidthFor(label, ButtonSize.Small);
+        var halfHeight = Button.SmallHeight * scale * 0.5f;
+        var min = new Vector2(right + halfHeight - width, centerY - halfHeight);
+        var max = new Vector2(right + halfHeight, centerY + halfHeight);
         var hovered = UiInteract.Hover(min, max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(ImGui.GetID($"polls.undo.{poll.Id}"), pressed, PressFx.ControlPressedScale);
-        var pillHalf = new Vector2(width * 0.5f, size.Y * 0.5f + Metrics.Space.Xs * scale) * press;
-        var pillCenter = (min + max) * 0.5f;
-        if (hovered)
-        {
-            drawList.AddRectFilled(pillCenter - pillHalf, pillCenter + pillHalf, ImGui.GetColorU32(ui.HoverTint),
-                pillHalf.Y);
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        Typography.Draw(drawList, pillCenter - size * 0.5f, label, ui.Accent, TextStyles.FootnoteEmphasized.Scale,
-            TextStyles.FootnoteEmphasized.Weight);
-        if (UiInteract.Click(min, max, hovered) && store.ClearVote(poll))
+        var face = Button.Surface(drawList, new Rect(min, max), ui.Ink, ButtonStyle.Plain, ButtonRole.Normal, true,
+            hovered, ImGui.GetID($"polls.undo.{poll.Id}"));
+        Button.DrawLabel(drawList, face, label);
+        if (UiInteract.Click(min, max, hovered, false) && store.ClearVote(poll))
         {
             UiFeedback.Play(UiSound.ToggleOff);
         }

@@ -11,7 +11,7 @@ namespace Aetherphone.Apps.Maps;
 
 internal sealed partial class MapsApp
 {
-    private const float TeleportHeight = 50f;
+    private const float TeleportHeight = Button.LargeHeight;
     private const float PreviewHeight = 172f;
     private const float PreviewSpan = 0.42f;
     private const float DetailRowHeight = 46f;
@@ -109,8 +109,8 @@ internal sealed partial class MapsApp
         var button = new Rect(origin, new Vector2(origin.X + width, origin.Y + TeleportHeight * scale));
         ReportVisible("maps.place.teleport", button);
         var label = lifestreamAvailable ? Loc.T(L.Maps.Teleport) : Loc.T(L.Maps.CopyCommand);
-        if (ConfirmDialog.DrawPillButton(button, label, true, theme, 1f, 1f, ConfirmButtonTone.Primary,
-                "maps.place.teleport"))
+        if (Button.Draw(button, label, ControlInk.From(theme).WithAccent(accent), ButtonStyle.Prominent,
+                id: "maps.place.teleport"))
         {
             Teleport(place);
         }

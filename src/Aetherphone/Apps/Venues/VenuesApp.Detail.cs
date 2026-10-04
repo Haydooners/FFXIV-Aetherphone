@@ -30,7 +30,7 @@ internal sealed partial class VenuesApp
     private const float InfoRowHeight = 50f;
     private const float InfoTileSide = 28f;
     private const float NowPlayingIconRadius = 20f;
-    private const float TwitchButtonHeight = 38f;
+    private const float TwitchButtonHeight = Button.RegularHeight;
     private const float CardInset = 14f;
     private const float ChipLineGap = 6f;
     private const int MaxLinkRows = 2;
@@ -183,8 +183,7 @@ internal sealed partial class VenuesApp
     {
         var height = DetailHeroHeight(width, scale);
         var hero = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var radius = VenuesArt.CardRadius(scale);
-        Elevation.Card(drawList, hero.Min, hero.Max, radius, scale, 0.35f);
+        var radius = Metrics.Radius.Grouped * scale;
         VenueImage.Cover(drawList, hero, radius, venue, detailText.Initial, Art);
         var inset = HeroInset * scale;
         VenueCard.DrawStatusPill(drawList, new Vector2(hero.Min.X + inset, hero.Min.Y + inset),
@@ -401,7 +400,7 @@ internal sealed partial class VenuesApp
                          (titleHeight > 0f ? Metrics.Space.Sm * scale + titleHeight : 0f) +
                          (genresHeight > 0f ? Metrics.Space.Sm * scale + genresHeight : 0f) +
                          (hasTwitch ? Metrics.Space.Md * scale + TwitchButtonHeight * scale : 0f);
-        VenuesArt.Card(drawList, ui, new Vector2(left, cardTop), new Vector2(cardRight, cardTop + cardHeight), scale);
+        ui.Card(drawList, new Vector2(left, cardTop), new Vector2(cardRight, cardTop + cardHeight), Metrics.Radius.Grouped * scale);
         if (djCount > 0)
         {
             var linkable = djCount > 1;
@@ -438,8 +437,8 @@ internal sealed partial class VenuesApp
             var buttonTop = cursorY + Metrics.Space.Md * scale;
             var button = new Rect(new Vector2(left + inner, buttonTop),
                 new Vector2(cardRight - inner, buttonTop + TwitchButtonHeight * scale));
-            if (VenuesArt.PillButton(drawList, ui, button, ImGui.GetID("venues.detail.twitch"),
-                    Loc.T(L.Venues.WatchOnTwitch), PhoneIcons.ExternalLink, false))
+            if (VenuesArt.Action(drawList, ui, button, ImGui.GetID("venues.detail.twitch"),
+                    Loc.T(L.Venues.WatchOnTwitch), PhoneIcons.ExternalLink, false, ButtonStyle.Gray))
             {
                 UrlActions.AskThenOpen(venue.TwitchUrl!);
             }
@@ -495,7 +494,7 @@ internal sealed partial class VenuesApp
         var venueKey = new TranslationKey(TranslationSurface.Venue, venue.Id);
         var aboutText = translation.View(venueKey, venue.Description).Text;
         ImGui.SetCursorScreenPos(new Vector2(left, textTop));
-        using (Plugin.Fonts.Push(1f))
+        using (Plugin.Fonts.Push(TextStyles.Body.Scale, TextStyles.Body.Weight))
         using (ImRaii.PushColor(ImGuiCol.Text, ui.BodyInk))
         {
             ImGui.PushTextWrapPos(left + width - ImGui.GetWindowPos().X);
@@ -533,7 +532,7 @@ internal sealed partial class VenuesApp
         var cardTop = Section(drawList, left, top, width, Loc.T(L.Venues.Details), string.Empty, out _, scale);
         var card = new Rect(new Vector2(left, cardTop),
             new Vector2(left + width, cardTop + rows * InfoRowHeight * scale));
-        VenuesArt.Card(drawList, ui, card.Min, card.Max, scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var rowIndex = 0;
         if (showWindow)
         {
@@ -587,7 +586,7 @@ internal sealed partial class VenuesApp
             centerY - valueHeight * 0.5f, valueWidth, InfoValueStyle, ui.TitleInk);
         if (rowIndex < rowCount - 1)
         {
-            VenuesArt.Hairline(drawList, ui, labelLeft, valueRight, rowTop + rowHeight);
+            FeedCell.Hairline(drawList, labelLeft, valueRight, rowTop + rowHeight, ui.Hairline);
         }
     }
 
@@ -623,7 +622,7 @@ internal sealed partial class VenuesApp
         var cardTop = Section(drawList, left, top, width, Loc.T(L.Venues.ListedOn), string.Empty, out _, scale);
         var rowHeight = InfoRowHeight * scale;
         var card = new Rect(new Vector2(left, cardTop), new Vector2(left + width, cardTop + count * rowHeight));
-        VenuesArt.Card(drawList, ui, card.Min, card.Max, scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var inset = CardInset * scale;
         for (var index = 0; index < count; index++)
         {
@@ -643,7 +642,7 @@ internal sealed partial class VenuesApp
                 ui.MutedInk, 14f * scale);
             if (index < count - 1)
             {
-                VenuesArt.Hairline(drawList, ui, labelLeft, row.Max.X - inset, row.Max.Y);
+                FeedCell.Hairline(drawList, labelLeft, row.Max.X - inset, row.Max.Y, ui.Hairline);
             }
 
             if (UiInteract.Click(row.Min, row.Max, hovered))

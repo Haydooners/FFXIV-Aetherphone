@@ -232,7 +232,7 @@ internal sealed partial class VenuesApp
     private float DrawSearchField(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         var before = search;
         GlassField.Search(drawList, field, "##venueSearch", Loc.T(L.Venues.Search), ref search, theme, scale,
             SearchMaxLength, false);
@@ -252,14 +252,14 @@ internal sealed partial class VenuesApp
         var filtersActive = FiltersActive;
         var filtersText = filtersActive ? FiltersLabel() : string.Empty;
         var filtersWidth = filtersActive
-            ? VenuesArt.GlassPillWidth(filtersText, PhoneIcons.AdjustmentsHorizontal, false, scale)
+            ? VenuesArt.ActionWidth(filtersText, PhoneIcons.AdjustmentsHorizontal, false, height)
             : 0f;
         var scopeLimit = width - (filtersActive ? filtersWidth + VenuesArt.PillGap * scale : 0f);
-        var scopeWidth = MathF.Min(VenuesArt.GlassPillWidth(label, PhoneIcons.MapPin, true, scale), scopeLimit);
+        var scopeWidth = MathF.Min(VenuesArt.ActionWidth(label, PhoneIcons.MapPin, true, height), scopeLimit);
         var scopeRect = new Rect(origin, new Vector2(origin.X + scopeWidth, origin.Y + height));
         UiAnchors.Report("venues.scope", scopeRect);
-        if (VenuesArt.GlassPill(drawList, ui, scopeRect, ImGui.GetID("venues.scope"), label, PhoneIcons.MapPin, true,
-                false))
+        if (VenuesArt.Action(drawList, ui, scopeRect, ImGui.GetID("venues.scope"), label, PhoneIcons.MapPin, true,
+                ButtonStyle.Gray))
         {
             OpenScope(backTitle);
         }
@@ -269,8 +269,8 @@ internal sealed partial class VenuesApp
             var left = scopeRect.Max.X + VenuesArt.PillGap * scale;
             var filtersRect = new Rect(new Vector2(left, origin.Y),
                 new Vector2(left + filtersWidth, origin.Y + height));
-            if (VenuesArt.GlassPill(drawList, ui, filtersRect, ImGui.GetID("venues.filters.pill"), filtersText,
-                    PhoneIcons.AdjustmentsHorizontal, false, true))
+            if (VenuesArt.Action(drawList, ui, filtersRect, ImGui.GetID("venues.filters.pill"), filtersText,
+                    PhoneIcons.AdjustmentsHorizontal, false, ButtonStyle.Prominent))
             {
                 OpenFilters(backTitle);
             }
@@ -293,7 +293,7 @@ internal sealed partial class VenuesApp
             var top = origin.Y + VenuesArt.SectionGap * scale;
             var rowHeight = VenuesArt.RowHeight * scale;
             var max = new Vector2(origin.X + width, top + rowHeight * SkeletonRows);
-            VenuesArt.Card(drawList, ui, new Vector2(origin.X, top), max, scale);
+            ui.Card(drawList, new Vector2(origin.X, top), max, Metrics.Radius.Grouped * scale);
             var pad = VenuesArt.RowPad * scale;
             for (var rowIndex = 0; rowIndex < SkeletonRows; rowIndex++)
             {
@@ -363,7 +363,7 @@ internal sealed partial class VenuesApp
     {
         var rowHeight = VenuesArt.RowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + (end - start) * rowHeight);
-        VenuesArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var art = Art;
         for (var index = start; index < end; index++)
         {
@@ -385,7 +385,7 @@ internal sealed partial class VenuesApp
             if (index < end - 1)
             {
                 var hairlineLeft = row.Min.X + (VenuesArt.RowPad + VenuesArt.RowThumb + VenuesArt.TextGap) * scale;
-                VenuesArt.Hairline(drawList, ui, hairlineLeft, row.Max.X, row.Max.Y);
+                FeedCell.Hairline(drawList, hairlineLeft, row.Max.X, row.Max.Y, ui.Hairline);
             }
         }
 
@@ -674,7 +674,7 @@ internal sealed partial class VenuesApp
     private float DrawDirectoryRow(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + DirectoryRowHeight * scale));
-        VenuesArt.Card(drawList, ui, card.Min, card.Max, scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var hovered = VenuesArt.RowWash(drawList, ui, card, scale);
         var side = DirectoryIconSide * scale;
         var tileMin = new Vector2(card.Min.X + VenuesArt.RowPad * scale, card.Center.Y - side * 0.5f);

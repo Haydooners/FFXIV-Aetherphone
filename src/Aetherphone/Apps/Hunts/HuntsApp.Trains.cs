@@ -18,7 +18,7 @@ internal sealed partial class HuntsApp
     private const float TrainSummaryHeight = 86f;
     private const float TrainRowHeight = 58f;
     private const float TrainGoWidth = 56f;
-    private const float TrainGoHeight = 30f;
+    private const float TrainGoHeight = Button.SmallHeight;
 
     private readonly ChipRail trainExpansionRail = new();
     private readonly ChipRail trainWorldRail = new();
@@ -252,7 +252,7 @@ internal sealed partial class HuntsApp
         var height = TrainSummaryHeight * scale;
         var card = new Rect(origin, origin + new Vector2(width, height));
         UiAnchors.Report("hunts.trains.summary", card);
-        ui.Card(drawList, card.Min, card.Max, HuntsArt.CardRadius * scale, elevated: true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var columnWidth = width / 3f;
         DrawTrainStat(drawList, card, 0, columnWidth, trainLiveText, Loc.T(L.Hunts.StatusLive),
             trainLiveCount > 0 ? HuntsArt.LiveColor : ui.TitleInk);
@@ -288,7 +288,7 @@ internal sealed partial class HuntsApp
 
     private void DrawTrainLeg(string title, int start, int count, float scale)
     {
-        ui.SectionLabel(title, TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(title, ui.TitleInk);
         var card = GroupCard.Begin(ui, count, TrainRowHeight);
         card.SeparatorInset = RingSize + HuntsArt.RowGap;
         for (var offset = 0; offset < count; offset++)

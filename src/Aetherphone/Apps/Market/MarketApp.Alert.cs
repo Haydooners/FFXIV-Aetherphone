@@ -21,14 +21,13 @@ internal sealed partial class MarketApp
     private const float SheetSubtitleHeight = 22f;
     private const float SheetGap = 14f;
     private const float SheetStripHeight = 32f;
-    private const float SheetButtonHeight = 48f;
+    private const float SheetButtonHeight = Button.LargeHeight;
     private const float SheetRowHeight = 48f;
     private const float SheetListHeader = 30f;
-    private const float StepperRadius = 18f;
+    private const float StepperGlyphFraction = 0.8f;
     private const float StepperGap = 10f;
     private const float SheetMutedAlpha = 0.62f;
     private const float SheetHairlineAlpha = 0.12f;
-    private const float StepperFillAlpha = 0.10f;
     private const int SheetMaxRows = 4;
 
     private readonly Sheet alertSheet = new();
@@ -146,21 +145,22 @@ internal sealed partial class MarketApp
         Vector4 ink, float scale)
     {
         var height = GlassField.HeightUnits * scale;
-        var radius = StepperRadius * scale;
+        var radius = RoundButton.RegularRadius * scale;
         var centerY = top + height * 0.5f;
         var minusCenter = new Vector2(left + radius, centerY);
         var plusCenter = new Vector2(right - radius, centerY);
         var step = MarketTrend.Step(Math.Max(threshold, alertCheapest));
-        var fill = Palette.WithAlpha(ink, StepperFillAlpha);
-        if (HoverButton.Circle(drawList, "market.alertMinus", minusCenter, radius, FontAwesomeIcon.Minus, fill,
-                ink, ImGui.GetIO().DeltaTime, 1f, threshold > step, Loc.T(L.Market.Lower), HoverLabelSide.Above))
+        var controlInk = ui.Ink with { Ink = ink };
+        var glyphHeight = radius * StepperGlyphFraction;
+        if (RoundButton.FontIcon(drawList, "market.alertMinus", minusCenter, radius, FontAwesomeIcon.Minus,
+                glyphHeight, controlInk, ButtonStyle.Gray, Loc.T(L.Market.Lower), enabled: threshold > step))
         {
             UiFeedback.Play(UiSound.Tap);
             alertPrice = Math.Max(1L, threshold - step).ToString(CultureInfo.InvariantCulture);
         }
 
-        if (HoverButton.Circle(drawList, "market.alertPlus", plusCenter, radius, FontAwesomeIcon.Plus, fill,
-                ink, ImGui.GetIO().DeltaTime, 1f, threshold < MaxPrice, Loc.T(L.Market.Higher), HoverLabelSide.Above))
+        if (RoundButton.FontIcon(drawList, "market.alertPlus", plusCenter, radius, FontAwesomeIcon.Plus,
+                glyphHeight, controlInk, ButtonStyle.Gray, Loc.T(L.Market.Higher), enabled: threshold < MaxPrice))
         {
             UiFeedback.Play(UiSound.Tap);
             alertPrice = Math.Min(MaxPrice, threshold + step).ToString(CultureInfo.InvariantCulture);
@@ -168,7 +168,7 @@ internal sealed partial class MarketApp
 
         var field = new Rect(new Vector2(minusCenter.X + radius + StepperGap * scale, top),
             new Vector2(plusCenter.X - radius - StepperGap * scale, top + height));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, controlInk);
         GlassField.Text(field, "##marketAlertPrice", Loc.T(L.Market.GilPrice), ref alertPrice, theme, scale,
             PriceMaxLength, false, ImGuiInputTextFlags.CharsDecimal);
         return field.Max.Y;
@@ -192,9 +192,9 @@ internal sealed partial class MarketApp
             drawList.AddLine(rowMin, new Vector2(right, rowMin.Y), hairline, Metrics.Stroke.Hairline);
             var centerY = rowMin.Y + rowHeight * 0.5f;
             var removeCenter = new Vector2(right - RemoveRadius * scale, centerY);
-            if (HoverButton.Circle(drawList, AlertId(alertIndex), removeCenter, RemoveGlyphRadius * scale,
-                    FontAwesomeIcon.Trash, Palette.WithAlpha(ink, 0f), muted, ImGui.GetIO().DeltaTime, 1f, true,
-                    Loc.T(L.Market.RemoveAlert), HoverLabelSide.Above))
+            if (RoundButton.FontIcon(drawList, AlertId(alertIndex), removeCenter, RemoveRadius * scale,
+                    FontAwesomeIcon.Trash, RemoveGlyphRadius * scale, ui.Ink with { Ink = ink }, ButtonStyle.Plain,
+                    Loc.T(L.Market.RemoveAlert), glyphInk: muted))
             {
                 removed = alert;
             }

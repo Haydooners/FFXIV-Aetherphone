@@ -174,10 +174,7 @@ internal sealed partial class LinkpearlApp
             new Vector2(body.Max.X - CellPadX * scale, kindTop + ChipRail.RowHeight * scale));
         findSegmentLabels[0] = Loc.T(L.FindPeople.Character);
         findSegmentLabels[1] = Loc.T(L.FindPeople.FreeCompany);
-        findSegmentActive[0] = findKind == LookupKind.Character;
-        findSegmentActive[1] = findKind == LookupKind.FreeCompany;
-        var selected = findRail.Draw(kindRow, ui, findSegmentLabels, findSegmentActive, false, "findpeople.kind",
-            ChipRail.CompactLabelPadding);
+        var selected = SegmentStrip.Draw("findpeople.kind", kindRow, findSegmentLabels, (int)findKind, ui.Palette);
         if (selected >= 0 && selected != (int)findKind)
         {
             findKind = (LookupKind)selected;

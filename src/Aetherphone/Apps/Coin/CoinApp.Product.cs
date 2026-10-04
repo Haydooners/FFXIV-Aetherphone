@@ -109,7 +109,7 @@ internal sealed partial class CoinApp
         if (item is null)
         {
             CoinArt.Capsule(drawList, ui, ImGui.GetID("coin.product.owned"), rect, Loc.T(L.Coin.Owned),
-                CapsuleTone.Quiet, false, TextStyles.Headline);
+                CapsuleTone.Quiet, false);
             return rect.Max.Y;
         }
 
@@ -117,7 +117,7 @@ internal sealed partial class CoinApp
         var label = worn ? Loc.T(L.Coin.Wearing) : Loc.T(L.Loadout.Wear);
         var tone = worn ? CapsuleTone.Quiet : CapsuleTone.Filled;
         if (CoinArt.Capsule(drawList, ui, ImGui.GetID("coin.product.wear"), rect, label, tone,
-                !worn && !inventory.Equipping, TextStyles.Headline))
+                !worn && !inventory.Equipping))
         {
             UiFeedback.Play(UiSound.ToggleOn);
             var slot = string.Equals(item.Kind, LoadoutStore.FrameKind, StringComparison.Ordinal) ? FrameSlot : (int?)null;
@@ -137,8 +137,7 @@ internal sealed partial class CoinApp
         var height = CoinArt.LargeCapsuleHeight * scale;
         var rect = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
         if (CoinArt.Capsule(drawList, ui, ImGui.GetID("coin.product.buy"), rect, texts.BuyFor(sku.Price),
-                CapsuleTone.Filled, affordable && !frozen && !store.Purchasing && wallet is not null,
-                TextStyles.Headline))
+                CapsuleTone.Filled, affordable && !frozen && !store.Purchasing && wallet is not null))
         {
             AskPurchase(sku);
         }
@@ -174,7 +173,7 @@ internal sealed partial class CoinApp
         var saveRect = new Rect(new Vector2(origin.X, cursorY), new Vector2(origin.X + width, cursorY + height));
         if (CoinArt.Capsule(drawList, ui, ImGui.GetID("coin.product.save"), saveRect,
                 Loc.T(saving ? L.Coin.SavingForThis : L.Coin.SaveForThis), saving ? CapsuleTone.Quiet : CapsuleTone.Tinted,
-                true, TextStyles.Headline))
+                true))
         {
             if (saving)
             {

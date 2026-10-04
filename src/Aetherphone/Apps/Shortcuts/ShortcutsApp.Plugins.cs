@@ -75,7 +75,7 @@ internal sealed partial class ShortcutsApp
             var origin = ImGui.GetCursorScreenPos();
             var width = ScrollLayout.StableContentWidth();
             var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-            Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+            SearchBar.Surface(drawList, field, ControlInk.From(theme));
             GlassField.Search(drawList, field, "##shortcutsPluginSearch", Loc.T(L.Shortcuts.SearchPlugins),
                 ref pluginQuery, theme, scale, SearchMaxLength, false);
             var cursorY = DrawPluginList(drawList, new Vector2(origin.X, field.Max.Y + SearchGap * scale), width,
@@ -106,7 +106,7 @@ internal sealed partial class ShortcutsApp
 
         var rowHeight = ShortcutsArt.RowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + matches * rowHeight);
-        ShortcutsArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var iconSize = ShortcutsArt.IconSize * scale;
         var row = 0;
@@ -127,8 +127,8 @@ internal sealed partial class ShortcutsApp
             }
             else
             {
-                ShortcutsArt.Hairline(drawList, ui, origin.X + pad + iconSize + ShortcutsArt.TextGap * scale,
-                    max.X - pad, top);
+                FeedCell.Hairline(drawList, origin.X + pad + iconSize + ShortcutsArt.TextGap * scale,
+                    max.X - pad, top, ui.Hairline);
             }
 
             row++;
@@ -321,7 +321,7 @@ internal sealed partial class ShortcutsApp
                          punchLines.Length * punchLine;
         var height = MathF.Max(tile, textHeight) + pad * 2f;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ShortcutsArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         DrawPluginTile(drawList, new Vector2(origin.X + pad + tile * 0.5f, origin.Y + pad + tile * 0.5f), tile, entry,
             scale);
         var top = origin.Y + pad;
@@ -391,8 +391,8 @@ internal sealed partial class ShortcutsApp
         float scale)
     {
         var top = origin.Y + ShortcutsArt.SectionGap * scale * 0.5f;
-        top += ShortcutsArt.SectionHeader(drawList, new Vector2(origin.X, top), width, Loc.T(L.Shortcuts.Commands),
-            ui.TitleInk, scale) + ShortcutsArt.HeaderGap * scale;
+        top += CardSectionHeader.Draw(drawList, new Vector2(origin.X, top), width, Loc.T(L.Shortcuts.Commands),
+            ui.TitleInk) + ShortcutsArt.HeaderGap * scale;
         if (entry.Commands.Count == 0)
         {
             return top + Typography.DrawWrappedLeft(new Vector2(origin.X, top), Loc.T(L.Shortcuts.NoCommands),
@@ -401,14 +401,14 @@ internal sealed partial class ShortcutsApp
 
         var rowHeight = CommandRowHeight * scale;
         var max = new Vector2(origin.X + width, top + entry.Commands.Count * rowHeight);
-        ShortcutsArt.Card(drawList, ui, new Vector2(origin.X, top), max, scale);
+        ui.Card(drawList, new Vector2(origin.X, top), max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         for (var index = 0; index < entry.Commands.Count; index++)
         {
             var rowTop = top + index * rowHeight;
             if (index > 0)
             {
-                ShortcutsArt.Hairline(drawList, ui, origin.X + pad, max.X - pad, rowTop);
+                FeedCell.Hairline(drawList, origin.X + pad, max.X - pad, rowTop, ui.Hairline);
             }
 
             var row = new Rect(new Vector2(origin.X, rowTop), new Vector2(max.X, rowTop + rowHeight));

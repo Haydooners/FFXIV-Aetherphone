@@ -41,7 +41,7 @@ internal sealed partial class FishingApp
     private const float BaitRowHeight = 36f;
     private const float BaitIconSize = 26f;
     private const float WindowRowHeight = 40f;
-    private const float MapButtonHeight = 36f;
+    private const float MapButtonHeight = Button.RegularHeight;
     private const float MapButtonWidth = 150f;
     private const float SectionInnerGap = 8f;
 
@@ -209,7 +209,7 @@ internal sealed partial class FishingApp
         var pad = FishingArt.CardPadding * scale;
         var origin = ImGui.GetCursorScreenPos();
         var card = new Rect(origin, origin + new Vector2(width, DetailHeroHeight * scale));
-        ui.Card(drawList, card.Min, card.Max, FishingArt.CardRadius * scale, elevated: true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var icon = DetailIconSize * scale;
         var iconMin = new Vector2(card.Min.X + pad, card.Min.Y + pad);
         FishingArt.ItemIcon(drawList, textures, entry.IconId, iconMin, icon, scale, ui.FieldSurface);
@@ -293,7 +293,7 @@ internal sealed partial class FishingApp
 
     private void DrawWindowCard(FishEntry entry, long nowUnix, float scale)
     {
-        ui.SectionLabel(Loc.T(L.Fishing.WindowSection), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Fishing.WindowSection), ui.TitleInk);
         var rule = entry.Fish.Rule;
         var drawList = ImGui.GetWindowDrawList();
         var width = ImGui.GetContentRegionAvail().X;
@@ -316,7 +316,7 @@ internal sealed partial class FishingApp
                      weatherHeight + previousHeight + windowsHeight + pad * 0.5f;
         var origin = ImGui.GetCursorScreenPos();
         var card = new Rect(origin, origin + new Vector2(width, height));
-        ui.Card(drawList, card.Min, card.Max, FishingArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var left = card.Min.X + pad;
         var right = card.Max.X - pad;
         var top = card.Min.Y + pad;
@@ -436,7 +436,7 @@ internal sealed partial class FishingApp
             return;
         }
 
-        ui.SectionLabel(Loc.T(L.Fishing.CatchSection), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Fishing.CatchSection), ui.TitleInk);
         var drawList = ImGui.GetWindowDrawList();
         var width = ImGui.GetContentRegionAvail().X;
         var pad = FishingArt.CardPadding * scale;
@@ -446,7 +446,7 @@ internal sealed partial class FishingApp
         var height = pad + baitCount * BaitRowHeight * scale + textHeight + pad * 0.5f;
         var origin = ImGui.GetCursorScreenPos();
         var card = new Rect(origin, origin + new Vector2(width, height));
-        ui.Card(drawList, card.Min, card.Max, FishingArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var left = card.Min.X + pad;
         var top = card.Min.Y + pad;
         var fish = entry.Fish;
@@ -487,7 +487,7 @@ internal sealed partial class FishingApp
 
     private void DrawLocationCard(FishEntry entry, float scale)
     {
-        ui.SectionLabel(Loc.T(L.Fishing.LocationSection), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Fishing.LocationSection), ui.TitleInk);
         var drawList = ImGui.GetWindowDrawList();
         var width = ImGui.GetContentRegionAvail().X;
         var pad = FishingArt.CardPadding * scale;
@@ -499,7 +499,7 @@ internal sealed partial class FishingApp
                      (canMap ? RowGap * scale + MapButtonHeight * scale : 0f) + pad;
         var origin = ImGui.GetCursorScreenPos();
         var card = new Rect(origin, origin + new Vector2(width, height));
-        ui.Card(drawList, card.Min, card.Max, FishingArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var left = card.Min.X + pad;
         var inner = width - pad * 2f;
         var top = card.Min.Y + pad;
@@ -521,10 +521,10 @@ internal sealed partial class FishingApp
         {
             top += RowGap * scale;
             var buttonWidth = MathF.Min(inner, MathF.Max(MapButtonWidth * scale,
-                AppSkin.PillWidthFor(Loc.T(L.Fishing.ShowOnMap), MapButtonHeight * scale)));
+                Button.WidthFor(Loc.T(L.Fishing.ShowOnMap), ButtonSize.Regular)));
             var button = new Rect(new Vector2(left, top), new Vector2(left + buttonWidth, top + MapButtonHeight * scale));
             UiAnchors.Report("fishing.detail.map", button);
-            if (ui.PillButton(button, Loc.T(L.Fishing.ShowOnMap), true, "fishing.detail.map"))
+            if (Button.Draw(button, Loc.T(L.Fishing.ShowOnMap), ui.Ink, id: "fishing.detail.map"))
             {
                 UiFeedback.Play(UiSound.Tap);
                 OpenMap(entry);

@@ -67,11 +67,8 @@ internal sealed partial class MusicApp
         var drawList = ImGui.GetWindowDrawList();
         var clear = Loc.T(L.Music.Search.Clear);
         var clearSize = Typography.Measure(clear, TextStyles.Body);
-        var titleHeight = Typography.LineHeight(TextStyles.Title3);
-        var title = Typography.FitText(Loc.T(L.Music.Search.Recent),
-            MathF.Max(1f, width - inset * 3f - clearSize.X), TextStyles.Title3);
-        Typography.Draw(drawList, new Vector2(origin.X + inset, origin.Y), title, ui.Palette.HeadingInk,
-            TextStyles.Title3);
+        var titleHeight = CardSectionHeader.Draw(drawList, new Vector2(origin.X + inset, origin.Y),
+            MathF.Max(1f, width - inset * 2f), Loc.T(L.Music.Search.Recent), ui.TitleInk, clearSize.X + inset);
         var clearMin = new Vector2(origin.X + width - inset - clearSize.X, origin.Y + (titleHeight - clearSize.Y) * 0.5f);
         var clearMax = clearMin + clearSize;
         var hovered = UiInteract.Hover(clearMin, clearMax);
@@ -232,8 +229,8 @@ internal sealed partial class MusicApp
         var min = new Vector2(origin.X + inset, origin.Y);
         var max = new Vector2(origin.X + width - inset, origin.Y + TopResultHeight * scale);
         var drawList = ImGui.GetWindowDrawList();
-        var radius = Metrics.Radius.Card * scale;
-        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(ui.Palette.CardFill));
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, min, max, radius);
         var pad = Metrics.Space.Md * scale;
         var side = TopResultArt * scale;
         var artMin = new Vector2(min.X + pad, min.Y + (max.Y - min.Y - side) * 0.5f);

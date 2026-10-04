@@ -7,7 +7,6 @@ namespace Aetherphone.Apps.Music.Components;
 
 internal static class SectionHeader
 {
-    private const float BottomGap = 8f;
     private const float FirstGap = 4f;
     private const float ChevronGap = 6f;
     private const float ChevronBox = 14f;
@@ -22,20 +21,21 @@ internal static class SectionHeader
         var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
         var left = origin.X + inset * scale;
+        var bandWidth = MathF.Max(1f, width - inset * 2f * scale);
+        var bandHeight = CardSectionHeader.HeightUnits * scale;
         var chevronSpace = tappable ? (ChevronGap + ChevronBox) * scale : 0f;
-        var available = MathF.Max(1f, width - inset * 2f * scale - chevronSpace);
-        var fitted = Typography.FitText(title, available, TextStyles.Title3);
-        var size = Typography.Measure(fitted, TextStyles.Title3);
+        var fitted = Typography.FitText(title, MathF.Max(1f, bandWidth - chevronSpace), TextStyles.Title3);
+        var textWidth = Typography.Measure(fitted, TextStyles.Title3).X;
         var drawList = ImGui.GetWindowDrawList();
         var min = new Vector2(left, origin.Y);
-        var max = new Vector2(left + size.X + chevronSpace, origin.Y + size.Y);
+        var max = new Vector2(left + textWidth + chevronSpace, origin.Y + bandHeight);
         var hovered = tappable && UiInteract.Hover(min, max);
-        var ink = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left) ? ui.MutedInk : ui.Palette.HeadingInk;
-        Typography.Draw(drawList, min, fitted, ink, TextStyles.Title3);
+        var ink = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left) ? ui.MutedInk : ui.TitleInk;
+        CardSectionHeader.Draw(drawList, min, bandWidth, title, ink, chevronSpace);
         if (tappable)
         {
-            var chevronCenter = new Vector2(left + size.X + (ChevronGap + ChevronBox * 0.5f) * scale,
-                origin.Y + size.Y * 0.5f);
+            var chevronCenter = new Vector2(left + textWidth + (ChevronGap + ChevronBox * 0.5f) * scale,
+                origin.Y + bandHeight * 0.5f);
             AppSkin.Icon(drawList, chevronCenter, IconGlyph.Of(FontAwesomeIcon.ChevronRight), ui.MutedInk,
                 ChevronScale);
         }
@@ -46,7 +46,7 @@ internal static class SectionHeader
         }
 
         ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, size.Y + BottomGap * scale));
+        ImGui.Dummy(new Vector2(width, bandHeight));
         return tappable && UiInteract.Click(min, max, hovered);
     }
 }

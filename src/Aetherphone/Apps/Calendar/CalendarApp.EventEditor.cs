@@ -33,12 +33,12 @@ internal sealed partial class CalendarApp
     private const float ValuePillHeight = 30f;
     private const float ValuePillPadX = 12f;
     private const float ValueFillAlpha = 0.14f;
-    private const float ValueRestAlpha = 0.07f;
     private const float PanelPad = 12f;
     private const float PickerHeaderHeight = 36f;
-    private const float PickerChevronRadius = 14f;
+    private const float PickerChevronRadius = RoundButton.SmallRadius;
     private const float StepperHeight = 44f;
-    private const float StepperRadius = 18f;
+    private const float StepperRadius = RoundButton.RegularRadius;
+
     private const float MenuGlyphSize = 10f;
     private const float MenuGlyphGap = 6f;
     private const float PanelHideThreshold = 0.01f;
@@ -168,7 +168,7 @@ internal sealed partial class CalendarApp
         var rowHeight = CalendarArt.FieldRowHeight * scale;
         var notesHeight = NotesHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight + notesHeight);
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var titleRow = new Rect(origin, new Vector2(max.X, origin.Y + rowHeight));
         ImGui.SetCursorScreenPos(new Vector2(titleRow.Min.X + pad, titleRow.Center.Y - ImGui.GetFrameHeight() * 0.5f));
@@ -226,7 +226,7 @@ internal sealed partial class CalendarApp
         var rowHeight = CalendarArt.FieldRowHeight * scale;
         var panelHeight = PanelHeight(shownPanel, scale) * reveal;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight * 3f + panelHeight);
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var cursorY = origin.Y;
         cursorY = DrawWhenRow(drawList, origin.X, cursorY, width, EditorPanel.Date, Loc.T(L.Calendar.EventDate),
@@ -305,7 +305,7 @@ internal sealed partial class CalendarApp
             row.Center.Y - ValuePillHeight * 0.5f * scale);
         if (!menu)
         {
-            var fill = active ? Palette.WithAlpha(ui.Accent, ValueFillAlpha) : Palette.WithAlpha(ui.TitleInk, ValueRestAlpha);
+            var fill = active ? Palette.WithAlpha(ui.Accent, ValueFillAlpha) : Surfaces.Fill(ui.TitleInk, FillLevel.Tertiary);
             Squircle.Fill(drawList, pillMin, pillMax, (pillMax.Y - pillMin.Y) * 0.5f, ImGui.GetColorU32(fill));
         }
 
@@ -344,19 +344,16 @@ internal sealed partial class CalendarApp
         var radius = PickerChevronRadius * scale;
         var nextCenter = new Vector2(right - radius, headerCenterY);
         var previousCenter = new Vector2(nextCenter.X - radius * 2f - Metrics.Space.Sm * scale, headerCenterY);
-        var fill = Palette.WithAlpha(ui.TitleInk, ChevronFillAlpha);
-        var delta = ImGui.GetIO().DeltaTime;
         var interactive = alpha > 0.9f;
-        if (HoverButton.Circle(drawList, "calendar.picker.previous", previousCenter, radius,
-                FontAwesomeIcon.ChevronLeft, fill, ui.Accent, delta, alpha, interactive,
-                Loc.T(L.Calendar.PreviousMonth)))
+        if (interactive && CalendarArt.RoundIcon(drawList, ui, "calendar.picker.previous", previousCenter, radius,
+                FontAwesomeIcon.ChevronLeft, Loc.T(L.Calendar.PreviousMonth), true))
         {
             UiFeedback.Play(UiSound.Tap);
             pickerMonth = pickerMonth.AddMonths(-1);
         }
 
-        if (HoverButton.Circle(drawList, "calendar.picker.next", nextCenter, radius, FontAwesomeIcon.ChevronRight,
-                fill, ui.Accent, delta, alpha, interactive, Loc.T(L.Calendar.NextMonth)))
+        if (interactive && CalendarArt.RoundIcon(drawList, ui, "calendar.picker.next", nextCenter, radius,
+                FontAwesomeIcon.ChevronRight, Loc.T(L.Calendar.NextMonth), true))
         {
             UiFeedback.Play(UiSound.Tap);
             pickerMonth = pickerMonth.AddMonths(1);
@@ -402,19 +399,17 @@ internal sealed partial class CalendarApp
         var radius = StepperRadius * scale;
         var minusCenter = new Vector2(panel.Min.X + pad + radius, centerY);
         var plusCenter = new Vector2(panel.Max.X - pad - radius, centerY);
-        var fill = Palette.WithAlpha(ui.TitleInk, ValueRestAlpha);
-        var delta = ImGui.GetIO().DeltaTime;
         var interactive = alpha > 0.9f;
-        if (HoverButton.Circle(drawList, "calendar.duration.minus", minusCenter, radius, FontAwesomeIcon.Minus, fill,
-                ui.Accent, delta, alpha, interactive && editDuration > 0, Loc.T(L.Calendar.Shorter),
+        if (interactive && CalendarArt.RoundIcon(drawList, ui, "calendar.duration.minus", minusCenter, radius,
+                FontAwesomeIcon.Minus, Loc.T(L.Calendar.Shorter), editDuration > 0,
                 HoverLabelSide.Above))
         {
             UiFeedback.Play(UiSound.Tap);
             editDuration = Math.Max(0, editDuration - DurationStep);
         }
 
-        if (HoverButton.Circle(drawList, "calendar.duration.plus", plusCenter, radius, FontAwesomeIcon.Plus, fill,
-                ui.Accent, delta, alpha, interactive && editDuration < MinutesPerDay, Loc.T(L.Calendar.Longer),
+        if (interactive && CalendarArt.RoundIcon(drawList, ui, "calendar.duration.plus", plusCenter, radius,
+                FontAwesomeIcon.Plus, Loc.T(L.Calendar.Longer), editDuration < MinutesPerDay,
                 HoverLabelSide.Above))
         {
             UiFeedback.Play(UiSound.Tap);
@@ -433,7 +428,7 @@ internal sealed partial class CalendarApp
         var rows = groups.Count > 0 ? 3 : 2;
         var rowHeight = CalendarArt.FieldRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rows * rowHeight);
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var cursorY = origin.Y;
         var repeatRow = new Rect(new Vector2(origin.X, cursorY), new Vector2(max.X, cursorY + rowHeight));

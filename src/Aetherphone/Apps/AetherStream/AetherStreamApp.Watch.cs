@@ -139,7 +139,7 @@ internal sealed partial class AetherStreamApp
 
         var card = BeginBlock(height);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Card * scale, true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
 
         var top = card.Min.Y + pad;
         var tileMin = new Vector2(card.Center.X - tile * 0.5f, top);
@@ -186,7 +186,7 @@ internal sealed partial class AetherStreamApp
         var row = BeginBlock(48f * scale);
         var drawList = ImGui.GetWindowDrawList();
         GlassCard(drawList, row);
-        var playRadius = 15f * scale;
+        var playRadius = RoundButton.SmallRadius * scale;
         var playCenter = new Vector2(row.Max.X - Metrics.Space.Md * scale - playRadius, row.Center.Y);
         var textLeft = row.Min.X + Metrics.Space.Md * scale;
         var textWidth = playCenter.X - playRadius - Metrics.Space.Md * scale - textLeft;
@@ -204,9 +204,8 @@ internal sealed partial class AetherStreamApp
 
         var overPlay = UiInteract.Hover(playCenter - new Vector2(playRadius, playRadius),
             playCenter + new Vector2(playRadius, playRadius));
-        var pressed = HoverButton.Circle(drawList, "aetherstream.copied.play", playCenter, playRadius,
-            watchAlong.IsViewing ? FontAwesomeIcon.PaperPlane : FontAwesomeIcon.Play, ui.Accent, WhiteInk,
-            ImGui.GetIO().DeltaTime, 1f, true);
+        var pressed = StreamRoundButton(drawList, "aetherstream.copied.play", playCenter, playRadius,
+            watchAlong.IsViewing ? FontAwesomeIcon.PaperPlane : FontAwesomeIcon.Play, ButtonStyle.Prominent);
         var hovered = !overPlay && UiInteract.Hover(row.Min, row.Max);
         if (hovered)
         {
@@ -445,7 +444,6 @@ internal sealed partial class AetherStreamApp
         var drawList = ImGui.GetWindowDrawList();
         var current = CurrentEntry;
 
-        Elevation.Card(drawList, hero.Min, hero.Max, rounding, scale);
         Squircle.Fill(drawList, hero.Min, hero.Max, rounding, ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 1f)));
         var liveHandle = screen.Engine.ScreenViewHandle;
         if (liveHandle != nint.Zero && video.HasMedia && video.FrameVersion > 0)
@@ -546,7 +544,7 @@ internal sealed partial class AetherStreamApp
         var sourceHeight = Typography.LineHeight(TextStyles.Footnote);
         var row = BeginBlock(titleHeight + sourceHeight + 2f * scale);
         var drawList = ImGui.GetWindowDrawList();
-        var moreRadius = 16f * scale;
+        var moreRadius = RoundButton.SmallRadius * scale;
         var moreCenter = new Vector2(row.Max.X - moreRadius, row.Center.Y);
         var textWidth = moreCenter.X - moreRadius - Metrics.Space.Md * scale - row.Min.X;
         Marquee.DrawLeftAuto(drawList, "aetherstream.nowPlaying.title",
@@ -559,9 +557,8 @@ internal sealed partial class AetherStreamApp
                 Typography.FitText(source, textWidth, TextStyles.Footnote), Ink.MutedInk, TextStyles.Footnote);
         }
 
-        if (HoverButton.Circle(drawList, "aetherstream.player.more", moreCenter, moreRadius,
-                FontAwesomeIcon.EllipsisH, Ink.ButtonFill, Ink.TitleInk, ImGui.GetIO().DeltaTime, 1f, true,
-                Loc.T(L.AetherStream.MoreOptions)))
+        if (StreamRoundButton(drawList, "aetherstream.player.more", moreCenter, moreRadius,
+                FontAwesomeIcon.EllipsisH, ButtonStyle.Gray, Loc.T(L.AetherStream.MoreOptions)))
         {
             OpenPlayerActions();
         }
@@ -708,13 +705,12 @@ internal sealed partial class AetherStreamApp
     {
         var row = BeginBlock(64f * scale);
         var drawList = ImGui.GetWindowDrawList();
-        var delta = ImGui.GetIO().DeltaTime;
         var progress = video.Progress;
         var center = row.Center;
         var sideOffset = 84f * scale;
-        if (HoverButton.Circle(drawList, "aetherstream.seek.back", new Vector2(center.X - sideOffset, center.Y),
-                20f * scale, FontAwesomeIcon.UndoAlt, AppSkin.Transparent, Ink.TitleInk, delta, 1f, true,
-                Loc.T(L.AetherStream.SeekBack)))
+        var seekRadius = RoundButton.RegularRadius * scale;
+        if (StreamRoundButton(drawList, "aetherstream.seek.back", new Vector2(center.X - sideOffset, center.Y),
+                seekRadius, FontAwesomeIcon.UndoAlt, ButtonStyle.Plain, Loc.T(L.AetherStream.SeekBack)))
         {
             SeekTo(progress.Position - SeekStepSeconds);
         }
@@ -728,9 +724,8 @@ internal sealed partial class AetherStreamApp
             TogglePlayback();
         }
 
-        if (HoverButton.Circle(drawList, "aetherstream.seek.forward", new Vector2(center.X + sideOffset, center.Y),
-                20f * scale, FontAwesomeIcon.RedoAlt, AppSkin.Transparent, Ink.TitleInk, delta, 1f, true,
-                Loc.T(L.AetherStream.SeekForward)))
+        if (StreamRoundButton(drawList, "aetherstream.seek.forward", new Vector2(center.X + sideOffset, center.Y),
+                seekRadius, FontAwesomeIcon.RedoAlt, ButtonStyle.Plain, Loc.T(L.AetherStream.SeekForward)))
         {
             SeekTo(progress.Position + SeekStepSeconds);
         }
@@ -744,7 +739,7 @@ internal sealed partial class AetherStreamApp
         var row = BeginBlock(SmallButtonHeight * scale);
         var drawList = ImGui.GetWindowDrawList();
         var resyncLabel = Loc.T(L.AetherStream.Resync);
-        var resyncWidth = Typography.Measure(resyncLabel, SmallButtonStyle).X + 28f * scale;
+        var resyncWidth = SmallButtonWidth(resyncLabel);
         var resync = new Rect(new Vector2(row.Max.X - resyncWidth, row.Min.Y), row.Max);
         var label = followingText.Format(Loc.T(L.AetherStream.ViewingStream), watchAlong.HostName() ?? string.Empty);
         var labelHeight = Typography.LineHeight(TextStyles.Subheadline);
@@ -866,7 +861,7 @@ internal sealed partial class AetherStreamApp
         var thumb = new Rect(thumbMin, thumbMin + new Vector2(thumbHeight * ThumbAspect, thumbHeight));
         DrawThumb(drawList, thumb, url, thumbnailUrl, Metrics.Radius.Sm * scale);
 
-        var skipRadius = 16f * scale;
+        var skipRadius = RoundButton.SmallRadius * scale;
         var skipCenter = new Vector2(card.Max.X - pad - skipRadius, card.Center.Y);
         var canSkip = CanDrive;
         var startsQueue = !watchAlong.IsViewing && queue.Current is null;
@@ -887,9 +882,8 @@ internal sealed partial class AetherStreamApp
             Typography.FitText(title, textRight - textLeft, TextStyles.BodyEmphasized), Ink.TitleInk,
             TextStyles.BodyEmphasized);
 
-        if (canSkip && HoverButton.Circle(drawList, "aetherstream.upnext.skip", skipCenter, skipRadius,
-                startsQueue ? FontAwesomeIcon.Play : FontAwesomeIcon.StepForward, Ink.ButtonFill, Ink.TitleInk,
-                ImGui.GetIO().DeltaTime, 1f, true,
+        if (canSkip && StreamRoundButton(drawList, "aetherstream.upnext.skip", skipCenter, skipRadius,
+                startsQueue ? FontAwesomeIcon.Play : FontAwesomeIcon.StepForward, ButtonStyle.Gray,
                 Loc.T(startsQueue ? L.AetherStream.PlayNow : L.AetherStream.SkipToNext)))
         {
             SkipToNext();

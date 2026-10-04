@@ -40,15 +40,13 @@ internal static class VenueCard
     private const float RailRounding = 18f;
     private const float RailPad = 11f;
     private const float RailScrimShare = 0.66f;
-    private const float ShadowOpacity = 0.35f;
     private const float RimAlpha = 0.30f;
     private const float RimWeight = 1.5f;
-    private const float ActionButtonHeight = 36f;
+    private const float ActionButtonHeight = Button.RegularHeight;
     private const float FeaturedRounding = 22f;
     private const float FeaturedPad = 14f;
     private const float FeaturedScrimShare = 0.72f;
-    private const float GoHeight = 36f;
-    private const float GoGlyph = 15f;
+    private const float GoHeight = Button.RegularHeight;
     private const float LeadColumn = 50f;
     private const float LeadGap = 6f;
     public const float LeadWidth = LeadColumn + LeadGap;
@@ -65,7 +63,6 @@ internal static class VenueCard
     private static readonly TextStyle FeaturedTitleStyle = TextStyles.Title2;
     private static readonly TextStyle RowTitleStyle = TextStyles.BodyEmphasized;
     private static readonly TextStyle LeadTopStyle = TextStyles.SubheadlineEmphasized;
-    private static readonly TextStyle GoStyle = TextStyles.SubheadlineEmphasized;
     private static readonly TextStyle RailTitleStyle = TextStyles.SubheadlineEmphasized;
     private static readonly TextStyle RailStatusStyle = TextStyles.Caption1;
     private static readonly Vector4 OverlayMutedInk = new(1f, 1f, 1f, 0.80f);
@@ -113,9 +110,9 @@ internal static class VenueCard
     public static VenueCardAction DrawFeed(ImDrawListPtr drawList, AppSkin ui, Rect card, VenueEvent venue,
         in VenueCardText text, bool favorite, in VenueArt art, bool actions, float scale)
     {
-        var radius = VenuesArt.CardRadius(scale);
+        var radius = Metrics.Radius.Grouped * scale;
         var hovered = UiInteract.Hover(card.Min, card.Max);
-        VenuesArt.Card(drawList, ui, card.Min, card.Max, scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var hero = new Rect(card.Min, new Vector2(card.Max.X, card.Min.Y + HeroHeight(card.Width, scale)));
         drawList.PushClipRect(hero.Min, hero.Max, true);
         VenueImage.Cover(drawList, new Rect(hero.Min, hero.Max + new Vector2(0f, radius)), radius, venue,
@@ -179,8 +176,8 @@ internal static class VenueCard
         if (venue.CanTeleport)
         {
             var rect = new Rect(new Vector2(left, row.Min.Y), new Vector2(left + split, row.Max.Y));
-            if (VenuesArt.PillButton(drawList, ui, rect, key + 1u, Loc.T(L.Travel.GoThere),
-                    PhoneIcons.NavigationFilled, true))
+            if (VenuesArt.Action(drawList, ui, rect, key + 1u, Loc.T(L.Travel.GoThere),
+                    PhoneIcons.NavigationFilled, false, ButtonStyle.Prominent))
             {
                 action = VenueCardAction.Teleport;
             }
@@ -191,8 +188,8 @@ internal static class VenueCard
         if (hasTwitch)
         {
             var rect = new Rect(new Vector2(left, row.Min.Y), new Vector2(left + split, row.Max.Y));
-            if (VenuesArt.PillButton(drawList, ui, rect, key + 2u, Loc.T(L.Venues.WatchOnTwitch),
-                    PhoneIcons.ExternalLink, false))
+            if (VenuesArt.Action(drawList, ui, rect, key + 2u, Loc.T(L.Venues.WatchOnTwitch),
+                    PhoneIcons.ExternalLink, false, ButtonStyle.Gray))
             {
                 action = VenueCardAction.Twitch;
             }
@@ -313,7 +310,7 @@ internal static class VenueCard
         if (goRect.Width > 0f)
         {
             if (DrawGoButton(drawList, goRect, Loc.T(L.Travel.GoThere), ui,
-                    live && InsideClip(clip, goRect.Min.X, goRect.Max.X)))
+                    live && InsideClip(clip, goRect.Min.X, goRect.Max.X), unchecked(ImGui.GetID(text.PressId) + 3u)))
             {
                 action = VenueCardAction.Teleport;
             }
@@ -367,7 +364,7 @@ internal static class VenueCard
 
         var pad = FeaturedPad * scale;
         var label = Loc.T(L.Travel.GoThere);
-        var width = Typography.Measure(label, GoStyle).X + (GoGlyph + 6f + 28f) * scale;
+        var width = VenuesArt.ActionWidth(label, PhoneIcons.NavigationFilled, false, GoHeight * scale);
         var top = card.Max.Y - pad - GoHeight * scale;
         return new Rect(new Vector2(card.Max.X - pad - width, top),
             new Vector2(card.Max.X - pad, top + GoHeight * scale));
@@ -381,7 +378,6 @@ internal static class VenueCard
         var grow = HoverLift * scale * eased -
                    rest.Width * 0.5f * (1f - PressFx.Scale(id, pressed, PressFx.CardPressedScale));
         var card = new Rect(rest.Min - new Vector2(grow, grow), rest.Max + new Vector2(grow, grow));
-        Elevation.Card(drawList, card.Min, card.Max, rounding, scale, ShadowOpacity * (1f + eased));
         return card;
     }
 
@@ -398,31 +394,13 @@ internal static class VenueCard
 
     private static bool InsideClip(Rect clip, float left, float right) => left >= clip.Min.X && right <= clip.Max.X;
 
-    private static bool DrawGoButton(ImDrawListPtr drawList, Rect rect, string label, AppSkin ui, bool interactive)
+    private static bool DrawGoButton(ImDrawListPtr drawList, Rect rect, string label, AppSkin ui, bool interactive,
+        uint key)
     {
-        var scale = UiScale.Current;
         var hovered = interactive && UiInteract.Hover(rect.Min, rect.Max);
-        var fill = hovered ? Palette.Lighten(ui.Accent, 0.12f) : ui.Accent;
-        Squircle.Fill(drawList, rect.Min, rect.Max, rect.Height * 0.5f, ImGui.GetColorU32(fill));
-        var glyphSize = GoGlyph * scale;
-        var labelSize = Typography.Measure(label, GoStyle);
-        var contentLeft = rect.Center.X - (glyphSize + 6f * scale + labelSize.X) * 0.5f;
-        PhoneIcon.Draw(drawList, new Vector2(contentLeft + glyphSize * 0.5f, rect.Center.Y),
-            PhoneIcons.NavigationFilled, AccentRing.Ink, glyphSize);
-        Typography.Draw(drawList,
-            new Vector2(contentLeft + glyphSize + 6f * scale, rect.Center.Y - labelSize.Y * 0.5f), label,
-            AccentRing.Ink, GoStyle);
-        if (!interactive)
-        {
-            return false;
-        }
-
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(rect.Min, rect.Max, hovered);
+        var face = Button.Surface(drawList, rect, ui.Ink, ButtonStyle.Prominent, ButtonRole.Normal, true, hovered, key);
+        VenuesArt.DrawGlyphLabel(drawList, face, label, PhoneIcons.NavigationFilled, false);
+        return interactive && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     public static VenueCardAction DrawRow(ImDrawListPtr drawList, AppSkin ui, Rect row, VenueEvent venue,

@@ -18,7 +18,7 @@ internal static class SubmitField
         var pillMin = new Vector2(bar.Min.X, bar.Center.Y - PillHalfHeight * scale);
         var pillMax = new Vector2(bar.Max.X, bar.Center.Y + PillHalfHeight * scale);
         var radius = (pillMax.Y - pillMin.Y) * 0.5f;
-        Squircle.Fill(drawList, pillMin, pillMax, radius, ImGui.GetColorU32(theme.GroupedCard));
+        Squircle.Fill(drawList, pillMin, pillMax, radius, ImGui.GetColorU32(Surfaces.Fill(theme.TextStrong, FillLevel.Tertiary)));
         var glyphCenter = new Vector2(pillMin.X + 16f * scale, bar.Center.Y);
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {
@@ -89,7 +89,7 @@ internal static class SubmitField
         var pillMax = new Vector2(bar.Max.X, bar.Center.Y + halfHeight);
         var rowCenterY = pillMax.Y - rowHeight * 0.5f;
         Squircle.Fill(drawList, pillMin, pillMax, MathF.Min(pillMax.Y - pillMin.Y, rowHeight) * 0.5f,
-            ImGui.GetColorU32(theme.GroupedCard));
+            ImGui.GetColorU32(Surfaces.Fill(theme.TextStrong, FillLevel.Tertiary)));
         var glyphCenter = new Vector2(pillMin.X + 16f * scale, rowCenterY);
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {

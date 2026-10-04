@@ -165,7 +165,7 @@ internal sealed partial class ActivityApp : IPhoneApp
         var max = new Vector2(origin.X + width, origin.Y + height);
         var card = new Rect(origin, max);
         UiAnchors.Report("character.week", card);
-        ui.Card(drawList, origin, max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = ActivityArt.CardPad * scale * 0.5f;
         var columnWidth = (width - pad * 2f) / ActivityDigest.WeekLength;
         var delta = ActivityArt.FrameDelta();

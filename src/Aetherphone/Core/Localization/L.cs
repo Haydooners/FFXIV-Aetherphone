@@ -2178,6 +2178,8 @@ internal static class L
                 "Overhauled the whole phone in liquid glass: the dock, folders, widgets, sheets and search pill show the wallpaper through them and catch the light from your cursor"),
             new("changelog.r1042.5",
                 "Redrew every app icon as a painted, full-color set that stays sharp at every phone size"),
+            new("changelog.r1042.150",
+                "Unified the buttons, search fields, cards and section headers in every app, so the whole phone shares one look and one press and hover feel"),
             new("changelog.r1042.6",
                 "Rebuilt the Dynamic Island around live activities: calls, music and radio, MogCast watch-alongs, timers and meetups starting within the hour, with a tap to expand and control them"),
             new("changelog.r1042.7",

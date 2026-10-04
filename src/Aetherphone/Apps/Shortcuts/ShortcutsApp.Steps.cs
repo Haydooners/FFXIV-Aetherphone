@@ -163,7 +163,7 @@ internal sealed partial class ShortcutsApp
     private float DrawEmptySteps(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var rect = new Rect(origin, new Vector2(origin.X + width, origin.Y + EmptyStepsHeight * scale));
-        ShortcutsArt.Card(drawList, ui, rect.Min, rect.Max, scale);
+        ui.Card(drawList, rect.Min, rect.Max, Metrics.Radius.Grouped * scale);
         var hovered = ShortcutsArt.RowInteraction(drawList, ui, rect, scale);
         var pad = Metrics.Space.Lg * scale;
         var badge = ShortcutsArt.BadgeSize * scale;
@@ -207,13 +207,13 @@ internal sealed partial class ShortcutsApp
             var drop = new Vector2(0f, FloatingShadowDrop * scale);
             Squircle.Fill(drawList, rect.Min + drop, rect.Max + drop, radius,
                 ImGui.GetColorU32(new Vector4(0f, 0f, 0f, FloatingShadowAlpha)));
-            ui.Card(drawList, rect.Min, rect.Max, radius, true);
+            ui.Card(drawList, rect.Min, rect.Max, radius);
             Squircle.Fill(drawList, rect.Min, rect.Max, radius,
                 ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, FloatingLift)));
         }
         else
         {
-            ui.Card(drawList, rect.Min, rect.Max, radius, true);
+            ui.Card(drawList, rect.Min, rect.Max, radius);
         }
 
         var pad = BlockPad * scale;
@@ -290,7 +290,8 @@ internal sealed partial class ShortcutsApp
     {
         var radius = Metrics.Radius.Field * scale;
         var malformed = ShortcutRules.IsBadLink(step);
-        Squircle.Fill(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(ui.FieldSurface));
+        Squircle.Fill(drawList, rect.Min, rect.Max, radius,
+            ImGui.GetColorU32(Surfaces.Fill(ui.TitleInk, FillLevel.Tertiary)));
         if (malformed)
         {
             Squircle.Stroke(drawList, rect.Min, rect.Max, radius,
@@ -337,7 +338,8 @@ internal sealed partial class ShortcutsApp
     {
         var width = MathF.Min(rect.Width, StepperWidth * scale);
         var capsule = new Rect(rect.Min, new Vector2(rect.Min.X + width, rect.Max.Y));
-        Squircle.Fill(drawList, capsule.Min, capsule.Max, capsule.Height * 0.5f, ImGui.GetColorU32(ui.FieldSurface));
+        Squircle.Fill(drawList, capsule.Min, capsule.Max, capsule.Height * 0.5f,
+            ImGui.GetColorU32(Surfaces.Fill(ui.TitleInk, FillLevel.Tertiary)));
         var label = WaitLabel(index, step.Seconds);
         var labelSize = Typography.Measure(label, TextStyles.BodyEmphasized);
         Typography.Draw(drawList, capsule.Center - labelSize * 0.5f, label, ui.TitleInk, TextStyles.BodyEmphasized);
@@ -346,38 +348,30 @@ internal sealed partial class ShortcutsApp
         var plusCenter = new Vector2(capsule.Max.X - capsule.Height * 0.5f, capsule.Center.Y);
         var canLower = editable && step.Seconds > ShortcutRunner.MinWaitSeconds + 0.001f;
         var canRaise = editable && step.Seconds < ShortcutRunner.MaxWaitSeconds - 0.001f;
-        if (StepperButtonDraw(drawList, minusCenter, buttonRadius, FontAwesomeIcon.Minus, canLower, editable, scale))
+        if (StepperButtonDraw(drawList, index * 2, minusCenter, buttonRadius, FontAwesomeIcon.Minus, canLower,
+                editable, scale))
         {
             step.Seconds = ShortcutRules.NudgeWait(step.Seconds, -1);
         }
 
-        if (StepperButtonDraw(drawList, plusCenter, buttonRadius, FontAwesomeIcon.Plus, canRaise, editable, scale))
+        if (StepperButtonDraw(drawList, index * 2 + 1, plusCenter, buttonRadius, FontAwesomeIcon.Plus, canRaise,
+                editable, scale))
         {
             step.Seconds = ShortcutRules.NudgeWait(step.Seconds, 1);
         }
     }
 
-    private bool StepperButtonDraw(ImDrawListPtr drawList, Vector2 center, float radius, FontAwesomeIcon glyph,
-        bool enabled, bool visible, float scale)
+    private bool StepperButtonDraw(ImDrawListPtr drawList, int slot, Vector2 center, float radius,
+        FontAwesomeIcon glyph, bool enabled, bool visible, float scale)
     {
         if (!visible)
         {
             return false;
         }
 
-        var hit = new Vector2(radius + 4f * scale);
-        var hovered = enabled && dragIndex < 0 && UiInteract.Hover(center - hit, center + hit);
-        var tint = ShortcutsArt.WaitTint;
-        drawList.AddCircleFilled(center, radius,
-            ImGui.GetColorU32(Palette.WithAlpha(tint, !enabled ? 0.08f : hovered ? 0.34f : 0.18f)), 24);
-        ProgressRing.CenterIcon(drawList, center, glyph, Palette.WithAlpha(tint, enabled ? 1f : 0.4f),
-            StepperGlyph * scale);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(center - hit, center + hit, hovered);
+        var key = unchecked(ImGui.GetID("shortcuts.wait.stepper") + (uint)slot);
+        return RoundButton.FontIcon(drawList, key, center, radius, glyph, StepperGlyph * scale,
+            ui.Ink.WithAccent(ShortcutsArt.WaitTint), ButtonStyle.Tinted, enabled: enabled && dragIndex < 0);
     }
 
     private void DrawPluginToken(ImDrawListPtr drawList, Rect rect, ShortcutStep step, int index, bool editable,
@@ -393,7 +387,7 @@ internal sealed partial class ShortcutsApp
         var width = MathF.Min(rect.Width, natural);
         var token = new Rect(rect.Min, new Vector2(rect.Min.X + width, rect.Max.Y));
         var hovered = editable && dragIndex < 0 && UiInteract.Hover(token.Min, token.Max);
-        var fill = hovered ? Palette.Mix(ui.FieldSurface, ui.TitleInk, 0.06f) : ui.FieldSurface;
+        var fill = Surfaces.Fill(ui.TitleInk, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
         Squircle.Fill(drawList, token.Min, token.Max, token.Height * 0.5f, ImGui.GetColorU32(fill));
         var iconMin = new Vector2(token.Min.X + inset, token.Center.Y - iconSize * 0.5f);
         var icon = catalog.Icon(step.Text);

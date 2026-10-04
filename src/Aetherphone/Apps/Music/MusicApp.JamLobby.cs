@@ -20,8 +20,6 @@ internal sealed partial class MusicApp
     private const float JamCodeFieldMaxWidth = 340f;
     private const float JamWaitingHeight = 150f;
     private const float JamSpinnerRadius = 16f;
-    private const float JamGlowCoverage = 0.55f;
-    private const float JamGlowStrength = 0.22f;
     private const int JamStackMax = 4;
 
     private static readonly TextStyle JamButtonStyle = TextStyles.Headline;
@@ -77,9 +75,7 @@ internal sealed partial class MusicApp
         var card = BeginJamBlock(pad + tile + Metrics.Space.Lg * scale + titleHeight + Metrics.Space.Xs * scale
             + bodyHeight + Metrics.Space.Xl * scale + fieldHeight + buttonHeight + pad);
         var drawList = ImGui.GetWindowDrawList();
-        var rounding = Metrics.Radius.Card * scale;
-        ui.Card(drawList, card.Min, card.Max, rounding, true);
-        Material.TopGlow(drawList, card.Min, card.Max, rounding, ui.Accent, JamGlowCoverage, JamGlowStrength);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var top = card.Min.Y + pad;
         DrawJamHeroTile(drawList, new Vector2(card.Center.X, top + tile * 0.5f), tile, FontAwesomeIcon.UserFriends);
         top += tile + Metrics.Space.Lg * scale;
@@ -186,7 +182,7 @@ internal sealed partial class MusicApp
         var card = BeginJamBlock(pad + spinner + Metrics.Space.Lg * scale + titleHeight + Metrics.Space.Xs * scale
             + bodyHeight + Metrics.Space.Xl * scale + buttonHeight + pad);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Card * scale, true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var top = card.Min.Y + pad;
         LoadingPulse.Spinner(new Vector2(card.Center.X, top + spinner * 0.5f), JamSpinnerRadius * scale, ui.Accent);
         top += spinner + Metrics.Space.Lg * scale;

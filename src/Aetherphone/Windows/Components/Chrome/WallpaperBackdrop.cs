@@ -20,10 +20,15 @@ internal readonly struct BackdropSnapshot
     public readonly float Darkness;
     public readonly int FlatFrame;
     public readonly Vector4 FlatColor;
+    public readonly Vector4 FlatBottom;
+    public readonly float FlatTop;
+    public readonly float FlatSpan;
+    public readonly bool AppGround;
 
     public BackdropSnapshot(int recordedFrame, Rect quad, ImTextureID lightHandle, Vector2 lightUv0,
         Vector2 lightUv1, float[]? lightGrid, bool hasDark, ImTextureID darkHandle, Vector2 darkUv0, Vector2 darkUv1,
-        float[]? darkGrid, float darkness, int flatFrame, Vector4 flatColor)
+        float[]? darkGrid, float darkness, int flatFrame, Vector4 flatColor, Vector4 flatBottom, float flatTop,
+        float flatSpan, bool appGround)
     {
         RecordedFrame = recordedFrame;
         Quad = quad;
@@ -39,6 +44,10 @@ internal readonly struct BackdropSnapshot
         Darkness = darkness;
         FlatFrame = flatFrame;
         FlatColor = flatColor;
+        FlatBottom = flatBottom;
+        FlatTop = flatTop;
+        FlatSpan = flatSpan;
+        AppGround = appGround;
     }
 }
 
@@ -62,12 +71,18 @@ internal static class WallpaperBackdrop
     private static float darkness;
     private static int flatFrame = -1;
     private static Vector4 flatColor;
+    private static Vector4 flatBottom;
+    private static float flatTop;
+    private static float flatSpan;
+    private static bool appGround;
     private static int requestedFrame = -1;
 
     public static bool Available => ImGui.GetFrameCount() - recordedFrame <= FrameTolerance && quad.Width > 0f &&
                                     quad.Height > 0f;
 
     public static bool FlatAvailable => ImGui.GetFrameCount() - flatFrame <= FrameTolerance;
+
+    public static bool OnAppGround => appGround && !Available && FlatAvailable;
 
     public static bool Requested => ImGui.GetFrameCount() - requestedFrame <= FrameTolerance;
 
@@ -77,6 +92,30 @@ internal static class WallpaperBackdrop
     {
         flatFrame = ImGui.GetFrameCount();
         flatColor = color with { W = 1f };
+        flatBottom = flatColor;
+        flatTop = 0f;
+        flatSpan = 0f;
+        appGround = false;
+    }
+
+    public static void RecordAppGround(Rect screen, Vector4 top, Vector4 bottom)
+    {
+        flatFrame = ImGui.GetFrameCount();
+        flatColor = top with { W = 1f };
+        flatBottom = bottom with { W = 1f };
+        flatTop = screen.Min.Y;
+        flatSpan = screen.Height;
+        appGround = true;
+    }
+
+    public static Vector4 GroundAt(float y)
+    {
+        if (flatSpan <= 0f)
+        {
+            return flatColor;
+        }
+
+        return Vector4.Lerp(flatColor, flatBottom, Math.Clamp((y - flatTop) / flatSpan, 0f, 1f));
     }
 
     public static void Record(Rect drawnQuad, ImTextureID light, Vector2 lightMinUv, Vector2 lightMaxUv,
@@ -104,7 +143,7 @@ internal static class WallpaperBackdrop
 
     public static BackdropSnapshot Snapshot() =>
         new(recordedFrame, quad, lightHandle, lightUv0, lightUv1, lightGrid, hasDark, darkHandle, darkUv0, darkUv1,
-            darkGrid, darkness, flatFrame, flatColor);
+            darkGrid, darkness, flatFrame, flatColor, flatBottom, flatTop, flatSpan, appGround);
 
     public static void Restore(in BackdropSnapshot snapshot)
     {
@@ -122,6 +161,10 @@ internal static class WallpaperBackdrop
         darkness = snapshot.Darkness;
         flatFrame = snapshot.FlatFrame;
         flatColor = snapshot.FlatColor;
+        flatBottom = snapshot.FlatBottom;
+        flatTop = snapshot.FlatTop;
+        flatSpan = snapshot.FlatSpan;
+        appGround = snapshot.AppGround;
     }
 
     public static bool FillEdge(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float band,
@@ -167,7 +210,9 @@ internal static class WallpaperBackdrop
                 return false;
             }
 
-            Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(flatColor with { W = opacity }));
+            Squircle.FillVerticalGradient(drawList, min, max, radius,
+                ImGui.GetColorU32(GroundAt(min.Y) with { W = opacity }),
+                ImGui.GetColorU32(GroundAt(max.Y) with { W = opacity }));
             return true;
         }
 
@@ -196,12 +241,12 @@ internal static class WallpaperBackdrop
     {
         if (!Available)
         {
-            return FlatAvailable ? Core.Theme.Palette.Luminance(flatColor) : -1f;
+            return FlatAvailable ? Core.Theme.Palette.Luminance(GroundAt((min.Y + max.Y) * 0.5f)) : -1f;
         }
 
         if (lightGrid is null)
         {
-            return FlatAvailable ? Core.Theme.Palette.Luminance(flatColor) : -1f;
+            return FlatAvailable ? Core.Theme.Palette.Luminance(GroundAt((min.Y + max.Y) * 0.5f)) : -1f;
         }
 
         var (lightMin, lightMax) = Map(min, max, lightUv0, lightUv1);

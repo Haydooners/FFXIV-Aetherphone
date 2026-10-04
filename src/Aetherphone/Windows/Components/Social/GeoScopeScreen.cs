@@ -257,7 +257,7 @@ internal sealed class GeoScopeScreen
         var pad = sidePad * scale;
         var card = new Rect(new Vector2(origin.X + pad, origin.Y),
             new Vector2(origin.X + width - pad, origin.Y + height));
-        ui.Card(ImGui.GetWindowDrawList(), card.Min, card.Max, cardRadius * scale, elevated: true);
+        ui.Card(ImGui.GetWindowDrawList(), card.Min, card.Max, cardRadius * scale);
         return card;
     }
 

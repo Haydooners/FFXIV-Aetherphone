@@ -90,9 +90,6 @@ internal static class SupportRow
         Squircle.FillHorizontalGradient(drawList, bounds.Min, bounds.Max, radius,
             ImGui.GetColorU32(Palette.WithAlpha(Palette.Mix(Coral, Violet, drift), alpha)),
             ImGui.GetColorU32(Palette.WithAlpha(Palette.Mix(Violet, Coral, drift), alpha * 0.8f)));
-        Squircle.FillVerticalGradient(drawList, bounds.Min, bounds.Max, radius,
-            ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.07f + 0.04f * hover)),
-            ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0f)));
     }
 
     private static void DrawParticles(ImDrawListPtr drawList, Rect bounds, float radius, float scale, float hover)
@@ -158,7 +155,6 @@ internal static class SupportRow
 
     private static void DrawBorder(ImDrawListPtr drawList, Rect bounds, float radius, float scale, float hover)
     {
-        Material.EdgeSquircle(drawList, bounds.Min, bounds.Max, radius, scale);
         Squircle.Stroke(drawList, bounds.Min, bounds.Max, radius,
             ImGui.GetColorU32(Palette.WithAlpha(Coral, 0.30f + 0.25f * hover)), 1.2f * scale);
         var angle = Pulse.Phase(BorderSpinMs) * MathF.PI * 2f;

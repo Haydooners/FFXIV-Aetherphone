@@ -22,7 +22,6 @@ internal sealed class PlaylistPickerSheet
     private const float HoverAlpha = 0.07f;
     private const float CheckScale = 0.7f;
     private const float PlusScale = 0.9f;
-    private const float TileFillAlpha = 0.12f;
 
     private readonly Sheet sheet = new();
     private Song song;
@@ -115,7 +114,7 @@ internal sealed class PlaylistPickerSheet
             cell.Bounds.Min.Y + (cell.Bounds.Height - side) * 0.5f);
         var artMax = artMin + new Vector2(side, side);
         Squircle.Fill(drawList, artMin, artMax, side * ArtworkTile.TileRadiusFraction,
-            ImGui.GetColorU32(Palette.WithAlpha(ink, TileFillAlpha)));
+            ImGui.GetColorU32(Surfaces.Fill(ink, FillLevel.Secondary)));
         AppSkin.Icon(drawList, (artMin + artMax) * 0.5f, IconGlyph.Of(FontAwesomeIcon.Plus), kit.Ui.Accent,
             PlusScale);
         var label = Loc.T(L.Music.NewPlaylist);
@@ -148,8 +147,8 @@ internal sealed class PlaylistPickerSheet
                 Metrics.Size.FieldHeight * scale * 0.5f),
             new Vector2(origin.X + width - inset, field.Center.Y + Metrics.Size.FieldHeight * scale * 0.5f));
         var hasName = nameDraft.Trim().Length > 0;
-        var created = AppSkin.PillButton(createRect, Loc.T(L.Music.CreatePlaylist), true, hasName && interactive,
-            kit.Ui.Theme);
+        var created = Button.Draw(createRect, Loc.T(L.Music.CreatePlaylist), kit.Ui.Ink, ButtonStyle.Prominent,
+            enabled: hasName && interactive);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height));
         if (!hasName || !interactive || (!submitted && !created))

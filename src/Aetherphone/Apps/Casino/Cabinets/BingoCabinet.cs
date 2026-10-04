@@ -18,14 +18,15 @@ internal sealed class BingoCabinet
     private const float BallRailHeight = 48f;
     private const float ProgressHeight = 62f;
     private const float LadderRowHeight = 34f;
-    private const float SegmentHeight = 40f;
-    private const float PillHeight = 46f;
+    private const float SegmentHeight = 32f;
+    private const float PillHeight = Button.LargeHeight;
     private const float CardGap = 10f;
     private const float CardPlatePadding = 5f;
     private const float CardLabelHeight = 22f;
     private const int RailCalls = 8;
 
     private static readonly Vector4 Gold = new(1f, 0.84f, 0.42f, 1f);
+    private static readonly Vector4 CountThumbInk = new(1f, 1f, 1f, 1f);
 
     private static readonly Vector4[] ConfettiPalette =
     {
@@ -328,10 +329,7 @@ internal sealed class BingoCabinet
         var height = CallerHeight * scale;
         var min = origin;
         var max = new Vector2(min.X + width, min.Y + height);
-        var callerRounding = Metrics.Radius.Card * scale;
-        Elevation.Card(drawList, min, max, callerRounding, scale);
-        ui.Card(drawList, min, max, callerRounding);
-        Material.TopGlow(drawList, min, max, callerRounding, ui.Palette.Accent, 0.55f, 0.30f);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         celebrationAnchor = new Vector2((min.X + max.X) * 0.5f, min.Y + 48f * scale);
 
         var centerX = (min.X + max.X) * 0.5f;
@@ -477,12 +475,10 @@ internal sealed class BingoCabinet
         var min = origin;
         var max = new Vector2(min.X + width, min.Y + height);
         var hot = best.Gap <= 1;
-        var rounding = Metrics.Radius.Card * scale;
-        Elevation.Card(drawList, min, max, rounding, scale);
+        var rounding = Metrics.Radius.Grouped * scale;
         ui.Card(drawList, min, max, rounding);
         if (hot)
         {
-            Material.TopGlow(drawList, min, max, rounding, Gold, 0.62f, 0.34f);
             Squircle.Stroke(drawList, min, max, rounding, ImGui.GetColorU32(Gold), 1.4f * scale);
         }
 
@@ -598,7 +594,7 @@ internal sealed class BingoCabinet
             + noteBlock.Y;
         var min = origin;
         var max = new Vector2(min.X + width, min.Y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
 
         Typography.Draw(drawList, new Vector2(min.X + inset, min.Y + inset), heading, ui.TitleInk,
             TextStyles.FootnoteEmphasized);
@@ -721,8 +717,8 @@ internal sealed class BingoCabinet
         var height = inset * 2f + titleSize.Y + 8f * scale + MathF.Max(outcomeBlock.Y, 26f * scale);
         var min = origin;
         var max = new Vector2(min.X + width, min.Y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
-        Squircle.Stroke(drawList, min, max, Metrics.Radius.Card * scale,
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(won ? Gold : ui.Accent, 0.35f)), 1f * scale);
 
         Typography.Draw(drawList, new Vector2(min.X + inset, min.Y + inset), title, ui.TitleInk,
@@ -839,7 +835,7 @@ internal sealed class BingoCabinet
         var rounding = height * 0.5f;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.FieldSurface));
+        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(Surfaces.Fill(ui.Ink, FillLevel.Tertiary)));
         var slotWidth = width / BingoRules.MaxCards;
         for (var count = 1; count <= BingoRules.MaxCards; count++)
         {
@@ -851,16 +847,17 @@ internal sealed class BingoCabinet
             if (selected)
             {
                 var padding = new Vector2(3f * scale, 3f * scale);
-                Squircle.Fill(drawList, slotMin + padding, slotMax - padding, rounding,
-                    ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.9f)));
+                Squircle.Fill(drawList, slotMin + padding, slotMax - padding, rounding - padding.Y,
+                    ImGui.GetColorU32(ui.Accent with { W = 1f }));
             }
             else if (hovered)
             {
-                Squircle.Fill(drawList, slotMin, slotMax, rounding, ImGui.GetColorU32(ui.HoverTint));
+                Squircle.Fill(drawList, slotMin, slotMax, rounding,
+                    ImGui.GetColorU32(Surfaces.Fill(ui.Ink, FillLevel.Quaternary)));
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
             }
 
-            var ink = selected ? ui.Palette.HeaderInk : enabled ? ui.BodyInk : ui.MutedInk;
+            var ink = selected ? CountThumbInk : enabled ? ui.BodyInk : ui.MutedInk;
             Typography.DrawCentered(drawList, (slotMin + slotMax) * 0.5f, GameNumber.Label(count),
                 Palette.WithAlpha(ink, enabled ? 1f : 0.4f), TextStyles.Subheadline);
             if (enabled && UiInteract.Click(slotMin, slotMax, hovered))
@@ -1018,8 +1015,9 @@ internal sealed class BingoCabinet
         var height = block.Y + inset * 2f;
         var min = origin;
         var max = new Vector2(min.X + width, min.Y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, 16f * scale,
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + inset, min.Y + inset), message, ui.TitleInk,
             TextStyles.Footnote, width - inset * 2f);
@@ -1038,7 +1036,7 @@ internal sealed class BingoCabinet
         var height = titleSize.Y + block.Y + inset * 2f + 6f * scale + 44f * scale + Metrics.Space.Sm * scale;
         var min = origin;
         var max = new Vector2(min.X + width, min.Y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + inset, min.Y + inset), title, ui.TitleInk,
             TextStyles.SubheadlineEmphasized);
         Typography.DrawWrappedLeft(new Vector2(min.X + inset, min.Y + inset + titleSize.Y + 6f * scale), hint,
@@ -1046,7 +1044,7 @@ internal sealed class BingoCabinet
 
         var pillRect = new Rect(new Vector2(min.X + width * 0.2f, max.Y - inset - 44f * scale),
             new Vector2(min.X + width * 0.8f, max.Y - inset));
-        if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.Cashier), true, true, ui.Theme))
+        if (ui.PillButton(pillRect, Loc.T(L.Casino.Cashier), true, true))
         {
             openCashier();
         }
@@ -1068,7 +1066,7 @@ internal sealed class BingoCabinet
         var height = titleSize.Y + block.Y + inset * 2f + 6f * scale;
         var min = new Vector2(left, body.Min.Y + Metrics.Space.Lg * scale);
         var max = new Vector2(left + width, min.Y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + inset, min.Y + inset), title, ui.TitleInk,
             TextStyles.SubheadlineEmphasized);
         Typography.DrawWrappedLeft(new Vector2(min.X + inset, min.Y + inset + titleSize.Y + 6f * scale), hint,
@@ -1077,7 +1075,7 @@ internal sealed class BingoCabinet
         var pillY = max.Y + Metrics.Space.Md * scale;
         var pillRect = new Rect(new Vector2(left + width * 0.2f, pillY),
             new Vector2(left + width * 0.8f, pillY + 44f * scale));
-        if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.WheelBackToFloor), true, true, ui.Theme))
+        if (ui.PillButton(pillRect, Loc.T(L.Casino.WheelBackToFloor), true, true))
         {
             leaveRoom();
         }

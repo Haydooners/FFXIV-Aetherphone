@@ -44,7 +44,7 @@ internal sealed partial class FeedbackApp
     private const float InfoRowHeight = 24f;
     private const float InfoDimAlpha = 0.45f;
     private const float SendBandPad = 12f;
-    private const float SendPillHeight = 50f;
+    private const float SendPillHeight = Button.LargeHeight;
     private const float BannerPad = 10f;
     private const float BannerIconScale = 0.7f;
     private const float BannerFillAlpha = 0.16f;
@@ -108,7 +108,7 @@ internal sealed partial class FeedbackApp
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + SwitcherHeight * scale);
         var radius = Metrics.Radius.Grouped * scale;
-        ui.Card(drawList, min, max, radius, true);
+        ui.Card(drawList, min, max, radius);
         var kinds = FeedbackKinds.All;
         var pad = SwitcherPad * scale;
         var segmentWidth = (width - pad * 2f) / kinds.Length;
@@ -165,7 +165,7 @@ internal sealed partial class FeedbackApp
     {
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + FieldCardHeight * scale);
-        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var pad = FieldPad * scale;
         var fieldMin = new Vector2(min.X + pad, min.Y + pad);
         var fieldSize = new Vector2(width - pad * 2f, max.Y - pad - CounterRowHeight * scale - fieldMin.Y);
@@ -384,7 +384,7 @@ internal sealed partial class FeedbackApp
         var height = (DeviceRowHeight + DisclosureRowHeight) * scale + infoHeight * open;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
 
         var iconSize = DeviceIconSize * scale;
         var rowCenterY = min.Y + DeviceRowHeight * scale * 0.5f;
@@ -518,7 +518,7 @@ internal sealed partial class FeedbackApp
         var posting = store.Posting;
         var enabled = draft.HasText && !posting && cooldown == 0;
         var label = SendLabel(posting, cooldown);
-        if (FeedbackArt.SendPill(ui, pill, label, enabled, posting, "feedback.send.pill"))
+        if (FeedbackArt.SendButton(ui, pill, label, enabled, posting, "feedback.send.pill"))
         {
             BeginSend();
         }

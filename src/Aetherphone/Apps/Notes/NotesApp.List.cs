@@ -17,7 +17,7 @@ internal sealed partial class NotesApp
     private const float RowTitleTop = 12f;
     private const float RowLineTop = 36f;
     private const float StampGap = 8f;
-    private const float SectionHeaderHeight = 40f;
+    private const float SectionHeaderHeight = CardSectionHeader.HeightUnits;
     private const float SectionHeaderInset = 4f;
     private const float SearchGap = 6f;
     private const float TrashRowHeight = 52f;
@@ -121,8 +121,10 @@ internal sealed partial class NotesApp
     {
         var origin = ImGui.GetCursorScreenPos();
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-        GlassField.Search(ImGui.GetWindowDrawList(), field, "##notesSearch", Loc.T(L.Notes.SearchHint),
-            ref searchQuery, theme, scale, SearchMaxLength, false);
+        var drawList = ImGui.GetWindowDrawList();
+        SearchBar.Surface(drawList, field, ui.Ink);
+        GlassField.Search(drawList, field, "##notesSearch", Loc.T(L.Notes.SearchHint), ref searchQuery, theme, scale,
+            SearchMaxLength, false);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, field.Height + SearchGap * scale));
     }
@@ -171,12 +173,9 @@ internal sealed partial class NotesApp
     private void DrawSectionHeader(string title, float width, float scale, Vector4 ink)
     {
         var origin = ImGui.GetCursorScreenPos();
-        var height = SectionHeaderHeight * scale;
-        var fitted = Typography.FitText(title, width - SectionHeaderInset * scale, TextStyles.Title3);
-        var textHeight = Typography.LineHeight(TextStyles.Title3);
-        Typography.Draw(ImGui.GetWindowDrawList(),
-            new Vector2(origin.X + SectionHeaderInset * scale, origin.Y + height - textHeight - Metrics.Space.Xs * scale),
-            fitted, ink, TextStyles.Title3);
+        var height = CardSectionHeader.Draw(ImGui.GetWindowDrawList(),
+            new Vector2(origin.X + SectionHeaderInset * scale, origin.Y), width - SectionHeaderInset * scale, title,
+            ink);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height));
     }

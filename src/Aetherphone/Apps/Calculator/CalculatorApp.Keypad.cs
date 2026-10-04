@@ -37,7 +37,6 @@ internal sealed partial class CalculatorApp
     private const int OperatorColumn = 3;
     private const float HoverLighten = 0.08f;
     private const float PressLighten = 0.30f;
-    private const float HistoryGlyphScale = 0.62f;
     private static readonly byte[] KeyRows = { 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4 };
     private static readonly byte[] KeyColumns = { 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 2, 3 };
     private static readonly sbyte[] KeyDigits = { -1, -1, -1, -1, 7, 8, 9, -1, 4, 5, 6, -1, 1, 2, 3, -1, 0, -1, -1 };

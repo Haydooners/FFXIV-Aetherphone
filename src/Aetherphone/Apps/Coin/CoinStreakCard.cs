@@ -58,13 +58,13 @@ internal sealed class CoinStreakCard
         var label = wallet.CheckInAvailable ? Loc.T(L.Coin.CheckIn) : Loc.T(L.Coin.CheckedIn);
         var buttonHeight = CoinArt.CapsuleHeight * scale;
         var buttonWidth = MathF.Min(width * 0.42f,
-            MathF.Max(ButtonMinWidth * scale, CoinArt.CapsuleWidth(label, buttonHeight, TextStyles.SubheadlineEmphasized)));
+            MathF.Max(ButtonMinWidth * scale, CoinArt.CapsuleWidth(label, buttonHeight)));
         var rowCenterY = tileMin.Y + tile * 0.5f;
         buttonRect = new Rect(new Vector2(max.X - pad - buttonWidth, rowCenterY - buttonHeight * 0.5f),
             new Vector2(max.X - pad, rowCenterY + buttonHeight * 0.5f));
         var tone = wallet.CheckInAvailable ? CapsuleTone.Filled : CapsuleTone.Tinted;
         pressed = CoinArt.Capsule(drawList, ui, ImGui.GetID("coin.checkin"), buttonRect, label, tone,
-            enabled && wallet.CheckInAvailable && !checking, TextStyles.SubheadlineEmphasized);
+            enabled && wallet.CheckInAvailable && !checking);
 
         var textLeft = tileMax.X + TileGap * scale;
         var textRight = buttonRect.Min.X - CoinArt.ValueGap * scale;

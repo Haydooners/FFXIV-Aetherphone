@@ -592,7 +592,7 @@ internal sealed partial class PhotosApp
         var top = content.Min.Y + SheetHeaderHeight * scale;
         var field = new Rect(new Vector2(content.Min.X + padX, top),
             new Vector2(content.Max.X - padX, top + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, frameTheme);
+        SearchBar.Surface(drawList, field, ControlInk.From(frameTheme));
         var focus = nameSheetFocus;
         nameSheetFocus = false;
         var submitted = GlassField.Text(field, "##photos.albumName", Loc.T(L.Photos.AlbumName), ref nameDraft,

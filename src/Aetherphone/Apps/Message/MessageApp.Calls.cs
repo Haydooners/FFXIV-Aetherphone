@@ -393,7 +393,7 @@ internal sealed partial class MessageApp
         var buttonWidth = 190f * scale;
         var buttonTop = baseY + 128f * scale;
         var buttonRect = new Rect(new Vector2(centerX - buttonWidth * 0.5f, buttonTop),
-            new Vector2(centerX + buttonWidth * 0.5f, buttonTop + 46f * scale));
+            new Vector2(centerX + buttonWidth * 0.5f, buttonTop + Button.LargeHeight * scale));
         if (ui.PillButton(buttonRect, Loc.T(L.Phone.Enable), true))
         {
             calls.SetEnabled(true);

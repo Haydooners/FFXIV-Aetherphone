@@ -92,7 +92,7 @@ internal sealed partial class ActivityApp
         var height = pad * 2f + nameHeight + valueHeight + detailHeight + ChartGap * scale + ChartHeight * scale +
                      ChartLabelGap * scale + letterHeight;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, origin, max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var tint = ActivityArt.Tint(ring);
         var left = origin.X + pad;
         var textWidth = MathF.Max(1f, width - pad * 2f);
@@ -141,7 +141,7 @@ internal sealed partial class ActivityApp
 
         var rowHeight = StatRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight * rows);
-        ui.Card(drawList, origin, max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var rowTop = origin.Y;
         if (play.Length > 0)
         {

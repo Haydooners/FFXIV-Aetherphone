@@ -105,7 +105,7 @@ internal sealed partial class MusicApp
         var height = MathF.Max(tile, titleHeight + hintHeight) + pad * 2f;
         var card = BeginJamBlock(height);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Md * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var tileMin = new Vector2(card.Min.X + pad, card.Center.Y - tile * 0.5f);
         IconTile.FillShaded(drawList, tileMin, tileMin + new Vector2(tile, tile), tile * Metrics.Radius.TileFactor,
             IconTile.Surface(tint));
@@ -140,7 +140,7 @@ internal sealed partial class MusicApp
         var saveWidth = Typography.Measure(saveLabel, TextStyles.SubheadlineEmphasized).X + fieldHeight;
         var card = BeginJamBlock(fieldHeight + pad * 2f);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Md * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var save = new Rect(new Vector2(card.Max.X - pad - saveWidth, card.Min.Y + pad),
             new Vector2(card.Max.X - pad, card.Max.Y - pad));
         var field = new Rect(new Vector2(card.Min.X + pad, card.Min.Y + pad),

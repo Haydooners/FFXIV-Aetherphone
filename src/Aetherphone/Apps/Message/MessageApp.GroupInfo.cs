@@ -245,7 +245,7 @@ internal sealed partial class MessageApp
         var textWidth = width - pad * 2f;
         var textHeight = Typography.MeasureWrappedBlock(description, TextStyles.Subheadline, textWidth).Y;
         var cardMax = new Vector2(origin.X + width, origin.Y + textHeight + pad * 2f);
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Md * scale);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
         Typography.DrawWrappedLeft(new Vector2(origin.X + pad, origin.Y + pad), description, ink.BodyInk,
             TextStyles.Subheadline, textWidth);
         if (canManage && UiInteract.HoverClick(origin, cardMax))
@@ -569,7 +569,7 @@ internal sealed partial class MessageApp
             Loc.Upper(Loc.T(L.Message.GroupDescription)), ink.FaintInk, SectionStyle);
         var cardMin = new Vector2(fieldRect.Min.X, labelTop + Typography.LineHeight(SectionStyle) + 8f * scale);
         var cardMax = new Vector2(fieldRect.Max.X, cardMin.Y + DescriptionFieldHeight * scale);
-        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Md * scale);
+        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Grouped * scale);
         var pad = 12f * scale;
         ImGui.SetCursorScreenPos(cardMin + new Vector2(pad, pad));
         var inputWidth = cardMax.X - cardMin.X - pad * 2f;
@@ -592,7 +592,7 @@ internal sealed partial class MessageApp
 
         var buttonTop = cardMax.Y + 18f * scale;
         var buttonRect = new Rect(new Vector2(fieldRect.Min.X, buttonTop),
-            new Vector2(fieldRect.Max.X, buttonTop + FieldHeight * scale));
+            new Vector2(fieldRect.Max.X, buttonTop + ActionButtonHeight * scale));
         var title = editGroupTitle.Trim();
         var description = editGroupDescription.Trim();
         var changed = !string.Equals(title, conversation.Title, StringComparison.Ordinal)
@@ -647,7 +647,7 @@ internal sealed partial class MessageApp
         var sideInset = CellPadX * scale;
         var buttonTop = barTop + 8f * scale;
         var buttonRect = new Rect(new Vector2(area.Min.X + sideInset, buttonTop),
-            new Vector2(area.Max.X - sideInset, buttonTop + FieldHeight * scale));
+            new Vector2(area.Max.X - sideInset, buttonTop + ActionButtonHeight * scale));
         if (ui.PillButton(buttonRect, Loc.T(L.DirectMessages.Add), true) && !composeBusy)
         {
             var ids = SelectedIds(composeRows);

@@ -131,7 +131,7 @@ internal sealed partial class WalletApp : IPhoneApp
             return max.Y;
         }
 
-        WalletArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         for (var index = 0; index < entries.Length; index++)
         {
@@ -139,8 +139,8 @@ internal sealed partial class WalletApp : IPhoneApp
             var row = new Rect(new Vector2(origin.X, top), new Vector2(max.X, top + rowHeight));
             if (index > 0)
             {
-                WalletArt.Hairline(drawList, ui, origin.X + pad + (WalletArt.DialSize + WalletArt.TextGap) * scale,
-                    max.X - pad, top);
+                FeedCell.Hairline(drawList, origin.X + pad + (WalletArt.DialSize + WalletArt.TextGap) * scale,
+                    max.X - pad, top, ui.Hairline);
             }
 
             if (index == 0 && anchor is not null)
@@ -188,7 +188,7 @@ internal sealed partial class WalletApp : IPhoneApp
             return max.Y;
         }
 
-        WalletArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var drawn = 0;
         for (var index = first; index < text.LineCount && drawn < count; index++)
@@ -203,8 +203,8 @@ internal sealed partial class WalletApp : IPhoneApp
             var row = new Rect(new Vector2(origin.X, top), new Vector2(max.X, top + rowHeight));
             if (drawn > 0)
             {
-                WalletArt.Hairline(drawList, ui, origin.X + pad + (WalletArt.DialSize + WalletArt.TextGap) * scale,
-                    max.X - pad, top);
+                FeedCell.Hairline(drawList, origin.X + pad + (WalletArt.DialSize + WalletArt.TextGap) * scale,
+                    max.X - pad, top, ui.Hairline);
             }
 
             drawn++;
@@ -252,7 +252,7 @@ internal sealed partial class WalletApp : IPhoneApp
         var reserve = trailing.Length > 0
             ? Typography.Measure(trailing, TextStyles.Body).X + WalletArt.ValueGap * scale
             : 0f;
-        var height = WalletArt.SectionHeader(drawList, origin, width, title, ui.TitleInk, reserve, scale);
+        var height = CardSectionHeader.Draw(drawList, origin, width, title, ui.TitleInk, reserve);
         if (trailing.Length == 0)
         {
             return height;

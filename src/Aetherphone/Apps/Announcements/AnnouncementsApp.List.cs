@@ -13,7 +13,7 @@ internal sealed partial class AnnouncementsApp
 {
     private const int SearchMaxLength = 64;
     private const float SearchBottomGap = 14f;
-    private const float FeatureRadius = Metrics.Radius.Widget;
+    private const float FeatureRadius = Metrics.Radius.Grouped;
     private const float FeaturePad = 18f;
     private const float FeatureLane = 18f;
     private const float FeatureEyebrowGap = 10f;
@@ -210,7 +210,7 @@ internal sealed partial class AnnouncementsApp
         var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Search(drawList, field, "##announcementsSearch", Loc.T(L.Announcements.SearchHint), ref query,
             theme, scale, SearchMaxLength, false);
         ImGui.SetCursorScreenPos(origin);
@@ -406,10 +406,11 @@ internal sealed partial class AnnouncementsApp
     {
         ImGui.Dummy(new Vector2(0f, gapUnits * scale));
         var origin = ImGui.GetCursorScreenPos();
-        var size = Typography.Measure(label, TextStyles.Title3);
-        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(origin.X + SectionHeaderInset * scale, origin.Y), label,
-            ui.TitleInk, TextStyles.Title3);
-        ImGui.Dummy(new Vector2(ScrollLayout.StableContentWidth(), size.Y + SectionHeaderGap * scale));
+        var width = ScrollLayout.StableContentWidth();
+        var height = CardSectionHeader.Draw(ImGui.GetWindowDrawList(),
+            new Vector2(origin.X + SectionHeaderInset * scale, origin.Y), width - SectionHeaderInset * scale, label,
+            ui.TitleInk);
+        ImGui.Dummy(new Vector2(width, height));
     }
 
     private float MeasureRow(AnnouncementEntry entry, float left, float right, float scale, out string[] titleLines,
@@ -522,7 +523,7 @@ internal sealed partial class AnnouncementsApp
         var pad = FeaturePad * scale;
 
         var featureMax = new Vector2(origin.X + width, origin.Y + SkeletonFeatureHeight * scale);
-        ui.Card(drawList, origin, featureMax, FeatureRadius * scale, true);
+        ui.Card(drawList, origin, featureMax, FeatureRadius * scale);
         var barY = origin.Y + pad;
         SkeletonBar(drawList, origin.X + pad, barY, width * 0.22f, SkeletonBarHeight * scale, packed);
         barY += (SkeletonBarHeight + FeatureEyebrowGap + Metrics.Space.Xxs) * scale;

@@ -92,10 +92,9 @@ internal sealed partial class LinkpearlApp
         var rowHeight = ChatListChrome.ActionRowHeight * scale;
         var cardMin = new Vector2(content.Min.X, cursorY);
         var cardMax = new Vector2(content.Max.X, cursorY + rowHeight * 2f);
-        var rounding = Metrics.Radius.Card * scale;
-        Squircle.Fill(drawList, cardMin, cardMax, rounding, ImGui.GetColorU32(ink.FieldFill));
-        Squircle.Stroke(drawList, cardMin, cardMax, rounding, ImGui.GetColorU32(ink.ChipStroke),
-            Metrics.Stroke.Hairline);
+        var rounding = Metrics.Radius.Grouped * scale;
+        Squircle.Fill(drawList, cardMin, cardMax, rounding,
+            ImGui.GetColorU32(Surfaces.Fill(ui.Ink, FillLevel.Tertiary)));
         var rowInset = Metrics.Space.Lg * scale;
         var customRow = new Rect(new Vector2(cardMin.X + rowInset, cardMin.Y),
             new Vector2(cardMax.X - rowInset, cardMin.Y + rowHeight));
@@ -142,9 +141,7 @@ internal sealed partial class LinkpearlApp
         var hovered = UiInteract.Hover(tile.Min, tile.Max);
         var rounding = Metrics.Radius.Card * scale;
         Squircle.Fill(drawList, tile.Min, tile.Max, rounding,
-            ImGui.GetColorU32(hovered ? ink.ButtonFill : ink.FieldFill));
-        Squircle.Stroke(drawList, tile.Min, tile.Max, rounding,
-            ImGui.GetColorU32(hovered ? ink.GlassStroke : ink.ChipStroke), Metrics.Stroke.Hairline);
+            ImGui.GetColorU32(Surfaces.Fill(ui.Ink, hovered ? FillLevel.Secondary : FillLevel.Tertiary)));
         var inset = QuickTileInset * scale;
         var tileRadius = QuickTileRadius * scale;
         var glyphCenter = new Vector2(tile.Min.X + inset + tileRadius, tile.Min.Y + inset + tileRadius);

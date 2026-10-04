@@ -212,8 +212,8 @@ internal sealed partial class HealthApp
     private void DrawStatTile(ImDrawListPtr drawList, Rect rect, Vector4 tint, FontAwesomeIcon icon, string label,
         string value, bool lit, float scale)
     {
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, rect.Min, rect.Max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, rect.Min, rect.Max, radius);
         if (lit)
         {
             Material.TopGlow(drawList, rect.Min, rect.Max, radius, tint, 0.6f, 0.14f);

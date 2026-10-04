@@ -189,8 +189,8 @@ internal sealed partial class VenuesApp
             if (entry.Index < 0)
             {
                 cursorY = Section(drawList, origin.X, cursorY, width, entry.Heading, string.Empty, out _, scale);
-                VenuesArt.Card(drawList, ui, new Vector2(origin.X, cursorY),
-                    new Vector2(origin.X + width, cursorY + entry.Count * rowHeight), scale);
+                ui.Card(drawList, new Vector2(origin.X, cursorY),
+                    new Vector2(origin.X + width, cursorY + entry.Count * rowHeight), Metrics.Radius.Grouped * scale);
                 rowInGroup = 0;
                 groupCount = entry.Count;
                 continue;
@@ -212,7 +212,7 @@ internal sealed partial class VenuesApp
             {
                 var inset = VenuesArt.RowPad + VenueCard.LeadWidth + VenuesArt.RowThumb + VenuesArt.TextGap;
                 var left = row.Min.X + inset * scale;
-                VenuesArt.Hairline(drawList, ui, left, row.Max.X, row.Max.Y);
+                FeedCell.Hairline(drawList, left, row.Max.X, row.Max.Y, ui.Hairline);
             }
         }
 

@@ -19,7 +19,7 @@ internal sealed partial class HuntsApp
     private const float FeatureTileSize = 40f;
     private const float AlertRowHeight = 52f;
     private const float AlertRowTile = 30f;
-    private const float FooterButtonHeight = 40f;
+    private const float FooterButtonHeight = Button.LargeHeight;
     private const int RankColumns = 5;
     private const int ExpansionColumns = 3;
     private const int WorldColumns = 2;
@@ -96,7 +96,7 @@ internal sealed partial class HuntsApp
         var height = pad + MathF.Max(tile, titleHeight + HuntsArt.LineGap * scale + hintHeight) +
                      HuntsArt.RowGap * scale + buttonHeight + pad;
         var card = new Rect(origin, origin + new Vector2(width, height));
-        ui.Card(drawList, card.Min, card.Max, HuntsArt.CardRadius * scale, elevated: true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var tileMin = new Vector2(card.Min.X + pad, card.Min.Y + pad);
         IconTile.FillShaded(drawList, tileMin, tileMin + new Vector2(tile, tile), tile * Metrics.Radius.TileFactor,
             IconTile.Surface(ui.Accent));
@@ -273,7 +273,7 @@ internal sealed partial class HuntsApp
     private void DrawMarkOverrides(bool interactive, float scale)
     {
         EnsureAlertOverrides();
-        ui.SectionLabel(Loc.T(L.Hunts.MarkNotificationsTitle), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Hunts.MarkNotificationsTitle), ui.TitleInk);
         if (alertOverrides.Count == 0)
         {
             DrawHintCard(Loc.T(L.Hunts.MarkNotificationsEmptyHint), scale);
@@ -368,7 +368,7 @@ internal sealed partial class HuntsApp
         var width = ImGui.GetContentRegionAvail().X;
         var pad = HuntsArt.CardPadding * scale;
         var height = Typography.MeasureWrappedBlock(text, TextStyles.Subheadline, width - pad * 2f).Y + pad * 2f;
-        ui.Card(drawList, origin, origin + new Vector2(width, height), HuntsArt.CardRadius * scale);
+        ui.Card(drawList, origin, origin + new Vector2(width, height), Metrics.Radius.Grouped * scale);
         Typography.DrawWrappedLeft(origin + new Vector2(pad, pad), text, ui.MutedInk, TextStyles.Subheadline,
             width - pad * 2f);
         ImGui.Dummy(new Vector2(width, height + HuntsArt.CardGap * scale));
@@ -387,7 +387,7 @@ internal sealed partial class HuntsApp
 
     private void DrawMapMarkersCard(float scale)
     {
-        ui.SectionLabel(Loc.T(L.Hunts.MapSection), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Hunts.MapSection), ui.TitleInk);
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
@@ -403,7 +403,7 @@ internal sealed partial class HuntsApp
             pad * 2f + titleHeight + HuntsArt.LineGap * scale + descriptionHeight);
         var card = new Rect(origin, origin + new Vector2(width, height));
         UiAnchors.Report("hunts.alerts.map", card);
-        ui.Card(drawList, card.Min, card.Max, HuntsArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var tileMin = new Vector2(card.Min.X + pad, card.Center.Y - tile * 0.5f);
         IconTile.FillShaded(drawList, tileMin, tileMin + new Vector2(tile, tile), tile * Metrics.Radius.TileFactor,
             IconTile.Surface(HuntsArt.OpenColor));

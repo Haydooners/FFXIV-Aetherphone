@@ -17,8 +17,8 @@ internal sealed partial class StratsApp
     private const float ScrollAnchorShare = 0.45f;
     private const float MechanicSettledShare = 0.55f;
     private const float DisclosureRowHeight = 44f;
-    private const float PagerPillHeight = 38f;
-    private const float LinkPillHeight = 30f;
+    private const float PagerPillHeight = Button.RegularHeight;
+    private const float LinkPillHeight = Button.SmallHeight;
     private const float MaxImageHeight = 420f;
     private const float SpotBarWidth = 3f;
     private const float SpotFillAlpha = 0.12f;
@@ -495,13 +495,17 @@ internal sealed partial class StratsApp
         for (var phaseIndex = 0; phaseIndex < current.Phases.Length; phaseIndex++)
         {
             var phase = current.Phases[phaseIndex];
+            using var phaseScope = ImRaii.PushId(phaseIndex);
             MarkEntry();
             DrawChapterHeading(phase.Name, scale);
             DrawPhaseIntro(phase, phaseIndex, scale);
             for (var mechIndex = 0; mechIndex < phase.Mechs.Length; mechIndex++)
             {
                 MarkEntry();
-                DrawMechanicCard(current, phase.Mechs[mechIndex], phaseIndex, mechIndex, scale);
+                using (ImRaii.PushId(mechIndex))
+                {
+                    DrawMechanicCard(current, phase.Mechs[mechIndex], phaseIndex, mechIndex, scale);
+                }
             }
         }
     }
@@ -665,6 +669,7 @@ internal sealed partial class StratsApp
             var pillWidth = MathF.Min(width, AppSkin.PillWidthFor(link.Label, pillHeight));
             var left = flow.Place(pillWidth);
             var top = origin.Y + flow.Row * (pillHeight + rowGap);
+            using var linkScope = ImRaii.PushId(index);
             if (ui.GhostButton(new Rect(new Vector2(left, top), new Vector2(left + pillWidth, top + pillHeight)),
                     Typography.FitText(link.Label, pillWidth - pillHeight * 0.5f, TextStyles.Subheadline)))
             {

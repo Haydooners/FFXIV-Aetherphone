@@ -23,7 +23,8 @@ internal sealed partial class CasinoApp
     private const float BankrollSubAlpha = 0.82f;
     private const float BankrollIdleAlpha = 0.55f;
     private const float BankrollIconWashAlpha = 0.22f;
-    private const float BankrollButtonHeight = 34f;
+    private const float BankrollButtonHeight = Button.RegularHeight;
+    private const float BankrollButtonInkLuminance = 0.22f;
     private const float BankrollButtonGap = 8f;
     private const float TonightBarHeight = 8f;
     private const float TonightPad = 16f;
@@ -156,7 +157,6 @@ internal sealed partial class CasinoApp
 
         var surface = Palette.ShadeToLuminance(ui.Accent with { W = 1f }, BankrollLuminance);
         var radius = Metrics.Radius.Widget * scale;
-        Elevation.Card(drawList, min, max, radius, scale, 0.9f);
         Material.AccentGlass(drawList, min, max, radius, scale, surface, BankrollGlassOpacity);
 
         var state = casino.State;
@@ -208,16 +208,15 @@ internal sealed partial class CasinoApp
         var seated = stack > 0 && casino.State?.Sitting is not null;
         var busy = casino.MovingMoney;
         var buyLabel = seated ? Loc.T(L.Casino.TopUp) : Loc.T(L.Casino.BuyIn);
-        var buyWidth = CasinoArt.CapsuleWidth(buyLabel, height, TextStyles.SubheadlineEmphasized);
+        var buyWidth = Button.WidthFor(buyLabel, ButtonSize.Regular);
         var cashLabel = Loc.T(L.Casino.CashOut);
-        var cashWidth = seated ? CasinoArt.CapsuleWidth(cashLabel, height, TextStyles.SubheadlineEmphasized) : 0f;
+        var cashWidth = seated ? Button.WidthFor(cashLabel, ButtonSize.Regular) : 0f;
         var gap = BankrollButtonGap * scale;
         var walletWidth = MathF.Max(0f, right - left - buyWidth - cashWidth - (seated ? gap * 2f : gap));
         DrawWalletLine(drawList, left, top, height, walletWidth);
 
         var buyRect = new Rect(new Vector2(right - buyWidth, top), new Vector2(right, top + height));
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("casino.bankroll.buy"), buyRect, buyLabel,
-                CasinoCapsuleTone.OnGlass, !busy, TextStyles.SubheadlineEmphasized))
+        if (DrawBankrollBuy(drawList, buyRect, buyLabel, !busy))
         {
             cashier.Open();
         }
@@ -229,11 +228,21 @@ internal sealed partial class CasinoApp
 
         var cashRect = new Rect(new Vector2(buyRect.Min.X - gap - cashWidth, top),
             new Vector2(buyRect.Min.X - gap, top + height));
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("casino.bankroll.cash"), cashRect, cashLabel,
-                CasinoCapsuleTone.GlassQuiet, !busy, TextStyles.SubheadlineEmphasized))
+        if (Button.Draw(drawList, cashRect, cashLabel, ui.Ink with { Ink = CasinoArt.White }, ButtonStyle.Gray,
+                enabled: !busy, id: "casino.bankroll.cash"))
         {
             AskCashOut(casino.State!.Sitting!);
         }
+    }
+
+    private bool DrawBankrollBuy(ImDrawListPtr drawList, Rect rect, string label, bool enabled)
+    {
+        var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
+        var face = Button.Surface(drawList, rect, ui.Ink.WithAccent(CasinoArt.White), ButtonStyle.Prominent,
+            ButtonRole.Normal, enabled, hovered, ImGui.GetID("casino.bankroll.buy"));
+        var labelInk = Palette.ShadeToLuminance(ui.Accent with { W = 1f }, BankrollButtonInkLuminance);
+        Button.DrawLabel(drawList, face with { LabelInk = labelInk with { W = face.LabelInk.W } }, label);
+        return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private void DrawWalletLine(ImDrawListPtr drawList, float left, float top, float height, float width)
@@ -289,7 +298,7 @@ internal sealed partial class CasinoApp
         var max = new Vector2(origin.X + width, origin.Y + height);
         UiAnchors.Report("casino.tonight", new Rect(min, max));
         var hovered = CasinoArt.PressCard(ImGui.GetID("casino.tonight"), min, max, out var cardMin, out var cardMax);
-        CoinArt.Card(drawList, ui, cardMin, cardMax, scale);
+        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Grouped * scale);
 
         var left = min.X + pad;
         var right = max.X - pad;
@@ -406,7 +415,7 @@ internal sealed partial class CasinoApp
         var max = new Vector2(origin.X + width, origin.Y + height);
         UiAnchors.Report("casino.spin", new Rect(min, max));
         var hovered = CasinoArt.PressCard(ImGui.GetID("casino.spin"), min, max, out var cardMin, out var cardMax);
-        CoinArt.Card(drawList, ui, cardMin, cardMax, scale);
+        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Grouped * scale);
 
         var pad = Metrics.Space.Lg * scale;
         var tile = SpinTile * scale;
@@ -419,7 +428,7 @@ internal sealed partial class CasinoApp
         {
             var badge = Loc.T(L.Casino.SpinReadyBadge);
             var badgeHeight = SpinBadgeHeight * scale;
-            var badgeWidth = CasinoArt.CapsuleWidth(badge, badgeHeight, TextStyles.FootnoteEmphasized);
+            var badgeWidth = Typography.Measure(badge, TextStyles.FootnoteEmphasized).X + badgeHeight;
             var badgeMin = new Vector2(trailing - badgeWidth, tileCenter.Y - badgeHeight * 0.5f);
             var badgeMax = new Vector2(trailing, tileCenter.Y + badgeHeight * 0.5f);
             Squircle.Fill(drawList, badgeMin, badgeMax, badgeHeight * 0.5f, ImGui.GetColorU32(ui.Accent));
@@ -487,7 +496,7 @@ internal sealed partial class CasinoApp
     {
         var hovered = CasinoArt.PressCard(ImGui.GetID(RoomOf(gameId)), card.Min, card.Max, out var cardMin,
             out var cardMax);
-        CoinArt.Card(drawList, ui, cardMin, cardMax, scale);
+        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Grouped * scale);
         var pad = LivePad * scale;
         var tile = LiveTile * scale;
         var tileCenter = new Vector2(card.Min.X + pad + tile * 0.5f, card.Min.Y + pad + tile * 0.5f);
@@ -578,7 +587,7 @@ internal sealed partial class CasinoApp
     {
         var gameId = FloorGameIds[gameIndex];
         var hovered = CasinoArt.PressCard(ImGui.GetID(gameId), card.Min, card.Max, out var cardMin, out var cardMax);
-        CoinArt.Card(drawList, ui, cardMin, cardMax, scale);
+        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Grouped * scale);
         var pad = GridPad * scale;
         var tile = GridTile * scale;
         var tileCenter = new Vector2(card.Min.X + pad + tile * 0.5f, card.Min.Y + pad + tile * 0.5f);

@@ -28,7 +28,7 @@ internal sealed class SupportPage : ISettingsPage
     private const float TierPerkPadding = 10f;
     private const float TierPadding = 16f;
     private const float TierGap = 14f;
-    private const float TierButtonHeight = 40f;
+    private const float TierButtonHeight = Button.LargeHeight;
     private const float TierButtonGap = 12f;
     private const float ChipHeight = 22f;
     private const float ChipPadX = 10f;
@@ -233,35 +233,16 @@ internal sealed class SupportPage : ISettingsPage
 
         var buttonMin = new Vector2(origin.X + padding, max.Y - padding - buttonHeight);
         var buttonMax = new Vector2(fullRight, max.Y - padding);
-        DrawJoinButton(drawList, buttonMin, buttonMax, in tier, index, scale);
+        DrawJoinButton(drawList, buttonMin, buttonMax, in tier, theme);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height));
     }
 
     private static void DrawJoinButton(ImDrawListPtr drawList, Vector2 min, Vector2 max, in PatreonTier tier,
-        int index, float scale)
+        PhoneTheme theme)
     {
-        var hovered = UiInteract.Hover(min, max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale(unchecked(0x5E70u + (uint)index), pressed, PressFx.ControlPressedScale);
-        var center = (min + max) * 0.5f;
-        var half = (max - min) * 0.5f * grow;
-        var drawMin = center - half;
-        var drawMax = center + half;
-        Squircle.FillVerticalGradient(drawList, drawMin, drawMax, half.Y,
-            ImGui.GetColorU32(Palette.Lighten(tier.Accent, hovered ? 0.14f : 0.06f)),
-            ImGui.GetColorU32(Palette.Darken(tier.Accent, 0.12f)));
-        Material.EdgeSquircle(drawList, drawMin, drawMax, half.Y, scale);
-        var label = Loc.T(L.Settings.SupportJoinTier, tier.Name);
-        var size = Typography.Measure(label, TextStyles.SubheadlineEmphasized);
-        Typography.Draw(drawList, new Vector2(center.X - size.X * 0.5f, center.Y - size.Y * 0.5f), label,
-            Vector4.One, TextStyles.SubheadlineEmphasized);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(min, max, hovered))
+        if (Button.Draw(drawList, new Rect(min, max), Loc.T(L.Settings.SupportJoinTier, tier.Name),
+                ControlInk.From(theme).WithAccent(tier.Accent), ButtonStyle.Prominent))
         {
             UrlActions.OpenInBrowser(tier.JoinUrl);
         }

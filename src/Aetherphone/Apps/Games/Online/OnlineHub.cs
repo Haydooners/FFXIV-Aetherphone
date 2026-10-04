@@ -23,7 +23,7 @@ internal sealed class OnlineHub
     private const float MedallionRadius = 25f;
     private const float RoomMedallionRadius = 18f;
     private const float RoomRowHeight = 64f;
-    private const float HostPillHeight = 32f;
+    private const float HostPillHeight = Button.RegularHeight;
     private const float HostPillMinWidth = 72f;
     private const float CardPadding = 16f;
     private const float TextGap = 14f;
@@ -198,14 +198,13 @@ internal sealed class OnlineHub
         var pad = CardPadding * scale;
         var pillLabel = Loc.T(L.Games.OnlineHostShort);
         var pillHeight = HostPillHeight * scale;
-        var pillWidth = MathF.Max(GamesHubArt.PillWidth(pillLabel, pillHeight, TextStyles.Headline),
-            HostPillMinWidth * scale);
+        var pillWidth = MathF.Max(GamesHubArt.ButtonWidth(pillLabel, pillHeight), HostPillMinWidth * scale);
         var pillRect = new Rect(new Vector2(rect.Max.X - pad - pillWidth, rect.Center.Y - pillHeight * 0.5f),
             new Vector2(rect.Max.X - pad, rect.Center.Y + pillHeight * 0.5f));
         var overPill = UiInteract.Hover(pillRect.Min, pillRect.Max);
         var hovered = !overPill && UiInteract.Hover(rect.Min, rect.Max);
         var enabled = !store.IntentInFlight;
-        ui.Card(drawList, rect.Min, rect.Max, rounding, true);
+        ui.Card(drawList, rect.Min, rect.Max, rounding);
         drawList.PushClipRect(rect.Min, rect.Max, true);
         var radius = MedallionRadius * scale;
         var medallion = new Vector2(rect.Min.X + pad + radius, rect.Center.Y);
@@ -239,8 +238,8 @@ internal sealed class OnlineHub
             TextStyles.Headline);
         Typography.Draw(drawList, new Vector2(textLeft, textTop + titleHeight),
             Typography.FitText(HostHint(kind), textWidth, TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
-        var pillClicked = GamesHubArt.Pill(drawList, pillId, pillRect, pillLabel, accent,
-            GamePalette.InkOn(accent), TextStyles.Headline, enabled);
+        var pillClicked = Button.Draw(drawList, pillRect, pillLabel, ui.Ink.WithAccent(accent), enabled: enabled,
+            id: pillId);
         var cardClicked = enabled && !overPill && UiInteract.Click(rect.Min, rect.Max, hovered);
         if ((pillClicked || cardClicked) && enabled)
         {
@@ -256,17 +255,19 @@ internal sealed class OnlineHub
     {
         var height = GlassField.HeightUnits * scale;
         var label = Loc.T(L.Games.OnlineJoin);
-        var pillWidth = MathF.Max(JoinPillMinWidth * scale, GamesHubArt.PillWidth(label, height, TextStyles.Headline));
+        var buttonHeight = Button.RegularHeight * scale;
+        var pillWidth = MathF.Max(JoinPillMinWidth * scale, GamesHubArt.ButtonWidth(label, buttonHeight));
         var field = new Rect(new Vector2(left, top),
             new Vector2(left + width - pillWidth - JoinGap * scale, top + height));
-        GlassField.Surface(drawList, field, GlassField.Radius(field), scale, 0f, 1f);
+        SearchBar.Surface(drawList, field, ControlInk.From(ui.Theme));
         var submitted = GlassField.Text(field, "##gameRoomCode", Loc.T(L.Games.OnlineJoinHint), ref codeBuffer,
             ui.Theme, scale, CodeBufferLength, false, ImGuiInputTextFlags.EnterReturnsTrue);
         var trimmed = codeBuffer.AsSpan().Trim();
         var ready = trimmed.Length > 0 && !store.IntentInFlight;
-        var pillRect = new Rect(new Vector2(field.Max.X + JoinGap * scale, top), new Vector2(left + width, top + height));
-        var tapped = GamesHubArt.Pill(drawList, "games.join", pillRect, label, ui.Accent, AccentRing.Ink,
-            TextStyles.Headline, ready);
+        var buttonTop = top + (height - buttonHeight) * 0.5f;
+        var pillRect = new Rect(new Vector2(field.Max.X + JoinGap * scale, buttonTop),
+            new Vector2(left + width, buttonTop + buttonHeight));
+        var tapped = Button.Draw(drawList, pillRect, label, ui.Ink, enabled: ready, id: "games.join");
         if ((tapped || submitted) && ready)
         {
             inlineReason = string.Empty;
@@ -322,11 +323,10 @@ internal sealed class OnlineHub
             FontAwesomeIcon.ExclamationTriangle, ui.MutedInk);
         var label = Loc.T(L.Common.Retry);
         var height = HostPillHeight * scale;
-        var pillWidth = GamesHubArt.PillWidth(label, height, TextStyles.Headline);
+        var pillWidth = GamesHubArt.ButtonWidth(label, height);
         var rect = new Rect(new Vector2(left + (width - pillWidth) * 0.5f, bottom + Metrics.Space.Md * scale),
             new Vector2(left + (width + pillWidth) * 0.5f, bottom + Metrics.Space.Md * scale + height));
-        if (GamesHubArt.Pill(drawList, "games.rooms.retry", rect, label, ui.Accent, AccentRing.Ink,
-                TextStyles.Headline, !store.LoadingRooms))
+        if (Button.Draw(drawList, rect, label, ui.Ink, enabled: !store.LoadingRooms, id: "games.rooms.retry"))
         {
             RefreshNow();
         }

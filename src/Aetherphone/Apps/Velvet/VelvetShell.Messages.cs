@@ -29,25 +29,23 @@ internal sealed partial class VelvetShell
     private const float IntroHeaderGap = 12f;
     private const float IntroFieldHeight = 118f;
     private const float IntroFieldPad = 10f;
-    private const float IntroWellAlpha = 0.55f;
     private const float IntroHintGap = 10f;
     private const float IntroSendGap = 18f;
-    private const float IntroSendHeight = 48f;
+    private const float IntroSendHeight = Button.LargeHeight;
     private const float IntroSkipGap = 16f;
     private const float IntroSkipHintGap = 8f;
-    private const float IntroSkipHeight = 44f;
+    private const float IntroSkipHeight = Button.LargeHeight;
     private const float IntroBottomGap = 32f;
     private const float RequestTopGap = 18f;
     private const float RequestMetaGap = 10f;
     private const float RequestActionGap = 22f;
-    private const float RequestActionHeight = 48f;
-    private const float RequestSecondaryHeight = 44f;
+    private const float RequestActionHeight = Button.LargeHeight;
+    private const float RequestSecondaryHeight = Button.LargeHeight;
     private const float RequestSecondaryGap = 10f;
     private const float RequestBottomGap = 32f;
 
     private static readonly TextStyle HeroNameStyle = TextStyles.Title2;
     private static readonly TextStyle HeroHandleStyle = TextStyles.Subheadline;
-    private static readonly TextStyle IntroSendStyle = TextStyles.SubheadlineEmphasized;
 
     private static readonly Comparison<VelvetChatRow> ChatRowsNewestFirst = (left, right) =>
     {
@@ -377,7 +375,7 @@ internal sealed partial class VelvetShell
             Value = archivedChatsCountLabel,
             Chevron = true,
         };
-        if (VRow.Cell(in model, ui, theme, images, lodestone) == VRowHit.Body)
+        if (VRow.Cell(in model, theme, images, lodestone) == VRowHit.Body)
         {
             router.Push(VelvetView.ArchivedChats);
         }
@@ -432,7 +430,7 @@ internal sealed partial class VelvetShell
             Badge = thread.UnreadCount,
             Pinned = pinned,
         };
-        var hit = VRow.Cell(in model, ui, theme, images, lodestone);
+        var hit = VRow.Cell(in model, theme, images, lodestone);
         if (hit == VRowHit.Body)
         {
             OpenThread(thread.OtherUserId);
@@ -459,7 +457,7 @@ internal sealed partial class VelvetShell
             Time = TimeText.Short(connection.ConnectedAtUnix),
             Pinned = pinned,
         };
-        var hit = VRow.Cell(in model, ui, theme, images, lodestone);
+        var hit = VRow.Cell(in model, theme, images, lodestone);
         if (hit == VRowHit.Body)
         {
             OpenThread(connection.UserId);
@@ -524,7 +522,7 @@ internal sealed partial class VelvetShell
                     PillFilled = false,
                     PillEnabled = true,
                 };
-                var hit = VRow.Cell(in model, ui, theme, images, lodestone);
+                var hit = VRow.Cell(in model, theme, images, lodestone);
                 if (hit == VRowHit.Pill)
                 {
                     store.CancelRequest(request.UserId);
@@ -552,7 +550,7 @@ internal sealed partial class VelvetShell
             AvatarUrl = request.AvatarUrl,
             Chevron = true,
         };
-        if (VRow.Cell(in model, ui, theme, images, lodestone) == VRowHit.Body)
+        if (VRow.Cell(in model, theme, images, lodestone) == VRowHit.Body)
         {
             OpenRequest(request.UserId);
         }
@@ -787,8 +785,7 @@ internal sealed partial class VelvetShell
         var origin = ImGui.GetCursorScreenPos();
         var accept = new Rect(new Vector2(origin.X + inset, origin.Y),
             new Vector2(origin.X + inset + contentWidth, origin.Y + RequestActionHeight * scale));
-        if (SocialPill.Accent(drawList, accept, Loc.T(L.Velvet.Accept), VelvetInk.Shared,
-                TextStyles.SubheadlineEmphasized, accept.Height * 0.5f))
+        if (Button.Draw(drawList, accept, Loc.T(L.Velvet.Accept), VelvetTheme.Ink))
         {
             store.AcceptRequest(userId);
             router.Pop(false);
@@ -805,18 +802,13 @@ internal sealed partial class VelvetShell
             new Vector2(secondary.X + inset + half, bottom));
         var view = new Rect(new Vector2(decline.Max.X + RequestSecondaryGap * scale, secondary.Y),
             new Vector2(decline.Max.X + RequestSecondaryGap * scale + half, bottom));
-        var ink = VelvetInk.Shared;
-        if (SocialPill.Flat(drawList, decline, Loc.T(L.Phone.Decline), ink.ButtonFill, ink.ButtonHover,
-                VelvetTheme.Hairline, VelvetTheme.TitleInk, TextStyles.SubheadlineEmphasized,
-                decline.Height * 0.5f))
+        if (Button.Draw(drawList, decline, Loc.T(L.Phone.Decline), VelvetTheme.Ink, ButtonStyle.Gray))
         {
             store.DeclineRequest(userId);
             router.Pop();
         }
 
-        if (SocialPill.Flat(drawList, view, Loc.T(L.Social.ViewProfile), ink.ButtonFill, ink.ButtonHover,
-                VelvetTheme.Hairline, VelvetTheme.TitleInk, TextStyles.SubheadlineEmphasized,
-                view.Height * 0.5f))
+        if (Button.Draw(drawList, view, Loc.T(L.Social.ViewProfile), VelvetTheme.Ink, ButtonStyle.Gray))
         {
             OpenProfile(userId);
         }
@@ -863,8 +855,8 @@ internal sealed partial class VelvetShell
             var sendOrigin = ImGui.GetCursorScreenPos();
             var send = new Rect(new Vector2(sendOrigin.X + inset, sendOrigin.Y),
                 new Vector2(sendOrigin.X + inset + contentWidth, sendOrigin.Y + IntroSendHeight * scale));
-            if (SocialPill.Accent(drawList, send, Loc.T(L.Velvet.SendIntro), VelvetInk.Shared, IntroSendStyle,
-                    send.Height * 0.5f, !string.IsNullOrWhiteSpace(introText) && !store.IntroBusy))
+            if (Button.Draw(drawList, send, Loc.T(L.Velvet.SendIntro), VelvetTheme.Ink,
+                    enabled: !string.IsNullOrWhiteSpace(introText) && !store.IntroBusy))
             {
                 SendIntro(userId);
             }
@@ -877,8 +869,7 @@ internal sealed partial class VelvetShell
             var skipOrigin = ImGui.GetCursorScreenPos();
             var skip = new Rect(new Vector2(skipOrigin.X + inset, skipOrigin.Y),
                 new Vector2(skipOrigin.X + inset + contentWidth, skipOrigin.Y + IntroSkipHeight * scale));
-            if (SocialPill.Flat(drawList, skip, Loc.T(L.Velvet.JustConnectMe), VelvetTheme.Card, VelvetTheme.CardHi,
-                    VelvetTheme.Hairline, VelvetTheme.TitleInk, IntroSendStyle, skip.Height * 0.5f))
+            if (Button.Draw(drawList, skip, Loc.T(L.Velvet.JustConnectMe), VelvetTheme.Ink, ButtonStyle.Gray))
             {
                 ConnectWithoutIntro(userId);
             }
@@ -944,7 +935,7 @@ internal sealed partial class VelvetShell
     {
         var drawList = ImGui.GetWindowDrawList();
         Squircle.Fill(drawList, field.Min, field.Max, Metrics.Radius.Md * scale,
-            VelvetTheme.Alpha(VelvetTheme.Sunken, IntroWellAlpha).Packed());
+            Surfaces.Fill(VelvetTheme.Ink, FillLevel.Tertiary).Packed());
         var padding = ImGui.GetStyle().FramePadding;
         var textLeft = field.Min.X + IntroFieldPad * scale;
         var wrapWidth = MathF.Max(1f, field.Width - (IntroFieldPad * 2f) * scale - padding.X * 2f - 4f * scale);

@@ -9,6 +9,9 @@ namespace Aetherphone.Windows.Components;
 internal sealed class ChipRail
 {
     public const float RowHeight = 34f;
+    public const float ChipHeight = 30f;
+    public const float ChipPadX = 13f;
+    public static readonly TextStyle LabelStyle = TextStyles.SubheadlineEmphasized;
 
     public const float DefaultLabelPadding = 26f;
     public const float CompactLabelPadding = 14f;
@@ -16,14 +19,16 @@ internal sealed class ChipRail
     private const float Gap = 8f;
     private const float SidePad = 2f;
     private const float DragSlop = 5f;
-    private const float ArrowRadius = 11f;
-    private const float ArrowInset = 13f;
-    private const float ArrowChevron = 3.5f;
+    private const float ArrowRadius = RoundButton.SmallRadius;
+    private const float ArrowInset = RoundButton.SmallRadius + SidePad;
+    private const float ArrowBaseRing = 2f;
+    private const int ArrowBaseSegments = 32;
+    private const float ArrowGlyphFraction = 0.95f;
     private const float PageFraction = 0.75f;
     private const float OverflowEpsilon = 0.5f;
 
-    private static readonly Vector4 ArrowScrim = new(0.05f, 0.03f, 0.04f, 0.72f);
-    private static readonly Vector4 ArrowRim = new(1f, 1f, 1f, 0.18f);
+    private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
+    private const float ActiveHoverLift = 0.10f;
 
     private float offset;
     private float maxOffset;
@@ -112,25 +117,17 @@ internal sealed class ChipRail
 
     private bool DrawArrow(ImDrawListPtr drawList, AppSkin ui, Rect rect, bool forward, float scale, bool overlay)
     {
-        var hovered = Hovered(rect.Min, rect.Max, overlay);
-        var highlighted = hovered && !dragging;
         var center = rect.Center;
         var radius = rect.Width * 0.5f;
-        var fill = highlighted ? Palette.Mix(ArrowScrim, ui.Accent, 0.35f) : ArrowScrim;
-        drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(fill), 24);
-        drawList.AddCircle(center, radius, ImGui.GetColorU32(ArrowRim), 24, 1f);
-        var chevron = ArrowChevron * scale;
-        var direction = forward ? -1f : 1f;
-        var tip = new Vector2(center.X - direction * chevron * 0.5f, center.Y);
-        var packed = ImGui.GetColorU32(ui.TitleInk);
-        drawList.AddLine(new Vector2(tip.X + direction * chevron, tip.Y - chevron), tip, packed, 2f * scale);
-        drawList.AddLine(tip, new Vector2(tip.X + direction * chevron, tip.Y + chevron), packed, 2f * scale);
-        if (highlighted)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return dragTravel <= DragSlop * scale && UiInteract.Click(rect.Min, rect.Max, hovered);
+        var baseRadius = radius + ArrowBaseRing * scale;
+        drawList.AddCircleFilled(center, baseRadius, ImGui.GetColorU32(ui.Palette.BackdropTop with { W = 1f }),
+            ArrowBaseSegments);
+        var key = (uint)HashCode.Combine(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this), forward);
+        var clicked = RoundButton.Draw(drawList, key, center, radius, ui.Ink, ButtonStyle.Gray, true, overlay,
+            out var face);
+        PhoneIcon.Draw(drawList, center, forward ? PhoneIcons.ChevronRight : PhoneIcons.ChevronLeft, face.LabelInk,
+            radius * ArrowGlyphFraction * (face.Face.Width / MathF.Max(rect.Width, 0.0001f)));
+        return clicked && dragTravel <= DragSlop * scale;
     }
 
     private void PageTo(float target)
@@ -157,31 +154,34 @@ internal sealed class ChipRail
     }
 
     private static float ChipWidth(string label, float scale, float labelPadding) =>
-        Typography.Measure(label, TextStyles.SubheadlineEmphasized).X + labelPadding * scale;
+        Typography.Measure(label, LabelStyle).X + labelPadding * scale;
 
     private bool DrawChip(ImDrawListPtr drawList, AppSkin ui, string label, bool active, Vector2 leftCenter,
         float width, float scale, bool overlay, bool shadowed, bool interactive = true)
     {
-        var height = RowHeight * scale;
+        var height = ChipHeight * scale;
         var min = new Vector2(leftCenter.X, leftCenter.Y - height * 0.5f);
         var max = new Vector2(leftCenter.X + width, leftCenter.Y + height * 0.5f);
-        var radius = height * 0.5f;
         var hovered = interactive && !shadowed && Hovered(min, max, overlay);
-        var highlighted = hovered && !dragging;
+        PaintChip(drawList, new Rect(min, max), label, active, hovered && !dragging, ui.Ink);
+        return interactive && dragTravel <= DragSlop * scale && UiInteract.Click(min, max, hovered);
+    }
+
+    public static void PaintChip(ImDrawListPtr drawList, Rect rect, string label, bool active, bool highlighted,
+        in ControlInk ink)
+    {
+        var radius = rect.Height * 0.5f;
         var fill = active
-            ? Palette.WithAlpha(ui.Accent, highlighted ? 1f : 0.92f)
-            : highlighted ? ui.HoverTint : ui.FieldSurface;
-        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(fill));
-        var ink = active ? new Vector4(0.11f, 0.08f, 0.02f, 1f) : ui.BodyInk;
-        var labelSize = Typography.Measure(label, TextStyles.SubheadlineEmphasized);
-        var labelOrigin = new Vector2((min.X + max.X - labelSize.X) * 0.5f, (min.Y + max.Y - labelSize.Y) * 0.5f);
-        Typography.Draw(drawList, labelOrigin, label, ink, TextStyles.SubheadlineEmphasized);
+            ? Palette.Mix(ink.Accent, White, highlighted ? ActiveHoverLift : 0f)
+            : Surfaces.Fill(ink, highlighted ? FillLevel.Secondary : FillLevel.Tertiary);
+        Squircle.Fill(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(fill));
+        var labelInk = active ? White : ink.Ink;
+        var fitted = Typography.FitText(label, MathF.Max(1f, rect.Width - rect.Height * 0.5f), LabelStyle);
+        Typography.DrawCentered(drawList, rect.Center, fitted, labelInk, LabelStyle);
         if (highlighted)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
-
-        return interactive && dragTravel <= DragSlop * scale && UiInteract.Click(min, max, hovered);
     }
 
     private static Rect ReserveRow(ChipRail rail, float scale)

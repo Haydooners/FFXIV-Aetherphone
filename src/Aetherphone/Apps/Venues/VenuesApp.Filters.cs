@@ -19,7 +19,7 @@ internal sealed partial class VenuesApp
     private const float TagRowHeight = 46f;
     private const float TagDot = 5f;
     private const float CheckGlyph = 22f;
-    private const float CtaHeight = 48f;
+    private const float CtaHeight = Button.LargeHeight;
     private const float CtaInset = 10f;
     private const int CollapsedTagCount = 10;
     private const int TagSearchMaxLength = 40;
@@ -144,7 +144,7 @@ internal sealed partial class VenuesApp
         var rowHeight = SourceRowHeight * scale;
         var card = new Rect(new Vector2(left, top),
             new Vector2(left + width, top + rowHeight * VenueFilter.SourceCount));
-        VenuesArt.Card(drawList, ui, card.Min, card.Max, scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var inset = CardInset * scale;
         for (var source = 0; source < VenueFilter.SourceCount; source++)
         {
@@ -173,7 +173,7 @@ internal sealed partial class VenuesApp
                 Typography.FitText(Loc.T(SourceHints[source]), textWidth, RowHelpStyle), ui.MutedInk, RowHelpStyle);
             if (source < VenueFilter.SourceCount - 1)
             {
-                VenuesArt.Hairline(drawList, ui, textLeft, row.Max.X, row.Max.Y);
+                FeedCell.Hairline(drawList, textLeft, row.Max.X, row.Max.Y, ui.Hairline);
             }
 
             if (UiInteract.Click(row.Min, row.Max, hovered) && !selected)
@@ -200,7 +200,7 @@ internal sealed partial class VenuesApp
         var helpHeight = Typography.MeasureWrappedBlock(help, RowHelpStyle, textWidth).Y;
         var cardHeight = inner * 2f + titleHeight + VenuesArt.LineGap * scale + helpHeight;
         var top = cursorY;
-        VenuesArt.Card(drawList, ui, new Vector2(left, top), new Vector2(right, top + cardHeight), scale);
+        ui.Card(drawList, new Vector2(left, top), new Vector2(right, top + cardHeight), Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(textLeft, top + inner),
             Typography.FitText(title, textWidth, RowTitleStyle), ui.TitleInk, RowTitleStyle);
         Typography.DrawWrappedLeft(new Vector2(textLeft, top + inner + titleHeight + VenuesArt.LineGap * scale), help,
@@ -244,7 +244,7 @@ internal sealed partial class VenuesApp
     private float DrawTagSearch(ImDrawListPtr drawList, float left, float top, float width, float scale)
     {
         var field = new Rect(new Vector2(left, top), new Vector2(left + width, top + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         var before = tagSearch;
         GlassField.Search(drawList, field, "##venueTagSearch", Loc.T(L.Venues.SearchTags), ref tagSearch, theme, scale,
             TagSearchMaxLength, false);
@@ -274,7 +274,7 @@ internal sealed partial class VenuesApp
         var showMore = !searching && !tagsExpanded && entries.Count > CollapsedTagCount;
         var rows = Math.Max(1, shown + (showMore ? 1 : 0));
         var card = new Rect(new Vector2(left, top), new Vector2(left + width, top + rows * rowHeight));
-        VenuesArt.Card(drawList, ui, card.Min, card.Max, scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         if (shown == 0)
         {
             var labelHeight = Typography.LineHeight(TagRowStyle);
@@ -342,7 +342,7 @@ internal sealed partial class VenuesApp
             selected ? ui.TitleInk : ui.BodyInk, TagRowStyle);
         if (divider)
         {
-            VenuesArt.Hairline(drawList, ui, textLeft, row.Max.X, row.Max.Y);
+            FeedCell.Hairline(drawList, textLeft, row.Max.X, row.Max.Y, ui.Hairline);
         }
 
         if (UiInteract.Click(row.Min, row.Max, hovered))
@@ -358,8 +358,8 @@ internal sealed partial class VenuesApp
         var button = new Rect(new Vector2(bar.Min.X, bar.Min.Y + inset),
             new Vector2(bar.Max.X, bar.Min.Y + inset + CtaHeight * scale));
         Elevation.Floating(drawList, button.Min, button.Max, button.Height * 0.5f, scale, 0.5f);
-        if (VenuesArt.PillButton(drawList, ui, button, ImGui.GetID("venues.filters.show"), showVenuesLabel,
-                string.Empty, true))
+        if (VenuesArt.Action(drawList, ui, button, ImGui.GetID("venues.filters.show"), showVenuesLabel,
+                string.Empty, false, ButtonStyle.Prominent))
         {
             tagSearch = string.Empty;
             tagQuery = string.Empty;

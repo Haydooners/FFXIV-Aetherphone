@@ -31,11 +31,9 @@ internal sealed partial class VelvetShell
     private const float OnboardSubtitleTop = 98f;
     private const float OnboardSubtitleMaxWidth = 300f;
     private const float OnboardBackInset = 24f;
-    private const float OnboardCtaHeight = 50f;
+    private const float OnboardCtaHeight = Button.LargeHeight;
     private const float OnboardCtaMaxWidth = 320f;
     private const float OnboardCtaBottom = 26f;
-    private const float OnboardCtaDisabledFill = 0.28f;
-    private const float OnboardCtaDisabledInk = 0.55f;
     private const float OnboardPhotoWidth = 240f;
     private const float OnboardPhotoBlock = 236f;
     private const float OnboardPhotoHintGap = 10f;
@@ -273,20 +271,8 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private bool DrawOnboardPrimary(Rect rect, string label, bool enabled)
-    {
-        if (enabled)
-        {
-            return ui.PillButton(rect, label, true);
-        }
-
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, rect.Min, rect.Max, rect.Height * 0.5f,
-            VelvetTheme.Alpha(VelvetTheme.Rose, OnboardCtaDisabledFill).Packed());
-        Typography.DrawCentered(rect.Center, label, VelvetTheme.Alpha(VelvetTheme.OnAccent, OnboardCtaDisabledInk),
-            0.9f, FontWeight.SemiBold);
-        return false;
-    }
+    private static bool DrawOnboardPrimary(Rect rect, string label, bool enabled) =>
+        Button.Draw(rect, label, VelvetTheme.Ink, enabled: enabled);
 
     private bool CanAdvanceOnboard() => onboardStep switch
     {
@@ -478,12 +464,16 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var radius = Metrics.Radius.Card * scale;
+        var radius = Metrics.Radius.Grouped * scale;
 
-        var fill = selected
-            ? VelvetTheme.Alpha(def.Hue, hovered ? 0.24f : 0.18f)
-            : hovered ? VelvetTheme.CardHi : VelvetTheme.Card;
+        var fill = selected ? VelvetTheme.Alpha(def.Hue, hovered ? 0.24f : 0.18f) : VelvetTheme.Card;
         Squircle.Fill(drawList, rect.Min, rect.Max, radius, fill.Packed());
+        if (hovered && !selected)
+        {
+            Squircle.Fill(drawList, rect.Min, rect.Max, radius,
+                Surfaces.Fill(VelvetTheme.Ink, FillLevel.Quaternary).Packed());
+        }
+
         Squircle.Stroke(drawList, rect.Min, rect.Max, radius,
             (selected ? VelvetTheme.Alpha(def.Hue, 0.85f) : VelvetTheme.CardStroke).Packed(),
             (selected ? Metrics.Stroke.Thin : Metrics.Stroke.Hairline) * scale);
@@ -649,7 +639,7 @@ internal sealed partial class VelvetShell
         VCard.RowLabel(drawList, discoverRow.Min, rowHeight, PhoneIcons.Compass, VelvetTheme.Rose,
             Loc.T(L.Velvet.DiscoverableLabel), card.ContentWidth - (VToggle.TrackWidth + Metrics.Space.Md) * scale,
             scale);
-        onboardDiscoverable = VToggle.Draw(drawList, "velvetObDiscoverable", discoverRow, onboardDiscoverable, scale);
+        onboardDiscoverable = VToggle.Draw("velvetObDiscoverable", discoverRow, onboardDiscoverable, theme);
         FeedCell.Hairline(drawList, left, right, discoverTop + rowHeight, VelvetTheme.Hairline);
 
         var whoTop = discoverTop + rowHeight;
@@ -659,7 +649,7 @@ internal sealed partial class VelvetShell
         FillWhoLabels();
         var who = VSegmented.Draw("velvetObWho",
             new Rect(new Vector2(left, segmentTop), new Vector2(right, segmentTop + segmentHeight)), whoLabels,
-            onboardWho, scale);
+            onboardWho);
         if (who >= 0)
         {
             onboardWho = who;

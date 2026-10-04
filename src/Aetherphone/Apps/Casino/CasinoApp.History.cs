@@ -21,7 +21,7 @@ internal sealed partial class CasinoApp
     private const float ReferenceGap = 10f;
     private const float StepBadge = 28f;
     private const float StepPad = 16f;
-    private const float ActionHeight = 44f;
+    private const float ActionHeight = Button.LargeHeight;
     private const int FairnessRecentRoundLimit = 8;
 
     private readonly struct HistoryRowText
@@ -147,7 +147,7 @@ internal sealed partial class CasinoApp
                     scale) + CoinArt.HeaderGap * scale;
                 var min = new Vector2(origin.X, cursorY);
                 var max = new Vector2(origin.X + width, cursorY + rowHeight * (day.End - day.Start));
-                CoinArt.Card(drawList, ui, min, max, scale);
+                ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
                 for (var entryIndex = day.Start; entryIndex < day.End; entryIndex++)
                 {
                     using (ImRaii.PushId(entryIndex))
@@ -215,7 +215,7 @@ internal sealed partial class CasinoApp
                 origin.Y + (height - netSize.Y) * 0.5f), net, CurrencyKind.Chips, ink, TextStyles.Headline);
         }
 
-        return CoinArt.SectionHeader(drawList, origin, width, historyDayLabels[dayIndex], ui.TitleInk, reserve, scale);
+        return CardSectionHeader.Draw(drawList, origin, width, historyDayLabels[dayIndex], ui.TitleInk, reserve);
     }
 
     private void DrawHistoryRow(ImDrawListPtr drawList, Rect row, int roundIndex, bool hairline, float scale)
@@ -293,7 +293,7 @@ internal sealed partial class CasinoApp
         var replayHeight = StepHeight(L.Casino.FairnessReplayTitle, L.Casino.FairnessReplayBody, textWidth, badge);
         var total = pad * 4f + lockHeight + revealHeight + replayHeight;
         var max = new Vector2(origin.X + width, origin.Y + total);
-        CoinArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var top = origin.Y + pad;
         top = DrawFairnessStep(drawList, origin.X + pad, top, textLeft, textWidth, 1, L.Casino.FairnessLockTitle,
             L.Casino.FairnessLockBody, lockHeight, scale) + pad;
@@ -346,7 +346,7 @@ internal sealed partial class CasinoApp
 
         var rowHeight = HistoryRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight * count);
-        CoinArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var drawn = 0;
         for (var index = 0; index < rounds.Length && drawn < count; index++)
         {
@@ -404,8 +404,8 @@ internal sealed partial class CasinoApp
             var verifyRect = new Rect(new Vector2(origin.X, cursorY), new Vector2(origin.X + width, cursorY + actionHeight));
             var canVerify = !history.Verifying
                 && (!hasVerified || verifiedRound.Verdict == CasinoRoundVerdict.Unrevealed);
-            if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("verify"), verifyRect, Loc.T(L.Casino.VerifyAction),
-                    CasinoCapsuleTone.Filled, canVerify, TextStyles.Headline))
+            if (Button.Draw(drawList, verifyRect, Loc.T(L.Casino.VerifyAction), ui.Ink, ButtonStyle.Prominent,
+                    enabled: canVerify, id: "casino.history.verify"))
             {
                 history.RequestVerify(roundId);
             }
@@ -416,8 +416,8 @@ internal sealed partial class CasinoApp
                 cursorY += CardGap * scale;
                 var copyRect = new Rect(new Vector2(origin.X, cursorY),
                     new Vector2(origin.X + width, cursorY + actionHeight));
-                if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("copy"), copyRect, Loc.T(L.Casino.CopyDetails),
-                        CasinoCapsuleTone.Tinted, true, TextStyles.Headline))
+                if (Button.Draw(drawList, copyRect, Loc.T(L.Casino.CopyDetails), ui.Ink, ButtonStyle.Tinted,
+                        id: "casino.history.copy"))
                 {
                     ImGui.SetClipboardText(BuildRoundDetailsBlob(verifiedRound));
                     ShellToast.Show();
@@ -500,7 +500,7 @@ internal sealed partial class CasinoApp
         var rows = settled ? 5 : 4;
         var rowHeight = FactRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight * rows);
-        CoinArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         DrawFactRow(drawList, RowAt(origin, max.X, rowHeight, 0), Loc.T(L.Casino.RoundGame),
             Loc.T(GameName(ClientGameId(round.GameKind))), ui.TitleInk, false, CurrencyKind.Chips, false, scale);
         DrawFactRow(drawList, RowAt(origin, max.X, rowHeight, 1), Loc.T(L.Casino.RoundState), StateText(round.State),
@@ -578,7 +578,7 @@ internal sealed partial class CasinoApp
         }
 
         var max = new Vector2(origin.X + width, origin.Y + height);
-        CoinArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var left = origin.X + pad;
         var top = origin.Y + pad;
         top = DrawReferenceField(drawList, left, top, inner, Loc.T(L.Casino.RoundIdLabel), roundId);

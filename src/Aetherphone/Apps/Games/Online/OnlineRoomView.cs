@@ -25,16 +25,15 @@ internal sealed class OnlineRoomView
     private const float RowTextGap = 12f;
     private const float CodeCardHeight = 112f;
     private const float CodeCardPadding = 16f;
-    private const float CopyPillHeight = 32f;
+    private const float CopyPillHeight = Button.SmallHeight;
     private const float RulesRowHeight = 52f;
     private const float PrimaryHeight = 44f;
-    private const float SecondaryHeight = 38f;
+    private const float SecondaryHeight = Button.RegularHeight;
     private const float KickPillHeight = 28f;
     private const float BannerHeight = 58f;
     private const float BannerIconSize = 20f;
     private const float WaitingSpinnerRadius = 7f;
     private const float ChevronSize = 12f;
-    private const float DangerWashAlpha = 0.14f;
     private const long NoticeMilliseconds = 4_000;
     private const long CopiedMilliseconds = 1_500;
     private const int MaxSeats = 8;
@@ -358,13 +357,12 @@ internal sealed class OnlineRoomView
         y = DrawPrimary(drawList, ui, left, y, width, scale, isHost, phase, players.Length, accent);
         y += Metrics.Space.Lg * scale;
         var leaveLabel = LeaveLabel(isHost);
-        var leaveWidth = MathF.Min(width, GamesHubArt.PillWidth(leaveLabel, SecondaryHeight * scale,
-            TextStyles.Headline) + Metrics.Space.Xxl * scale);
+        var leaveWidth = MathF.Min(width, GamesHubArt.ButtonWidth(leaveLabel, SecondaryHeight * scale) +
+            Metrics.Space.Xxl * scale);
         var leaveRect = new Rect(new Vector2(left + (width - leaveWidth) * 0.5f, y),
             new Vector2(left + (width + leaveWidth) * 0.5f, y + SecondaryHeight * scale));
-        if (GamesHubArt.Pill(drawList, "games.room.leave", leaveRect, leaveLabel,
-                Palette.WithAlpha(theme.Danger, DangerWashAlpha), theme.Danger, TextStyles.Headline,
-                !store.IntentInFlight))
+        if (Button.Draw(drawList, leaveRect, leaveLabel, ui.Ink, ButtonStyle.Tinted, ButtonRole.Destructive,
+                !store.IntentInFlight, id: "games.room.leave"))
         {
             LeaveOrClose(isHost);
         }
@@ -398,8 +396,8 @@ internal sealed class OnlineRoomView
             ? Loc.T(L.Games.OnlineRematch)
             : Loc.T(L.Games.OnlineStart);
         var rect = new Rect(new Vector2(left, top), new Vector2(left + width, top + height));
-        if (GamesHubArt.Pill(drawList, "games.room.start", rect, startLabel, accent, GamePalette.InkOn(accent),
-                TextStyles.Headline, enough && !store.ActInFlight))
+        if (Button.Draw(drawList, rect, startLabel, ui.Ink.WithAccent(accent), enabled: enough && !store.ActInFlight,
+                id: "games.room.start"))
         {
             store.SendStart(selectedRuleSet);
         }
@@ -421,7 +419,7 @@ internal sealed class OnlineRoomView
         var rect = new Rect(new Vector2(left, top), new Vector2(left + width, top + height));
         var rounding = Metrics.Radius.Widget * scale;
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        ui.Card(drawList, rect.Min, rect.Max, rounding, true);
+        ui.Card(drawList, rect.Min, rect.Max, rounding);
         if (hovered)
         {
             Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
@@ -549,12 +547,12 @@ internal sealed class OnlineRoomView
         var min = new Vector2(left, top);
         var max = new Vector2(left + width, top + height);
         var rounding = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, min, max, rounding, true);
+        ui.Card(drawList, min, max, rounding);
         var pad = CodeCardPadding * scale;
         var copied = Environment.TickCount64 - copiedAtTick < CopiedMilliseconds;
         var copyLabel = Loc.T(copied ? L.Games.OnlineCodeCopied : L.Games.OnlineCopyCode);
         var pillHeight = CopyPillHeight * scale;
-        var pillWidth = GamesHubArt.PillWidth(copyLabel, pillHeight, TextStyles.Headline);
+        var pillWidth = GamesHubArt.ButtonWidth(copyLabel, pillHeight);
         var pillRect = new Rect(new Vector2(max.X - pad - pillWidth, min.Y + pad),
             new Vector2(max.X - pad, min.Y + pad + pillHeight));
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), Loc.T(L.Games.OnlineRoomCode), ui.MutedInk,
@@ -567,8 +565,8 @@ internal sealed class OnlineRoomView
         Typography.Draw(drawList, new Vector2(min.X + pad, max.Y - pad - hintHeight),
             Typography.FitText(Loc.T(L.GamesHub.CodeHint), MathF.Max(1f, width - pad * 2f), TextStyles.Footnote),
             ui.MutedInk, TextStyles.Footnote);
-        if (GamesHubArt.Pill(drawList, "games.room.copy", pillRect, copyLabel, copied ? ui.FieldSurface : accent,
-                copied ? ui.TitleInk : GamePalette.InkOn(accent), TextStyles.Headline, code.Length > 0))
+        if (Button.Draw(drawList, pillRect, copyLabel, ui.Ink.WithAccent(accent),
+                copied ? ButtonStyle.Gray : ButtonStyle.Prominent, enabled: code.Length > 0, id: "games.room.copy"))
         {
             ImGui.SetClipboardText(code);
             copiedAtTick = Environment.TickCount64;
@@ -660,7 +658,7 @@ internal sealed class OnlineRoomView
         var kickLabel = Loc.T(L.Games.OnlineKick);
         var kickHeight = KickPillHeight * scale;
         var kickWidth = viewerIsHost && !isRoomHost
-            ? GamesHubArt.PillWidth(kickLabel, kickHeight, TextStyles.SubheadlineEmphasized)
+            ? GamesHubArt.ButtonWidth(kickLabel, kickHeight)
             : 0f;
         var textLeft = avatar.X + radius + RowTextGap * scale;
         var textWidth = MathF.Max(1f, row.Max.X - kickWidth - (kickWidth > 0f ? Metrics.Space.Sm * scale : 0f)
@@ -680,9 +678,8 @@ internal sealed class OnlineRoomView
 
         var kickRect = new Rect(new Vector2(row.Max.X - kickWidth, row.Center.Y - kickHeight * 0.5f),
             new Vector2(row.Max.X, row.Center.Y + kickHeight * 0.5f));
-        if (GamesHubArt.Pill(drawList, KickIds[index], kickRect, kickLabel,
-                Palette.WithAlpha(theme.Danger, DangerWashAlpha), theme.Danger, TextStyles.SubheadlineEmphasized,
-                !store.IntentInFlight))
+        if (Button.Draw(drawList, kickRect, kickLabel, ui.Ink, ButtonStyle.Tinted, ButtonRole.Destructive,
+                !store.IntentInFlight, id: KickIds[index]))
         {
             store.Kick(player.UserId);
         }

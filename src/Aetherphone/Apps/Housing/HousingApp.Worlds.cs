@@ -38,9 +38,10 @@ internal sealed partial class HousingApp
         var searchBar = new Rect(new Vector2(body.Min.X, body.Min.Y),
             new Vector2(body.Max.X, body.Min.Y + GlassField.HeightUnits * scale));
         var drawList = ImGui.GetWindowDrawList();
-        GlassField.Surface(drawList, searchBar, GlassField.Radius(searchBar), scale, 0f, 1f);
+        var ink = ui.Ink;
+        SearchBar.Surface(drawList, searchBar, ink);
         GlassField.Search(drawList, searchBar, "##housingWorldSearch", Loc.T(L.Housing.SearchWorlds), ref worldSearch,
-            frameTheme, scale, 40, false);
+            ink.Ink, ink.Muted, scale, 40, false);
         var listBody = new Rect(new Vector2(body.Min.X, searchBar.Max.Y + Metrics.Space.Sm * scale), body.Max);
         var worlds = housing.Worlds;
         if (worlds.Count == 0)
@@ -201,9 +202,9 @@ internal sealed partial class HousingApp
         var strip = new Rect(new Vector2(left, top), new Vector2(left + ImGui.GetWindowSize().X, top + height));
         UiInteract.HoverOverlay(strip);
         var drawList = ImGui.GetWindowDrawList();
-        Material.ThemedGlass(drawList, strip.Min, strip.Max, 0f, scale, ui.Palette.BackdropTop);
+        drawList.AddRectFilled(strip.Min, strip.Max, ImGui.GetColorU32(ui.BackdropColor));
         Typography.Draw(drawList, new Vector2(pinnedLabelLeft, top + Metrics.Space.Sm * scale),
-            PinnedHeaderLabel(pinnedDataCenter), frameTheme.TextMuted, TextStyles.FootnoteEmphasized);
+            PinnedHeaderLabel(pinnedDataCenter), ui.MutedInk, TextStyles.FootnoteEmphasized);
     }
 
     private string PinnedHeaderLabel(string header)

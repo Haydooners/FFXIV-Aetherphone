@@ -46,7 +46,7 @@ internal sealed partial class FeedbackApp
                 cursorY += SectionGap * scale;
             }
 
-            cursorY += DrawSectionHeader(drawList, new Vector2(origin.X, cursorY), width,
+            cursorY += CardSectionHeader.Draw(drawList, new Vector2(origin.X, cursorY), width,
                 Loc.T(L.Feedback.NewSection), ui.TitleInk);
             cursorY += HeaderGap * scale;
             cursorY = DrawKindGrid(drawList, new Vector2(origin.X, cursorY), width, scale);
@@ -164,7 +164,7 @@ internal sealed partial class FeedbackApp
         var center = (min + max) * 0.5f;
         var half = (max - min) * 0.5f * grow;
         var radius = Metrics.Radius.Grouped * scale;
-        ui.Card(drawList, center - half, center + half, radius, true);
+        ui.Card(drawList, center - half, center + half, radius);
         if (hovered)
         {
             Squircle.Fill(drawList, center - half, center + half, radius, ImGui.GetColorU32(ui.HoverTint));
@@ -179,7 +179,7 @@ internal sealed partial class FeedbackApp
         var rows = hubRows.Rows(store.History, store.HistoryRevision, width, scale);
         var state = store.HistoryState;
         var showSeeAll = state == FeedbackHistoryState.Ready && (rows.Length > HubPreviewRows || store.HasMoreHistory);
-        var headerHeight = DrawSectionHeader(drawList, origin, width * (showSeeAll ? 0.6f : 1f),
+        var headerHeight = CardSectionHeader.Draw(drawList, origin, width * (showSeeAll ? 0.6f : 1f),
             Loc.T(L.Feedback.YourFeedback), ui.TitleInk);
         if (showSeeAll)
         {
@@ -209,7 +209,7 @@ internal sealed partial class FeedbackApp
 
         var min = new Vector2(origin.X, top);
         var max = new Vector2(origin.X + width, top + StatusCardHeight * scale);
-        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         if (state == FeedbackHistoryState.Ready)
         {
             DrawHubStatus(drawList, min, max, FontAwesomeIcon.PaperPlane, ui.Accent,
@@ -250,7 +250,7 @@ internal sealed partial class FeedbackApp
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
         var radius = Metrics.Radius.Grouped * scale;
-        ui.Card(drawList, min, max, radius, true);
+        ui.Card(drawList, min, max, radius);
         var rowTop = origin.Y;
         for (var index = 0; index < count; index++)
         {

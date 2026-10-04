@@ -173,12 +173,12 @@ internal sealed partial class JobsApp
         drawList.AddCircle(swatchCenter, swatchRadius, ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.2f)), 32,
             Metrics.Stroke.Hairline * scale);
 
-        DrawPickerField(drawList, hexRect, theme, scale);
+        DrawPickerField(drawList, hexRect, theme);
         var hexDisplay = "#" + pickerDigits.PadRight(HexDigitCount, '_');
         Typography.Draw(drawList, FieldTextOrigin(hexRect, hexDisplay, TextStyles.BodyEmphasized, scale), hexDisplay,
             theme.TextStrong, TextStyles.BodyEmphasized);
 
-        DrawPickerField(drawList, nameRect, theme, scale);
+        DrawPickerField(drawList, nameRect, theme);
         var named = pickerName.Length > 0;
         var nameText = Typography.FitText(named ? pickerName : Loc.T(L.Jobs.ColorNamePlaceholder),
             nameRect.Width - Metrics.Space.Md * 2f * scale, TextStyles.Body);
@@ -270,18 +270,17 @@ internal sealed partial class JobsApp
         float scale)
     {
         var editing = pickerSavedIndex >= 0 && pickerSavedIndex < configuration.JobsCustomColors.Count;
+        rect = PickerButtonRect(rect);
         var hovered = enabled && UiInteract.HoverWindowOnly(rect.Min, rect.Max);
-        var fill = !enabled
-            ? Palette.WithAlpha(theme.TextMuted, 0.2f)
-            : hovered
-                ? Palette.Mix(color, PickerInkOnDark, 0.14f)
-                : color;
-        Squircle.Fill(drawList, rect.Min, rect.Max, rect.Height * 0.5f, ImGui.GetColorU32(fill));
+        var face = Button.Surface(drawList, rect, ControlInk.From(theme).WithAccent(color), ButtonStyle.Prominent,
+            ButtonRole.Normal, enabled, hovered, ImGui.GetID("jobs.picker.save"));
         var label = Loc.T(editing ? L.Jobs.UpdateColor : L.Jobs.SaveColor);
+        var style = Button.LabelStyle(face.Face.Height);
         var ink = enabled
-            ? Palette.Luminance(fill) > 0.62f ? PickerInkOnLight : PickerInkOnDark
-            : theme.TextMuted;
-        Typography.DrawCentered(drawList, rect.Center, label, ink, TextStyles.SubheadlineEmphasized);
+            ? Palette.Luminance(color) > 0.62f ? PickerInkOnLight : PickerInkOnDark
+            : face.LabelInk;
+        Typography.DrawCentered(drawList, face.Face.Center,
+            Typography.FitText(label, MathF.Max(1f, face.Face.Width - face.Face.Height), style), ink, style);
         if (!hovered)
         {
             return;
@@ -314,12 +313,13 @@ internal sealed partial class JobsApp
         CloseColorPicker();
     }
 
-    private static void DrawPickerField(ImDrawListPtr drawList, Rect rect, PhoneTheme theme, float scale)
+    private static void DrawPickerField(ImDrawListPtr drawList, Rect rect, PhoneTheme theme) =>
+        SearchBar.Surface(drawList, rect, ControlInk.From(theme));
+
+    private static Rect PickerButtonRect(Rect slot)
     {
-        Squircle.Fill(drawList, rect.Min, rect.Max, Metrics.Radius.Field * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.07f)));
-        Squircle.Stroke(drawList, rect.Min, rect.Max, Metrics.Radius.Field * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.1f)), Metrics.Stroke.Hairline * scale);
+        var half = MathF.Min(slot.Height, Button.SmallHeight * UiScale.Current) * 0.5f;
+        return new Rect(new Vector2(slot.Min.X, slot.Center.Y - half), new Vector2(slot.Max.X, slot.Center.Y + half));
     }
 
     private static Vector2 FieldTextOrigin(Rect rect, string text, in TextStyle style, float scale) =>

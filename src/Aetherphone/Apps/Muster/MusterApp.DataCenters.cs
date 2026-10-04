@@ -34,7 +34,7 @@ internal sealed partial class MusterApp
             var cursorY = origin.Y + hintHeight + Metrics.Space.Md * scale;
             var homeRow = new Rect(new Vector2(origin.X, cursorY),
                 new Vector2(origin.X + width, cursorY + DataCenterRowHeight * scale));
-            MusterArt.Card(drawList, ui, homeRow.Min, homeRow.Max, scale);
+            ui.Card(drawList, homeRow.Min, homeRow.Max, Metrics.Radius.Grouped * scale);
             if (DrawDataCenterRow(drawList, homeRow, Loc.T(L.Muster.MyDataCenter),
                     MusterDataCenters.Name(store.CurrentDataCenterId), pinned == 0, FontAwesomeIcon.Home, scale))
             {
@@ -74,13 +74,13 @@ internal sealed partial class MusterApp
                 ui.MutedInk, TextStyles.FootnoteEmphasized);
             var cardTop = headerTop + RegionHeaderHeight * scale;
             var cardMax = new Vector2(left + width, cardTop + (end - start) * rowHeight);
-            MusterArt.Card(drawList, ui, new Vector2(left, cardTop), cardMax, scale);
+            ui.Card(drawList, new Vector2(left, cardTop), cardMax, Metrics.Radius.Grouped * scale);
             for (var index = start; index < end; index++)
             {
                 var rowTop = cardTop + (index - start) * rowHeight;
                 if (index > start)
                 {
-                    MusterArt.Hairline(drawList, ui, left + Metrics.Space.Lg * scale, cardMax.X, rowTop);
+                    FeedCell.Hairline(drawList, left + Metrics.Space.Lg * scale, cardMax.X, rowTop, ui.Hairline);
                 }
 
                 var row = new Rect(new Vector2(left, rowTop), new Vector2(cardMax.X, rowTop + rowHeight));

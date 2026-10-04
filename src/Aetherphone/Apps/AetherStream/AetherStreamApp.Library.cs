@@ -120,7 +120,9 @@ internal sealed partial class AetherStreamApp
             SectionLabel(Loc.T(L.AetherStream.QueueSuggestionsHeader));
             for (var index = 0; index < suggestions.Count; index++)
             {
+                ImGui.PushID(index);
                 DrawSuggestionRow(drawList, suggestions[index], scale);
+                ImGui.PopID();
             }
 
             Gap(Metrics.Space.Sm);
@@ -165,10 +167,10 @@ internal sealed partial class AetherStreamApp
         var labelHeight = Typography.LineHeight(SectionStyle);
         Typography.Draw(drawList, new Vector2(row.Min.X, row.Center.Y - labelHeight * 0.5f),
             queueCountText.Format(Loc.T(L.AetherStream.UpNextCount), count), Ink.FaintInk, SectionStyle);
-        var moreRadius = 14f * scale;
+        var moreRadius = RoundButton.SmallRadius * scale;
         var moreCenter = new Vector2(row.Max.X - moreRadius, row.Center.Y);
-        if (ui.IconButton(moreCenter, moreRadius, IconGlyph.Of(FontAwesomeIcon.EllipsisH), Ink.TitleInk,
-                Ink.ButtonFill, 0.62f, Loc.T(L.AetherStream.MoreOptions)))
+        if (StreamRoundButton(drawList, "aetherstream.queue.more", moreCenter, moreRadius, FontAwesomeIcon.EllipsisH,
+                ButtonStyle.Gray, Loc.T(L.AetherStream.MoreOptions)))
         {
             actionEntry = null;
             actionHistory = null;
@@ -346,7 +348,7 @@ internal sealed partial class AetherStreamApp
     {
         var cell = FeedCell.Begin(drawList, SuggestionRowHeight * scale, ui.HoverWash, false);
         var row = cell.Bounds;
-        var circleRadius = 15f * scale;
+        var circleRadius = RoundButton.SmallRadius * scale;
         var denyCenter = new Vector2(row.Max.X - PadX * scale - circleRadius, row.Center.Y);
         var approveCenter = new Vector2(denyCenter.X - circleRadius * 2f - Metrics.Space.Sm * scale, row.Center.Y);
         var textLeft = row.Min.X + PadX * scale;
@@ -360,14 +362,16 @@ internal sealed partial class AetherStreamApp
         Typography.Draw(drawList, new Vector2(textLeft, top + nameHeight),
             Typography.FitText(suggestion.Url, textWidth, TextStyles.Footnote), Ink.MutedInk, TextStyles.Footnote);
 
-        if (ui.IconButton(approveCenter, circleRadius, IconGlyph.Of(FontAwesomeIcon.Check), Ink.PresenceGreen,
-                Palette.WithAlpha(Ink.PresenceGreen, 0.18f), 0.62f, Loc.T(L.AetherStream.QueueSuggestionAdd)))
+        if (StreamRoundButton(drawList, "aetherstream.suggestion.approve", approveCenter, circleRadius,
+                FontAwesomeIcon.Check, ButtonStyle.Tinted, Loc.T(L.AetherStream.QueueSuggestionAdd),
+                HoverLabelSide.Above, Ink.PresenceGreen))
         {
             watchAlong.ApproveQueueSuggestion(suggestion.SuggestionId);
         }
 
-        if (ui.IconButton(denyCenter, circleRadius, IconGlyph.Of(FontAwesomeIcon.Times), Ink.Danger,
-                Palette.WithAlpha(Ink.Danger, 0.16f), 0.62f, Loc.T(L.AetherStream.QueueSuggestionDismiss)))
+        if (StreamRoundButton(drawList, "aetherstream.suggestion.deny", denyCenter, circleRadius,
+                FontAwesomeIcon.Times, ButtonStyle.Tinted, Loc.T(L.AetherStream.QueueSuggestionDismiss),
+                HoverLabelSide.Above, Ink.Danger))
         {
             watchAlong.DenyQueueSuggestion(suggestion.SuggestionId);
         }

@@ -111,7 +111,7 @@ internal sealed partial class MapsApp
             new Vector2(header.Max.X - inset, top + GlassField.HeightUnits * scale));
         lastField = field;
         UiAnchors.Report("maps.search", field);
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Search(drawList, field, "##mapsSearch", Loc.T(L.Maps.Search), ref search, theme, scale,
             SearchMaxLength, focusSearch);
         var active = ImGui.IsItemActive();
@@ -400,7 +400,6 @@ internal sealed partial class MapsApp
         var max = card.Center + half;
         var radius = Metrics.Radius.Lg * scale * grow;
         var tint = MapGlyphs.ExpansionTint(expansion.Order, accent);
-        Elevation.Card(drawList, min, max, radius, scale);
         IconTile.FillShaded(drawList, min, max, radius, hovered ? Palette.Lighten(tint, 0.06f) : tint);
         var padding = ExpansionCardPadding * scale;
         var textWidth = MathF.Max(1f, max.X - min.X - padding * 2f);

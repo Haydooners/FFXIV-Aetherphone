@@ -14,7 +14,7 @@ internal sealed partial class MusicApp
 {
     private const float RequestRowHeight = 58f;
     private const float RequestAvatarRadius = 15f;
-    private const float RequestActionHeight = 28f;
+    private const float RequestActionHeight = Button.SmallHeight;
     private const float RequestFieldHeight = 40f;
     private const float RequestCardPad = 14f;
     private const float RequestToggleRowHeight = 50f;
@@ -117,7 +117,7 @@ internal sealed partial class MusicApp
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var pad = RequestCardPad * scale;
         var toggleSize = new Vector2(Metrics.Size.ToggleWidth, Metrics.Size.ToggleHeight) * scale;
         var toggleMin = new Vector2(max.X - pad - toggleSize.X, (min.Y + max.Y - toggleSize.Y) * 0.5f);
@@ -163,16 +163,16 @@ internal sealed partial class MusicApp
         var width = ScrollLayout.StableContentWidth();
         var height = RequestFieldHeight * scale;
         var buttonLabel = Loc.T(L.Music.Live.RequestSend);
-        var buttonWidth = AppSkin.PillWidthFor(buttonLabel, RequestActionHeight * scale + Metrics.Space.Xs * scale);
+        var buttonWidth = Button.WidthFor(buttonLabel, ButtonSize.Regular);
         var fieldRect = new Rect(origin, new Vector2(origin.X + width - buttonWidth - Metrics.Space.Sm * scale,
             origin.Y + height));
         var submitted = SubmitField.Draw(fieldRect, "##radioRequest", Loc.T(L.Music.Live.RequestHint),
             ref requestDraft, theme, RadioRoomSession.MaxRequestLength, FontAwesomeIcon.Music);
         var canRequest = requestDraft.AsSpan().Trim().Length > 0 && room.CanRequest();
-        var buttonHeight = RequestActionHeight * scale + Metrics.Space.Xs * scale;
+        var buttonHeight = Button.RegularHeight * scale;
         var buttonMin = new Vector2(fieldRect.Max.X + Metrics.Space.Sm * scale, origin.Y + (height - buttonHeight) * 0.5f);
-        var tapped = AppSkin.PillButton(new Rect(buttonMin, buttonMin + new Vector2(buttonWidth, buttonHeight)),
-            buttonLabel, true, canRequest, theme);
+        var tapped = Button.Draw(new Rect(buttonMin, buttonMin + new Vector2(buttonWidth, buttonHeight)),
+            buttonLabel, ui.Ink, ButtonStyle.Prominent, enabled: canRequest);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, height + Metrics.Space.Sm * scale));
         if ((submitted || tapped) && canRequest && room.Request(requestDraft))
@@ -193,7 +193,7 @@ internal sealed partial class MusicApp
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var glyphCenter = new Vector2(min.X + pad + 8f * scale, min.Y + height * 0.5f);
         AppSkin.Icon(drawList, glyphCenter, IconGlyph.Of(icon), ui.MutedInk, 0.8f);
         var textLeft = glyphCenter.X + Metrics.Space.Lg * scale;
@@ -220,7 +220,7 @@ internal sealed partial class MusicApp
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var accepted = own.State == RadioRequestState.Accepted;
         var withdrawLabel = Loc.T(L.Music.Live.RequestWithdraw);
         var buttonHeight = RequestActionHeight * scale;

@@ -76,8 +76,9 @@ internal sealed partial class CollectionsApp
         string hint, float scale)
     {
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
-        GlassField.Search(drawList, field, id, hint, ref query, theme, scale, SearchMaxLength, false);
+        var ink = ui.Ink;
+        SearchBar.Surface(drawList, field, ink);
+        GlassField.Search(drawList, field, id, hint, ref query, ink.Ink, ink.Muted, scale, SearchMaxLength, false);
         return field.Max.Y;
     }
 
@@ -117,7 +118,7 @@ internal sealed partial class CollectionsApp
         }
 
         var cursorY = top + SectionGap * scale;
-        cursorY += CollectionsArt.SectionHeader(drawList, new Vector2(left, cursorY), width, title, ui.TitleInk);
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width, title, ui.TitleInk);
         if (hint.Length > 0)
         {
             cursorY += HeroLineGap * scale;
@@ -133,8 +134,8 @@ internal sealed partial class CollectionsApp
         float scale)
     {
         var max = new Vector2(origin.X + width, origin.Y + HeroHeight * scale);
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, origin, max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, origin, max, radius);
         Material.TopGlow(drawList, origin, max, radius, ui.Accent, HeroGlowCoverage, HeroGlowStrength);
         UiAnchors.Report("collections.hero", new Rect(origin, max));
 
@@ -211,7 +212,7 @@ internal sealed partial class CollectionsApp
         var max = rect.Center + half;
         var radius = Metrics.Radius.Grouped * scale;
         var tint = CollectionsArt.Tint(category);
-        ui.Card(drawList, min, max, radius, true);
+        ui.Card(drawList, min, max, radius);
         Material.TopGlow(drawList, min, max, radius, tint, TileGlowCoverage, hovered ? TileGlowHover : TileGlowRest);
         if (hovered)
         {

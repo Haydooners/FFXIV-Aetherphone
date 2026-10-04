@@ -21,7 +21,7 @@ internal static class CalendarArt
     public const float TextGap = 12f;
     public const float LineGap = 2f;
     public const float ChevronSize = 11f;
-    public const float PillHeight = 50f;
+    public const float PillHeight = Button.LargeHeight;
     public const float ToggleTileHeight = 74f;
 
     private const float WashInset = 4f;
@@ -47,10 +47,8 @@ internal static class CalendarArt
     private const float SwatchRingGap = 3f;
     private const float SwatchRingStroke = 2.2f;
     private const float TrailingTextGap = 6f;
+    private const float RoundGlyphFraction = 0.8f;
     private const uint StateKeyOffset = 0x51ED27u;
-
-    public static void Card(ImDrawListPtr drawList, AppSkin ui, Vector2 min, Vector2 max, float scale) =>
-        ui.Card(drawList, min, max, Metrics.Radius.Widget * scale, true);
 
     public static void Hairline(ImDrawListPtr drawList, AppSkin ui, float left, float right, float y) =>
         drawList.AddLine(new Vector2(left, y), new Vector2(right, y), ImGui.GetColorU32(ui.Hairline),
@@ -69,10 +67,7 @@ internal static class CalendarArt
         var height = SectionHeaderHeight * scale;
         var trailingWidth = trailing.Length > 0 ? Typography.Measure(trailing, TextStyles.Body).X : 0f;
         var reserve = trailingWidth > 0f ? trailingWidth + Metrics.Space.Md * scale : 0f;
-        var fitted = Typography.FitText(title, MathF.Max(1f, width - reserve), TextStyles.Title3);
-        var size = Typography.Measure(fitted, TextStyles.Title3);
-        Typography.Draw(drawList, new Vector2(origin.X, origin.Y + (height - size.Y) * 0.5f), fitted, ui.TitleInk,
-            TextStyles.Title3);
+        CardSectionHeader.Draw(drawList, origin, width, title, ui.TitleInk, reserve);
         if (trailingWidth <= 0f)
         {
             return height;
@@ -99,6 +94,23 @@ internal static class CalendarArt
         }
 
         return height;
+    }
+
+    public static bool RoundIcon(ImDrawListPtr drawList, AppSkin ui, string id, Vector2 center, float radius,
+        FontAwesomeIcon icon, string tooltip, bool enabled, HoverLabelSide side = HoverLabelSide.Below)
+    {
+        var clicked = RoundButton.Draw(drawList, ImGui.GetID(id), center, radius, ui.Ink, ButtonStyle.Gray, enabled,
+            false, out var face);
+        var glyphInk = ui.Ink.AccentInk;
+        ProgressRing.CenterIcon(drawList, center, icon, glyphInk with { W = face.LabelInk.W },
+            face.Face.Width * 0.5f * RoundGlyphFraction);
+        if (enabled && face.Hovered)
+        {
+            HoverTooltip.Show(new Rect(center - new Vector2(radius, radius), center + new Vector2(radius, radius)),
+                tooltip, side);
+        }
+
+        return clicked;
     }
 
     public static bool RowWash(ImDrawListPtr drawList, AppSkin ui, Rect row, float scale)
@@ -183,7 +195,7 @@ internal static class CalendarArt
         FontAwesomeIcon icon, Vector4 tint, string title, string body, float scale)
     {
         var max = new Vector2(origin.X + width, origin.Y + height);
-        Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var tileSize = StateTileSize * scale;
         var tileMin = new Vector2(origin.X + pad, origin.Y + pad);

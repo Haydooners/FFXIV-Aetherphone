@@ -359,13 +359,12 @@ internal sealed partial class AetherStreamApp
     {
         var radius = StageToggleRadius * scale;
         var inset = Metrics.Space.Md * scale + radius;
-        var delta = ImGui.GetIO().DeltaTime;
         var windowCenter = new Vector2(card.Max.X - inset, card.Min.Y + inset);
         var worldCenter = new Vector2(windowCenter.X - radius * 2f - Metrics.Space.Sm * scale, windowCenter.Y);
         var visible = configuration.VideoScreenVisible;
-        if (HoverButton.Circle(drawList, "aetherstream.stage.world", worldCenter, radius,
-                visible ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash, visible ? ui.Accent : Ink.ButtonFill,
-                visible ? WhiteInk : Ink.MutedInk, delta, 1f, true, Loc.T(L.AetherStream.InGameScreen)))
+        if (StreamRoundButton(drawList, "aetherstream.stage.world", worldCenter, radius,
+                visible ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash,
+                visible ? ButtonStyle.Prominent : ButtonStyle.Gray, Loc.T(L.AetherStream.InGameScreen)))
         {
             configuration.VideoScreenVisible = !visible;
             configuration.Save();
@@ -377,9 +376,9 @@ internal sealed partial class AetherStreamApp
         }
 
         var windowOpen = screenWindow.IsOpen;
-        if (HoverButton.Circle(drawList, "aetherstream.stage.window", windowCenter, radius,
-                FontAwesomeIcon.WindowRestore, windowOpen ? ui.Accent : Ink.ButtonFill,
-                windowOpen ? WhiteInk : Ink.MutedInk, delta, 1f, true, Loc.T(L.AetherStream.OpenScreenWindow)))
+        if (StreamRoundButton(drawList, "aetherstream.stage.window", windowCenter, radius,
+                FontAwesomeIcon.WindowRestore, windowOpen ? ButtonStyle.Prominent : ButtonStyle.Gray,
+                Loc.T(L.AetherStream.OpenScreenWindow)))
         {
             screenWindow.IsOpen = !windowOpen;
         }
@@ -552,8 +551,8 @@ internal sealed partial class AetherStreamApp
         }
 
         var resetCenter = new Vector2(row.Max.X - resetColumn * 0.5f + 4f * scale, row.Center.Y);
-        if (ui.IconButton(resetCenter, resetColumn * 0.5f, IconGlyph.Of(FontAwesomeIcon.UndoAlt), Ink.MutedInk,
-                AppSkin.Transparent, 0.5f))
+        if (StreamRoundButton(ImGui.GetWindowDrawList(), id, resetCenter,
+                resetColumn * 0.5f, FontAwesomeIcon.UndoAlt, ButtonStyle.Plain))
         {
             value = resetValue;
             return true;
@@ -682,12 +681,13 @@ internal sealed partial class AetherStreamApp
         var extent = new Vector2(radius, radius);
         var hovered = UiInteract.Hover(center - extent, center + extent);
         var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(down ? Ink.ButtonHover : Ink.ButtonFill), 28);
-        AppSkin.Icon(drawList, center, IconGlyph.Of(icon), Ink.TitleInk, 0.62f);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
+        ImGui.PushID(key);
+        var motionKey = ImGui.GetID("aetherstream.nudge");
+        ImGui.PopID();
+        var face = RoundButton.Surface(drawList, new Rect(center - extent, center + extent), ui.Ink, ButtonStyle.Gray,
+            true, hovered, motionKey);
+        var grow = face.Face.Width / MathF.Max(radius * 2f, 0.0001f);
+        ProgressRing.CenterIcon(drawList, center, icon, face.LabelInk, radius * RoundGlyphFraction * grow);
 
         if (!down)
         {
@@ -795,16 +795,15 @@ internal sealed partial class AetherStreamApp
 
         Gap(Metrics.Space.Sm);
         var row = BeginBlock(FieldRowHeight * scale);
-        var saveRadius = 17f * scale;
+        var saveRadius = RoundButton.RegularRadius * scale;
         var submitted = SubmitField.Draw(
             new Rect(row.Min, new Vector2(row.Max.X - saveRadius * 2f - Metrics.Space.Sm * scale, row.Max.Y)),
             "##aetherstreamScreenPresetName", Loc.T(L.AetherStream.CastingPresetNameHint), ref screenPresetName,
             accentedTheme, 50, FontAwesomeIcon.Bookmark);
         var canSave = !string.IsNullOrWhiteSpace(screenPresetName);
-        if (ui.IconButton(new Vector2(row.Max.X - saveRadius, row.Center.Y), saveRadius,
-                IconGlyph.Of(FontAwesomeIcon.Plus), canSave ? WhiteInk : Palette.WithAlpha(WhiteInk, 0.6f),
-                canSave ? ui.Accent : Palette.WithAlpha(ui.Accent, 0.35f), 0.6f,
-                Loc.T(L.AetherStream.CastingSavePreset)) && canSave)
+        if (StreamRoundButton(ImGui.GetWindowDrawList(), "aetherstream.preset.save",
+                new Vector2(row.Max.X - saveRadius, row.Center.Y), saveRadius, FontAwesomeIcon.Plus,
+                ButtonStyle.Prominent, Loc.T(L.AetherStream.CastingSavePreset), enabled: canSave))
         {
             submitted = true;
         }

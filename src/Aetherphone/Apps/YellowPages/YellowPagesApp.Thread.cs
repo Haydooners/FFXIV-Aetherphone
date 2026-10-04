@@ -148,25 +148,8 @@ internal sealed partial class YellowPagesApp
         }
 
         var canSend = TrimmedLength(inquiryEditor.Text) > 0;
-        var sendExtent = new Vector2(sendSide * 0.5f, sendSide * 0.5f);
-        var sendHovered = canSend && UiInteract.Hover(sendCenter - sendExtent, sendCenter + sendExtent);
-        if (canSend)
-        {
-            AccentGloss.Circle(drawList, sendCenter, sendSide * 0.5f, Palette.Lighten(Ink.Accent, 0.18f), Ink.AccentDeep,
-                scale, sendHovered ? 1f : 0.4f, 0f);
-        }
-        else
-        {
-            drawList.AddCircleFilled(sendCenter, sendSide * 0.5f, ImGui.GetColorU32(Ink.FieldFill), 32);
-        }
-
-        PhoneIcon.Draw(drawList, sendCenter, PhoneIcons.SendFilled, canSend ? Ink.White : Ink.FaintInk, 18f * scale);
-        if (sendHovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        var tapped = UiInteract.Click(sendCenter - sendExtent, sendCenter + sendExtent, sendHovered);
+        var tapped = RoundButton.Icon(drawList, sendCenter, sendSide * 0.5f, PhoneIcons.SendFilled, ui.Ink,
+            canSend ? ButtonStyle.Prominent : ButtonStyle.Gray, enabled: canSend);
         if (!canSend || (!tapped && !submitted))
         {
             return;

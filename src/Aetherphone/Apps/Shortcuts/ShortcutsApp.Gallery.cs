@@ -42,8 +42,8 @@ internal sealed partial class ShortcutsApp
         float scale)
     {
         var top = origin.Y + ShortcutsArt.SectionGap * scale * 0.5f;
-        top += ShortcutsArt.SectionHeader(drawList, new Vector2(origin.X, top), width,
-            Loc.T(ShortcutTemplates.GroupTitle(group)), ui.TitleInk, scale) + ShortcutsArt.HeaderGap * scale;
+        top += CardSectionHeader.Draw(drawList, new Vector2(origin.X, top), width,
+            Loc.T(ShortcutTemplates.GroupTitle(group)), ui.TitleInk) + ShortcutsArt.HeaderGap * scale;
         var bottom = top;
         var slot = 0;
         var templates = ShortcutTemplates.All;

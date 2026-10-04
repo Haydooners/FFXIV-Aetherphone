@@ -132,6 +132,13 @@ internal sealed partial class AethergramApp
     private void DrawShareRow(string postId, UserDto user)
     {
         var row = DrawUserRow(user, SharePillWidth);
+        ImGui.PushID(user.Id);
+        DrawShareAction(postId, user, row);
+        ImGui.PopID();
+    }
+
+    private void DrawShareAction(string postId, UserDto user, SocialUserRowResult row)
+    {
         var sent = shareSentUserIds.Contains(user.Id);
         if (sent)
         {

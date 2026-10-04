@@ -207,7 +207,7 @@ internal sealed partial class CalendarApp
         var deleteTop = cursorY + CalendarArt.SectionGap * scale;
         var deleteRow = new Rect(new Vector2(origin.X, deleteTop),
             new Vector2(origin.X + width, deleteTop + CalendarArt.FieldRowHeight * scale));
-        CalendarArt.Card(drawList, ui, deleteRow.Min, deleteRow.Max, scale);
+        ui.Card(drawList, deleteRow.Min, deleteRow.Max, Metrics.Radius.Grouped * scale);
         var hovered = CalendarArt.RowWash(drawList, ui, deleteRow, scale);
         Typography.DrawCentered(drawList, deleteRow.Center, Loc.T(L.Calendar.DeleteEvent), ui.Theme.Danger,
             TextStyles.Body);
@@ -228,7 +228,7 @@ internal sealed partial class CalendarApp
         var progressSpan = showProgress ? (ProgressGap + ProgressHeight) * scale : 0f;
         var height = pad * 2f + tileSize + StatusGap * scale + StatusPillHeight * scale + progressSpan;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var tileMin = new Vector2(origin.X + pad, origin.Y + pad);
         CalendarArt.DateTile(drawList, ui, tileMin, tileSize, detailMonth, detailDay, detailEvent.Color, scale);
         var textLeft = tileMin.X + tileSize + HeroTextGap * scale;
@@ -309,7 +309,7 @@ internal sealed partial class CalendarApp
     {
         var rowHeight = InfoRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + infoCount * rowHeight);
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         for (var index = 0; index < infoCount; index++)
         {
@@ -349,7 +349,7 @@ internal sealed partial class CalendarApp
         var bodyHeight = Typography.MeasureWrappedBlock(detailNotes, TextStyles.Body, textWidth).Y;
         var height = pad * 2f + labelHeight + NotesLabelGap * scale + bodyHeight;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        CalendarArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(origin.X + pad, origin.Y + pad), label, ui.MutedInk,
             TextStyles.FootnoteEmphasized);
         Typography.DrawWrappedLeft(new Vector2(origin.X + pad, origin.Y + pad + labelHeight + NotesLabelGap * scale),

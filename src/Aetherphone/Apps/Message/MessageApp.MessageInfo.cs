@@ -17,7 +17,7 @@ internal sealed partial class MessageApp
     private const int InfoBubbleMaxChars = 220;
 
     private static readonly Vector4 ReadTickColor = new(0.45f, 0.83f, 1f, 1f);
-    private static readonly TextStyle InfoStampStyle = new(0.70f, FontWeight.Regular);
+    private static readonly TextStyle InfoStampStyle = TextStyles.Caption1;
 
     private float sinceInfoPoll;
 

@@ -88,7 +88,7 @@ internal sealed class ShellScreenPainter
         if (!app.WantsTransparentScreen)
         {
             DeviceChrome.FillScreen(screen, screenRadius, content.AppBackground);
-            WallpaperBackdrop.RecordFlat(content.AppBackground);
+            WallpaperBackdrop.RecordAppGround(screen, content.AppBackground, content.AppBackground);
         }
 
         Plugin.LiveBackdrop.Record(screen, content.AppBackground);

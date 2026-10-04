@@ -21,6 +21,7 @@ internal sealed class NamePage : ISettingsPage, IDisposable
 
     public FontAwesomeIcon Icon => FontAwesomeIcon.UserTag;
     public Vector4 Tint => new(0.36f, 0.72f, 0.62f, 1f);
+    private static readonly Vector4 Transparent = new(0f, 0f, 0f, 0f);
     private readonly AethernetSession session;
     private readonly AccountClient account;
     private readonly ISettingsNavigator navigator;
@@ -88,80 +89,51 @@ internal sealed class NamePage : ISettingsPage, IDisposable
 
         using (AppSurface.Begin(body))
         {
-            var scale = UiScale.Current;
-            ImGui.Dummy(new Vector2(0f, 6f * scale));
-            DrawField(theme, Loc.T(L.Account.DisplayNameLabel), "##accountDisplayName", ref editDisplay,
+            SettingsForm.Gap(Metrics.Space.Xs);
+            SettingsSection.Header(Loc.T(L.Account.DisplayNameLabel), theme);
+            SettingsForm.TextField("##accountDisplayName", string.Empty, ref editDisplay, theme,
                 SocialProfilePages.DisplayNameMax);
-            ImGui.Dummy(new Vector2(0f, 14f * scale));
+            SettingsForm.Gap(Metrics.Space.Lg);
             DrawHandleField(theme);
-            ImGui.Dummy(new Vector2(0f, 18f * scale));
+            SettingsForm.Gap(Metrics.Space.Xl);
             var canSave = !busy && editDisplay.Trim().Length > 0 && SocialProfilePages.IsHandleValid(editHandle);
-            if (ThemeButton.Primary(busy ? Loc.T(L.Account.Saving) : Loc.T(L.Account.Save), theme, canSave))
+            if (SettingsForm.Button(busy ? Loc.T(L.Account.Saving) : Loc.T(L.Account.Save), theme,
+                    ButtonStyle.Prominent, enabled: canSave))
             {
                 Save();
             }
 
             if (editStatus.Length > 0)
             {
-                ImGui.Dummy(new Vector2(0f, 10f * scale));
-                using (ImRaii.PushColor(ImGuiCol.Text, theme.Danger))
-                {
-                    Typography.Wrapped(editStatus);
-                }
+                SettingsForm.Gap(Metrics.Space.Md);
+                SettingsForm.Text(editStatus, theme.Danger, TextStyles.Subheadline);
             }
 
-            ImGui.Dummy(new Vector2(0f, 16f * scale));
+            SettingsForm.Gap(Metrics.Space.Lg);
             SettingsSection.Hint(Loc.T(L.Account.NameHint), theme);
         }
-    }
-
-    private void DrawField(PhoneTheme theme, string label, string id, ref string value, int maxLength)
-    {
-        var scale = UiScale.Current;
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Plain(label);
-        }
-
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var height = 34f * scale;
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, origin, new Vector2(origin.X + width, origin.Y + height), 9f * scale,
-            ImGui.GetColorU32(theme.GroupedCard));
-        ImGui.SetCursorScreenPos(new Vector2(origin.X + 12f * scale,
-            origin.Y + height * 0.5f - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(width - 24f * scale);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0f, 0f)).Push(ImGuiCol.Text, theme.TextStrong))
-        {
-            ImGui.InputText(id, ref value, maxLength);
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
     }
 
     private void DrawHandleField(PhoneTheme theme)
     {
         var scale = UiScale.Current;
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextMuted))
-        {
-            Typography.Plain(Loc.T(L.Account.HandleLabel));
-        }
-
+        SettingsSection.Header(Loc.T(L.Account.HandleLabel), theme);
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
-        var height = 34f * scale;
+        var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
         var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, origin, new Vector2(origin.X + width, origin.Y + height), 9f * scale,
-            ImGui.GetColorU32(theme.GroupedCard));
-        Typography.Draw(new Vector2(origin.X + 12f * scale, origin.Y + height * 0.5f - 8f * scale), "@",
-            theme.TextMuted, 1f);
-        ImGui.SetCursorScreenPos(new Vector2(origin.X + 26f * scale,
-            origin.Y + height * 0.5f - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(width - 38f * scale);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
+        var prefixLeft = origin.X + Metrics.Space.Lg * scale;
+        var prefixSize = Typography.Measure("@", TextStyles.Body);
+        Typography.Draw(drawList, new Vector2(prefixLeft, field.Center.Y - prefixSize.Y * 0.5f), "@", theme.TextMuted,
+            TextStyles.Body);
+        var inputLeft = prefixLeft + prefixSize.X + Metrics.Space.Xxs * scale;
+        ImGui.SetCursorScreenPos(new Vector2(inputLeft, field.Center.Y - ImGui.GetFrameHeight() * 0.5f));
+        ImGui.SetNextItemWidth(MathF.Max(1f, field.Max.X - Metrics.Space.Lg * scale - inputLeft));
         var valid = SocialProfilePages.IsHandleValid(editHandle);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0f, 0f))
+        using (ImRaii.PushColor(ImGuiCol.FrameBg, Transparent)
+                   .Push(ImGuiCol.FrameBgHovered, Transparent)
+                   .Push(ImGuiCol.FrameBgActive, Transparent)
                    .Push(ImGuiCol.Text, valid ? theme.TextStrong : theme.Danger))
         {
             if (ImGui.InputText("##accountHandle", ref editHandle, SocialProfilePages.HandleMax,
@@ -172,11 +144,9 @@ internal sealed class NamePage : ISettingsPage, IDisposable
         }
 
         ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
-        Typography.Draw(new Vector2(origin.X + 2f * scale, origin.Y + height + 3f * scale),
-            Typography.FitText(Loc.T(L.Account.HandleRules), width - 4f * scale, 0.78f, FontWeight.Regular),
-            theme.TextMuted, 0.78f);
-        ImGui.Dummy(new Vector2(width, 16f * scale));
+        ImGui.Dummy(new Vector2(width, field.Height));
+        SettingsForm.Gap(Metrics.Space.Xxs);
+        SettingsSection.Hint(Loc.T(L.Account.HandleRules), theme);
     }
 
     private void Save()

@@ -18,7 +18,7 @@ internal sealed partial class LinkpearlApp
     private const float PopoutMarkOffset = 10f;
 
     private static readonly TextStyle ThreadNameStyle = TextStyles.Headline;
-    private static readonly TextStyle ThreadSubStyle = new(0.76f, FontWeight.Regular);
+    private static readonly TextStyle ThreadSubStyle = TextStyles.Footnote;
 
     private readonly Action<Rect> paintThreadBackdrop;
     private string subtitleKey = string.Empty;

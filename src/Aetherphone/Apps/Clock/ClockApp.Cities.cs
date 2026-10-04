@@ -48,7 +48,7 @@ internal sealed partial class ClockApp
         var height = GlassField.HeightUnits * scale;
         var field = new Rect(origin, origin + new Vector2(width, height));
         var drawList = ImGui.GetWindowDrawList();
-        GlassField.Surface(drawList, field, GlassField.Radius(field), scale, 0f, 1f);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Search(drawList, field, "##clockCitySearch", Loc.T(L.Clock.SearchCities), ref cityQuery, theme,
             scale, CityQueryMaxLength, false);
         ClockArt.Advance(origin, width, height, CitySearchGap, scale);
@@ -80,7 +80,7 @@ internal sealed partial class ClockApp
         var rowHeight = CityRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + matches * rowHeight);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, origin, max, ClockArt.CardRadius * scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var utcNow = DateTime.UtcNow;
         var row = 0;
         for (var index = 0; index < catalog.Count; index++)
@@ -94,7 +94,7 @@ internal sealed partial class ClockApp
             var rect = RowRect(origin, width, row * rowHeight, rowHeight);
             if (row > 0)
             {
-                ClockArt.Separator(drawList, origin.X + Metrics.Space.Lg * scale, max.X, rect.Min.Y, ui.Hairline);
+                FeedCell.Hairline(drawList, origin.X + Metrics.Space.Lg * scale, max.X, rect.Min.Y, ui.Hairline);
             }
 
             DrawCityOption(drawList, rect, index, city, utcNow, scale);

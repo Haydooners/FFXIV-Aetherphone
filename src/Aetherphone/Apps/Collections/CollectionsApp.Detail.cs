@@ -151,8 +151,8 @@ internal sealed partial class CollectionsApp
         var contentHeight = nameHeight + chipHeight + pillHeight + starsHeight;
         var height = MathF.Max(iconSize, contentHeight) + pad * 2f;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, origin, max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, origin, max, radius);
         Material.TopGlow(drawList, origin, max, radius, CollectionsArt.Tint(item.Category), HeroGlowCoverage,
             HeroGlowStrength);
         var iconMin = new Vector2(origin.X + pad, origin.Y + (height - iconSize) * 0.5f);
@@ -226,7 +226,7 @@ internal sealed partial class CollectionsApp
         }
 
         var cursorY = top + SectionGap * scale;
-        cursorY += CollectionsArt.SectionHeader(drawList, new Vector2(left, cursorY), width,
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width,
             Loc.T(L.Collections.Rarity), ui.TitleInk);
         cursorY += HeaderGap * scale;
         var pad = DetailPad * scale;
@@ -239,7 +239,7 @@ internal sealed partial class CollectionsApp
                      DetailMetaGap * scale + noteHeight;
         var min = new Vector2(left, cursorY);
         var max = new Vector2(left + width, cursorY + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var y = min.Y + pad;
         y += Typography.DrawWrappedLeft(new Vector2(min.X + pad, y), line, ui.TitleInk, TextStyles.BodyEmphasized,
             innerWidth) + DetailMetaGap * scale;
@@ -259,7 +259,7 @@ internal sealed partial class CollectionsApp
         }
 
         var cursorY = top + SectionGap * scale;
-        cursorY += CollectionsArt.SectionHeader(drawList, new Vector2(left, cursorY), width,
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width,
             Loc.T(L.Collections.HowToObtain), ui.TitleInk);
         cursorY += HeaderGap * scale;
         var cardTop = cursorY;
@@ -270,7 +270,7 @@ internal sealed partial class CollectionsApp
         }
 
         var max = new Vector2(left + width, cardTop + height);
-        ui.Card(drawList, new Vector2(left, cardTop), max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, new Vector2(left, cardTop), max, Metrics.Radius.Grouped * scale);
         var rowTop = cardTop;
         for (var index = 0; index < item.Sources.Length; index++)
         {
@@ -410,20 +410,12 @@ internal sealed partial class CollectionsApp
         var radius = SourceActionSize * scale * 0.5f;
         var min = center - new Vector2(radius, radius);
         var max = center + new Vector2(radius, radius);
-        var hovered = UiInteract.Hover(min, max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(ImGui.GetID($"collections.map.{quest.TerritoryId}.{quest.RawX}"), pressed,
-            PressFx.ControlPressedScale);
-        var fill = Palette.WithAlpha(ui.Accent, hovered ? 0.32f : 0.20f);
-        drawList.AddCircleFilled(center, radius * press, ImGui.GetColorU32(fill), 28);
-        ProgressRing.CenterIcon(drawList, center, FontAwesomeIcon.MapMarkerAlt, ui.Accent, radius * 0.9f * press);
+        var clicked = RoundButton.Draw(drawList, ImGui.GetID($"collections.map.{quest.TerritoryId}.{quest.RawX}"),
+            center, radius, ui.Ink, ButtonStyle.Tinted, true, false, out var face);
+        var grow = face.Face.Width / MathF.Max(radius * 2f, 0.0001f);
+        ProgressRing.CenterIcon(drawList, center, FontAwesomeIcon.MapMarkerAlt, face.LabelInk, radius * 0.9f * grow);
         HoverTooltip.Show(new Rect(min, max), Loc.T(L.Collections.ShowOnMap));
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (!UiInteract.Click(min, max, hovered))
+        if (!clicked)
         {
             return;
         }
@@ -441,14 +433,14 @@ internal sealed partial class CollectionsApp
         }
 
         var cursorY = top + SectionGap * scale;
-        cursorY += CollectionsArt.SectionHeader(drawList, new Vector2(left, cursorY), width,
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width,
             Loc.T(L.Collections.About), ui.TitleInk);
         cursorY += HeaderGap * scale;
         var pad = DetailPad * scale;
         var innerWidth = width - pad * 2f;
         var textHeight = Typography.MeasureWrappedBlock(item.Description, TextStyles.Subheadline, innerWidth).Y;
         var max = new Vector2(left + width, cursorY + textHeight + pad * 2f);
-        ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Grouped * scale);
         Typography.DrawWrappedLeft(new Vector2(left + pad, cursorY + pad), item.Description, ui.BodyInk,
             TextStyles.Subheadline, innerWidth);
         return max.Y;
@@ -467,12 +459,12 @@ internal sealed partial class CollectionsApp
         }
 
         var cursorY = top + SectionGap * scale;
-        cursorY += CollectionsArt.SectionHeader(drawList, new Vector2(left, cursorY), width,
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width,
             Loc.T(L.Collections.Details), ui.TitleInk);
         cursorY += HeaderGap * scale;
         var rowHeight = InfoRowHeight * scale;
         var max = new Vector2(left + width, cursorY + rows * rowHeight);
-        ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Grouped * scale);
         var rowIndex = 0;
         if (item.Patch.Length > 0)
         {

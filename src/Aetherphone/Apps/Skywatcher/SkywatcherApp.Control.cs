@@ -91,7 +91,7 @@ internal sealed partial class SkywatcherApp
             var preset = TimePresets[index];
             var cell = new Rect(new Vector2(inner.Min.X + presetWidth * index + 3f * scale, presetTop),
                 new Vector2(inner.Min.X + presetWidth * (index + 1) - 3f * scale, presetTop + 28f * scale));
-            if (DrawPill(cell, Loc.T(preset.Label), custom && minutes == preset.Minutes, palette, scale))
+            if (DrawPill(cell, Loc.T(preset.Label), custom && minutes == preset.Minutes, palette))
             {
                 control.SetTime(preset.Minutes);
             }
@@ -289,44 +289,23 @@ internal sealed partial class SkywatcherApp
             2f * scale);
     }
 
-    private static bool DrawPill(Rect pill, string label, bool active, in SkyPalette palette, float scale)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        var rounding = pill.Height * 0.5f;
-        drawList.AddRectFilled(pill.Min, pill.Max,
-            ImGui.GetColorU32(palette.Ink with { W = active ? 0.22f : 0.08f }), rounding);
-        if (active)
-        {
-            drawList.AddRect(pill.Min, pill.Max, ImGui.GetColorU32(palette.Ink with { W = 0.24f }), rounding,
-                ImDrawFlags.RoundCornersAll, 1f * scale);
-        }
+    private ControlInk SkyInk(in SkyPalette palette) => ui.Ink with { Ink = palette.Ink, Muted = palette.InkSoft };
 
-        Typography.DrawCentered(pill.Center, label, active ? palette.Ink : palette.InkSoft, TextStyles.Caption1.Scale,
-            active ? FontWeight.SemiBold : FontWeight.Regular);
-        return UiInteract.HoverClick(pill.Min, pill.Max);
+    private bool DrawPill(Rect pill, string label, bool active, in SkyPalette palette)
+    {
+        var hovered = UiInteract.Hover(pill.Min, pill.Max);
+        ChipRail.PaintChip(ImGui.GetWindowDrawList(), pill, label, active, hovered, SkyInk(palette));
+        return UiInteract.Click(pill.Min, pill.Max, hovered);
     }
 
     private void DrawControlFooter(float width, in SkyPalette palette, float scale)
     {
         ImGui.Dummy(new Vector2(0f, 12f * scale));
         var origin = ImGui.GetCursorScreenPos();
-        var height = 34f * scale;
+        var height = Button.RegularHeight * scale;
         var button = new Rect(origin, origin + new Vector2(width, height));
         var live = control.HasOverride;
-        var drawList = ImGui.GetWindowDrawList();
-        if (live)
-        {
-            WeatherCard.Panel(drawList, button, palette, sky.Density, scale, height * 0.5f);
-        }
-        else
-        {
-            drawList.AddRectFilled(button.Min, button.Max, ImGui.GetColorU32(palette.Ink with { W = 0.06f }),
-                height * 0.5f);
-        }
-
-        Typography.DrawCentered(button.Center, Loc.T(L.Skywatcher.Reset), live ? palette.Ink : palette.InkFaint,
-            TextStyles.Caption1.Scale, live ? FontWeight.SemiBold : FontWeight.Regular);
-        if (live && UiInteract.HoverClick(button.Min, button.Max))
+        if (Button.Draw(button, Loc.T(L.Skywatcher.Reset), SkyInk(palette), ButtonStyle.Gray, enabled: live))
         {
             control.ClearAll();
         }

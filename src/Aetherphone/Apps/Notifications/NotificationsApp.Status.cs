@@ -12,7 +12,6 @@ namespace Aetherphone.Apps.Notifications;
 
 internal sealed partial class NotificationsApp
 {
-    private const float SectionHeaderHeight = 34f;
     private const float CardLift = 0.085f;
     private const float LayerLift = 0.045f;
     private const float StatusGlassOpacity = 0.92f;
@@ -20,10 +19,7 @@ internal sealed partial class NotificationsApp
     private const float StatusGlyphSize = 18f;
     private const float StatusTextGap = 12f;
     private const float StatusLineGap = 2f;
-    private const float StatusPillHeight = 28f;
-    private const float StatusPillPadX = 14f;
-    private const float StatusPillAlpha = 0.22f;
-    private const float StatusPillHoverAlpha = 0.32f;
+    private const float StatusPillHeight = Button.SmallHeight;
     private const float StatusHintAlpha = 0.84f;
     private const float EmptyTileSize = 72f;
     private const float EmptyGlyphSize = 30f;
@@ -59,7 +55,7 @@ internal sealed partial class NotificationsApp
         var right = origin.X + width - pad;
         var pillLabel = Loc.T(L.Notifications.TurnOff);
         var pillWidth = doNotDisturb
-            ? Typography.Measure(pillLabel, TextStyles.FootnoteEmphasized).X + StatusPillPadX * 2f * scale
+            ? Button.WidthFor(pillLabel, ButtonSize.Small)
             : 0f;
         var titleRow = MathF.Max(Typography.LineHeight(TextStyles.Headline), doNotDisturb ? StatusPillHeight * scale : 0f);
         var hintWidth = MathF.Max(1f, right - textLeft);
@@ -87,28 +83,13 @@ internal sealed partial class NotificationsApp
             var pillTop = top + (titleRow - StatusPillHeight * scale) * 0.5f;
             var pill = new Rect(new Vector2(right - pillWidth, pillTop),
                 new Vector2(right, pillTop + StatusPillHeight * scale));
-            if (StatusPill(drawList, pill, pillLabel))
+            if (Button.Draw(drawList, pill, pillLabel, ui.Ink with { Ink = White }, ButtonStyle.Gray))
             {
                 ToggleDoNotDisturb();
             }
         }
 
         Advance(origin, width, height, BlockGap, scale);
-    }
-
-    private static bool StatusPill(ImDrawListPtr drawList, Rect rect, string label)
-    {
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        drawList.AddRectFilled(rect.Min, rect.Max,
-            ImGui.GetColorU32(Palette.WithAlpha(White, hovered ? StatusPillHoverAlpha : StatusPillAlpha)),
-            rect.Height * 0.5f);
-        Typography.DrawCentered(drawList, rect.Center, label, White, TextStyles.FootnoteEmphasized);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private void DrawEmpty(Rect body, float scale)

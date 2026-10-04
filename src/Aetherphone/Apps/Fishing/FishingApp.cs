@@ -143,10 +143,8 @@ internal sealed partial class FishingApp : IPhoneApp
     private bool BellButton(Rect rect, bool active, string tooltip)
     {
         var glyph = active ? PhoneIcons.BellFilled : PhoneIcons.Bell;
-        var ink = active ? ui.Accent : ui.TitleInk;
-        var pressed = ui.IconButton(rect.Center, rect.Width * 0.5f, glyph, ink, ui.Palette.FieldSurface,
-            1f, tooltip);
-        return pressed;
+        return RoundButton.Icon(ImGui.GetWindowDrawList(), rect.Center, rect.Width * 0.5f, glyph, ui.Ink,
+            active ? ButtonStyle.Prominent : ButtonStyle.Tinted, tooltip);
     }
 
     private void UpdateTourHold()

@@ -182,7 +182,7 @@ internal sealed partial class VelvetShell
             TileTint = VelvetTheme.Rose,
             Chevron = true,
         };
-        if (VRow.Cell(in model, ui, theme, images, lodestone) == VRowHit.Body)
+        if (VRow.Cell(in model, theme, images, lodestone) == VRowHit.Body)
         {
             OpenTagPosts(searchTagTokens[index]);
         }
@@ -208,7 +208,7 @@ internal sealed partial class VelvetShell
             UserId = user.UserId,
             Chevron = true,
         };
-        if (VRow.Cell(in model, ui, theme, images, lodestone) == VRowHit.Body)
+        if (VRow.Cell(in model, theme, images, lodestone) == VRowHit.Body)
         {
             OpenProfile(user.UserId);
         }

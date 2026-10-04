@@ -17,7 +17,8 @@ internal sealed class InfoSheet
     private const float GrabberHeight = 4.5f;
     private const float TopInset = 0.14f;
     private const float ParagraphGap = 14f;
-    private const float DoneHeight = 44f;
+    private const float DoneHeight = Button.LargeHeight;
+    private const string DoneKey = "##infosheet.done";
     private const float BottomPad = 30f;
     private const float PanelLift = 0.08f;
     private const float PanelAlpha = 0.96f;
@@ -25,7 +26,6 @@ internal sealed class InfoSheet
 
     private static readonly TextStyle TitleStyle = new(1.13f, FontWeight.Bold);
     private static readonly TextStyle BodyStyle = new(0.95f, FontWeight.Regular);
-    private static readonly TextStyle DoneStyle = new(1f, FontWeight.Bold);
     private static readonly Vector4 GrabberFill = new(1f, 1f, 1f, 0.22f);
     private static readonly Vector4 PanelStroke = new(1f, 1f, 1f, 0.10f);
 
@@ -124,10 +124,9 @@ internal sealed class InfoSheet
         var doneMin = new Vector2(left, doneTop);
         var doneMax = new Vector2(right, doneTop + DoneHeight * scale);
         var doneHovered = interactive && UiInteract.HoverWindowOnly(doneMin, doneMax, false);
-        AccentPill.Paint(drawList, doneMin, doneMax, DoneHeight * scale * 0.5f, doneHovered, ink.Accent,
-            ink.AccentDeep, ink.AccentShadow, opacity);
-        Typography.DrawCentered(drawList, (doneMin + doneMax) * 0.5f, doneLabel, Palette.WithAlpha(ink.White, opacity),
-            DoneStyle);
+        var doneFace = Button.Surface(drawList, new Rect(doneMin, doneMax), ink.Control, ButtonStyle.Prominent,
+            ButtonRole.Normal, true, doneHovered, ImGui.GetID(DoneKey), opacity);
+        Button.DrawLabel(drawList, doneFace, doneLabel);
         if (doneHovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);

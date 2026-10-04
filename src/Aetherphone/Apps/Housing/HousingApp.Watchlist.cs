@@ -20,7 +20,7 @@ internal sealed partial class HousingApp
     private const float WatchCardGap = 12f;
     private const float WatchLineGap = 10f;
     private const float WatchActionRadius = 16f;
-    private const float WatchPillHeight = 30f;
+    private const float WatchPillHeight = Button.SmallHeight;
     private const float WatchPillPad = 12f;
     private const float WatchPillGlyph = 14f;
 
@@ -139,7 +139,7 @@ internal sealed partial class HousingApp
             Motion.PressScaleCard);
         var center = (min + max) * 0.5f;
         var half = (max - min) * 0.5f * press;
-        HousingArt.Card(drawList, ui, center - half, center + half, scale);
+        ui.Card(drawList, center - half, center + half, Metrics.Radius.Grouped * scale);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -244,29 +244,18 @@ internal sealed partial class HousingApp
     {
         var enabled = live is not null && live.PhaseEndsUtc is not null;
         var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var radius = rect.Height * 0.5f;
-        var fill = active ? Palette.WithAlpha(ui.Accent, 0.22f) : ui.FieldSurface;
-        if (hovered)
-        {
-            fill = Palette.Mix(fill, ui.TitleInk, 0.08f);
-        }
-
-        Squircle.Fill(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(fill));
-        var ink = !enabled ? ui.MutedInk : active ? Palette.Lighten(ui.Accent, 0.25f) : ui.TitleInk;
-        var glyphCenter = new Vector2(rect.Min.X + WatchPillPad * scale + WatchPillGlyph * scale * 0.5f,
-            rect.Center.Y);
+        var face = Button.Surface(drawList, rect, ui.Ink, active ? ButtonStyle.Tinted : ButtonStyle.Gray,
+            ButtonRole.Normal, enabled, hovered, unchecked(ImGui.GetID("housing.watch.pill") + (uint)index));
+        var ink = face.LabelInk;
+        var glyphCenter = new Vector2(face.Face.Min.X + WatchPillPad * scale + WatchPillGlyph * scale * 0.5f,
+            face.Face.Center.Y);
         PhoneIcon.Draw(drawList, glyphCenter, active ? PhoneIcons.BellFilled : PhoneIcons.Bell, ink,
             WatchPillGlyph * scale);
         var label = watchCardReminders[index].Value;
         var labelLeft = glyphCenter.X + WatchPillGlyph * scale * 0.5f + Metrics.Space.Xs * scale;
         var labelHeight = Typography.LineHeight(TextStyles.Footnote);
-        Typography.Draw(drawList, new Vector2(labelLeft, rect.Center.Y - labelHeight * 0.5f), label, ink,
+        Typography.Draw(drawList, new Vector2(labelLeft, face.Face.Center.Y - labelHeight * 0.5f), label, ink,
             TextStyles.Footnote);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
         if (enabled && UiInteract.Click(rect.Min, rect.Max, hovered))
         {
             OpenReminderSheet(live!.Key);

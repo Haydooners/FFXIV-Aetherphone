@@ -93,7 +93,6 @@ internal sealed partial class AppStoreApp
         var tint = AppStoreCatalog.Tint(category);
         var rounding = Metrics.Radius.Grouped * scale;
         var lift = hovered ? CategoryHoverLift : 0f;
-        Elevation.Floating(drawList, body.Min, body.Max, rounding, scale, hovered ? 0.6f : 0.34f);
         Squircle.FillVerticalGradient(drawList, body.Min, body.Max, rounding,
             ImGui.GetColorU32(Palette.Lighten(tint, CategoryTopLift + lift)),
             ImGui.GetColorU32(Palette.Darken(tint, CategoryBottomDarken - lift * 0.5f)));
@@ -192,9 +191,10 @@ internal sealed partial class AppStoreApp
             var origin = ImGui.GetCursorScreenPos();
             var width = ScrollLayout.StableContentWidth();
             var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-            Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
-            GlassField.Search(drawList, field, "##appstoreSearch", Loc.T(L.Store.SearchHint), ref search, theme, scale,
-                SearchMaxLength, false);
+            var ink = ui.Ink;
+            SearchBar.Surface(drawList, field, ink);
+            GlassField.Search(drawList, field, "##appstoreSearch", Loc.T(L.Store.SearchHint), ref search, ink.Ink,
+                ink.Muted, scale, SearchMaxLength, false);
             index.Search(search);
             var top = field.Max.Y + SectionGap * scale;
             if (search.AsSpan().Trim().Length == 0)

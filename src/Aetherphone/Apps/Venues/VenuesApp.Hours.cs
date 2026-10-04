@@ -74,7 +74,7 @@ internal sealed partial class VenuesApp
         var rows = hoursExpanded ? VenueHours.DayCount : 1;
         var rowHeight = HoursRowHeight * scale;
         var card = new Rect(new Vector2(left, cardTop), new Vector2(left + width, cardTop + rows * rowHeight));
-        VenuesArt.Card(drawList, ui, card.Min, card.Max, scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var hovered = VenuesArt.RowWash(drawList, ui, card, scale);
         var inset = CardInset * scale;
         for (var day = 0; day < rows; day++)
@@ -103,7 +103,7 @@ internal sealed partial class VenuesApp
 
             if (day < rows - 1)
             {
-                VenuesArt.Hairline(drawList, ui, card.Min.X + inset, card.Max.X - inset, rowTop + rowHeight);
+                FeedCell.Hairline(drawList, card.Min.X + inset, card.Max.X - inset, rowTop + rowHeight, ui.Hairline);
             }
         }
 

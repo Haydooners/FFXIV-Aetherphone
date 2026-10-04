@@ -30,7 +30,6 @@ internal sealed partial class AppStoreApp
     private const float HeroEdgeAlpha = 0.30f;
     private const float HeroEyebrowAlpha = 0.78f;
     private const float HeroSubtitleAlpha = 0.86f;
-    private const float HeroPillStrength = 2f;
     private const float HeroStripDarken = 0.38f;
     private const float HeroStripOpacity = 0.62f;
     private const float WidgetMediumAspect = 0.47f;
@@ -115,7 +114,6 @@ internal sealed partial class AppStoreApp
         var half = card.Size * 0.5f * press;
         var body = new Rect(center - half, center + half);
         var rounding = Metrics.Radius.Grouped * scale;
-        Elevation.Floating(drawList, body.Min, body.Max, rounding, scale, hovered ? 0.85f : 0.6f);
         Squircle.FillVerticalGradient(drawList, body.Min, body.Max, rounding,
             ImGui.GetColorU32(Palette.Lighten(app.Accent, HeroTopLift)),
             ImGui.GetColorU32(Palette.Darken(app.Accent, HeroBottomDarken)));
@@ -155,8 +153,7 @@ internal sealed partial class AppStoreApp
         Typography.Draw(drawList, new Vector2(nameLeft, nameY + nameHeight),
             Typography.FitText(Loc.T(AppStoreCatalog.Name(entry.Category)), nameWidth, TextStyles.Footnote),
             Palette.WithAlpha(White, HeroEyebrowAlpha), TextStyles.Footnote);
-        DrawStatePill(drawList, pill, app, overPill, Palette.WithAlpha(White, HeroPillStrength), White,
-            scale);
+        DrawStatePill(drawList, pill, app, overPill, ui.Ink with { Ink = White }, White, scale);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);

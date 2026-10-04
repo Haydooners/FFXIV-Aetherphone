@@ -1,52 +1,15 @@
 using Aetherphone.Core;
 using Aetherphone.Windows.Components;
-using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Apps.Velvet.Kit;
 
 internal static class VSegmented
 {
-    public static int Draw(string id, Rect rect, ReadOnlySpan<string> labels, int current, float scale)
+    public static int Draw(string id, Rect rect, IReadOnlyList<string> labels, int current)
     {
-        var count = labels.Length;
-        if (count <= 0)
-        {
-            return -1;
-        }
-
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, rect.Min, rect.Max, rect.Height * 0.5f, VelvetTheme.PlumWell.Packed());
-
-        var segmentWidth = rect.Width / count;
-        var pad = 3f * scale;
-        var thumb = VAnim.To(id + ".thumb", current, 0.14f, ImGui.GetIO().DeltaTime);
-        var thumbMin = new Vector2(rect.Min.X + pad + thumb * segmentWidth, rect.Min.Y + pad);
-        var thumbMax = new Vector2(thumbMin.X + segmentWidth - pad * 2f, rect.Max.Y - pad);
-        Squircle.Fill(drawList, thumbMin, thumbMax, (rect.Height - pad * 2f) * 0.5f,
-            VelvetTheme.Alpha(VelvetTheme.Rose, 0.28f).Packed());
-
-        var clicked = -1;
-        for (var index = 0; index < count; index++)
-        {
-            var min = new Vector2(rect.Min.X + index * segmentWidth, rect.Min.Y);
-            var max = new Vector2(rect.Min.X + (index + 1) * segmentWidth, rect.Max.Y);
-            var hovered = UiInteract.Hover(min, max);
-            var ink = index == current ? VelvetTheme.TitleInk : VelvetTheme.MutedInk;
-            var labelMaxWidth = MathF.Max(1f, segmentWidth - 12f * scale);
-            var labelHeight = Typography.Measure(labels[index], TextStyles.FootnoteEmphasized).Y;
-            Marquee.DrawCenteredAuto(id + "." + index, labels[index], (min.X + max.X) * 0.5f,
-                (min.Y + max.Y) * 0.5f - labelHeight * 0.5f, labelMaxWidth, TextStyles.FootnoteEmphasized, ink);
-            if (hovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            if (UiInteract.Click(min, max, hovered))
-            {
-                clicked = index;
-            }
-        }
-
-        return clicked;
+        var selected = SegmentStrip.Draw(id, rect, labels, current,
+            Surfaces.Fill(VelvetTheme.Ink, FillLevel.Tertiary), VelvetTheme.Ink.Accent, VelvetTheme.Ink.Muted,
+            VelvetTheme.OnAccent, out var pressed);
+        return pressed ? selected : -1;
     }
 }

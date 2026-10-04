@@ -30,7 +30,7 @@ internal sealed partial class StratsApp
     private const float CheckWidth = 22f;
     private const float BadgeGap = 4f;
     private const float BadgeLabelGap = 10f;
-    private const float RoleChipHeight = 34f;
+    private const float RoleChipHeight = ChipRail.ChipHeight;
     private const float RoleChipGap = 6f;
     private const float RoleCaptionGap = 4f;
     private const float AlignmentHeight = 38f;
@@ -325,7 +325,7 @@ internal sealed partial class StratsApp
         var min = rect.Center - half;
         var max = rect.Center + half;
         var radius = Metrics.Radius.Grouped * scale;
-        ui.Card(drawList, min, max, radius, true);
+        ui.Card(drawList, min, max, radius);
         Material.TopGlow(drawList, min, max, radius, ui.Accent, SummaryGlowCoverage,
             hovered ? SummaryGlowStrengthHover : SummaryGlowStrength);
         if (hovered)

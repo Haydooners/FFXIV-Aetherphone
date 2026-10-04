@@ -47,8 +47,8 @@ internal sealed partial class HuntsApp
     private const float LiveCardHeight = 92f;
     private const float LiveThumbSize = 64f;
     private const float GoButtonWidth = 64f;
-    private const float GoButtonHeight = 32f;
-    private const float StatusCapsuleHeight = 30f;
+    private const float GoButtonHeight = Button.SmallHeight;
+    private const float StatusCapsuleHeight = Button.SmallHeight;
     private const float StatusCapsulePad = 12f;
     private const float StatusDotGap = 8f;
     private const float StatusRowGap = 10f;
@@ -121,21 +121,12 @@ internal sealed partial class HuntsApp
         var rect = new Rect(origin, origin + new Vector2(capsuleWidth, StatusCapsuleHeight * scale));
         UiAnchors.Report("hunts.auth", rect);
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var press = PressFx.Scale("hunts.status", hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left),
-            Core.Animation.Motion.PressScaleControl);
-        var half = rect.Size * 0.5f * press;
-        var min = rect.Center - half;
-        var max = rect.Center + half;
-        Material.ThemedGlass(drawList, min, max, (max.Y - min.Y) * 0.5f, scale, frameTheme);
-        var dotCenter = new Vector2(min.X + pad + dot * 0.5f, rect.Center.Y);
+        var face = Button.Surface(drawList, rect, ui.Ink, ButtonStyle.Gray, ButtonRole.Normal, true, hovered,
+            ImGui.GetID("hunts.status")).Face;
+        var dotCenter = new Vector2(face.Min.X + pad + dot * 0.5f, face.Center.Y);
         HuntsArt.HaloDot(drawList, dotCenter, dotInk, connected, scale);
         Typography.Draw(drawList, new Vector2(dotCenter.X + dot * 0.5f + StatusDotGap * scale,
-            rect.Center.Y - labelSize.Y * 0.5f), fitted, ui.TitleInk, TextStyles.FootnoteEmphasized);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
+            face.Center.Y - labelSize.Y * 0.5f), fitted, ui.TitleInk, TextStyles.FootnoteEmphasized);
         if (UiInteract.Click(rect.Min, rect.Max, hovered))
         {
             OpenAccount();
@@ -210,8 +201,10 @@ internal sealed partial class HuntsApp
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
         var field = new Rect(origin, origin + new Vector2(width, GlassField.HeightUnits * scale));
+        var ink = ui.Ink;
+        SearchBar.Surface(ImGui.GetWindowDrawList(), field, ink);
         GlassField.Search(ImGui.GetWindowDrawList(), field, "##huntsSearch", Loc.T(L.Hunts.SearchHint),
-            ref searchQuery, frameTheme, scale, SearchMaxLength, false);
+            ref searchQuery, ink.Ink, ink.Muted, scale, SearchMaxLength, false);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, (GlassField.HeightUnits + SearchGap) * scale));
     }
@@ -468,7 +461,7 @@ internal sealed partial class HuntsApp
             return;
         }
 
-        ui.SectionLabel(Loc.T(L.Hunts.SectionLive), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Hunts.SectionLive), ui.TitleInk);
         for (var index = 0; index < liveRows.Count; index++)
         {
             DrawLiveCard(liveRows[index], index == 0, scale);
@@ -507,10 +500,10 @@ internal sealed partial class HuntsApp
         var half = card.Size * 0.5f * press;
         var min = card.Center - half;
         var max = card.Center + half;
-        ui.Card(drawList, min, max, HuntsArt.CardRadius * scale, elevated: true);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         if (hovered)
         {
-            Squircle.Fill(drawList, min, max, HuntsArt.CardRadius * scale, ImGui.GetColorU32(ui.HoverWash));
+            Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale, ImGui.GetColorU32(ui.HoverWash));
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
@@ -595,7 +588,7 @@ internal sealed partial class HuntsApp
             return;
         }
 
-        ui.SectionLabel(title, TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(title, ui.TitleInk);
         var card = GroupCard.Begin(ui, rows.Count, BoardRowHeight);
         card.SeparatorInset = RingSize + HuntsArt.RowGap;
         for (var index = 0; index < rows.Count; index++)

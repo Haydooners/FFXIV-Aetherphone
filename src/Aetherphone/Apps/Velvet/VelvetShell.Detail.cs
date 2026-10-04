@@ -15,9 +15,8 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetShell
 {
-    private const float CommentTextScale = 0.9f;
 
-    private static readonly TextStyle CommentBodyStyle = new(CommentTextScale, FontWeight.Regular);
+    private static readonly TextStyle CommentBodyStyle = TextStyles.Subheadline;
     private const float CommentHeadHeight = 18f;
     private const float CommentPadY = 10f;
     private const float CommentActionWidth = 44f;
@@ -256,7 +255,7 @@ internal sealed partial class VelvetShell
         var labelOrigin = ImGui.GetCursorScreenPos();
         Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(labelOrigin.X + pad, labelOrigin.Y),
             Loc.Upper(count > 0 ? Loc.T(L.Velvet.CommentsCount, count) : Loc.T(L.Velvet.Comments)),
-            VelvetTheme.HeaderInk, TextStyles.FootnoteEmphasized);
+            VelvetTheme.MutedInk, TextStyles.FootnoteEmphasized);
         ImGui.SetCursorScreenPos(labelOrigin);
         ImGui.Dummy(new Vector2(width, 26f * scale));
 
@@ -297,12 +296,12 @@ internal sealed partial class VelvetShell
         var commentView = translation.View(commentKey, comment.Text, comment.Lang);
         var commentText = commentView.Text;
         RichTextLayout? commentLayout;
-        using (Plugin.Fonts.Push(CommentTextScale))
+        using (Plugin.Fonts.Push(CommentBodyStyle.Scale, CommentBodyStyle.Weight))
         {
             commentLayout = commentLayouts.LayoutFor(commentView.LayoutKey, commentText, comment.Mentions, wrapWidth);
         }
 
-        var textHeight = commentLayout?.Size.Y ?? Typography.MeasureWrapped(commentText, wrapWidth, CommentTextScale);
+        var textHeight = commentLayout?.Size.Y ?? Typography.MeasureWrapped(commentText, wrapWidth, CommentBodyStyle.Scale);
         var linkHeight = TranslateLink.Height(translation, commentKey, comment.Lang, scale);
         var bodyHeight = CommentHeadHeight * scale + textHeight + linkHeight;
         var cellHeight = MathF.Max(avatarRadius * 2f, bodyHeight) + CommentPadY * 2f * scale;
@@ -328,7 +327,7 @@ internal sealed partial class VelvetShell
                 VelvetTheme.MutedInk);
             CommentReviewTag.Draw(
                 new Vector2(nameLeft + nameWidth + 8f * scale + timeWidth + 8f * scale, origin.Y + 1f * scale),
-                nameLeft + wrapWidth, comment.ScanStatus, 0.8f);
+                nameLeft + wrapWidth, comment.ScanStatus, TextStyles.Footnote.Scale);
         }
 
         var textTop = origin.Y + CommentHeadHeight * scale;
@@ -339,7 +338,7 @@ internal sealed partial class VelvetShell
         }
         else
         {
-            using (Plugin.Fonts.Push(CommentTextScale))
+            using (Plugin.Fonts.Push(CommentBodyStyle.Scale, CommentBodyStyle.Weight))
             {
                 DrawRichBody(drawList, commentLayout, new Vector2(nameLeft, textTop));
             }
@@ -386,8 +385,9 @@ internal sealed partial class VelvetShell
 
     private void DrawCommentComposer(Rect bar, Rect screen, string postId)
     {
-        var style = new CommentComposerStyle(VelvetTheme.Hairline, VelvetTheme.PlumWell, VelvetTheme.TitleInk,
-            VelvetTheme.Rose, VelvetTheme.PlumWell, VelvetTheme.OnAccent, true, 9f, 54f, 0.85f);
+        var style = new CommentComposerStyle(VelvetTheme.Hairline,
+            Surfaces.Fill(VelvetTheme.Ink, FillLevel.Tertiary), VelvetTheme.TitleInk, VelvetTheme.Rose,
+            Surfaces.Fill(VelvetTheme.Ink, FillLevel.Secondary), VelvetTheme.OnAccent, true, 9f, 54f, 0.85f);
         var returned = Interlocked.Exchange(ref commentRestore, null);
         if (returned is not null)
         {
@@ -471,7 +471,7 @@ internal sealed partial class VelvetShell
                     RoleBadgeIds = user.ProfileBadges,
                     UserId = user.Id,
                 };
-                if (VRow.Cell(in model, ui, theme, images, lodestone) == VRowHit.Body)
+                if (VRow.Cell(in model, theme, images, lodestone) == VRowHit.Body)
                 {
                     OpenProfile(user.Id);
                 }

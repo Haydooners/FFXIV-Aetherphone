@@ -30,18 +30,15 @@ internal sealed partial class ChirperApp
     private const int MediaGridColumns = 3;
     private const float MediaGridCellGap = 2f;
 
-    private static readonly TextStyle ProfileNameStyle = new(1.4f, FontWeight.Bold);
-    private static readonly TextStyle ProfileHandleStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle ProfileBioStyle = new(1f, FontWeight.Regular);
-    private static readonly TextStyle ProfileMetaStyle = new(0.9f, FontWeight.Regular);
-    private static readonly TextStyle StatValueStyle = new(1f, FontWeight.Bold);
-    private static readonly TextStyle StatLabelStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle FollowedByStyle = new(0.83f, FontWeight.Regular);
-    private static readonly TextStyle TabStyle = new(0.97f, FontWeight.SemiBold);
-    private static readonly TextStyle TabIdleStyle = new(0.97f, FontWeight.Medium);
-    private static readonly TextStyle FollowPillStyle = new(0.97f, FontWeight.Bold);
-    private static readonly Vector4 GlassPillFill = new(1f, 1f, 1f, 0.08f);
-    private static readonly Vector4 OutlinePillFill = new(1f, 1f, 1f, 0.04f);
+    private static readonly TextStyle ProfileNameStyle = TextStyles.Title2;
+    private static readonly TextStyle ProfileHandleStyle = TextStyles.Subheadline;
+    private static readonly TextStyle ProfileBioStyle = TextStyles.Body;
+    private static readonly TextStyle ProfileMetaStyle = TextStyles.Subheadline;
+    private static readonly TextStyle StatValueStyle = TextStyles.Headline;
+    private static readonly TextStyle StatLabelStyle = TextStyles.Subheadline;
+    private static readonly TextStyle FollowedByStyle = TextStyles.Footnote;
+    private static readonly TextStyle TabStyle = TextStyles.Headline;
+    private static readonly TextStyle TabIdleStyle = TextStyles.BodyEmphasized;
     private static readonly Vector4 BannerScrim = new(0f, 0f, 0f, 0.4f);
     private static readonly Vector4 BannerVeil = new(0.031f, 0.067f, 0.122f, 0.55f);
 
@@ -331,35 +328,26 @@ internal sealed partial class ChirperApp
     private void DrawProfileActions(ImDrawListPtr drawList, UserDto user, float left, float right, float top)
     {
         var scale = UiScale.Current;
-        var height = ProfileActionHeight * scale;
-        var rounding = height * 0.5f;
-        var moreRadius = height * 0.5f;
-        var moreCenter = new Vector2(right - moreRadius, top + moreRadius);
-        var moreExtent = new Vector2(moreRadius, moreRadius);
-        var moreHovered = UiInteract.Hover(moreCenter - moreExtent, moreCenter + moreExtent);
-        drawList.AddCircleFilled(moreCenter, moreRadius,
-            ImGui.GetColorU32(moreHovered ? ChirperInk.ChipHover : GlassPillFill), 32);
-        drawList.AddCircle(moreCenter, moreRadius, ImGui.GetColorU32(ChirperInk.ChipStroke), 32, 1f);
-        PhoneIcon.Draw(drawList, moreCenter, PhoneIcons.Dots, GlassPillInk, 16f * scale);
-        if (moreHovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        HoverTooltip.Show(new Rect(moreCenter - moreExtent, moreCenter + moreExtent), Loc.T(L.Chirper.More),
-            HoverLabelSide.Above);
-        if (UiInteract.Click(moreCenter - moreExtent, moreCenter + moreExtent, moreHovered))
+        var rowHeight = ProfileActionHeight * scale;
+        var rowCenterY = top + rowHeight * 0.5f;
+        var moreRadius = RoundButton.RegularRadius * scale;
+        var moreCenter = new Vector2(right - moreRadius, rowCenterY);
+        if (RoundButton.Icon(drawList, moreCenter, moreRadius, PhoneIcons.Dots, ui.Ink, ButtonStyle.Gray,
+                Loc.T(L.Chirper.More)))
         {
             OpenProfileSheet(user);
         }
 
         var pillRight = moreCenter.X - moreRadius - 8f * scale;
+        var pillHeight = Button.RegularHeight * scale;
+        var pillTop = rowCenterY - pillHeight * 0.5f;
         if (user.IsMe)
         {
             var label = Loc.T(L.Chirper.EditProfile);
-            var pillWidth = Typography.Measure(label, FollowPillStyle).X + 34f * scale;
-            var editRect = new Rect(new Vector2(pillRight - pillWidth, top), new Vector2(pillRight, top + height));
-            if (DrawOutlinePill(drawList, editRect, label, rounding))
+            var pillWidth = Button.WidthFor(label, ButtonSize.Regular);
+            var editRect = new Rect(new Vector2(pillRight - pillWidth, pillTop),
+                new Vector2(pillRight, pillTop + pillHeight));
+            if (Button.Draw(drawList, editRect, label, ui.Ink, ButtonStyle.Gray))
             {
                 editLoadedFor = null;
                 router.Push(ChirperRoute.EditProfile);
@@ -375,23 +363,15 @@ internal sealed partial class ChirperApp
             FollowState.Requested => Loc.T(L.Social.Requested),
             _ => Loc.T(L.Chirper.Follow),
         };
-        var followWidth = MathF.Max(110f * scale, Typography.Measure(followLabel, FollowPillStyle).X + 34f * scale);
-        var pillRect = new Rect(new Vector2(pillRight - followWidth, top), new Vector2(pillRight, top + height));
-        var clicked = state == FollowState.None
-            ? DrawGradientPill(drawList, pillRect, followLabel, rounding)
-            : DrawOutlinePill(drawList, pillRect, followLabel, rounding);
-        if (clicked)
+        var followWidth = MathF.Max(110f * scale, Button.WidthFor(followLabel, ButtonSize.Regular));
+        var pillRect = new Rect(new Vector2(pillRight - followWidth, pillTop),
+            new Vector2(pillRight, pillTop + pillHeight));
+        if (Button.Draw(drawList, pillRect, followLabel, ui.Ink,
+                state == FollowState.None ? ButtonStyle.Prominent : ButtonStyle.Gray))
         {
             store.ToggleFollow(user);
         }
     }
-
-    private static bool DrawGradientPill(ImDrawListPtr drawList, Rect rect, string label, float rounding) =>
-        SocialPill.Accent(drawList, rect, label, ChirperInk.Shared, FollowPillStyle, rounding);
-
-    private static bool DrawOutlinePill(ImDrawListPtr drawList, Rect rect, string label, float rounding) =>
-        SocialPill.Outline(drawList, rect, label, ChirperInk.Shared, FollowPillStyle, rounding, OutlinePillFill);
-
     private void DrawProfileTabs(bool showLikes)
     {
         var scale = UiScale.Current;
@@ -858,5 +838,6 @@ internal sealed partial class ChirperApp
         bool filter, bool highlighted) =>
         SocialChrome.DrawHeaderIcon(drawList, center, radius,
             filter ? PhoneIcons.AdjustmentsHorizontal : PhoneIcons.Refresh, 18f, tooltip, ChirperInk.Shared,
-            GlassPillInk, highlighted);
+            ChirperInk.BodyInk, highlighted);
+
 }

@@ -16,7 +16,7 @@ internal sealed class GameRulesSheet
     private const float FactStackPadY = 8f;
     private const float FactStackGap = 2f;
     private const float BulletRadius = 11f;
-    private const float PlayPillHeight = 46f;
+    private const float PlayPillHeight = Button.LargeHeight;
     private const float PlayPillGap = 10f;
     private const float BodyMinHeight = 24f;
 
@@ -91,8 +91,8 @@ internal sealed class GameRulesSheet
         }
 
         var pillRect = new Rect(new Vector2(content.Min.X, pillTop), new Vector2(content.Max.X, content.Max.Y));
-        if (!CasinoArt.Capsule(ImGui.GetWindowDrawList(), skin, ImGui.GetID("casino.rules.play"), pillRect,
-                Loc.T(L.Casino.RulesPlay), CasinoCapsuleTone.Filled, sheet.IsOpen, TextStyles.Headline, true))
+        if (!Button.Draw(pillRect, Loc.T(L.Casino.RulesPlay), skin.Ink, ButtonStyle.Prominent, enabled: sheet.IsOpen,
+                overlay: true, id: "casino.rules.play"))
         {
             return;
         }

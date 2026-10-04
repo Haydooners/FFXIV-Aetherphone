@@ -89,7 +89,7 @@ internal sealed partial class GamesApp
             var width = ScrollLayout.StableContentWidth();
             var drawList = ImGui.GetWindowDrawList();
             var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-            GlassField.Surface(drawList, field, GlassField.Radius(field), scale, 0f, 1f);
+            SearchBar.Surface(drawList, field, ControlInk.From(theme));
             GlassField.Search(drawList, field, "##gamesSearch", Loc.T(L.Games.SearchHint), ref searchText, theme,
                 scale, SearchMaxLength, focusSearch);
             focusSearch = false;
@@ -184,7 +184,6 @@ internal sealed partial class GamesApp
         var max = rect.Center + half;
         var rounding = Metrics.Radius.Widget * scale;
         var accent = BrowseAccent(index);
-        Elevation.Card(drawList, min, max, rounding, scale, hovered ? 1f : 0.55f);
         Squircle.FillVerticalGradient(drawList, min, max, rounding,
             ImGui.GetColorU32(GamePalette.Lighten(accent, hovered ? 0.20f : 0.12f)),
             ImGui.GetColorU32(GamePalette.Darken(accent, 0.38f)));
