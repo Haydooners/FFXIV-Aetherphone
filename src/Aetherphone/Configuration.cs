@@ -419,7 +419,9 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
 
     public bool IsVelvetOnboarded() => VelvetOnboarded && VelvetOnboardedVersion >= VelvetOnboardVersion;
     public bool VelvetBlurByDefault { get; set; } = true;
-    public VelvetMutePreferences VelvetMutes { get; set; } = new();
+    public VelvetFilterPreferences VelvetMutes { get; set; } = new();
+    public VelvetFilterPreferences VelvetDiscoverFilters { get; set; } = new();
+    public VelvetFilterPreferences VelvetFeedFilters { get; set; } = new();
     public List<string> VelvetPinnedThreads { get; set; } = new();
     public List<string> VelvetArchivedThreads { get; set; } = new();
     public List<string> AethergramPinnedThreads { get; set; } = new();

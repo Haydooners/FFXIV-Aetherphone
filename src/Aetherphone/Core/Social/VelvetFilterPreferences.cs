@@ -1,7 +1,7 @@
 namespace Aetherphone.Core.Social;
 
 [Serializable]
-internal sealed class VelvetMutePreferences
+internal sealed class VelvetFilterPreferences
 {
     public int Intent { get; set; }
     public int Gender { get; set; }

@@ -243,6 +243,7 @@ internal sealed partial class VelvetShell
                 NextTone(ref lead), "velvet.discover.clear"))
         {
             discoverInclude.Clear();
+            SaveFilters();
             ApplyDiscoverFilters();
         }
 

@@ -67,15 +67,20 @@ internal sealed partial class VelvetShell
     private VelvetFilterSelection IncludeFor(VelvetPage surface) =>
         surface == VelvetPage.Feed ? feedInclude : discoverInclude;
 
-    private void LoadMutes()
+    private void LoadFilters()
     {
         mutes.LoadFrom(configuration.VelvetMutes);
+        discoverInclude.LoadFrom(configuration.VelvetDiscoverFilters);
+        feedInclude.LoadFrom(configuration.VelvetFeedFilters);
         mutesFilterDirty = true;
+        filterSummaryDirty = true;
     }
 
-    private void SaveMutes()
+    private void SaveFilters()
     {
         mutes.SaveInto(configuration.VelvetMutes);
+        discoverInclude.SaveInto(configuration.VelvetDiscoverFilters);
+        feedInclude.SaveInto(configuration.VelvetFeedFilters);
         configuration.Save();
     }
 
@@ -120,7 +125,7 @@ internal sealed partial class VelvetShell
     private void ApplyMutesEverywhere()
     {
         mutesFilterDirty = true;
-        SaveMutes();
+        SaveFilters();
         ApplyDiscoverFilters();
         ApplyFeedFilters();
     }
@@ -176,6 +181,7 @@ internal sealed partial class VelvetShell
 
         if (changedInclude)
         {
+            SaveFilters();
             ApplyFilters(filterSurface);
         }
     }
