@@ -88,6 +88,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         var general = new GeneralPage(configuration, services.Translation, confirm);
         var tutorials = new TutorialsPage(configuration);
         callsPage = new CallsPage(calls, configuration);
+        var nameplatePage = new NameplateTitlePage(services.NameplateTitles);
         var notificationSoundPage = new SoundSettingsPage(sound, SoundKind.Notification, L.Settings.NotificationSound,
             FontAwesomeIcon.Bell, new Vector4(0.98f, 0.27f, 0.25f, 1f), "settings.notificationVolume",
             () => configuration.NotificationSound, token =>
@@ -129,7 +130,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         linkedDevicesPage = new LinkedDevicesPage(configuration, aethernetSession, aethernet.Auth, this);
         var groups = new[]
         {
-            new ISettingsPage[] { general, appearance, display, sounds, notificationsPage, callsPage, language },
+            new ISettingsPage[] { general, appearance, display, sounds, notificationsPage, callsPage, nameplatePage, language },
             new ISettingsPage[] { privacyPage, safetyPage, linkedDevicesPage },
             new ISettingsPage[] { tutorials, commands, changelogPage, about },
             new ISettingsPage[] { appsPage },

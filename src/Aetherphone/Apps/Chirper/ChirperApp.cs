@@ -7,6 +7,7 @@ using Aetherphone.Core.Conduct;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Emoji;
 using Aetherphone.Core.Game;
+using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Lodestone;
 using Aetherphone.Core.Media;
@@ -29,7 +30,7 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Chirper;
 
-internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
+internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer, INameplateHandleSource
 {
     private enum SheetKind
     {
@@ -160,6 +161,14 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
     public string Id => "chirper";
     public Vector4 Accent => AppAccents.For(Id);
     public string DisplayName => Loc.T(L.Apps.Chirper);
+
+    public NameplateStatus TagStatus => NameplateStatus.SocialApps;
+
+    public string ResolveNameplateHandle()
+    {
+        store.EnsureMe();
+        return store.Me?.Handle ?? string.Empty;
+    }
     public string Glyph => "Ch";
     public int BadgeCount => social.UnseenCount(Id);
     public bool HasBadge => true;

@@ -2321,6 +2321,8 @@ internal static class L
                 "Added a Display page that gathers phone size, text size, Live glass, Lock Position and the mini phone"),
             new("changelog.r1100.32",
                 "Added a Support page with the three Patreon tiers, what each one includes, a preview of the member look and badges, and a link to join each tier"),
+            new("changelog.r1100.160",
+                "Added Nameplate Title in Settings: show your MogCast party, jam, radio show, meetup, open social app or current song as your Honorific title"),
         };
 
         public static readonly LocString[] Release1100Tours =
@@ -8250,6 +8252,58 @@ internal static class L
         public static readonly LocString ResultTitle = new("swoop.resultTitle", "Good night");
         public static readonly LocString ResultLine = new("swoop.resultLine", "{0} m · Island {1} · Best air {2}s");
         public static readonly LocString Altitude = new("swoop.altitude", "{0} m");
+    }
+
+    internal static class Nameplate
+    {
+        public static readonly LocString Title = new("nameplate.title", "Nameplate Title");
+        public static readonly LocString Off = new("nameplate.off", "Off");
+        public static readonly LocString Jam = new("nameplate.jam", "Jam");
+        public static readonly LocString OnAir = new("nameplate.onAir", "On air");
+        public static readonly LocString Hosting = new("nameplate.hosting", "Hosting");
+        public static readonly LocString OnACall = new("nameplate.onACall", "On a call");
+        public static readonly LocString DoNotDisturb = new("nameplate.doNotDisturb", "Do not disturb");
+        public static readonly LocString NotInstalledTitle = new("nameplate.notInstalledTitle", "Honorific is not installed");
+        public static readonly LocString NotInstalledBody = new("nameplate.notInstalledBody", "Nameplate Title shows what you are doing as your title through the Honorific plugin. Install Honorific from the Dalamud plugin installer, then come back here.");
+        public static readonly LocString Enabled = new("nameplate.enabled", "Show my status on my title");
+        public static readonly LocString PublicHint = new("nameplate.publicHint", "Everyone who sees your Honorific title sees this, including friends who sync with you. When nothing is active, your own title comes back.");
+        public static readonly LocString Character = new("nameplate.character", "These settings apply to {0} only.");
+        public static readonly LocString NothingActive = new("nameplate.nothingActive", "Nothing to show right now, so your own title is on.");
+        public static readonly LocString Example = new("nameplate.example", "Example");
+        public static readonly LocString Live = new("nameplate.live", "On your nameplate now");
+        public static readonly LocString Statuses = new("nameplate.statuses", "Statuses");
+        public static readonly LocString StatusesHint = new("nameplate.statusesHint", "The highest active status wins: hosting first, your handle last.");
+        public static readonly LocString MogCast = new("nameplate.mogCast", "MogCast party");
+        public static readonly LocString MogCastHint = new("nameplate.mogCastHint", "Your party code, while the party is open to guests.");
+        public static readonly LocString JamRow = new("nameplate.jamRow", "Jam you host");
+        public static readonly LocString JamHint = new("nameplate.jamHint", "The join code, while you host a jam.");
+        public static readonly LocString JamShowsName = new("nameplate.jamShowsName", "Show the jam name instead of the code");
+        public static readonly LocString Radio = new("nameplate.radio", "Radio on air");
+        public static readonly LocString RadioHint = new("nameplate.radioHint", "Your station, while you DJ live.");
+        public static readonly LocString Muster = new("nameplate.muster", "Muster meetup");
+        public static readonly LocString MusterHint = new("nameplate.musterHint", "The meetup type, while a meetup you host is running.");
+        public static readonly LocString SocialApps = new("nameplate.socialApps", "Chirper and Aethergram");
+        public static readonly LocString SocialAppsHint = new("nameplate.socialAppsHint", "Your handle in that app, while it is open.");
+        public static readonly LocString VelvetHint = new("nameplate.velvetHint", "Your Velvet handle, while Velvet is open. Anyone who can see your title sees it, Velvet user or not.");
+        public static readonly LocString Busy = new("nameplate.busy", "Busy");
+        public static readonly LocString BusyHint = new("nameplate.busyHint", "On a call, or Do Not Disturb.");
+        public static readonly LocString NowPlaying = new("nameplate.nowPlaying", "Now playing");
+        public static readonly LocString NowPlayingHint = new("nameplate.nowPlayingHint", "The song you are playing. Needs Share what I listen to, in Music settings.");
+        public static readonly LocString PcMedia = new("nameplate.pcMedia", "Include music from your PC");
+        public static readonly LocString Handle = new("nameplate.handle", "Social handle");
+        public static readonly LocString HandleHint = new("nameplate.handleHint", "Your handle, when nothing else is active.");
+        public static readonly LocString Look = new("nameplate.look", "Look");
+        public static readonly LocString StyleApp = new("nameplate.styleApp", "App colors");
+        public static readonly LocString StyleMine = new("nameplate.styleMine", "Match my title");
+        public static readonly LocString StyleCustom = new("nameplate.styleCustom", "Custom");
+        public static readonly LocString StyleAppHint = new("nameplate.styleAppHint", "Each status takes the color of the app it comes from.");
+        public static readonly LocString StyleMineHint = new("nameplate.styleMineHint", "Copies the color, glow and gradient of your own Honorific title.");
+        public static readonly LocString StyleMineMissing = new("nameplate.styleMineMissing", "Set a custom title in Honorific first. Until then, app colors are used.");
+        public static readonly LocString TextColor = new("nameplate.textColor", "Text color");
+        public static readonly LocString GlowColor = new("nameplate.glowColor", "Glow color");
+        public static readonly LocString Position = new("nameplate.position", "Position");
+        public static readonly LocString Above = new("nameplate.above", "Above my name");
+        public static readonly LocString Below = new("nameplate.below", "Below my name");
     }
 
     internal static class Minimized

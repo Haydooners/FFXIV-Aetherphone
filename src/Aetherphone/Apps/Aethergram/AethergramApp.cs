@@ -9,6 +9,7 @@ using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Crypto;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Home;
+using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Lodestone;
 using Aetherphone.Core.Media;
@@ -31,7 +32,7 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Aethergram;
 
-internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
+internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer, INameplateHandleSource
 {
     private enum PostSheetAction
     {
@@ -113,6 +114,14 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
     public string Id => "aethergram";
     public Vector4 Accent => AppAccents.For(Id);
     public string DisplayName => Loc.T(L.Apps.Aethergram);
+
+    public NameplateStatus TagStatus => NameplateStatus.SocialApps;
+
+    public string ResolveNameplateHandle()
+    {
+        store.EnsureMe();
+        return store.Me?.Handle ?? string.Empty;
+    }
     public string Glyph => "Ag";
     public int BadgeCount => dmStore.UnreadCount + social.UnseenCount(Id);
     public bool HasBadge => true;

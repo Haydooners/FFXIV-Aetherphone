@@ -12,6 +12,7 @@ using Aetherphone.Core.Game;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Games;
 using Aetherphone.Core.Health;
+using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Housing;
 using Aetherphone.Core.Hunts;
 using Aetherphone.Core.Inventory;
@@ -221,6 +222,7 @@ internal sealed class PhoneServices : IDisposable
     public required Feedback.FeedbackLauncher FeedbackLauncher { get; init; }
     public required Maps.HuntsMapMarkers HuntsMapMarkers { get; init; }
     public required Shell.MinimizedLayoutService MinimizedLayout { get; init; }
+    public required NameplateTitleService NameplateTitles { get; init; }
 
     public static PhoneServices Build(Configuration configuration, IChatGui chatGui, IDataManager dataManager,
         IObjectTable objectTable, IClientState clientState, IFramework framework, IDutyState dutyState,
@@ -444,6 +446,10 @@ internal sealed class PhoneServices : IDisposable
         var huntsMapMarkers = new Maps.HuntsMapMarkers(configuration, hunts, huntMobCatalog, huntZoneCatalog,
             huntCandidateCache);
         var windowsMedia = new WindowsMediaSessions(configuration);
+        var pcMedia = new PcMediaSource(configuration, windowsMedia);
+        var nameplateTitles = new NameplateTitleService(configuration, framework, clientState, objectTable,
+            aethernetSession, playback, pcMedia, jam, radioRooms, musters, calls,
+            new HonorificBridge(Plugin.PluginInterface));
 
 
         return new PhoneServices
@@ -549,7 +555,7 @@ internal sealed class PhoneServices : IDisposable
             Listening = listening,
             MusicDownloads = musicDownloads,
             WindowsMedia = windowsMedia,
-            PcMedia = new PcMediaSource(configuration, windowsMedia),
+            PcMedia = pcMedia,
             WindowsMediaPublisher = mediaPublisher,
             PlaybackBridge = new PlaybackSystemBridge(playback, mediaPublisher, remoteImages, configuration,
                 framework),
@@ -600,11 +606,13 @@ internal sealed class PhoneServices : IDisposable
             HuntsLauncher = new Hunts.HuntsLauncher(),
             FeedbackLauncher = new Feedback.FeedbackLauncher(),
             HuntsMapMarkers = huntsMapMarkers,
+            NameplateTitles = nameplateTitles,
         };
     }
 
     public void Dispose()
     {
+        NameplateTitles.Dispose();
         CharacterSwitcher.Dispose();
         Looks.Dispose();
         CharacterWatch.Dispose();

@@ -14,6 +14,7 @@ using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Games;
 using Aetherphone.Core.Geography;
 using Aetherphone.Core.Home;
+using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Housing;
 using Aetherphone.Core.Hunts;
 using Aetherphone.Core.Jobs;
@@ -363,6 +364,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public IconAppearance IconAppearance { get; set; } = IconAppearance.Default;
     public List<HomeLook> Looks { get; set; } = new();
     public Dictionary<ulong, Guid> LookByCharacter { get; set; } = new();
+    public Dictionary<ulong, NameplateTitleSettings> NameplateTitleByCharacter { get; set; } = new();
     public Guid ActiveLookId { get; set; }
     public ControlLayout? ControlPanel { get; set; }
     public bool ControlPanelRepacked { get; set; }

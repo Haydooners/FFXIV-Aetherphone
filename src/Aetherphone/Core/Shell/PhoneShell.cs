@@ -176,6 +176,8 @@ internal sealed class PhoneShell : IDisposable
 
     public bool MinimizedResting => minimize.MinimizedResting;
 
+    public IPhoneApp? ForegroundApp => minimize.Phase == MinimizePhase.None && PhoneVisible() ? navigation.Current : null;
+
     private static bool BezelDoubleClicked(Rect device, in ChassisGeometry chassis)
     {
         if (!ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left) || ImGui.IsAnyItemHovered())
