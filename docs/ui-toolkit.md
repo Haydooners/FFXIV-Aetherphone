@@ -250,6 +250,10 @@ A tap only registers if the pointer traveled less than the drag slop, so panning
 
 | Widget | One-liner |
 | --- | --- |
+| `Button.Draw(rect, label, ink, style, role)` | The one labelled button: Prominent, Tinted, Gray or Plain capsule with shared hover and press motion; `ui.Ink` or `ControlInk.From(theme)` supplies the colours (src/Aetherphone/Windows/Components/Fields/Button.cs) |
+| `RoundButton.Icon(drawList, center, radius, glyph, ink, style)` | Content-layer circular icon button in the same styles (src/Aetherphone/Windows/Components/Fields/RoundButton.cs) |
+| `SearchBar.Surface` / `SearchBar.Draw` | Filled 36 tall capsule behind a search or text field (src/Aetherphone/Windows/Components/Fields/SearchBar.cs) |
+| `Surfaces.Fill(ink, FillLevel)` | Content fill ladder derived from the title ink, right in dark and light (src/Aetherphone/Windows/Components/Primitives/Surfaces.cs) |
 | `EmptyState.Draw(body, ui, glyph, title, hint)` | Centered icon, title, and wrapped hint for empty lists; takes a `PhoneIcons` glyph or a `FontAwesomeIcon` (src/Aetherphone/Windows/Components/Fields/EmptyState.cs) |
 | `AvatarView.Draw` / `AvatarView.DrawRemote` | Circular avatar with monogram fallback, loading pulse, and fade-in (src/Aetherphone/Windows/Components/AvatarView.cs) |
 | `SoftWrapField.Multiline(id, ref value, maxLength, size, wrapWidth)` | Multiline composer input; wraps visually without inserting real newlines, supports `MentionAutocomplete` (src/Aetherphone/Windows/Components/SoftWrapField.cs) |
@@ -301,6 +305,8 @@ To move, scale or fade a whole screen, do not paint it at a shifted rect or a sm
 | Inset a card inside an edge-to-edge surface | shift both edges by `FeedCell.PadX * scale` |
 | Size rows inside a scroll region | `ScrollLayout.StableContentWidth()` |
 | Render a long feed | `FeedVirtualizer` + `InfiniteScroll.ReachedBottom` |
+| Draw a labelled button | `Button.Draw` (or the AppSkin pill helpers that forward to it) |
+| Put a round icon button on a card | `RoundButton.Icon` (glass `GlassCircle` only in the navigation layer) |
 | Make a rect clickable | `UiInteract.HoverClick` (or `Hover` + `Click`) |
 | Flip a boolean setting | `Toggle.Draw` |
 | Offer filters in a row | `ChipRail` |

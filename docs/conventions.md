@@ -129,6 +129,18 @@ Full detail with examples lives in [UI toolkit](ui-toolkit.md); this is the chec
 - **Critically damped motion, no bounce.** All UI motion runs through Spring (src/Aetherphone/Core/Animation/Spring.cs), whose Step clamps at the target so it cannot overshoot. Every smooth time and press scale comes from Motion (src/Aetherphone/Core/Animation/Motion.cs); never redeclare one in a component. Draw with the raw spring value: no easing curve sits on top of a spring (Easing.Lerp, Clamp01 and Segment are linear helpers and stay). Bouncy easing (Easing.EaseOutBack) lives only in games: the mini-games under src/Aetherphone/Apps/Games/ and the casino cabinets under src/Aetherphone/Apps/Casino/Cabinets/.
 - **All clock text goes through the single clock seam.** TimeText.Clock (src/Aetherphone/Core/Localization/TimeText.cs) formats every clock string and honors the user's 12/24-hour preference via TimeText.Use24Hour. There are dozens of call sites and zero hand-rolled `"HH:mm"` format strings outside TimeText itself. Keep it that way.
 
+### Materials and controls (the two-layer rule)
+
+The phone follows the iOS split between a navigation layer and a content layer, and every control comes from one kit.
+
+- **Glass belongs to the navigation layer only.** Nav bar buttons, the bottom tab bar, floating toolbars, sheets, menus, popovers, toasts, the home dock and Control Center are glass (Material.LiquidGlass, Material.ThemedGlass, GlassCircle). Anything that scrolls with the content (cards, rows, buttons, fields, chips, heroes) is a fill, never glass, and glass never sits on glass.
+- **In-app glass refracts the app's own backdrop.** AppSkin.Backdrop records its gradient through WallpaperBackdrop.RecordAppGround, and the shell records the theme background for every other app, so glass inside an app lifts the colour behind it instead of darkening the bottom of the gradient into a black block.
+- **Content fills come from one ladder.** Surfaces.Fill(ink, FillLevel) derives Primary, Secondary, Tertiary and Quaternary fills from the screen's title ink, so the same call is right in dark and light themes. Never hand-pick a white-alpha fill for a control.
+- **Every labelled button is a Button.** Styles are Prominent (solid accent, white label, sheen and halo), Tinted (accent at 20 percent), Gray (Fill.Secondary) and Plain; ButtonRole.Destructive swaps the accent for the danger colour. Sizes are Small 28, Regular 34 and Large 44, all capsules, and the label style follows the height. Every button shares the hover lift and press sink from MotionButton. AppSkin.PillButton, AccentPill, ActionPill, GhostButton, DangerPillButton and SocialPill forward to it; never write a new pill painter, and never use a stock ImGui.Button.
+- **Round icon buttons in content are a RoundButton.** Gray or Tinted circles with the same motion. GlassCircle is the navigation-layer version.
+- **Search and text fields are filled capsules.** SearchBar.Surface paints a 36 tall capsule on Fill.Tertiary behind GlassField.Search or GlassField.Text. A field never renders without a background.
+- **Buttons in a tinted app use that app's accent.** Pass the app's ControlInk (`ui.Ink`), not a PhoneTheme, so a button never falls back to the system accent.
+
 ### Grouped lists (settings and any list of rows)
 
 The settings tree is the reference implementation of these three rules; follow them anywhere you build a card of rows.
