@@ -17,7 +17,7 @@ public sealed class TourRegistryTests
         { "collections", (3, 3) },
         { "wallet", (4, 3) },
         { "inventory", (4, 3) },
-        { "settings", (3, 5) },
+        { "settings", (4, 5) },
         { "camera", (5, 7) },
         { "photos", (4, 6) },
         { "news", (4, 3) },

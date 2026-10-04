@@ -5,6 +5,7 @@ using Aetherphone.Core.Crypto;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Moderation;
 using Aetherphone.Core.Notifications;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Sharing;
 using Aetherphone.Core.Theme;
@@ -25,6 +26,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
     public bool BadgeAsDot => true;
     public bool WantsSystemTheme => true;
     public ShareKindSet AcceptedShares => ShareKindSet.Photo;
+    private const float BackAnchorFraction = 0.32f;
     private readonly Configuration configuration;
     private readonly ViewRouter<ISettingsPage> router;
     private readonly ISettingsPage[] searchablePages;
@@ -294,6 +296,12 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
 
         var navBar = AppHeader.BeginLargeTitle(context, depth > 1);
         page.Draw(context, navBar.Body);
+        if (depth > 1)
+        {
+            UiAnchors.Report("settings.back", new Rect(area.Min, new Vector2(area.Min.X + area.Width * BackAnchorFraction,
+                area.Min.Y + NavBarMetrics.InlineHeight * UiScale.Current)));
+        }
+
         var backTitle = depth > 1 && router.TryGetView(depth - 2, out var previous) ? previous.Title : string.Empty;
         AppHeader.EndLargeTitle(in navBar, context, "settings.nav", page.Title, NavBarStyle.From(frameTheme),
             ReadOnlySpan<NavBarButton>.Empty, backTitle, depth > 1 ? popBack : null);
