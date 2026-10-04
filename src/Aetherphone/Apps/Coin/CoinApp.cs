@@ -39,6 +39,7 @@ internal sealed partial class CoinApp : IPhoneApp, ITabRouteTarget
 
     private readonly AethernetSession session;
     private readonly CoinStore store;
+    private readonly CoinQuestStore quests;
     private readonly CoinCatalogStore catalog;
     private readonly ConfirmService confirm;
     private readonly ConductGateService conduct;
@@ -76,7 +77,8 @@ internal sealed partial class CoinApp : IPhoneApp, ITabRouteTarget
     public CoinApp(AethernetSession session, CoinStore store, CoinCatalogStore catalog, ConfirmService confirm,
         ConductGateService conduct, Core.Social.BadgeCatalogStore badgeCatalog, Core.Media.RemoteImageCache images,
         Core.Casino.CasinoStore casino, Core.Social.FrameCatalogStore frameCatalog,
-        Core.Social.LoadoutStore inventory, Core.Lodestone.LodestoneService lodestone, Configuration configuration)
+        Core.Social.LoadoutStore inventory, Core.Lodestone.LodestoneService lodestone, Configuration configuration,
+        CoinQuestStore quests)
     {
         this.session = session;
         this.store = store;
@@ -90,6 +92,7 @@ internal sealed partial class CoinApp : IPhoneApp, ITabRouteTarget
         this.images = images;
         this.casino = casino;
         this.configuration = configuration;
+        this.quests = quests;
         router = new ViewRouter<CoinRoute>(CoinRoute.Root);
         drawView = DrawView;
         back = () => router.Pop();
@@ -104,11 +107,13 @@ internal sealed partial class CoinApp : IPhoneApp, ITabRouteTarget
         historyFilter = CoinLedgerText.FilterAll;
         PrimeWallet();
         store.RefreshNow();
+        quests.Watch();
     }
 
     public void OnClosed()
     {
         router.Reset();
+        quests.Unwatch();
     }
 
     public void Draw(in PhoneContext context)

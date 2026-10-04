@@ -44,6 +44,7 @@ internal sealed partial class CoinApp
     {
         balanceRoll = default;
         PrimeToday();
+        PrimeQuests();
     }
 
     private void DrawWallet(in PhoneContext context)
@@ -56,6 +57,7 @@ internal sealed partial class CoinApp
             walletRefresh.Draw(navBar.Body, surface.Pull, surface.Dragging, wallet is null, ui.MutedInk,
                 store.RefreshNow);
             ConsumeCheckIn();
+            ConsumeQuestClaim();
             if (wallet is null)
             {
                 TourHolds.Hold(Id);
@@ -123,6 +125,8 @@ internal sealed partial class CoinApp
         {
             cursorY = DrawToday(drawList, new Vector2(origin.X, cursorY), width, wallet, scale);
         }
+
+        cursorY = DrawQuests(drawList, new Vector2(origin.X, cursorY), width, scale);
 
         cursorY = DrawSavingGoal(drawList, new Vector2(origin.X, cursorY), width, wallet.Balance, scale);
         cursorY = DrawEarn(drawList, new Vector2(origin.X, cursorY), width, wallet, scale);

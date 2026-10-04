@@ -34,6 +34,8 @@ internal sealed class CoinStore : IDisposable
 
     public event Action<long, CoinLedgerEntryDto[]>? Earned;
 
+    public event Action? WalletRefreshed;
+
     public CoinStore(AethernetSession session, CoinsClient coins)
     {
         this.session = session;
@@ -342,6 +344,8 @@ internal sealed class CoinStore : IDisposable
             {
                 ReloadLedger();
             }
+
+            WalletRefreshed?.Invoke();
         }, () => Interlocked.Exchange(ref fetchingWallet, 0));
     }
 

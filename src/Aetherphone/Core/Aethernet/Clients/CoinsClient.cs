@@ -86,6 +86,33 @@ internal sealed class CoinsClient
             AethernetJsonContext.Default.CoinAwardDto, token, null, onFailure);
     }
 
+    public Task<CoinQuestBoardDto?> QuestsAsync(CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return net.GetAsync("/coins/quests", AethernetJsonContext.Default.CoinQuestBoardDto, token, null, onFailure);
+    }
+
+    public Task<CoinAwardDto?> ClaimQuestAsync(string questId, CancellationToken token,
+        Action<AepFailure>? onFailure = null)
+    {
+        return net.RequestAsync(HttpMethod.Post, $"/coins/quests/{Uri.EscapeDataString(questId)}/claim",
+            AethernetJsonContext.Default.CoinAwardDto, token, null, onFailure);
+    }
+
+    public Task<CoinListenStartDto?> StartRadioListenAsync(string stationId, CancellationToken token,
+        Action<AepFailure>? onFailure = null)
+    {
+        return net.PostAsync("/coins/radio/start", new CoinListenStartRequest(stationId),
+            AethernetJsonContext.Default.CoinListenStartRequest, AethernetJsonContext.Default.CoinListenStartDto,
+            token, null, onFailure);
+    }
+
+    public Task<CoinListenEndDto?> EndRadioListenAsync(string sessionId, CancellationToken token,
+        Action<AepFailure>? onFailure = null)
+    {
+        return net.RequestAsync(HttpMethod.Post, $"/coins/radio/{Uri.EscapeDataString(sessionId)}/end",
+            AethernetJsonContext.Default.CoinListenEndDto, token, null, onFailure);
+    }
+
     public Task<CoinPurchaseResult?> PurchaseAsync(string skuId, long expectedPrice, CancellationToken token,
         Action<AepFailure>? onFailure = null)
     {
