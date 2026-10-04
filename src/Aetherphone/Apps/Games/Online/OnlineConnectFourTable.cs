@@ -20,8 +20,9 @@ internal sealed class OnlineConnectFourTable
 {
     private const float DropDuration = 0.28f;
     private const float BannerSeconds = 1.4f;
+    private const int BannerSeamRow = 2;
 
-    private static readonly Vector4 GridFrame = new(0.20f, 0.38f, 0.72f, 1f);
+    public static readonly Vector4 GridFrame = new(0.20f, 0.38f, 0.72f, 1f);
     private static readonly Vector4 SeatZeroDisc = new(0.86f, 0.24f, 0.24f, 1f);
     private static readonly Vector4 SeatOneDisc = new(0.95f, 0.78f, 0.20f, 1f);
     private static readonly Vector4 ResignTint = new(0.85f, 0.35f, 0.32f, 1f);
@@ -65,6 +66,11 @@ internal sealed class OnlineConnectFourTable
 
     public static Vector4 SeatColor(int seat) => seat == 0 ? SeatZeroDisc : SeatOneDisc;
 
+    private static bool IsLive(ConnectFourRoomStateDto board) => board.WinnerSeat < 0 && board.EndKind.Length == 0;
+
+    private static Vector2 TurnBannerCenter(GameGrid grid) =>
+        new(grid.Bounds.Center.X, grid.Origin.Y + BannerSeamRow * grid.Pitch);
+
     public void Draw(Rect body, PhoneTheme theme, float scale, GameRoomSnapshotDto snapshot,
         ConnectFourRoomStateDto board, string notice, OnlineFinishHold hold)
     {
@@ -78,7 +84,7 @@ internal sealed class OnlineConnectFourTable
         var players = board.Players ?? Array.Empty<ConnectFourPlayerDto>();
         var cells = board.Cells ?? Array.Empty<int>();
         var mySeat = SeatOf(players, store.AccountId);
-        var live = board.WinnerSeat < 0 && board.EndKind.Length == 0;
+        var live = IsLive(board);
         var myTurn = live && mySeat >= 0 && mySeat == board.TurnSeat;
 
         var rowHeight = 30f * scale;
@@ -91,9 +97,7 @@ internal sealed class OnlineConnectFourTable
         var area = new Rect(new Vector2(body.Min.X + 6f * scale, topRow.Max.Y + 12f * scale),
             new Vector2(body.Max.X - 6f * scale, body.Max.Y - 46f * scale));
         var grid = GameGrid.Centered(area, GameRoomWire.ConnectFourColumns, GameRoomWire.ConnectFourRows, 0f);
-        // The seam between the second and third row (0-indexed rows 1 and 2): early and mid-game
-        // those cells are still empty far more often than the board's dead center is.
-        var bannerCenter = new Vector2(grid.Bounds.Center.X, grid.Origin.Y + 2f * grid.Pitch);
+        var bannerCenter = TurnBannerCenter(grid);
 
         ObserveBoard(board, mySeat, new Vector2(grid.Bounds.Center.X, grid.Bounds.Min.Y), scale);
         if (fallingColumn >= 0)
@@ -158,9 +162,6 @@ internal sealed class OnlineConnectFourTable
         }
     }
 
-    // Reacts to facts the server already settled: a round boundary clears the board's memory of
-    // itself, a new action count plays the drop that just landed, and a turn that newly points at
-    // us pops a banner. None of this decides anything; it only replays what already happened.
     private void ObserveBoard(ConnectFourRoomStateDto board, int mySeat, Vector2 confettiOrigin, float scale)
     {
         if (board.RoundIndex != seenRound)
@@ -182,7 +183,7 @@ internal sealed class OnlineConnectFourTable
             }
         }
 
-        var live = board.WinnerSeat < 0 && board.EndKind.Length == 0;
+        var live = IsLive(board);
         if (board.TurnSeat != lastTurnSeat)
         {
             var wasObserved = lastTurnSeat != -2;
@@ -238,7 +239,7 @@ internal sealed class OnlineConnectFourTable
         }
 
         var player = players[seat];
-        var live = board.WinnerSeat < 0 && board.EndKind.Length == 0;
+        var live = IsLive(board);
         var isMover = live && seat == board.TurnSeat;
         var discColor = SeatColor(seat);
         var discRadius = 9f * scale;
@@ -344,7 +345,6 @@ internal sealed class OnlineConnectFourTable
         return column >= 0 && column < GameRoomWire.ConnectFourColumns ? column : -1;
     }
 
-    // A column is full exactly when its top cell, row 0, is occupied: rows fill from the bottom up.
     private static bool IsColumnFull(int[] cells, int column) => cells[column] >= 0;
 
     private static int LandingRow(int[] cells, int column)
@@ -390,7 +390,7 @@ internal sealed class OnlineConnectFourTable
         }
 
         var moverSeat = board.TurnSeat;
-        var live = board.WinnerSeat < 0 && board.EndKind.Length == 0;
+        var live = IsLive(board);
         if (live && moverSeat >= 0 && moverSeat < players.Length)
         {
             return Loc.T(L.Games.OnlineTheirTurn, players[moverSeat].DisplayName);

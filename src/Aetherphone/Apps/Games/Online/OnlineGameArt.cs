@@ -21,9 +21,6 @@ internal static class OnlineGameArt
     private static readonly Vector4 BallInk = new(0.09f, 0.09f, 0.11f, 1f);
     private static readonly Vector4 White = new(0.97f, 0.97f, 0.99f, 1f);
     private static readonly Vector4 Shadow = new(0f, 0f, 0f, 0.30f);
-    private static readonly Vector4 ConnectFourFrame = new(0.20f, 0.38f, 0.72f, 1f);
-    private static readonly Vector4 ConnectFourRed = new(0.86f, 0.24f, 0.24f, 1f);
-    private static readonly Vector4 ConnectFourYellow = new(0.95f, 0.78f, 0.20f, 1f);
 
     public static string AccentId(string kind)
     {
@@ -77,13 +74,13 @@ internal static class OnlineGameArt
         var half = size * 0.46f;
         drawList.AddCircleFilled(center + new Vector2(0f, half * 0.14f), half, ImGui.GetColorU32(Shadow), 48);
         Squircle.Fill(drawList, center - new Vector2(half, half), center + new Vector2(half, half), size * 0.16f,
-            ImGui.GetColorU32(ConnectFourFrame));
+            ImGui.GetColorU32(OnlineConnectFourTable.GridFrame));
         var discRadius = size * 0.15f;
         var offset = size * 0.19f;
-        DrawSlot(drawList, center + new Vector2(-offset, -offset), discRadius, ConnectFourYellow);
-        DrawSlot(drawList, center + new Vector2(offset, -offset), discRadius, ConnectFourRed);
-        DrawSlot(drawList, center + new Vector2(-offset, offset), discRadius, ConnectFourRed);
-        DrawSlot(drawList, center + new Vector2(offset, offset), discRadius, ConnectFourYellow);
+        DrawSlot(drawList, center + new Vector2(-offset, -offset), discRadius, OnlineConnectFourTable.SeatColor(1));
+        DrawSlot(drawList, center + new Vector2(offset, -offset), discRadius, OnlineConnectFourTable.SeatColor(0));
+        DrawSlot(drawList, center + new Vector2(-offset, offset), discRadius, OnlineConnectFourTable.SeatColor(0));
+        DrawSlot(drawList, center + new Vector2(offset, offset), discRadius, OnlineConnectFourTable.SeatColor(1));
     }
 
     private static void DrawSlot(ImDrawListPtr drawList, Vector2 center, float radius, Vector4 color)
