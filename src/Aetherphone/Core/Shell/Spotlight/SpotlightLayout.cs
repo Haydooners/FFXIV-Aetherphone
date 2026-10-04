@@ -64,15 +64,6 @@ internal readonly struct SpotlightLayout
     public static Rect RestRect(Rect content, float scale) =>
         new(content.Min, new Vector2(content.Max.X, content.Min.Y + FieldHeightUnits * scale));
 
-    public static Rect FieldRect(Rect origin, Rect rest, float progress) =>
-        new(Vector2.Lerp(origin.Min, rest.Min, progress), Vector2.Lerp(origin.Max, rest.Max, progress));
-
-    public static float FieldRadius(Rect origin, float restRadius, float progress)
-    {
-        var originRadius = origin.Height * 0.5f;
-        return originRadius + (restRadius - originRadius) * progress;
-    }
-
     public static float ScrollToReveal(float rowTop, float rowBottom, float scrollY, float viewHeight)
     {
         if (rowTop < scrollY)

@@ -54,31 +54,6 @@ public sealed class SpotlightLayoutTests
     }
 
     [Fact]
-    public void FieldRect_Travels_From_The_Pill_To_Its_Rest()
-    {
-        var origin = new Rect(new Vector2(0f, 500f), new Vector2(96f, 526f));
-        var rest = new Rect(new Vector2(16f, 40f), new Vector2(344f, 84f));
-
-        Assert.Equal(origin, SpotlightLayout.FieldRect(origin, rest, 0f));
-        Assert.Equal(rest, SpotlightLayout.FieldRect(origin, rest, 1f));
-        var midway = SpotlightLayout.FieldRect(origin, rest, 0.5f);
-        Assert.Equal(8f, midway.Min.X, Precision);
-        Assert.Equal(270f, midway.Min.Y, Precision);
-        Assert.Equal(220f, midway.Max.X, Precision);
-        Assert.Equal(305f, midway.Max.Y, Precision);
-    }
-
-    [Fact]
-    public void FieldRadius_Lerps_From_Half_The_Pill_Height()
-    {
-        var origin = new Rect(new Vector2(0f, 500f), new Vector2(96f, 526f));
-
-        Assert.Equal(13f, SpotlightLayout.FieldRadius(origin, 22f, 0f), Precision);
-        Assert.Equal(17.5f, SpotlightLayout.FieldRadius(origin, 22f, 0.5f), Precision);
-        Assert.Equal(22f, SpotlightLayout.FieldRadius(origin, 22f, 1f), Precision);
-    }
-
-    [Fact]
     public void RestRect_Sits_At_The_Content_Inset()
     {
         var content = new Rect(new Vector2(16f, 40f), new Vector2(344f, 700f));

@@ -2195,7 +2195,7 @@ internal static class L
             new("changelog.r1042.11",
                 "Sheets now open at half or full height, and you can drag them between the two"),
             new("changelog.r1042.12",
-                "Spotlight now drops out of the search pill, and folders grow out of their tile and dim the screen behind them"),
+                "Spotlight now fades in over the dimmed home screen, and folders grow out of their tile and dim the screen behind them"),
             new("changelog.r1042.13",
                 "Hovering an app icon now lifts it and lights its edge, in place of the old magnifying effect"),
             new("changelog.r1042.14",

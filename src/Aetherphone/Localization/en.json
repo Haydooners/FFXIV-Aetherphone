@@ -7050,7 +7050,7 @@
   "changelog.r1042.83": "The minimap now shows the clock, notification banners, and music or call controls",
   "changelog.r1042.10": "Apps with tabs now use a floating glass tab bar, and Notes, Calendar and Settings have large titles that shrink as you scroll",
   "changelog.r1042.11": "Sheets now open at half or full height, and you can drag them between the two",
-  "changelog.r1042.12": "Spotlight now drops out of the search pill, and folders grow out of their tile and dim the screen behind them",
+  "changelog.r1042.12": "Spotlight now fades in over the dimmed home screen, and folders grow out of their tile and dim the screen behind them",
   "changelog.r1042.13": "Hovering an app icon now lifts it and lights its edge, in place of the old magnifying effect",
   "changelog.r1042.14": "Rearranged the side keys: the Action button for Do Not Disturb and a Lock Position key on the left, the Side button and Camera Control on the right",
   "changelog.r1042.15": "Added Live glass (experimental) to the Display page in Settings: glass inside apps and on the mini phone blurs the game behind it",

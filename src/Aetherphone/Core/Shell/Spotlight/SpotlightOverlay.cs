@@ -12,15 +12,10 @@ namespace Aetherphone.Core.Shell.Spotlight;
 
 internal sealed class SpotlightOverlay
 {
-    private const string SearchAnchorKey = "home.search";
     private const float VeilDim = 0.35f;
     private const float InteractiveThreshold = 0.6f;
     private const float RevealStart = 0.45f;
-    private const float FieldFadeEnd = 0.15f;
     private const float ReopenGuard = 0.2f;
-    private const float FallbackPillWidthUnits = 96f;
-    private const float FallbackPillHeightUnits = 26f;
-    private const float FallbackPillLiftUnits = 103f;
     private const float EmptyPanelHeightUnits = 74f;
     private const float BottomMarginUnits = 24f;
     private const float SelectionAlpha = 0.12f;
@@ -43,10 +38,8 @@ internal sealed class SpotlightOverlay
     private bool open;
     private bool focusPending;
     private bool scrollToSelection;
-    private bool hasOrigin;
     private int openedFrame;
     private int selected;
-    private Rect origin;
     private string query = string.Empty;
 
     public SpotlightOverlay(SpotlightIndex index, Configuration configuration)
@@ -91,16 +84,13 @@ internal sealed class SpotlightOverlay
             return;
         }
 
-        TrackOrigin(content, scale);
         var layout = new SpotlightLayout(scale);
         var drawList = ImGui.GetWindowDrawList();
         drawList.PushClipRect(screen.Min, screen.Max, true);
         Material.Veil(drawList, screen.Min, screen.Max, VeilDim * progress);
-        var rest = SpotlightLayout.RestRect(content, scale);
-        var field = SpotlightLayout.FieldRect(origin, rest, progress);
-        var fieldRadius = SpotlightLayout.FieldRadius(origin, SpotlightLayout.FieldRadiusUnits * scale, progress);
-        GlassField.Surface(drawList, field, fieldRadius, scale, WallpaperLegibility.Strength(theme),
-            Easing.Segment(progress, 0f, FieldFadeEnd));
+        var field = SpotlightLayout.RestRect(content, scale);
+        GlassField.Surface(drawList, field, SpotlightLayout.FieldRadiusUnits * scale, scale,
+            WallpaperLegibility.Strength(theme), progress);
         var interactive = open && progress > InteractiveThreshold;
         var overContent = false;
         if (interactive)
@@ -116,9 +106,9 @@ internal sealed class SpotlightOverlay
         var reveal = Easing.Segment(progress, RevealStart, 1f);
         if (reveal > 0.01f)
         {
-            var listTop = rest.Max.Y + SpotlightLayout.ListGapUnits * scale;
-            var list = new Rect(new Vector2(rest.Min.X, listTop),
-                new Vector2(rest.Max.X, screen.Max.Y - BottomMarginUnits * scale));
+            var listTop = field.Max.Y + SpotlightLayout.ListGapUnits * scale;
+            var list = new Rect(new Vector2(field.Min.X, listTop),
+                new Vector2(field.Max.X, screen.Max.Y - BottomMarginUnits * scale));
             overContent |= DrawBelowField(drawList, list, in layout, theme, navigation, scale, reveal, interactive);
         }
 
@@ -133,25 +123,6 @@ internal sealed class SpotlightOverlay
         {
             Close();
         }
-    }
-
-    private void TrackOrigin(Rect content, float scale)
-    {
-        if (UiAnchors.TryGet(SearchAnchorKey, out var reported))
-        {
-            origin = reported;
-            hasOrigin = true;
-            return;
-        }
-
-        if (hasOrigin)
-        {
-            return;
-        }
-
-        var half = new Vector2(FallbackPillWidthUnits, FallbackPillHeightUnits) * (0.5f * scale);
-        var center = new Vector2(content.Center.X, content.Max.Y - FallbackPillLiftUnits * scale);
-        origin = new Rect(center - half, center + half);
     }
 
     private void DrawQueryField(ImDrawListPtr drawList, Rect field, PhoneTheme theme, float scale)
