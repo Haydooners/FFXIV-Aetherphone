@@ -17,7 +17,7 @@ internal sealed partial class AppStoreApp
     private const float DetailIconSize = 104f;
     private const float DetailTextGap = 16f;
     private const float DetailPillWidth = 84f;
-    private const float DetailPillHeight = 30f;
+    private const float DetailPillHeight = Button.SmallHeight;
     private const float DetailButtonGap = 10f;
     private const float RemoveRowHeight = 50f;
     private const float StripHeight = 82f;
@@ -113,7 +113,7 @@ internal sealed partial class AppStoreApp
         }
 
         UiAnchors.Report("appstore.detail.get", pill);
-        DrawStatePill(drawList, pill, app, UiInteract.Hover(pill.Min, pill.Max), ui.TitleInk,
+        DrawStatePill(drawList, pill, app, UiInteract.Hover(pill.Min, pill.Max), ui.Ink,
             Palette.Lighten(app.Accent, PillInkLift), scale);
         if (!AppInstaller.CanUninstall(app.Id))
         {
