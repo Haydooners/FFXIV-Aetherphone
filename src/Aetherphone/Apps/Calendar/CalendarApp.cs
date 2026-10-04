@@ -84,7 +84,7 @@ internal sealed partial class CalendarApp : IPhoneApp
         theme = context.Theme;
         navigation = context.Navigation;
         ui.Theme = context.Theme;
-        ui.Palette = AppPalettes.Calendar(context.Theme);
+        ui.Palette = AppPalettes.Calendar(context.Theme) with { Accent = AppAccents.For("calendar") };
         var scale = UiScale.Current;
         frameScreen = SceneChrome.ScreenFrom(context.Content, context.Theme, scale);
         ui.Backdrop(frameScreen);
