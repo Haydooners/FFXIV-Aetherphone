@@ -30,8 +30,8 @@ internal static class GlassField
 
     public static bool Text(Rect field, string imguiId, string hint, ref string text, PhoneTheme theme, float scale,
         int maxLength, bool focus, ImGuiInputTextFlags flags) =>
-        Input(field, imguiId, hint, ref text, theme, theme.TextMuted, TextInsetUnits * scale, TextInsetUnits * scale,
-            maxLength, focus, flags);
+        Input(field, imguiId, hint, ref text, theme.TextStrong, theme.TextMuted, TextInsetUnits * scale,
+            TextInsetUnits * scale, maxLength, focus, flags);
 
     public static bool Title(Rect field, string imguiId, string hint, ref string text, PhoneTheme theme, float scale,
         int maxLength, ImGuiInputTextFlags flags)
@@ -42,23 +42,29 @@ internal static class GlassField
             var inputWidth = ImGui.CalcTextSize(shown).X + ImGui.GetStyle().FramePadding.X * 2f +
                              CaretSlackUnits * scale;
             var inset = MathF.Max(TextInsetUnits * scale, (field.Width - inputWidth) * 0.5f);
-            return Input(field, imguiId, hint, ref text, theme, theme.TextStrong, inset, inset, maxLength, false,
-                flags);
+            return Input(field, imguiId, hint, ref text, theme.TextStrong, theme.TextStrong, inset, inset, maxLength,
+                false, flags);
         }
     }
 
-    public static void SearchGlyph(ImDrawListPtr drawList, Rect field, PhoneTheme theme, float scale, float alpha)
+    public static void SearchGlyph(ImDrawListPtr drawList, Rect field, PhoneTheme theme, float scale, float alpha) =>
+        SearchGlyph(drawList, field, Palette.WithAlpha(theme.TextMuted, alpha), scale);
+
+    private static void SearchGlyph(ImDrawListPtr drawList, Rect field, Vector4 ink, float scale)
     {
         var glyphCenter = new Vector2(field.Min.X + GlyphInsetUnits * scale, field.Center.Y);
-        PhoneIcon.Draw(drawList, glyphCenter, PhoneIcons.Search, Palette.WithAlpha(theme.TextMuted, alpha),
-            GlyphSizeUnits * scale);
+        PhoneIcon.Draw(drawList, glyphCenter, PhoneIcons.Search, ink, GlyphSizeUnits * scale);
     }
 
     public static void Search(ImDrawListPtr drawList, Rect field, string imguiId, string hint, ref string text,
-        PhoneTheme theme, float scale, int maxLength, bool focus)
+        PhoneTheme theme, float scale, int maxLength, bool focus) =>
+        Search(drawList, field, imguiId, hint, ref text, theme.TextStrong, theme.TextMuted, scale, maxLength, focus);
+
+    public static void Search(ImDrawListPtr drawList, Rect field, string imguiId, string hint, ref string text,
+        Vector4 ink, Vector4 mutedInk, float scale, int maxLength, bool focus)
     {
         var glyphSize = GlyphSizeUnits * scale;
-        SearchGlyph(drawList, field, theme, scale, 1f);
+        SearchGlyph(drawList, field, mutedInk, scale);
         var hasText = text.Length > 0;
         var clearRadius = ClearRadiusUnits * scale;
         var clearCenter = new Vector2(field.Max.X - ClearInsetUnits * scale, field.Center.Y);
@@ -66,7 +72,7 @@ internal static class GlassField
         var rightInset = hasText
             ? field.Max.X - (clearCenter.X - clearRadius - ClearTextGapUnits * scale)
             : TextInsetUnits * scale;
-        Input(field, imguiId, hint, ref text, theme, theme.TextMuted, leftInset, rightInset, maxLength, focus,
+        Input(field, imguiId, hint, ref text, ink, mutedInk, leftInset, rightInset, maxLength, focus,
             ImGuiInputTextFlags.None);
         if (!hasText)
         {
@@ -77,9 +83,9 @@ internal static class GlassField
         var clearMax = clearCenter + new Vector2(clearRadius, clearRadius);
         var hovered = UiInteract.Hover(clearMin, clearMax);
         drawList.AddCircleFilled(clearCenter, clearRadius,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, hovered ? ClearFillHoverAlpha : ClearFillAlpha)), 16);
+            ImGui.GetColorU32(Palette.WithAlpha(ink, hovered ? ClearFillHoverAlpha : ClearFillAlpha)), 16);
         var arm = ClearArmUnits * scale;
-        var cross = ImGui.GetColorU32(theme.TextStrong);
+        var cross = ImGui.GetColorU32(ink);
         var stroke = ClearStrokeUnits * scale;
         drawList.AddLine(clearCenter - new Vector2(arm, arm), clearCenter + new Vector2(arm, arm), cross, stroke);
         drawList.AddLine(clearCenter + new Vector2(-arm, arm), clearCenter + new Vector2(arm, -arm), cross, stroke);
@@ -95,7 +101,7 @@ internal static class GlassField
         }
     }
 
-    private static bool Input(Rect field, string imguiId, string hint, ref string text, PhoneTheme theme,
+    private static bool Input(Rect field, string imguiId, string hint, ref string text, Vector4 textColor,
         Vector4 hintColor, float leftInset, float rightInset, int maxLength, bool focus, ImGuiInputTextFlags flags)
     {
         var left = field.Min.X + leftInset;
@@ -112,7 +118,7 @@ internal static class GlassField
         using (ImRaii.PushColor(ImGuiCol.FrameBg, Transparent))
         using (ImRaii.PushColor(ImGuiCol.FrameBgHovered, Transparent))
         using (ImRaii.PushColor(ImGuiCol.FrameBgActive, Transparent))
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
+        using (ImRaii.PushColor(ImGuiCol.Text, textColor))
         using (ImRaii.PushColor(ImGuiCol.TextDisabled, hintColor))
         {
             return ImGui.InputTextWithHint(imguiId, hint, ref text, maxLength, flags);

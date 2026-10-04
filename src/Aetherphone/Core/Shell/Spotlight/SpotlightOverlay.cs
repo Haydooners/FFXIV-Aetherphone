@@ -14,7 +14,6 @@ internal sealed class SpotlightOverlay
 {
     private const float VeilDim = 0.35f;
     private const float InteractiveThreshold = 0.6f;
-    private const float RevealStart = 0.45f;
     private const float ReopenGuard = 0.2f;
     private const float EmptyPanelHeightUnits = 74f;
     private const float BottomMarginUnits = 24f;
@@ -25,6 +24,7 @@ internal sealed class SpotlightOverlay
     private const int QueryMaxLength = 64;
     private static readonly Vector4 Ink = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 MutedInk = new(1f, 1f, 1f, 0.62f);
+    private static readonly Vector4 HintInk = new(1f, 1f, 1f, 0.72f);
     private static readonly string[] RecentPressIds =
     {
         "spotlight.recent0", "spotlight.recent1", "spotlight.recent2", "spotlight.recent3", "spotlight.recent4",
@@ -89,28 +89,17 @@ internal sealed class SpotlightOverlay
         drawList.PushClipRect(screen.Min, screen.Max, true);
         Material.Veil(drawList, screen.Min, screen.Max, VeilDim * progress);
         var field = SpotlightLayout.RestRect(content, scale);
-        GlassField.Surface(drawList, field, SpotlightLayout.FieldRadiusUnits * scale, scale,
-            WallpaperLegibility.Strength(theme), progress);
         var interactive = open && progress > InteractiveThreshold;
-        var overContent = false;
-        if (interactive)
-        {
-            overContent = UiInteract.Hover(field.Min, field.Max);
-            DrawQueryField(drawList, field, theme, scale);
-        }
-        else
-        {
-            GlassField.SearchGlyph(drawList, field, theme, scale, progress);
-        }
-
-        var reveal = Easing.Segment(progress, RevealStart, 1f);
-        if (reveal > 0.01f)
-        {
-            var listTop = field.Max.Y + SpotlightLayout.ListGapUnits * scale;
-            var list = new Rect(new Vector2(field.Min.X, listTop),
-                new Vector2(field.Max.X, screen.Max.Y - BottomMarginUnits * scale));
-            overContent |= DrawBelowField(drawList, list, in layout, theme, navigation, scale, reveal, interactive);
-        }
+        var overContent = interactive && UiInteract.Hover(field.Min, field.Max);
+        var fieldVertexStart = drawList.VtxBuffer.Size;
+        Material.LiquidGlass(drawList, field.Min, field.Max, SpotlightLayout.FieldRadiusUnits * scale, scale,
+            GlassTone.Dark, 0f);
+        DrawQueryField(drawList, field, scale);
+        LayerCompositor.Fade(drawList, fieldVertexStart, progress);
+        var listTop = field.Max.Y + SpotlightLayout.ListGapUnits * scale;
+        var list = new Rect(new Vector2(field.Min.X, listTop),
+            new Vector2(field.Max.X, screen.Max.Y - BottomMarginUnits * scale));
+        overContent |= DrawBelowField(drawList, list, in layout, theme, navigation, scale, progress, interactive);
 
         drawList.PopClipRect();
         if (!interactive || !open)
@@ -125,11 +114,11 @@ internal sealed class SpotlightOverlay
         }
     }
 
-    private void DrawQueryField(ImDrawListPtr drawList, Rect field, PhoneTheme theme, float scale)
+    private void DrawQueryField(ImDrawListPtr drawList, Rect field, float scale)
     {
         var previous = query;
-        GlassField.Search(drawList, field, "##spotlightQuery", Loc.T(L.Spotlight.Hint), ref query, theme, scale,
-            QueryMaxLength, focusPending);
+        GlassField.Search(drawList, field, "##spotlightQuery", Loc.T(L.Spotlight.Hint), ref query, Ink, HintInk,
+            scale, QueryMaxLength, focusPending);
         focusPending = false;
         if (string.Equals(previous, query, StringComparison.Ordinal))
         {
