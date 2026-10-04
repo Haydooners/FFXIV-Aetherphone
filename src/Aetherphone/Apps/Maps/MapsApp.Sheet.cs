@@ -18,21 +18,22 @@ internal sealed partial class MapsApp
     private const float LocationTileSize = 42f;
     private const float LocationGlyphSize = 20f;
     private const float CardTextGap = 12f;
-    private const float FavoriteTileWidth = 72f;
-    private const float FavoriteDiscSize = 56f;
-    private const float FavoriteIconSize = 30f;
-    private const float FavoriteGlyphSize = 22f;
-    private const float RailGap = 12f;
-    private const float RailLabelGap = 6f;
-    private const float ExpansionCardWidth = 164f;
-    private const float ExpansionCardHeight = 98f;
-    private const float ExpansionCardPadding = 14f;
+    private const float FavoriteCellWidth = 72f;
+    private const float FavoriteDiscSize = 52f;
+    private const float FavoriteIconSize = 28f;
+    private const float FavoriteGlyphSize = 20f;
+    private const float FavoriteRowGap = 14f;
+    private const float FavoriteLabelGap = 6f;
+    private const float FavoriteCardPadding = 14f;
+    private const int BrowseColumns = 2;
+    private const float BrowseRowHeight = 52f;
+    private const float BrowseColumnGap = 16f;
+    private const float BrowseDiscSize = 28f;
+    private const float BrowseGlyphSize = 14f;
     private const int RecentsShown = 5;
     private const float ContentBottomPad = 24f;
     private const float SectionGap = 6f;
 
-    private readonly PanRail favoritesRail = new();
-    private readonly PanRail browseRail = new();
     private readonly List<MapAetheryte> favoriteList = new();
     private readonly List<MapAetheryte> recentList = new();
     private bool favoritesDirty = true;
@@ -225,55 +226,52 @@ internal sealed partial class MapsApp
         RebuildFavorites();
         ListSection.Header(Loc.T(L.Maps.Favorites), theme.TextMuted);
         var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var labelHeight = Typography.Measure(Loc.T(L.Maps.AddFavorite), TextStyles.Footnote).Y;
-        var tileWidth = FavoriteTileWidth * scale;
+        var innerWidth = ImGui.GetContentRegionAvail().X - Metrics.Space.Lg * 2f * scale;
+        var columns = Math.Max(1, (int)(innerWidth / (FavoriteCellWidth * scale)));
+        var cellCount = favoriteList.Count + 1;
+        var rows = (cellCount + columns - 1) / columns;
+        var labelUnits = Typography.Measure(Loc.T(L.Maps.AddFavorite), TextStyles.Footnote).Y / scale;
+        var cellUnits = FavoriteDiscSize + FavoriteLabelGap + labelUnits;
+        var cardUnits = rows * cellUnits + (rows - 1) * FavoriteRowGap + FavoriteCardPadding * 2f;
+        var card = GroupCard.Begin(theme, cardUnits);
+        var grid = card.NextRow(cardUnits);
+        var cellWidth = grid.Width / columns;
+        var cellHeight = cellUnits * scale;
+        var top = grid.Min.Y + FavoriteCardPadding * scale;
         var disc = FavoriteDiscSize * scale;
-        var height = disc + RailLabelGap * scale + labelHeight;
-        var rail = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var count = favoriteList.Count + 1;
-        var gap = RailGap * scale;
-        favoritesRail.Begin(rail, count * tileWidth + (count - 1) * gap);
-        for (var index = 0; index < count; index++)
+        for (var index = 0; index < cellCount; index++)
         {
-            var left = rail.Min.X - favoritesRail.Offset + index * (tileWidth + gap);
-            if (left > rail.Max.X || left + tileWidth < rail.Min.X)
-            {
-                continue;
-            }
-
-            var tileRect = new Rect(new Vector2(left, rail.Min.Y), new Vector2(left + tileWidth, rail.Max.Y));
+            var cellMin = new Vector2(grid.Min.X + index % columns * cellWidth,
+                top + index / columns * (cellUnits + FavoriteRowGap) * scale);
+            var cell = new Rect(cellMin, cellMin + new Vector2(cellWidth, cellHeight));
             if (index < favoriteList.Count)
             {
-                DrawFavoriteTile(drawList, tileRect, favoriteList[index], disc, scale);
+                DrawFavoriteTile(drawList, cell, favoriteList[index], disc, scale);
             }
             else
             {
-                DrawAddFavoriteTile(drawList, tileRect, disc, scale);
+                DrawAddFavoriteTile(drawList, cell, disc, scale);
             }
         }
 
-        favoritesRail.End();
-        if (favoriteList.Count == 0)
+        if (favoriteList.Count == 0 && columns > 1)
         {
-            var hintLeft = rail.Min.X + tileWidth + gap;
-            var hintWidth = MathF.Max(1f, rail.Max.X - hintLeft);
+            var hintLeft = grid.Min.X + cellWidth + Metrics.Space.Sm * scale;
+            var hintWidth = MathF.Max(1f, grid.Max.X - hintLeft);
             var hintHeight = Typography.MeasureWrappedBlock(Loc.T(L.Maps.FavoritesHint), TextStyles.Subheadline,
                 hintWidth).Y;
-            Typography.DrawWrappedLeft(new Vector2(hintLeft, rail.Min.Y + (disc - hintHeight) * 0.5f),
+            Typography.DrawWrappedLeft(new Vector2(hintLeft, top + (cellHeight - hintHeight) * 0.5f),
                 Loc.T(L.Maps.FavoritesHint), theme.TextMuted, TextStyles.Subheadline, hintWidth);
         }
 
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + SectionGap * scale));
+        card.End();
+        ImGui.Dummy(new Vector2(0f, SectionGap * scale));
     }
 
-    private void DrawFavoriteTile(ImDrawListPtr drawList, Rect tile, MapAetheryte aetheryte, float disc, float scale)
+    private void DrawFavoriteTile(ImDrawListPtr drawList, Rect cell, MapAetheryte aetheryte, float disc, float scale)
     {
-        var center = new Vector2(tile.Center.X, tile.Min.Y + disc * 0.5f);
-        var half = new Vector2(disc * 0.5f, disc * 0.5f);
-        var hovered = favoritesRail.Hover(center - half, center + half);
+        var center = new Vector2(cell.Center.X, cell.Min.Y + disc * 0.5f);
+        var hovered = UiInteract.Hover(cell.Min, cell.Max);
         var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var grow = PressFx.Scale(unchecked(ImGui.GetID("maps.favorite") + aetheryte.RowId), down,
             PressFx.IconPressedScale);
@@ -285,48 +283,47 @@ internal sealed partial class MapsApp
         var icon = FavoriteIconSize * 0.5f * scale * grow;
         GameIconTile.Draw(drawList, Plugin.TextureProvider, MapCanvas.AetheryteIconId,
             center - new Vector2(icon, icon), center + new Vector2(icon, icon), icon, scale);
-        var label = Typography.FitText(aetheryte.Name, tile.Width, TextStyles.Footnote);
-        var labelSize = Typography.Measure(label, TextStyles.Footnote);
-        Typography.Draw(drawList, new Vector2(tile.Center.X - labelSize.X * 0.5f,
-            tile.Min.Y + disc + RailLabelGap * scale), label, theme.TextStrong, TextStyles.Footnote);
+        DrawFavoriteLabel(drawList, cell, aetheryte.Name, disc, scale);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            HoverTooltip.Show(new Rect(center - half, center + half), aetheryte.Subtitle, HoverLabelSide.Above);
+            HoverTooltip.Show(cell, aetheryte.Subtitle, HoverLabelSide.Above);
         }
 
-        if (favoritesRail.Tapped(center - half, center + half, hovered))
+        if (UiInteract.Click(cell.Min, cell.Max, hovered))
         {
-            UiFeedback.Play(UiSound.Tap);
             OpenPlace(aetheryte);
         }
     }
 
-    private void DrawAddFavoriteTile(ImDrawListPtr drawList, Rect tile, float disc, float scale)
+    private void DrawAddFavoriteTile(ImDrawListPtr drawList, Rect cell, float disc, float scale)
     {
-        var center = new Vector2(tile.Center.X, tile.Min.Y + disc * 0.5f);
-        var half = new Vector2(disc * 0.5f, disc * 0.5f);
-        var hovered = favoritesRail.Hover(center - half, center + half);
+        var center = new Vector2(cell.Center.X, cell.Min.Y + disc * 0.5f);
+        var hovered = UiInteract.Hover(cell.Min, cell.Max);
         var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var grow = PressFx.Scale("maps.favorite.add", down, PressFx.IconPressedScale);
         var fill = hovered ? Palette.Mix(theme.SurfaceMuted, theme.TextStrong, 0.10f) : theme.SurfaceMuted;
         drawList.AddCircleFilled(center, disc * 0.5f * grow, ImGui.GetColorU32(fill), 40);
         PhoneIcon.Draw(drawList, center, PhoneIcons.Plus, theme.Accent, FavoriteGlyphSize * scale * grow);
-        var label = Typography.FitText(Loc.T(L.Maps.AddFavorite), tile.Width, TextStyles.Footnote);
-        var labelSize = Typography.Measure(label, TextStyles.Footnote);
-        Typography.Draw(drawList, new Vector2(tile.Center.X - labelSize.X * 0.5f,
-            tile.Min.Y + disc + RailLabelGap * scale), label, theme.TextStrong, TextStyles.Footnote);
+        DrawFavoriteLabel(drawList, cell, Loc.T(L.Maps.AddFavorite), disc, scale);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        if (favoritesRail.Tapped(center - half, center + half, hovered))
+        if (UiInteract.Click(cell.Min, cell.Max, hovered))
         {
-            UiFeedback.Play(UiSound.Tap);
             focusSearch = true;
             drawer.SetDetent(MapDrawerDetent.Large);
         }
+    }
+
+    private void DrawFavoriteLabel(ImDrawListPtr drawList, Rect cell, string text, float disc, float scale)
+    {
+        var label = Typography.FitText(text, cell.Width - Metrics.Space.Xxs * 2f * scale, TextStyles.Footnote);
+        var labelSize = Typography.Measure(label, TextStyles.Footnote);
+        Typography.Draw(drawList, new Vector2(cell.Center.X - labelSize.X * 0.5f,
+            cell.Min.Y + disc + FavoriteLabelGap * scale), label, theme.TextStrong, TextStyles.Footnote);
     }
 
     private void RebuildFavorites()
@@ -358,63 +355,61 @@ internal sealed partial class MapsApp
 
         ListSection.Header(Loc.T(L.Maps.Browse), theme.TextMuted);
         var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var cardWidth = ExpansionCardWidth * scale;
-        var height = ExpansionCardHeight * scale;
-        var gap = RailGap * scale;
-        var rail = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        browseRail.Begin(rail, expansions.Count * cardWidth + (expansions.Count - 1) * gap);
+        var rows = (expansions.Count + BrowseColumns - 1) / BrowseColumns;
+        var cardUnits = rows * BrowseRowHeight;
+        var card = GroupCard.Begin(theme, cardUnits);
+        var grid = card.NextRow(cardUnits);
+        var gap = BrowseColumnGap * scale;
+        var cellWidth = (grid.Width - gap * (BrowseColumns - 1)) / BrowseColumns;
+        var cellHeight = BrowseRowHeight * scale;
         for (var index = 0; index < expansions.Count; index++)
         {
-            var left = rail.Min.X - browseRail.Offset + index * (cardWidth + gap);
-            var cardRect = new Rect(new Vector2(left, rail.Min.Y), new Vector2(left + cardWidth, rail.Max.Y));
+            var row = index / BrowseColumns;
+            var cellMin = new Vector2(grid.Min.X + index % BrowseColumns * (cellWidth + gap),
+                grid.Min.Y + row * cellHeight);
+            var cell = new Rect(cellMin, cellMin + new Vector2(cellWidth, cellHeight));
             if (index == 0)
             {
-                ReportVisible("maps.expansion.first", new Rect(
-                    new Vector2(MathF.Max(cardRect.Min.X, rail.Min.X), cardRect.Min.Y),
-                    new Vector2(MathF.Min(cardRect.Max.X, rail.Max.X), cardRect.Max.Y)));
+                ReportVisible("maps.expansion.first", cell);
             }
 
-            if (left > rail.Max.X || left + cardWidth < rail.Min.X)
-            {
-                continue;
-            }
-
-            DrawExpansionCard(drawList, cardRect, expansions[index], scale);
+            DrawExpansionCell(drawList, cell, expansions[index], row > 0, scale);
         }
 
-        browseRail.End();
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + SectionGap * scale));
+        card.End();
+        ImGui.Dummy(new Vector2(0f, SectionGap * scale));
     }
 
-    private void DrawExpansionCard(ImDrawListPtr drawList, Rect card, MapExpansion expansion, float scale)
+    private void DrawExpansionCell(ImDrawListPtr drawList, Rect cell, MapExpansion expansion, bool separated,
+        float scale)
     {
-        var hovered = browseRail.Hover(card.Min, card.Max);
-        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale(unchecked(ImGui.GetID("maps.expansion") + expansion.Order), down,
-            PressFx.CardPressedScale);
-        var half = card.Size * 0.5f * grow;
-        var min = card.Center - half;
-        var max = card.Center + half;
-        var radius = Metrics.Radius.Lg * scale * grow;
-        var tint = MapGlyphs.ExpansionTint(expansion.Order, accent);
-        IconTile.FillShaded(drawList, min, max, radius, hovered ? Palette.Lighten(tint, 0.06f) : tint);
-        var padding = ExpansionCardPadding * scale;
-        var textWidth = MathF.Max(1f, max.X - min.X - padding * 2f);
-        Typography.DrawWrappedLeft(new Vector2(min.X + padding, min.Y + padding), expansion.Name, AccentRing.Ink,
-            TextStyles.Headline, textWidth);
-        var summary = Typography.FitText(expansion.Summary, textWidth, TextStyles.Footnote);
-        var summarySize = Typography.Measure(summary, TextStyles.Footnote);
-        Typography.Draw(drawList, new Vector2(min.X + padding, max.Y - padding - summarySize.Y), summary,
-            Palette.WithAlpha(AccentRing.Ink, 0.82f), TextStyles.Footnote);
+        var hovered = UiInteract.Hover(cell.Min, cell.Max);
         if (hovered)
         {
+            MapGlyphs.Highlight(drawList, cell, theme.HoverWash, RowWashInset, scale);
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            HoverTooltip.Show(cell, expansion.Summary, HoverLabelSide.Above);
         }
 
-        if (browseRail.Tapped(card.Min, card.Max, hovered))
+        var disc = BrowseDiscSize * scale;
+        var center = new Vector2(cell.Min.X + disc * 0.5f, cell.Center.Y);
+        var tint = MapGlyphs.ExpansionTint(expansion.Order, accent);
+        Squircle.FillCircleVerticalGradient(drawList, center, disc * 0.5f,
+            ImGui.GetColorU32(Palette.Lighten(tint, 0.10f) with { W = 1f }),
+            ImGui.GetColorU32(Palette.Darken(tint, 0.14f) with { W = 1f }));
+        PhoneIcon.Draw(drawList, center, PhoneIcons.MapPin, AccentRing.Ink, BrowseGlyphSize * scale);
+        var textLeft = center.X + disc * 0.5f + Metrics.Space.Md * scale;
+        if (separated)
+        {
+            drawList.AddLine(new Vector2(textLeft, cell.Min.Y), new Vector2(cell.Max.X, cell.Min.Y),
+                ImGui.GetColorU32(theme.Separator), Metrics.Stroke.Hairline);
+        }
+
+        var name = Typography.FitText(expansion.Name, MathF.Max(1f, cell.Max.X - textLeft), TextStyles.Subheadline);
+        var nameSize = Typography.Measure(name, TextStyles.Subheadline);
+        Typography.Draw(drawList, new Vector2(textLeft, cell.Center.Y - nameSize.Y * 0.5f), name, theme.TextStrong,
+            TextStyles.Subheadline);
+        if (UiInteract.Click(cell.Min, cell.Max, hovered))
         {
             OpenExpansion(expansion);
         }

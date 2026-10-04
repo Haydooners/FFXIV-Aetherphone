@@ -96,8 +96,6 @@ internal sealed partial class MapsApp : IPhoneApp
         stageMapId = 0;
         plotSource = default;
         SyncFavorites();
-        favoritesRail.Reset();
-        browseRail.Reset();
     }
 
     public void OnClosed()
