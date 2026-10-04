@@ -10,6 +10,7 @@ using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Clock;
@@ -30,7 +31,7 @@ internal sealed partial class ClockApp
     private const float DayRowHeight = 52f;
     private const float DayChipDiameter = 36f;
     private const float LabelFieldFraction = 0.62f;
-    private const float StepperRadius = 15f;
+    private const float StepperRadius = RoundButton.SmallRadius;
     private const float StepperGlyph = 12f;
     private const float StepperValueGap = 10f;
 
@@ -206,7 +207,7 @@ internal sealed partial class ClockApp
         var card = new Rect(origin, origin + new Vector2(width, height));
         UiAnchors.Report("clock.alarm.time", card);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, card.Min, card.Max, ClockArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         DrawWheelBand(drawList, card, scale);
 
         var twelve = TwelveHourWheels;
@@ -293,7 +294,7 @@ internal sealed partial class ClockApp
         var max = new Vector2(origin.X + width, origin.Y + height);
         UiAnchors.Report("clock.alarm.repeat", new Rect(origin, max));
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, origin, max, ClockArt.CardRadius * scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var inset = Metrics.Space.Lg * scale;
         var left = origin.X + inset;
         var right = max.X - inset;
@@ -343,18 +344,10 @@ internal sealed partial class ClockApp
             var corner = new Vector2(radius, radius);
             var active = draft.RepeatsOn(day);
             var hovered = UiInteract.Hover(center - corner, center + corner);
-            var grow = PressFx.Scale(ImGui.GetID($"clock.day.{index}"),
-                hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left), Motion.PressScaleControl);
-            var fill = active ? ui.Accent : hovered ? ui.HoverTint : ui.FieldSurface;
-            drawList.AddCircleFilled(center, radius * grow, ImGui.GetColorU32(fill), 32);
+            var face = RoundButton.Surface(drawList, new Rect(center - corner, center + corner), ui.Ink,
+                active ? ButtonStyle.Prominent : ButtonStyle.Gray, true, hovered, ImGui.GetID($"clock.day.{index}"));
             var label = Typography.FitText(names[(int)day], diameter * 0.8f, TextStyles.FootnoteEmphasized);
-            Typography.DrawCentered(drawList, center, label, active ? ClockArt.White : ui.TitleInk,
-                TextStyles.FootnoteEmphasized);
-            if (hovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
+            Typography.DrawCentered(drawList, center, label, face.LabelInk, TextStyles.FootnoteEmphasized);
             if (UiInteract.Click(center - corner, center + corner, hovered))
             {
                 draft.ToggleDay(day);
@@ -380,13 +373,13 @@ internal sealed partial class ClockApp
         var rowHeight = OptionRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight * 2f);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, origin, max, ClockArt.CardRadius * scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var inset = Metrics.Space.Lg * scale;
         var left = origin.X + inset;
         var right = max.X - inset;
         var labelRow = new Rect(origin, new Vector2(max.X, origin.Y + rowHeight));
         var snoozeRow = labelRow.Translate(new Vector2(0f, rowHeight));
-        ClockArt.Separator(drawList, left, max.X, snoozeRow.Min.Y, ui.Hairline);
+        FeedCell.Hairline(drawList, left, max.X, snoozeRow.Min.Y, ui.Hairline);
         DrawOptionTitle(drawList, left, labelRow, Loc.T(L.Clock.Label));
         DrawLabelInput(labelRow, right, width, "##clockAlarmLabel", Loc.T(L.Clock.AlarmLabelHint), ref editLabel);
         DrawOptionTitle(drawList, left, snoozeRow, Loc.T(L.Clock.Snooze));
@@ -441,30 +434,9 @@ internal sealed partial class ClockApp
     }
 
     private bool StepperButton(ImDrawListPtr drawList, string id, Vector2 center, float radius, bool plus,
-        bool enabled, float scale)
-    {
-        var corner = new Vector2(radius, radius);
-        var hovered = enabled && UiInteract.Hover(center - corner, center + corner);
-        var grow = PressFx.Scale(id, hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left), Motion.PressScaleControl);
-        drawList.AddCircleFilled(center, radius * grow,
-            ImGui.GetColorU32(hovered ? ui.HoverTint : ui.FieldSurface), 32);
-        var ink = enabled ? ui.TitleInk : ui.MutedInk with { W = ui.MutedInk.W * 0.5f };
-        var color = ImGui.GetColorU32(ink);
-        var arm = StepperGlyph * 0.5f * scale;
-        var stroke = 2f * scale;
-        drawList.AddLine(center - new Vector2(arm, 0f), center + new Vector2(arm, 0f), color, stroke);
-        if (plus)
-        {
-            drawList.AddLine(center - new Vector2(0f, arm), center + new Vector2(0f, arm), color, stroke);
-        }
-
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(center - corner, center + corner, hovered);
-    }
+        bool enabled, float scale) =>
+        RoundButton.FontIcon(drawList, id, center, radius, plus ? FontAwesomeIcon.Plus : FontAwesomeIcon.Minus,
+            StepperGlyph * scale, ui.Ink, ButtonStyle.Gray, enabled: enabled);
 
     private void DrawDeleteAlarm(float width, float scale)
     {

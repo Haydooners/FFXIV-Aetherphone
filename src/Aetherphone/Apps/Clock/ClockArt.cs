@@ -11,9 +11,7 @@ namespace Aetherphone.Apps.Clock;
 internal static class ClockArt
 {
     public const float ControlRadius = 37f;
-    public const float CardRadius = Metrics.Radius.Grouped;
     public const float SectionGap = 18f;
-    public const float SectionHeaderHeight = 34f;
     public const float BottomPad = 24f;
     public const float MeridiemGap = 3f;
     public const float MeridiemLift = 0.12f;
@@ -149,22 +147,6 @@ internal static class ClockArt
 
         cursor.X += Typography.Measure(tail, small).X;
         return cursor.X - topLeft.X;
-    }
-
-    public static void Separator(ImDrawListPtr drawList, float left, float right, float y, Vector4 color)
-    {
-        drawList.AddLine(new Vector2(left, y), new Vector2(right, y), ImGui.GetColorU32(color), UiScale.Current);
-    }
-
-    public static void SectionHeader(string title, Vector4 ink, float width, float scale)
-    {
-        var origin = ImGui.GetCursorScreenPos();
-        var height = SectionHeaderHeight * scale;
-        var fitted = Typography.FitText(title, width, TextStyles.Title3);
-        var titleHeight = Typography.LineHeight(TextStyles.Title3);
-        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(origin.X, origin.Y + height - titleHeight - 6f * scale),
-            fitted, ink, TextStyles.Title3);
-        Advance(origin, width, height, 0f, scale);
     }
 
     public static void Advance(Vector2 origin, float width, float height, float gapUnits, float scale)

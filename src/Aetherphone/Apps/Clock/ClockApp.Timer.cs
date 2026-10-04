@@ -98,7 +98,7 @@ internal sealed partial class ClockApp
         var height = ClockWheel.HeightUnits * scale + pad * 2f;
         var card = new Rect(origin, origin + new Vector2(width, height));
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, card.Min, card.Max, ClockArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         DrawWheelBand(drawList, card, scale);
         if (primeTimerPicker)
         {
@@ -169,7 +169,7 @@ internal sealed partial class ClockApp
         var rowHeight = OptionRowHeight * scale;
         var row = new Rect(origin, origin + new Vector2(width, rowHeight));
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, row.Min, row.Max, ClockArt.CardRadius * scale);
+        ui.Card(drawList, row.Min, row.Max, Metrics.Radius.Grouped * scale);
         var inset = Metrics.Space.Lg * scale;
         DrawOptionTitle(drawList, row.Min.X + inset, row, Loc.T(L.Clock.Label));
         DrawLabelInput(row, row.Max.X - inset, width, "##clockTimerLabel", Loc.T(L.Clock.TimerTitle),
@@ -186,12 +186,12 @@ internal sealed partial class ClockApp
             return;
         }
 
-        ClockArt.SectionHeader(Loc.T(L.Clock.Recents), ui.TitleInk, width, scale);
+        CardSectionHeader.Flow(Loc.T(L.Clock.Recents), ui.TitleInk);
         var rowHeight = RecentRowHeight * scale;
         var origin = ImGui.GetCursorScreenPos();
         var max = new Vector2(origin.X + width, origin.Y + count * rowHeight);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, origin, max, ClockArt.CardRadius * scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var started = -1;
         var loaded = -1;
         for (var index = 0; index < count; index++)
@@ -199,7 +199,7 @@ internal sealed partial class ClockApp
             var row = RowRect(origin, width, index * rowHeight, rowHeight);
             if (index > 0)
             {
-                ClockArt.Separator(drawList, origin.X + Metrics.Space.Lg * scale, max.X, row.Min.Y, ui.Hairline);
+                FeedCell.Hairline(drawList, origin.X + Metrics.Space.Lg * scale, max.X, row.Min.Y, ui.Hairline);
             }
 
             var action = DrawRecentRow(drawList, row, index, recents[index], scale);
