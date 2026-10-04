@@ -119,7 +119,7 @@ internal sealed partial class MusicApp
                 Typography.Draw(drawList, new Vector2(nowPlayingMin.X + 14f * scale, nowPlayingMin.Y + 10f * scale),
                     nowPlayingLabel, ui.Palette.Accent, TextStyles.Caption1);
 
-                var watchRadius = venue.DjTwitch != null ? 20f * scale : 0f;
+                var watchRadius = venue.DjTwitch != null ? RoundButton.RegularRadius * scale : 0f;
                 var djMaxWidth = nowPlayingMax.X - (nowPlayingMin.X + 14f * scale) - (watchRadius > 0f ? watchRadius * 2f + 24f * scale : 4f * scale);
                 var djNameY = nowPlayingMin.Y + 10f * scale + nowPlayingLabelSize.Y + 3f * scale;
                 var djNameFitted = Typography.FitText(venue.DjName, djMaxWidth, TextStyles.SubheadlineEmphasized);
@@ -129,10 +129,8 @@ internal sealed partial class MusicApp
                 if (venue.DjTwitch != null)
                 {
                     var watchCenter = new Vector2(nowPlayingMax.X - 14f * scale - watchRadius, nowPlayingMin.Y + nowPlayingCardHeight * 0.5f);
-                    drawList.AddCircleFilled(watchCenter, watchRadius, ImGui.GetColorU32(ui.Palette.Accent), 32);
-                    AppSkin.Icon(drawList, watchCenter, IconGlyph.Of(FontAwesomeIcon.Play), ui.Palette.BackdropBottom, 1f);
-                    ImGui.SetCursorScreenPos(new Vector2(watchCenter.X - watchRadius, watchCenter.Y - watchRadius));
-                    if (ImGui.InvisibleButton("##venueWatch", new Vector2(watchRadius * 2f, watchRadius * 2f)))
+                    if (RoundButton.Icon(drawList, watchCenter, watchRadius, IconGlyph.Of(FontAwesomeIcon.Play), ui.Ink,
+                            ButtonStyle.Prominent))
                     {
                         Windows.UrlActions.AskThenOpen(venue.DjRolladeckUrl ?? venue.DjTwitch!);
                     }
@@ -253,7 +251,8 @@ internal sealed partial class MusicApp
 
                     var chipMin = new Vector2(currentChipX, currentChipY);
                     var chipMax = new Vector2(currentChipX + chipWidth, currentChipY + chipHeight);
-                    Squircle.Stroke(drawList, chipMin, chipMax, 6f * scale, ImGui.GetColorU32(ui.Palette.CardStroke), 1f);
+                    Squircle.Fill(drawList, chipMin, chipMax, chipHeight * 0.5f,
+                        ImGui.GetColorU32(Surfaces.Fill(ui.Ink, FillLevel.Tertiary)));
                     Typography.Draw(drawList,
                         new Vector2(chipMin.X + chipPadding, chipMin.Y + (chipHeight - amenitySize.Y) * 0.5f),
                         amenity, ui.Palette.BodyInk, TextStyles.Footnote);

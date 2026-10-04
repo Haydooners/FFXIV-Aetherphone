@@ -30,8 +30,7 @@ internal sealed partial class MusicApp
     private const float ShimmerBase = 0.08f;
     private const float ShimmerSwing = 0.07f;
     private const float LyricsIconScale = 1.6f;
-    private const float RetryPillHeight = 34f;
-    private const float RetryPillPad = 18f;
+    private const float RetryPillHeight = Button.RegularHeight;
 
     private static readonly TextStyle LyricStyle = TextStyles.Title2;
     private static readonly float[] ShimmerWidths = [0.78f, 0.92f, 0.64f, 0.84f];
@@ -135,21 +134,11 @@ internal sealed partial class MusicApp
         float scale)
     {
         var label = Loc.T(L.Common.Retry);
-        var size = Typography.Measure(label, TextStyles.SubheadlineEmphasized);
         var height = RetryPillHeight * scale;
-        var width = size.X + RetryPillPad * 2f * scale;
+        var width = Button.WidthFor(label, ButtonSize.Regular);
         var min = new Vector2(centerX - width * 0.5f, top);
-        var max = min + new Vector2(width, height);
-        var hovered = interactive && UiInteract.Hover(min, max);
-        drawList.AddRectFilled(min, max, ImGui.GetColorU32(hovered ? NowPlayingRail : NowPlayingWash), height * 0.5f);
-        Typography.Draw(drawList, (min + max) * 0.5f - size * 0.5f, label, NowPlayingInk,
-            TextStyles.SubheadlineEmphasized);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return interactive && UiInteract.Click(min, max, hovered);
+        return Button.Draw(drawList, new Rect(min, min + new Vector2(width, height)), label, NowPlayingControlInk,
+            ButtonStyle.Gray, enabled: interactive, id: "music.lyrics.retry");
     }
 
     private void DrawLyricLines(ImDrawListPtr drawList, Rect area, LrcDocument document, bool interactive,

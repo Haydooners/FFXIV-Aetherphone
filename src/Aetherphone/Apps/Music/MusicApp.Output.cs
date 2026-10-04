@@ -204,18 +204,8 @@ internal sealed partial class MusicApp
     private static bool OutputControl(ImDrawListPtr drawList, string id, Vector2 center, float radius, Vector4 ink,
         bool enabled)
     {
-        var hit = new Vector2(radius, radius);
-        var hovered = enabled && UiInteract.Hover(center - hit, center + hit);
-        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale(id, down, PressFx.ControlPressedScale);
-        drawList.AddCircleFilled(center, radius * grow,
-            ImGui.GetColorU32(ink with { W = ink.W * (hovered ? OutputHoverAlpha * 2f : OutputHoverAlpha) }));
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return enabled && UiInteract.Click(center - hit, center + hit, hovered);
+        return RoundButton.Draw(drawList, ImGui.GetID(id), center, radius, new ControlInk(ink, ink, ink, ink),
+            ButtonStyle.Gray, enabled, false, out _);
     }
 
     private static bool DrawOutputLinkRow(ImDrawListPtr drawList, float left, float right, float top, Vector4 ink,

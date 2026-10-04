@@ -20,7 +20,7 @@ internal sealed partial class MusicApp
     private const float JamSheetSearchHeight = 36f;
     private const float JamSheetMutedAlpha = 0.6f;
     private const float JamSheetHoverAlpha = 0.07f;
-    private const float JamInvitePillHeight = 28f;
+    private const float JamInvitePillHeight = Button.SmallHeight;
     private const float JamInvitePillPadX = 14f;
     private const float JamInviteCheckScale = 0.62f;
 
@@ -235,12 +235,13 @@ internal sealed partial class MusicApp
         var radius = pill.Height * 0.5f;
         if (!inJam && !invited)
         {
-            Squircle.Fill(drawList, pill.Min, pill.Max, radius, ImGui.GetColorU32(ui.Accent));
+            Button.Surface(drawList, pill, ui.Ink, ButtonStyle.Prominent, ButtonRole.Normal, true, false,
+                ImGui.GetID(label));
             Typography.DrawCentered(drawList, pill.Center, label, AccentRing.Ink, TextStyles.FootnoteEmphasized);
             return;
         }
 
-        Squircle.Stroke(drawList, pill.Min, pill.Max, radius, ImGui.GetColorU32(muted), Metrics.Stroke.Hairline * scale);
+        Button.Surface(drawList, pill, ui.Ink, ButtonStyle.Gray, ButtonRole.Normal, true, false, ImGui.GetID(label));
         if (!invited)
         {
             Typography.DrawCentered(drawList, pill.Center, label, muted, TextStyles.FootnoteEmphasized);
