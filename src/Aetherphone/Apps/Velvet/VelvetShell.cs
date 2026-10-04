@@ -8,6 +8,7 @@ using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Crypto;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Home;
+using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Inventory;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Lodestone;
@@ -31,7 +32,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 
 namespace Aetherphone.Apps.Velvet;
 
-internal sealed partial class VelvetShell : IResumableApp, ITabIconDrawer
+internal sealed partial class VelvetShell : IResumableApp, ITabIconDrawer, INameplateHandleSource
 {
     private const float HeartbeatSeconds = 45f;
     private const byte LalafellRaceId = 3;
@@ -155,6 +156,10 @@ internal sealed partial class VelvetShell : IResumableApp, ITabIconDrawer
     public Vector4 Accent => AppAccents.For(Id);
 
     public string DisplayName => Loc.T(L.Apps.Velvet);
+
+    public NameplateStatus TagStatus => NameplateStatus.Velvet;
+
+    public string ResolveNameplateHandle() => store.Me?.Handle ?? string.Empty;
 
     public string Glyph => "Ve";
 

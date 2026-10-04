@@ -193,6 +193,8 @@ One Aethernet account signs you in to every social app, and each app can keep it
 
 **Make it yours.** Wallpapers, ringtones, accent colors and icon looks, saved as a Look that follows each character.
 
+**On your nameplate.** With [Honorific](https://github.com/Caraxi/Honorific) installed, your title can show the watch party or jam you host, your radio show, the social app you have open or the song you are playing.
+
 **Speaks your language.** Nine interface languages and one-tap translation on posts, profiles and messages.
 
 **Private by design.** Messages, photos and voice notes are end-to-end encrypted. A human moderation team reviews reported content.

@@ -144,6 +144,7 @@ public sealed class Plugin : IDalamudPlugin
             linkpearlHotkey = new LinkpearlHotkey(Cfg, services.ChatInbox, linkpearlPopouts);
             var bundle = AppRegistry.BuildDefault(services, videoSuite, screenWindow, linkpearlPopouts);
             shell = new PhoneShell(services, bundle);
+            services.NameplateTitles.Bind(videoSuite.WatchAlong, () => shell.ForegroundApp, bundle.Apps);
             screenshotImport = new ScreenshotImportService(bundle.Photos, Cfg);
             phoneWindow = new PhoneWindow(shell, Cfg);
             Updates = new UpdateCheckService(services.Http, PluginInterface);
