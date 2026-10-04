@@ -12,10 +12,10 @@ public sealed class NameplateTitleSettingsTests
 
         settings.Normalize();
 
-        Assert.Equal(NameplateStatusCatalog.All.Length, settings.Order.Length);
+        Assert.Equal(NameplateStatusCatalog.Ranked.Length, settings.Order.Length);
         for (var index = 0; index < settings.Order.Length; index++)
         {
-            Assert.Equal(NameplateStatusCatalog.All[index].Status, settings.Order[index]);
+            Assert.Equal(NameplateStatusCatalog.Ranked[index], settings.Order[index]);
         }
     }
 
@@ -31,7 +31,7 @@ public sealed class NameplateTitleSettingsTests
 
         Assert.Equal(NameplateStatus.NowPlaying, settings.Order[0]);
         Assert.Equal(NameplateStatus.Custom, settings.Order[1]);
-        Assert.Equal(NameplateStatusCatalog.All.Length, settings.Order.Length);
+        Assert.Equal(NameplateStatusCatalog.Ranked.Length, settings.Order.Length);
         Assert.Single(settings.Order, status => status == NameplateStatus.NowPlaying);
     }
 
@@ -52,8 +52,23 @@ public sealed class NameplateTitleSettingsTests
         Assert.Equal(NameplateStatus.NowPlaying, settings.Order[0]);
         Assert.Equal(settings.Order.Length - 2, handle);
         Assert.Equal(NameplateStatus.Custom, settings.Order[^1]);
-        Assert.True(Array.IndexOf(settings.Order, NameplateStatus.SlotsWin) <
+        Assert.True(Array.IndexOf(settings.Order, NameplateStatus.Games) <
                     Array.IndexOf(settings.Order, NameplateStatus.Gamba));
+    }
+
+    [Fact]
+    public void NormalizeKeepsSlotsResultsOffThePriorityList()
+    {
+        var settings = new NameplateTitleSettings
+        {
+            Order = new[] { NameplateStatus.SlotsWin, NameplateStatus.Gamba, NameplateStatus.SlotsLoss },
+        };
+
+        settings.Normalize();
+
+        Assert.Equal(NameplateStatus.Gamba, settings.Order[0]);
+        Assert.DoesNotContain(NameplateStatus.SlotsWin, settings.Order);
+        Assert.DoesNotContain(NameplateStatus.SlotsLoss, settings.Order);
     }
 
     [Fact]

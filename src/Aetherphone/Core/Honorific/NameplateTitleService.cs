@@ -30,6 +30,7 @@ internal sealed class NameplateTitleService : IDisposable
     private const string SampleArtist = "Susan Calloway";
     private const string SampleGame = "Coil";
     private const long SampleChips = 1250;
+    private const int MaxChildren = 4;
     private static readonly Vector4 CustomInk = new(1f, 1f, 1f, 1f);
 
     private readonly Configuration configuration;
@@ -339,13 +340,28 @@ internal sealed class NameplateTitleService : IDisposable
         var order = settings.Order;
         for (var index = 0; index < order.Length; index++)
         {
-            var status = order[index];
-            if (!settings.Shows(status))
+            var title = ResolveRanked(order[index]);
+            if (!title.IsNone)
+            {
+                return title;
+            }
+        }
+
+        return NameplateTitle.None;
+    }
+
+    private NameplateTitle ResolveRanked(NameplateStatus status)
+    {
+        Span<NameplateStatus> children = stackalloc NameplateStatus[MaxChildren];
+        var count = NameplateStatusCatalog.ChildrenOf(status, children);
+        for (var index = 0; index < count; index++)
+        {
+            if (!settings.Shows(children[index]))
             {
                 continue;
             }
 
-            var title = ResolveStatus(status);
+            var title = ResolveStatus(children[index]);
             if (!title.IsNone)
             {
                 return title;

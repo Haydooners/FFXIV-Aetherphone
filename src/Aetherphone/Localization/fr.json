@@ -8807,13 +8807,14 @@
   "nameplate.template.nowPlaying": "♪ [song] · [artist]",
   "nameplate.template.handle": "@[handle]",
   "nameplate.gamesHint": "Le jeu auquel tu joues, tant qu'il est ouvert.",
-  "nameplate.gambaHint": "Tant que Gamba est ouvert.",
+  "nameplate.gambaSlotsHint": "Le résultat d'un tour remplace Gamba quelques secondes.",
+  "nameplate.gambaHint": "Le jeu auquel tu paries, tant que Gamba est ouvert.",
   "nameplate.slotsWin": "Gain aux machines",
   "nameplate.slotsWinHint": "Ce qu'un tour t'a rapporté, quelques secondes après.",
   "nameplate.slotsLoss": "Perte aux machines",
   "nameplate.slotsLossHint": "Ce qu'un tour t'a coûté, quelques secondes après.",
   "nameplate.template.games": "Joue à [game]",
-  "nameplate.template.gamba": "Parie chez Gamba",
+  "nameplate.template.gamba": "Parie à [game]",
   "nameplate.template.slotsWin": "[chips] jetons gagnés !",
   "nameplate.template.slotsLoss": "[chips] jetons perdus :("
 }

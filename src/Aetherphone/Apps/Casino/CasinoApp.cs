@@ -113,6 +113,7 @@ internal sealed partial class CasinoApp : IPhoneApp, INameplateActivitySource
         switch (status)
         {
             case NameplateStatus.Gamba:
+                values = NameplateValues.Empty with { Game = Loc.T(PlayingName(router.Current)) };
                 return true;
             case NameplateStatus.SlotsWin when slots.TryRecentResult(out var won) && won > 0:
                 values = NameplateValues.Empty with { Chips = NameplateTitleService.ChipCount(won) };
@@ -637,6 +638,14 @@ internal sealed partial class CasinoApp : IPhoneApp, INameplateActivitySource
     {
         return Core.Casino.CasinoWire.SittingFor(casino.State, wireKind) is not null;
     }
+
+    private static LocString PlayingName(CasinoRoute route) => route.Screen switch
+    {
+        CasinoScreen.Cabinet => GameName(route.GameId),
+        CasinoScreen.Table or CasinoScreen.TableDoor => L.Casino.GameBlackjack,
+        CasinoScreen.DailySpin => L.Casino.GameDailySpin,
+        _ => L.Apps.Casino,
+    };
 
     private static LocString GameName(string gameId) => gameId switch
     {

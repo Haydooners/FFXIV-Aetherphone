@@ -11,7 +11,13 @@ namespace Aetherphone.Apps.Settings.Pages;
 
 internal sealed class NameplateStatusPage : ISettingsPage
 {
+    private const int MaxChildren = 4;
+
+    private static readonly string[] ChildIds = BuildChildIds();
+
     private readonly NameplateTitleService titles;
+    private readonly ISettingsNavigator navigator;
+    private readonly NameplateStatusPage? childPage;
     private readonly NameplateStage stage = new();
     private readonly string[] handleLabels = new string[3];
     private readonly string[] longTitleLabels = new string[2];
@@ -30,9 +36,12 @@ internal sealed class NameplateStatusPage : ISettingsPage
     private string tokensTemplate = string.Empty;
     private string tokensLine = string.Empty;
 
-    public NameplateStatusPage(NameplateTitleService titles)
+    public NameplateStatusPage(NameplateTitleService titles, ISettingsNavigator navigator,
+        NameplateStatusPage? childPage)
     {
         this.titles = titles;
+        this.navigator = navigator;
+        this.childPage = childPage;
     }
 
     public string Title => Loc.T(NameplateStatusCatalog.For(status).Label);
@@ -173,6 +182,12 @@ internal sealed class NameplateStatusPage : ISettingsPage
             return;
         }
 
+        if (status == NameplateStatus.Gamba)
+        {
+            DrawChildren(theme, scale);
+            return;
+        }
+
         if (status != NameplateStatus.Handle)
         {
             return;
@@ -195,6 +210,39 @@ internal sealed class NameplateStatusPage : ISettingsPage
         settings.HandleApp = (NameplateHandleApp)picked;
         sampleTemplate = string.Empty;
         titles.Commit();
+    }
+
+    private void DrawChildren(PhoneTheme theme, float scale)
+    {
+        Span<NameplateStatus> children = stackalloc NameplateStatus[MaxChildren];
+        var count = NameplateStatusCatalog.ChildrenOf(status, children);
+        if (count == 0 || childPage is null)
+        {
+            return;
+        }
+
+        var settings = titles.Settings;
+        ImGui.Dummy(new Vector2(0f, Metrics.Space.Xl * scale));
+        SettingsSection.Header(Loc.T(L.Casino.GameSlots), theme);
+        var card = GroupCard.Begin(theme, count);
+        for (var index = 0; index < count; index++)
+        {
+            var child = children[index];
+            ref readonly var info = ref NameplateStatusCatalog.For(child);
+            var value = Loc.T(settings.Shows(child) ? L.Common.On : L.Common.Off);
+            if (!SettingsRow.Link(card.NextRow(), info.Icon, info.Tint, Loc.T(info.Label), value, theme,
+                    id: ChildIds[NameplateStatusCatalog.IndexOf(child)]))
+            {
+                continue;
+            }
+
+            childPage.Show(child);
+            navigator.Open(childPage);
+        }
+
+        card.End();
+        ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
+        SettingsSection.Hint(Loc.T(L.Nameplate.GambaSlotsHint), theme);
     }
 
     private void DrawLongTitles(PhoneTheme theme, float scale)
@@ -289,5 +337,16 @@ internal sealed class NameplateStatusPage : ISettingsPage
         }
 
         return tokensLine;
+    }
+
+    private static string[] BuildChildIds()
+    {
+        var ids = new string[NameplateStatusCatalog.All.Length];
+        for (var index = 0; index < ids.Length; index++)
+        {
+            ids[index] = "nameplate.child." + NameplateStatusCatalog.All[index].Status;
+        }
+
+        return ids;
     }
 }

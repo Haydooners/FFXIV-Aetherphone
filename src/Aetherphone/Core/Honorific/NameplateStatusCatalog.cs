@@ -12,7 +12,8 @@ internal readonly record struct NameplateStatusInfo(
     LocString Label,
     LocString Hint,
     LocString? DefaultTemplate,
-    string Tokens);
+    string Tokens,
+    NameplateStatus Parent = NameplateStatus.None);
 
 internal static class NameplateStatusCatalog
 {
@@ -41,11 +42,11 @@ internal static class NameplateStatusCatalog
         new(NameplateStatus.Games, FontAwesomeIcon.Gamepad, AppAccents.For("games"), L.Apps.Games,
             L.Nameplate.GamesHint, L.Nameplate.TemplateGames, GameToken),
         new(NameplateStatus.SlotsWin, FontAwesomeIcon.Coins, AccentRing.Gold, L.Nameplate.SlotsWin,
-            L.Nameplate.SlotsWinHint, L.Nameplate.TemplateSlotsWin, ChipsToken),
+            L.Nameplate.SlotsWinHint, L.Nameplate.TemplateSlotsWin, ChipsToken, NameplateStatus.Gamba),
         new(NameplateStatus.SlotsLoss, FontAwesomeIcon.SadTear, AccentRing.Slate, L.Nameplate.SlotsLoss,
-            L.Nameplate.SlotsLossHint, L.Nameplate.TemplateSlotsLoss, ChipsToken),
+            L.Nameplate.SlotsLossHint, L.Nameplate.TemplateSlotsLoss, ChipsToken, NameplateStatus.Gamba),
         new(NameplateStatus.Gamba, FontAwesomeIcon.Dice, AppAccents.For("casino"), L.Apps.Casino,
-            L.Nameplate.GambaHint, L.Nameplate.TemplateGamba, string.Empty),
+            L.Nameplate.GambaHint, L.Nameplate.TemplateGamba, GameToken),
         new(NameplateStatus.MogCast, FontAwesomeIcon.Tv, AppAccents.For("aetherstream"), L.Nameplate.MogCast,
             L.Nameplate.MogCastHint, L.Nameplate.TemplateMogCast, CodeToken),
         new(NameplateStatus.Jam, FontAwesomeIcon.Music, AppAccents.For("music"), L.Nameplate.JamRow,
@@ -66,6 +67,8 @@ internal static class NameplateStatusCatalog
             string.Empty),
     };
 
+    public static readonly NameplateStatus[] Ranked = BuildRanked();
+
     public static int IndexOf(NameplateStatus status)
     {
         for (var index = 0; index < All.Length; index++)
@@ -83,5 +86,45 @@ internal static class NameplateStatusCatalog
     {
         var index = IndexOf(status);
         return ref All[index < 0 ? All.Length - 1 : index];
+    }
+
+    public static int ChildrenOf(NameplateStatus parent, Span<NameplateStatus> children)
+    {
+        var count = 0;
+        for (var index = 0; index < All.Length && count < children.Length; index++)
+        {
+            if (All[index].Parent == parent)
+            {
+                children[count] = All[index].Status;
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static NameplateStatus[] BuildRanked()
+    {
+        var count = 0;
+        for (var index = 0; index < All.Length; index++)
+        {
+            if (All[index].Parent == NameplateStatus.None)
+            {
+                count++;
+            }
+        }
+
+        var ranked = new NameplateStatus[count];
+        count = 0;
+        for (var index = 0; index < All.Length; index++)
+        {
+            if (All[index].Parent == NameplateStatus.None)
+            {
+                ranked[count] = All[index].Status;
+                count++;
+            }
+        }
+
+        return ranked;
     }
 }

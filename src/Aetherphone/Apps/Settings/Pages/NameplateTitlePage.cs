@@ -53,7 +53,7 @@ internal sealed class NameplateTitlePage : ISettingsPage
         this.titles = titles;
         this.configuration = configuration;
         this.navigator = navigator;
-        statusPage = new NameplateStatusPage(titles);
+        statusPage = new NameplateStatusPage(titles, navigator, new NameplateStatusPage(titles, navigator, null));
     }
 
     public string Title => Loc.T(L.Nameplate.Title);
@@ -169,7 +169,8 @@ internal sealed class NameplateTitlePage : ISettingsPage
         }
 
         var tileMax = SettingsRow.DrawIconTile(row, info.Icon, info.Tint, theme, hovered, false, scale);
-        if (titles.Current.Kind == status)
+        var live = titles.Current.Kind;
+        if (live == status || NameplateStatusCatalog.For(live).Parent == status)
         {
             var dot = new Vector2(tileMax.X, row.Center.Y - (tileMax.Y - row.Center.Y));
             var drawList = ImGui.GetWindowDrawList();

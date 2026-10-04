@@ -8807,13 +8807,14 @@
   "nameplate.template.nowPlaying": "♪ [song] · [artist]",
   "nameplate.template.handle": "@[handle]",
   "nameplate.gamesHint": "The game you are playing, while it is open.",
-  "nameplate.gambaHint": "While Gamba is open.",
+  "nameplate.gambaSlotsHint": "A spin result takes the place of Gamba for a few seconds after it lands.",
+  "nameplate.gambaHint": "The game you are gambling at, while Gamba is open.",
   "nameplate.slotsWin": "Slots win",
   "nameplate.slotsWinHint": "What a spin won you, for a few seconds after it lands.",
   "nameplate.slotsLoss": "Slots loss",
   "nameplate.slotsLossHint": "What a spin cost you, for a few seconds after it lands.",
   "nameplate.template.games": "Playing [game]",
-  "nameplate.template.gamba": "Gambling at Gamba",
+  "nameplate.template.gamba": "Gambling at [game]",
   "nameplate.template.slotsWin": "Won [chips] chips!",
   "nameplate.template.slotsLoss": "Lost [chips] chips :("
 }

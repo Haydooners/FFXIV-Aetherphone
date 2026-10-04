@@ -98,7 +98,7 @@ internal sealed class NameplateTitleSettings
     public void Normalize()
     {
         TurnSeconds = Math.Clamp(TurnSeconds, MinimumTurnSeconds, MaximumTurnSeconds);
-        var catalog = NameplateStatusCatalog.All;
+        var ranked = NameplateStatusCatalog.Ranked;
         if (Order.Length == 0)
         {
             if (Shows(NameplateStatus.Chirper))
@@ -112,12 +112,12 @@ internal sealed class NameplateTitleSettings
             }
         }
 
-        var normalized = new NameplateStatus[catalog.Length];
+        var normalized = new NameplateStatus[ranked.Length];
         var count = 0;
         for (var index = 0; index < Order.Length; index++)
         {
             var status = Order[index];
-            if (NameplateStatusCatalog.IndexOf(status) >= 0 && Array.IndexOf(normalized, status, 0, count) < 0)
+            if (Array.IndexOf(ranked, status) >= 0 && Array.IndexOf(normalized, status, 0, count) < 0)
             {
                 normalized[count] = status;
                 count++;
@@ -125,9 +125,9 @@ internal sealed class NameplateTitleSettings
         }
 
         var fallback = Array.IndexOf(normalized, NameplateStatus.Handle, 0, count);
-        for (var index = 0; index < catalog.Length; index++)
+        for (var index = 0; index < ranked.Length; index++)
         {
-            var status = catalog[index].Status;
+            var status = ranked[index];
             if (Array.IndexOf(normalized, status, 0, count) >= 0)
             {
                 continue;

@@ -8807,13 +8807,14 @@
   "nameplate.template.nowPlaying": "♪ [song] · [artist]",
   "nameplate.template.handle": "@[handle]",
   "nameplate.gamesHint": "Игра, в которую вы играете, пока она открыта.",
-  "nameplate.gambaHint": "Пока открыт Gamba.",
+  "nameplate.gambaSlotsHint": "Результат спина на несколько секунд заменяет Gamba.",
+  "nameplate.gambaHint": "Игра, в которую вы играете, пока открыт Gamba.",
   "nameplate.slotsWin": "Выигрыш в слотах",
   "nameplate.slotsWinHint": "Сколько принёс спин, несколько секунд после остановки.",
   "nameplate.slotsLoss": "Проигрыш в слотах",
   "nameplate.slotsLossHint": "Сколько стоил спин, несколько секунд после остановки.",
   "nameplate.template.games": "Играет в [game]",
-  "nameplate.template.gamba": "Азартит в Gamba",
+  "nameplate.template.gamba": "Азартит: [game]",
   "nameplate.template.slotsWin": "Выиграл [chips] фишек!",
   "nameplate.template.slotsLoss": "Проиграл [chips] фишек :("
 }
