@@ -8,11 +8,14 @@ internal enum NameplateStatus
     Jam = 1 << 1,
     RadioOnAir = 1 << 2,
     Muster = 1 << 3,
-    SocialApps = 1 << 4,
+    Chirper = 1 << 4,
     Velvet = 1 << 5,
-    Busy = 1 << 6,
+    InCall = 1 << 6,
     NowPlaying = 1 << 7,
     Handle = 1 << 8,
+    Aethergram = 1 << 9,
+    Custom = 1 << 10,
+    DoNotDisturb = 1 << 11,
     Default = MogCast | Jam | RadioOnAir | Muster,
 }
 
@@ -27,17 +30,22 @@ internal enum NameplateHandleApp
 {
     Chirper,
     Aethergram,
+    Velvet,
 }
 
 internal sealed class NameplateTitleSettings
 {
+    public const int MaxTemplateLength = 64;
+
     public bool Enabled { get; set; }
     public NameplateStatus Statuses { get; set; } = NameplateStatus.Default;
+    public NameplateStatus[] Order { get; set; } = Array.Empty<NameplateStatus>();
+    public Dictionary<NameplateStatus, string> Templates { get; set; } = new();
+    public string CustomText { get; set; } = string.Empty;
     public NameplateTitleStyle Style { get; set; }
     public int CustomColor { get; set; }
     public int CustomGlow { get; set; } = NameplatePalette.DarkGlowIndex;
     public bool Prefix { get; set; }
-    public bool JamShowsName { get; set; }
     public bool IncludePcMedia { get; set; }
     public NameplateHandleApp HandleApp { get; set; }
 
@@ -45,4 +53,71 @@ internal sealed class NameplateTitleSettings
 
     public void Set(NameplateStatus status, bool shown) =>
         Statuses = shown ? Statuses | status : Statuses & ~status;
+
+    public string Template(NameplateStatus status) =>
+        Templates.TryGetValue(status, out var template) ? template : string.Empty;
+
+    public void SetTemplate(NameplateStatus status, string template)
+    {
+        var clean = template.Trim();
+        if (clean.Length == 0)
+        {
+            Templates.Remove(status);
+            return;
+        }
+
+        Templates[status] = clean;
+    }
+
+    public void Move(int index, int delta)
+    {
+        var target = index + delta;
+        if (index < 0 || index >= Order.Length || target < 0 || target >= Order.Length)
+        {
+            return;
+        }
+
+        (Order[index], Order[target]) = (Order[target], Order[index]);
+    }
+
+    public void Normalize()
+    {
+        var catalog = NameplateStatusCatalog.All;
+        if (Order.Length == 0)
+        {
+            if (Shows(NameplateStatus.Chirper))
+            {
+                Set(NameplateStatus.Aethergram, true);
+            }
+
+            if (Shows(NameplateStatus.InCall))
+            {
+                Set(NameplateStatus.DoNotDisturb, true);
+            }
+        }
+
+        var normalized = new NameplateStatus[catalog.Length];
+        var count = 0;
+        for (var index = 0; index < Order.Length; index++)
+        {
+            var status = Order[index];
+            if (NameplateStatusCatalog.IndexOf(status) >= 0 && Array.IndexOf(normalized, status, 0, count) < 0)
+            {
+                normalized[count] = status;
+                count++;
+            }
+        }
+
+        for (var index = 0; index < catalog.Length; index++)
+        {
+            var status = catalog[index].Status;
+            if (Array.IndexOf(normalized, status, 0, count) < 0)
+            {
+                normalized[count] = status;
+                count++;
+            }
+        }
+
+        Order = normalized;
+    }
 }

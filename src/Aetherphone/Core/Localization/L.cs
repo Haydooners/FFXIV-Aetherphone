@@ -2322,7 +2322,7 @@ internal static class L
             new("changelog.r1100.32",
                 "Added a Support page with the three Patreon tiers, what each one includes, a preview of the member look and badges, and a link to join each tier"),
             new("changelog.r1100.160",
-                "Added Nameplate Title in Settings: show your MogCast party, jam, radio show, meetup, open social app or current song as your Honorific title"),
+                "Added Nameplate Title in Settings: show your MogCast party, jam, radio show, meetup, open social app, song or your own words as your Honorific title, in the order you choose and with text you can edit"),
         };
 
         public static readonly LocString[] Release1100Tours =
@@ -8258,11 +8258,6 @@ internal static class L
     {
         public static readonly LocString Title = new("nameplate.title", "Nameplate Title");
         public static readonly LocString Off = new("nameplate.off", "Off");
-        public static readonly LocString Jam = new("nameplate.jam", "Jam");
-        public static readonly LocString OnAir = new("nameplate.onAir", "On air");
-        public static readonly LocString Hosting = new("nameplate.hosting", "Hosting");
-        public static readonly LocString OnACall = new("nameplate.onACall", "On a call");
-        public static readonly LocString DoNotDisturb = new("nameplate.doNotDisturb", "Do not disturb");
         public static readonly LocString NotInstalledTitle = new("nameplate.notInstalledTitle", "Honorific is not installed");
         public static readonly LocString NotInstalledBody = new("nameplate.notInstalledBody", "Nameplate Title shows what you are doing as your title through the Honorific plugin. Install Honorific from the Dalamud plugin installer, then come back here.");
         public static readonly LocString Enabled = new("nameplate.enabled", "Show my status on my title");
@@ -8271,27 +8266,37 @@ internal static class L
         public static readonly LocString NothingActive = new("nameplate.nothingActive", "Nothing to show right now, so your own title is on.");
         public static readonly LocString Example = new("nameplate.example", "Example");
         public static readonly LocString Live = new("nameplate.live", "On your nameplate now");
-        public static readonly LocString Statuses = new("nameplate.statuses", "Statuses");
-        public static readonly LocString StatusesHint = new("nameplate.statusesHint", "The highest active status wins: hosting first, your handle last.");
+        public static readonly LocString Priority = new("nameplate.statuses", "Priority");
+        public static readonly LocString PriorityHint = new("nameplate.statusesHint", "The first active status from the top shows on your title. Use the arrows to change the order, and tap a status to edit its text.");
         public static readonly LocString MogCast = new("nameplate.mogCast", "MogCast party");
         public static readonly LocString MogCastHint = new("nameplate.mogCastHint", "Your party code, while the party is open to guests.");
         public static readonly LocString JamRow = new("nameplate.jamRow", "Jam you host");
         public static readonly LocString JamHint = new("nameplate.jamHint", "The join code, while you host a jam.");
-        public static readonly LocString JamShowsName = new("nameplate.jamShowsName", "Show the jam name instead of the code");
         public static readonly LocString Radio = new("nameplate.radio", "Radio on air");
         public static readonly LocString RadioHint = new("nameplate.radioHint", "Your station, while you DJ live.");
         public static readonly LocString Muster = new("nameplate.muster", "Muster meetup");
         public static readonly LocString MusterHint = new("nameplate.musterHint", "The meetup type, while a meetup you host is running.");
-        public static readonly LocString SocialApps = new("nameplate.socialApps", "Chirper and Aethergram");
-        public static readonly LocString SocialAppsHint = new("nameplate.socialAppsHint", "Your handle in that app, while it is open.");
+        public static readonly LocString SocialAppsHint = new("nameplate.socialAppsHint", "Your handle in this app, while it is open.");
         public static readonly LocString VelvetHint = new("nameplate.velvetHint", "Your Velvet handle, while Velvet is open. Anyone who can see your title sees it, Velvet user or not.");
-        public static readonly LocString Busy = new("nameplate.busy", "Busy");
-        public static readonly LocString BusyHint = new("nameplate.busyHint", "On a call, or Do Not Disturb.");
+        public static readonly LocString InCall = new("nameplate.inCall", "In a call");
+        public static readonly LocString InCallHint = new("nameplate.inCallHint", "While you are on a call.");
+        public static readonly LocString DoNotDisturb = new("nameplate.dnd", "Do not disturb");
+        public static readonly LocString DoNotDisturbHint = new("nameplate.dndHint", "While Do Not Disturb is on.");
         public static readonly LocString NowPlaying = new("nameplate.nowPlaying", "Now playing");
         public static readonly LocString NowPlayingHint = new("nameplate.nowPlayingHint", "The song you are playing. Needs Share what I listen to, in Music settings.");
         public static readonly LocString PcMedia = new("nameplate.pcMedia", "Include music from your PC");
         public static readonly LocString Handle = new("nameplate.handle", "Social handle");
-        public static readonly LocString HandleHint = new("nameplate.handleHint", "Your handle, when nothing else is active.");
+        public static readonly LocString HandleHint = new("nameplate.handleHint", "Your handle, when nothing above it is active.");
+        public static readonly LocString HandleApp = new("nameplate.handleApp", "Use the handle from");
+        public static readonly LocString Custom = new("nameplate.custom", "Custom text");
+        public static readonly LocString CustomHint = new("nameplate.customHint", "Your own words. Put it at the top to always show it.");
+        public static readonly LocString CustomPlaceholder = new("nameplate.customPlaceholder", "Write your title");
+        public static readonly LocString Show = new("nameplate.show", "Show this status");
+        public static readonly LocString Text = new("nameplate.text", "Text");
+        public static readonly LocString TextHint = new("nameplate.textHint", "Leave it empty to use the default text.");
+        public static readonly LocString Tokens = new("nameplate.tokens", "Fills in by itself: {0}");
+        public static readonly LocString Reset = new("nameplate.reset", "Reset to default");
+        public static readonly LocString Length = new("nameplate.length", "{0} of {1} characters");
         public static readonly LocString Look = new("nameplate.look", "Look");
         public static readonly LocString StyleApp = new("nameplate.styleApp", "App colors");
         public static readonly LocString StyleMine = new("nameplate.styleMine", "Match my title");
@@ -8304,6 +8309,17 @@ internal static class L
         public static readonly LocString Position = new("nameplate.position", "Position");
         public static readonly LocString Above = new("nameplate.above", "Above my name");
         public static readonly LocString Below = new("nameplate.below", "Below my name");
+        public static readonly LocString TemplateMogCast = new("nameplate.template.mogCast", "MogCast · [code]");
+        public static readonly LocString TemplateJam = new("nameplate.template.jam", "Jam · [code]");
+        public static readonly LocString TemplateRadio = new("nameplate.template.radio", "On air · [station]");
+        public static readonly LocString TemplateMuster = new("nameplate.template.muster", "Hosting · [type]");
+        public static readonly LocString TemplateChirper = new("nameplate.template.chirper", "Chirper · @[handle]");
+        public static readonly LocString TemplateAethergram = new("nameplate.template.aethergram", "Aethergram · @[handle]");
+        public static readonly LocString TemplateVelvet = new("nameplate.template.velvet", "Velvet · @[handle]");
+        public static readonly LocString TemplateInCall = new("nameplate.template.inCall", "On a call");
+        public static readonly LocString TemplateDoNotDisturb = new("nameplate.template.dnd", "Do not disturb");
+        public static readonly LocString TemplateNowPlaying = new("nameplate.template.nowPlaying", "♪ [song] · [artist]");
+        public static readonly LocString TemplateHandle = new("nameplate.template.handle", "@[handle]");
     }
 
     internal static class Minimized

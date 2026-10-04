@@ -11,33 +11,23 @@ namespace Aetherphone.Apps.Settings.Pages;
 
 internal sealed class NameplateTitlePage : ISettingsPage
 {
-    private const float StageHeight = 132f;
-    private const float StageInset = 18f;
-    private const float NameTitleGap = 4f;
-    private const float HaloRadius = 1.4f;
+    private const float ReorderRadius = 10f;
+    private const float ReorderGap = 3f;
+    private const float ToggleGap = 10f;
+    private const float LabelGap = 8f;
+    private const float LiveDotRadius = 4f;
     private const float SwatchRadius = 10f;
     private const float SwatchGap = 8f;
     private const float SwatchRing = 2f;
-    private const string OpenQuote = "《";
-    private const string CloseQuote = "》";
 
-    private static readonly Vector4 StageTop = new(0.05f, 0.09f, 0.13f, 1f);
-    private static readonly Vector4 StageBottom = new(0.08f, 0.19f, 0.18f, 1f);
-    private static readonly Vector4 NameInk = new(0.95f, 0.96f, 1f, 1f);
-    private static readonly Vector4 NameHalo = new(0.04f, 0.16f, 0.29f, 1f);
     private static readonly Vector4 PageTint = new(0.11f, 0.50f, 0.58f, 1f);
-    private static readonly Vector4 BusyTint = new(0.45f, 0.47f, 0.55f, 1f);
-    private static readonly Vector4 RadioTint = AccentRing.Orange;
+    private static readonly string[] RowIds = BuildRowIds();
 
     private static readonly SettingsEntry[] Searchable =
     {
         new(L.Nameplate.Enabled),
-        new(L.Nameplate.MogCast),
-        new(L.Nameplate.JamRow),
-        new(L.Nameplate.Radio),
-        new(L.Nameplate.Muster),
-        new(L.Nameplate.SocialApps),
-        new(L.Nameplate.Busy),
+        new(L.Nameplate.Priority),
+        new(L.Nameplate.Custom),
         new(L.Nameplate.NowPlaying),
         new(L.Nameplate.Handle),
         new(L.Nameplate.Look),
@@ -45,18 +35,22 @@ internal sealed class NameplateTitlePage : ISettingsPage
     };
 
     private readonly NameplateTitleService titles;
+    private readonly ISettingsNavigator navigator;
+    private readonly NameplateStatusPage statusPage;
+    private readonly NameplateStage stage = new();
     private readonly string[] styleLabels = new string[3];
     private readonly string[] positionLabels = new string[2];
-    private readonly string[] handleLabels = new string[2];
-    private string quotedSource = string.Empty;
-    private string quotedTitle = string.Empty;
     private string characterSourceName = string.Empty;
     private string characterSourceTemplate = string.Empty;
     private string characterLine = string.Empty;
+    private int moveIndex = -1;
+    private int moveDelta;
 
-    public NameplateTitlePage(NameplateTitleService titles)
+    public NameplateTitlePage(NameplateTitleService titles, ISettingsNavigator navigator)
     {
         this.titles = titles;
+        this.navigator = navigator;
+        statusPage = new NameplateStatusPage(titles);
     }
 
     public string Title => Loc.T(L.Nameplate.Title);
@@ -78,7 +72,9 @@ internal sealed class NameplateTitlePage : ISettingsPage
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
             if (!titles.Available)
             {
-                DrawNotInstalled(theme, scale);
+                NameplateStage.DrawMessage(theme, scale, Loc.T(L.Nameplate.NotInstalledTitle));
+                ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
+                SettingsSection.Hint(Loc.T(L.Nameplate.NotInstalledBody), theme);
                 return;
             }
 
@@ -86,57 +82,21 @@ internal sealed class NameplateTitlePage : ISettingsPage
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Xl * scale));
             DrawMasterSwitch(theme, scale);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Xl * scale));
-            DrawStatuses(theme, scale);
+            DrawPriority(theme, scale);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Xl * scale));
             DrawLook(theme, scale);
             ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
         }
-    }
 
-    private static void DrawNotInstalled(PhoneTheme theme, float scale)
-    {
-        var card = GroupCard.Begin(theme, StageHeight);
-        var stage = card.Bounds;
-        card.End();
-        PaintStage(stage, scale);
-        var center = stage.Center;
-        Typography.DrawCenteredHalo(center, Loc.T(L.Nameplate.NotInstalledTitle), NameInk, NameHalo,
-            HaloRadius * scale, stage.Width - StageInset * 2f * scale, TextStyles.Headline);
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-        SettingsSection.Hint(Loc.T(L.Nameplate.NotInstalledBody), theme);
+        ApplyPendingMove();
     }
 
     private void DrawStage(PhoneTheme theme, float scale)
     {
-        var live = !titles.Current.IsNone;
-        var shown = titles.Preview;
-        if (shown.IsNone)
-        {
-            return;
-        }
-
-        var card = GroupCard.Begin(theme, StageHeight);
-        var stage = card.Bounds;
-        card.End();
-        PaintStage(stage, scale);
         var name = titles.CharacterName.Length > 0 ? titles.CharacterName : Loc.T(L.Nameplate.Example);
-        var maxWidth = stage.Width - StageInset * 2f * scale;
-        var nameHeight = Typography.LineHeight(TextStyles.Title3);
-        var titleHeight = Typography.LineHeight(TextStyles.Subheadline);
-        var gap = NameTitleGap * scale;
-        var blockTop = stage.Center.Y - (nameHeight + gap + titleHeight) * 0.5f;
-        var titleAbove = shown.Prefix;
-        var nameCenterY = titleAbove ? blockTop + titleHeight + gap + nameHeight * 0.5f : blockTop + nameHeight * 0.5f;
-        var titleCenterY = titleAbove ? blockTop + titleHeight * 0.5f : blockTop + nameHeight + gap + titleHeight * 0.5f;
-        Typography.DrawCenteredHalo(new Vector2(stage.Center.X, nameCenterY), name, NameInk, NameHalo,
-            HaloRadius * scale, maxWidth, TextStyles.Title3);
-        var look = shown.Look;
-        var glow = look.Glow ?? look.Color3 ?? NameplatePalette.DarkGlow;
-        Typography.DrawCenteredHalo(new Vector2(stage.Center.X, titleCenterY), Quoted(shown.Text),
-            new Vector4(look.Color, 1f), new Vector4(glow, 1f), HaloRadius * scale, maxWidth,
-            TextStyles.SubheadlineEmphasized);
+        stage.Draw(theme, scale, name, titles.Preview);
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
-        var caption = live
+        var caption = !titles.Current.IsNone
             ? Loc.T(L.Nameplate.Live)
             : titles.Settings.Enabled
                 ? Loc.T(L.Nameplate.NothingActive)
@@ -144,16 +104,12 @@ internal sealed class NameplateTitlePage : ISettingsPage
         SettingsSection.Hint(caption, theme);
     }
 
-    private static void PaintStage(Rect stage, float scale) =>
-        Squircle.FillVerticalGradient(ImGui.GetWindowDrawList(), stage.Min, stage.Max,
-            Metrics.Radius.Grouped * scale, ImGui.GetColorU32(StageTop), ImGui.GetColorU32(StageBottom));
-
     private void DrawMasterSwitch(PhoneTheme theme, float scale)
     {
         var settings = titles.Settings;
         var card = GroupCard.Begin(theme, 1);
-        var enabled = SettingsRow.Switch(card.NextRow(), FontAwesomeIcon.IdBadge, PageTint, Loc.T(L.Nameplate.Enabled),
-            settings.Enabled, theme, id: "nameplate.enabled");
+        var enabled = SettingsRow.Switch(card.NextRow(), FontAwesomeIcon.IdBadge, PageTint,
+            Loc.T(L.Nameplate.Enabled), settings.Enabled, theme, id: "nameplate.enabled");
         card.End();
         if (enabled != settings.Enabled)
         {
@@ -172,105 +128,93 @@ internal sealed class NameplateTitlePage : ISettingsPage
         SettingsSection.Hint(CharacterLine(), theme);
     }
 
-    private void DrawStatuses(PhoneTheme theme, float scale)
+    private void DrawPriority(PhoneTheme theme, float scale)
     {
-        var settings = titles.Settings;
-        SettingsSection.Header(Loc.T(L.Nameplate.Statuses), theme);
-        var rows = 9;
-        if (settings.Shows(NameplateStatus.Jam))
+        var order = titles.Settings.Order;
+        SettingsSection.Header(Loc.T(L.Nameplate.Priority), theme);
+        var card = GroupCard.Begin(theme, order.Length);
+        for (var index = 0; index < order.Length; index++)
         {
-            rows++;
-        }
-
-        if (settings.Shows(NameplateStatus.NowPlaying))
-        {
-            rows++;
-        }
-
-        if (settings.Shows(NameplateStatus.Handle))
-        {
-            rows++;
-        }
-
-        var card = GroupCard.Begin(theme, rows);
-        var changed = StatusRow(card.NextRow(), NameplateStatus.MogCast, FontAwesomeIcon.Tv,
-            AppAccents.For("aetherstream"), L.Nameplate.MogCast, L.Nameplate.MogCastHint, "nameplate.mogcast", theme);
-        changed |= StatusRow(card.NextRow(), NameplateStatus.Jam, FontAwesomeIcon.Music, AppAccents.For("music"),
-            L.Nameplate.JamRow, L.Nameplate.JamHint, "nameplate.jam", theme);
-        if (settings.Shows(NameplateStatus.Jam))
-        {
-            var showsName = SettingsRow.Bool(card.NextRow(), Loc.T(L.Nameplate.JamShowsName), settings.JamShowsName,
-                theme, "nameplate.jamName");
-            if (showsName != settings.JamShowsName)
-            {
-                settings.JamShowsName = showsName;
-                changed = true;
-            }
-        }
-
-        changed |= StatusRow(card.NextRow(), NameplateStatus.RadioOnAir, FontAwesomeIcon.BroadcastTower, RadioTint,
-            L.Nameplate.Radio, L.Nameplate.RadioHint, "nameplate.radio", theme);
-        changed |= StatusRow(card.NextRow(), NameplateStatus.Muster, FontAwesomeIcon.Users, AppAccents.For("muster"),
-            L.Nameplate.Muster, L.Nameplate.MusterHint, "nameplate.muster", theme);
-        changed |= StatusRow(card.NextRow(), NameplateStatus.SocialApps, FontAwesomeIcon.At,
-            AppAccents.For(NameplateTitleService.ChirperAppId), L.Nameplate.SocialApps, L.Nameplate.SocialAppsHint,
-            "nameplate.social", theme);
-        changed |= StatusRow(card.NextRow(), NameplateStatus.Velvet, FontAwesomeIcon.Heart, AppAccents.For("velvet"),
-            L.Apps.Velvet, L.Nameplate.VelvetHint, "nameplate.velvet", theme);
-        changed |= StatusRow(card.NextRow(), NameplateStatus.Busy, FontAwesomeIcon.Moon, BusyTint, L.Nameplate.Busy,
-            L.Nameplate.BusyHint, "nameplate.busy", theme);
-        changed |= StatusRow(card.NextRow(), NameplateStatus.NowPlaying, FontAwesomeIcon.Headphones,
-            AppAccents.For("music"), L.Nameplate.NowPlaying, L.Nameplate.NowPlayingHint, "nameplate.nowPlaying",
-            theme);
-        if (settings.Shows(NameplateStatus.NowPlaying))
-        {
-            var pcMedia = SettingsRow.Bool(card.NextRow(), Loc.T(L.Nameplate.PcMedia), settings.IncludePcMedia, theme,
-                "nameplate.pcMedia");
-            if (pcMedia != settings.IncludePcMedia)
-            {
-                settings.IncludePcMedia = pcMedia;
-                changed = true;
-            }
-        }
-
-        changed |= StatusRow(card.NextRow(), NameplateStatus.Handle, FontAwesomeIcon.UserTag,
-            AppAccents.For(NameplateTitleService.AethergramAppId), L.Nameplate.Handle, L.Nameplate.HandleHint,
-            "nameplate.handle", theme);
-        if (settings.Shows(NameplateStatus.Handle))
-        {
-            handleLabels[0] = Loc.T(L.Apps.Chirper);
-            handleLabels[1] = Loc.T(L.Apps.Aethergram);
-            var picked = SegmentStrip.Draw("nameplate.handleApp", card.NextRow(), handleLabels,
-                (int)settings.HandleApp, theme);
-            if (picked != (int)settings.HandleApp)
-            {
-                settings.HandleApp = (NameplateHandleApp)picked;
-                changed = true;
-            }
+            DrawStatusRow(card.NextRow(), index, order[index], order.Length, theme, scale);
         }
 
         card.End();
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
-        SettingsSection.Hint(Loc.T(L.Nameplate.StatusesHint), theme);
-        if (changed)
+        SettingsSection.Hint(Loc.T(L.Nameplate.PriorityHint), theme);
+    }
+
+    private void DrawStatusRow(Rect row, int index, NameplateStatus status, int count, PhoneTheme theme, float scale)
+    {
+        var settings = titles.Settings;
+        ref readonly var info = ref NameplateStatusCatalog.For(status);
+        var shown = settings.Shows(status);
+        var rowId = RowIds[NameplateStatusCatalog.IndexOf(status)];
+        var toggleWidth = Metrics.Size.ToggleWidth * scale;
+        var toggleHeight = Metrics.Size.ToggleHeight * scale;
+        var toggleMin = new Vector2(row.Max.X - toggleWidth, row.Center.Y - toggleHeight * 0.5f);
+        var radius = ReorderRadius * scale;
+        var downCenter = new Vector2(toggleMin.X - ToggleGap * scale - radius, row.Center.Y);
+        var upCenter = new Vector2(downCenter.X - radius * 2f - ReorderGap * scale, row.Center.Y);
+        var editMax = new Vector2(upCenter.X - radius - LabelGap * scale, row.Max.Y);
+        var hovered = UiInteract.Hover(row.Min, editMax);
+        if (hovered)
         {
+            SettingsRow.DrawRowHighlight(new Rect(row.Min, editMax), theme);
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        var tileMax = SettingsRow.DrawIconTile(row, info.Icon, info.Tint, theme, hovered, false, scale);
+        if (titles.Current.Kind == status)
+        {
+            var dot = new Vector2(tileMax.X, row.Center.Y - (tileMax.Y - row.Center.Y));
+            var drawList = ImGui.GetWindowDrawList();
+            drawList.AddCircleFilled(dot, (LiveDotRadius + 1.5f) * scale, ImGui.GetColorU32(theme.GroupedCard), 16);
+            drawList.AddCircleFilled(dot, LiveDotRadius * scale, ImGui.GetColorU32(theme.ToggleOn), 16);
+        }
+
+        var labelX = tileMax.X + Metrics.Space.Md * scale;
+        var label = Loc.T(info.Label);
+        var labelSize = Typography.Measure(label, TextStyles.BodyEmphasized);
+        Marquee.DrawLeftAuto(rowId, label, labelX, row.Center.Y - labelSize.Y * 0.5f,
+            MathF.Max(1f, editMax.X - labelX), TextStyles.BodyEmphasized, shown ? theme.TextStrong : theme.TextMuted);
+        if (UiInteract.Click(row.Min, editMax, hovered))
+        {
+            statusPage.Show(status);
+            navigator.Open(statusPage);
+        }
+
+        if (SettingsReorder.Button(upCenter, radius, FontAwesomeIcon.ChevronUp, theme, index > 0))
+        {
+            moveIndex = index;
+            moveDelta = -1;
+        }
+
+        if (SettingsReorder.Button(downCenter, radius, FontAwesomeIcon.ChevronDown, theme, index < count - 1))
+        {
+            moveIndex = index;
+            moveDelta = 1;
+        }
+
+        var next = Toggle.Draw(rowId, new Rect(toggleMin, toggleMin + new Vector2(toggleWidth, toggleHeight)), shown,
+            theme);
+        if (next != shown)
+        {
+            settings.Set(status, next);
             titles.Commit();
         }
     }
 
-    private bool StatusRow(Rect row, NameplateStatus status, FontAwesomeIcon icon, Vector4 tint, LocString label,
-        LocString hint, string id, PhoneTheme theme)
+    private void ApplyPendingMove()
     {
-        var settings = titles.Settings;
-        var shown = settings.Shows(status);
-        var next = SettingsRow.Switch(row, icon, tint, Loc.T(label), shown, theme, Loc.T(hint), id);
-        if (next == shown)
+        if (moveIndex < 0)
         {
-            return false;
+            return;
         }
 
-        settings.Set(status, next);
-        return true;
+        titles.Settings.Move(moveIndex, moveDelta);
+        moveIndex = -1;
+        moveDelta = 0;
+        titles.Commit();
     }
 
     private void DrawLook(PhoneTheme theme, float scale)
@@ -387,17 +331,6 @@ internal sealed class NameplateTitlePage : ISettingsPage
         return picked == selected ? -1 : picked;
     }
 
-    private string Quoted(string text)
-    {
-        if (!ReferenceEquals(text, quotedSource))
-        {
-            quotedSource = text;
-            quotedTitle = string.Concat(OpenQuote, text, CloseQuote);
-        }
-
-        return quotedTitle;
-    }
-
     private string CharacterLine()
     {
         var template = Loc.T(L.Nameplate.Character);
@@ -410,5 +343,16 @@ internal sealed class NameplateTitlePage : ISettingsPage
         }
 
         return characterLine;
+    }
+
+    private static string[] BuildRowIds()
+    {
+        var ids = new string[NameplateStatusCatalog.All.Length];
+        for (var index = 0; index < ids.Length; index++)
+        {
+            ids[index] = "nameplate.status." + NameplateStatusCatalog.All[index].Status;
+        }
+
+        return ids;
     }
 }
