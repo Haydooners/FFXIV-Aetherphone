@@ -172,28 +172,28 @@ internal sealed class PhoneCasePage : ISettingsPage
         var pageDelta = stride * MathF.Max(1f, MathF.Floor(VisibleCards));
         var interactive = draggingRail < 0;
         if (showLeft && ArrowButton(drawList, leftArrowIds[railIndex], leftCenter, radius, PhoneIcons.ChevronLeft,
-                theme) && interactive)
+                theme, interactive))
         {
             Nudge(railIndex, -pageDelta, stride, maxOffset);
         }
 
         if (showRight && ArrowButton(drawList, rightArrowIds[railIndex], rightCenter, radius, PhoneIcons.ChevronRight,
-                theme) && interactive)
+                theme, interactive))
         {
             Nudge(railIndex, pageDelta, stride, maxOffset);
         }
     }
 
     private static bool ArrowButton(ImDrawListPtr drawList, string id, Vector2 center, float radius, string glyph,
-        PhoneTheme theme)
+        PhoneTheme theme, bool interactive)
     {
         var extent = new Vector2(radius, radius);
         var rect = new Rect(center - extent, center + extent);
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
+        var hovered = interactive && UiInteract.Hover(rect.Min, rect.Max);
         var face = RoundButton.Surface(drawList, rect, ControlInk.From(theme), ButtonStyle.Gray, true, hovered,
             ImGui.GetID(id), theme.Surface);
         PhoneIcon.Draw(drawList, center, glyph, face.LabelInk, face.Face.Width * ArrowGlyphFraction);
-        return UiInteract.Click(rect.Min, rect.Max, hovered);
+        return interactive && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private static bool OverCircle(Vector2 center, float radius)
