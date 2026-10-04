@@ -180,7 +180,7 @@ internal sealed partial class ShortcutsApp
         var field = new Rect(new Vector2(fieldLeft, rect.Center.Y - fieldHeight * 0.5f),
             new Vector2(rect.Max.X - pad, rect.Center.Y + fieldHeight * 0.5f));
         UiAnchors.Report("shortcuts.editor.name", field);
-        Squircle.Fill(drawList, field.Min, field.Max, Metrics.Radius.Field * scale, ImGui.GetColorU32(ui.FieldSurface));
+        SearchBar.Surface(drawList, field, ui.Ink);
         var inset = Metrics.Space.Md * scale;
         ImGui.SetCursorScreenPos(new Vector2(field.Min.X + inset, field.Center.Y - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(field.Width - inset * 2f);

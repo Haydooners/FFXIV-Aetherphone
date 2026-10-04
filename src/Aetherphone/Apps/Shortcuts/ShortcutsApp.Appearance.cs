@@ -127,7 +127,7 @@ internal sealed partial class ShortcutsApp
 
         var hexTop = top + pad + gridHeight + pad;
         var field = new Rect(new Vector2(origin.X + pad, hexTop), new Vector2(max.X - pad, hexTop + hexHeight));
-        Squircle.Fill(drawList, field.Min, field.Max, Metrics.Radius.Field * scale, ImGui.GetColorU32(ui.FieldSurface));
+        SearchBar.Surface(drawList, field, ui.Ink);
         var dot = HexDot * scale;
         var dotCenter = new Vector2(field.Min.X + Metrics.Space.Md * scale + dot * 0.5f, field.Center.Y);
         drawList.AddCircleFilled(dotCenter, dot * 0.5f, ImGui.GetColorU32(selected), 20);
@@ -263,7 +263,8 @@ internal sealed partial class ShortcutsApp
             else
             {
                 Squircle.Fill(drawList, center - half, center + half, tileRadius,
-                    ImGui.GetColorU32(hovered ? Palette.Mix(ui.FieldSurface, ui.TitleInk, 0.08f) : ui.FieldSurface));
+                    ImGui.GetColorU32(Surfaces.Fill(ui.TitleInk,
+                        hovered ? FillLevel.Secondary : FillLevel.Tertiary)));
             }
 
             var ink = active ? AccentRing.Ink : ui.TitleInk;

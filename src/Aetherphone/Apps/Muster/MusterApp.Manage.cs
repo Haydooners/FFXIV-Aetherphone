@@ -23,7 +23,8 @@ internal sealed partial class MusterApp
     private const float InvitedSeconds = 1.6f;
     private const float AttendeeRowHeight = 54f;
     private const float AttendeeAvatarRadius = 16f;
-    private const float InviteRadius = 15f;
+    private const float InviteRadius = RoundButton.SmallRadius;
+    private const float InviteGlyphFraction = 0.9f;
     private const float TallyBarHeight = 8f;
     private const float TallyLegendRowHeight = 26f;
     private const float TallyDotRadius = 4f;
@@ -318,8 +319,10 @@ internal sealed partial class MusterApp
             return center.X - radius;
         }
 
-        if (ui.IconButton(center, radius, IconGlyph.Of(FontAwesomeIcon.UserPlus), ui.Accent, ui.FieldSurface, 0.6f,
-                Loc.T(L.Muster.InviteToParty)) && PartyInvite.Invite(attendee.CharacterName, attendee.World))
+        var inviteLabel = Loc.T(L.Muster.InviteToParty);
+        if (RoundButton.FontIcon(drawList, inviteLabel, center, radius, FontAwesomeIcon.UserPlus,
+                radius * InviteGlyphFraction, ui.Ink, ButtonStyle.Tinted, inviteLabel) &&
+            PartyInvite.Invite(attendee.CharacterName, attendee.World))
         {
             UiFeedback.Play(UiSound.Success);
             invitedUserId = attendee.UserId;
