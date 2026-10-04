@@ -1,5 +1,6 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Changelog;
 using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
@@ -35,6 +36,7 @@ internal sealed class NameplateTitlePage : ISettingsPage
     };
 
     private readonly NameplateTitleService titles;
+    private readonly Configuration configuration;
     private readonly ISettingsNavigator navigator;
     private readonly NameplateStatusPage statusPage;
     private readonly NameplateStage stage = new();
@@ -46,9 +48,10 @@ internal sealed class NameplateTitlePage : ISettingsPage
     private int moveIndex = -1;
     private int moveDelta;
 
-    public NameplateTitlePage(NameplateTitleService titles, ISettingsNavigator navigator)
+    public NameplateTitlePage(NameplateTitleService titles, Configuration configuration, ISettingsNavigator navigator)
     {
         this.titles = titles;
+        this.configuration = configuration;
         this.navigator = navigator;
         statusPage = new NameplateStatusPage(titles);
     }
@@ -60,6 +63,8 @@ internal sealed class NameplateTitlePage : ISettingsPage
     public FontAwesomeIcon Icon => FontAwesomeIcon.IdBadge;
 
     public Vector4 Tint => PageTint;
+
+    public bool ShowsBadge => configuration.HasUnseenFeaturePin(NewFeaturePins.Nameplate);
 
     public ReadOnlySpan<SettingsEntry> Entries => Searchable;
 

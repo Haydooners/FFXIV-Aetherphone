@@ -541,7 +541,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public List<int> ClockRecentTimers { get; set; } = new();
     public string LastSeenChangelogVersion { get; set; } = string.Empty;
     public bool ChangelogSeenInitialized { get; set; }
-    
+    public HashSet<string> SeenFeaturePins { get; set; } = new();
+
     public bool MarketContextMenu { get; set; } = true;
     public bool LinkpearlContextMenu { get; set; }
 
@@ -555,6 +556,18 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
         }
 
         LastSeenChangelogVersion = ChangelogData.LatestVersion;
+        Save();
+    }
+
+    public bool HasUnseenFeaturePin(string key) => !SeenFeaturePins.Contains(key);
+
+    public void MarkFeaturePinSeen(string key)
+    {
+        if (!SeenFeaturePins.Add(key))
+        {
+            return;
+        }
+
         Save();
     }
 
