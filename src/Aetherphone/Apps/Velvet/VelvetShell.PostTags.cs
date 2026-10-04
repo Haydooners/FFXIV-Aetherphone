@@ -38,14 +38,14 @@ internal sealed partial class VelvetShell
             for (var index = 0; index < categories.Length; index++)
             {
                 var category = categories[index];
-                VSectionHeader.Card(PhoneIcons.Hash, Loc.T(category.Title));
+                CardSectionHeader.Flow(Loc.T(category.Title), VelvetTheme.TitleInk);
                 Gap(6f);
                 DrawPostTagChips(category.Tags, category.Hue, width, scale);
                 Gap(16f);
             }
 
             Gap(8f);
-            if (ui.PillButton(Reserve(46f), Loc.T(L.Velvet.FilterDone), true))
+            if (Button.Draw(Reserve(Button.LargeHeight), Loc.T(L.Velvet.FilterDone), VelvetTheme.Ink))
             {
                 router.Pop();
             }

@@ -34,8 +34,7 @@ internal static class VCard
 
     public const float HeaderGlyph = 15f;
 
-    private const float Radius = Metrics.Radius.Card;
-    private const float ShadowOpacity = 0.5f;
+    public const float Radius = Metrics.Radius.Grouped;
     private const float TileAlpha = 0.18f;
     private const float HeaderTitleGap = 10f;
     private const float RowTile = 26f;
@@ -72,10 +71,8 @@ internal static class VCard
     public static void Paint(ImDrawListPtr drawList, Vector2 min, Vector2 max, float scale)
     {
         var radius = Radius * scale;
-        Elevation.Card(drawList, min, max, radius, scale, ShadowOpacity);
-        Squircle.FillVerticalGradient(drawList, min, max, radius, VelvetTheme.CardHi.Packed(),
-            VelvetTheme.Card.Packed());
-        Squircle.Stroke(drawList, min, max, radius, VelvetTheme.CardStroke.Packed(), Metrics.Stroke.Hairline * scale);
+        Squircle.Fill(drawList, min, max, radius, VelvetTheme.Card.Packed());
+        Squircle.Stroke(drawList, min, max, radius, VelvetTheme.CardStroke.Packed(), 1f);
     }
 
     public static void Header(ImDrawListPtr drawList, Vector2 origin, float width, string glyph, Vector4 tone,

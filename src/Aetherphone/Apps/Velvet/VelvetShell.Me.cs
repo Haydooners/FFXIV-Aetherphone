@@ -83,7 +83,7 @@ internal sealed partial class VelvetShell
         var labelWidth = card.ContentWidth - (VToggle.TrackWidth + Metrics.Space.Md) * scale;
         VCard.RowLabel(drawList, card.ContentOrigin, rowHeight, PhoneIcons.Compass, VelvetTheme.Rose,
             Loc.T(L.Velvet.DiscoverableLabel), labelWidth, scale);
-        var discoverable = VToggle.Draw(drawList, "velvetDiscoverable", row, me.Discoverable, scale);
+        var discoverable = VToggle.Draw("velvetDiscoverable", row, me.Discoverable, theme);
         VCard.End(card);
         if (discoverable == me.Discoverable || editBusy)
         {
@@ -109,7 +109,7 @@ internal sealed partial class VelvetShell
         var segment = new Rect(card.ContentOrigin,
             new Vector2(card.ContentOrigin.X + card.ContentWidth, card.ContentOrigin.Y + segmentHeight));
         FillWhoLabels();
-        var who = VSegmented.Draw("velvetWho", segment, whoLabels, settingsWho, scale);
+        var who = VSegmented.Draw("velvetWho", segment, whoLabels, settingsWho);
         VCard.End(card);
         if (who < 0 || who == settingsWho)
         {
@@ -223,7 +223,7 @@ internal sealed partial class VelvetShell
                     PillFilled = false,
                     PillEnabled = true,
                 };
-                var hit = VRow.Cell(in model, ui, theme, images, lodestone);
+                var hit = VRow.Cell(in model, theme, images, lodestone);
                 if (hit == VRowHit.Pill)
                 {
                     store.Unblock(user.Id);
@@ -284,7 +284,7 @@ internal sealed partial class VelvetShell
                     PillFilled = false,
                     PillEnabled = true,
                 };
-                var hit = VRow.Cell(in model, ui, theme, images, lodestone);
+                var hit = VRow.Cell(in model, theme, images, lodestone);
                 if (hit == VRowHit.Pill)
                 {
                     store.RemoveFromNotInterested(user.UserId);

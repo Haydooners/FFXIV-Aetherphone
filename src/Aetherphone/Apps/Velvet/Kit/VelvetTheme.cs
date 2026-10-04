@@ -15,8 +15,6 @@ internal static class VelvetTheme
     public static readonly Vector4 Card = new(0.141f, 0.067f, 0.161f, 1f);
     public static readonly Vector4 CardHi = new(0.184f, 0.094f, 0.212f, 1f);
     public static readonly Vector4 CardStroke = new(0.235f, 0.133f, 0.259f, 0.60f);
-    public static readonly Vector4 Sheen = new(1f, 0.851f, 0.902f, 0.10f);
-    public static readonly Vector4 Divider = new(1f, 0.878f, 0.925f, 0.07f);
     public static readonly Vector4 Hairline = new(0.984f, 0.953f, 0.969f, 0.10f);
     public static readonly Vector4 HoverWash = new(1f, 0.878f, 0.925f, 0.035f);
 
@@ -24,7 +22,6 @@ internal static class VelvetTheme
     public static readonly Vector4 RoseBright = new(0.961f, 0.243f, 0.447f, 1f);
     public static readonly Vector4 Rose = new(0.898f, 0.102f, 0.357f, 1f);
     public static readonly Vector4 RoseDeep = new(0.722f, 0.078f, 0.282f, 1f);
-    public static readonly Vector4 RoseShadow = new(0.486f, 0.055f, 0.200f, 1f);
     public static readonly Vector4 RoseInk = new(1f, 0.612f, 0.733f, 1f);
 
     public static readonly Vector4 BloomTop = new(0.870f, 0.140f, 0.380f, 0.22f);
@@ -72,6 +69,8 @@ internal static class VelvetTheme
         Hairline = Hairline,
         HoverWash = HoverWash,
     };
+
+    public static readonly ControlInk Ink = new(Rose, TitleInk, MutedInk, Danger);
 
     public static Vector4 Alpha(Vector4 color, float alpha) => new(color.X, color.Y, color.Z, alpha);
 
