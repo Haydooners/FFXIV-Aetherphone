@@ -44,7 +44,9 @@ internal sealed partial class MusicApp
         var requests = jam.JoinRequests;
         for (var index = 0; index < requests.Length && index < jamRequestNames.Length; index++)
         {
+            ImGui.PushID(index);
             DrawJamRequestRow(requests[index], jamRequestNames[index], jamRequestHandles[index], scale);
+            ImGui.PopID();
         }
     }
 
