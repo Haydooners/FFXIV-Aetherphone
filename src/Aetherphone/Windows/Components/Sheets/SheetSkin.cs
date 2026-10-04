@@ -13,7 +13,9 @@ internal readonly record struct SheetSkin(Vector4 Panel, Vector4 Stroke, Vector4
         Palette.WithAlpha(theme.TextStrong, ThemeStrokeAlpha), Palette.WithAlpha(theme.TextMuted, GrabberAlpha),
         theme.TextStrong);
 
-    public static SheetSkin From(in AppPalette palette, SocialInk ink) => new(
-        palette.CardFill.W >= OpaqueAlpha ? palette.CardFill : ink.GlassPanel, ink.GlassStroke,
+    public static SheetSkin From(in AppPalette palette, SocialInk ink) =>
+        From(ink) with { Panel = palette.CardFill.W >= OpaqueAlpha ? palette.CardFill : ink.GlassPanel };
+
+    public static SheetSkin From(SocialInk ink) => new(ink.GlassPanel, ink.GlassStroke,
         Palette.WithAlpha(ink.MutedInk, GrabberAlpha), ink.TitleInk);
 }

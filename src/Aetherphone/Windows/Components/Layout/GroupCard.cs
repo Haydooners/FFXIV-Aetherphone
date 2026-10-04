@@ -7,6 +7,7 @@ namespace Aetherphone.Windows.Components;
 internal struct GroupCard
 {
     public const float DefaultRowHeight = Metrics.Size.Row;
+    private const float CardStrokeAlpha = 0.06f;
     private readonly Vector4 separator;
     private readonly float scale;
     private readonly float rowHeight;
@@ -32,27 +33,28 @@ internal struct GroupCard
     }
 
     public static GroupCard Begin(PhoneTheme theme, int rowCount, float rowHeight = DefaultRowHeight) =>
-        Begin(theme.GroupedCard, theme.Separator, rowCount * rowHeight, rowHeight);
+        Begin(theme, rowCount * rowHeight, rowHeight);
 
     public static GroupCard Begin(AppSkin ui, int rowCount, float rowHeight = DefaultRowHeight) =>
         Begin(ui, rowCount * rowHeight, rowHeight);
 
-    public static GroupCard Begin(PhoneTheme theme, float totalHeight) =>
-        Begin(theme.GroupedCard, theme.Separator, totalHeight, 0f);
+    public static GroupCard Begin(PhoneTheme theme, float totalHeight) => Begin(theme, totalHeight, 0f);
 
     public static GroupCard Begin(AppSkin ui, float totalHeight) => Begin(ui, totalHeight, 0f);
 
-    private static GroupCard Begin(Vector4 cardColor, Vector4 separator, float totalHeight, float rowHeight)
+    private static GroupCard Begin(PhoneTheme theme, float totalHeight, float rowHeight)
     {
         var scale = UiScale.Current;
         var origin = ImGui.GetCursorScreenPos();
         var right = origin.X + ImGui.GetContentRegionAvail().X;
         var height = totalHeight * scale;
         var cardMax = new Vector2(right, origin.Y + height);
-        var dl = ImGui.GetWindowDrawList();
-        Squircle.Fill(dl, origin, cardMax, Metrics.Radius.Grouped * scale, ImGui.GetColorU32(cardColor));
-        Material.EdgeSquircle(dl, origin, cardMax, Metrics.Radius.Grouped * scale, scale);
-        return new GroupCard(separator, scale, rowHeight, origin.X, right, origin.Y, totalHeight);
+        var drawList = ImGui.GetWindowDrawList();
+        var radius = Metrics.Radius.Grouped * scale;
+        Squircle.Fill(drawList, origin, cardMax, radius, ImGui.GetColorU32(theme.GroupedCard));
+        Squircle.Stroke(drawList, origin, cardMax, radius,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, CardStrokeAlpha)), Metrics.Stroke.Hairline);
+        return new GroupCard(theme.Separator, scale, rowHeight, origin.X, right, origin.Y, totalHeight);
     }
 
     private static GroupCard Begin(AppSkin ui, float totalHeight, float rowHeight)

@@ -1,5 +1,4 @@
 using Aetherphone.Core;
-using Aetherphone.Core.Animation;
 using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -14,67 +13,82 @@ internal enum HoverLabelSide : byte
 
 internal static class HoverButton
 {
-    private const float GrowAmount = 0.14f;
-    private const float GhostHoverFillAlpha = 0.12f;
-    private static readonly Dictionary<string, Spring> springs = new();
+    private const float GlyphFraction = 0.9f;
+    private const float RimLightAlpha = 0.5f;
+    private const float AccentSaturation = 0.12f;
+    private const float SolidAccentAlpha = 0.5f;
+    private const float TintedAlpha = 0.20f;
+    private const float TintedHoverAlpha = 0.28f;
+    private const float ScrimLuminance = 0.25f;
+    private const float ScrimAlpha = 0.3f;
+    private const float ScrimHoverLift = 0.08f;
+    private const float ProminentHoverLift = 0.10f;
+    private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
 
-    public static bool Circle(ImDrawListPtr dl, string id, Vector2 center, float radius, FontAwesomeIcon icon,
+    public static bool Circle(ImDrawListPtr drawList, string id, Vector2 center, float radius, FontAwesomeIcon icon,
         Vector4 tint, Vector4 ink, float delta, float alpha, bool interactive, string? label = null,
         HoverLabelSide side = HoverLabelSide.Below)
     {
-        var scale = UiScale.Current;
-        var min = new Vector2(center.X - radius, center.Y - radius);
-        var max = new Vector2(center.X + radius, center.Y + radius);
-        var hovered = interactive && UiInteract.Hover(min, max);
-        var eased = Step(id, hovered, delta);
+        var extent = new Vector2(radius, radius);
+        var rect = new Rect(center - extent, center + extent);
+        var hovered = interactive && UiInteract.Hover(rect.Min, rect.Max);
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(id, pressed, PressFx.ControlPressedScale);
-        var grow = (1f + GrowAmount * eased) * press;
-        var scaledRadius = radius * grow;
+        var pose = MotionButton.Animate(rect, (int)ImGui.GetID(id), hovered, pressed);
+        var face = pose.Face;
+        var faceRadius = face.Height * 0.5f;
         var ghost = tint.W <= 0f;
-        var fill = ghost ? ink : Palette.Lighten(tint, 0.10f * eased);
-        var circleAlpha = ghost
-            ? GhostHoverFillAlpha * eased * alpha
-            : Math.Clamp(tint.W * (1f + 0.7f * eased), 0f, 1f) * alpha;
-        dl.AddCircleFilled(center, scaledRadius, ImGui.GetColorU32(Palette.WithAlpha(fill, circleAlpha)), 40);
-        if (eased > 0.001f)
+        var fill = FillFor(tint, ink, ghost, pose.Hover);
+        if (fill.W > 0.001f)
         {
-            dl.AddCircle(center, scaledRadius, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.22f * eased * alpha)), 40,
-                1.2f * scale);
+            Squircle.Fill(drawList, face.Min, face.Max, faceRadius, ImGui.GetColorU32(fill with { W = fill.W * alpha }));
         }
 
-        ProgressRing.CenterIcon(dl, center, icon, Palette.WithAlpha(ink, alpha), scaledRadius * 0.9f);
+        if (!ghost)
+        {
+            MotionButton.RimLight(drawList, face, faceRadius, pose.Hover * RimLightAlpha * alpha);
+        }
+
+        ProgressRing.CenterIcon(drawList, center, icon, Palette.WithAlpha(ink, alpha),
+            faceRadius * GlyphFraction);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        if (label is not null && eased > 0.02f)
+        if (label is not null && pose.Hover > 0.02f)
         {
-            var bounds = new Rect(new Vector2(center.X - scaledRadius, center.Y - scaledRadius),
-                new Vector2(center.X + scaledRadius, center.Y + scaledRadius));
-            HoverTooltip.Enqueue(bounds, label, eased * alpha, side);
+            HoverTooltip.Enqueue(face, label, pose.Hover * alpha, side);
         }
 
-        return UiInteract.Click(min, max, hovered);
+        return UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
-    public static void CircleStatic(ImDrawListPtr dl, Vector2 center, float radius, FontAwesomeIcon icon, Vector4 tint,
-        Vector4 ink, float alpha)
+    private static Vector4 FillFor(Vector4 tint, Vector4 ink, bool ghost, float hover)
     {
-        dl.AddCircleFilled(center, radius, ImGui.GetColorU32(Palette.WithAlpha(tint, tint.W * alpha)), 40);
-        ProgressRing.CenterIcon(dl, center, icon, Palette.WithAlpha(ink, alpha), radius * 0.9f);
-    }
-
-    private static float Step(string id, bool hovered, float delta)
-    {
-        if (!springs.TryGetValue(id, out var spring))
+        if (ghost)
         {
-            spring = default;
+            var wash = Surfaces.Fill(ink with { W = 1f }, FillLevel.Tertiary);
+            return wash with { W = wash.W * hover };
         }
 
-        spring.Step(hovered ? 1f : 0f, Motion.HoverLift, delta);
-        springs[id] = spring;
-        return Math.Clamp(spring.Value, 0f, 1f);
+        var saturation = MathF.Max(tint.X, MathF.Max(tint.Y, tint.Z)) - MathF.Min(tint.X, MathF.Min(tint.Y, tint.Z));
+        if (saturation > AccentSaturation)
+        {
+            if (tint.W >= SolidAccentAlpha)
+            {
+                return Palette.Mix(tint, White, ProminentHoverLift * hover) with { W = tint.W };
+            }
+
+            return tint with { W = TintedAlpha + (TintedHoverAlpha - TintedAlpha) * hover };
+        }
+
+        if (Palette.Luminance(tint) < ScrimLuminance && tint.W >= ScrimAlpha)
+        {
+            return Palette.Mix(tint, White, ScrimHoverLift * hover) with { W = tint.W };
+        }
+
+        var ladderInk = ink with { W = 1f };
+        return Vector4.Lerp(Surfaces.Fill(ladderInk, FillLevel.Secondary), Surfaces.Fill(ladderInk, FillLevel.Primary),
+            hover);
     }
 }
