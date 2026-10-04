@@ -7,8 +7,8 @@ namespace Aetherphone.Windows.Components;
 internal static class SocialChrome
 {
     public const float CellPadX = 16f;
-    public const float BackChipRadius = 17f;
-    public const float HeaderIconRadius = 18f;
+    public const float BackChipRadius = Metrics.Size.GlassButton * 0.5f;
+    public const float HeaderIconRadius = Metrics.Size.GlassButton * 0.5f;
     public const float HeaderIconPitch = 40f;
 
     private const string BackChipKey = "##socialBackChip";
@@ -113,10 +113,12 @@ internal static class SocialChrome
         HoverLabelSide side = HoverLabelSide.Below)
     {
         var scale = UiScale.Current;
-        var extent = new Vector2(radius, radius);
-        var clicked = GlassButton(drawList, ImGui.GetID(tooltip.Length > 0 ? tooltip : glyph), center, radius, radius,
-            ink, highlighted, out var grow);
-        PhoneIcon.Draw(drawList, center, glyph, highlighted ? ink.White : idleInk, iconSize * scale * grow);
+        var buttonRadius = HeaderIconRadius * scale;
+        var extent = new Vector2(buttonRadius, buttonRadius);
+        var clicked = GlassButton(drawList, ImGui.GetID(tooltip.Length > 0 ? tooltip : glyph), center, buttonRadius,
+            buttonRadius, ink, highlighted, out var grow);
+        PhoneIcon.Draw(drawList, center, glyph, highlighted ? ink.White : idleInk,
+            NavBarMetrics.GlyphSize * scale * grow);
         DrawCountBadge(drawList, center + new Vector2(10f * scale, -10f * scale), badge, ink);
         HoverTooltip.Show(new Rect(center - extent, center + extent), tooltip, side);
         return clicked;
