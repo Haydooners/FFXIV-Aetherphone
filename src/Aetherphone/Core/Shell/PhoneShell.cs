@@ -191,6 +191,9 @@ internal sealed class PhoneShell : IDisposable
         return onDevice && !onScreen;
     }
 
+    private static bool KeyHovered(Rect slot, RailSide side) =>
+        HardwareButton.HitRect(slot, side).Contains(ImGui.GetMousePos());
+
     public bool HomeEditing => home.Editing && navigation.Current is null;
 
     public bool LandscapeActive => minimize.Phase == MinimizePhase.None && !navigation.IsTransitioning &&
@@ -328,7 +331,11 @@ internal sealed class PhoneShell : IDisposable
                     break;
             }
 
-            if (BezelDoubleClicked(device, chassis))
+            var keyHovered = KeyHovered(sideButtonRect, sideButtonSide) ||
+                             KeyHovered(actionButtonRect, actionButtonSide) ||
+                             KeyHovered(lockButtonRect, lockButtonSide) ||
+                             KeyHovered(cameraControlRect, cameraControlSide);
+            if (!keyHovered && BezelDoubleClicked(device, chassis))
             {
                 minimize.BeginCollapse();
             }
