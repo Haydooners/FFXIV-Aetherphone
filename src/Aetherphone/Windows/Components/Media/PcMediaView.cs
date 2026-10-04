@@ -87,7 +87,7 @@ internal static class PcMediaView
         return count + 1;
     }
 
-    private static string MissingSource(string appId)
+    public static string MissingSource(string appId)
     {
         var language = Loc.Current.Code;
         if (ReferenceEquals(appId, missingAppId) && string.Equals(language, missingLanguage, StringComparison.Ordinal))

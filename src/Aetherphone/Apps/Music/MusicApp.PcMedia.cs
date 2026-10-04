@@ -55,6 +55,7 @@ internal sealed partial class MusicApp
         ref readonly var snapshot = ref pcMedia.Current;
         if (!snapshot.HasSession)
         {
+            DrawPcPinnedIdleCard(scale);
             return;
         }
 
@@ -75,6 +76,43 @@ internal sealed partial class MusicApp
         {
             DrawPcCardBody(ImGui.GetWindowDrawList(), snapshot, min, max, scale, captionHeight, artSide, hasProgress,
                 playRadius);
+        }
+
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height + MusicUi.SectionGap * scale));
+    }
+
+    private void DrawPcPinnedIdleCard(float scale)
+    {
+        var pinned = pcMedia.PinnedAppId;
+        if (pinned.Length == 0)
+        {
+            return;
+        }
+
+        var width = ScrollLayout.StableContentWidth();
+        var origin = ImGui.GetCursorScreenPos();
+        var padding = PcCardPadding * scale;
+        var captionHeight = Typography.LineHeight(TextStyles.Footnote);
+        var height = padding * 2f + captionHeight;
+        var inset = MusicUi.Inset * scale;
+        var min = new Vector2(origin.X + inset, origin.Y);
+        var max = new Vector2(origin.X + width - inset, origin.Y + height);
+        if (ImGui.IsRectVisible(min, max))
+        {
+            var drawList = ImGui.GetWindowDrawList();
+            Material.ThemedGlass(drawList, min, max, PcCardRadius * scale, scale, ui.BackdropColor);
+            var left = min.X + padding;
+            var top = min.Y + padding;
+            var sourceLeft = DrawPcSourceButton(drawList, max.X - padding, top, captionHeight, ui.TitleInk, 1f, true,
+                out _);
+            var glyphCenter = new Vector2(left + captionHeight * 0.5f, top + captionHeight * 0.5f);
+            ProgressRing.CenterIcon(drawList, glyphCenter, PcMediaGlyph.For(MediaAppNames.FromAppUserModelId(pinned)),
+                ui.MutedInk, captionHeight * 0.8f);
+            var textLeft = left + captionHeight + Metrics.Space.Xs * scale;
+            var text = Typography.FitText(PcMediaView.MissingSource(pinned),
+                MathF.Max(1f, sourceLeft - PcTextGap * scale - textLeft), TextStyles.Footnote);
+            Typography.Draw(drawList, new Vector2(textLeft, top), text, ui.MutedInk, TextStyles.Footnote);
         }
 
         ImGui.SetCursorScreenPos(origin);
