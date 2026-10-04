@@ -119,6 +119,7 @@ internal sealed class WatchAlongSession : IDisposable
 
     private bool awaitingHostAck;
     private bool partyOpen;
+    private string? accountToken;
 
     internal WatchAlongSession(AethernetSession session, Configuration configuration, ConfirmService confirm,
         VideoPlayer video, AetherStreamQueue queue, StreamSignalRouter stream, ScreenController screen)
@@ -130,6 +131,8 @@ internal sealed class WatchAlongSession : IDisposable
         this.queue = queue;
         this.stream = stream;
         this.screen = screen;
+        accountToken = session.Token;
+        session.Changed += OnSessionChanged;
         queue.Changed += RequestPublish;
         stream.Joined += OnJoined;
         stream.Declined += OnDeclined;
@@ -304,6 +307,28 @@ internal sealed class WatchAlongSession : IDisposable
         }
 
         stream.Leave(Mode == WatchAlongMode.Viewing || IsJoining ? roomHostId : session.CurrentUser?.Id);
+        LeaveLocally();
+    }
+
+    private void OnSessionChanged()
+    {
+        var token = session.Token;
+        if (string.Equals(token, accountToken, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        accountToken = token;
+        if (Mode == WatchAlongMode.None && !awaitingHostAck && !IsJoining && !partyOpen)
+        {
+            return;
+        }
+
+        LeaveLocally();
+    }
+
+    private void LeaveLocally()
+    {
         if (Mode == WatchAlongMode.Viewing)
         {
             sync.Reset();
@@ -1817,6 +1842,7 @@ internal sealed class WatchAlongSession : IDisposable
 
     public void Dispose()
     {
+        session.Changed -= OnSessionChanged;
         queue.Changed -= RequestPublish;
         stream.Joined -= OnJoined;
         stream.Declined -= OnDeclined;
