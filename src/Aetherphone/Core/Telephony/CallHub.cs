@@ -34,7 +34,7 @@ internal sealed class CallHub : IDisposable
     private Guid callId;
     private ParticipantInfo[] roster = Array.Empty<ParticipantInfo>();
     private ParticipantInfo? incomingFrom;
-    private string? realtimeAccountId;
+    private string? realtimeToken;
     private CallContact? dialingTo;
     private float stateTimer;
     private long connectionLostTicks;
@@ -779,19 +779,19 @@ internal sealed class CallHub : IDisposable
         if (!session.IsSignedIn)
         {
             EndCall(CallEndReason.None);
-            realtimeAccountId = null;
+            realtimeToken = null;
             router.Stop();
             return;
         }
 
-        var accountId = session.CurrentUser?.Id;
-        if (realtimeAccountId is not null && !string.Equals(accountId, realtimeAccountId, StringComparison.Ordinal))
+        var token = session.Token;
+        if (realtimeToken is not null && !string.Equals(token, realtimeToken, StringComparison.Ordinal))
         {
             EndCall(CallEndReason.None);
             router.Stop();
         }
 
-        realtimeAccountId = accountId;
+        realtimeToken = token;
         router.Start();
         if (!configuration.CallsEnabled)
         {
