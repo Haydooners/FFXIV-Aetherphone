@@ -7062,6 +7062,7 @@
   "changelog.r1041.14": "Correction des fichiers locaux qui ne se lisaient pas quand leur chemin était collé entre guillemets",
   "changelog.r1101.0": "Correction de la chanson en cours qui n'apparaissait pas dans votre Titre de la plaque si « Partager ce que j'écoute » était désactivé",
   "changelog.r1101.1": "Correction de l'icône de la barre d'informations du serveur qui restait à l'écran après que le jeu avait masqué la barre, l'entrée affiche désormais l'icône Aethernet au lieu d'un téléphone",
+  "changelog.r1101.2": "Correction des boutons en haut des fenêtres détachées de Linkpearl et ChocoChat qui se chevauchaient",
   "changelog.r1100.0": "L'entrée de la barre d'informations du serveur est désormais une icône de téléphone avec votre nombre de notifications non lues, à la place du nom Aetherphone",
   "changelog.r1100.1": "Survoler l'entrée de la barre d'informations du serveur affiche désormais le nombre de notifications en attente et l'effet d'un clic",
   "changelog.r1100.2": "Correction de MogCast qui faisait tomber le jeu à une image par seconde chez certains joueurs pendant qu'il attendait un lien",
