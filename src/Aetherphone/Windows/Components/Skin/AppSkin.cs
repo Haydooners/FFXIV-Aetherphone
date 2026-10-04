@@ -118,7 +118,7 @@ internal sealed class AppSkin
         var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
         var face = Button.Surface(drawList, rect, ink,
             filled ? ButtonStyle.Prominent : ButtonStyle.Gray, ButtonRole.Normal, enabled, hovered,
-            ImGui.GetID(label + subLabel));
+            ImGui.GetID(label));
         var labelInk = face.LabelInk;
         var area = face.Face;
         var maxLabelWidth = MathF.Max(1f, area.Width - area.Height * StackedPillInsetFraction);
