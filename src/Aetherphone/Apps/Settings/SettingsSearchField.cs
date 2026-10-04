@@ -15,7 +15,7 @@ internal static class SettingsSearchField
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Search(drawList, field, imguiId, hint, ref query, theme, scale, QueryMaxLength, false);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, field.Height));

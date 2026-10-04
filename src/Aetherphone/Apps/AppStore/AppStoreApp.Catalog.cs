@@ -192,7 +192,7 @@ internal sealed partial class AppStoreApp
             var origin = ImGui.GetCursorScreenPos();
             var width = ScrollLayout.StableContentWidth();
             var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-            Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+            SearchBar.Surface(drawList, field, ControlInk.From(theme));
             GlassField.Search(drawList, field, "##appstoreSearch", Loc.T(L.Store.SearchHint), ref search, theme, scale,
                 SearchMaxLength, false);
             index.Search(search);

@@ -79,7 +79,7 @@ internal sealed partial class InventoryApp
         var width = ScrollLayout.StableContentWidth();
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
         UiAnchors.Report("inventory.search", field);
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, frameTheme);
+        SearchBar.Surface(drawList, field, ControlInk.From(frameTheme));
         GlassField.Search(drawList, field, "##inventorySearch", Loc.T(L.Inventory.Search), ref query, frameTheme,
             scale, SearchMaxLength, false);
         ImGui.SetCursorScreenPos(origin);

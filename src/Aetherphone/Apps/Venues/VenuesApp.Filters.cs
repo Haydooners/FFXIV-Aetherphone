@@ -244,7 +244,7 @@ internal sealed partial class VenuesApp
     private float DrawTagSearch(ImDrawListPtr drawList, float left, float top, float width, float scale)
     {
         var field = new Rect(new Vector2(left, top), new Vector2(left + width, top + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         var before = tagSearch;
         GlassField.Search(drawList, field, "##venueTagSearch", Loc.T(L.Venues.SearchTags), ref tagSearch, theme, scale,
             TagSearchMaxLength, false);

@@ -38,7 +38,7 @@ internal sealed partial class HousingApp
         var searchBar = new Rect(new Vector2(body.Min.X, body.Min.Y),
             new Vector2(body.Max.X, body.Min.Y + GlassField.HeightUnits * scale));
         var drawList = ImGui.GetWindowDrawList();
-        GlassField.Surface(drawList, searchBar, GlassField.Radius(searchBar), scale, 0f, 1f);
+        SearchBar.Surface(drawList, searchBar, ControlInk.From(frameTheme));
         GlassField.Search(drawList, searchBar, "##housingWorldSearch", Loc.T(L.Housing.SearchWorlds), ref worldSearch,
             frameTheme, scale, 40, false);
         var listBody = new Rect(new Vector2(body.Min.X, searchBar.Max.Y + Metrics.Space.Sm * scale), body.Max);

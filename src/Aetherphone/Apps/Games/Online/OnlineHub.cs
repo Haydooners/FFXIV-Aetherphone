@@ -259,7 +259,7 @@ internal sealed class OnlineHub
         var pillWidth = MathF.Max(JoinPillMinWidth * scale, GamesHubArt.PillWidth(label, height, TextStyles.Headline));
         var field = new Rect(new Vector2(left, top),
             new Vector2(left + width - pillWidth - JoinGap * scale, top + height));
-        GlassField.Surface(drawList, field, GlassField.Radius(field), scale, 0f, 1f);
+        SearchBar.Surface(drawList, field, ControlInk.From(ui.Theme));
         var submitted = GlassField.Text(field, "##gameRoomCode", Loc.T(L.Games.OnlineJoinHint), ref codeBuffer,
             ui.Theme, scale, CodeBufferLength, false, ImGuiInputTextFlags.EnterReturnsTrue);
         var trimmed = codeBuffer.AsSpan().Trim();

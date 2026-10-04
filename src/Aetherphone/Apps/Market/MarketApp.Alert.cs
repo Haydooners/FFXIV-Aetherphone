@@ -168,7 +168,7 @@ internal sealed partial class MarketApp
 
         var field = new Rect(new Vector2(minusCenter.X + radius + StepperGap * scale, top),
             new Vector2(plusCenter.X - radius - StepperGap * scale, top + height));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Text(field, "##marketAlertPrice", Loc.T(L.Market.GilPrice), ref alertPrice, theme, scale,
             PriceMaxLength, false, ImGuiInputTextFlags.CharsDecimal);
         return field.Max.Y;

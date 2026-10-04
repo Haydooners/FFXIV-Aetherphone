@@ -48,7 +48,7 @@ internal sealed partial class ClockApp
         var height = GlassField.HeightUnits * scale;
         var field = new Rect(origin, origin + new Vector2(width, height));
         var drawList = ImGui.GetWindowDrawList();
-        GlassField.Surface(drawList, field, GlassField.Radius(field), scale, 0f, 1f);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Search(drawList, field, "##clockCitySearch", Loc.T(L.Clock.SearchCities), ref cityQuery, theme,
             scale, CityQueryMaxLength, false);
         ClockArt.Advance(origin, width, height, CitySearchGap, scale);

@@ -286,7 +286,7 @@ internal sealed partial class HealthApp
             Loc.T(editing ? L.Health.EditGoal : L.Health.NewGoal), ink, TextStyles.Headline);
         y += (SheetTitleHeight + SheetGap) * scale;
         var field = new Rect(new Vector2(left, y), new Vector2(right, y + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Text(field, "##health.goalName", GoalTypeLabel(draftType), ref draftName, theme, scale,
             MaxNameLength, false, ImGuiInputTextFlags.None);
         y = field.Max.Y + SheetGap * scale;

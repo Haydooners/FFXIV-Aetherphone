@@ -78,7 +78,7 @@ internal sealed partial class ShortcutsApp
     private float DrawLibraryContent(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Search(drawList, field, "##shortcutsSearch", Loc.T(L.Shortcuts.SearchShortcuts), ref libraryQuery,
             theme, scale, SearchMaxLength, false);
         var top = field.Max.Y + SearchGap * scale;

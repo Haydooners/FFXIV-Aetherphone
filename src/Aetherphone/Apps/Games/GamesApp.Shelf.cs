@@ -89,7 +89,7 @@ internal sealed partial class GamesApp
             var width = ScrollLayout.StableContentWidth();
             var drawList = ImGui.GetWindowDrawList();
             var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-            GlassField.Surface(drawList, field, GlassField.Radius(field), scale, 0f, 1f);
+            SearchBar.Surface(drawList, field, ControlInk.From(theme));
             GlassField.Search(drawList, field, "##gamesSearch", Loc.T(L.Games.SearchHint), ref searchText, theme,
                 scale, SearchMaxLength, focusSearch);
             focusSearch = false;

@@ -76,7 +76,7 @@ internal sealed partial class CollectionsApp
         string hint, float scale)
     {
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Search(drawList, field, id, hint, ref query, theme, scale, SearchMaxLength, false);
         return field.Max.Y;
     }

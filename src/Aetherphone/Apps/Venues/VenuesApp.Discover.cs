@@ -232,7 +232,7 @@ internal sealed partial class VenuesApp
     private float DrawSearchField(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         var before = search;
         GlassField.Search(drawList, field, "##venueSearch", Loc.T(L.Venues.Search), ref search, theme, scale,
             SearchMaxLength, false);

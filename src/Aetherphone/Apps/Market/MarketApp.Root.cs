@@ -86,7 +86,7 @@ internal sealed partial class MarketApp
     {
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
         UiAnchors.Report("market.search", field);
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Search(drawList, field, "##marketSearch", Loc.T(L.Market.SearchItems), ref search, theme, scale,
             SearchMaxLength, false);
         return field.Max.Y;

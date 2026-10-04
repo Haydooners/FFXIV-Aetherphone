@@ -111,7 +111,7 @@ internal sealed partial class MapsApp
             new Vector2(header.Max.X - inset, top + GlassField.HeightUnits * scale));
         lastField = field;
         UiAnchors.Report("maps.search", field);
-        Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+        SearchBar.Surface(drawList, field, ControlInk.From(theme));
         GlassField.Search(drawList, field, "##mapsSearch", Loc.T(L.Maps.Search), ref search, theme, scale,
             SearchMaxLength, focusSearch);
         var active = ImGui.IsItemActive();

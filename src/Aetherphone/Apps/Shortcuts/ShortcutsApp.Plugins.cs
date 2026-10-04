@@ -75,7 +75,7 @@ internal sealed partial class ShortcutsApp
             var origin = ImGui.GetCursorScreenPos();
             var width = ScrollLayout.StableContentWidth();
             var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
-            Material.ThemedGlass(drawList, field.Min, field.Max, GlassField.Radius(field), scale, theme);
+            SearchBar.Surface(drawList, field, ControlInk.From(theme));
             GlassField.Search(drawList, field, "##shortcutsPluginSearch", Loc.T(L.Shortcuts.SearchPlugins),
                 ref pluginQuery, theme, scale, SearchMaxLength, false);
             var cursorY = DrawPluginList(drawList, new Vector2(origin.X, field.Max.Y + SearchGap * scale), width,

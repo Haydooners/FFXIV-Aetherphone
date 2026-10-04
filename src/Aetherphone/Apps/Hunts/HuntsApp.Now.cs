@@ -210,6 +210,7 @@ internal sealed partial class HuntsApp
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
         var field = new Rect(origin, origin + new Vector2(width, GlassField.HeightUnits * scale));
+        SearchBar.Surface(ImGui.GetWindowDrawList(), field, ControlInk.From(frameTheme));
         GlassField.Search(ImGui.GetWindowDrawList(), field, "##huntsSearch", Loc.T(L.Hunts.SearchHint),
             ref searchQuery, frameTheme, scale, SearchMaxLength, false);
         ImGui.SetCursorScreenPos(origin);

@@ -130,6 +130,7 @@ internal sealed partial class FishingApp
         var width = ImGui.GetContentRegionAvail().X;
         var field = new Rect(origin, origin + new Vector2(width, GlassField.HeightUnits * scale));
         UiAnchors.Report("fishing.search", field);
+        SearchBar.Surface(ImGui.GetWindowDrawList(), field, ControlInk.From(theme));
         GlassField.Search(ImGui.GetWindowDrawList(), field, "##fishingSearch", Loc.T(L.Fishing.SearchHint),
             ref search, theme, scale, SearchMaxLength, false);
         ImGui.SetCursorScreenPos(origin);
