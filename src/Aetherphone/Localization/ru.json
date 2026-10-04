@@ -8762,7 +8762,7 @@
   "nameplate.dnd": "Не беспокоить",
   "nameplate.dndHint": "Пока включён режим «Не беспокоить».",
   "nameplate.nowPlaying": "Сейчас играет",
-  "nameplate.nowPlayingHint": "Песня, которую вы слушаете. Нужна настройка «Делиться тем, что я слушаю» в разделе Музыка.",
+  "nameplate.nowPlayingHint": "Песня, которую вы слушаете.",
   "nameplate.pcMedia": "Включать музыку с вашего ПК",
   "nameplate.longTitles": "Длинные названия",
   "nameplate.takeTurns": "По очереди",

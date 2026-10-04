@@ -8762,7 +8762,7 @@
   "nameplate.dnd": "おやすみモード",
   "nameplate.dndHint": "おやすみモードがオンの間。",
   "nameplate.nowPlaying": "再生中",
-  "nameplate.nowPlayingHint": "再生中の曲を表示します。ミュージック設定の「聴いている曲を共有」が必要です。",
+  "nameplate.nowPlayingHint": "再生中の曲を表示します。",
   "nameplate.pcMedia": "PCの音楽も含める",
   "nameplate.longTitles": "長いタイトル",
   "nameplate.takeTurns": "交互に表示",

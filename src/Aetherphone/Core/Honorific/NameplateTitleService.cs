@@ -399,7 +399,7 @@ internal sealed class NameplateTitleService : IDisposable
             case NameplateStatus.DoNotDisturb when configuration.DoNotDisturb:
             case NameplateStatus.Custom:
                 return Compose(status, NameplateValues.Empty);
-            case NameplateStatus.NowPlaying when configuration.ShareListeningActivity:
+            case NameplateStatus.NowPlaying:
                 return ResolveNowPlaying();
             case NameplateStatus.Handle:
                 return ResolveIdleHandle();

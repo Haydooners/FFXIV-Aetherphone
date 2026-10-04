@@ -8762,7 +8762,7 @@
   "nameplate.dnd": "Nicht stören",
   "nameplate.dndHint": "Solange „Nicht stören“ aktiv ist.",
   "nameplate.nowPlaying": "Wird gespielt",
-  "nameplate.nowPlayingHint": "Das Lied, das du gerade spielst. Benötigt „Teilen, was ich höre“ in den Musik-Einstellungen.",
+  "nameplate.nowPlayingHint": "Das Lied, das du gerade spielst.",
   "nameplate.pcMedia": "Musik von deinem PC einbeziehen",
   "nameplate.longTitles": "Lange Titel",
   "nameplate.takeTurns": "Abwechseln",

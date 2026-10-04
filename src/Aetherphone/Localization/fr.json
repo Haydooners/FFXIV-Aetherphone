@@ -8762,7 +8762,7 @@
   "nameplate.dnd": "Ne pas déranger",
   "nameplate.dndHint": "Tant que Ne pas déranger est activé.",
   "nameplate.nowPlaying": "En cours de lecture",
-  "nameplate.nowPlayingHint": "La chanson que vous écoutez. Nécessite « Partager ce que j'écoute » dans les réglages de Musique.",
+  "nameplate.nowPlayingHint": "La chanson que vous écoutez.",
   "nameplate.pcMedia": "Inclure la musique de votre PC",
   "nameplate.longTitles": "Titres longs",
   "nameplate.takeTurns": "Alterner",
