@@ -168,7 +168,7 @@ internal sealed partial class MarketApp
         var max = new Vector2(origin.X + width, origin.Y + height);
         var radius = Metrics.Radius.Widget * scale;
         UiAnchors.Report("market.detail.hero", new Rect(origin, max));
-        ui.Card(drawList, origin, max, radius, true);
+        ui.Card(drawList, origin, max, radius);
         Material.TopGlow(drawList, origin, max, radius, ui.Accent, HeroGlowCoverage, HeroGlowStrength);
         var left = origin.X + pad;
         var right = max.X - pad;

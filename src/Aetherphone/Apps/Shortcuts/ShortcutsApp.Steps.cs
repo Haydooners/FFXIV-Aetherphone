@@ -163,7 +163,7 @@ internal sealed partial class ShortcutsApp
     private float DrawEmptySteps(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var rect = new Rect(origin, new Vector2(origin.X + width, origin.Y + EmptyStepsHeight * scale));
-        ShortcutsArt.Card(drawList, ui, rect.Min, rect.Max, scale);
+        ui.Card(drawList, rect.Min, rect.Max, Metrics.Radius.Grouped * scale);
         var hovered = ShortcutsArt.RowInteraction(drawList, ui, rect, scale);
         var pad = Metrics.Space.Lg * scale;
         var badge = ShortcutsArt.BadgeSize * scale;
@@ -207,13 +207,13 @@ internal sealed partial class ShortcutsApp
             var drop = new Vector2(0f, FloatingShadowDrop * scale);
             Squircle.Fill(drawList, rect.Min + drop, rect.Max + drop, radius,
                 ImGui.GetColorU32(new Vector4(0f, 0f, 0f, FloatingShadowAlpha)));
-            ui.Card(drawList, rect.Min, rect.Max, radius, true);
+            ui.Card(drawList, rect.Min, rect.Max, radius);
             Squircle.Fill(drawList, rect.Min, rect.Max, radius,
                 ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, FloatingLift)));
         }
         else
         {
-            ui.Card(drawList, rect.Min, rect.Max, radius, true);
+            ui.Card(drawList, rect.Min, rect.Max, radius);
         }
 
         var pad = BlockPad * scale;

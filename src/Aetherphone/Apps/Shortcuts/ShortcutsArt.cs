@@ -13,7 +13,6 @@ namespace Aetherphone.Apps.Shortcuts;
 internal static class ShortcutsArt
 {
     public const float SectionGap = 22f;
-    public const float SectionHeaderHeight = 40f;
     public const float HeaderGap = 4f;
     public const float BottomPad = 28f;
     public const float TileHeight = 104f;
@@ -82,13 +81,6 @@ internal static class ShortcutsArt
         _ => FontAwesomeIcon.Terminal,
     };
 
-    public static void Card(ImDrawListPtr drawList, AppSkin ui, Vector2 min, Vector2 max, float scale) =>
-        ui.Card(drawList, min, max, Metrics.Radius.Widget * scale, true);
-
-    public static void Hairline(ImDrawListPtr drawList, AppSkin ui, float left, float right, float y) =>
-        drawList.AddLine(new Vector2(left, y), new Vector2(right, y), ImGui.GetColorU32(ui.Hairline),
-            Metrics.Stroke.Hairline);
-
     public static bool RowInteraction(ImDrawListPtr drawList, AppSkin ui, Rect row, float scale, bool enabled = true)
     {
         var hovered = enabled && UiInteract.Hover(row.Min, row.Max);
@@ -107,17 +99,6 @@ internal static class ShortcutsArt
         return true;
     }
 
-    public static float SectionHeader(ImDrawListPtr drawList, Vector2 origin, float width, string title, Vector4 ink,
-        float scale)
-    {
-        var height = SectionHeaderHeight * scale;
-        var fitted = Typography.FitText(title, MathF.Max(1f, width), TextStyles.Title3);
-        var size = Typography.Measure(fitted, TextStyles.Title3);
-        Typography.Draw(drawList, new Vector2(origin.X, origin.Y + (height - size.Y) * 0.5f), fitted, ink,
-            TextStyles.Title3);
-        return height;
-    }
-
     public static void KindBadge(ImDrawListPtr drawList, Vector2 center, float size, ShortcutStepKind kind)
     {
         var half = new Vector2(size * 0.5f);
@@ -129,8 +110,7 @@ internal static class ShortcutsArt
 
     public static void TileBody(ImDrawListPtr drawList, Rect rect, Vector4 tint, float lift, float scale)
     {
-        var radius = Metrics.Radius.Widget * scale;
-        Elevation.IconRest(drawList, rect.Min, rect.Max, radius, scale);
+        var radius = Metrics.Radius.Grouped * scale;
         var surface = IconTile.Surface(tint);
         IconTile.FillShaded(drawList, rect.Min, rect.Max, radius,
             lift > 0f ? Palette.Lighten(surface, lift) : surface);
@@ -231,7 +211,7 @@ internal static class ShortcutsArt
         var grow = PressFx.Scale(id, pressed, PressFx.CardPressedScale);
         var half = rect.Size * 0.5f * grow;
         var drawn = new Rect(rect.Center - half, rect.Center + half);
-        Card(drawList, ui, drawn.Min, drawn.Max, scale);
+        ui.Card(drawList, drawn.Min, drawn.Max, Metrics.Radius.Grouped * scale);
         if (hovered)
         {
             Squircle.Fill(drawList, drawn.Min, drawn.Max, Metrics.Radius.Widget * scale,

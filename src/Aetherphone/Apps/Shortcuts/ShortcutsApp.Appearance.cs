@@ -68,7 +68,7 @@ internal sealed partial class ShortcutsApp
     private float DrawAppearancePreview(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var max = new Vector2(origin.X + width, origin.Y + PreviewHeight * scale);
-        ShortcutsArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         Material.TopGlow(drawList, origin, max, Metrics.Radius.Widget * scale, ShortcutTint.Resolve(draft!.Tint),
             PreviewGlowCoverage, PreviewGlowStrength);
         var tile = PreviewTile * scale;
@@ -86,15 +86,15 @@ internal sealed partial class ShortcutsApp
     private float DrawColorSection(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var top = origin.Y + ShortcutsArt.SectionGap * scale * 0.5f;
-        top += ShortcutsArt.SectionHeader(drawList, new Vector2(origin.X, top), width, Loc.T(L.Shortcuts.Color),
-            ui.TitleInk, scale) + ShortcutsArt.HeaderGap * scale;
+        top += CardSectionHeader.Draw(drawList, new Vector2(origin.X, top), width, Loc.T(L.Shortcuts.Color),
+            ui.TitleInk) + ShortcutsArt.HeaderGap * scale;
         var pad = GridPad * scale;
         var cell = (width - pad * 2f) / SwatchColumns;
         var rows = (ShortcutPalette.Wheel.Length + SwatchColumns - 1) / SwatchColumns;
         var gridHeight = rows * cell;
         var hexHeight = HexRowHeight * scale;
         var max = new Vector2(origin.X + width, top + pad + gridHeight + hexHeight + pad * 2f);
-        ShortcutsArt.Card(drawList, ui, new Vector2(origin.X, top), max, scale);
+        ui.Card(drawList, new Vector2(origin.X, top), max, Metrics.Radius.Grouped * scale);
         var selected = ShortcutTint.Resolve(draft!.Tint);
         var radius = cell * SwatchFraction;
         for (var index = 0; index < ShortcutPalette.Wheel.Length; index++)
@@ -157,8 +157,8 @@ internal sealed partial class ShortcutsApp
     private float DrawImageSection(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var top = origin.Y + ShortcutsArt.SectionGap * scale * 0.5f;
-        top += ShortcutsArt.SectionHeader(drawList, new Vector2(origin.X, top), width,
-            Loc.T(L.Shortcuts.ImageSection), ui.TitleInk, scale) + ShortcutsArt.HeaderGap * scale;
+        top += CardSectionHeader.Draw(drawList, new Vector2(origin.X, top), width,
+            Loc.T(L.Shortcuts.ImageSection), ui.TitleInk) + ShortcutsArt.HeaderGap * scale;
         var gap = ShortcutsArt.TileGap * scale;
         var tileWidth = (width - gap) * 0.5f;
         var height = SourceTileHeight * scale;
@@ -190,7 +190,7 @@ internal sealed partial class ShortcutsApp
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
         var drawn = Pressed(rect, ImGui.GetID(id), hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left));
         var radius = Metrics.Radius.Widget * scale;
-        ShortcutsArt.Card(drawList, ui, drawn.Min, drawn.Max, scale);
+        ui.Card(drawList, drawn.Min, drawn.Max, Metrics.Radius.Grouped * scale);
         if (hovered)
         {
             Squircle.Fill(drawList, drawn.Min, drawn.Max, radius, ImGui.GetColorU32(ui.HoverTint));
@@ -228,14 +228,14 @@ internal sealed partial class ShortcutsApp
     private float DrawSymbolSection(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var top = origin.Y + ShortcutsArt.SectionGap * scale * 0.5f;
-        top += ShortcutsArt.SectionHeader(drawList, new Vector2(origin.X, top), width, Loc.T(L.Shortcuts.Symbol),
-            ui.TitleInk, scale) + ShortcutsArt.HeaderGap * scale;
+        top += CardSectionHeader.Draw(drawList, new Vector2(origin.X, top), width, Loc.T(L.Shortcuts.Symbol),
+            ui.TitleInk) + ShortcutsArt.HeaderGap * scale;
         var pad = GridPad * scale;
         var cell = (width - pad * 2f) / SwatchColumns;
         var total = ShortcutPalette.Glyphs.Length + 1;
         var rows = (total + SwatchColumns - 1) / SwatchColumns;
         var max = new Vector2(origin.X + width, top + pad * 2f + rows * cell);
-        ShortcutsArt.Card(drawList, ui, new Vector2(origin.X, top), max, scale);
+        ui.Card(drawList, new Vector2(origin.X, top), max, Metrics.Radius.Grouped * scale);
         var entry = draft!;
         var usesImage = entry.IconPlugin.Length > 0 || entry.IconImage.Length > 0;
         var tint = ShortcutTint.Resolve(entry.Tint);
