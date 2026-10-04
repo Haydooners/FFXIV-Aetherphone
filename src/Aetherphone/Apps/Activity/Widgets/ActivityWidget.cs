@@ -43,6 +43,7 @@ internal sealed class ActivityWidget : IHomeWidget
     private readonly string[] weekKeys = new string[WeekDays];
     private readonly CachedText[] dayLabels = new CachedText[WeekDays];
     private readonly CachedText[] values = new CachedText[RingCount];
+    private CachedText endgameValue;
     private readonly float[] fractions = new float[RingCount];
     private WidgetRefresh weekCadence;
     private DateTime weekAnchor;
@@ -285,6 +286,14 @@ internal sealed class ActivityWidget : IHomeWidget
     {
         switch (ring)
         {
+            case 0 when !sample && ActivityGoals.ShowsEndgame(configuration, tracker.Today):
+                var endgame = tracker.Today.EndgameEarned;
+                var endgameGoal = configuration.ActivityGoalEndgame;
+                var endgameKey = unchecked(endgame * 1_000_003L + endgameGoal);
+                return endgameValue.IsCurrent(endgameKey)
+                    ? endgameValue.Value
+                    : endgameValue.Store(endgameKey, Loc.T(L.WidgetsLife.EndgameOf, NumberText.Group(endgame),
+                        NumberText.Group(endgameGoal)));
             case 0:
                 var levels = sample ? SampleLevels : tracker.Today.LevelUnitsGained;
                 var levelGoal = configuration.ActivityGoalLevels;

@@ -12,6 +12,10 @@ internal sealed class ActivityDay
 
     [JsonProperty("levels")] public int LevelsGained { get; set; }
 
+    [JsonProperty("endgame")] public long EndgameEarned { get; set; }
+
+    [JsonProperty("capped")] public bool Capped { get; set; }
+
     [JsonProperty("gil")] public long GilEarned { get; set; }
 
     [JsonProperty("duties")] public int DutiesCompleted { get; set; }
@@ -30,6 +34,8 @@ internal sealed class ActivityDay
         ExpGained = 0;
         LevelUnitsGained = 0f;
         LevelsGained = 0;
+        EndgameEarned = 0;
+        Capped = false;
         GilEarned = 0;
         DutiesCompleted = 0;
         MountsGained = 0;

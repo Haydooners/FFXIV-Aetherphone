@@ -2,6 +2,7 @@ using System.Globalization;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Runtime;
+using Aetherphone.Core.Wallet;
 using Dalamud.Game.DutyState;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -16,6 +17,7 @@ internal sealed unsafe class ActivityTracker : IDisposable
     private const int CollectionSampleEveryTicks = 30;
     private const int SaveEveryTicks = 30;
     private const int MaxCollectionGainPerSample = 8;
+    private const long MaxEndgameGainPerSample = 1000;
     private const int MaxStoredDays = 60;
 
     private readonly IClientState clientState;
@@ -25,6 +27,7 @@ internal sealed unsafe class ActivityTracker : IDisposable
     private readonly FrameworkTicker ticker;
     private readonly AppGate gate;
     private readonly ActivityDay session = new();
+    private readonly List<uint> tomestoneItemIds = new(3);
     private ActivityLedger ledger = new();
     private ActivityDay today = new();
     private ulong contentId;
@@ -38,6 +41,7 @@ internal sealed unsafe class ActivityTracker : IDisposable
     private long baselineExp;
     private long baselineNeededExp;
     private long baselineGil = -1;
+    private long baselineEndgame = -1;
     private int baselineMounts = -1;
     private int baselineMinions = -1;
 
@@ -137,7 +141,7 @@ internal sealed unsafe class ActivityTracker : IDisposable
 
         RollDayIfNeeded();
         AddPlayTime(elapsed);
-        SampleJob(playerState, player.ClassJob.RowId);
+        SampleEndgame(SampleJob(playerState, player.ClassJob.RowId));
         SampleGil();
         SampleRetainers();
         if (tickCounter % CollectionSampleEveryTicks == 0)
@@ -209,7 +213,7 @@ internal sealed unsafe class ActivityTracker : IDisposable
         dirty = true;
     }
 
-    private void SampleJob(PlayerState* playerState, uint jobId)
+    private bool SampleJob(PlayerState* playerState, uint jobId)
     {
         var expArrayIndex = gameData.JobExpArrayIndex(jobId);
         var levels = playerState->ClassJobLevels;
@@ -217,7 +221,7 @@ internal sealed unsafe class ActivityTracker : IDisposable
         if (level <= 0)
         {
             hasJobBaseline = false;
-            return;
+            return false;
         }
 
         var maxLevel = playerState->MaxLevel > 0 && level >= playerState->MaxLevel;
@@ -255,6 +259,38 @@ internal sealed unsafe class ActivityTracker : IDisposable
         baselineLevel = level;
         baselineExp = exp;
         baselineNeededExp = neededExp;
+        return maxLevel;
+    }
+
+    private void SampleEndgame(bool capped)
+    {
+        if (today.Capped != capped)
+        {
+            today.Capped = capped;
+            dirty = true;
+        }
+
+        if (!WalletReader.IsCurrencyLoaded())
+        {
+            baselineEndgame = -1;
+            return;
+        }
+
+        if (tomestoneItemIds.Count == 0)
+        {
+            gameData.CollectTomestoneItemIds(tomestoneItemIds, out _);
+        }
+
+        var total = WalletReader.EndgameCurrencyTotal(tomestoneItemIds);
+        var gained = total - baselineEndgame;
+        if (capped && baselineEndgame >= 0 && gained > 0 && gained <= MaxEndgameGainPerSample)
+        {
+            today.EndgameEarned += gained;
+            session.EndgameEarned += gained;
+            dirty = true;
+        }
+
+        baselineEndgame = total;
     }
 
     private void AddExperience(long expGained, float levelUnits, int levelsGained)
@@ -406,6 +442,7 @@ internal sealed unsafe class ActivityTracker : IDisposable
     {
         hasJobBaseline = false;
         baselineGil = -1;
+        baselineEndgame = -1;
         baselineMounts = -1;
         baselineMinions = -1;
     }

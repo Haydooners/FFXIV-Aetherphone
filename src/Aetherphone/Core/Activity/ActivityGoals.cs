@@ -1,9 +1,10 @@
 namespace Aetherphone.Core.Activity;
 
-internal readonly record struct ActivityTargets(float Levels, int Duties, long Gil)
+internal readonly record struct ActivityTargets(float Levels, int Duties, long Gil, long Endgame)
 {
     public static ActivityTargets From(Configuration configuration) =>
-        new(configuration.ActivityGoalLevels, configuration.ActivityGoalDuties, configuration.ActivityGoalGil);
+        new(configuration.ActivityGoalLevels, configuration.ActivityGoalDuties, configuration.ActivityGoalGil,
+            configuration.ActivityGoalEndgame);
 }
 
 internal static class ActivityGoals
@@ -23,8 +24,24 @@ internal static class ActivityGoals
     public static bool AllClosed(Configuration configuration, ActivityDay day) =>
         AllClosed(ActivityTargets.From(configuration), day);
 
-    public static float ProgressFraction(in ActivityTargets targets, ActivityDay day) =>
+    public static bool ShowsEndgame(Configuration configuration, ActivityDay day) =>
+        ShowsEndgame(ActivityTargets.From(configuration), day);
+
+    public static float LevelFraction(in ActivityTargets targets, ActivityDay day) =>
         targets.Levels <= 0f ? 0f : day.LevelUnitsGained / targets.Levels;
+
+    public static float EndgameFraction(in ActivityTargets targets, ActivityDay day) =>
+        targets.Endgame <= 0 ? 0f : day.EndgameEarned / (float)targets.Endgame;
+
+    public static float ProgressFraction(in ActivityTargets targets, ActivityDay day) =>
+        LevelFraction(targets, day) + EndgameFraction(targets, day);
+
+    public static bool ShowsEndgame(in ActivityTargets targets, ActivityDay day)
+    {
+        var levels = LevelFraction(targets, day);
+        var endgame = EndgameFraction(targets, day);
+        return endgame > levels || (endgame == levels && day.Capped);
+    }
 
     public static float AdventureFraction(in ActivityTargets targets, ActivityDay day) =>
         targets.Duties <= 0 ? 0f : day.DutiesCompleted / (float)targets.Duties;

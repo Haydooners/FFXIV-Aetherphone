@@ -170,7 +170,7 @@ internal sealed partial class ActivityApp
                 Typography.FitText(Loc.T(RingNames[ring]), textWidth, TextStyles.FootnoteEmphasized), ui.TitleInk,
                 TextStyles.FootnoteEmphasized);
             DrawValueWithUnit(drawList, new Vector2(textLeft, top + labelHeight), textWidth,
-                digest.RingValues[offset + ring], digest.Units[ring], tint);
+                digest.RingValues[offset + ring], digest.RingUnit(ActivityDigest.TodaySlot, ring), tint);
         }
 
         if (UiInteract.Click(rect.Min, rect.Max, hovered))

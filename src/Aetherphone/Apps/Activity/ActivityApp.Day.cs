@@ -103,7 +103,7 @@ internal sealed partial class ActivityApp
         cursorY += nameHeight;
         var index = slot * ActivityGoals.RingCount + ring;
         DrawValueWithUnit(drawList, new Vector2(left, cursorY), textWidth, digest.RingValues[index],
-            digest.Units[ring], tint);
+            digest.RingUnit(slot, ring), tint);
         cursorY += valueHeight;
         Typography.Draw(drawList, new Vector2(left, cursorY),
             Typography.FitText(digest.RingDetails[index], textWidth, TextStyles.Footnote), ui.MutedInk,

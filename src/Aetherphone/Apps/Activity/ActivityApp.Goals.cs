@@ -22,12 +22,21 @@ internal sealed partial class ActivityApp
     private const float GoalButtonGlyph = 0.9f;
     private const float GoalHeaderGap = 14f;
 
-    private readonly Spring[] goalFills = new Spring[ActivityGoals.RingCount];
-    private readonly CachedText[] goalValues = new CachedText[ActivityGoals.RingCount];
-    private readonly CachedText[] goalPercents = new CachedText[ActivityGoals.RingCount];
+    private readonly Spring[] goalFills = new Spring[ActivityGoalSteps.GoalCount];
+    private readonly CachedText[] goalValues = new CachedText[ActivityGoalSteps.GoalCount];
+    private readonly CachedText[] goalPercents = new CachedText[ActivityGoalSteps.GoalCount];
 
-    private static readonly string[] GoalMinusIds = { "character.goal.minus.0", "character.goal.minus.1", "character.goal.minus.2" };
-    private static readonly string[] GoalPlusIds = { "character.goal.plus.0", "character.goal.plus.1", "character.goal.plus.2" };
+    private static readonly int[] GoalOrder = { 0, ActivityGoalSteps.EndgameGoal, 1, 2 };
+    private static readonly string[] GoalMinusIds = { "character.goal.minus.0", "character.goal.minus.1", "character.goal.minus.2", "character.goal.minus.3" };
+    private static readonly string[] GoalPlusIds = { "character.goal.plus.0", "character.goal.plus.1", "character.goal.plus.2", "character.goal.plus.3" };
+
+    private static readonly LocString[] GoalNames =
+    {
+        L.Character.GoalLevels,
+        L.Character.RingAdventure,
+        L.Character.RingFortune,
+        L.Character.GoalEndgame,
+    };
 
     private void DrawGoals(Rect area)
     {
@@ -40,13 +49,15 @@ internal sealed partial class ActivityApp
             var origin = ImGui.GetCursorScreenPos();
             var width = ScrollLayout.StableContentWidth();
             var cursorY = origin.Y;
-            for (var ring = 0; ring < ActivityGoals.RingCount; ring++)
+            for (var orderIndex = 0; orderIndex < GoalOrder.Length; orderIndex++)
             {
-                cursorY = DrawGoalCard(drawList, new Vector2(origin.X, cursorY), width, ring, scale);
+                cursorY = DrawGoalCard(drawList, new Vector2(origin.X, cursorY), width, GoalOrder[orderIndex], scale);
                 cursorY += ActivityArt.TileGap * scale;
             }
 
             cursorY += Typography.DrawWrappedLeft(new Vector2(origin.X, cursorY), Loc.T(L.Character.GoalsHint),
+                ui.MutedInk, TextStyles.Footnote, width);
+            cursorY += Typography.DrawWrappedLeft(new Vector2(origin.X, cursorY), Loc.T(L.Character.EndgameHint),
                 ui.MutedInk, TextStyles.Footnote, width);
             ReserveTo(origin, width, cursorY + BottomBreathing * scale);
         }
@@ -55,18 +66,18 @@ internal sealed partial class ActivityApp
             NavBarStyle.From(ui), ReadOnlySpan<NavBarButton>.Empty, DisplayName, back);
     }
 
-    private float DrawGoalCard(ImDrawListPtr drawList, Vector2 origin, float width, int ring, float scale)
+    private float DrawGoalCard(ImDrawListPtr drawList, Vector2 origin, float width, int goal, float scale)
     {
         var pad = ActivityArt.CardPad * scale;
         var ringRadius = GoalRingRadius * scale;
         var height = pad * 2f + ringRadius * 2f + GoalControlTop * scale + GoalControlHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + height);
         ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
+        var ring = ActivityGoalSteps.RingOf(goal);
         var tint = ActivityArt.Tint(ring);
-        var today = tracker.Today;
-        var fraction = ActivityGoals.Fraction(targets, today, ring);
+        var fraction = GoalFraction(goal, tracker.Today);
         var ringCenter = new Vector2(origin.X + pad + ringRadius, origin.Y + pad + ringRadius);
-        var shown = goalFills[ring].Step(fraction, Motion.Sheet, ActivityArt.FrameDelta());
+        var shown = goalFills[goal].Step(fraction, Motion.Sheet, ActivityArt.FrameDelta());
         ActivityArt.Ring(drawList, ringCenter, ringRadius - GoalRingThickness * scale * 0.5f,
             GoalRingThickness * scale, shown, tint, true);
         ProgressRing.CenterIcon(drawList, ringCenter, ActivityArt.RingIcon(ring), tint, ringRadius * 0.5f);
@@ -77,33 +88,33 @@ internal sealed partial class ActivityApp
         var percentHeight = Typography.LineHeight(TextStyles.Footnote);
         var textTop = ringCenter.Y - (nameHeight + percentHeight) * 0.5f;
         Typography.Draw(drawList, new Vector2(textLeft, textTop),
-            Typography.FitText(Loc.T(RingNames[ring]), textWidth, TextStyles.Headline), tint, TextStyles.Headline);
+            Typography.FitText(Loc.T(GoalNames[goal]), textWidth, TextStyles.Headline), tint, TextStyles.Headline);
         Typography.Draw(drawList, new Vector2(textLeft, textTop + nameHeight),
-            Typography.FitText(GoalPercent(ring, fraction), textWidth, TextStyles.Footnote), ui.MutedInk,
+            Typography.FitText(GoalPercent(goal, fraction), textWidth, TextStyles.Footnote), ui.MutedInk,
             TextStyles.Footnote);
 
-        var index = ActivityGoalSteps.IndexOf(ring, targets);
-        var count = ActivityGoalSteps.Count(ring);
+        var index = ActivityGoalSteps.IndexOf(goal, targets);
+        var count = ActivityGoalSteps.Count(goal);
         var controlTop = origin.Y + pad + ringRadius * 2f + GoalControlTop * scale;
         var controlCenterY = controlTop + GoalControlHeight * scale * 0.5f;
         var buttonRadius = GoalButtonRadius * scale;
         var minusCenter = new Vector2(origin.X + pad + buttonRadius, controlCenterY);
         var plusCenter = new Vector2(max.X - pad - buttonRadius, controlCenterY);
         var delta = 0;
-        if (GoalButton(minusCenter, buttonRadius, FontAwesomeIcon.Minus, tint, index > 0, GoalMinusIds[ring]))
+        if (GoalButton(minusCenter, buttonRadius, FontAwesomeIcon.Minus, tint, index > 0, GoalMinusIds[goal]))
         {
             delta = -1;
         }
 
-        if (GoalButton(plusCenter, buttonRadius, FontAwesomeIcon.Plus, tint, index < count - 1, GoalPlusIds[ring]))
+        if (GoalButton(plusCenter, buttonRadius, FontAwesomeIcon.Plus, tint, index < count - 1, GoalPlusIds[goal]))
         {
             delta = 1;
         }
 
         var valueWidth = MathF.Max(1f, plusCenter.X - minusCenter.X - buttonRadius * 2f - pad);
-        var value = Typography.FitText(GoalValue(ring), valueWidth, TextStyles.WidgetDisplayCompact);
+        var value = Typography.FitText(GoalValue(goal), valueWidth, TextStyles.WidgetDisplayCompact);
         var valueSize = Typography.Measure(value, TextStyles.WidgetDisplayCompact);
-        var unit = Typography.FitText(digest.Units[ring], valueWidth, TextStyles.FootnoteEmphasized);
+        var unit = Typography.FitText(digest.Units[goal], valueWidth, TextStyles.FootnoteEmphasized);
         var unitSize = Typography.Measure(unit, TextStyles.FootnoteEmphasized);
         var blockTop = controlCenterY - (valueSize.Y + unitSize.Y) * 0.5f;
         var centerX = (minusCenter.X + plusCenter.X) * 0.5f;
@@ -113,7 +124,7 @@ internal sealed partial class ActivityApp
             TextStyles.FootnoteEmphasized);
         if (delta != 0)
         {
-            targets = ActivityGoalSteps.With(ring, index + delta, targets);
+            targets = ActivityGoalSteps.With(goal, index + delta, targets);
             ActivityGoalSteps.Apply(configuration, targets);
             configuration.Save();
             UiFeedback.Play(UiSound.Tap);
@@ -133,35 +144,44 @@ internal sealed partial class ActivityApp
         return clicked;
     }
 
-    private string GoalValue(int ring)
+    private float GoalFraction(int goal, ActivityDay today) => goal switch
     {
-        var key = ring switch
+        0 => ActivityGoals.LevelFraction(targets, today),
+        ActivityGoalSteps.EndgameGoal => ActivityGoals.EndgameFraction(targets, today),
+        _ => ActivityGoals.Fraction(targets, today, goal),
+    };
+
+    private string GoalValue(int goal)
+    {
+        var key = goal switch
         {
             0 => (long)MathF.Round(targets.Levels * 10f),
             1 => targets.Duties,
-            _ => targets.Gil,
+            2 => targets.Gil,
+            _ => targets.Endgame,
         };
-        if (goalValues[ring].IsCurrent(key))
+        if (goalValues[goal].IsCurrent(key))
         {
-            return goalValues[ring].Value;
+            return goalValues[goal].Value;
         }
 
-        return goalValues[ring].Store(key, ring switch
+        return goalValues[goal].Store(key, goal switch
         {
             0 => ActivityDigest.Levels(targets.Levels),
             1 => ActivityDigest.Number(targets.Duties),
-            _ => ActivityDigest.Number(targets.Gil),
+            2 => ActivityDigest.Number(targets.Gil),
+            _ => ActivityDigest.Number(targets.Endgame),
         });
     }
 
-    private string GoalPercent(int ring, float fraction)
+    private string GoalPercent(int goal, float fraction)
     {
         var percent = ActivityDigest.PercentValue(fraction);
-        if (goalPercents[ring].IsCurrent(percent))
+        if (goalPercents[goal].IsCurrent(percent))
         {
-            return goalPercents[ring].Value;
+            return goalPercents[goal].Value;
         }
 
-        return goalPercents[ring].Store(percent, Loc.T(L.Character.TodayPercent, percent));
+        return goalPercents[goal].Store(percent, Loc.T(L.Character.TodayPercent, percent));
     }
 }

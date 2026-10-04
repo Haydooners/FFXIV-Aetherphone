@@ -181,6 +181,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public float ActivityGoalLevels { get; set; } = 1f;
     public int ActivityGoalDuties { get; set; } = 3;
     public long ActivityGoalGil { get; set; } = 50000;
+    public long ActivityGoalEndgame { get; set; } = 200;
     public bool ScrollWhileIdle { get; set; } = true;
     public bool ShowLodestonePortraits { get; set; } = true;
     public int LodestoneIdIndexVersion { get; set; }

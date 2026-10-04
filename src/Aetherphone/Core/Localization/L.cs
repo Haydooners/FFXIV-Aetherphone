@@ -2403,6 +2403,8 @@ internal static class L
                 "Overhauled Activity around three daily rings for experience, duties and gil, with a week strip, streaks, weekly trends and awards for your best days"),
             new("changelog.r1042.94",
                 "Added a day view with a card and a 7 day chart for each ring, and a Goals page with large plus and minus buttons"),
+            new("changelog.r1042.159",
+                "Added a goal for max level jobs: the tomestones and scrips you earn fill the Progress ring once a job reaches the level cap, so your rings and streaks keep going at endgame"),
         };
 
         public static readonly LocString[] Release1042Notifications =
@@ -5913,6 +5915,8 @@ internal static class L
         public static readonly LocString GoalLevels = new("character.goalLevels", "Level progress");
         public static readonly LocString LevelsShort = new("character.levelsShort", "{0} Lv");
         public static readonly LocString GoalsHint = new("character.goalsHint", "Rings close when you reach these goals. Progress resets at midnight.");
+        public static readonly LocString GoalEndgame = new("character.goalEndgame", "Progress at max level");
+        public static readonly LocString EndgameHint = new("character.endgameHint", "On a job at the level cap, the tomestones and scrips you earn fill the Progress ring instead.");
         public static readonly LocString DurationHoursMinutes = new("character.durationHoursMinutes", "{0}h {1}m");
         public static readonly LocString DurationMinutes = new("character.durationMinutes", "{0}m");
         public static readonly LocString Streaks = new("character.streaks", "Streaks");
@@ -5928,9 +5932,11 @@ internal static class L
         public static readonly LocString UnitLevels = new("character.unitLevels", "Lv");
         public static readonly LocString UnitDuties = new("character.unitDuties", "duties");
         public static readonly LocString UnitGil = new("character.unitGil", "gil");
+        public static readonly LocString UnitEndgame = new("character.unitEndgame", "tomes & scrips");
         public static readonly LocString ExperienceDetail = new("character.experienceDetail", "{0} experience");
         public static readonly LocPlural LevelUps = new("character.levelUps", "{0} level gained", "{0} levels gained");
         public static readonly LocString GilDetail = new("character.gilDetail", "{0} gil");
+        public static readonly LocString EndgameDetail = new("character.endgameDetail", "{0} tomestones and scrips");
         public static readonly LocString SinceTime = new("character.sinceTime", "Since {0}");
         public static readonly LocString TodayPercent = new("character.todayPercent", "Today {0}%");
         public static readonly LocString ChangeGoals = new("character.changeGoals", "Change goals");
@@ -10851,6 +10857,7 @@ internal static class L
         public static readonly LocString LevelsOf = new("widgetsLife.levelsOf", "{0}/{1} Lv");
         public static readonly LocString DutiesOf = new("widgetsLife.dutiesOf", "{0}/{1} duties");
         public static readonly LocString GilOf = new("widgetsLife.gilOf", "{0}/{1} gil");
+        public static readonly LocString EndgameOf = new("widgetsLife.endgameOf", "{0}/{1} tomes & scrips");
         public static readonly LocString CoinDescription = new("widgetsLife.coinDescription", "Your balance, today's earnings and a quick check-in.");
         public static readonly LocString CheckInReady = new("widgetsLife.checkInReady", "Check-in ready");
         public static readonly LocString HydrationDescription = new("widgetsLife.hydrationDescription", "Log water in one tap and keep up with today's goal.");
