@@ -17,6 +17,7 @@ internal sealed unsafe class ServerBarEntry : IDisposable
     private const string AddonName = "_DTR";
     private const FontAwesomeIcon IdleIcon = FontAwesomeIcon.Mobile;
     private const FontAwesomeIcon UnreadIcon = FontAwesomeIcon.MobileVibrate;
+    private const BitmapFontIcon TextIcon = BitmapFontIcon.Aethernet;
     private const float IconPixels = 15f;
     private const string IconSlot = "     ";
     private const ushort IconSlotWidth = 17;
@@ -27,6 +28,7 @@ internal sealed unsafe class ServerBarEntry : IDisposable
     private readonly Configuration configuration;
     private readonly NotificationService notifications;
     private int unread;
+    private bool nativeBarHidden;
 
     public ServerBarEntry(IDtrBar bar, Configuration configuration, NotificationService notifications, Action onClick)
     {
@@ -65,14 +67,21 @@ internal sealed unsafe class ServerBarEntry : IDisposable
             return;
         }
 
-        var bounds = entry.ScreenBounds;
-        if (bounds.Max == Vector2.Zero)
+        var addon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(AddonName).Address;
+        var hidden = addon == null || !addon->IsVisible || addon->RootNode == null;
+        if (hidden != nativeBarHidden)
+        {
+            nativeBarHidden = hidden;
+            entry.Text = BuildText();
+        }
+
+        if (hidden)
         {
             return;
         }
 
-        var addon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(AddonName).Address;
-        if (addon == null || !addon->IsVisible || addon->RootNode == null)
+        var bounds = entry.ScreenBounds;
+        if (bounds.Max == Vector2.Zero)
         {
             return;
         }
@@ -97,7 +106,16 @@ internal sealed unsafe class ServerBarEntry : IDisposable
 
     private SeString BuildText()
     {
-        var builder = new SeStringBuilder().AddText(string.Concat(IconSlot, AepConstants.ServerBarTag));
+        var builder = new SeStringBuilder();
+        if (nativeBarHidden)
+        {
+            builder.AddIcon(TextIcon).AddText(AepConstants.ServerBarTag);
+        }
+        else
+        {
+            builder.AddText(string.Concat(IconSlot, AepConstants.ServerBarTag));
+        }
+
         if (unread > 0)
         {
             builder.AddText(string.Concat(" ", unread.ToString(Loc.Culture)));
