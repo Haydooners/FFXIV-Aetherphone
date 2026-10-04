@@ -226,12 +226,19 @@ internal sealed class TrackVoice : ISampleProvider
             return 0;
         }
 
-        var readerHeld = Monitor.TryEnter(readerGate);
+        if (!Monitor.TryEnter(readerGate))
+        {
+            lock (gate)
+            {
+                return WriteSilence(buffer, offset, count);
+            }
+        }
+
         try
         {
             lock (gate)
             {
-                if (!readerHeld || (pendingSeekSeconds >= 0 && !faulted))
+                if (pendingSeekSeconds >= 0 && !faulted)
                 {
                     return WriteSilence(buffer, offset, count);
                 }
@@ -241,9 +248,14 @@ internal sealed class TrackVoice : ISampleProvider
                     resampler.SetRates(sourceSampleRate * (double)rate, OutputSampleRate);
                     rateDirty = false;
                 }
+            }
 
-                var outputFrames = count / OutputChannels;
-                var producedFrames = sourceEnded ? 0 : SafeResample(outputFrames);
+            var outputFrames = count / OutputChannels;
+            var framesRead = 0;
+            var producedFrames = sourceEnded ? 0 : SafeResample(outputFrames, out framesRead);
+            lock (gate)
+            {
+                sourceFramesConsumed += framesRead;
                 audible |= producedFrames > 0;
                 WriteFrames(buffer, offset, producedFrames, outputFrames);
                 if ((producedFrames == 0 && sourceEnded) || (targetGain <= 0f && gain <= 0f))
@@ -256,10 +268,7 @@ internal sealed class TrackVoice : ISampleProvider
         }
         finally
         {
-            if (readerHeld)
-            {
-                Monitor.Exit(readerGate);
-            }
+            Monitor.Exit(readerGate);
         }
     }
 
@@ -288,22 +297,23 @@ internal sealed class TrackVoice : ISampleProvider
         return count;
     }
 
-    private int SafeResample(int outputFrames)
+    private int SafeResample(int outputFrames, out int framesRead)
     {
         try
         {
-            return Resample(outputFrames);
+            return Resample(outputFrames, out framesRead);
         }
         catch (Exception exception)
         {
             AepLog.Warning(exception, "Song voice read failed");
             faulted = true;
             sourceEnded = true;
+            framesRead = 0;
             return 0;
         }
     }
 
-    private int Resample(int outputFrames)
+    private int Resample(int outputFrames, out int framesRead)
     {
         var needed = outputFrames * sourceChannels;
         if (resampled.Length < needed)
@@ -314,13 +324,12 @@ internal sealed class TrackVoice : ISampleProvider
         var framesWanted = resampler.ResamplePrepare(outputFrames, sourceChannels, out var inputBuffer,
             out var inputOffset);
         var samplesRead = source.Read(inputBuffer, inputOffset, framesWanted * sourceChannels);
-        var framesRead = samplesRead / sourceChannels;
+        framesRead = samplesRead / sourceChannels;
         if (framesRead == 0)
         {
             sourceEnded = true;
         }
 
-        sourceFramesConsumed += framesRead;
         return resampler.ResampleOut(resampled, 0, framesRead, outputFrames, sourceChannels);
     }
 
