@@ -33,7 +33,7 @@ internal sealed partial class MusterApp
     private const float RulerKnob = 9f;
     private const float RulerBlockGap = 14f;
     private const float StepperHeight = 56f;
-    private const float StepperButtonRadius = 16f;
+    private const float StepperGlyphFraction = 0.8f;
     private const float ToggleTileHeight = 78f;
     private const int RulerMajorEvery = 4;
 
@@ -176,8 +176,7 @@ internal sealed partial class MusterApp
 
     private float DrawCategoryGrid(ImDrawListPtr drawList, float left, float top, float width, float scale)
     {
-        var cursorY = MusterArt.SectionHeader(drawList, ui, new Vector2(left, top), width,
-            Loc.T(L.Muster.CategorySection), scale);
+        var cursorY = top + CardSectionHeader.Draw(drawList, new Vector2(left, top), width, Loc.T(L.Muster.CategorySection), ui.TitleInk);
         var categories = MusterCategories.All;
         var gap = CategoryTileGap * scale;
         var tileWidth = (width - gap * (CategoryColumns - 1)) / CategoryColumns;
@@ -213,7 +212,7 @@ internal sealed partial class MusterApp
         var min = rect.Center - half;
         var max = rect.Center + half;
         var tint = MusterArt.Tint(category);
-        var rest = Palette.WithAlpha(ui.TitleInk, hovered ? 0.10f : 0.06f);
+        var rest = Surfaces.Fill(ui.TitleInk, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
         var lit = Palette.WithAlpha(tint, hovered ? 0.24f : 0.18f);
         var radius = Metrics.Radius.Card * scale;
         Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(Vector4.Lerp(rest, lit, amount)));
@@ -250,7 +249,7 @@ internal sealed partial class MusterApp
         var rowHeight = MusterArt.FieldRowHeight * scale;
         var descriptionHeight = DescriptionHeight * scale;
         var max = new Vector2(left + width, top + descriptionHeight + rowHeight);
-        MusterArt.Card(drawList, ui, new Vector2(left, top), max, scale);
+        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var framePadding = ImGui.GetStyle().FramePadding;
         var counter = DescriptionCounter();
@@ -283,7 +282,7 @@ internal sealed partial class MusterApp
             new Vector2(max.X - pad - counterSize.X, top + descriptionHeight - counterSize.Y - Metrics.Space.Xs * scale),
             counter, over ? ui.Theme.Danger : ui.MutedInk, TextStyles.Caption1);
         var spotTop = top + descriptionHeight;
-        MusterArt.Hairline(drawList, ui, left + pad, max.X, spotTop);
+        FeedCell.Hairline(drawList, left + pad, max.X, spotTop, ui.Hairline);
         ImGui.SetCursorScreenPos(new Vector2(left + pad - framePadding.X,
             spotTop + rowHeight * 0.5f - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(width - pad * 2f + framePadding.X * 2f);
@@ -314,7 +313,7 @@ internal sealed partial class MusterApp
     private float DrawCreateWhere(ImDrawListPtr drawList, float left, float top, float width, float scale)
     {
         var row = new Rect(new Vector2(left, top), new Vector2(left + width, top + MusterArt.FieldRowHeight * scale));
-        MusterArt.Card(drawList, ui, row.Min, row.Max, scale);
+        ui.Card(drawList, row.Min, row.Max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var glyph = LocationGlyph * scale;
         var glyphCenter = new Vector2(left + pad + glyph * 0.5f, row.Center.Y);
@@ -378,12 +377,11 @@ internal sealed partial class MusterApp
     private float DrawCreateWhen(ImDrawListPtr drawList, float left, float top, float width, long nowUnix,
         float scale, out bool dragging)
     {
-        var cursorY = MusterArt.SectionHeader(drawList, ui, new Vector2(left, top), width,
-            Loc.T(L.Muster.WhenSection), scale);
+        var cursorY = top + CardSectionHeader.Draw(drawList, new Vector2(left, top), width, Loc.T(L.Muster.WhenSection), ui.TitleInk);
         var pad = Metrics.Space.Lg * scale;
         var blockHeight = (RulerReadoutHeight + RulerHeight) * scale;
         var max = new Vector2(left + width, cursorY + pad * 2f + blockHeight * 2f + RulerBlockGap * scale);
-        MusterArt.Card(drawList, ui, new Vector2(left, cursorY), max, scale);
+        ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Grouped * scale);
         UiAnchors.Report("muster.create.when", new Rect(new Vector2(left, cursorY), max));
         var minute = nowUnix / 60;
         var leadTop = cursorY + pad;
@@ -527,8 +525,7 @@ internal sealed partial class MusterApp
 
     private float DrawCreateWho(ImDrawListPtr drawList, float left, float top, float width, float scale)
     {
-        var cursorY = MusterArt.SectionHeader(drawList, ui, new Vector2(left, top), width,
-            Loc.T(L.Muster.WhoSection), scale);
+        var cursorY = top + CardSectionHeader.Draw(drawList, new Vector2(left, top), width, Loc.T(L.Muster.WhoSection), ui.TitleInk);
         var gap = CategoryTileGap * scale;
         var tileWidth = (width - gap) * 0.5f;
         var tileHeight = ToggleTileHeight * scale;
@@ -573,20 +570,21 @@ internal sealed partial class MusterApp
         decrementAttendees ??= () => SetMaxAttendees(createMaxAttendees - 1);
         incrementAttendees ??= () => SetMaxAttendees(createMaxAttendees + 1);
         var max = new Vector2(left + width, top + StepperHeight * scale);
-        MusterArt.Card(drawList, ui, new Vector2(left, top), max, scale);
+        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
-        var radius = StepperButtonRadius * scale;
+        var radius = RoundButton.RegularRadius * scale;
         var centerY = (top + max.Y) * 0.5f;
-        var fill = Palette.WithAlpha(ui.TitleInk, 0.08f);
-        var delta = ImGui.GetIO().DeltaTime;
-        if (HoverButton.Circle(drawList, "muster.create.fewer", new Vector2(left + pad + radius, centerY), radius,
-                FontAwesomeIcon.Minus, fill, ui.Accent, delta, 1f, createMaxAttendees > MusterDraft.MinAttendees))
+        var glyphHeight = radius * StepperGlyphFraction;
+        if (RoundButton.FontIcon(drawList, "muster.create.fewer", new Vector2(left + pad + radius, centerY), radius,
+                FontAwesomeIcon.Minus, glyphHeight, ui.Ink, ButtonStyle.Tinted,
+                enabled: createMaxAttendees > MusterDraft.MinAttendees))
         {
             decrementAttendees();
         }
 
-        if (HoverButton.Circle(drawList, "muster.create.more", new Vector2(max.X - pad - radius, centerY), radius,
-                FontAwesomeIcon.Plus, fill, ui.Accent, delta, 1f, createMaxAttendees < MusterDraft.MaxAttendees))
+        if (RoundButton.FontIcon(drawList, "muster.create.more", new Vector2(max.X - pad - radius, centerY), radius,
+                FontAwesomeIcon.Plus, glyphHeight, ui.Ink, ButtonStyle.Tinted,
+                enabled: createMaxAttendees < MusterDraft.MaxAttendees))
         {
             incrementAttendees();
         }
@@ -631,7 +629,7 @@ internal sealed partial class MusterApp
             ui.PaintAccentPill(rect, string.Empty, false, false, TextStyles.Headline);
             LoadingPulse.Spinner(rect.Center, 9f * scale, AccentRing.Ink);
         }
-        else if (MusterArt.Pill(ui, rect, Loc.T(L.Muster.CallIt), issue == MusterDraftIssue.None))
+        else if (MusterArt.Action(ui, rect, Loc.T(L.Muster.CallIt), issue == MusterDraftIssue.None))
         {
             SubmitCreate();
         }

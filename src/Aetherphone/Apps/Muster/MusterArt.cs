@@ -39,8 +39,7 @@ internal static class MusterArt
     public const float CardGap = 12f;
     public const float SectionGap = 22f;
     public const float BottomPad = 28f;
-    public const float SectionHeaderHeight = 40f;
-    public const float PillHeight = 50f;
+    public const float PillHeight = Button.LargeHeight;
     public const float RowHeight = 64f;
     public const float FieldRowHeight = 50f;
     public const float LineGap = 2f;
@@ -83,7 +82,6 @@ internal static class MusterArt
     private const float WashInset = 4f;
     private const float WashRadius = 16f;
     private const float PressedWash = 1.6f;
-    private const float TileRestAlpha = 0.07f;
     private const float TileActiveAlpha = 0.16f;
     private const float TileGlyph = 17f;
     private const float TilePad = 12f;
@@ -145,28 +143,10 @@ internal static class MusterArt
             _ => FontAwesomeIcon.Walking,
         };
 
-    public static void Card(ImDrawListPtr drawList, AppSkin ui, Vector2 min, Vector2 max, float scale) =>
-        ui.Card(drawList, min, max, Metrics.Radius.Widget * scale, true);
-
-    public static void Hairline(ImDrawListPtr drawList, AppSkin ui, float left, float right, float y) =>
-        drawList.AddLine(new Vector2(left, y), new Vector2(right, y), ImGui.GetColorU32(ui.Hairline),
-            Metrics.Stroke.Hairline);
-
     public static void Reserve(Vector2 origin, float width, float bottom)
     {
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, MathF.Max(0f, bottom - origin.Y - ImGui.GetStyle().ItemSpacing.Y)));
-    }
-
-    public static float SectionHeader(ImDrawListPtr drawList, AppSkin ui, Vector2 origin, float width, string title,
-        float scale)
-    {
-        var height = SectionHeaderHeight * scale;
-        var fitted = Typography.FitText(title, MathF.Max(1f, width), TextStyles.Title3);
-        var size = Typography.Measure(fitted, TextStyles.Title3);
-        Typography.Draw(drawList, new Vector2(origin.X, origin.Y + (height - size.Y) * 0.5f), fitted, ui.TitleInk,
-            TextStyles.Title3);
-        return origin.Y + height;
     }
 
     public static bool RowWash(ImDrawListPtr drawList, AppSkin ui, Rect row, float scale, bool enabled = true)
@@ -227,8 +207,7 @@ internal static class MusterArt
         var half = rect.Size * 0.5f * press * (1f + Motion.HoverLiftCard * lift);
         var cardMin = rect.Center - half;
         var cardMax = rect.Center + half;
-        var radius = Metrics.Radius.Widget * scale;
-        Elevation.Card(drawList, cardMin, cardMax, radius, scale, 0.75f + 0.25f * lift);
+        var radius = Metrics.Radius.Grouped * scale;
         var surface = Surface(poster.Category);
         Squircle.FillVerticalGradient(drawList, cardMin, cardMax, radius,
             ImGui.GetColorU32(Palette.Lighten(surface, SurfaceLighten) with { W = 1f }),
@@ -485,14 +464,14 @@ internal static class MusterArt
         var actionWidth = MathF.Min(StateActionWidth * scale, width);
         var actionTop = top + StateActionGap * scale;
         var rect = new Rect(new Vector2(centerX - actionWidth * 0.5f, actionTop),
-            new Vector2(centerX + actionWidth * 0.5f, actionTop + Metrics.Size.Pill * scale));
+            new Vector2(centerX + actionWidth * 0.5f, actionTop + Button.LargeHeight * scale));
         bottom = rect.Max.Y;
-        return Pill(ui, rect, label, true);
+        return Action(ui, rect, label, true);
     }
 
-    public static bool Pill(AppSkin ui, Rect rect, string label, bool enabled)
+    public static bool Action(AppSkin ui, Rect rect, string label, bool enabled)
     {
-        if (!ui.AccentPill(rect, label, enabled, TextStyles.Headline))
+        if (!Button.Draw(rect, label, ui.Ink, enabled: enabled))
         {
             return false;
         }
@@ -511,7 +490,7 @@ internal static class MusterArt
         var half = rect.Size * 0.5f * press;
         var min = rect.Center - half;
         var max = rect.Center + half;
-        var rest = Palette.WithAlpha(ui.TitleInk, TileRestAlpha * (hovered ? 1.6f : 1f));
+        var rest = Surfaces.Fill(ui.TitleInk, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
         var lit = Palette.WithAlpha(tint, TileActiveAlpha * (hovered ? 1.3f : 1f));
         Squircle.Fill(drawList, min, max, Metrics.Radius.Card * scale,
             ImGui.GetColorU32(Vector4.Lerp(rest, lit, amount)));
@@ -559,7 +538,7 @@ internal static class MusterArt
         var min = rect.Center - half;
         var max = rect.Center + half;
         var radius = Metrics.Radius.Card * scale;
-        var rest = Palette.WithAlpha(ui.TitleInk, TileRestAlpha * (hovered ? 1.6f : 1f));
+        var rest = Surfaces.Fill(ui.TitleInk, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
         var active = Palette.WithAlpha(ui.Accent, TileActiveAlpha * (hovered ? 1.3f : 1f));
         Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(Vector4.Lerp(rest, active, fill)));
         var pad = TilePad * scale;
