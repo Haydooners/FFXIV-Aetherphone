@@ -79,7 +79,7 @@ internal sealed partial class HousingApp
         filterSegmentLabels[1] = Loc.T(L.Housing.ShowAllPlots);
         var picked = SegmentStrip.Draw("housing.filters.scope", segment, filterSegmentLabels,
             filters.ShowAllPlots ? 1 : 0, Surfaces.Fill(ui.Ink, FillLevel.Tertiary), ui.Accent, ui.MutedInk,
-            AccentRing.Ink, FilterSegmentHeight);
+            AccentRing.Ink, FilterSegmentHeight, overlay: true);
         if (frame.Interactive && picked == 1 != filters.ShowAllPlots)
         {
             filters.ShowAllPlots = picked == 1;

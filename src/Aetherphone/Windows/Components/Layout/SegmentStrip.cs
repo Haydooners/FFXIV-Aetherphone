@@ -25,12 +25,13 @@ internal static class SegmentStrip
             palette.MutedInk, White, out _, trackHeight, textScale);
 
     public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, Vector4 track,
-        Vector4 accent, Vector4 mutedInk, Vector4 activeInk, float trackHeight = TrackHeight, float textScale = 0.82f) =>
-        Draw(id, row, options, selected, track, accent, mutedInk, activeInk, out _, trackHeight, textScale);
+        Vector4 accent, Vector4 mutedInk, Vector4 activeInk, float trackHeight = TrackHeight, float textScale = 0.82f,
+        bool overlay = false) =>
+        Draw(id, row, options, selected, track, accent, mutedInk, activeInk, out _, trackHeight, textScale, overlay);
 
     public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, Vector4 track,
         Vector4 accent, Vector4 mutedInk, Vector4 activeInk, out bool pressed, float trackHeight = TrackHeight,
-        float textScale = 0.82f)
+        float textScale = 0.82f, bool overlay = false)
     {
         pressed = false;
         if (options.Count == 0)
@@ -51,7 +52,9 @@ internal static class SegmentStrip
         {
             var segmentMin = new Vector2(trackMin.X + index * segmentWidth, trackMin.Y);
             var segmentMax = new Vector2(trackMin.X + (index + 1) * segmentWidth, trackMax.Y);
-            var segmentHovered = UiInteract.Hover(segmentMin, segmentMax);
+            var segmentHovered = overlay
+                ? UiInteract.HoverWindowOnly(segmentMin, segmentMax)
+                : UiInteract.Hover(segmentMin, segmentMax);
             if (segmentHovered)
             {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
