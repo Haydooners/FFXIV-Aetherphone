@@ -47,6 +47,7 @@ internal static class CoinRuleLabels
         ["comment.survived"] = L.Coin.RuleCommentHint,
         ["post.survived"] = L.Coin.RulePostHint,
         ["comment.daily"] = L.Coin.RuleCommentsDailyHint,
+        [Casino.CasinoLedgerRules.Daily] = L.Coin.RuleCasinoDailyHint,
     }.ToFrozenDictionary(StringComparer.Ordinal);
 
     public static LocString For(string ruleId)
