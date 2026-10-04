@@ -2530,6 +2530,10 @@ internal static class L
                 "Overhauled Aether Coin with Wallet, Shop, Items and History tabs, a Today card with your daily cap and a 7 day chart, and every way to earn in one list"),
             new("changelog.r1042.133",
                 "Added product pages to the coin shop that preview the item on your own portrait or name, and Saving for, which keeps a goal and shows how many coins are left"),
+            new("changelog.r1042.155",
+                "Added daily quests to Aether Coin: three new quests every day across games, friends and the rest of the phone, each paying coins when you tap Claim"),
+            new("changelog.r1042.156",
+                "Listening to community radio now counts toward the daily radio quest"),
             new("changelog.r1042.147",
                 "The welcome bonus now arrives with the first coins you earn anywhere, not only from the check-in button"),
             new("changelog.r1042.148",
@@ -8604,6 +8608,26 @@ internal static class L
         public static readonly LocString BuyFor = new("coin.buyFor", "Buy for {0}");
         public static readonly LocString TourTodayTitle = new("coin.tourTodayTitle", "Today at a glance");
         public static readonly LocString TourTodayBody = new("coin.tourTodayBody", "The ring fills as you earn toward today's limit, and the bars show what you earned on each of the last seven days. Every way to earn is listed further down.");
+        public static readonly LocString QuestsTitle = new("coin.questsTitle", "Today's quests");
+        public static readonly LocString QuestClaim = new("coin.questClaim", "Claim");
+        public static readonly LocString QuestClaimed = new("coin.questClaimed", "Claimed");
+        public static readonly LocString QuestsReset = new("coin.questsReset", "New quests at {0}");
+        public static readonly LocString QuestProgress = new("coin.questProgress", "{0} / {1}");
+        public static readonly LocString QuestMinutes = new("coin.questMinutes", "{0} / {1} min");
+        public static readonly LocString QuestPlayFeatured = new("coin.questPlayFeatured", "Play today's featured game");
+        public static readonly LocString QuestPlayThree = new("coin.questPlayThree", "Play {0} games");
+        public static readonly LocString QuestPlayLong = new("coin.questPlayLong", "Stay in one game for 15 minutes");
+        public static readonly LocString QuestPlayMatch = new("coin.questPlayMatch", "Finish a match with a friend");
+        public static readonly LocString QuestSocialChat = new("coin.questSocialChat", "Message {0} friends");
+        public static readonly LocString QuestSocialComment = new("coin.questSocialComment", "Comment on posts from {0} people");
+        public static readonly LocString QuestSocialPost = new("coin.questSocialPost", "Share a post");
+        public static readonly LocString QuestSocialStory = new("coin.questSocialStory", "Post a story");
+        public static readonly LocString QuestSocialCall = new("coin.questSocialCall", "Call a friend");
+        public static readonly LocString QuestExploreRadio = new("coin.questExploreRadio", "Listen to community radio for {0} minutes");
+        public static readonly LocString QuestExplorePoll = new("coin.questExplorePoll", "Vote in a poll");
+        public static readonly LocString QuestExploreMuster = new("coin.questExploreMuster", "Say you're going to a meetup");
+        public static readonly LocString RuleQuest = new("coin.ruleQuest", "Daily quest");
+        public static readonly LocString RuleQuestHint = new("coin.ruleQuestHint", "Finish one of today's three quests and tap Claim, up to three a day");
     }
 
     internal static class Casino

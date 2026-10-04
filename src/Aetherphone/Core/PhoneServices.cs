@@ -113,6 +113,10 @@ internal sealed class PhoneServices : IDisposable
 
     public required Coins.CoinGameSessionTracker CoinSessions { get; init; }
 
+    public required Coins.CoinQuestStore CoinQuests { get; init; }
+
+    public required Coins.CoinRadioListenTracker CoinRadio { get; init; }
+
     public required Coins.CoinEarnNotifier CoinEarnNotifier { get; init; }
 
     public required Casino.CasinoStore Casino { get; init; }
@@ -303,6 +307,7 @@ internal sealed class PhoneServices : IDisposable
         var coins = new Coins.CoinStore(aethernetSession, coinApi.Coins);
         var coinCatalog = new Coins.CoinCatalogStore(aethernetSession, coinApi.Coins);
         var coinSessions = new Coins.CoinGameSessionTracker(configuration, aethernetSession, coinApi.Coins);
+        var coinQuests = new Coins.CoinQuestStore(aethernetSession, coinApi.Coins, coins);
         var coinEarnNotifier = new Coins.CoinEarnNotifier(coins, notifications);
         var casinoApi = new AethernetApi(http, aethernetSession, "casino");
         var casino = new Casino.CasinoStore(configuration, aethernetSession, casinoApi.Casino, coins);
@@ -335,6 +340,7 @@ internal sealed class PhoneServices : IDisposable
             musicLibrary, action => _ = framework.RunOnFrameworkThread(action));
         songPlayer.OfflineSource = musicDownloads.TryRead;
         var playback = new PlaybackHub(radioPlayer, songPlayer, musicLibrary, songResolver, configuration, framework);
+        var coinRadio = new Coins.CoinRadioListenTracker(aethernetSession, coinApi.Coins, radioPlayer, framework);
         var lyricsDisk = new DiskCache(new DirectoryInfo(Path.Combine(cacheRoot.FullName, "lyrics")),
             16L * 1024 * 1024);
         var lyrics = new LyricsService(new LrcLibClient(http), lyricsDisk);
@@ -495,6 +501,8 @@ internal sealed class PhoneServices : IDisposable
             Coins = coins,
             CoinCatalog = coinCatalog,
             CoinSessions = coinSessions,
+            CoinQuests = coinQuests,
+            CoinRadio = coinRadio,
             CoinEarnNotifier = coinEarnNotifier,
             Casino = casino,
             CasinoPlay = casinoPlay,
@@ -677,6 +685,8 @@ internal sealed class PhoneServices : IDisposable
         CasinoPlay.Dispose();
         Casino.Dispose();
         CoinEarnNotifier.Dispose();
+        CoinRadio.Dispose();
+        CoinQuests.Dispose();
         CoinSessions.Dispose();
         CoinCatalog.Dispose();
         Coins.Dispose();
