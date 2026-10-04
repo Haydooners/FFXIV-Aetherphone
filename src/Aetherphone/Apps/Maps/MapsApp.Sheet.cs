@@ -400,7 +400,6 @@ internal sealed partial class MapsApp
         var max = card.Center + half;
         var radius = Metrics.Radius.Lg * scale * grow;
         var tint = MapGlyphs.ExpansionTint(expansion.Order, accent);
-        Elevation.Card(drawList, min, max, radius, scale);
         IconTile.FillShaded(drawList, min, max, radius, hovered ? Palette.Lighten(tint, 0.06f) : tint);
         var padding = ExpansionCardPadding * scale;
         var textWidth = MathF.Max(1f, max.X - min.X - padding * 2f);
