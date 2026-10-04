@@ -345,15 +345,15 @@ internal sealed partial class CalendarApp
         var nextCenter = new Vector2(right - radius, headerCenterY);
         var previousCenter = new Vector2(nextCenter.X - radius * 2f - Metrics.Space.Sm * scale, headerCenterY);
         var interactive = alpha > 0.9f;
-        if (CalendarArt.RoundIcon(drawList, ui, "calendar.picker.previous", previousCenter, radius,
-                FontAwesomeIcon.ChevronLeft, Loc.T(L.Calendar.PreviousMonth), interactive))
+        if (interactive && CalendarArt.RoundIcon(drawList, ui, "calendar.picker.previous", previousCenter, radius,
+                FontAwesomeIcon.ChevronLeft, Loc.T(L.Calendar.PreviousMonth), true))
         {
             UiFeedback.Play(UiSound.Tap);
             pickerMonth = pickerMonth.AddMonths(-1);
         }
 
-        if (CalendarArt.RoundIcon(drawList, ui, "calendar.picker.next", nextCenter, radius,
-                FontAwesomeIcon.ChevronRight, Loc.T(L.Calendar.NextMonth), interactive))
+        if (interactive && CalendarArt.RoundIcon(drawList, ui, "calendar.picker.next", nextCenter, radius,
+                FontAwesomeIcon.ChevronRight, Loc.T(L.Calendar.NextMonth), true))
         {
             UiFeedback.Play(UiSound.Tap);
             pickerMonth = pickerMonth.AddMonths(1);
@@ -400,16 +400,16 @@ internal sealed partial class CalendarApp
         var minusCenter = new Vector2(panel.Min.X + pad + radius, centerY);
         var plusCenter = new Vector2(panel.Max.X - pad - radius, centerY);
         var interactive = alpha > 0.9f;
-        if (CalendarArt.RoundIcon(drawList, ui, "calendar.duration.minus", minusCenter, radius,
-                FontAwesomeIcon.Minus, Loc.T(L.Calendar.Shorter), interactive && editDuration > 0,
+        if (interactive && CalendarArt.RoundIcon(drawList, ui, "calendar.duration.minus", minusCenter, radius,
+                FontAwesomeIcon.Minus, Loc.T(L.Calendar.Shorter), editDuration > 0,
                 HoverLabelSide.Above))
         {
             UiFeedback.Play(UiSound.Tap);
             editDuration = Math.Max(0, editDuration - DurationStep);
         }
 
-        if (CalendarArt.RoundIcon(drawList, ui, "calendar.duration.plus", plusCenter, radius,
-                FontAwesomeIcon.Plus, Loc.T(L.Calendar.Longer), interactive && editDuration < MinutesPerDay,
+        if (interactive && CalendarArt.RoundIcon(drawList, ui, "calendar.duration.plus", plusCenter, radius,
+                FontAwesomeIcon.Plus, Loc.T(L.Calendar.Longer), editDuration < MinutesPerDay,
                 HoverLabelSide.Above))
         {
             UiFeedback.Play(UiSound.Tap);
