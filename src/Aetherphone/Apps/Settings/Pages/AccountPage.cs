@@ -489,10 +489,7 @@ internal sealed class AccountPage : ISettingsPage, IDisposable
         var hovered = UiInteract.Hover(row.Min, row.Max);
         if (hovered && !active)
         {
-            var pressed = ImGui.IsMouseDown(ImGuiMouseButton.Left);
-            Squircle.Fill(drawList, new Vector2(row.Min.X - 10f * scale, row.Min.Y + 3f * scale),
-                new Vector2(row.Max.X + 10f * scale, row.Max.Y - 3f * scale), 8f * scale,
-                ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, pressed ? 0.10f : 0.05f)));
+            SettingsRow.DrawRowHighlight(row, theme);
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
