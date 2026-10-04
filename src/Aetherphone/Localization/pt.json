@@ -7152,6 +7152,7 @@
   "changelog.r1042.48": "Alarmes e timers agora tocam até você parar ou adiar, e abrem o telefone com um alarme em tela cheia",
   "changelog.r1042.49": "As mensagens foram para a barra de abas, no lugar do botão separado de caixa de entrada",
   "changelog.r1042.50": "Corrigido o MogCast verificando sua área de transferência a cada segundo; agora ele só lê quando ela muda",
+  "changelog.r1042.151": "Corrigido o MogCast mostrando a conta do seu personagem anterior nas festas depois de trocar de personagem",
   "changelog.r1037.0": "Os DJs ao vivo saíram da tela inicial e foram para a página do local: o cartão Tocando agora mostra a foto, o nome e os espectadores do DJ, com um link da Twitch para cada DJ",
   "changelog.r1037.1": "Adicionada a etiqueta DJ ativo aos cartões de locais enquanto um DJ está ao vivo lá",
   "changelog.r1037.2": "Corrigido DJs ao vivo e confirmações ao vivo do XIV Rolladeck que não apareciam",

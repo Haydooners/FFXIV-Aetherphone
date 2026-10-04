@@ -7152,6 +7152,7 @@
   "changelog.r1042.48": "Alarmlar ve zamanlayıcılar artık sen durdurana ya da erteleyene kadar çalıyor ve telefonu tam ekran bir alarmla açıyor",
   "changelog.r1042.49": "Mesajlar ayrı gelen kutusu düğmesi yerine sekme çubuğuna taşındı",
   "changelog.r1042.50": "MogCast'in panonu her saniye kontrol etmesi düzeltildi; artık yalnızca değiştiğinde okuyor",
+  "changelog.r1042.151": "Karakter değiştirdikten sonra MogCast'in partilerde önceki karakterinin hesabını göstermesi düzeltildi",
   "changelog.r1037.0": "Canlı DJ'ler ana ekrandan kendi mekanlarının sayfasına taşındı: Şimdi çalıyor kartı DJ'in resmini, adını ve izleyicilerini gösterir, her DJ için bir Twitch bağlantısıyla",
   "changelog.r1037.1": "Bir DJ yayındayken mekan kartlarına Aktif DJ etiketi eklendi",
   "changelog.r1037.2": "Canlı DJ'lerin ve XIV Rolladeck canlı onaylarının hiç görünmemesi düzeltildi",

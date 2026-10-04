@@ -7152,6 +7152,7 @@
   "changelog.r1042.48": "Wecker und Timer klingeln jetzt, bis du sie stoppst oder schlummern lässt, und öffnen das Telefon mit einem Vollbild-Alarm",
   "changelog.r1042.49": "Nachrichten in die Tableiste verschoben, anstelle der separaten Posteingangstaste",
   "changelog.r1042.50": "Behoben, dass MogCast jede Sekunde deine Zwischenablage geprüft hat; jetzt liest es sie nur, wenn sie sich ändert",
+  "changelog.r1042.151": "Behoben, dass MogCast nach einem Charakterwechsel in Partys noch das Konto deines vorherigen Charakters angezeigt hat",
   "changelog.r1037.0": "Live-DJs von der Startseite auf die Seite ihrer Location verschoben: Die Karte Läuft gerade zeigt Bild, Namen und Zuschauer des DJs, mit einem Twitch-Link für jeden DJ",
   "changelog.r1037.1": "Location-Karten tragen jetzt den Hinweis DJ aktiv, solange dort ein DJ auflegt",
   "changelog.r1037.2": "Behoben, dass Live-DJs und Live-Bestätigungen von XIV Rolladeck gar nicht angezeigt wurden",

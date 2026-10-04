@@ -2618,6 +2618,8 @@ internal static class L
                 "Fixed MogCast dragging the game down to one frame per second for some players while it waited for a link"),
             new("changelog.r1042.50",
                 "Fixed MogCast checking your clipboard every second; it now reads it only when it changes"),
+            new("changelog.r1042.151",
+                "Fixed MogCast showing your previous character's account in watch parties after you switched characters"),
         };
 
         public static readonly LocString[] Release1041MogCast =

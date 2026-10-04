@@ -7152,6 +7152,7 @@
   "changelog.r1042.48": "Las alarmas y los temporizadores suenan ahora hasta que los detienes o pospones, y abren el teléfono con una alarma a pantalla completa",
   "changelog.r1042.49": "Los mensajes pasan a la barra de pestañas, en lugar del botón de bandeja de entrada aparte",
   "changelog.r1042.50": "Corregido que MogCast revisara tu portapapeles cada segundo; ahora solo lo lee cuando cambia",
+  "changelog.r1042.151": "Corregido que MogCast mostrara la cuenta de tu personaje anterior en las fiestas después de cambiar de personaje",
   "changelog.r1037.0": "Los DJ en directo pasan de la pantalla de inicio a la página de su local: la tarjeta Sonando ahora muestra la foto, el nombre y los espectadores del DJ, con un enlace de Twitch para cada DJ",
   "changelog.r1037.1": "Se añadió la etiqueta DJ activo a las tarjetas de locales mientras un DJ está en directo allí",
   "changelog.r1037.2": "Corregido que los DJ en directo y las confirmaciones en directo de XIV Rolladeck no aparecieran",

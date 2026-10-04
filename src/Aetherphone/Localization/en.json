@@ -7152,6 +7152,7 @@
   "changelog.r1042.48": "Alarms and timers now ring until you stop or snooze them, and open the phone with a full-screen alarm",
   "changelog.r1042.49": "Moved messages into the tab bar, in place of the separate inbox button",
   "changelog.r1042.50": "Fixed MogCast checking your clipboard every second; it now reads it only when it changes",
+  "changelog.r1042.151": "Fixed MogCast showing your previous character's account in watch parties after you switched characters",
   "changelog.r1037.0": "Moved live DJs off the home screen and onto their venue's page: the Now playing card shows the DJ's picture, name and viewers, with a Twitch link for each DJ",
   "changelog.r1037.1": "Added an Active DJ tag to venue cards while a DJ is on air there",
   "changelog.r1037.2": "Fixed live DJs and XIV Rolladeck live confirmations not showing at all",

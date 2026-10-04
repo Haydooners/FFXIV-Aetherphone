@@ -7152,6 +7152,7 @@
   "changelog.r1042.48": "Les alarmes et minuteurs sonnent désormais jusqu'à ce que vous les arrêtiez ou les reportiez, et ouvrent le téléphone avec une alarme plein écran",
   "changelog.r1042.49": "Les messages passent dans la barre d'onglets, à la place du bouton de boîte de réception séparé",
   "changelog.r1042.50": "Correction de MogCast qui vérifiait votre presse-papiers chaque seconde ; il ne le lit plus que lorsqu'il change",
+  "changelog.r1042.151": "Correction de MogCast qui affichait le compte de votre personnage précédent dans les soirées après un changement de personnage",
   "changelog.r1037.0": "Les DJ en direct quittent l'écran d'accueil pour la page de leur lieu : la carte En cours affiche la photo, le nom et les spectateurs du DJ, avec un lien Twitch pour chaque DJ",
   "changelog.r1037.1": "Ajout de l'étiquette DJ actif sur les cartes des lieux lorsqu'un DJ y est en direct",
   "changelog.r1037.2": "Correction des DJ en direct et des confirmations en direct de XIV Rolladeck qui ne s'affichaient plus",
