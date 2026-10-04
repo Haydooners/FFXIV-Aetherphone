@@ -325,6 +325,18 @@ The Calendar app shows in-game event dates served through the Aetherphone
 backend, which caches a community-maintained public events database. The data
 is fetched server-side; no third-party credentials ship with the plugin.
 
+## Optional plugin integrations
+
+Aetherphone can talk to the following Dalamud plugins through Dalamud's
+inter-plugin communication (IPC). None of their code ships with Aetherphone.
+Each integration only works when the user has installed that plugin
+separately, and the matching feature stays unavailable otherwise.
+
+- **Lifestream** by NightmareXIV (https://github.com/NightmareXIV/Lifestream):
+  teleport, world travel and housing travel across the phone's apps and widgets.
+- **Honorific** by Caraxi (https://github.com/Caraxi/Honorific): Settings >
+  Nameplate Title shows your current Aetherphone status as your nameplate title.
+
 ## managed-doom (Doom engine)
 
 The Doom mini-game runs on [managed-doom](https://github.com/sinshu/managed-doom), a C# port of the
