@@ -29,7 +29,7 @@ internal sealed partial class CasinoApp
     private const float StepperAlpha = 0.10f;
     private const float StepperHoverAlpha = 0.18f;
     private const float SliderRowHeight = 36f;
-    private const float PickerButtonHeight = 44f;
+    private const float PickerButtonHeight = Button.LargeHeight;
     private const float PickerLineGap = 10f;
     private const string LimitSliderId = "casino.limit.slider";
 
@@ -316,18 +316,18 @@ internal sealed partial class CasinoApp
 
         var gap = CardGap * scale;
         var secondaryLabel = hasSelf ? Loc.T(L.Casino.LimitRemove) : Loc.T(L.Common.Cancel);
-        var secondaryWidth = CasinoArt.CapsuleWidth(secondaryLabel, buttonHeight, TextStyles.Headline);
+        var secondaryWidth = Button.WidthFor(secondaryLabel, ButtonSize.Large);
         var saveRect = new Rect(new Vector2(left, top), new Vector2(right - secondaryWidth - gap, top + buttonHeight));
         var canSave = change != LimitChange.None && !casino.SavingLimits;
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("save"), saveRect, Loc.T(L.Casino.SelfLimitSave),
-                CasinoCapsuleTone.Filled, canSave, TextStyles.Headline))
+        if (Button.Draw(drawList, saveRect, Loc.T(L.Casino.SelfLimitSave), ui.Ink, ButtonStyle.Prominent,
+                enabled: canSave, id: "casino.limits.save"))
         {
             casino.SetLimits(chosen);
         }
 
         var secondaryRect = new Rect(new Vector2(right - secondaryWidth, top), new Vector2(right, top + buttonHeight));
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("secondary"), secondaryRect, secondaryLabel,
-                CasinoCapsuleTone.Quiet, !casino.SavingLimits, TextStyles.Headline))
+        if (Button.Draw(drawList, secondaryRect, secondaryLabel, ui.Ink, ButtonStyle.Gray,
+                enabled: !casino.SavingLimits, id: "casino.limits.secondary"))
         {
             if (hasSelf)
             {
@@ -379,8 +379,8 @@ internal sealed partial class CasinoApp
             title, body, scale);
         var buttonTop = origin.Y + panelHeight;
         var rect = new Rect(new Vector2(origin.X + pad, buttonTop), new Vector2(max.X - pad, buttonTop + buttonHeight));
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("set"), rect, Loc.T(L.Casino.LimitSetAction),
-                CasinoCapsuleTone.Tinted, !casino.SavingLimits, TextStyles.Headline))
+        if (Button.Draw(drawList, rect, Loc.T(L.Casino.LimitSetAction), ui.Ink, ButtonStyle.Tinted,
+                enabled: !casino.SavingLimits, id: "casino.limits.set"))
         {
             limitChoice = CasinoLimitPicker.Snap(CasinoLimits.SuggestedLimit,
                 CasinoLimitPicker.CeilingFor(state.DailyBuyInCap));

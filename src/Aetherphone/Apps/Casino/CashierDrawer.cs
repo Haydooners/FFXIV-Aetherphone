@@ -24,7 +24,7 @@ internal sealed class CashierDrawer
     private const float SectionGap = 10f;
     private const float SummaryRowHeight = 22f;
     private const float CardPad = 12f;
-    private const float PillHeight = 44f;
+    private const float PillHeight = Button.LargeHeight;
     private const float HintGap = 6f;
     private const float LotHeight = 42f;
     private const float LotGap = 8f;
@@ -458,8 +458,8 @@ internal sealed class CashierDrawer
             : Loc.T(L.Casino.NotEnoughCoins);
         var confirmRect = new Rect(new Vector2(left, y), new Vector2(left + innerWidth, y + PillHeight * scale));
         var canConfirm = interactive && amountValid && !busy;
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("cashier.confirm"), confirmRect, label,
-                CasinoCapsuleTone.Filled, canConfirm, TextStyles.Headline, true))
+        if (Button.Draw(drawList, confirmRect, label, ui.Ink, ButtonStyle.Prominent, enabled: canConfirm,
+                overlay: true, id: "cashier.confirm"))
         {
             AskStake(sittingOpen, amount);
         }
@@ -539,9 +539,8 @@ internal sealed class CashierDrawer
         var stackText = NumberText.Group(sitting.Stack);
         var rect = new Rect(new Vector2(left, y), new Vector2(left + innerWidth, y + PillHeight * scale));
         var canCashOut = interactive && !store.MovingMoney;
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("cashier.cashout"), rect,
-                Loc.T(L.Casino.CashOutFor, stackText), CasinoCapsuleTone.Tinted, canCashOut, TextStyles.Headline,
-                true))
+        if (Button.Draw(drawList, rect, Loc.T(L.Casino.CashOutFor, stackText), ui.Ink, ButtonStyle.Tinted,
+                enabled: canCashOut, overlay: true, id: "cashier.cashout"))
         {
             confirm.Ask(new ConfirmRequest
             {

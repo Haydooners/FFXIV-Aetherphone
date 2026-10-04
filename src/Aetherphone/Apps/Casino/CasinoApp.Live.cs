@@ -15,7 +15,7 @@ internal sealed partial class CasinoApp
     private const float LiveRowTile = 44f;
     private const float HouseRowHeight = 84f;
     private const float HouseRowTile = 40f;
-    private const float SitHeight = 32f;
+    private const float SitHeight = Button.RegularHeight;
     private const float SeatEmptyAlpha = 0.18f;
 
     private void DrawLiveTab(Rect body)
@@ -154,7 +154,7 @@ internal sealed partial class CasinoApp
         var canSit = !full && table.Admitted;
         var sitLabel = full ? Loc.T(L.Casino.TableFullBadge) : Loc.T(L.Casino.TableSit);
         var sitHeight = SitHeight * scale;
-        var sitWidth = CasinoArt.CapsuleWidth(sitLabel, sitHeight, TextStyles.SubheadlineEmphasized);
+        var sitWidth = Button.WidthFor(sitLabel, ButtonSize.Regular);
         var sitRect = new Rect(new Vector2(row.Max.X - pad - sitWidth, row.Center.Y - sitHeight * 0.5f),
             new Vector2(row.Max.X - pad, row.Center.Y + sitHeight * 0.5f));
         var overSit = UiInteract.Hover(sitRect.Min, sitRect.Max);
@@ -183,8 +183,8 @@ internal sealed partial class CasinoApp
             Typography.FitText(texts.Counts(L.Casino.TableSeats, table.SeatedCount, table.MaxSeats),
                 MathF.Max(1f, textLeft + textWidth - seatsLeft), TextStyles.Footnote), seatInk, TextStyles.Footnote);
 
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("sit"), sitRect, sitLabel,
-                canSit ? CasinoCapsuleTone.Tinted : CasinoCapsuleTone.Quiet, canSit, TextStyles.SubheadlineEmphasized))
+        if (Button.Draw(drawList, sitRect, sitLabel, ui.Ink, canSit ? ButtonStyle.Tinted : ButtonStyle.Gray,
+                enabled: canSit, id: "casino.live.sit"))
         {
             OpenTable(table.TableId);
             return;

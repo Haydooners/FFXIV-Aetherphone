@@ -21,7 +21,7 @@ internal sealed partial class CasinoApp
     private const float ReferenceGap = 10f;
     private const float StepBadge = 28f;
     private const float StepPad = 16f;
-    private const float ActionHeight = 44f;
+    private const float ActionHeight = Button.LargeHeight;
     private const int FairnessRecentRoundLimit = 8;
 
     private readonly struct HistoryRowText
@@ -404,8 +404,8 @@ internal sealed partial class CasinoApp
             var verifyRect = new Rect(new Vector2(origin.X, cursorY), new Vector2(origin.X + width, cursorY + actionHeight));
             var canVerify = !history.Verifying
                 && (!hasVerified || verifiedRound.Verdict == CasinoRoundVerdict.Unrevealed);
-            if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("verify"), verifyRect, Loc.T(L.Casino.VerifyAction),
-                    CasinoCapsuleTone.Filled, canVerify, TextStyles.Headline))
+            if (Button.Draw(drawList, verifyRect, Loc.T(L.Casino.VerifyAction), ui.Ink, ButtonStyle.Prominent,
+                    enabled: canVerify, id: "casino.history.verify"))
             {
                 history.RequestVerify(roundId);
             }
@@ -416,8 +416,8 @@ internal sealed partial class CasinoApp
                 cursorY += CardGap * scale;
                 var copyRect = new Rect(new Vector2(origin.X, cursorY),
                     new Vector2(origin.X + width, cursorY + actionHeight));
-                if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("copy"), copyRect, Loc.T(L.Casino.CopyDetails),
-                        CasinoCapsuleTone.Tinted, true, TextStyles.Headline))
+                if (Button.Draw(drawList, copyRect, Loc.T(L.Casino.CopyDetails), ui.Ink, ButtonStyle.Tinted,
+                        id: "casino.history.copy"))
                 {
                     ImGui.SetClipboardText(BuildRoundDetailsBlob(verifiedRound));
                     ShellToast.Show();

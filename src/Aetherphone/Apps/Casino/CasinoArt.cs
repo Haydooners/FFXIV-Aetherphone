@@ -8,15 +8,6 @@ using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Casino;
 
-internal enum CasinoCapsuleTone : byte
-{
-    Filled,
-    Tinted,
-    Quiet,
-    OnGlass,
-    GlassQuiet,
-}
-
 internal static class CasinoArt
 {
     public const float GlyphExtentFactor = 0.26f;
@@ -25,14 +16,6 @@ internal static class CasinoArt
     public const float SeatDotGap = 4f;
     public const float ChevronScale = 0.75f;
 
-    private const float TintedAlpha = 0.16f;
-    private const float TintedHoverAlpha = 0.24f;
-    private const float QuietAlpha = 0.08f;
-    private const float GlassQuietAlpha = 0.18f;
-    private const float GlassQuietHoverAlpha = 0.26f;
-    private const float DisabledAlpha = 0.45f;
-    private const float HoverDarken = 0.12f;
-    private const float OnGlassInkLuminance = 0.22f;
     private const float LiveHaloAlpha = 0.35f;
     private const float LiveHaloGrowth = 1.9f;
     private const float SheetLighten = 0.10f;
@@ -100,65 +83,6 @@ internal static class CasinoArt
 
         return seats <= 0 ? 0f : seats * step - SeatDotGap * scale;
     }
-
-    public static bool Capsule(ImDrawListPtr drawList, AppSkin ui, uint id, Rect rect, string label,
-        CasinoCapsuleTone tone, bool enabled, in TextStyle style, bool overlay = false)
-    {
-        var hovered = enabled && (overlay
-            ? UiInteract.HoverWindowOnly(rect.Min, rect.Max)
-            : UiInteract.Hover(rect.Min, rect.Max));
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var factor = PressFx.Scale(id, pressed, Motion.PressScaleControl);
-        var half = rect.Size * 0.5f * factor;
-        var min = rect.Center - half;
-        var max = rect.Center + half;
-        var radius = (max.Y - min.Y) * 0.5f;
-        var accent = ui.Accent;
-        Vector4 fill;
-        Vector4 ink;
-        switch (tone)
-        {
-            case CasinoCapsuleTone.Filled:
-                fill = hovered ? Palette.Mix(accent, new Vector4(0f, 0f, 0f, 1f), HoverDarken) : accent;
-                ink = White;
-                break;
-            case CasinoCapsuleTone.Tinted:
-                fill = Palette.WithAlpha(accent, hovered ? TintedHoverAlpha : TintedAlpha);
-                ink = accent;
-                break;
-            case CasinoCapsuleTone.OnGlass:
-                fill = hovered ? Palette.Mix(White, accent, HoverDarken) : White;
-                ink = Palette.ShadeToLuminance(accent with { W = 1f }, OnGlassInkLuminance);
-                break;
-            case CasinoCapsuleTone.GlassQuiet:
-                fill = Palette.WithAlpha(White, hovered ? GlassQuietHoverAlpha : GlassQuietAlpha);
-                ink = White;
-                break;
-            default:
-                fill = Palette.WithAlpha(ui.TitleInk, hovered ? QuietAlpha * 1.5f : QuietAlpha);
-                ink = ui.TitleInk;
-                break;
-        }
-
-        if (!enabled)
-        {
-            fill = Palette.WithAlpha(fill, fill.W * DisabledAlpha);
-            ink = Palette.WithAlpha(ink, DisabledAlpha + 0.15f);
-        }
-
-        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(fill));
-        var fitted = Typography.FitText(label, MathF.Max(1f, max.X - min.X - radius), style);
-        Typography.DrawCentered(drawList, (min + max) * 0.5f, fitted, ink, style);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
-    }
-
-    public static float CapsuleWidth(string label, float height, in TextStyle style) =>
-        Typography.Measure(label, style).X + height * 1.1f;
 
     public static SheetSkin Sheet(AppSkin ui) => new(
         Palette.Lighten(ui.Palette.BackdropTop, SheetLighten) with { W = 1f },

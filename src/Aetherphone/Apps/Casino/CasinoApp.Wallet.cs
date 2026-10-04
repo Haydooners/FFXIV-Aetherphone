@@ -18,7 +18,7 @@ internal sealed partial class CasinoApp
     private const float ExchangePad = 18f;
     private const float ExchangeDisc = 40f;
     private const float ExchangeArrow = 30f;
-    private const float ExchangeButtonHeight = 40f;
+    private const float ExchangeButtonHeight = Button.LargeHeight;
     private const float ExchangeRowGap = 14f;
     private const float ExchangeArrowAlpha = 0.10f;
 
@@ -102,17 +102,16 @@ internal sealed partial class CasinoApp
         var buttonWidth = (width - pad * 2f - gap) * 0.5f;
         var buyRect = new Rect(new Vector2(min.X + pad, buttonTop),
             new Vector2(min.X + pad + buttonWidth, buttonTop + buttonHeight));
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("buy"), buyRect,
-                seated ? Loc.T(L.Casino.TopUp) : Loc.T(L.Casino.BuyIn), CasinoCapsuleTone.Filled, !busy,
-                TextStyles.Headline))
+        if (Button.Draw(drawList, buyRect, seated ? Loc.T(L.Casino.TopUp) : Loc.T(L.Casino.BuyIn), ui.Ink,
+                ButtonStyle.Prominent, enabled: !busy, id: "casino.wallet.buy"))
         {
             cashier.Open();
         }
 
         var cashRect = new Rect(new Vector2(max.X - pad - buttonWidth, buttonTop),
             new Vector2(max.X - pad, buttonTop + buttonHeight));
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("cash"), cashRect, Loc.T(L.Casino.CashOut),
-                CasinoCapsuleTone.Tinted, seated && !busy, TextStyles.Headline))
+        if (Button.Draw(drawList, cashRect, Loc.T(L.Casino.CashOut), ui.Ink, ButtonStyle.Tinted,
+                enabled: seated && !busy, id: "casino.wallet.cash"))
         {
             AskCashOut(casino.State!.Sitting!);
         }
