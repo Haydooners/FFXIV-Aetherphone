@@ -17,8 +17,8 @@ internal sealed partial class StratsApp
     private const float ScrollAnchorShare = 0.45f;
     private const float MechanicSettledShare = 0.55f;
     private const float DisclosureRowHeight = 44f;
-    private const float PagerPillHeight = 38f;
-    private const float LinkPillHeight = 30f;
+    private const float PagerPillHeight = Button.RegularHeight;
+    private const float LinkPillHeight = Button.SmallHeight;
     private const float MaxImageHeight = 420f;
     private const float SpotBarWidth = 3f;
     private const float SpotFillAlpha = 0.12f;

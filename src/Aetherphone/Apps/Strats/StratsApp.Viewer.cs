@@ -12,8 +12,6 @@ namespace Aetherphone.Apps.Strats;
 internal sealed partial class StratsApp
 {
     private const float ViewerScrimHeight = 64f;
-    private const float ViewerBackRadius = 15f;
-    private const float ViewerBackHit = 20f;
     private const float PopOutMinimumPixels = 1920f;
     private const float ViewerSpinnerRadius = 13f;
 
@@ -121,18 +119,14 @@ internal sealed partial class StratsApp
     private void DrawViewerChrome(ImDrawListPtr drawList, Rect area, string title, float scale)
     {
         PhotosChrome.TopScrim(drawList, area.Min, area.Max, ViewerScrimHeight * scale);
-        var rowCenterY = area.Min.Y + Metrics.Space.Xl * scale;
-        var backCenter = new Vector2(area.Min.X + Metrics.Space.Xl * scale, rowCenterY);
-        var hit = new Vector2(ViewerBackHit * scale, ViewerBackHit * scale);
-        var hovered = UiInteract.Hover(backCenter - hit, backCenter + hit);
-        if (BackButton.Draw("strats.viewer.back", backCenter, ViewerBackRadius * scale, ViewerInk, hovered, scale,
-                shadow: true))
+        var rowCenterY = area.Min.Y + NavBarMetrics.InlineHeight * scale * 0.5f;
+        if (AppHeader.DrawLargeTitleBack(drawList, area, string.Empty, ViewerInk, scale, out var reserve))
         {
             CloseViewer();
             return;
         }
 
-        var titleMaxWidth = area.Width - (Metrics.Space.Xl * 2f + ViewerBackHit * 2f) * 2f * scale;
+        var titleMaxWidth = MathF.Max(1f, area.Width - reserve * 2f);
         var fitted = Typography.FitText(title, titleMaxWidth, TextStyles.Headline);
         Typography.DrawCentered(drawList, new Vector2(area.Center.X, rowCenterY), fitted, ViewerInk,
             TextStyles.Headline.Scale, TextStyles.Headline.Weight);

@@ -55,6 +55,14 @@ internal static class AppHeader
         return BackButton.Draw(id, center, 15f * scale, color, hovered, scale);
     }
 
+    public static bool DrawLargeTitleBack(ImDrawListPtr drawList, Rect content, string backTitle, Vector4 ink,
+        float scale, out float reserve)
+    {
+        reserve = DrawBackControl(drawList, content, backTitle, ink, NavBarMetrics.InlineHeight * scale, scale,
+            out var pressed);
+        return pressed;
+    }
+
     public static Rect BackRect(Rect content, float scale) =>
         new(content.Min, new Vector2(content.Min.X + BackHitWidth * scale, content.Min.Y + Height * scale));
 
