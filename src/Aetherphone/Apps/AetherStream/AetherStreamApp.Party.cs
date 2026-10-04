@@ -87,7 +87,7 @@ internal sealed partial class AetherStreamApp
         var card = BeginBlock(pad + tile + Metrics.Space.Lg * scale + titleHeight + Metrics.Space.Xs * scale
             + hintHeight + Metrics.Space.Xl * scale + buttonHeight + pad);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Card * scale, true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var top = card.Min.Y + pad;
         var tileMin = new Vector2(card.Center.X - tile * 0.5f, top);
         IconTile.FillShaded(drawList, tileMin, tileMin + new Vector2(tile, tile), tile * Metrics.Radius.TileFactor,
@@ -147,7 +147,7 @@ internal sealed partial class AetherStreamApp
     {
         var row = BeginBlock(FieldRowHeight * scale);
         var joinLabel = Loc.T(L.AetherStream.JoinAction);
-        var joinWidth = Typography.Measure(joinLabel, SmallButtonStyle).X + 36f * scale;
+        var joinWidth = SmallButtonWidth(joinLabel);
         var field = new Rect(row.Min, new Vector2(row.Max.X - joinWidth - Metrics.Space.Sm * scale, row.Max.Y));
         var submitted = SubmitField.Draw(field, "##aetherstreamCode", Loc.T(L.AetherStream.CodeHint), ref codeInput,
             accentedTheme, CodeFieldLength, FontAwesomeIcon.Key);
@@ -279,7 +279,7 @@ internal sealed partial class AetherStreamApp
         var graceHeight = grace > 0f ? Typography.LineHeight(TextStyles.Footnote) + Metrics.Space.Sm * scale : 0f;
         var card = BeginBlock(pad + titleHeight + subtitleHeight + codeHeight + graceHeight + pad);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Card * scale, true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
 
         var left = card.Min.X + pad;
         var width = card.Width - pad * 2f;
@@ -324,7 +324,7 @@ internal sealed partial class AetherStreamApp
         {
             var hint = Loc.T(L.AetherStream.CodeOffHint);
             var buttonLabel = Loc.T(L.AetherStream.CodeTurnOn);
-            var buttonWidth = Typography.Measure(buttonLabel, SmallButtonStyle).X + 30f * scale;
+            var buttonWidth = SmallButtonWidth(buttonLabel);
             var button = new Rect(
                 new Vector2(well.Max.X - pad - buttonWidth, well.Center.Y - SmallButtonHeight * scale * 0.5f),
                 new Vector2(well.Max.X - pad, well.Center.Y + SmallButtonHeight * scale * 0.5f));
@@ -354,10 +354,10 @@ internal sealed partial class AetherStreamApp
         Typography.Draw(drawList, new Vector2(well.Min.X + pad, top + labelHeight), codeDisplay, Ink.TitleInk,
             TextStyles.Title2);
 
-        var copyRadius = 16f * scale;
+        var copyRadius = RoundButton.SmallRadius * scale;
         var copyCenter = new Vector2(well.Max.X - pad - copyRadius, well.Center.Y);
-        if (HoverButton.Circle(drawList, "aetherstream.code.copy", copyCenter, copyRadius, FontAwesomeIcon.Copy,
-                Ink.ButtonFill, Ink.TitleInk, ImGui.GetIO().DeltaTime, 1f, true, Loc.T(L.AetherStream.CopyCode)))
+        if (StreamRoundButton(drawList, "aetherstream.code.copy", copyCenter, copyRadius, FontAwesomeIcon.Copy,
+                ButtonStyle.Gray, Loc.T(L.AetherStream.CopyCode)))
         {
             ImGui.SetClipboardText(code);
             ShellToast.Show();
@@ -374,7 +374,7 @@ internal sealed partial class AetherStreamApp
         AvatarView.DrawRemote(drawList, avatarCenter, avatarRadius, theme, request.DisplayName, string.Empty,
             request.AvatarUrl, remoteImages, lodestone, 0.7f, 24);
 
-        var circleRadius = 15f * scale;
+        var circleRadius = RoundButton.SmallRadius * scale;
         var denyCenter = new Vector2(row.Max.X - PadX * scale - circleRadius, row.Center.Y);
         var approveCenter = new Vector2(denyCenter.X - circleRadius * 2f - Metrics.Space.Sm * scale, row.Center.Y);
         var textLeft = avatarCenter.X + avatarRadius + Metrics.Space.Md * scale;
@@ -384,14 +384,16 @@ internal sealed partial class AetherStreamApp
                 approveCenter.X - circleRadius - Metrics.Space.Md * scale - textLeft, TextStyles.BodyEmphasized),
             Ink.TitleInk, TextStyles.BodyEmphasized);
 
-        if (ui.IconButton(approveCenter, circleRadius, IconGlyph.Of(FontAwesomeIcon.Check), Ink.PresenceGreen,
-                Palette.WithAlpha(Ink.PresenceGreen, 0.18f), 0.62f, Loc.T(L.AetherStream.CastingApprove)))
+        if (StreamRoundButton(drawList, "aetherstream.request.approve", approveCenter, circleRadius,
+                FontAwesomeIcon.Check, ButtonStyle.Tinted, Loc.T(L.AetherStream.CastingApprove), HoverLabelSide.Above,
+                Ink.PresenceGreen))
         {
             watchAlong.ApproveRequest(request.UserId);
         }
 
-        if (ui.IconButton(denyCenter, circleRadius, IconGlyph.Of(FontAwesomeIcon.Times), Ink.Danger,
-                Palette.WithAlpha(Ink.Danger, 0.16f), 0.62f, Loc.T(L.AetherStream.CastingDeny)))
+        if (StreamRoundButton(drawList, "aetherstream.request.deny", denyCenter, circleRadius,
+                FontAwesomeIcon.Times, ButtonStyle.Tinted, Loc.T(L.AetherStream.CastingDeny), HoverLabelSide.Above,
+                Ink.Danger))
         {
             watchAlong.DenyRequest(request.UserId);
         }

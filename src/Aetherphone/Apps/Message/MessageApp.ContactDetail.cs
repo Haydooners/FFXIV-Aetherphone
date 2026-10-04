@@ -165,7 +165,7 @@ internal sealed partial class MessageApp
     private float DrawContactNameEditor(ContactDto contact, float left, float width, float nameY, float scale)
     {
         var fieldHeight = FieldHeight * scale;
-        var iconRadius = 15f * scale;
+        var iconRadius = RoundButton.SmallRadius * scale;
         var gap = 10f * scale;
         var iconSpan = (iconRadius * 2f + gap) * 2f;
         var top = nameY;
@@ -175,16 +175,16 @@ internal sealed partial class MessageApp
         var centerY = top + fieldHeight * 0.5f;
         var saveCenter = new Vector2(fieldRect.Max.X + gap + iconRadius, centerY);
         var canSave = !renameBusy && !string.Equals(contactNameDraft.Trim(), contact.Alias, StringComparison.Ordinal);
-        var saveBackground = canSave ? ui.Accent : ui.FieldSurface;
-        var saveInk = canSave ? White : ui.MutedInk;
-        if ((ui.IconButton(saveCenter, iconRadius, PhoneIcons.Check, saveInk, saveBackground, 0.95f,
-                Loc.T(L.DirectMessages.Save), HoverLabelSide.Below) || submitted) && canSave)
+        var drawList = ImGui.GetWindowDrawList();
+        if ((RoundButton.Icon(drawList, saveCenter, iconRadius, PhoneIcons.Check, ui.Ink,
+                canSave ? ButtonStyle.Prominent : ButtonStyle.Gray, Loc.T(L.DirectMessages.Save),
+                HoverLabelSide.Below) || submitted) && canSave)
         {
             SubmitRename(contact.UserId);
         }
 
         var cancelCenter = new Vector2(saveCenter.X + iconRadius + gap + iconRadius, centerY);
-        if (ui.IconButton(cancelCenter, iconRadius, PhoneIcons.X, ui.MutedInk, ui.FieldSurface, 0.95f,
+        if (RoundButton.Icon(drawList, cancelCenter, iconRadius, PhoneIcons.X, ui.Ink, ButtonStyle.Gray,
                 Loc.T(L.Common.Cancel), HoverLabelSide.Below))
         {
             editingContactName = false;
@@ -319,7 +319,7 @@ internal sealed partial class MessageApp
         var pad = 12f * scale;
         var cardMin = origin;
         var cardMax = new Vector2(origin.X + width, origin.Y + NotesCardHeight * scale);
-        ui.Card(ImGui.GetWindowDrawList(), cardMin, cardMax, Metrics.Radius.Md * scale);
+        ui.Card(ImGui.GetWindowDrawList(), cardMin, cardMax, Metrics.Radius.Grouped * scale);
         ImGui.SetCursorScreenPos(cardMin + new Vector2(pad, pad));
         var inputWidth = cardMax.X - cardMin.X - pad * 2f;
         var wrapWidth = inputWidth - ImGui.GetStyle().FramePadding.X * 2f - 4f * scale;

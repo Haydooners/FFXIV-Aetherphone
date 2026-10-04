@@ -28,7 +28,7 @@ internal sealed partial class MessageApp
     private const float ThreadHeaderNameGap = 10f;
 
     private static readonly TextStyle ThreadNameStyle = TextStyles.Headline;
-    private static readonly TextStyle ThreadSubStyle = new(0.76f, FontWeight.Regular);
+    private static readonly TextStyle ThreadSubStyle = TextStyles.Footnote;
 
     private readonly ActionSheet threadSheet = new();
     private readonly ActionSheet.Item[] threadSheetItems = new ActionSheet.Item[9];

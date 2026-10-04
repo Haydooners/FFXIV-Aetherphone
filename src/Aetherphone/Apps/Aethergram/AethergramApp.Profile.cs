@@ -46,9 +46,9 @@ internal sealed partial class AethergramApp
     private const int ProfileMenuMaxItems = 7;
     private const int ProfileTabCount = 2;
 
-    private static readonly TextStyle OwnProfileTitleStyle = new(1.15f, FontWeight.SemiBold);
-    private static readonly TextStyle ProfileNameStyle = new(1.4f, FontWeight.Bold);
-    private static readonly TextStyle ProfileStatValueStyle = new(1.15f, FontWeight.Bold);
+    private static readonly TextStyle OwnProfileTitleStyle = TextStyles.Title3;
+    private static readonly TextStyle ProfileNameStyle = TextStyles.Title2;
+    private static readonly TextStyle ProfileStatValueStyle = TextStyles.Title3;
     private static readonly TextStyle ProfileStatLabelStyle = TextStyles.Subheadline;
     private static readonly TextStyle ProfileChipStyle = TextStyles.Footnote;
 

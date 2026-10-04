@@ -46,7 +46,7 @@ internal sealed class MessagePopoutWindow : Window
 
     private static readonly Vector4 GripInk = new(1f, 1f, 1f, 0.22f);
     private static readonly TextStyle TitleStyle = TextStyles.Headline;
-    private static readonly TextStyle SubtitleStyle = new(0.76f, FontWeight.Regular);
+    private static readonly TextStyle SubtitleStyle = TextStyles.Footnote;
 
     private readonly MessagePopouts owner;
     private readonly int slot;
@@ -283,7 +283,7 @@ internal sealed class MessagePopoutWindow : Window
         }
 
         using (ConfirmHosts.Enter(confirmHost))
-        using (Plugin.Fonts.Push(1f))
+        using (Plugin.Fonts.Push(TextStyles.Body.Scale, TextStyles.Body.Weight))
         {
             var theme = CurrentTheme;
             ui.Palette = ChatThemes.PaletteFor(configuration.MessageChatTheme);

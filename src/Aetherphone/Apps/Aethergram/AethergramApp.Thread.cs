@@ -210,12 +210,12 @@ internal sealed partial class AethergramApp
                 new Vector2(listRect.Min.X + pad + buttonWidth, buttonsTop + buttonHeight));
             var deleteRect = new Rect(new Vector2(acceptRect.Max.X + gap, buttonsTop),
                 new Vector2(listRect.Min.X + pad + innerWidth, buttonsTop + buttonHeight));
-            if (DrawAccentPill(acceptRect, Loc.T(L.Aethergram.AcceptRequest)))
+            if (app.DrawAccentPill(acceptRect, Loc.T(L.Aethergram.AcceptRequest)))
             {
                 app.dmStore.AcceptThread(threadId);
             }
 
-            if (DrawGrayPill(deleteRect, Loc.T(L.Aethergram.DeleteConfirm)))
+            if (app.DrawGrayPill(deleteRect, Loc.T(L.Aethergram.DeleteConfirm)))
             {
                 app.AskDeleteConversation(threadId);
             }

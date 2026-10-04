@@ -178,8 +178,8 @@ internal sealed partial class YellowPagesApp
             new Vector2(rightCenter.X, rightCenter.Y + half));
         UiAnchors.Report("yellowpages.scope", rect);
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        Squircle.Fill(drawList, rect.Min, rect.Max, half, ImGui.GetColorU32(hovered ? Ink.ChipHover : Ink.ChipFill));
-        Squircle.Stroke(drawList, rect.Min, rect.Max, half, ImGui.GetColorU32(Ink.ChipStroke), 1f);
+        Squircle.Fill(drawList, rect.Min, rect.Max, half,
+            ImGui.GetColorU32(Surfaces.Fill(ui.Ink, hovered ? FillLevel.Secondary : FillLevel.Tertiary)));
         Typography.Draw(drawList, new Vector2(rect.Min.X + 11f * scale, rect.Center.Y - labelSize.Y * 0.5f), fitted,
             Ink.AccentLink, ScopePillStyle);
         PhoneIcon.Draw(drawList, new Vector2(rect.Max.X - 11f * scale, rect.Center.Y), PhoneIcons.ChevronDown,
@@ -325,7 +325,6 @@ internal sealed partial class YellowPagesApp
         var half = (max - min) * 0.5f * press;
         min = center - half;
         max = center + half;
-        Elevation.Card(drawList, min, max, rounding, scale, hovered ? 0.55f : 0.35f);
         var texture = string.IsNullOrEmpty(ad.MediaUrl) ? null : images.Get(ad.MediaUrl);
         if (texture is not null)
         {
@@ -451,8 +450,8 @@ internal sealed partial class YellowPagesApp
         var half = (max - min) * 0.5f * press;
         min = center - half;
         max = center + half;
-        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(hovered ? Ink.ChipHover : Ink.ChipFill));
-        Squircle.Stroke(drawList, min, max, rounding, ImGui.GetColorU32(Ink.ChipStroke), 1f);
+        Squircle.Fill(drawList, min, max, rounding,
+            ImGui.GetColorU32(Surfaces.Fill(ui.Ink, hovered ? FillLevel.Secondary : FillLevel.Tertiary)));
         var tint = intent == AdIntents.Wanted ? YellowPagesKit.WantedTint : Ink.Accent;
         var glyphCenter = new Vector2(center.X, min.Y + IntentGlyphTop * scale);
         var glyphRadius = IntentGlyphRadius * scale;
@@ -666,11 +665,12 @@ internal sealed partial class YellowPagesApp
         else
         {
             var label = Loc.T(L.YellowPages.LoadMore);
-            var buttonWidth = Typography.Measure(label, TextStyles.SubheadlineEmphasized).X + 44f * scale;
-            var rect = new Rect(new Vector2(origin.X + (width - buttonWidth) * 0.5f, origin.Y + 6f * scale),
-                new Vector2(origin.X + (width + buttonWidth) * 0.5f, origin.Y + height - 6f * scale));
-            if (SocialPill.Flat(ImGui.GetWindowDrawList(), rect, label, Ink.ChipFill, Ink.ChipHover, Ink.ChipStroke,
-                    Ink.TitleInk, TextStyles.SubheadlineEmphasized, rect.Height * 0.5f))
+            var buttonWidth = Button.WidthFor(label, ButtonSize.Regular);
+            var buttonHalf = Button.RegularHeight * scale * 0.5f;
+            var centerY = origin.Y + height * 0.5f;
+            var rect = new Rect(new Vector2(origin.X + (width - buttonWidth) * 0.5f, centerY - buttonHalf),
+                new Vector2(origin.X + (width + buttonWidth) * 0.5f, centerY + buttonHalf));
+            if (Button.Draw(rect, label, ui.Ink, ButtonStyle.Gray))
             {
                 store.LoadMoreDirectory();
             }
@@ -713,11 +713,10 @@ internal sealed partial class YellowPagesApp
         {
             DrawEmptyState(area, Loc.T(L.Common.LoadFailed), Loc.T(L.Common.LoadFailedHint));
             var retryLabel = Loc.T(L.Common.Retry);
-            var retryWidth = Typography.Measure(retryLabel, TextStyles.SubheadlineEmphasized).X + 44f * scale;
-            var retryRect = new Rect(new Vector2(listRect.Center.X - retryWidth * 0.5f, origin.Y + 150f * scale),
-                new Vector2(listRect.Center.X + retryWidth * 0.5f, origin.Y + 186f * scale));
-            if (SocialPill.Accent(ImGui.GetWindowDrawList(), retryRect, retryLabel, Ink, TextStyles.SubheadlineEmphasized,
-                    retryRect.Height * 0.5f))
+            var retryWidth = Button.WidthFor(retryLabel, ButtonSize.Regular);
+            var retryRect = new Rect(new Vector2(listRect.Center.X - retryWidth * 0.5f, origin.Y + 151f * scale),
+                new Vector2(listRect.Center.X + retryWidth * 0.5f, origin.Y + (151f + Button.RegularHeight) * scale));
+            if (Button.Draw(retryRect, retryLabel, ui.Ink, ButtonStyle.Prominent))
             {
                 RefreshCurrentList();
             }

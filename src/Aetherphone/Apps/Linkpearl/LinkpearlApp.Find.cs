@@ -24,9 +24,7 @@ internal sealed partial class LinkpearlApp
     private const int LookupAvatarSegments = 48;
     private const float LookupMonogramScale = 1.4f;
 
-    private readonly ChipRail findRail = new();
     private readonly string[] findSegmentLabels = new string[2];
-    private readonly bool[] findSegmentActive = new bool[2];
     private LookupKind findKind = LookupKind.Character;
     private string findNameInput = string.Empty;
     private string findWorldInput = string.Empty;

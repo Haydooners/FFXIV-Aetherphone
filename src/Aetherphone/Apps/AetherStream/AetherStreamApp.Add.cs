@@ -97,14 +97,13 @@ internal sealed partial class AetherStreamApp
     private bool DrawLinkField(Rect row, string imguiId, string pasteId, float scale)
     {
         var drawList = ImGui.GetWindowDrawList();
-        var pasteRadius = 17f * scale;
+        var pasteRadius = RoundButton.RegularRadius * scale;
         var field = new Rect(row.Min, new Vector2(row.Max.X - pasteRadius * 2f - Metrics.Space.Sm * scale, row.Max.Y));
         var hint = watchAlong.IsViewing ? Loc.T(L.AetherStream.SuggestHint) : Loc.T(L.AetherStream.UrlHint);
         var submitted = SubmitField.Draw(field, imguiId, hint, ref linkInput, accentedTheme, MaxLinkLength,
             FontAwesomeIcon.Link);
         var pasteCenter = new Vector2(row.Max.X - pasteRadius, row.Center.Y);
-        if (HoverButton.Circle(drawList, pasteId, pasteCenter, pasteRadius,
-                FontAwesomeIcon.Paste, Ink.ButtonFill, Ink.TitleInk, ImGui.GetIO().DeltaTime, 1f, true,
+        if (StreamRoundButton(drawList, pasteId, pasteCenter, pasteRadius, FontAwesomeIcon.Paste, ButtonStyle.Gray,
                 Loc.T(L.AetherStream.PasteClipboard), HoverLabelSide.Above))
         {
             var clipboard = ImGui.GetClipboardText();

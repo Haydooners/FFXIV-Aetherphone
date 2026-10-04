@@ -19,7 +19,7 @@ internal sealed partial class MessageApp
     private const float EncryptionMemberGlyph = 18f;
     private const float EncryptionSidePadding = 32f;
 
-    private static readonly TextStyle SecurityCodeStyle = new(1.02f, FontWeight.Medium);
+    private static readonly TextStyle SecurityCodeStyle = TextStyles.BodyEmphasized;
 
     private string? encryptionPeerRequestedFor;
     private string securityCode = string.Empty;
@@ -172,7 +172,7 @@ internal sealed partial class MessageApp
         var lineGap = 7f * scale;
         var cardHeight = pad * 2f + lineHeight * 4f + lineGap * 3f;
         var cardMax = new Vector2(origin.X + width, origin.Y + cardHeight);
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Md * scale);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
         var centerX = (origin.X + cardMax.X) * 0.5f;
         var lineTop = origin.Y + pad;
         var remaining = code.AsSpan();
