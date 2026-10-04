@@ -48,7 +48,6 @@ internal sealed class JackpotRail
         var rounding = Metrics.Radius.Widget * scale;
         var hovered = CasinoArt.PressCard(ImGui.GetID(HintMarqueeId), origin, restMax, out var min, out var max);
 
-        Elevation.Card(drawList, min, max, rounding, scale, 0.95f);
         Squircle.FillVerticalGradient(drawList, min, max, rounding,
             ImGui.GetColorU32(Crown), ImGui.GetColorU32(Bed));
         if (hovered)
@@ -96,7 +95,6 @@ internal sealed class JackpotRail
             available, TextStyles.Footnote, Palette.WithAlpha(Ink, 0.72f), hovered);
 
         DrawMeter(drawList, min, max, coins, delta, scale);
-        Material.EdgeSquircle(drawList, min, max, rounding, scale);
 
         bottom = restMax.Y;
         return UiInteract.Click(origin, restMax, hovered);

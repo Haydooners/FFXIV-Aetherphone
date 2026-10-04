@@ -19,16 +19,13 @@ internal sealed partial class MusicApp
     private const float FriendAvatarInset = 8f;
     private const float FriendAvatarRing = 2f;
     private const float FriendMonogramScale = 0.62f;
-    private const float FriendJamPillHeight = 28f;
+    private const float FriendJamPillHeight = Button.SmallHeight;
     private const float FriendJamGlyphScale = 0.62f;
-    private const float FriendJamHoverLighten = 0.08f;
     private const float FriendLiveDot = 3f;
     private const int FriendSegments = 24;
     private const float ListeningPromptTile = 40f;
     private const float ListeningPromptGlyphScale = 1.05f;
-    private const float ListeningPromptButtonHeight = 34f;
-    private const float ListeningPromptGlowCoverage = 0.55f;
-    private const float ListeningPromptGlowStrength = 0.18f;
+    private const float ListeningPromptButtonHeight = Button.RegularHeight;
 
     private readonly ListeningPresence listening;
     private readonly ShelfRail friendsRail = new();
@@ -56,10 +53,7 @@ internal sealed partial class MusicApp
         var buttonHeight = ListeningPromptButtonHeight * scale;
         var card = BeginJamBlock(pad + MathF.Max(tile, textHeight) + Metrics.Space.Lg * scale + buttonHeight + pad);
         var drawList = ImGui.GetWindowDrawList();
-        var rounding = Metrics.Radius.Card * scale;
-        Material.ThemedGlass(drawList, card.Min, card.Max, rounding, scale, theme);
-        Material.TopGlow(drawList, card.Min, card.Max, rounding, ui.Accent, ListeningPromptGlowCoverage,
-            ListeningPromptGlowStrength);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var left = card.Min.X + pad;
         var top = card.Min.Y + pad;
         var tileMin = new Vector2(left, top);
@@ -139,7 +133,7 @@ internal sealed partial class MusicApp
             DrawFriendAvatar(drawList, tile.Min, friend, scale);
             if (jamCode.Length > 0)
             {
-                DrawFriendJamPill(drawList, jamPill, jamHovered, scale);
+                DrawFriendJamPill(drawList, jamPill, jamHovered, index, scale);
             }
 
             DrawFriendCaption(drawList, tile.Min, side, friend, index, nowUnixMilliseconds, scale);
@@ -209,22 +203,20 @@ internal sealed partial class MusicApp
             FriendMonogramScale, FriendSegments);
     }
 
-    private void DrawFriendJamPill(ImDrawListPtr drawList, Rect pill, bool hovered, float scale)
+    private void DrawFriendJamPill(ImDrawListPtr drawList, Rect pill, bool hovered, int index, float scale)
     {
-        var fill = hovered ? Palette.Lighten(ui.Accent, FriendJamHoverLighten) : ui.Accent;
-        Squircle.Fill(drawList, pill.Min, pill.Max, pill.Height * 0.5f, ImGui.GetColorU32(fill));
-        var glyphCenter = new Vector2(pill.Min.X + pill.Height * 0.5f + Metrics.Space.Xs * scale, pill.Center.Y);
-        DrawJamGlyph(drawList, glyphCenter, AccentRing.Ink, FriendJamGlyphScale);
-        var textLeft = glyphCenter.X + pill.Height * 0.5f;
-        var textWidth = MathF.Max(1f, pill.Max.X - Metrics.Space.Sm * scale - textLeft);
+        var face = Button.Surface(drawList, pill, ui.Ink, ButtonStyle.Prominent, ButtonRole.Normal, true, hovered,
+            ImGui.GetID(index));
+        var faceRect = face.Face;
+        var glyphCenter = new Vector2(faceRect.Min.X + faceRect.Height * 0.5f + Metrics.Space.Xs * scale,
+            faceRect.Center.Y);
+        DrawJamGlyph(drawList, glyphCenter, face.LabelInk, FriendJamGlyphScale);
+        var textLeft = glyphCenter.X + faceRect.Height * 0.5f;
+        var textWidth = MathF.Max(1f, faceRect.Max.X - Metrics.Space.Sm * scale - textLeft);
         var label = Typography.FitText(Loc.T(L.Music.Friends.JoinJam), textWidth, TextStyles.FootnoteEmphasized);
         var textHeight = Typography.LineHeight(TextStyles.FootnoteEmphasized);
-        Typography.Draw(drawList, new Vector2(textLeft, pill.Center.Y - textHeight * 0.5f), label, AccentRing.Ink,
+        Typography.Draw(drawList, new Vector2(textLeft, faceRect.Center.Y - textHeight * 0.5f), label, face.LabelInk,
             TextStyles.FootnoteEmphasized);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
     }
 
     private void DrawFriendCaption(ImDrawListPtr drawList, Vector2 artMin, float side, ListeningFriendDto friend,

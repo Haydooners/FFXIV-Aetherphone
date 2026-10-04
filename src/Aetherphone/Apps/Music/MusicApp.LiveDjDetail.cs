@@ -15,11 +15,6 @@ internal sealed partial class MusicApp
     private const float LiveDjDetailAvatarRadius = 40f;
 
     private readonly List<(string Label, FontAwesomeIcon Icon, string Url)> liveDjSocialLinks = new(8);
-    private static readonly string[] LiveDjSocialButtonIds =
-    [
-        "music.liveDj.soc.0", "music.liveDj.soc.1", "music.liveDj.soc.2", "music.liveDj.soc.3",
-        "music.liveDj.soc.4", "music.liveDj.soc.5", "music.liveDj.soc.6", "music.liveDj.soc.7",
-    ];
     private LiveDjEntry? selectedDj;
     private string? lastDjDetailKey;
     private string cachedDjEventLabel = string.Empty;
@@ -93,8 +88,9 @@ internal sealed partial class MusicApp
                 var teleportWidth = MathF.Min(
                     Typography.Measure(teleportLabel, TextStyles.Callout).X + 34f * scale,
                     contentWidth - actionRadius * 2f - sidePadding);
-                var teleportMin = new Vector2(origin.X + sidePadding, actionRowY + actionRadius - 18f * scale);
-                var teleportRect = new Rect(teleportMin, teleportMin + new Vector2(teleportWidth, 36f * scale));
+                var teleportHeight = Button.RegularHeight * scale;
+                var teleportMin = new Vector2(origin.X + sidePadding, actionRowY + actionRadius - teleportHeight * 0.5f);
+                var teleportRect = new Rect(teleportMin, teleportMin + new Vector2(teleportWidth, teleportHeight));
                 if (ui.GhostButton(teleportRect, teleportLabel))
                 {
                     Windows.TeleportActions.AskThenTravel(confirm, dj.VenueName ?? dj.NormalizedName,
@@ -110,18 +106,8 @@ internal sealed partial class MusicApp
             if (dj.TwitchUrl != null)
             {
                 var watchCenter = new Vector2(origin.X + width - actionRadius - sidePadding, actionRowY + actionRadius);
-                var watchMin = watchCenter - new Vector2(actionRadius, actionRadius);
-                var watchMax = watchCenter + new Vector2(actionRadius, actionRadius);
-                var watchHovered = UiInteract.Hover(watchMin, watchMax);
-                var watchFill = watchHovered ? ui.Accent : Palette.WithAlpha(ui.Accent, 0.92f);
-                drawList.AddCircleFilled(watchCenter, actionRadius, ImGui.GetColorU32(watchFill), 32);
-                AppSkin.Icon(drawList, watchCenter, IconGlyph.Of(FontAwesomeIcon.Play), ui.Palette.BackdropBottom, 1f);
-                if (watchHovered)
-                {
-                    ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-                }
-
-                if (watchHovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                if (RoundButton.Icon(drawList, watchCenter, actionRadius, IconGlyph.Of(FontAwesomeIcon.Play), ui.Ink,
+                        ButtonStyle.Prominent))
                 {
                     Windows.UrlActions.AskThenOpen(dj.RolladeckUrl ?? dj.TwitchUrl ?? "https://xivrolladeck.com");
                 }
@@ -134,10 +120,10 @@ internal sealed partial class MusicApp
             var infoMin = new Vector2(origin.X + sidePadding, cursorY);
             var infoMax = new Vector2(origin.X + sidePadding + contentWidth, cursorY + infoCardHeight);
             var infoHovered = venueEntry != null && UiInteract.Hover(infoMin, infoMax);
-            ui.Card(drawList, infoMin, infoMax, 10f * scale, elevated: false);
+            ui.Card(drawList, infoMin, infoMax, Metrics.Radius.Grouped * scale);
             if (infoHovered)
             {
-                Squircle.Fill(drawList, infoMin, infoMax, 10f * scale, ImGui.GetColorU32(ui.HoverTint));
+                Squircle.Fill(drawList, infoMin, infoMax, Metrics.Radius.Grouped * scale, ImGui.GetColorU32(ui.HoverTint));
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
             }
 
@@ -256,7 +242,8 @@ internal sealed partial class MusicApp
 
                     var chipMin = new Vector2(currentChipX, currentChipY);
                     var chipMax = new Vector2(currentChipX + chipWidth, currentChipY + chipHeight);
-                    Squircle.Stroke(drawList, chipMin, chipMax, 6f * scale, ImGui.GetColorU32(ui.Palette.CardStroke), 1f);
+                    Squircle.Fill(drawList, chipMin, chipMax, chipHeight * 0.5f,
+                        ImGui.GetColorU32(Surfaces.Fill(ui.Ink, FillLevel.Tertiary)));
                     Typography.Draw(drawList, new Vector2(chipMin.X + chipPadding, chipMin.Y + (chipHeight - genreSize.Y) * 0.5f),
                         genre, ui.Palette.BodyInk, TextStyles.Footnote);
                     currentChipX += chipWidth + chipGapX;
@@ -316,7 +303,7 @@ internal sealed partial class MusicApp
                 ImGui.SetCursorScreenPos(socialOrigin);
                 ImGui.Dummy(new Vector2(width, socialLabelHeight + 6f * scale));
 
-                var iconButtonSize = 36f * scale;
+                var iconButtonSize = RoundButton.RegularRadius * 2f * scale;
                 var iconGapX = 8f * scale;
                 var socialRowMaxX = origin.X + sidePadding + contentWidth;
                 var socialX = origin.X + sidePadding;
@@ -332,24 +319,9 @@ internal sealed partial class MusicApp
                         socialY += iconButtonSize + 8f * scale;
                     }
 
-                    var buttonMin = new Vector2(socialX, socialY);
-                    var buttonMax = new Vector2(socialX + iconButtonSize, socialY + iconButtonSize);
-
-                    ImGui.SetCursorScreenPos(buttonMin);
-                    var clicked = ImGui.InvisibleButton(LiveDjSocialButtonIds[socialIndex], new Vector2(iconButtonSize, iconButtonSize));
-                    var buttonHovered = ImGui.IsItemHovered();
-
-                    Squircle.Stroke(drawList, buttonMin, buttonMax, 8f * scale,
-                        ImGui.GetColorU32(buttonHovered ? ui.Palette.Accent : ui.Palette.CardStroke), 1f);
-                    AppSkin.Icon(drawList, new Vector2(buttonMin.X + iconButtonSize * 0.5f, buttonMin.Y + iconButtonSize * 0.5f),
-                        IconGlyph.Of(icon), buttonHovered ? ui.Palette.Accent : ui.Palette.MutedInk, 0.88f);
-
-                    if (buttonHovered)
-                    {
-                        ImGui.SetTooltip(label);
-                    }
-
-                    if (clicked)
+                    var buttonCenter = new Vector2(socialX + iconButtonSize * 0.5f, socialY + iconButtonSize * 0.5f);
+                    if (RoundButton.Icon(drawList, buttonCenter, iconButtonSize * 0.5f, IconGlyph.Of(icon), ui.Ink,
+                            ButtonStyle.Gray, label))
                     {
                         Windows.UrlActions.AskThenOpen(url);
                     }

@@ -11,7 +11,7 @@ namespace Aetherphone.Apps.Casino.Tables;
 
 internal sealed class TableDoor
 {
-    private const float PillHeight = 40f;
+    private const float PillHeight = Button.RegularHeight;
     private const float RowHeight = 56f;
     private const float RowGap = 8f;
 
@@ -121,7 +121,7 @@ internal sealed class TableDoor
         var tokenBlock = Typography.MeasureWrappedBlock(shareText, TextStyles.Footnote, width - pad * 2f);
         var height = 20f * scale + tokenBlock.Y + PillHeight * scale + pad * 2f + 8f * scale;
         var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var rounding = Metrics.Radius.Card * scale;
+        var rounding = Metrics.Radius.Grouped * scale;
         ui.Card(drawList, card.Min, card.Max, rounding);
         Squircle.Stroke(drawList, card.Min, card.Max, rounding,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.30f)), 1f * scale);
@@ -154,7 +154,8 @@ internal sealed class TableDoor
         var height = block.Y + pad * 2f;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), message, ui.TitleInk, TextStyles.Footnote,
             width - pad * 2f);
         ImGui.SetCursorScreenPos(origin);
@@ -185,7 +186,7 @@ internal sealed class TableDoor
         var height = block.Y + pad * 2f;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), text, ui.MutedInk, TextStyles.Footnote,
             width - pad * 2f);
         ImGui.SetCursorScreenPos(origin);
@@ -199,7 +200,7 @@ internal sealed class TableDoor
         var drawList = ImGui.GetWindowDrawList();
         var height = RowHeight * scale;
         var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        ui.Card(drawList, row.Min, row.Max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, row.Min, row.Max, Metrics.Radius.Grouped * scale);
 
         var buttonWidth = 74f * scale;
         var textWidth = width - buttonWidth * 2f - 32f * scale;
@@ -234,7 +235,7 @@ internal sealed class TableDoor
         var drawList = ImGui.GetWindowDrawList();
         var height = RowHeight * scale;
         var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        ui.Card(drawList, row.Min, row.Max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, row.Min, row.Max, Metrics.Radius.Grouped * scale);
 
         var buttonWidth = 84f * scale;
         DrawIdentity(drawList, ui, occupant.DisplayName, row, width - buttonWidth - 32f * scale, scale);

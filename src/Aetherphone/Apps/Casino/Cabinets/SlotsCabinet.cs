@@ -16,10 +16,10 @@ internal sealed class SlotsCabinet
     private const float PadX = 16f;
     private const float InfoRowHeight = 48f;
     private const float BannerHeight = 62f;
-    private const float SpinPillHeight = 50f;
+    private const float SpinPillHeight = Button.LargeHeight;
     private const float TurboWidth = 62f;
     private const float AutoWidth = 62f;
-    private const float AutoChipHeight = 34f;
+    private const float AutoChipHeight = Button.RegularHeight;
     private const float AutoChipGap = 6f;
 
     private const float SpinRowsPerSecond = 15f;
@@ -774,23 +774,10 @@ internal sealed class SlotsCabinet
         }
 
         var label = Loc.T(L.Casino.SlotsSkip);
-        var labelSize = Typography.Measure(label, TextStyles.FootnoteEmphasized);
-        var chipHeight = 28f * scale;
+        var chipHeight = Button.SmallHeight * scale;
         var chipMax = new Vector2(left + width, y + chipHeight);
-        var chipMin = new Vector2(chipMax.X - labelSize.X - 24f * scale, y);
-        var hovered = UiInteract.Hover(chipMin, chipMax);
-        Squircle.Fill(drawList, chipMin, chipMax, chipHeight * 0.5f, ImGui.GetColorU32(ui.FieldSurface));
-        Squircle.Stroke(drawList, chipMin, chipMax, chipHeight * 0.5f,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.3f)), 1f * scale);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, chipMin, chipMax, chipHeight * 0.5f, ImGui.GetColorU32(ui.HoverTint));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        Typography.DrawCentered(drawList, (chipMin + chipMax) * 0.5f, label, ui.BodyInk,
-            TextStyles.FootnoteEmphasized);
-        if (UiInteract.Click(chipMin, chipMax, hovered))
+        var chipMin = new Vector2(chipMax.X - Button.WidthFor(label, ButtonSize.Small), y);
+        if (Button.Draw(drawList, new Rect(chipMin, chipMax), label, ui.Ink, ButtonStyle.Gray, id: "casino.slots.skip"))
         {
             playback.Skip();
             winRoll.Snap((int)playback.TotalWin);
@@ -1008,21 +995,8 @@ internal sealed class SlotsCabinet
             var min = new Vector2(left + index * (chipWidth + gap), y);
             var max = new Vector2(min.X + chipWidth, y + height);
             var affordable = stake > 0 && sitting.Stack >= stake;
-            var rounding = height * 0.5f;
-            var hovered = affordable && UiInteract.Hover(min, max);
-            Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.FieldSurface));
-            Squircle.Stroke(drawList, min, max, rounding,
-                ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, affordable ? 0.30f : 0.14f)), 1f * scale);
-            if (hovered)
-            {
-                Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.HoverTint));
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            Typography.DrawCentered(drawList, (min + max) * 0.5f, GameNumber.Label(rounds),
-                affordable ? ui.TitleInk : Palette.WithAlpha(ui.MutedInk, 0.6f),
-                TextStyles.SubheadlineEmphasized);
-            if (UiInteract.Click(min, max, hovered))
+            if (Button.Draw(drawList, new Rect(min, max), GameNumber.Label(rounds), ui.Ink, ButtonStyle.Gray,
+                    enabled: affordable))
             {
                 inlineReason = string.Empty;
                 autoRemaining = rounds;
@@ -1040,42 +1014,14 @@ internal sealed class SlotsCabinet
 
     private bool DrawAutoToggle(ImDrawListPtr drawList, AppSkin ui, Rect rect, float scale)
     {
-        var rounding = rect.Height * 0.5f;
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
         var lit = AutoRunning || autoPickerOpen;
-        var fill = lit ? Palette.WithAlpha(ui.Accent, 0.22f) : ui.FieldSurface;
-        Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(fill));
-        Squircle.Stroke(drawList, rect.Min, rect.Max, rounding,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, lit ? 0.7f : 0.25f)), 1f * scale);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        Typography.DrawCentered(drawList, rect.Center, Loc.T(L.Casino.SlotsAuto),
-            lit ? ui.Accent : ui.MutedInk, TextStyles.FootnoteEmphasized);
-        return hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+        return Button.Draw(drawList, rect, Loc.T(L.Casino.SlotsAuto), ui.Ink,
+            lit ? ButtonStyle.Tinted : ButtonStyle.Gray, id: "casino.slots.auto");
     }
 
-    private bool DrawTurboToggle(ImDrawListPtr drawList, AppSkin ui, Rect rect, float scale)
-    {
-        var rounding = rect.Height * 0.5f;
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var fill = turbo ? Palette.WithAlpha(ui.Accent, 0.22f) : ui.FieldSurface;
-        Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(fill));
-        Squircle.Stroke(drawList, rect.Min, rect.Max, rounding,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, turbo ? 0.7f : 0.25f)), 1f * scale);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        Typography.DrawCentered(drawList, rect.Center, Loc.T(L.Casino.SlotsTurbo),
-            turbo ? ui.Accent : ui.MutedInk, TextStyles.FootnoteEmphasized);
-        return hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
-    }
+    private bool DrawTurboToggle(ImDrawListPtr drawList, AppSkin ui, Rect rect, float scale) =>
+        Button.Draw(drawList, rect, Loc.T(L.Casino.SlotsTurbo), ui.Ink, turbo ? ButtonStyle.Tinted : ButtonStyle.Gray,
+            id: "casino.slots.turbo");
 
     private static float DrawReasonCard(ImDrawListPtr drawList, AppSkin ui, string message, float left, float y,
         float width, float scale)
@@ -1085,8 +1031,9 @@ internal sealed class SlotsCabinet
         var height = block.Y + pad * 2f;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, 16f * scale,
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), message, ui.TitleInk,
             TextStyles.Footnote, width - pad * 2f);
@@ -1103,7 +1050,7 @@ internal sealed class SlotsCabinet
         var cardHeight = titleSize.Y + hintBlock.Y + pad * 2f + 6f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + cardHeight);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), title, ui.TitleInk,
             TextStyles.SubheadlineEmphasized);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad + titleSize.Y + 6f * scale), hint,

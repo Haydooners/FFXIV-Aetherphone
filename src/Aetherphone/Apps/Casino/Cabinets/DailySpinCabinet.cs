@@ -13,7 +13,7 @@ namespace Aetherphone.Apps.Casino.Cabinets;
 internal sealed class DailySpinCabinet
 {
     private const float MaxRingRadius = 104f;
-    private const float PillHeight = 48f;
+    private const float PillHeight = Button.LargeHeight;
     private const int SpinTurns = 5;
 
     private static readonly Vector4 Gold = new(1f, 0.84f, 0.42f, 1f);
@@ -311,8 +311,9 @@ internal sealed class DailySpinCabinet
         var height = block.Y + pad * 2f;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, 16f * scale,
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), message, ui.TitleInk,
             TextStyles.Footnote, width - pad * 2f);

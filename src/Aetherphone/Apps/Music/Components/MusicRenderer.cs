@@ -8,8 +8,6 @@ namespace Aetherphone.Apps.Music.Components;
 
 internal static class MusicRenderer
 {
-    private const float ShadowAlpha = 0.30f;
-    private const float ShadowDrop = 1.5f;
     private const float GlyphFraction = 0.42f;
     private const float PlayNudge = 0.14f;
     private const int CircleSegments = 48;
@@ -27,8 +25,6 @@ internal static class MusicRenderer
             pressed ? Motion.PressIn : Motion.Release, MathF.Min(ImGui.GetIO().DeltaTime, 0.1f));
         Springs[id] = spring;
         var drawnRadius = radius * grow;
-        drawList.AddCircleFilled(center + new Vector2(0f, ShadowDrop * UiScale.Current), drawnRadius,
-            ImGui.GetColorU32(new Vector4(0f, 0f, 0f, ShadowAlpha * alpha)), CircleSegments);
         drawList.AddCircleFilled(center, drawnRadius, ImGui.GetColorU32(Palette.WithAlpha(fill, alpha)),
             CircleSegments);
         var glyphInk = ImGui.GetColorU32(Palette.WithAlpha(ink, alpha));

@@ -29,6 +29,8 @@ internal sealed partial class MusicApp
     private static readonly Vector4 NowPlayingWash = new(1f, 1f, 1f, 0.08f);
     private static readonly Vector4 NowPlayingRail = new(1f, 1f, 1f, 0.22f);
     private static readonly Vector4 ActiveGlyphInk = new(0.08f, 0.08f, 0.10f, 1f);
+    private static readonly ControlInk NowPlayingControlInk = new(NowPlayingInk, NowPlayingInk, NowPlayingMuted,
+        NowPlayingInk);
 
     private readonly NowPlayingPresenter nowPlaying = new();
     private readonly PaletteBackdrop paletteBackdrop = new();

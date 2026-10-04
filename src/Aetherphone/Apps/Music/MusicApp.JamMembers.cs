@@ -20,9 +20,7 @@ internal sealed partial class MusicApp
     private const float JamCrownOffsetX = 0.72f;
     private const float JamCrownOffsetY = 0.82f;
     private const float JamCrownBackingShare = 0.62f;
-    private const float JamDecisionRadius = 15f;
-    private const float JamDecisionGlyphScale = 0.62f;
-    private const float JamDecisionFillAlpha = 0.18f;
+    private const float JamDecisionRadius = RoundButton.SmallRadius;
     private const float JamDotsBox = 18f;
     private const float JamTagPadX = 6f;
     private const float JamTagFillAlpha = 0.16f;
@@ -88,16 +86,14 @@ internal sealed partial class MusicApp
         var textLeft = avatarCenter.X + avatarRadius + Metrics.Space.Md * scale;
         var textRight = approveCenter.X - decisionRadius - Metrics.Space.Md * scale;
         DrawJamRowText(drawList, textLeft, textRight, row.Center.Y, shownName, handle);
-        var positive = AccentRing.Green;
-        if (ui.IconButton(approveCenter, decisionRadius, IconGlyph.Of(FontAwesomeIcon.Check), positive,
-                Palette.WithAlpha(positive, JamDecisionFillAlpha), JamDecisionGlyphScale, Loc.T(L.Music.Jam.Approve)))
+        if (RoundButton.Icon(drawList, approveCenter, decisionRadius, IconGlyph.Of(FontAwesomeIcon.Check),
+                ui.Ink.WithAccent(AccentRing.Green), ButtonStyle.Tinted, Loc.T(L.Music.Jam.Approve)))
         {
             jam.Approve(request.UserId);
         }
 
-        var danger = theme.Danger;
-        if (ui.IconButton(denyCenter, decisionRadius, IconGlyph.Of(FontAwesomeIcon.Times), danger,
-                Palette.WithAlpha(danger, JamDecisionFillAlpha), JamDecisionGlyphScale, Loc.T(L.Music.Jam.Deny)))
+        if (RoundButton.Icon(drawList, denyCenter, decisionRadius, IconGlyph.Of(FontAwesomeIcon.Times),
+                ui.Ink.WithAccent(theme.Danger), ButtonStyle.Tinted, Loc.T(L.Music.Jam.Deny)))
         {
             jam.Deny(request.UserId);
         }

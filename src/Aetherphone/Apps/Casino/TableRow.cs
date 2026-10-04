@@ -22,9 +22,9 @@ internal static class TableRow
 
     public static bool Draw(ImDrawListPtr drawList, in Rect row, AppSkin ui, in TableRowView view, float scale)
     {
-        var rounding = Metrics.Radius.Widget * scale;
+        var rounding = Metrics.Radius.Grouped * scale;
         var hovered = UiInteract.Hover(row.Min, row.Max);
-        ui.Card(drawList, row.Min, row.Max, rounding, true);
+        ui.Card(drawList, row.Min, row.Max, rounding);
         if (hovered)
         {
             Squircle.Fill(drawList, row.Min, row.Max, rounding, ImGui.GetColorU32(ui.HoverTint));

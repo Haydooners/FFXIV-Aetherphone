@@ -18,7 +18,7 @@ internal sealed partial class CasinoApp
     private const float ExchangePad = 18f;
     private const float ExchangeDisc = 40f;
     private const float ExchangeArrow = 30f;
-    private const float ExchangeButtonHeight = 40f;
+    private const float ExchangeButtonHeight = Button.LargeHeight;
     private const float ExchangeRowGap = 14f;
     private const float ExchangeArrowAlpha = 0.10f;
 
@@ -73,7 +73,7 @@ internal sealed partial class CasinoApp
         var height = pad * 2f + disc + rowGap * 0.5f + caption + value + rowGap + caption + rowGap + buttonHeight;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        CoinArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
 
         var stack = casino.State?.Sitting?.Stack ?? 0;
         var balance = coins.Wallet?.Balance ?? 0;
@@ -102,17 +102,16 @@ internal sealed partial class CasinoApp
         var buttonWidth = (width - pad * 2f - gap) * 0.5f;
         var buyRect = new Rect(new Vector2(min.X + pad, buttonTop),
             new Vector2(min.X + pad + buttonWidth, buttonTop + buttonHeight));
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("buy"), buyRect,
-                seated ? Loc.T(L.Casino.TopUp) : Loc.T(L.Casino.BuyIn), CasinoCapsuleTone.Filled, !busy,
-                TextStyles.Headline))
+        if (Button.Draw(drawList, buyRect, seated ? Loc.T(L.Casino.TopUp) : Loc.T(L.Casino.BuyIn), ui.Ink,
+                ButtonStyle.Prominent, enabled: !busy, id: "casino.wallet.buy"))
         {
             cashier.Open();
         }
 
         var cashRect = new Rect(new Vector2(max.X - pad - buttonWidth, buttonTop),
             new Vector2(max.X - pad, buttonTop + buttonHeight));
-        if (CasinoArt.Capsule(drawList, ui, ImGui.GetID("cash"), cashRect, Loc.T(L.Casino.CashOut),
-                CasinoCapsuleTone.Tinted, seated && !busy, TextStyles.Headline))
+        if (Button.Draw(drawList, cashRect, Loc.T(L.Casino.CashOut), ui.Ink, ButtonStyle.Tinted,
+                enabled: seated && !busy, id: "casino.wallet.cash"))
         {
             AskCashOut(casino.State!.Sitting!);
         }
@@ -179,7 +178,7 @@ internal sealed partial class CasinoApp
         var rowHeight = RecordRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight);
         var row = new Rect(origin, max);
-        CoinArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var hovered = CoinArt.RowInteraction(drawList, ui, row, scale);
         var pad = Metrics.Space.Lg * scale;
         var tile = RecordTile * scale;

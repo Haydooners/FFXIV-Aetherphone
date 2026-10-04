@@ -83,7 +83,7 @@ internal sealed partial class CasinoApp
         var factor = PressFx.Scale(ImGui.GetID("card"), pressed, Core.Animation.Motion.PressScaleCard);
         var center = (min + max) * 0.5f;
         var half = (max - min) * 0.5f * factor;
-        CoinArt.Card(drawList, ui, center - half, center + half, scale);
+        ui.Card(drawList, center - half, center + half, Metrics.Radius.Grouped * scale);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -161,7 +161,7 @@ internal sealed partial class CasinoApp
     {
         var rowHeight = RecordRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight);
-        CoinArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         if (DrawRecordRow(drawList, new Rect(origin, max), FontAwesomeIcon.ThList, CasinoArt.TintOf(CasinoGames.Blackjack),
                 L.Casino.TablesRow, L.Casino.TablesRowHint, false, scale))
         {

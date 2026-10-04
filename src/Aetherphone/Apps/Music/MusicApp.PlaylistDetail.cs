@@ -367,8 +367,8 @@ internal sealed partial class MusicApp
         var descriptionField = new Rect(new Vector2(nameField.Min.X, descriptionTop),
             new Vector2(nameField.Max.X, descriptionTop + DescriptionFieldHeight * scale));
         var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, descriptionField.Min, descriptionField.Max, LibraryKit.ButtonRadius * scale,
-            ImGui.GetColorU32(ui.FieldSurface));
+        Squircle.Fill(drawList, descriptionField.Min, descriptionField.Max, Metrics.Radius.Md * scale,
+            ImGui.GetColorU32(Surfaces.Fill(ui.Ink, FillLevel.Tertiary)));
         var pad = Metrics.Space.Sm * scale;
         var innerMin = descriptionField.Min + new Vector2(pad, pad * 0.5f);
         var innerSize = descriptionField.Size - new Vector2(pad * 2f, pad);

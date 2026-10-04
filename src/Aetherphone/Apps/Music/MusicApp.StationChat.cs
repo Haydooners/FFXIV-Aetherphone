@@ -244,9 +244,8 @@ internal sealed partial class MusicApp
             fieldLeft = reactCenter.X + buttonRadius + Metrics.Space.Sm * scale;
             overReactionToggle = UiInteract.Hover(reactCenter - new Vector2(buttonRadius, buttonRadius),
                 reactCenter + new Vector2(buttonRadius, buttonRadius));
-            if (ui.IconButton(reactCenter, buttonRadius, IconGlyph.Of(FontAwesomeIcon.Heart),
-                    reactionTrayOpen ? ui.Accent : ui.MutedInk, Palette.WithAlpha(ui.FieldSurface, 0.9f), 0.8f,
-                    Loc.T(L.Music.Live.React)))
+            if (RoundButton.Icon(drawList, reactCenter, buttonRadius, IconGlyph.Of(FontAwesomeIcon.Heart), ui.Ink,
+                    reactionTrayOpen ? ButtonStyle.Tinted : ButtonStyle.Gray, Loc.T(L.Music.Live.React)))
             {
                 reactionTrayOpen = !reactionTrayOpen;
             }
@@ -278,8 +277,7 @@ internal sealed partial class MusicApp
 
     private void DrawComposerLock(ImDrawListPtr drawList, Rect field, RadioComposerLock lockState, float scale)
     {
-        Squircle.Fill(drawList, field.Min, field.Max, field.Height * 0.5f,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.FieldSurface, 0.7f)));
+        SearchBar.Surface(drawList, field, ui.Ink);
         var glyphCenter = new Vector2(field.Min.X + Metrics.Space.Lg * scale, field.Center.Y);
         AppSkin.Icon(drawList, glyphCenter, IconGlyph.Of(FontAwesomeIcon.Lock), ui.MutedInk, 0.7f);
         var textLeft = glyphCenter.X + Metrics.Space.Md * scale;
@@ -339,7 +337,10 @@ internal sealed partial class MusicApp
         var min = new Vector2(left, bar.Min.Y - height - Metrics.Space.Xs * scale);
         var max = new Vector2(left + width, min.Y + height);
         var drawList = ImGui.GetWindowDrawList();
-        Material.ThemedGlass(drawList, min, max, height * 0.5f, scale, theme);
+        var radius = height * 0.5f;
+        Elevation.Floating(drawList, min, max, radius, scale);
+        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(ui.BackdropColor with { W = 1f }));
+        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(Surfaces.Fill(ui.Ink, FillLevel.Secondary)));
         var enabled = room.CanReact();
         var overTray = UiInteract.Hover(min, max);
         for (var index = 0; index < RadioRoomSession.ReactionKinds; index++)

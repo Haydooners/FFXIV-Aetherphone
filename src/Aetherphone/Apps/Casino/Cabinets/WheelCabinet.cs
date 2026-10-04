@@ -22,7 +22,7 @@ internal sealed class WheelCabinet
     private const float SpotCardHeight = 92f;
     private const float SpotGap = 6f;
     private const float FieldHeight = 40f;
-    private const float PillHeight = 46f;
+    private const float PillHeight = Button.LargeHeight;
     private const float LockFlashSeconds = 0.45f;
     private const float RecentChipHeight = 20f;
     private const float RecentChipGap = 5f;
@@ -637,7 +637,7 @@ internal sealed class WheelCabinet
         var fieldWidth = width * 0.34f;
         var fieldMin = new Vector2(left, y);
         var fieldMax = new Vector2(left + fieldWidth, y + FieldHeight * scale);
-        Squircle.Fill(drawList, fieldMin, fieldMax, Metrics.Radius.Sm * scale, ImGui.GetColorU32(ui.FieldSurface));
+        SearchBar.Surface(drawList, new Rect(fieldMin, fieldMax), ui.Ink);
         ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + 10f * scale,
             (fieldMin.Y + fieldMax.Y) * 0.5f - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(fieldWidth - 20f * scale);
@@ -706,8 +706,9 @@ internal sealed class WheelCabinet
         var height = titleSize.Y + block.Y + pad * 2f + 4f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, 16f * scale,
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), title, ui.TitleInk,
             TextStyles.FootnoteEmphasized);
@@ -724,8 +725,9 @@ internal sealed class WheelCabinet
         var height = block.Y + pad * 2f;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, 16f * scale,
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), message, ui.TitleInk,
             TextStyles.Footnote, width - pad * 2f);
@@ -743,7 +745,7 @@ internal sealed class WheelCabinet
         var height = titleSize.Y + block.Y + pad * 2f + 6f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), title, ui.TitleInk,
             TextStyles.SubheadlineEmphasized);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad + titleSize.Y + 6f * scale), hint,
@@ -768,7 +770,7 @@ internal sealed class WheelCabinet
         var height = titleSize.Y + block.Y + pad * 2f + 6f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), title, ui.TitleInk,
             TextStyles.SubheadlineEmphasized);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad + titleSize.Y + 6f * scale), hint,

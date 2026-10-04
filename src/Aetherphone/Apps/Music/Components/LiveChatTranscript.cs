@@ -17,7 +17,7 @@ internal sealed class LiveChatTranscript
     public const float ComposerBaseHeight = 54f;
     public const float ComposerFieldInsetY = 9f;
     public const int ComposerMaxLines = 3;
-    public const float ComposerButtonRadius = 17f;
+    public const float ComposerButtonRadius = RoundButton.RegularRadius;
 
     public static readonly TextStyle BodyStyle = TextStyles.Subheadline;
 
@@ -35,7 +35,7 @@ internal sealed class LiveChatTranscript
     private const int CounterWarning = 10;
 
     private static readonly TextStyle NameStyle = TextStyles.FootnoteEmphasized;
-    private static readonly TextStyle BadgeStyle = new(0.66f, FontWeight.Bold);
+    private static readonly TextStyle BadgeStyle = TextStyles.Caption2;
 
     private readonly AppSkin ui;
     private readonly RemoteImageCache images;
@@ -175,39 +175,35 @@ internal sealed class LiveChatTranscript
         var drawList = ImGui.GetWindowDrawList();
         var height = JumpPillHeight * scale;
         var bottom = list.Max.Y - Metrics.Space.Sm * scale;
-        Vector2 min;
-        Vector2 max;
-        if (follow.Unseen > 0)
+        var ink = ui.Ink;
+        if (follow.Unseen == 0)
         {
-            var label = newMessagesLabel.Plural(L.Music.Live.NewMessages, follow.Unseen);
-            var width = MathF.Min(list.Width - Metrics.Space.Xxl * scale,
-                Typography.Measure(label, TextStyles.FootnoteEmphasized).X + height + Metrics.Space.Lg * scale);
-            min = new Vector2(list.Center.X - width * 0.5f, bottom - height);
-            max = new Vector2(list.Center.X + width * 0.5f, bottom);
-            Material.ThemedGlass(drawList, min, max, height * 0.5f, scale, ui.Theme);
-            AppSkin.Icon(drawList, new Vector2(min.X + height * 0.5f + Metrics.Space.Xxs * scale, min.Y + height * 0.5f),
-                IconGlyph.Of(FontAwesomeIcon.ArrowDown), ui.Accent, 0.65f);
-            var fitted = jumpPillFit.Fit(label, width - height - Metrics.Space.Sm * scale,
-                TextStyles.FootnoteEmphasized);
-            var size = Typography.Measure(fitted, TextStyles.FootnoteEmphasized);
-            Typography.Draw(drawList, new Vector2(min.X + height, min.Y + (height - size.Y) * 0.5f), fitted, ui.Accent,
-                TextStyles.FootnoteEmphasized);
-        }
-        else
-        {
-            min = new Vector2(list.Center.X - height * 0.5f, bottom - height);
-            max = new Vector2(list.Center.X + height * 0.5f, bottom);
-            Material.ThemedGlass(drawList, min, max, height * 0.5f, scale, ui.Theme);
-            AppSkin.Icon(drawList, (min + max) * 0.5f, IconGlyph.Of(FontAwesomeIcon.ArrowDown), ui.Accent, 0.65f);
+            if (RoundButton.Icon(drawList, new Vector2(list.Center.X, bottom - height * 0.5f), height * 0.5f,
+                    IconGlyph.Of(FontAwesomeIcon.ArrowDown), ink, ButtonStyle.Prominent))
+            {
+                follow.RequestJump();
+            }
+
+            return;
         }
 
-        var hovered = UiInteract.Hover(min, max);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(min, max, hovered))
+        var label = newMessagesLabel.Plural(L.Music.Live.NewMessages, follow.Unseen);
+        var width = MathF.Min(list.Width - Metrics.Space.Xxl * scale,
+            Typography.Measure(label, TextStyles.FootnoteEmphasized).X + height + Metrics.Space.Lg * scale);
+        var pill = new Rect(new Vector2(list.Center.X - width * 0.5f, bottom - height),
+            new Vector2(list.Center.X + width * 0.5f, bottom));
+        var hovered = UiInteract.Hover(pill.Min, pill.Max);
+        var face = Button.Surface(drawList, pill, ink, ButtonStyle.Prominent, ButtonRole.Normal, true, hovered,
+            ImGui.GetID("##liveChatJump"));
+        var faceRect = face.Face;
+        AppSkin.Icon(drawList,
+            new Vector2(faceRect.Min.X + faceRect.Height * 0.5f + Metrics.Space.Xxs * scale, faceRect.Center.Y),
+            IconGlyph.Of(FontAwesomeIcon.ArrowDown), face.LabelInk, 0.65f);
+        var fitted = jumpPillFit.Fit(label, width - height - Metrics.Space.Sm * scale, TextStyles.FootnoteEmphasized);
+        var size = Typography.Measure(fitted, TextStyles.FootnoteEmphasized);
+        Typography.Draw(drawList, new Vector2(faceRect.Min.X + faceRect.Height, faceRect.Center.Y - size.Y * 0.5f),
+            fitted, face.LabelInk, TextStyles.FootnoteEmphasized);
+        if (UiInteract.Click(pill.Min, pill.Max, hovered))
         {
             follow.RequestJump();
         }
@@ -226,10 +222,8 @@ internal sealed class LiveChatTranscript
         var submitted = SubmitField.Multiline(field, imguiId, hint, editor, ui.Theme, maxLength, ComposerMaxLines,
             FontAwesomeIcon.Comment);
         var ready = editor.HasContent && canSend;
-        drawList.AddCircleFilled(sendCenter, buttonRadius,
-            ImGui.GetColorU32(ready ? ui.Accent : Palette.WithAlpha(ui.FieldSurface, 0.9f)), 32);
-        var sendTapped = ui.IconButton(sendCenter, buttonRadius, IconGlyph.Of(FontAwesomeIcon.PaperPlane),
-            ready ? ui.Palette.BackdropBottom : ui.MutedInk, AppSkin.Transparent, 0.8f, Loc.T(L.Music.Live.Send));
+        var sendTapped = RoundButton.Icon(drawList, sendCenter, buttonRadius, IconGlyph.Of(FontAwesomeIcon.PaperPlane),
+            ui.Ink, ready ? ButtonStyle.Prominent : ButtonStyle.Gray, Loc.T(L.Music.Live.Send));
         DrawCounter(ui, drawList, field, editor.Text.Length, maxLength, counter, scale);
         return (submitted || sendTapped) && ready;
     }

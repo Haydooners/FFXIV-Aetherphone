@@ -10,17 +10,12 @@ namespace Aetherphone.Apps.Music.Library;
 
 internal static class LibraryKit
 {
-    public const float ButtonHeight = 44f;
-    public const float ButtonRadius = 11f;
+    public const float ButtonHeight = Button.LargeHeight;
     public const float ActionRowHeight = 58f;
     public const float FieldHeight = 40f;
     private const float ButtonGap = 14f;
     private const float ButtonGlyphScale = 0.75f;
     private const float ButtonGlyphGap = 8f;
-    private const float ButtonFillAlpha = 0.10f;
-    private const float ButtonHoverAlpha = 0.16f;
-    private const float ButtonPressedAlpha = 0.22f;
-    private const float TileFillAlpha = 0.12f;
     private const float TileGlyphScale = 0.9f;
     private const float FieldPadX = 12f;
 
@@ -76,25 +71,20 @@ internal static class LibraryKit
     {
         var drawList = ImGui.GetWindowDrawList();
         var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var alpha = !hovered ? ButtonFillAlpha :
-            ImGui.IsMouseDown(ImGuiMouseButton.Left) ? ButtonPressedAlpha : ButtonHoverAlpha;
-        var radius = ButtonRadius * UiScale.Current;
-        Squircle.Fill(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, alpha)));
-        var ink = enabled ? ui.Accent : Palette.WithAlpha(ui.Accent, 0.4f);
-        var glyphBox = Typography.LineHeight(TextStyles.Headline);
+        var face = Button.Surface(drawList, rect, ui.Ink, ButtonStyle.Tinted, ButtonRole.Normal, enabled, hovered,
+            ImGui.GetID(label));
+        var faceRect = face.Face;
+        var style = Button.LabelStyle(faceRect.Height);
+        var glyphBox = Typography.LineHeight(style);
         var gap = ButtonGlyphGap * UiScale.Current;
-        var available = MathF.Max(1f, rect.Width - glyphBox - gap - radius * 2f);
-        var fitted = Typography.FitText(label, available, TextStyles.Headline);
-        var labelSize = Typography.Measure(fitted, TextStyles.Headline);
-        var left = rect.Center.X - (glyphBox + gap + labelSize.X) * 0.5f;
-        AppSkin.Icon(drawList, new Vector2(left + glyphBox * 0.5f, rect.Center.Y), glyph, ink, ButtonGlyphScale);
-        Typography.Draw(drawList, new Vector2(left + glyphBox + gap, rect.Center.Y - labelSize.Y * 0.5f), fitted, ink,
-            TextStyles.Headline);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
+        var available = MathF.Max(1f, faceRect.Width - glyphBox - gap - faceRect.Height);
+        var fitted = Typography.FitText(label, available, style);
+        var labelSize = Typography.Measure(fitted, style);
+        var left = faceRect.Center.X - (glyphBox + gap + labelSize.X) * 0.5f;
+        AppSkin.Icon(drawList, new Vector2(left + glyphBox * 0.5f, faceRect.Center.Y), glyph, face.LabelInk,
+            ButtonGlyphScale);
+        Typography.Draw(drawList, new Vector2(left + glyphBox + gap, faceRect.Center.Y - labelSize.Y * 0.5f), fitted,
+            face.LabelInk, style);
         return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
@@ -129,7 +119,7 @@ internal static class LibraryKit
             cell.Bounds.Min.Y + (cell.Bounds.Height - side) * 0.5f);
         var artMax = artMin + new Vector2(side, side);
         Squircle.Fill(drawList, artMin, artMax, side * ArtworkTile.TileRadiusFraction,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, TileFillAlpha)));
+            ImGui.GetColorU32(Surfaces.Fill(ui.Ink, FillLevel.Secondary)));
         AppSkin.Icon(drawList, (artMin + artMax) * 0.5f, glyph, ui.Accent, TileGlyphScale);
         var textLeft = artMax.X + Metrics.Space.Md * scale;
         var labelHeight = Typography.LineHeight(TextStyles.Body);
@@ -147,7 +137,7 @@ internal static class LibraryKit
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, field.Min, field.Max, ButtonRadius * scale, ImGui.GetColorU32(ui.FieldSurface));
+        SearchBar.Surface(drawList, field, ui.Ink);
         var padX = FieldPadX * scale;
         ImGui.SetCursorScreenPos(new Vector2(field.Min.X + padX, field.Center.Y - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(MathF.Max(1f, field.Width - padX * 2f));

@@ -30,7 +30,7 @@ internal sealed partial class MusicApp
     private const float PlayHitRadius = 36f;
     private const float VolumeIconReserve = 28f;
     private const float VolumeIconScale = 0.8f;
-    private const float RowButtonRadius = 15f;
+    private const float RowButtonRadius = RoundButton.SmallRadius;
     private const float RowButtonSpacing = 38f;
     private const float RowButtonGlyph = 0.85f;
     private const float PaneButtonRadius = 20f;
@@ -178,9 +178,6 @@ internal sealed partial class MusicApp
         var radiusFraction = miniArtKnown
             ? MiniArtRadiusFraction + (heroFraction - MiniArtRadiusFraction) * openness
             : heroFraction;
-        var shadow = openness * (1f - blend) * Math.Clamp((artScale.Value - PausedArtScale) / (1f - PausedArtScale),
-            0.35f, 1f);
-        Elevation.Squircle(drawList, target.Min, target.Max, target.Width * radiusFraction, scale, shadow);
         ArtworkTile.Draw(drawList, images, target.Min, target.Width, playback.ArtworkUrl, playback.Title,
             radiusFraction);
         if (blend <= InteractiveBlend || !nowPlaying.IsOpen)
@@ -262,18 +259,15 @@ internal sealed partial class MusicApp
         var menuCenter = new Vector2(right - radius, centerY);
         var loveCenter = new Vector2(menuCenter.X - RowButtonSpacing * scale, centerY);
         var loved = library.IsLoved(song.VideoId);
-        drawList.AddCircleFilled(loveCenter, radius, ImGui.GetColorU32(NowPlayingWash));
-        drawList.AddCircleFilled(menuCenter, radius, ImGui.GetColorU32(NowPlayingWash));
-        if (RoundGlyphButton(drawList, ImGui.GetID("music.np.love"), loveCenter, radius,
-                IconGlyph.Of(FontAwesomeIcon.Heart),
-                loved ? NowPlayingInk : NowPlayingMuted, interactive,
-                Loc.T(loved ? L.Music.Unlove : L.Music.Love)))
+        if (RoundButton.Icon(drawList, loveCenter, radius, IconGlyph.Of(FontAwesomeIcon.Heart), NowPlayingControlInk,
+                ButtonStyle.Gray, Loc.T(loved ? L.Music.Unlove : L.Music.Love), enabled: interactive,
+                glyphInk: loved ? NowPlayingInk : NowPlayingMuted))
         {
             library.SetLoved(song, !loved);
         }
 
-        if (RoundGlyphButton(drawList, ImGui.GetID("music.np.menu"), menuCenter, radius,
-                IconGlyph.Of(FontAwesomeIcon.EllipsisH), NowPlayingInk, interactive, Loc.T(L.Music.MoreOptions)))
+        if (RoundButton.Icon(drawList, menuCenter, radius, IconGlyph.Of(FontAwesomeIcon.EllipsisH),
+                NowPlayingControlInk, ButtonStyle.Gray, Loc.T(L.Music.MoreOptions), enabled: interactive))
         {
             songMenu.Open(song);
         }
