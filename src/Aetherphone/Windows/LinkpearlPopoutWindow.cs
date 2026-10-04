@@ -33,8 +33,8 @@ internal sealed partial class LinkpearlPopoutWindow : Window
     private const float TitleHeight = 44f;
     private const float Rounding = 18f;
     private const float BodyInset = 4f;
-    private const float ButtonRadius = 14f;
-    private const float ButtonPitch = 31f;
+    private const float ButtonRadius = SocialChrome.HeaderIconRadius;
+    private const float ButtonPitch = SocialChrome.HeaderIconPitch;
     private const float ButtonGlyph = 18f;
     private const float EdgeInset = 8f;
     private const float ChipHeight = 30f;
