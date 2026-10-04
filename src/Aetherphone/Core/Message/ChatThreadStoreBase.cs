@@ -168,6 +168,8 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
 
     protected abstract string ReportTargetType { get; }
 
+    public virtual ReportVenue ReportVenue => ReportVenue.General;
+
     protected abstract string TypingSignalType { get; }
 
     protected abstract string ScopeFor(string threadId);
@@ -1593,7 +1595,7 @@ internal abstract class ChatThreadStoreBase<TMessage, TThread> : IDisposable
             && keys.TryGetCek(ScopeFor(threadId), generation, out _);
     }
 
-    public void ReportMessage(string messageId, string? reason, Action<bool> onComplete)
+    public void ReportMessage(string messageId, ReportReason reason, Action<bool> onComplete)
     {
         var snapshot = messages;
         var threadId = currentThreadId;

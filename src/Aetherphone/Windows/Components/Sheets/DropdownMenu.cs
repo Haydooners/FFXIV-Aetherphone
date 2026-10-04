@@ -23,11 +23,18 @@ internal sealed class DropdownMenu
     private const float MinWidth = 168f;
     private const float ActionSlotWidth = 24f;
     private const float ActionIconRadius = 11f;
+    private const float ScreenMargin = 8f;
+    private const float ScrollThumbWidth = 3f;
+    private const float ScrollThumbInset = 3f;
+    private const float ScrollThumbMinHeight = 24f;
+    private const float ScrollThumbAlpha = 0.22f;
     private string ownerId = string.Empty;
     private bool open;
     private Rect anchor;
     private Spring revealSpring;
     private int openedFrame;
+    private float scrollOffset;
+    private bool revealSelected;
 
     public bool Open => open;
 
@@ -46,6 +53,8 @@ internal sealed class DropdownMenu
         open = true;
         revealSpring.SnapTo(0f);
         openedFrame = ImGui.GetFrameCount();
+        scrollOffset = 0f;
+        revealSelected = true;
     }
 
     public void Close()
@@ -124,22 +133,28 @@ internal sealed class DropdownMenu
             width = MathF.Max(width, Typography.Measure(Header, TextStyles.Footnote).X + padX * 2f);
         }
 
-        var height = items.Length * rowHeight + padY * 2f + headerHeight;
+        var margin = ScreenMargin * scale;
+        var rowsHeight = items.Length * rowHeight;
+        var fullHeight = rowsHeight + padY * 2f + headerHeight;
+        var height = MathF.Min(fullHeight, MathF.Max(rowHeight + padY * 2f + headerHeight, screen.Height - margin * 2f));
+        var maxScroll = fullHeight - height;
         var left = anchor.Min.X;
-        if (left + width > screen.Max.X - 8f * scale)
+        if (left + width > screen.Max.X - margin)
         {
             left = anchor.Max.X - width;
         }
 
-        left = Math.Clamp(left, screen.Min.X + 8f * scale, MathF.Max(screen.Min.X + 8f * scale, screen.Max.X - 8f * scale - width));
+        left = Math.Clamp(left, screen.Min.X + margin, MathF.Max(screen.Min.X + margin, screen.Max.X - margin - width));
         var top = anchor.Max.Y + 4f * scale;
-        if (top + height > screen.Max.Y - 8f * scale)
+        if (top + height > screen.Max.Y - margin)
         {
             top = anchor.Min.Y - 4f * scale - height;
         }
 
-        var topLimit = screen.Min.Y + 8f * scale;
-        top = Math.Clamp(top, topLimit, MathF.Max(topLimit, screen.Max.Y - 8f * scale - height));
+        var topLimit = screen.Min.Y + margin;
+        top = Math.Clamp(top, topLimit, MathF.Max(topLimit, screen.Max.Y - margin - height));
+        scrollOffset = Scroll(items, rowHeight, height - padY * 2f - headerHeight, maxScroll, new Vector2(left, top),
+            new Vector2(left + width, top + height));
         var pivot = new Vector2(Math.Clamp(anchor.Center.X, left, left + width), top < anchor.Min.Y ? top + height : top);
         var revealScale = 0.94f + 0.06f * reveal;
         var min = pivot + (new Vector2(left, top) - pivot) * revealScale;
@@ -163,12 +178,20 @@ internal sealed class DropdownMenu
                 ImGui.GetColorU32(Palette.WithAlpha(theme.Separator, alpha)), 1f);
         }
 
+        var viewportMin = new Vector2(min.X, min.Y + padY * revealScale + headerOffset);
+        var viewportMax = new Vector2(max.X, max.Y - padY * revealScale);
+        drawList.PushClipRect(viewportMin, viewportMax, true);
         for (var index = 0; index < items.Length; index++)
         {
             var item = items[index];
             var rowMin = new Vector2(min.X + padY,
-                min.Y + padY * revealScale + headerOffset + index * rowHeight * revealScale);
+                viewportMin.Y + (index * rowHeight - scrollOffset) * revealScale);
             var rowMax = new Vector2(max.X - padY, rowMin.Y + rowHeight * revealScale);
+            if (rowMax.Y <= viewportMin.Y || rowMin.Y >= viewportMax.Y)
+            {
+                continue;
+            }
+
             var centerY = (rowMin.Y + rowMax.Y) * 0.5f;
 
             var cursorRight = rowMax.X - 10f * scale;
@@ -185,7 +208,7 @@ internal sealed class DropdownMenu
                 cursorRight -= actionSlot;
             }
 
-            var rowHovered = Hovering(rowMin, rowMax, true);
+            var rowHovered = Hovering(rowMin, rowMax, true) && Hovering(viewportMin, viewportMax, false);
             var editHovered = item.CanEdit && editRect is { } er && Hovering(er.Min, er.Max, true);
             if (rowHovered)
             {
@@ -232,6 +255,12 @@ internal sealed class DropdownMenu
             }
         }
 
+        drawList.PopClipRect();
+        if (maxScroll > 0f)
+        {
+            DrawScrollThumb(drawList, viewportMin, viewportMax, maxScroll, theme, alpha, scale);
+        }
+
         if (clicked >= 0)
         {
             action = clickedAction;
@@ -250,6 +279,51 @@ internal sealed class DropdownMenu
         }
 
         return -1;
+    }
+
+    private float Scroll(ReadOnlySpan<Item> items, float rowHeight, float viewportHeight, float maxScroll,
+        Vector2 min, Vector2 max)
+    {
+        if (maxScroll <= 0f)
+        {
+            revealSelected = false;
+            return 0f;
+        }
+
+        var offset = scrollOffset;
+        if (revealSelected)
+        {
+            revealSelected = false;
+            for (var index = 0; index < items.Length; index++)
+            {
+                if (items[index].Selected)
+                {
+                    offset = (index + 0.5f) * rowHeight - viewportHeight * 0.5f;
+                    break;
+                }
+            }
+        }
+
+        var wheel = ImGui.GetIO().MouseWheel;
+        if (wheel != 0f && Hovering(min, max, false))
+        {
+            offset -= wheel * rowHeight * 2f;
+        }
+
+        return Math.Clamp(offset, 0f, maxScroll);
+    }
+
+    private void DrawScrollThumb(ImDrawListPtr drawList, Vector2 viewportMin, Vector2 viewportMax, float maxScroll,
+        PhoneTheme theme, float alpha, float scale)
+    {
+        var track = viewportMax.Y - viewportMin.Y;
+        var thumbHeight = MathF.Max(ScrollThumbMinHeight * scale, track * track / (track + maxScroll));
+        var thumbTop = viewportMin.Y + (track - thumbHeight) * (scrollOffset / maxScroll);
+        var right = viewportMax.X - ScrollThumbInset * scale;
+        var thumbMin = new Vector2(right - ScrollThumbWidth * scale, thumbTop);
+        var thumbMax = new Vector2(right, thumbTop + thumbHeight);
+        drawList.AddRectFilled(thumbMin, thumbMax,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, ScrollThumbAlpha * alpha)), ScrollThumbWidth * scale);
     }
 
     private bool Hovering(Vector2 min, Vector2 max, bool clip) =>

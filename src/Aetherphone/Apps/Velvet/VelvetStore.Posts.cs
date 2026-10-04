@@ -1,3 +1,4 @@
+using Aetherphone.Core.Report;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Aethernet.Clients;
@@ -654,7 +655,7 @@ internal sealed partial class VelvetStore
         return post with { ReactionCounts = counts, TotalReactions = total, MyReaction = nextKind };
     }
 
-    public void Report(string targetType, string targetId, string? reason, Action<bool> onComplete)
+    public void Report(string targetType, string targetId, ReportReason reason, Action<bool> onComplete)
     {
         work.Run("report",
             async token => await safety.ReportAsync(targetType, targetId, reason, token).ConfigureAwait(false),

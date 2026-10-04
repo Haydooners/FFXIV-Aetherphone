@@ -152,8 +152,11 @@ internal sealed partial class MusicApp
         {
             Title = Loc.T(L.Music.Live.ReportTitle),
             Submit = (reason, done) =>
-                SubmitChatReport(entry, RadioRoomReport.Compose(reason, RadioRoomReport.JamEvidenceTag, code, entry),
-                    done),
+                SubmitChatReport(entry,
+                    reason with
+                    {
+                        Details = RadioRoomReport.Compose(reason.Details, RadioRoomReport.JamEvidenceTag, code, entry),
+                    }, done),
         });
     }
 }

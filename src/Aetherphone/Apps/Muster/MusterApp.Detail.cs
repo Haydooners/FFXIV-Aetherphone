@@ -746,7 +746,7 @@ internal sealed partial class MusterApp
         });
     }
 
-    private void SubmitReport(string musterId, string? reason, Action<bool> done)
+    private void SubmitReport(string musterId, ReportReason reason, Action<bool> done)
     {
         _ = Task.Run(async () =>
         {

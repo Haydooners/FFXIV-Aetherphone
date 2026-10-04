@@ -4,6 +4,7 @@ using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Media;
 using Aetherphone.Core.Net;
+using Aetherphone.Core.Report;
 using Aetherphone.Core.Wallpapers;
 
 namespace Aetherphone.Core.Social;
@@ -1278,7 +1279,7 @@ internal abstract class SocialFeedStore : IDisposable
         }, onComplete);
     }
 
-    public void Report(string targetType, string targetId, string? reason, Action<bool> onComplete)
+    public void Report(string targetType, string targetId, ReportReason reason, Action<bool> onComplete)
     {
         work.Run("report", token => safety.ReportAsync(targetType, targetId, reason, token), onComplete);
     }

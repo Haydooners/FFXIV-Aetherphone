@@ -4,7 +4,6 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Report;
 using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Windows.Components;
@@ -18,24 +17,24 @@ internal sealed class ReportOverlay
     private const float MaxDim = 0.55f;
     private const float MinCardScale = 0.92f;
     private const float CardRounding = 24f;
-    private const float CardPadding = 20f;
+    private const float CardPadding = 22f;
     private const float CardMaxWidth = 360f;
     private const float CardSideMargin = 24f;
-    private const float FieldHeight = 42f;
+    private const float FieldHeight = Button.LargeHeight;
+    private const float FieldInset = 16f;
+    private const float ChevronSize = 14f;
     private const float FieldGap = 10f;
-    private const float TitleGap = 12f;
+    private const float SummaryGap = 8f;
+    private const float TitleGap = 14f;
     private const float ButtonGap = 10f;
-    private const float ButtonsTopGap = 18f;
-    private const float ButtonHeight = 38f;
-    private const float TitleScale = 1.25f;
-    private const float DisclosureScale = 0.82f;
-    private const float FieldTextScale = 0.92f;
+    private const float ButtonsTopGap = 20f;
     private const int ReasonMaxLength = 170;
 
     private readonly ReportService service;
     private readonly DropdownMenu categoryMenu = new();
     private readonly DropdownMenu.Item[] categoryItems = new DropdownMenu.Item[ReportCategories.All.Length];
     private Spring reveal;
+    private Spring summaryReveal;
     private ReportPrompt? shown;
     private ReportPrompt? armedPrompt;
     private int openedFrame;
@@ -59,6 +58,7 @@ internal sealed class ReportOverlay
             {
                 armedPrompt = active;
                 openedFrame = ImGui.GetFrameCount();
+                summaryReveal.SnapTo(0f);
             }
         }
         else
@@ -95,7 +95,7 @@ internal sealed class ReportOverlay
             var menuWasOpen = categoryMenu.Open;
             categoryMenu.Gate();
             var interactive = active is not null && opacity > 0.5f && !menuWasOpen;
-            var cardRect = DrawCard(screen, theme, shown, opacity, cardScale, interactive);
+            var cardRect = DrawCard(screen, theme, shown, opacity, cardScale, interactive, delta);
             DrawCategoryMenu(screen, theme);
             if (active is null || opacity <= 0.5f || menuWasOpen)
             {
@@ -111,7 +111,7 @@ internal sealed class ReportOverlay
     }
 
     private Rect DrawCard(Rect screen, PhoneTheme theme, ReportPrompt prompt, float opacity, float cardScale,
-        bool interactive)
+        bool interactive, float delta)
     {
         var scale = UiScale.Current;
         var s = scale * cardScale;
@@ -120,26 +120,35 @@ internal sealed class ReportOverlay
         var available = screen.Width - CardSideMargin * 2f * scale;
         var cardWidth = MathF.Min(CardMaxWidth * scale, available) * cardScale;
         var innerWidth = cardWidth - pad * 2f;
+        var titleStyle = Scaled(TextStyles.Title2, cardScale);
+        var bodyStyle = Scaled(TextStyles.Callout, cardScale);
+        var footnoteStyle = Scaled(TextStyles.Footnote, cardScale);
+        var buttonHeight = Button.LargeHeight * s;
 
         var title = service.Sent ? Loc.T(L.Report.SentTitle) : prompt.Title;
-        var titleHeight = Typography.Measure(title, TitleScale * cardScale, FontWeight.Bold).Y;
+        var titleHeight = Typography.MeasureWrappedBlock(title, titleStyle, innerWidth).Y;
+        var summary = service.CategoryIndex >= 0 ? Loc.T(ReportCategories.All[service.CategoryIndex].Summary) : null;
+        var summaryWidth = innerWidth - FieldInset * s * 2f;
+        var summaryTarget = summary is null
+            ? 0f
+            : SummaryGap * s + Typography.MeasureWrappedBlock(summary, footnoteStyle, summaryWidth).Y;
+        var summaryHeight = MathF.Max(0f, summaryReveal.Step(summaryTarget, Motion.Sheet, delta));
         float bodyHeight;
         if (service.Sent)
         {
-            var sentHeight = Typography.MeasureWrapped(Loc.T(L.Report.Sent), innerWidth, FieldTextScale * cardScale,
-                FontWeight.Medium);
-            bodyHeight = sentHeight + ButtonsTopGap * s + ButtonHeight * s;
+            bodyHeight = Typography.MeasureWrappedBlock(Loc.T(L.Report.Sent), bodyStyle, innerWidth).Y +
+                         ButtonsTopGap * s + buttonHeight;
         }
         else
         {
             var disclosureHeight = prompt.Disclosure is { Length: > 0 } disclosure
-                ? Typography.MeasureWrapped(disclosure, innerWidth, DisclosureScale * cardScale) + TitleGap * s
+                ? Typography.MeasureWrappedBlock(disclosure, footnoteStyle, innerWidth).Y + TitleGap * s
                 : 0f;
             var failedHeight = service.Failed
-                ? FieldGap * s + Typography.Measure(Loc.T(L.Report.Failed), 0.8f * cardScale).Y
+                ? FieldGap * s + Typography.Measure(Loc.T(L.Report.Failed), footnoteStyle).Y
                 : 0f;
-            bodyHeight = disclosureHeight + FieldHeight * s + FieldGap * s + FieldHeight * s + failedHeight +
-                         ButtonsTopGap * s + ButtonHeight * s;
+            bodyHeight = disclosureHeight + FieldHeight * s + summaryHeight + FieldGap * s + FieldHeight * s +
+                         failedHeight + ButtonsTopGap * s + buttonHeight;
         }
 
         var cardHeight = pad + titleHeight + TitleGap * s + bodyHeight + pad;
@@ -151,48 +160,65 @@ internal sealed class ReportOverlay
         Squircle.Stroke(drawList, cardMin, cardMax, CardRounding * s,
             ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.08f * opacity)), 1f);
 
-        var titleColor = Palette.WithAlpha(theme.TextStrong, opacity);
-        Typography.DrawCentered(drawList, new Vector2(cardRect.Center.X, cardMin.Y + pad + titleHeight * 0.5f),
-            Typography.FitText(title, innerWidth, TitleScale * cardScale, FontWeight.Bold), titleColor,
-            TitleScale * cardScale, FontWeight.Bold);
+        var centerX = cardRect.Center.X;
+        Typography.DrawWrappedCentered(new Vector2(centerX, cardMin.Y + pad), title,
+            Palette.WithAlpha(theme.TextStrong, opacity), titleStyle, innerWidth);
         var y = cardMin.Y + pad + titleHeight + TitleGap * s;
         var left = cardMin.X + pad;
         if (service.Sent)
         {
-            DrawSentBody(cardRect, theme, pad, left, innerWidth, y, s, opacity, cardScale, interactive);
+            Typography.DrawWrappedCentered(new Vector2(centerX, y), Loc.T(L.Report.Sent),
+                Palette.WithAlpha(theme.TextStrong, 0.88f * opacity), bodyStyle, innerWidth);
+            var closeY = cardMax.Y - pad - buttonHeight;
+            var closeRect = new Rect(new Vector2(left, closeY), new Vector2(left + innerWidth, closeY + buttonHeight));
+            if (ConfirmDialog.DrawPillButton(closeRect, Loc.T(L.Common.Close), true, theme, cardScale, opacity,
+                    ConfirmButtonTone.Primary, "report.close") && interactive)
+            {
+                service.Dismiss();
+            }
+
             return cardRect;
         }
 
         if (prompt.Disclosure is { Length: > 0 } disclosureText)
         {
-            DrawWrapped(disclosureText, new Vector2(left, y), innerWidth, DisclosureScale * cardScale,
-                Palette.WithAlpha(theme.TextMuted, opacity));
-            y += Typography.MeasureWrapped(disclosureText, innerWidth, DisclosureScale * cardScale) + TitleGap * s;
+            y += Typography.DrawWrappedCentered(new Vector2(centerX, y), disclosureText,
+                Palette.WithAlpha(theme.TextMuted, opacity), footnoteStyle, innerWidth) + TitleGap * s;
         }
 
+        var ink = ControlInk.From(theme);
         var categoryRect = new Rect(new Vector2(left, y), new Vector2(left + innerWidth, y + FieldHeight * s));
-        DrawCategoryField(categoryRect, theme, s, opacity, cardScale, interactive);
-        y += FieldHeight * s + FieldGap * s;
+        DrawCategoryField(categoryRect, theme, ink, s, opacity, cardScale, interactive);
+        y += FieldHeight * s;
+        var summaryVisible = summaryHeight - SummaryGap * s;
+        if (summary is not null && summaryVisible > 0.5f)
+        {
+            DrawSummary(drawList, summary, new Vector2(left + FieldInset * s, y + SummaryGap * s), summaryWidth,
+                summaryVisible, summaryTarget - SummaryGap * s, theme, footnoteStyle, opacity);
+        }
+
+        y += summaryHeight + FieldGap * s;
         var detailsRect = new Rect(new Vector2(left, y), new Vector2(left + innerWidth, y + FieldHeight * s));
-        DrawDetailsField(detailsRect, theme, s, opacity, cardScale, interactive);
+        DrawDetailsField(detailsRect, theme, ink, s, opacity, cardScale, interactive);
         y += FieldHeight * s;
         if (service.Failed)
         {
             y += FieldGap * s;
             var failedText = Loc.T(L.Report.Failed);
-            var failedHeight = Typography.Measure(failedText, 0.8f * cardScale).Y;
-            Typography.DrawCentered(drawList, new Vector2(cardRect.Center.X, y + failedHeight * 0.5f), failedText,
-                Palette.WithAlpha(theme.Danger, opacity), 0.8f * cardScale, FontWeight.Medium);
+            var failedHeight = Typography.Measure(failedText, footnoteStyle).Y;
+            Typography.DrawCentered(drawList, new Vector2(centerX, y + failedHeight * 0.5f),
+                Typography.FitText(failedText, innerWidth, footnoteStyle), Palette.WithAlpha(theme.Danger, opacity),
+                footnoteStyle);
             y += failedHeight;
         }
 
         y += ButtonsTopGap * s;
         var buttonWidth = (innerWidth - ButtonGap * s) * 0.5f;
-        var cancelRect = new Rect(new Vector2(left, y), new Vector2(left + buttonWidth, y + ButtonHeight * s));
+        var cancelRect = new Rect(new Vector2(left, y), new Vector2(left + buttonWidth, y + buttonHeight));
         var submitRect = new Rect(new Vector2(cancelRect.Max.X + ButtonGap * s, y),
-            new Vector2(left + innerWidth, y + ButtonHeight * s));
+            new Vector2(left + innerWidth, y + buttonHeight));
         if (ConfirmDialog.DrawPillButton(cancelRect, Loc.T(L.Common.Cancel), !service.Busy, theme, cardScale,
-                opacity) && interactive && !service.Busy)
+                opacity, ConfirmButtonTone.Neutral, "report.cancel") && interactive && !service.Busy)
         {
             service.Dismiss();
         }
@@ -200,7 +226,7 @@ internal sealed class ReportOverlay
         var canSubmit = !service.Busy && service.CategoryIndex >= 0;
         var submitLabel = Loc.T(service.Busy ? L.Report.Sending : L.Report.Submit);
         if (ConfirmDialog.DrawPillButton(submitRect, submitLabel, canSubmit, theme, cardScale, opacity,
-                ConfirmButtonTone.Danger) && interactive && canSubmit)
+                ConfirmButtonTone.Danger, "report.submit") && interactive && canSubmit)
         {
             service.Submit();
         }
@@ -208,92 +234,82 @@ internal sealed class ReportOverlay
         return cardRect;
     }
 
-    private void DrawSentBody(Rect cardRect, PhoneTheme theme, float pad, float left, float innerWidth, float y,
-        float s, float opacity, float cardScale, bool interactive)
-    {
-        DrawWrapped(Loc.T(L.Report.Sent), new Vector2(left, y), innerWidth, FieldTextScale * cardScale,
-            Palette.WithAlpha(theme.TextStrong, 0.88f * opacity), FontWeight.Medium);
-        var buttonY = cardRect.Max.Y - pad - ButtonHeight * s;
-        var closeRect = new Rect(new Vector2(left, buttonY), new Vector2(left + innerWidth, buttonY + ButtonHeight * s));
-        if (ConfirmDialog.DrawPillButton(closeRect, Loc.T(L.Common.Close), true, theme, cardScale, opacity,
-                ConfirmButtonTone.Primary) && interactive)
-        {
-            service.Dismiss();
-        }
-    }
-
-    private void DrawCategoryField(Rect rect, PhoneTheme theme, float s, float opacity, float cardScale,
-        bool interactive)
+    private void DrawCategoryField(Rect rect, PhoneTheme theme, in ControlInk ink, float s, float opacity,
+        float cardScale, bool interactive)
     {
         var drawList = ImGui.GetWindowDrawList();
-        var hovered = interactive && UiInteract.Hover(rect.Min, rect.Max);
-        var fill = hovered ? Palette.Mix(theme.SurfaceMuted, theme.TextStrong, 0.06f) : theme.SurfaceMuted;
-        Squircle.Fill(drawList, rect.Min, rect.Max, 12f * s, ImGui.GetColorU32(Palette.WithAlpha(fill, opacity)));
-        Squircle.Stroke(drawList, rect.Min, rect.Max, 12f * s,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.10f * opacity)), 1f);
+        var hovered = interactive && !service.Busy && UiInteract.Hover(rect.Min, rect.Max);
+        var menuOpen = categoryMenu.IsOpenFor(CategoryMenuId);
+        var fill = Surfaces.Fill(ink, hovered || menuOpen ? FillLevel.Secondary : FillLevel.Tertiary);
+        var radius = rect.Height * 0.5f;
+        Squircle.Fill(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(fill with { W = fill.W * opacity }));
+
         var hasCategory = service.CategoryIndex >= 0;
         var label = hasCategory
             ? Loc.T(ReportCategories.All[service.CategoryIndex].Label)
             : Loc.T(L.Report.CategoryHint);
-        var ink = hasCategory ? theme.TextStrong : theme.TextMuted;
-        var labelMaxWidth = rect.Max.X - 30f * s - (rect.Min.X + 14f * s);
-        var fittedLabel = Typography.FitText(label, labelMaxWidth, FieldTextScale * cardScale, FontWeight.Medium);
-        var labelSize = Typography.Measure(fittedLabel, FieldTextScale * cardScale, FontWeight.Medium);
-        Typography.Draw(drawList, new Vector2(rect.Min.X + 14f * s, rect.Center.Y - labelSize.Y * 0.5f), fittedLabel,
-            Palette.WithAlpha(ink, opacity), FieldTextScale * cardScale, FontWeight.Medium);
-        AppSkin.Icon(drawList, new Vector2(rect.Max.X - 18f * s, rect.Center.Y),
-            IconGlyph.Of(FontAwesomeIcon.ChevronDown), Palette.WithAlpha(theme.TextMuted, opacity), 0.72f);
-        if (hovered)
+        var labelInk = hasCategory ? theme.TextStrong : theme.TextMuted;
+        var labelStyle = Scaled(hasCategory ? TextStyles.BodyEmphasized : TextStyles.Body, cardScale);
+        var chevronCenter = new Vector2(rect.Max.X - FieldInset * s - ChevronSize * s * 0.5f, rect.Center.Y);
+        var labelLeft = rect.Min.X + FieldInset * s;
+        var labelMaxWidth = chevronCenter.X - ChevronSize * s - labelLeft;
+        var fittedLabel = Typography.FitText(label, labelMaxWidth, labelStyle);
+        var labelSize = Typography.Measure(fittedLabel, labelStyle);
+        Typography.Draw(drawList, new Vector2(labelLeft, rect.Center.Y - labelSize.Y * 0.5f), fittedLabel,
+            Palette.WithAlpha(labelInk, opacity), labelStyle);
+        PhoneIcon.Draw(drawList, chevronCenter, menuOpen ? PhoneIcons.ChevronUp : PhoneIcons.ChevronDown,
+            Palette.WithAlpha(theme.TextMuted, opacity), ChevronSize * s);
+        if (!hovered)
         {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            if (ImGui.IsMouseClicked(ImGuiMouseButton.Left) && !service.Busy)
-            {
-                categoryMenu.Toggle(CategoryMenuId, rect);
-            }
-        }
-    }
-
-    private void DrawDetailsField(Rect rect, PhoneTheme theme, float s, float opacity, float cardScale,
-        bool interactive)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, rect.Min, rect.Max, 12f * s,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.SurfaceMuted, opacity)));
-        Squircle.Stroke(drawList, rect.Min, rect.Max, 12f * s,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.10f * opacity)), 1f);
-        if (!interactive)
-        {
-            if (service.ReasonDraft.Length > 0)
-            {
-                var textSize = Typography.Measure(service.ReasonDraft, FieldTextScale * cardScale);
-                var textLeft = rect.Min.X + 14f * s;
-                var textMaxWidth = rect.Max.X - 14f * s - textLeft;
-                var reasonHovering = UiInteract.Hover(rect.Min, rect.Max);
-                Marquee.DrawLeft("reportoverlay.reason", service.ReasonDraft, textLeft,
-                    rect.Center.Y - textSize.Y * 0.5f, textMaxWidth, new TextStyle(FieldTextScale * cardScale,
-                        FontWeight.Regular), Palette.WithAlpha(theme.TextStrong, opacity), reasonHovering);
-            }
-
             return;
         }
 
-        ImGui.SetCursorScreenPos(new Vector2(rect.Min.X + 8f * s,
-            rect.Center.Y - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(rect.Width - 16f * s);
-        var draft = service.ReasonDraft;
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0f, 0f))
-                   .Push(ImGuiCol.Text, theme.TextStrong))
+        ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        if (UiInteract.Click(rect.Min, rect.Max, hovered))
         {
-            if (ImGui.InputTextWithHint("##reportDetails", Loc.T(L.Report.DetailsHint), ref draft, ReasonMaxLength,
-                    ImGuiInputTextFlags.EnterReturnsTrue))
-            {
-                service.ReasonDraft = draft;
-                service.Submit();
-                return;
-            }
+            categoryMenu.Toggle(CategoryMenuId, rect);
+        }
+    }
+
+    private static void DrawSummary(ImDrawListPtr drawList, string summary, Vector2 topLeft, float width,
+        float visibleHeight, float fullHeight, PhoneTheme theme, in TextStyle style, float opacity)
+    {
+        var visibility = Math.Clamp(visibleHeight / MathF.Max(fullHeight, 0.0001f), 0f, 1f);
+        drawList.PushClipRect(topLeft, new Vector2(topLeft.X + width, topLeft.Y + visibleHeight), true);
+        Typography.DrawWrappedLeft(topLeft, summary, Palette.WithAlpha(theme.TextMuted, visibility * opacity), style,
+            width);
+        drawList.PopClipRect();
+    }
+
+    private void DrawDetailsField(Rect rect, PhoneTheme theme, in ControlInk ink, float s, float opacity,
+        float cardScale, bool interactive)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var fill = Surfaces.Fill(ink, FillLevel.Tertiary);
+        Squircle.Fill(drawList, rect.Min, rect.Max, rect.Height * 0.5f,
+            ImGui.GetColorU32(fill with { W = fill.W * opacity }));
+        if (!interactive)
+        {
+            var textLeft = rect.Min.X + FieldInset * s;
+            var textMaxWidth = rect.Max.X - FieldInset * s - textLeft;
+            var style = Scaled(TextStyles.Body, cardScale);
+            var hasDraft = service.ReasonDraft.Length > 0;
+            var shownText = hasDraft ? service.ReasonDraft : Loc.T(L.Report.DetailsHint);
+            var textSize = Typography.Measure(shownText, style);
+            Marquee.DrawLeft("reportoverlay.reason", shownText, textLeft, rect.Center.Y - textSize.Y * 0.5f,
+                textMaxWidth, style, Palette.WithAlpha(hasDraft ? theme.TextStrong : theme.TextMuted, opacity),
+                UiInteract.Hover(rect.Min, rect.Max));
+            return;
         }
 
+        var draft = service.ReasonDraft;
+        var submitted = GlassField.Text(rect, "##reportDetails", Loc.T(L.Report.DetailsHint), ref draft, theme,
+            UiScale.Current, ReasonMaxLength, false, ImGuiInputTextFlags.EnterReturnsTrue);
         service.ReasonDraft = draft;
+        if (submitted)
+        {
+            service.Submit();
+        }
     }
 
     private void DrawCategoryMenu(Rect screen, PhoneTheme theme)
@@ -303,28 +319,20 @@ internal sealed class ReportOverlay
             return;
         }
 
-        for (var index = 0; index < ReportCategories.All.Length; index++)
+        var visible = service.Visible;
+        for (var index = 0; index < visible.Length; index++)
         {
-            categoryItems[index] = new DropdownMenu.Item(Loc.T(ReportCategories.All[index].Label),
-                Selected: index == service.CategoryIndex);
+            var categoryIndex = visible[index];
+            categoryItems[index] = new DropdownMenu.Item(Loc.T(ReportCategories.All[categoryIndex].Label),
+                Selected: categoryIndex == service.CategoryIndex);
         }
 
-        var picked = categoryMenu.Draw(screen, theme, categoryItems);
+        var picked = categoryMenu.Draw(screen, theme, categoryItems.AsSpan(0, visible.Length));
         if (picked >= 0)
         {
-            service.CategoryIndex = picked;
+            service.CategoryIndex = visible[picked];
         }
     }
 
-    private static void DrawWrapped(string text, Vector2 position, float width, float fontScale, Vector4 color,
-        FontWeight weight = FontWeight.Regular)
-    {
-        ImGui.SetCursorScreenPos(position);
-        using (Typography.WrapAt(position.X + width))
-        using (Plugin.Fonts.Push(fontScale, weight))
-        using (ImRaii.PushColor(ImGuiCol.Text, color))
-        {
-            Typography.Wrapped(text);
-        }
-    }
+    private static TextStyle Scaled(in TextStyle style, float cardScale) => style with { Scale = style.Scale * cardScale };
 }

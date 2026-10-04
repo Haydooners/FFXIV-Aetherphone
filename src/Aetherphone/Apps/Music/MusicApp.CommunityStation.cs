@@ -677,7 +677,7 @@ internal sealed partial class MusicApp
         });
     }
 
-    private void SubmitStationReport(string stationId, string? reason, Action<bool> done)
+    private void SubmitStationReport(string stationId, ReportReason reason, Action<bool> done)
     {
         _ = Task.Run(async () =>
         {
