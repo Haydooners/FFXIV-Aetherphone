@@ -24,9 +24,9 @@ internal sealed partial class VelvetShell
     private const float FeedTabRowHeight = 44f;
     private const float FeedTabUnderline = 2f;
 
-    private static readonly TextStyle WordmarkStyle = new(1.4f, FontWeight.Bold);
-    private static readonly TextStyle FeedTabStyle = new(1.07f, FontWeight.SemiBold);
-    private static readonly TextStyle FeedTabIdleStyle = new(1.07f, FontWeight.Medium);
+    private static readonly TextStyle WordmarkStyle = TextStyles.Title2;
+    private static readonly TextStyle FeedTabStyle = TextStyles.Headline;
+    private static readonly TextStyle FeedTabIdleStyle = TextStyles.BodyEmphasized;
     private static readonly UnderlineTabStyle FeedTabsStyle = new(FeedTabStyle, FeedTabIdleStyle,
         VelvetTheme.TitleInk, VelvetTheme.MutedInk, VelvetTheme.Rose, FeedTabUnderline, SocialChrome.CellPadX,
         Motion.Release);
