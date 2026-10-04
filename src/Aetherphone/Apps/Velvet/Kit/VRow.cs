@@ -184,11 +184,14 @@ internal static class VRow
             var pillRect = new Rect(new Vector2(rightEdge - pillWidth, centerY - pillHeight * 0.5f),
                 new Vector2(rightEdge, centerY + pillHeight * 0.5f));
             overControl |= model.PillEnabled && UiInteract.Hover(pillRect.Min, pillRect.Max);
+            ImGui.PushID(model.UserId ?? model.Title);
             if (Button.Draw(drawList, pillRect, model.Pill, VelvetTheme.Ink,
                     model.PillFilled ? ButtonStyle.Prominent : ButtonStyle.Gray, enabled: model.PillEnabled))
             {
                 hit = VRowHit.Pill;
             }
+
+            ImGui.PopID();
 
             rightEdge -= pillWidth + Metrics.Space.Sm * scale;
         }
