@@ -44,7 +44,6 @@ internal sealed partial class YellowPagesApp
     private const float KindCardHeight = 84f;
     private const float KindTileSide = 42f;
     private const float DirectionTileHeight = 64f;
-    private const float FieldCardRounding = 14f;
     private const float FieldCardPad = 14f;
     private const float FieldRowHeight = 46f;
     private const float FieldLabelWidth = 104f;
@@ -54,11 +53,14 @@ internal sealed partial class YellowPagesApp
     private const float TagsFieldHeight = 40f;
     private const float TagChipHeight = 28f;
     private const float DayCellHeight = 38f;
+    private const float SelectedHoverLift = 0.10f;
+    private const float SelectedTint = 0.20f;
+    private const float SelectedTintHover = 0.28f;
     private const float TimeFieldHeight = 42f;
     private const float AccentDotRadius = 14f;
     private const float AccentRowHeight = 52f;
     private const float ToggleRowHeight = 52f;
-    private const float PublishHeight = 50f;
+    private const float PublishHeight = Button.LargeHeight;
     private const float ComposePaneFraction = 0.5f;
     private const float ComposeGridGap = 6f;
     private const float KeptStripHeight = 64f;
@@ -69,7 +71,7 @@ internal sealed partial class YellowPagesApp
     private static readonly TextStyle FieldHintStyle = TextStyles.Footnote;
     private static readonly TextStyle KindTitleStyle = TextStyles.Headline;
     private static readonly TextStyle KindHintStyle = TextStyles.Footnote;
-    private static readonly TextStyle ComposeActionStyle = TextStyles.Headline;
+
     private static readonly TextStyle CounterStyle = TextStyles.Caption1;
 
     private readonly List<string> composeTags = new();
@@ -256,30 +258,22 @@ internal sealed partial class YellowPagesApp
 
         var actionLabel = ComposeActionLabel();
         var actionEnabled = ComposeActionEnabled();
-        var actionSize = Typography.Measure(actionLabel, ComposeActionStyle);
-        var actionRect = new Rect(new Vector2(area.Max.X - CellPadX * scale - actionSize.X - 8f * scale, rowCenterY - 16f * scale),
-            new Vector2(area.Max.X - CellPadX * scale + 8f * scale, rowCenterY + 16f * scale));
-        var hovered = actionEnabled && UiInteract.Hover(actionRect.Min, actionRect.Max);
+        var actionWidth = Button.WidthFor(actionLabel, ButtonSize.Small);
+        var actionHalf = Button.SmallHeight * scale * 0.5f;
+        var actionRight = area.Max.X - CellPadX * scale;
+        var actionRect = new Rect(new Vector2(actionRight - actionWidth, rowCenterY - actionHalf),
+            new Vector2(actionRight, rowCenterY + actionHalf));
         if (composeBusy)
         {
             LoadingPulse.Spinner(actionRect.Center, 8f * scale, Ink.Accent);
         }
-        else
+        else if (Button.Draw(drawList, actionRect, actionLabel, ui.Ink, ButtonStyle.Prominent,
+                     enabled: actionEnabled, id: "yellowpages.compose.action"))
         {
-            Typography.Draw(drawList, new Vector2(actionRect.Min.X + 8f * scale, rowCenterY - actionSize.Y * 0.5f), actionLabel,
-                actionEnabled ? (hovered ? Ink.TitleInk : Ink.AccentLink) : Ink.FaintInk, ComposeActionStyle);
-            if (hovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            if (actionEnabled && UiInteract.Click(actionRect.Min, actionRect.Max, hovered))
-            {
-                ComposeAdvance();
-            }
+            ComposeAdvance();
         }
 
-        var reserve = actionSize.X + 24f * scale;
+        var reserve = actionWidth + 8f * scale;
         SocialChrome.DrawScreenHeader(area, title, Ink, back, ScreenTitleStyle, reserve / scale, string.Empty, false, true);
         DrawHairline(drawList, area.Min.X, area.Max.X, area.Min.Y + AppHeader.Height * scale);
     }
@@ -451,10 +445,10 @@ internal sealed partial class YellowPagesApp
         var rounding = 18f * scale;
         var selected = composeArchetype == archetype;
         var hovered = UiInteract.Hover(min, max);
-        Squircle.Fill(drawList, min, max, rounding,
-            ImGui.GetColorU32(selected ? Ink.AccentWash : hovered ? Ink.ChipHover : Ink.ChipFill));
-        Squircle.Stroke(drawList, min, max, rounding,
-            ImGui.GetColorU32(selected ? Palette.WithAlpha(Ink.AccentLink, 0.75f) : Ink.ChipStroke), selected ? 1.4f : 1f);
+        var fill = selected
+            ? ui.Accent with { W = hovered ? SelectedTintHover : SelectedTint }
+            : Surfaces.Fill(ui.Ink, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
+        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(fill));
         var tileMin = new Vector2(origin.X + pad, origin.Y + pad);
         YellowPagesKit.Tile(drawList, tileMin, tileMin + new Vector2(tileSide, tileSide), Ink.Accent, icon, 12f * scale, 1f);
         Typography.Draw(drawList, new Vector2(textLeft, origin.Y + pad), title, Ink.TitleInk, KindTitleStyle);
@@ -519,18 +513,11 @@ internal sealed partial class YellowPagesApp
     private bool DrawDirectionTile(ImDrawListPtr drawList, Rect rect, string title, string hint, bool active,
         float scale)
     {
-        var rounding = 16f * scale;
         var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        if (active)
-        {
-            AccentPill.Paint(drawList, rect.Min, rect.Max, rounding, hovered, Ink.Accent, Ink.AccentDeep,
-                Ink.AccentShadow);
-        }
-        else
-        {
-            Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(hovered ? Ink.ChipHover : Ink.ChipFill));
-            Squircle.Stroke(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(Ink.ChipStroke), 1f);
-        }
+        var fill = active
+            ? Palette.Mix(ui.Accent, Ink.White, hovered ? SelectedHoverLift : 0f)
+            : Surfaces.Fill(ui.Ink, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
+        Squircle.Fill(drawList, rect.Min, rect.Max, Metrics.Radius.Card * scale, ImGui.GetColorU32(fill));
 
         var pad = 12f * scale;
         var titleInk = active ? Ink.White : Ink.TitleInk;
@@ -736,7 +723,7 @@ internal sealed partial class YellowPagesApp
         var bodyBlock = pad + bodyLabelHeight + 6f * scale + BodyFieldHeight * scale + pad;
         var height = rowHeight + bodyBlock;
         var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        ui.Card(drawList, card.Min, card.Max, FieldCardRounding * scale, true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var labelWidth = FieldLabelWidthFor(Loc.T(L.YellowPages.TitleLabel), scale);
         DrawFieldLabel(drawList, card.Min.X + pad, card.Min.Y, rowHeight, labelWidth, Loc.T(L.YellowPages.TitleLabel));
         if (composeTitleFocus)
@@ -845,7 +832,7 @@ internal sealed partial class YellowPagesApp
         var pad = FieldCardPad * scale;
         var rowHeight = FieldRowHeight * scale;
         var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + rowHeight));
-        ui.Card(drawList, card.Min, card.Max, FieldCardRounding * scale, true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var labelWidth = FieldLabelWidthFor(label, scale);
         DrawFieldLabel(drawList, card.Min.X + pad, card.Min.Y, rowHeight, labelWidth, label);
         DrawFieldInput(id, card.Min.X + pad + labelWidth, card.Max.X - pad, card.Min.Y, rowHeight, ref value, maxLength,
@@ -864,7 +851,7 @@ internal sealed partial class YellowPagesApp
         var labelHeight = Typography.LineHeight(FieldLabelStyle);
         var height = pad + labelHeight + 6f * scale + fieldHeight * scale + pad;
         var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        ui.Card(drawList, card.Min, card.Max, FieldCardRounding * scale, true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(card.Min.X + pad, card.Min.Y + pad), label, Ink.MutedInk, FieldLabelStyle);
         var fieldTop = card.Min.Y + pad + labelHeight + 6f * scale;
         var fieldWidth = width - pad * 2f;
@@ -899,7 +886,7 @@ internal sealed partial class YellowPagesApp
         var chipsHeight = chipRows > 0 ? chipRows * (chipHeight + chipGap) + 4f * scale : 0f;
         var height = rowHeight + chipsHeight;
         var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        ui.Card(drawList, card.Min, card.Max, FieldCardRounding * scale, true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var labelWidth = FieldLabelWidthFor(Loc.T(L.YellowPages.TagsLabel), scale);
         DrawFieldLabel(drawList, card.Min.X + pad, card.Min.Y, rowHeight, labelWidth, Loc.T(L.YellowPages.TagsLabel));
         var full = composeTags.Count >= MaxTags;
@@ -1031,18 +1018,17 @@ internal sealed partial class YellowPagesApp
             var pad = FieldCardPad * scale;
             var summary = LocationShare.Summary(in location);
             var clearLabel = Loc.T(L.YellowPages.ClearLocation);
-            var clearWidth = Typography.Measure(clearLabel, TextStyles.FootnoteEmphasized).X + 26f * scale;
+            var clearWidth = Button.WidthFor(clearLabel, ButtonSize.Small);
             var summaryHeight = Typography.MeasureWrappedBlock(summary, TextStyles.Subheadline,
                 width - pad * 2f - clearWidth - 10f * scale).Y;
             var height = MathF.Max(rowHeight, summaryHeight + pad * 2f);
             var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-            ui.Card(drawList, card.Min, card.Max, FieldCardRounding * scale, true);
+            ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
             Typography.DrawWrappedLeft(new Vector2(card.Min.X + pad, card.Min.Y + pad), summary, Ink.BodyInk,
                 TextStyles.Subheadline, width - pad * 2f - clearWidth - 10f * scale);
             var clearRect = new Rect(new Vector2(card.Max.X - pad - clearWidth, card.Center.Y - 14f * scale),
                 new Vector2(card.Max.X - pad, card.Center.Y + 14f * scale));
-            if (SocialPill.Flat(drawList, clearRect, clearLabel, Ink.ChipFill, Ink.ChipHover, Ink.ChipStroke,
-                    Ink.TitleInk, TextStyles.FootnoteEmphasized, clearRect.Height * 0.5f))
+            if (Button.Draw(drawList, clearRect, clearLabel, ui.Ink, ButtonStyle.Gray))
             {
                 composeLocation = null;
             }
@@ -1052,9 +1038,10 @@ internal sealed partial class YellowPagesApp
         }
         else
         {
-            var captureRect = new Rect(origin, new Vector2(origin.X + width, origin.Y + rowHeight));
-            if (SocialPill.Flat(drawList, captureRect, Loc.T(L.YellowPages.UseMyLocation), Ink.ButtonFill, Ink.ButtonHover,
-                    Ink.ChipStroke, Ink.TitleInk, TextStyles.SubheadlineEmphasized, FieldCardRounding * scale))
+            var captureTop = origin.Y + (rowHeight - Button.LargeHeight * scale) * 0.5f;
+            var captureRect = new Rect(new Vector2(origin.X, captureTop),
+                new Vector2(origin.X + width, captureTop + Button.LargeHeight * scale));
+            if (Button.Draw(drawList, captureRect, Loc.T(L.YellowPages.UseMyLocation), ui.Ink, ButtonStyle.Gray))
             {
                 composeLocation = LocationShare.Capture();
             }
@@ -1179,24 +1166,10 @@ internal sealed partial class YellowPagesApp
             var max = new Vector2(min.X + cellWidth, origin.Y + height);
             var active = composeDays[day];
             var hovered = UiInteract.Hover(min, max);
-            var rounding = 11f * scale;
-            if (active)
-            {
-                AccentPill.Paint(drawList, min, max, rounding, hovered, Ink.Accent, Ink.AccentDeep, Ink.AccentShadow);
-            }
-            else
-            {
-                Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(hovered ? Ink.ChipHover : Ink.ChipFill));
-                Squircle.Stroke(drawList, min, max, rounding, ImGui.GetColorU32(Ink.ChipStroke), 1f);
-            }
-
-            var label = Typography.FitText(dayNames[day], cellWidth - 6f * scale, TextStyles.FootnoteEmphasized);
-            Typography.DrawCentered(drawList, new Vector2((min.X + max.X) * 0.5f, (min.Y + max.Y) * 0.5f), label,
-                active ? Ink.White : Ink.TitleInk, TextStyles.FootnoteEmphasized);
-            if (hovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
+            var chipHalf = ChipRail.ChipHeight * scale * 0.5f;
+            var centerY = (min.Y + max.Y) * 0.5f;
+            ChipRail.PaintChip(drawList, new Rect(new Vector2(min.X, centerY - chipHalf),
+                new Vector2(max.X, centerY + chipHalf)), dayNames[day], active, hovered, ui.Ink);
 
             if (UiInteract.Click(min, max, hovered))
             {
@@ -1464,7 +1437,7 @@ internal sealed partial class YellowPagesApp
         var pad = CellPadX * scale;
         var rowHeight = ToggleRowHeight * scale;
         var card = new Rect(new Vector2(origin.X + pad, origin.Y), new Vector2(origin.X + width - pad, origin.Y + rowHeight * 2f));
-        ui.Card(drawList, card.Min, card.Max, FieldCardRounding * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var firstRow = new Rect(card.Min, new Vector2(card.Max.X, card.Min.Y + rowHeight));
         composeAllowInquiries = DrawToggleRow(drawList, firstRow, "yellowpages.compose.inquiries", PhoneIcons.MessageCircle,
             Loc.T(L.YellowPages.AllowInquiriesToggle), composeAllowInquiries, scale);
@@ -1528,8 +1501,8 @@ internal sealed partial class YellowPagesApp
         {
             LoadingPulse.Spinner(rect.Center, 10f * scale, Ink.Accent);
         }
-        else if (SocialPill.Accent(drawList, rect, label, Ink, ComposeActionStyle, rect.Height * 0.5f,
-                     ComposeDetailsValid(out _)))
+        else if (Button.Draw(drawList, rect, label, ui.Ink, ButtonStyle.Prominent,
+                     enabled: ComposeDetailsValid(out _)))
         {
             SubmitCompose();
         }

@@ -28,11 +28,11 @@ internal sealed partial class YellowPagesApp
     private const float PosterRowHeight = 66f;
     private const float PosterAvatarRadius = 21f;
     private const float ActionBarHeight = 74f;
-    private const float CtaHeight = 48f;
-    private const float CircleButtonRadius = 23f;
+    private const float CtaHeight = Button.LargeHeight;
+    private const float CircleButtonRadius = RoundButton.RegularRadius;
     private const float SectionRowHeight = 28f;
     private const float ScheduleRowHeight = 42f;
-    private const float LocationButtonHeight = 40f;
+    private const float LocationButtonHeight = Button.RegularHeight;
     private const float TagRowHeight = 28f;
     private const float MetaRowHeight = 30f;
 
@@ -40,7 +40,6 @@ internal sealed partial class YellowPagesApp
     private static readonly TextStyle DetailBodyStyle = TextStyles.Body;
     private static readonly TextStyle SectionRowStyle = TextStyles.Subheadline;
     private static readonly TextStyle SectionRowEmphasis = TextStyles.SubheadlineEmphasized;
-    private static readonly TextStyle CtaStyle = TextStyles.Headline;
     private static readonly TextStyle DetailMetaStyle = TextStyles.Footnote;
 
     private readonly ActionSheet.Item[] adSheetItems = new ActionSheet.Item[8];
@@ -629,8 +628,7 @@ internal sealed partial class YellowPagesApp
             var travelRect = new Rect(new Vector2(origin.X + pad, cursorY),
                 new Vector2(origin.X + width - pad, cursorY + buttonHeight));
             var travelLabel = JustCopied("travel") ? Loc.T(L.YellowPages.Copied) : Loc.T(L.YellowPages.Travel);
-            if (SocialPill.Accent(drawList, travelRect, travelLabel, Ink, TextStyles.SubheadlineEmphasized,
-                    buttonHeight * 0.5f))
+            if (Button.Draw(drawList, travelRect, travelLabel, ui.Ink, ButtonStyle.Prominent))
             {
                 TravelTo(ad);
             }
@@ -656,8 +654,7 @@ internal sealed partial class YellowPagesApp
     }
 
     private bool DrawFlatPill(ImDrawListPtr drawList, Rect rect, string label) =>
-        SocialPill.Flat(drawList, rect, label, Ink.ButtonFill, Ink.ButtonHover, Ink.ChipStroke, Ink.TitleInk,
-            TextStyles.SubheadlineEmphasized, rect.Height * 0.5f);
+        Button.Draw(drawList, rect, label, ui.Ink, ButtonStyle.Gray);
 
     private void DrawCallSection(AdDto ad, float scale)
     {
@@ -766,8 +763,7 @@ internal sealed partial class YellowPagesApp
             new Vector2(cursorRight, centerY + CtaHeight * scale * 0.5f));
         if (mine)
         {
-            if (SocialPill.Accent(drawList, ctaRect, Loc.T(L.YellowPages.ManageAction), Ink, CtaStyle,
-                    ctaRect.Height * 0.5f))
+            if (Button.Draw(drawList, ctaRect, Loc.T(L.YellowPages.ManageAction), ui.Ink, ButtonStyle.Prominent))
             {
                 OpenAdSheet(ad);
             }
@@ -778,7 +774,7 @@ internal sealed partial class YellowPagesApp
         if (hasLink)
         {
             var linkLabel = JustCopied("modlink") ? Loc.T(L.YellowPages.ModLinkCopied) : Loc.T(L.YellowPages.ModLinkAction);
-            if (SocialPill.Accent(drawList, ctaRect, linkLabel, Ink, CtaStyle, ctaRect.Height * 0.5f))
+            if (Button.Draw(drawList, ctaRect, linkLabel, ui.Ink, ButtonStyle.Prominent))
             {
                 OpenModLink(ad);
             }
@@ -788,38 +784,24 @@ internal sealed partial class YellowPagesApp
 
         if (!ad.AllowInquiries)
         {
-            SocialPill.Flat(drawList, ctaRect, Loc.T(L.YellowPages.InquiriesClosed), Ink.ChipFill, Ink.ChipFill,
-                Ink.ChipStroke, Ink.MutedInk, CtaStyle, ctaRect.Height * 0.5f);
+            Button.Draw(drawList, ctaRect, Loc.T(L.YellowPages.InquiriesClosed), ui.Ink, ButtonStyle.Gray,
+                enabled: false);
             HoverTooltip.Show(ctaRect, Loc.T(L.YellowPages.InquiriesClosedHint), HoverLabelSide.Above);
             return;
         }
 
         var existing = inquiries.ThreadForAd(ad.Id);
         var label = existing is null ? Loc.T(L.YellowPages.InquireAction) : Loc.T(L.YellowPages.OpenConversation);
-        if (SocialPill.Accent(drawList, ctaRect, label, Ink, CtaStyle, ctaRect.Height * 0.5f))
+        if (Button.Draw(drawList, ctaRect, label, ui.Ink, ButtonStyle.Prominent))
         {
             OpenInquiryFor(ad);
         }
     }
 
     private bool DrawCircleButton(ImDrawListPtr drawList, Vector2 center, float radius, string glyph, string tooltip,
-        bool highlighted, float scale)
-    {
-        var extent = new Vector2(radius, radius);
-        var hovered = UiInteract.Hover(center - extent, center + extent);
-        drawList.AddCircleFilled(center, radius,
-            ImGui.GetColorU32(highlighted ? Ink.AccentWash : hovered ? Ink.ButtonHover : Ink.ButtonFill), 40);
-        drawList.AddCircle(center, radius, ImGui.GetColorU32(highlighted ? Palette.WithAlpha(Ink.AccentLink, 0.6f) : Ink.ChipStroke),
-            40, 1f);
-        PhoneIcon.Draw(drawList, center, glyph, highlighted ? Ink.AccentLink : Ink.TitleInk, 21f * scale);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        HoverTooltip.Show(new Rect(center - extent, center + extent), tooltip, HoverLabelSide.Above);
-        return UiInteract.Click(center - extent, center + extent, hovered);
-    }
+        bool highlighted, float scale) =>
+        RoundButton.Icon(drawList, center, radius, glyph, ui.Ink, highlighted ? ButtonStyle.Tinted : ButtonStyle.Gray,
+            tooltip);
 
     private void ToggleSaved(AdDto ad)
     {
