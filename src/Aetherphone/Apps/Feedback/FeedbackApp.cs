@@ -247,14 +247,6 @@ internal sealed partial class FeedbackApp : IPhoneApp
         return remaining > 0 ? (int)remaining : 0;
     }
 
-    private static float DrawSectionHeader(ImDrawListPtr drawList, Vector2 origin, float width, string title,
-        Vector4 ink)
-    {
-        var fitted = Typography.FitText(title, width, TextStyles.Title3);
-        Typography.Draw(drawList, origin, fitted, ink, TextStyles.Title3);
-        return Typography.Measure(fitted, TextStyles.Title3).Y;
-    }
-
     private static void ReserveTo(Vector2 origin, float width, float bottom)
     {
         ImGui.SetCursorScreenPos(origin);

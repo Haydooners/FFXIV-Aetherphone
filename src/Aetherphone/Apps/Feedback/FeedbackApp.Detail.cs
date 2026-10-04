@@ -56,7 +56,7 @@ internal sealed partial class FeedbackApp
                 }
 
                 cursorY += SectionGap * scale;
-                cursorY += DrawSectionHeader(drawList, new Vector2(origin.X, cursorY), width,
+                cursorY += CardSectionHeader.Draw(drawList, new Vector2(origin.X, cursorY), width,
                     Loc.T(L.Feedback.YourMessage), ui.TitleInk);
                 cursorY += HeaderGap * scale;
                 cursorY = DrawDetailMessage(drawList, new Vector2(origin.X, cursorY), width, item.Text ?? string.Empty,
@@ -65,7 +65,7 @@ internal sealed partial class FeedbackApp
                 if (urls.Length > 0)
                 {
                     cursorY += SectionGap * scale;
-                    cursorY += DrawSectionHeader(drawList, new Vector2(origin.X, cursorY), width,
+                    cursorY += CardSectionHeader.Draw(drawList, new Vector2(origin.X, cursorY), width,
                         Loc.T(L.Feedback.Screenshots), ui.TitleInk);
                     cursorY += HeaderGap * scale;
                     cursorY = DrawDetailImages(drawList, new Vector2(origin.X, cursorY), width, urls, scale);
@@ -144,7 +144,7 @@ internal sealed partial class FeedbackApp
                      + hintHeight + pad;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
 
         var iconCenter = new Vector2(min.X + pad + iconSize * 0.5f, min.Y + pad + iconSize * 0.5f);
         FeedbackArt.CategoryTile(drawList, iconCenter, iconSize, in kind);
@@ -253,7 +253,7 @@ internal sealed partial class FeedbackApp
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + pad + iconSize + gap + bodyHeight + pad);
         var radius = Metrics.Radius.Grouped * scale;
-        ui.Card(drawList, min, max, radius, true);
+        ui.Card(drawList, min, max, radius);
         Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, ReplyWashAlpha)));
 
         var iconCenter = new Vector2(min.X + pad + iconSize * 0.5f, min.Y + pad + iconSize * 0.5f);
@@ -284,7 +284,7 @@ internal sealed partial class FeedbackApp
         var textHeight = Typography.MeasureWrappedBlock(text, TextStyles.Body, textWidth).Y;
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + textHeight + pad * 2f);
-        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), text, ui.TitleInk, TextStyles.Body,
             textWidth);
         return max.Y;
