@@ -21,6 +21,7 @@ internal sealed class OnlineConnectFourTable
     private const float DropDuration = 0.28f;
     private const float BannerSeconds = 1.4f;
     private const int BannerSeamRow = 2;
+    internal const int NotObserved = int.MinValue;
 
     public static readonly Vector4 GridFrame = new(0.20f, 0.38f, 0.72f, 1f);
     private static readonly Vector4 SeatZeroDisc = new(0.86f, 0.24f, 0.24f, 1f);
@@ -35,7 +36,7 @@ internal sealed class OnlineConnectFourTable
     private readonly GameRoomsStore store;
     private readonly ParticleSystem particles = new(128);
 
-    private int seenActionCount = -1;
+    private int seenLastIndex = NotObserved;
     private long seenRound = -1;
     private int lastTurnSeat = -2;
     private int fallingColumn = -1;
@@ -54,7 +55,7 @@ internal sealed class OnlineConnectFourTable
     public void Reset()
     {
         particles.Clear();
-        seenActionCount = -1;
+        seenLastIndex = NotObserved;
         seenRound = -1;
         lastTurnSeat = -2;
         fallingColumn = -1;
@@ -67,6 +68,21 @@ internal sealed class OnlineConnectFourTable
     public static Vector4 SeatColor(int seat) => seat == 0 ? SeatZeroDisc : SeatOneDisc;
 
     private static bool IsLive(ConnectFourRoomStateDto board) => board.WinnerSeat < 0 && board.EndKind.Length == 0;
+
+    internal static bool IsNewDrop(int seenIndex, int lastIndex, int[] cells)
+    {
+        if (seenIndex == NotObserved || lastIndex == seenIndex)
+        {
+            return false;
+        }
+
+        if (lastIndex < 0 || lastIndex >= GameRoomWire.ConnectFourCellCount)
+        {
+            return false;
+        }
+
+        return cells.Length == GameRoomWire.ConnectFourCellCount && cells[lastIndex] >= 0;
+    }
 
     private static Vector2 TurnBannerCenter(GameGrid grid) =>
         new(grid.Bounds.Center.X, grid.Origin.Y + BannerSeamRow * grid.Pitch);
@@ -99,7 +115,7 @@ internal sealed class OnlineConnectFourTable
         var grid = GameGrid.Centered(area, GameRoomWire.ConnectFourColumns, GameRoomWire.ConnectFourRows, 0f);
         var bannerCenter = TurnBannerCenter(grid);
 
-        ObserveBoard(board, mySeat, new Vector2(grid.Bounds.Center.X, grid.Bounds.Min.Y), scale);
+        ObserveBoard(board, cells, mySeat, new Vector2(grid.Bounds.Center.X, grid.Bounds.Min.Y), scale);
         if (fallingColumn >= 0)
         {
             fallingTimer += delta;
@@ -162,26 +178,25 @@ internal sealed class OnlineConnectFourTable
         }
     }
 
-    private void ObserveBoard(ConnectFourRoomStateDto board, int mySeat, Vector2 confettiOrigin, float scale)
+    private void ObserveBoard(ConnectFourRoomStateDto board, int[] cells, int mySeat, Vector2 confettiOrigin,
+        float scale)
     {
         if (board.RoundIndex != seenRound)
         {
             seenRound = board.RoundIndex;
-            seenActionCount = -1;
+            seenLastIndex = NotObserved;
             lastTurnSeat = -2;
             fallingColumn = -1;
             particles.Clear();
         }
 
-        var first = seenActionCount < 0;
-        if (board.ActionCount != seenActionCount)
+        var lastIndex = board.LastRow * GameRoomWire.ConnectFourColumns + board.LastColumn;
+        if (IsNewDrop(seenLastIndex, lastIndex, cells))
         {
-            seenActionCount = board.ActionCount;
-            if (!first && board.LastSeat >= 0)
-            {
-                ReactToDrop(board, mySeat, confettiOrigin, scale);
-            }
+            ReactToDrop(board, cells[lastIndex], mySeat, confettiOrigin, scale);
         }
+
+        seenLastIndex = lastIndex;
 
         var live = IsLive(board);
         if (board.TurnSeat != lastTurnSeat)
@@ -195,11 +210,12 @@ internal sealed class OnlineConnectFourTable
         }
     }
 
-    private void ReactToDrop(ConnectFourRoomStateDto board, int mySeat, Vector2 confettiOrigin, float scale)
+    private void ReactToDrop(ConnectFourRoomStateDto board, int dropSeat, int mySeat, Vector2 confettiOrigin,
+        float scale)
     {
         fallingColumn = board.LastColumn;
         fallingRow = board.LastRow;
-        fallingSeat = board.LastSeat;
+        fallingSeat = dropSeat;
         fallingTimer = 0f;
         UiFeedback.Play(UiSound.GamePiece);
 
