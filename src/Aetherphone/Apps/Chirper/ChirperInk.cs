@@ -19,7 +19,6 @@ internal static class ChirperInk
     public static Vector4 Hairline => Shared.Hairline;
     public static Vector4 ChipFill => Shared.ChipFill;
     public static Vector4 ChipStroke => Shared.ChipStroke;
-    public static Vector4 ChipHover => Shared.ChipHover;
     public static Vector4 Danger => Shared.Danger;
     public static Vector4 LikeRed => Shared.LikeRed;
     public static Vector4 HoverTint => Shared.HoverTint;
