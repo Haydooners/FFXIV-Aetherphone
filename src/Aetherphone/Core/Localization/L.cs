@@ -2177,15 +2177,15 @@ internal static class L
         public static readonly LocString SectionTours = new("changelog.sectionTours", "Setup and tours");
         public static readonly LocString SectionSounds = new("changelog.sectionSounds", "Sounds");
 
-        public static readonly LocString[] Release1101Messaging =
+        public static readonly LocString[] Release1102Messaging =
         {
-            new("changelog.r1101.2",
+            new("changelog.r1102.1",
                 "Fixed the buttons at the top of Linkpearl and ChocoChat pop-out windows overlapping each other"),
         };
 
-        public static readonly LocString[] Release1101Phone =
+        public static readonly LocString[] Release1102Phone =
         {
-            new("changelog.r1101.1",
+            new("changelog.r1102.0",
                 "Fixed the server info bar icon staying on screen after the game hid the bar, the entry now shows the Aethernet icon instead of a phone"),
         };
 
