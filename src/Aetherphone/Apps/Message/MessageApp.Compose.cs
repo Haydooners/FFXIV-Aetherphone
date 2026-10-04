@@ -163,7 +163,7 @@ internal sealed partial class MessageApp
             ref groupTitleDraft, GroupTitleMaxLength);
         var buttonTop = fieldRect.Max.Y + 10f * scale;
         var buttonRect = new Rect(new Vector2(area.Min.X + sideInset, buttonTop),
-            new Vector2(area.Max.X - sideInset, buttonTop + buttonHeight));
+            new Vector2(area.Max.X - sideInset, buttonTop + ActionButtonHeight * scale));
         if ((ui.PillButton(buttonRect, Loc.T(L.DirectMessages.CreateGroup), true) || submitted) && !composeBusy)
         {
             SubmitGroup(composeRows);
@@ -286,9 +286,7 @@ internal sealed partial class MessageApp
     private bool PillField(Rect rect, string imguiId, string hint, ref string value, int maxLength)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, rect.Min, rect.Max, (rect.Max.Y - rect.Min.Y) * 0.5f,
-            ImGui.GetColorU32(ui.FieldSurface));
+        SearchBar.Surface(ImGui.GetWindowDrawList(), rect, ui.Ink);
         ImGui.SetNextItemWidth(rect.Width - 36f * scale);
         using (ImRaii.PushColor(ImGuiCol.FrameBg, Transparent))
         using (ImRaii.PushColor(ImGuiCol.Text, ui.TitleInk))
