@@ -15,8 +15,7 @@ internal sealed partial class PhotosApp
     private const float EditorResetLift = 18f;
     private const float EditorTopScrim = 110f;
     private const float EditorSavingRadius = 13f;
-    private const float SavePadX = 18f;
-    private const float DisabledSaveAlpha = 0.4f;
+
 
     private readonly PhotoEditSession editSession = new();
 
@@ -59,7 +58,11 @@ internal sealed partial class PhotosApp
         if (editSession.IsDirty && !editSession.Saving)
         {
             var resetCenter = new Vector2(screen.Center.X, panelTop - EditorResetLift * scale);
-            if (TextButton.Draw(resetCenter, Loc.T(L.Photos.Reset), WhiteMuted, scale))
+            var resetLabel = Loc.T(L.Photos.Reset);
+            var resetHalf = new Vector2(Button.WidthFor(resetLabel, ButtonSize.Small),
+                Button.SmallHeight * scale) * 0.5f;
+            if (Button.Draw(drawList, new Rect(resetCenter - resetHalf, resetCenter + resetHalf), resetLabel,
+                    EditorInk(), ButtonStyle.Gray))
             {
                 editSession.Reset();
                 UiFeedback.Play(UiSound.Refresh);
@@ -74,6 +77,8 @@ internal sealed partial class PhotosApp
         Material.Veil(drawList, stage.Min, stage.Max, 0.45f, 0f);
         LoadingPulse.Draw(stage.Center, EditorSavingRadius * scale, ui.Accent, WhiteMuted, Loc.T(L.Account.Saving));
     }
+
+    private ControlInk EditorInk() => new(ui.Accent, White, WhiteMuted, frameTheme.Danger);
 
     private void DrawEditorTopBar(ImDrawListPtr drawList, Rect screen, Rect safe, float scale)
     {
@@ -92,23 +97,13 @@ internal sealed partial class PhotosApp
 
         var canSave = editSession.Preview.Ready && editSession.IsDirty && !editSession.Saving;
         var saveLabel = Loc.T(L.Photos.Save);
-        var saveWidth = Typography.Measure(saveLabel, TextStyles.Headline).X + SavePadX * 2f * scale;
+        var saveWidth = Button.WidthFor(saveLabel, ButtonSize.Regular);
+        var saveHalfHeight = Button.RegularHeight * scale * 0.5f;
         var right = screen.Max.X - ViewerEdgeInset * scale;
-        var save = new Rect(new Vector2(right - saveWidth, rowCenterY - radius), new Vector2(right, rowCenterY + radius));
-        var hovered = canSave && UiInteract.Hover(save.Min, save.Max);
-        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale(ImGui.GetID("photos.editor.save"), down, PressFx.ControlPressedScale);
-        var half = save.Size * 0.5f * grow;
-        Material.AccentGlass(drawList, save.Center - half, save.Center + half, half.Y, scale, ui.Accent,
-            canSave ? 1f : DisabledSaveAlpha);
-        Typography.DrawCentered(drawList, save.Center, saveLabel,
-            canSave ? White : Palette.WithAlpha(White, DisabledSaveAlpha), TextStyles.Headline);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (canSave && UiInteract.Click(save.Min, save.Max, hovered))
+        var save = new Rect(new Vector2(right - saveWidth, rowCenterY - saveHalfHeight),
+            new Vector2(right, rowCenterY + saveHalfHeight));
+        if (Button.Draw(drawList, save, saveLabel, EditorInk(), ButtonStyle.Prominent, enabled: canSave,
+                id: "photos.editor.save"))
         {
             SaveEdit();
         }
