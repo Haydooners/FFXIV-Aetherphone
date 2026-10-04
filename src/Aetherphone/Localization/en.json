@@ -8734,6 +8734,7 @@
   "widgetsPeople.sampleNotificationLike": "Liked your photo.",
   "widgetsPeople.sampleNotificationMuster": "Your meetup starts in 15 minutes.",
   "changelog.r1100.160": "Added Nameplate Title in Settings: show your MogCast party, jam, radio show, meetup, open social app, song or your own words as your Honorific title, in the order you choose and with text you can edit",
+  "changelog.r1100.161": "Added Connect Four to Play with friends: drop red and yellow discs head-to-head with 30 seconds a turn, contributed by jambalong",
   "nameplate.title": "Nameplate Title",
   "nameplate.off": "Off",
   "nameplate.notInstalledTitle": "Honorific is not installed",

@@ -2601,6 +2601,8 @@ internal static class L
                 "Added Blitz to Gem Swap: a 60-second mode where matches earn extra time and four element powers clear the board"),
             new("changelog.r1100.72",
                 "Added Line, Burst and Prism gems to Gem Swap, which combine with each other for bigger clears"),
+            new("changelog.r1100.161",
+                "Added Connect Four to Play with friends: drop red and yellow discs head-to-head with 30 seconds a turn, contributed by jambalong"),
             new("changelog.r1100.111",
                 "Fixed Bubbles losing your score when you restart or leave before the game ends, contributed by jambalong"),
         };

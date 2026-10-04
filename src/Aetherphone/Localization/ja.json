@@ -8734,6 +8734,7 @@
   "widgetsPeople.sampleNotificationLike": "あなたの写真にいいねしました。",
   "widgetsPeople.sampleNotificationMuster": "ミートアップは15分後に始まります。",
   "changelog.r1100.160": "設定にネームプレート称号を追加：MogCastパーティー、ジャム、ラジオ番組、集まり、開いているSNSアプリ、再生中の曲、自分の言葉をHonorificの称号として、好きな順番と編集できるテキストで表示できます",
+  "changelog.r1100.161": "「友達と遊ぶ」にコネクトフォーを追加：赤と黄色のディスクで一対一、1手30秒で対戦できます（jambalongさんの貢献）",
   "nameplate.title": "ネームプレート称号",
   "nameplate.off": "オフ",
   "nameplate.notInstalledTitle": "Honorificがインストールされていません",

@@ -8734,6 +8734,7 @@
   "widgetsPeople.sampleNotificationLike": "赞了你的照片。",
   "widgetsPeople.sampleNotificationMuster": "你的聚会将在 15 分钟后开始。",
   "changelog.r1100.160": "设置中新增名牌称号：可将你的 MogCast 派对、Jam、电台节目、聚会、打开的社交应用、歌曲或你自己的文字显示为 Honorific 称号，顺序由你决定，文字也可编辑",
+  "changelog.r1100.161": "和朋友一起玩新增四子棋：红黄棋子一对一对战，每回合30秒，由jambalong贡献",
   "nameplate.title": "名牌称号",
   "nameplate.off": "关闭",
   "nameplate.notInstalledTitle": "未安装 Honorific",
