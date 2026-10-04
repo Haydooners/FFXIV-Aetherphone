@@ -5,6 +5,8 @@ namespace Aetherphone.Windows.Components;
 internal static class Squircle
 {
     public const float Exponent = 4.2f;
+    private const float RoundExponent = 2f;
+    private const float RoundTolerance = 0.5f;
     private const int MinCornerSegments = 6;
     private const int MaxCornerSegments = 24;
     private const float SegmentError = 0.25f;
@@ -12,11 +14,13 @@ internal static class Squircle
     private const float CapOverlap = 1.5f;
     private const float DegenerateBox = 0.5f;
     private const uint AlphaMask = 0xFF000000;
-    private static readonly Vector2[][] UnitCorners = BuildUnitCorners();
+    private static readonly Vector2[][] UnitCorners = BuildUnitCorners(Exponent);
+    private static readonly Vector2[][] RoundCorners = BuildUnitCorners(RoundExponent);
     private static readonly Vector2[] PathScratch = new Vector2[(MaxCornerSegments + 1) * 4 + 4];
     private static readonly Vector2[] ClipScratch = new Vector2[(MaxCornerSegments + 1) * 4 + 4];
     private static readonly Vector2[] OuterRing = new Vector2[(MaxCornerSegments + 1) * 4];
     private static readonly Vector2[] InnerRing = new Vector2[(MaxCornerSegments + 1) * 4];
+    private static bool round;
 
     public static void Fill(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, uint color)
     {
@@ -470,6 +474,7 @@ internal static class Squircle
     public static float CornerBox(Vector2 min, Vector2 max, float radius)
     {
         var limit = MathF.Min(max.X - min.X, max.Y - min.Y) * 0.5f;
+        round = radius >= limit - RoundTolerance;
         return MathF.Max(0f, MathF.Min(radius, limit));
     }
 
@@ -485,8 +490,9 @@ internal static class Squircle
             return 0f;
         }
 
-        var vertical = MathF.Pow(1f - depth / box, Exponent * 0.5f);
-        var horizontal = MathF.Pow(MathF.Max(1f - vertical * vertical, 0f), 1f / Exponent);
+        var exponent = round ? RoundExponent : Exponent;
+        var vertical = MathF.Pow(1f - depth / box, exponent * 0.5f);
+        var horizontal = MathF.Pow(MathF.Max(1f - vertical * vertical, 0f), 1f / exponent);
         return box * (1f - horizontal);
     }
 
@@ -655,7 +661,8 @@ internal static class Squircle
         }
     }
 
-    private static Vector2[] CornerFor(float box) => UnitCorners[SegmentsFor(box) - MinCornerSegments];
+    private static Vector2[] CornerFor(float box) =>
+        (round ? RoundCorners : UnitCorners)[SegmentsFor(box) - MinCornerSegments];
 
     private static int SegmentsFor(float box)
     {
@@ -669,21 +676,21 @@ internal static class Squircle
         return Math.Clamp(count, MinCornerSegments, MaxCornerSegments);
     }
 
-    private static Vector2[][] BuildUnitCorners()
+    private static Vector2[][] BuildUnitCorners(float exponent)
     {
         var table = new Vector2[MaxCornerSegments - MinCornerSegments + 1][];
         for (var segments = MinCornerSegments; segments <= MaxCornerSegments; segments++)
         {
-            table[segments - MinCornerSegments] = BuildUnitCorner(segments);
+            table[segments - MinCornerSegments] = BuildUnitCorner(segments, exponent);
         }
 
         return table;
     }
 
-    private static Vector2[] BuildUnitCorner(int segments)
+    private static Vector2[] BuildUnitCorner(int segments, float exponent)
     {
         var points = new Vector2[segments + 1];
-        var power = 2f / Exponent;
+        var power = 2f / exponent;
         for (var index = 0; index <= segments; index++)
         {
             var angle = MathF.PI * 0.5f * index / segments;

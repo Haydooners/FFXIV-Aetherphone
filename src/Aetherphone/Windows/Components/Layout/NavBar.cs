@@ -45,6 +45,7 @@ internal static class NavBarMetrics
     public const float BackHitHeight = 44f;
     public const float ButtonGap = 8f;
     public const float ButtonPad = 6f;
+    public const float GlyphSize = 19f;
     public const int MaxButtons = 2;
     private const float MinimumScale = 0.0001f;
 

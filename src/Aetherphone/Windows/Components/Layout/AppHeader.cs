@@ -14,7 +14,6 @@ internal static class AppHeader
 
     private static bool BarHover(Vector2 min, Vector2 max) =>
         !UiInteract.InputBlocked && UiInteract.HoverWindowOnly(min, max);
-    private const float ButtonGlyphScale = 0.62f;
     private const float BackPadX = 6f;
     private const float BackHitWidth = 44f;
     private const float BackLabelGap = 4f;
@@ -370,7 +369,7 @@ internal static class AppHeader
         var grow = PressFx.Scale(key, down, PressFx.ControlPressedScale);
         var drawn = new Vector2(radius * grow, radius * grow);
         Material.ThemedGlass(drawList, center - drawn, center + drawn, radius * grow, scale, theme);
-        AppSkin.Icon(drawList, center, glyph, ink, ButtonGlyphScale * grow);
+        PhoneIcon.Draw(drawList, center, glyph, ink, NavBarMetrics.GlyphSize * scale * grow);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
