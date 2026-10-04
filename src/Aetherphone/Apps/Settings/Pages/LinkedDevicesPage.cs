@@ -167,10 +167,10 @@ internal sealed class LinkedDevicesPage : ISettingsPage, IDisposable
         var scale = UiScale.Current;
         ImGui.Dummy(new Vector2(1f, 10f * scale));
         var width = ImGui.GetContentRegionAvail().X;
-        var codeSize = Typography.Measure(code, 1.05f, FontWeight.SemiBold);
+        var codeSize = Typography.Measure(code, TextStyles.Headline);
         var codeLeft = ImGui.GetCursorScreenPos().X + (width - codeSize.X) * 0.5f;
-        Typography.Draw(new Vector2(codeLeft, ImGui.GetCursorScreenPos().Y), code, theme.Accent, 1.05f,
-            FontWeight.SemiBold);
+        Typography.Draw(new Vector2(codeLeft, ImGui.GetCursorScreenPos().Y), code, theme.Accent,
+            TextStyles.Headline);
         ImGui.Dummy(new Vector2(1f, codeSize.Y + 8f * scale));
         SettingsSection.Hint(Loc.T(L.Settings.LinkedDevicesRefresh), theme);
     }
