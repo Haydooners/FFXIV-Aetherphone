@@ -203,7 +203,7 @@ internal sealed partial class HealthApp : IResumableApp, ITabRouteTarget
     private float SectionTop(ImDrawListPtr drawList, float left, float top, float width, string title, float scale)
     {
         var cursorY = top + HealthArt.SectionGap * scale;
-        cursorY += HealthArt.SectionHeader(drawList, new Vector2(left, cursorY), width, title, ui.TitleInk);
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width, title, ui.TitleInk);
         return cursorY + HealthArt.HeaderGap * scale;
     }
 
@@ -214,8 +214,8 @@ internal sealed partial class HealthApp : IResumableApp, ITabRouteTarget
         var press = PressFx.Scale(id, pressed, PressedCardScale);
         var half = rect.Size * 0.5f * press;
         drawn = new Rect(rect.Center - half, rect.Center + half);
-        var radius = Metrics.Radius.Widget * UiScale.Current;
-        ui.Card(drawList, drawn.Min, drawn.Max, radius, true);
+        var radius = Metrics.Radius.Grouped * UiScale.Current;
+        ui.Card(drawList, drawn.Min, drawn.Max, radius);
         if (hovered)
         {
             Squircle.Fill(drawList, drawn.Min, drawn.Max, radius, ImGui.GetColorU32(ui.HoverTint));

@@ -324,8 +324,7 @@ internal sealed partial class HealthApp
         }
 
         var save = new Rect(new Vector2(left, y), new Vector2(right, y + SheetButtonHeight * scale));
-        if (frame.Interactive && ui.AccentPill(save, Loc.T(editing ? L.Health.Done : L.Health.AddGoal), true,
-                TextStyles.Headline))
+        if (frame.Interactive && Button.Draw(save, Loc.T(editing ? L.Health.Done : L.Health.AddGoal), ui.Ink))
         {
             SaveGoal();
         }

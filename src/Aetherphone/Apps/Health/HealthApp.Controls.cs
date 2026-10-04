@@ -15,15 +15,15 @@ internal sealed record StepperIds(string Minus, string Plus)
 internal sealed partial class HealthApp
 {
     private const float RowHeight = 52f;
-    private const float StepperRadius = 16f;
-    private const float StepperWashAlpha = 0.14f;
+    private const float StepperRadius = RoundButton.SmallRadius;
+    private const float GlyphFraction = 0.9f;
     private const float StepperValueWidth = 92f;
 
     private float RowsCard(ImDrawListPtr drawList, Vector2 origin, float width, int rows, float scale, out Rect card)
     {
         var height = rows * RowHeight * scale;
         card = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         return card.Max.Y;
     }
 
@@ -110,10 +110,23 @@ internal sealed partial class HealthApp
     }
 
     private bool StepperButton(ImDrawListPtr drawList, string id, Vector2 center, float radius, FontAwesomeIcon icon,
-        Vector4 tint, bool enabled)
+        Vector4 tint, bool enabled) =>
+        GlyphButton(drawList, id, center, radius, icon, tint, ButtonStyle.Tinted, enabled);
+
+    private bool GlyphButton(ImDrawListPtr drawList, string id, Vector2 center, float radius, FontAwesomeIcon icon,
+        Vector4 tint, ButtonStyle style, bool enabled, string tooltip = "", Vector4? glyphInk = null)
     {
-        var fill = Palette.WithAlpha(tint, StepperWashAlpha);
-        return HoverButton.Circle(drawList, id, center, radius, icon, fill, enabled ? tint : ui.MutedInk,
-            HealthArt.FrameDelta(), enabled ? 1f : 0.4f, enabled);
+        var clicked = RoundButton.Draw(drawList, ImGui.GetID(id), center, radius, ui.Ink.WithAccent(tint), style,
+            enabled, false, out var face);
+        var grow = face.Face.Width / MathF.Max(radius * 2f, 0.0001f);
+        var ink = glyphInk is { } custom ? custom with { W = face.LabelInk.W } : face.LabelInk;
+        ProgressRing.CenterIcon(drawList, center, icon, ink, radius * GlyphFraction * grow);
+        if (enabled && tooltip.Length > 0)
+        {
+            var extent = new Vector2(radius, radius);
+            HoverTooltip.Show(new Rect(center - extent, center + extent), tooltip, HoverLabelSide.Above);
+        }
+
+        return clicked;
     }
 }

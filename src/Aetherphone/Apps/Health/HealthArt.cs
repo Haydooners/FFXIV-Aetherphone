@@ -87,12 +87,6 @@ internal static class HealthArt
         drawList.AddLine(new Vector2(center.X - size * 0.5f, center.Y + size), tip, color, thickness);
     }
 
-    public static float SectionHeader(ImDrawListPtr drawList, Vector2 origin, float width, string title, Vector4 ink)
-    {
-        Typography.Draw(drawList, origin, Typography.FitText(title, width, TextStyles.Title3), ink, TextStyles.Title3);
-        return Typography.LineHeight(TextStyles.Title3);
-    }
-
     public static float StateHeight(string title, string body, float width, float scale)
     {
         var textWidth = StateTextWidth(width, scale);
