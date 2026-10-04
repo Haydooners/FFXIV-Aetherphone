@@ -8294,10 +8294,13 @@ internal static class L
         public static readonly LocString LongTitles = new("nameplate.longTitles", "Long titles");
         public static readonly LocString TakeTurns = new("nameplate.takeTurns", "Take turns");
         public static readonly LocString Shorten = new("nameplate.shorten", "Shorten");
-        public static readonly LocString TakeTurnsHint = new("nameplate.takeTurnsHint", "When the song and artist do not fit, they take turns on your title, and a long name shows in parts. Nothing gets cut off.");
-        public static readonly LocString ShortenHint = new("nameplate.shortenHint", "Drops the artist first, then cuts the song name short to fit.");
+        public static readonly LocString TakeTurnsHint = new("nameplate.takeTurnsHint", "A line that does not fit shows the song and artist one at a time, and long names show in parts. Nothing gets cut off.");
+        public static readonly LocString ShortenHint = new("nameplate.shortenHint", "A line that does not fit drops the artist first, then cuts the song name short.");
         public static readonly LocString SwitchEvery = new("nameplate.switchEvery", "Switch every");
         public static readonly LocString TurnSeconds = new("nameplate.turnSeconds", "{0}s");
+        public static readonly LocString AddLine = new("nameplate.addLine", "Add line");
+        public static readonly LocString LinePlaceholder = new("nameplate.linePlaceholder", "Another line, like I am listening to");
+        public static readonly LocString LinesHint = new("nameplate.linesHint", "Each line shows on its own, one after another. Leave them empty to use the default text.");
         public static readonly LocString Handle = new("nameplate.handle", "Social handle");
         public static readonly LocString HandleHint = new("nameplate.handleHint", "Your handle, when nothing above it is active.");
         public static readonly LocString HandleApp = new("nameplate.handleApp", "Use the handle from");

@@ -3,6 +3,7 @@ using Aetherphone.Core.Apps;
 using Aetherphone.Core.Changelog;
 using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -48,12 +49,14 @@ internal sealed class NameplateTitlePage : ISettingsPage
     private int moveIndex = -1;
     private int moveDelta;
 
-    public NameplateTitlePage(NameplateTitleService titles, Configuration configuration, ISettingsNavigator navigator)
+    public NameplateTitlePage(NameplateTitleService titles, Configuration configuration, ISettingsNavigator navigator,
+        PcMediaSource pcMedia)
     {
         this.titles = titles;
         this.configuration = configuration;
         this.navigator = navigator;
-        statusPage = new NameplateStatusPage(titles, navigator, new NameplateStatusPage(titles, navigator, null));
+        statusPage = new NameplateStatusPage(titles, configuration, pcMedia, navigator,
+            new NameplateStatusPage(titles, configuration, pcMedia, navigator, null));
     }
 
     public string Title => Loc.T(L.Nameplate.Title);

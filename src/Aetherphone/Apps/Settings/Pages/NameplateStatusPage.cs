@@ -2,6 +2,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -11,18 +12,25 @@ namespace Aetherphone.Apps.Settings.Pages;
 
 internal sealed class NameplateStatusPage : ISettingsPage
 {
+    private const int MaxLines = 6;
+    private const float RemoveRadius = 10f;
+    private static readonly string[] LineIds = BuildLineIds();
+
     private const int MaxChildren = 4;
 
     private static readonly string[] ChildIds = BuildChildIds();
 
     private readonly NameplateTitleService titles;
+    private readonly Configuration configuration;
+    private readonly PcMediaSource pcMedia;
     private readonly ISettingsNavigator navigator;
     private readonly NameplateStatusPage? childPage;
     private readonly NameplateStage stage = new();
     private readonly string[] handleLabels = new string[3];
     private readonly string[] longTitleLabels = new string[2];
     private NameplateStatus status = NameplateStatus.Jam;
-    private string buffer = string.Empty;
+    private readonly string[] lines = new string[MaxLines];
+    private int lineCount = 1;
     private bool editing;
     private string sampleTemplate = string.Empty;
     private NameplateTitle sample = NameplateTitle.None;
@@ -36,10 +44,12 @@ internal sealed class NameplateStatusPage : ISettingsPage
     private string tokensTemplate = string.Empty;
     private string tokensLine = string.Empty;
 
-    public NameplateStatusPage(NameplateTitleService titles, ISettingsNavigator navigator,
-        NameplateStatusPage? childPage)
+    public NameplateStatusPage(NameplateTitleService titles, Configuration configuration, PcMediaSource pcMedia,
+        ISettingsNavigator navigator, NameplateStatusPage? childPage)
     {
         this.titles = titles;
+        this.configuration = configuration;
+        this.pcMedia = pcMedia;
         this.navigator = navigator;
         this.childPage = childPage;
     }
@@ -57,7 +67,7 @@ internal sealed class NameplateStatusPage : ISettingsPage
     public void Show(NameplateStatus shownStatus)
     {
         status = shownStatus;
-        buffer = titles.Settings.Template(shownStatus);
+        LoadLines(titles.Settings.Template(shownStatus));
         editing = false;
         sampleTemplate = string.Empty;
         tokensTemplate = string.Empty;
@@ -118,24 +128,21 @@ internal sealed class NameplateStatusPage : ISettingsPage
     private void DrawText(PhoneTheme theme, float scale)
     {
         var custom = status == NameplateStatus.Custom;
+        var multiLine = status == NameplateStatus.NowPlaying;
         SettingsSection.Header(Loc.T(L.Nameplate.Text), theme);
-        var hint = custom ? Loc.T(L.Nameplate.CustomPlaceholder) : NameplateTitleService.DefaultTemplate(status);
-        var changed = SettingsForm.TextField("##nameplate.template", hint, ref buffer, theme,
-            NameplateTitleSettings.MaxTemplateLength, ImGuiInputTextFlags.None, out var active);
-        if (changed)
+        DrawLines(theme, scale, custom, multiLine);
+        if (multiLine)
         {
-            titles.Settings.SetTemplate(status, buffer);
-            titles.Refresh();
+            ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
+            if (SettingsForm.ActionCard(Loc.T(L.Nameplate.AddLine), theme.Accent, theme, lineCount < MaxLines))
+            {
+                AddLine();
+            }
         }
 
-        if (editing && !active)
-        {
-            titles.Commit();
-        }
-
-        editing = active;
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
-        SettingsSection.Hint(custom ? Loc.T(L.Nameplate.CustomHint) : Loc.T(L.Nameplate.TextHint), theme);
+        var hint = custom ? L.Nameplate.CustomHint : multiLine ? L.Nameplate.LinesHint : L.Nameplate.TextHint;
+        SettingsSection.Hint(Loc.T(hint), theme);
         var tokens = TokensLine();
         if (tokens.Length > 0)
         {
@@ -157,9 +164,124 @@ internal sealed class NameplateStatusPage : ISettingsPage
             return;
         }
 
-        buffer = string.Empty;
+        LoadLines(string.Empty);
         titles.Settings.SetTemplate(status, string.Empty);
         titles.Commit();
+    }
+
+    private void DrawLines(PhoneTheme theme, float scale, bool custom, bool multiLine)
+    {
+        var removable = multiLine && lineCount > 1;
+        var radius = RemoveRadius * scale;
+        var gap = Metrics.Space.Sm * scale;
+        var reserve = removable ? radius * 2f + gap : 0f;
+        var changed = false;
+        var active = false;
+        var removeIndex = -1;
+        for (var index = 0; index < lineCount; index++)
+        {
+            if (index > 0)
+            {
+                ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
+            }
+
+            var hint = index > 0 ? Loc.T(L.Nameplate.LinePlaceholder)
+                : custom ? Loc.T(L.Nameplate.CustomPlaceholder) : NameplateTitleService.DefaultTemplate(status);
+            changed |= SettingsForm.TextField(LineIds[index], hint, ref lines[index], theme,
+                NameplateTitleSettings.MaxTemplateLength, ImGuiInputTextFlags.None, out var lineActive, reserve);
+            active |= lineActive;
+            if (!removable)
+            {
+                continue;
+            }
+
+            var fieldMin = ImGui.GetItemRectMin();
+            var fieldMax = ImGui.GetItemRectMax();
+            var center = new Vector2(fieldMax.X + gap + radius, (fieldMin.Y + fieldMax.Y) * 0.5f);
+            if (SettingsReorder.Button(center, radius, FontAwesomeIcon.Times, theme, true))
+            {
+                removeIndex = index;
+            }
+        }
+
+        if (changed)
+        {
+            StoreLines();
+            titles.Refresh();
+        }
+
+        if (editing && !active)
+        {
+            titles.Commit();
+        }
+
+        editing = active;
+        if (removeIndex < 0)
+        {
+            return;
+        }
+
+        Array.Copy(lines, removeIndex + 1, lines, removeIndex, lineCount - removeIndex - 1);
+        lineCount--;
+        lines[lineCount] = string.Empty;
+        StoreLines();
+        titles.Commit();
+    }
+
+    private void AddLine()
+    {
+        if (lineCount >= MaxLines)
+        {
+            return;
+        }
+
+        if (AllLinesEmpty())
+        {
+            lines[0] = NameplateTitleService.DefaultTemplate(status);
+        }
+
+        lines[lineCount] = string.Empty;
+        lineCount++;
+        StoreLines();
+        titles.Commit();
+    }
+
+    private bool AllLinesEmpty()
+    {
+        for (var index = 0; index < lineCount; index++)
+        {
+            if (!string.IsNullOrWhiteSpace(lines[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void LoadLines(string template)
+    {
+        Array.Fill(lines, string.Empty);
+        var parts = template.Split(NameplateTitleText.LineBreak);
+        lineCount = Math.Clamp(parts.Length, 1, MaxLines);
+        for (var index = 0; index < lineCount && index < parts.Length; index++)
+        {
+            lines[index] = parts[index];
+        }
+    }
+
+    private void StoreLines() =>
+        titles.Settings.SetTemplate(status, string.Join(NameplateTitleText.LineBreak, lines, 0, lineCount));
+
+    private static string[] BuildLineIds()
+    {
+        var ids = new string[MaxLines];
+        for (var index = 0; index < MaxLines; index++)
+        {
+            ids[index] = "##nameplate.line" + index;
+        }
+
+        return ids;
     }
 
     private void DrawExtras(PhoneTheme theme, float scale)
@@ -176,6 +298,11 @@ internal sealed class NameplateStatusPage : ISettingsPage
             {
                 settings.IncludePcMedia = pcMedia;
                 titles.Commit();
+            }
+
+            if (settings.IncludePcMedia && configuration.ShowWindowsMedia)
+            {
+                MusicMediaSettings.DrawSource(this.pcMedia, theme);
             }
 
             DrawLongTitles(theme, scale);
@@ -253,10 +380,11 @@ internal sealed class NameplateStatusPage : ISettingsPage
         SettingsSection.Header(Loc.T(L.Nameplate.LongTitles), theme);
         longTitleLabels[0] = Loc.T(L.Nameplate.TakeTurns);
         longTitleLabels[1] = Loc.T(L.Nameplate.Shorten);
-        var card = GroupCard.Begin(theme, takeTurns ? 3 : 1);
+        var rotates = takeTurns || lineCount > 1;
+        var card = GroupCard.Begin(theme, rotates ? 3 : 1);
         var picked = SegmentStrip.Draw("nameplate.longTitles", card.NextRow(), longTitleLabels,
             (int)settings.LongTitles, theme);
-        if (takeTurns)
+        if (rotates)
         {
             DrawTurnSeconds(ref card, theme);
         }

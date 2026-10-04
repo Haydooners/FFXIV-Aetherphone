@@ -90,7 +90,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         var general = new GeneralPage(configuration, services.Translation, confirm);
         var tutorials = new TutorialsPage(configuration);
         callsPage = new CallsPage(calls, configuration);
-        var nameplatePage = new NameplateTitlePage(services.NameplateTitles, configuration, this);
+        var nameplatePage = new NameplateTitlePage(services.NameplateTitles, configuration, this, services.PcMedia);
         var notificationSoundPage = new SoundSettingsPage(sound, SoundKind.Notification, L.Settings.NotificationSound,
             FontAwesomeIcon.Bell, new Vector4(0.98f, 0.27f, 0.25f, 1f), "settings.notificationVolume",
             () => configuration.NotificationSound, token =>

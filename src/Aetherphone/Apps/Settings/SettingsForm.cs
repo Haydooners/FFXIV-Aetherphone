@@ -72,11 +72,11 @@ internal static class SettingsForm
         TextField(imguiId, hint, ref text, theme, maxLength, flags, out _);
 
     public static bool TextField(string imguiId, string hint, ref string text, PhoneTheme theme, int maxLength,
-        ImGuiInputTextFlags flags, out bool active)
+        ImGuiInputTextFlags flags, out bool active, float trailingReserve = 0f)
     {
         var scale = UiScale.Current;
         var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
+        var width = ImGui.GetContentRegionAvail().X - trailingReserve;
         var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + GlassField.HeightUnits * scale));
         SearchBar.Surface(ImGui.GetWindowDrawList(), field, ControlInk.From(theme));
         var changed = GlassField.Text(field, imguiId, hint, ref text, theme, scale, maxLength, false, flags);

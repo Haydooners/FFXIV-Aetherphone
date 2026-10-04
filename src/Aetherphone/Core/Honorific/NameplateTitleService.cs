@@ -368,7 +368,7 @@ internal sealed class NameplateTitleService : IDisposable
             }
         }
 
-        return NameplateTitle.None;
+        return settings.Shows(status) ? ResolveStatus(status) : NameplateTitle.None;
     }
 
     private NameplateTitle ResolveStatus(NameplateStatus status)
@@ -488,12 +488,8 @@ internal sealed class NameplateTitleService : IDisposable
 
     private NameplateTitle ComposeNowPlaying(in NameplateValues values, double seconds)
     {
-        if (settings.LongTitles == NameplateLongTitles.Shorten)
-        {
-            return Compose(NameplateStatus.NowPlaying, values);
-        }
-
-        var turns = NameplateTitleText.Turns(TemplateFor(NameplateStatus.NowPlaying), values);
+        var turns = NameplateTitleText.Turns(TemplateFor(NameplateStatus.NowPlaying), values,
+            settings.LongTitles == NameplateLongTitles.Shorten);
         if (turns.Length == 0)
         {
             return NameplateTitle.None;

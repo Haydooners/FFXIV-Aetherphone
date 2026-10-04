@@ -8,6 +8,7 @@ internal static class NameplateTitleText
 {
     public const int MaxLength = 32;
     public const string Separator = " · ";
+    public const char LineBreak = '\n';
     private const char Ellipsis = '…';
     private const char HandleMark = '@';
     private const char TokenOpen = '[';
@@ -71,18 +72,76 @@ internal static class NameplateTitleText
         return Clean(builder.ToString());
     }
 
-    public static string[] Turns(string template, in NameplateValues values)
+    public static string[] Turns(string template, in NameplateValues values, bool shorten)
     {
-        var whole = Render(template, values);
-        if (whole.Length <= MaxLength)
+        var turns = new List<string>(4);
+        var start = 0;
+        while (start <= template.Length)
         {
-            return whole.Length == 0 ? Array.Empty<string>() : new[] { whole };
+            var end = template.IndexOf(LineBreak, start);
+            if (end < 0)
+            {
+                end = template.Length;
+            }
+
+            AddLineTurns(turns, template.Substring(start, end - start), values, shorten);
+            start = end + 1;
         }
 
-        var turns = new List<string>(4);
-        AddPages(turns, template, values with { Artist = string.Empty }, values.Song, false);
-        AddPages(turns, template, values with { Song = string.Empty }, values.Artist, true);
-        return turns.Count == 0 ? new[] { Fit(whole) } : turns.ToArray();
+        return turns.ToArray();
+    }
+
+    private static void AddLineTurns(List<string> turns, string line, in NameplateValues values, bool shorten)
+    {
+        if (shorten)
+        {
+            AddIfShown(turns, RenderFitted(line, values));
+            return;
+        }
+
+        var whole = Render(line, values);
+        if (whole.Length <= MaxLength)
+        {
+            AddIfShown(turns, whole);
+            return;
+        }
+
+        var count = turns.Count;
+        AddPages(turns, line, values with { Artist = string.Empty }, values.Song, false);
+        AddPages(turns, line, values with { Song = string.Empty }, values.Artist, true);
+        if (turns.Count == count)
+        {
+            AddTextPages(turns, whole);
+        }
+    }
+
+    private static void AddIfShown(List<string> turns, string text)
+    {
+        if (text.Length > 0)
+        {
+            turns.Add(text);
+        }
+    }
+
+    private static void AddTextPages(List<string> turns, string text)
+    {
+        var start = 0;
+        while (start < text.Length)
+        {
+            var length = PageLength(text, start, MaxLength);
+            AddIfShown(turns, Clean(text.Substring(start, length)));
+            start = SkipSpaces(text, start + length);
+        }
+    }
+
+    private static int SkipSpaces(string text, int index)
+    {
+        while (index < text.Length && text[index] == ' ')
+        {
+            index++;
+        }
+
+        return index;
     }
 
     private static void AddPages(List<string> turns, string template, in NameplateValues values, string text,
@@ -106,17 +165,8 @@ internal static class NameplateTitleText
         while (start < trimmed.Length)
         {
             var length = PageLength(trimmed, start, budget);
-            var page = Render(template, With(values, artist, trimmed.Substring(start, length)));
-            if (page.Length > 0)
-            {
-                turns.Add(page);
-            }
-
-            start += length;
-            while (start < trimmed.Length && trimmed[start] == ' ')
-            {
-                start++;
-            }
+            AddIfShown(turns, Render(template, With(values, artist, trimmed.Substring(start, length))));
+            start = SkipSpaces(trimmed, start + length);
         }
     }
 

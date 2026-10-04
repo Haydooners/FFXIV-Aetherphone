@@ -87,14 +87,14 @@ public sealed class NameplateTitleTextTests
     [Fact]
     public void FittingSongIsASingleTurn()
     {
-        Assert.Equal(new[] { "♪ Answers · Susan Calloway" }, NameplateTitleText.Turns("♪ [song] · [artist]", Song));
-        Assert.Empty(NameplateTitleText.Turns("♪ [song] · [artist]", NameplateValues.Empty));
+        Assert.Equal(new[] { "♪ Answers · Susan Calloway" }, NameplateTitleText.Turns("♪ [song] · [artist]", Song, false));
+        Assert.Empty(NameplateTitleText.Turns("♪ [song] · [artist]", NameplateValues.Empty, false));
     }
 
     [Fact]
     public void SongAndArtistTakeTurnsWhenTogetherTheyDoNotFit()
     {
-        var turns = NameplateTitleText.Turns("♪ [song] · [artist]", Song with { Song = "Tomorrow and Tomorrow" });
+        var turns = NameplateTitleText.Turns("♪ [song] · [artist]", Song with { Song = "Tomorrow and Tomorrow" }, false);
 
         Assert.Equal(new[] { "♪ Tomorrow and Tomorrow", "♪ Susan Calloway" }, turns);
     }
@@ -104,7 +104,7 @@ public sealed class NameplateTitleTextTests
     {
         const string song = "Footfalls (from FINAL FANTASY XIV: Endwalker Original Soundtrack)";
 
-        var turns = NameplateTitleText.Turns("♪ [song] · [artist]", NameplateValues.Empty with { Song = song });
+        var turns = NameplateTitleText.Turns("♪ [song] · [artist]", NameplateValues.Empty with { Song = song }, false);
 
         Assert.True(turns.Length > 1);
         var joined = string.Empty;
@@ -117,6 +117,32 @@ public sealed class NameplateTitleTextTests
         }
 
         Assert.Equal(song, joined);
+    }
+
+    [Fact]
+    public void EachLineIsItsOwnTurnAndEmptyLinesAreSkipped()
+    {
+        var turns = NameplateTitleText.Turns("I am listening to\n♪ [song]\n\n[artist]", Song, false);
+
+        Assert.Equal(new[] { "I am listening to", "♪ Answers", "Susan Calloway" }, turns);
+    }
+
+    [Fact]
+    public void LongPlainLineIsPagedInsteadOfCut()
+    {
+        var turns = NameplateTitleText.Turns("Vibing to the finest tunes in all of Eorzea tonight",
+            NameplateValues.Empty, false);
+
+        Assert.Equal(new[] { "Vibing to the finest tunes in", "all of Eorzea tonight" }, turns);
+    }
+
+    [Fact]
+    public void ShortenKeepsOneTurnPerLine()
+    {
+        var turns = NameplateTitleText.Turns("Now playing\n♪ [song] · [artist]",
+            Song with { Song = "Tomorrow and Tomorrow" }, true);
+
+        Assert.Equal(new[] { "Now playing", "♪ Tomorrow and Tomorrow" }, turns);
     }
 
     [Fact]

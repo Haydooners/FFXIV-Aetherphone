@@ -48,7 +48,7 @@ internal static class MusicMediaSettings
         configuration.Save();
     }
 
-    private static void DrawSource(PcMediaSource pcMedia, PhoneTheme theme)
+    public static void DrawSource(PcMediaSource pcMedia, PhoneTheme theme)
     {
         SettingsSection.Header(Loc.T(L.Music.PcMedia.SourceHeader), theme);
         var count = PcMediaView.SourceOptions(pcMedia, SourceIds, SourceLabels, SourceGlyphs,
