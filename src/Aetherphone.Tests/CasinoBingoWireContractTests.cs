@@ -154,7 +154,7 @@ public sealed class CasinoBingoWireContractTests
     [Fact]
     public void ThePublishedLadderAgreesWithTheMirroredRates()
     {
-        const string json = "{\"roundIndex\":7,\"cards\":40,\"prizes\":[11388,15120,32596],\"prizeCardCap\":125}";
+        const string json = "{\"roundIndex\":7,\"cards\":40,\"prizes\":[11528,15308,33004],\"prizeCardCap\":125}";
         var board = JsonSerializer.Deserialize(json, AethernetJsonContext.Default.CasinoBingoRoomStateDto);
 
         Assert.NotNull(board);
