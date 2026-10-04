@@ -150,7 +150,7 @@ internal static class VenuesArt
         return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
-    private static void DrawGlyphLabel(ImDrawListPtr drawList, in ButtonFace face, string label, string glyph,
+    public static void DrawGlyphLabel(ImDrawListPtr drawList, in ButtonFace face, string label, string glyph,
         bool chevron)
     {
         var scale = UiScale.Current;
