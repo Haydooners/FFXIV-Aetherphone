@@ -11,11 +11,7 @@ using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Apps.Games.Online;
 
-// The live Connect Four table. The server is the arbiter; a column tap only ever sends an intent,
-// and the next snapshot repaints the truth. Unlike Chess's static repaint, a landed disc gets a
-// short gravity-drop flight: the server already tells us where it landed and whose it was
-// (LastColumn/LastRow/LastSeat), so the animation is purely a local replay of a fact the server
-// already confirmed, never a guess about what the server will do.
+// A landed disc is replayed from LastColumn/LastRow, facts the server already settled, never predicted.
 internal sealed class OnlineConnectFourTable
 {
     private const float DropDuration = 0.28f;

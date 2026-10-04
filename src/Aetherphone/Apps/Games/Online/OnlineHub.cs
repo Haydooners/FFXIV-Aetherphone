@@ -35,7 +35,8 @@ internal sealed class OnlineHub
     private const float LampOffset = 16f;
     private const int CodeBufferLength = 16;
 
-    private static readonly string[] HostIds = ["games.host.uno", "games.host.chess", "games.host.pool", "games.host.connectfour"];
+    private static readonly string[] HostIds =
+        ["games.host.uno", "games.host.chess", "games.host.pool", "games.host.connectfour"];
 
     private readonly GameRoomsStore store;
     private readonly Action<string, string> openRoom;
