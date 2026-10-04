@@ -8289,7 +8289,7 @@ internal static class L
         public static readonly LocString DoNotDisturb = new("nameplate.dnd", "Do not disturb");
         public static readonly LocString DoNotDisturbHint = new("nameplate.dndHint", "While Do Not Disturb is on.");
         public static readonly LocString NowPlaying = new("nameplate.nowPlaying", "Now playing");
-        public static readonly LocString NowPlayingHint = new("nameplate.nowPlayingHint", "The song you are playing. Needs Share what I listen to, in Music settings.");
+        public static readonly LocString NowPlayingHint = new("nameplate.nowPlayingHint", "The song you are playing.");
         public static readonly LocString PcMedia = new("nameplate.pcMedia", "Include music from your PC");
         public static readonly LocString LongTitles = new("nameplate.longTitles", "Long titles");
         public static readonly LocString TakeTurns = new("nameplate.takeTurns", "Take turns");

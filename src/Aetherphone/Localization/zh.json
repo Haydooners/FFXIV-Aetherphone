@@ -8762,7 +8762,7 @@
   "nameplate.dnd": "勿扰",
   "nameplate.dndHint": "开启勿扰期间。",
   "nameplate.nowPlaying": "正在播放",
-  "nameplate.nowPlayingHint": "显示你正在播放的歌曲。需要在音乐设置中开启“分享我正在听的歌”。",
+  "nameplate.nowPlayingHint": "显示你正在播放的歌曲。",
   "nameplate.pcMedia": "包括电脑上的音乐",
   "nameplate.longTitles": "过长的标题",
   "nameplate.takeTurns": "轮流显示",

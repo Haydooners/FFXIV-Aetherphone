@@ -8762,7 +8762,7 @@
   "nameplate.dnd": "No molestar",
   "nameplate.dndHint": "Mientras No molestar está activado.",
   "nameplate.nowPlaying": "Reproduciendo ahora",
-  "nameplate.nowPlayingHint": "La canción que estás reproduciendo. Requiere «Compartir lo que escucho» en los ajustes de Música.",
+  "nameplate.nowPlayingHint": "La canción que estás reproduciendo.",
   "nameplate.pcMedia": "Incluir música de tu PC",
   "nameplate.longTitles": "Títulos largos",
   "nameplate.takeTurns": "Alternar",
