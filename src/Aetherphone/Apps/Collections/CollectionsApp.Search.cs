@@ -129,7 +129,7 @@ internal sealed partial class CollectionsApp
         var linkWidth = showAll ? Typography.Measure(linkLabel, TextStyles.Body).X : 0f;
         var title = Loc.T(CollectionText.Label(category));
         var titleWidth = MathF.Max(1f, width - linkWidth - HeaderGap * scale);
-        var height = CollectionsArt.SectionHeader(drawList, new Vector2(left, top), titleWidth, title, ui.TitleInk);
+        var height = CardSectionHeader.Draw(drawList, new Vector2(left, top), titleWidth, title, ui.TitleInk);
         var titleSize = Typography.Measure(Typography.FitText(title, titleWidth, TextStyles.Title3), TextStyles.Title3);
         var countLeft = left + titleSize.X + HeaderGap * scale * 0.6f;
         var countSize = Typography.Measure(searchCounts[index], TextStyles.Subheadline);
