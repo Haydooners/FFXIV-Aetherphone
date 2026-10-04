@@ -7080,6 +7080,8 @@
   "changelog.r1042.13": "Survoler une icône d'app la soulève désormais et éclaire son bord, à la place de l'ancien effet de loupe",
   "changelog.r1042.14": "Boutons latéraux réorganisés : le bouton Action pour Ne pas déranger et une touche Verrouiller la position à gauche, le bouton latéral et le Contrôle de l'appareil photo à droite",
   "changelog.r1042.15": "Ajout du Verre en direct (expérimental) à la page Affichage des Réglages : le verre dans les apps et sur le mini téléphone floute le jeu derrière lui",
+  "changelog.r1042.152": "Motifs de signalement revus dans toutes les apps pour suivre les règles de la communauté, du spam et du harcèlement à l'art volé, au doxxing et au contournement de bannissement, et chaque app ne propose que ceux qui la concernent",
+  "changelog.r1042.153": "Choisir un motif de signalement affiche désormais une courte ligne qui explique ce qu'il couvre",
   "changelog.r1042.16": "Les fonds d'écran se chargent désormais à la taille où ils sont affichés, et restent nets au lieu de scintiller",
   "changelog.r1042.17": "Le pourcentage de batterie se trouve désormais dans l'icône de batterie, et survoler l'icône de signal, de Wi-Fi ou de batterie montre ce qu'elle mesure",
   "changelog.r1042.18": "L'emote du téléphone se joue désormais une fois à l'ouverture du téléphone, et s'éloigner ou l'annuler ne la relance plus",

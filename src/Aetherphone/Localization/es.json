@@ -7080,6 +7080,8 @@
   "changelog.r1042.13": "Al pasar el cursor sobre un icono de app, ahora se eleva y se ilumina su borde, en lugar del antiguo efecto de lupa",
   "changelog.r1042.14": "Botones laterales reorganizados: el botón de Acción para No molestar y una tecla de Bloquear posición a la izquierda, el botón lateral y el Control de Cámara a la derecha",
   "changelog.r1042.15": "Añadido Cristal en vivo (experimental) a la página Pantalla de Ajustes: el cristal dentro de las apps y en el mini teléfono desenfoca el juego que hay detrás",
+  "changelog.r1042.152": "Rehechos los motivos de denuncia en todas las apps para seguir las normas de la comunidad, desde spam y acoso hasta arte robado, doxeo y evasión de suspensiones, y cada app solo muestra los que le corresponden",
+  "changelog.r1042.153": "Al elegir un motivo de denuncia, ahora una línea breve explica qué abarca",
   "changelog.r1042.16": "Los fondos de pantalla se cargan ahora al tamaño en que se dibujan, así se ven nítidos en lugar de parpadear",
   "changelog.r1042.17": "El porcentaje de batería está ahora dentro del icono de batería, y al pasar el cursor sobre el icono de señal, Wi-Fi o batería ves lo que mide",
   "changelog.r1042.18": "El gesto del teléfono se reproduce ahora una vez al abrir el teléfono, y alejarte o cancelarlo ya no lo hace volver",

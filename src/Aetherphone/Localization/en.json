@@ -7080,6 +7080,8 @@
   "changelog.r1042.13": "Hovering an app icon now lifts it and lights its edge, in place of the old magnifying effect",
   "changelog.r1042.14": "Rearranged the side keys: the Action button for Do Not Disturb and a Lock Position key on the left, the Side button and Camera Control on the right",
   "changelog.r1042.15": "Added Live glass (experimental) to the Display page in Settings: glass inside apps and on the mini phone blurs the game behind it",
+  "changelog.r1042.152": "Reworked the report reasons in every app to match the community rules, from spam and harassment to stolen art, doxxing and ban evasion, and each app only lists the reasons that apply to it",
+  "changelog.r1042.153": "Picking a report reason now shows a short line explaining what it covers",
   "changelog.r1042.16": "Wallpapers now load at the size they are drawn, so they stay crisp instead of shimmering",
   "changelog.r1042.17": "The battery percentage now sits inside the battery icon, and hovering the signal, Wi-Fi or battery icon shows what it measures",
   "changelog.r1042.18": "The phone emote now plays once when you open the phone, and walking off or cancelling it no longer brings it back",

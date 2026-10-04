@@ -7080,6 +7080,8 @@
   "changelog.r1042.13": "Wenn du mit der Maus über ein App-Symbol fährst, hebt es sich jetzt an und sein Rand leuchtet auf, statt des alten Vergrößerungseffekts",
   "changelog.r1042.14": "Die Seitentasten neu angeordnet: links die Aktionstaste für Nicht stören und eine Taste für Position sperren, rechts die Seitentaste und die Kamerasteuerung",
   "changelog.r1042.15": "Live-Glas (experimentell) zur Seite Anzeige in den Einstellungen hinzugefügt: Glas in Apps und am Mini-Telefon zeichnet das Spiel dahinter weich",
+  "changelog.r1042.152": "Die Meldegründe in allen Apps an die Community-Regeln angepasst, von Spam und Belästigung bis zu gestohlener Kunst, Doxxing und Sperrumgehung, und jede App zeigt nur die Gründe, die für sie gelten",
+  "changelog.r1042.153": "Wenn du einen Meldegrund auswählst, erklärt jetzt eine kurze Zeile, was er umfasst",
   "changelog.r1042.16": "Hintergrundbilder laden jetzt in der Größe, in der sie gezeichnet werden, und bleiben so scharf, statt zu flimmern",
   "changelog.r1042.17": "Der Akkustand steht jetzt im Akkusymbol, und wenn du mit der Maus über das Signal-, WLAN- oder Akkusymbol fährst, siehst du, was es misst",
   "changelog.r1042.18": "Die Telefon-Emote wird jetzt einmal abgespielt, wenn du das Telefon öffnest, und kehrt nicht mehr zurück, wenn du weggehst oder sie abbrichst",

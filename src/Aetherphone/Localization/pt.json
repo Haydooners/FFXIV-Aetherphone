@@ -7080,6 +7080,8 @@
   "changelog.r1042.13": "Passar o cursor sobre um ícone de app agora o eleva e ilumina sua borda, no lugar do antigo efeito de lupa",
   "changelog.r1042.14": "Botões laterais reorganizados: o botão de Ação para Não perturbe e uma tecla de Travar posição à esquerda, o botão lateral e o Controle da Câmera à direita",
   "changelog.r1042.15": "Adicionado Vidro ao vivo (experimental) à página Tela dos Ajustes: o vidro dentro dos apps e no mini telefone desfoca o jogo por trás",
+  "changelog.r1042.152": "Motivos de denúncia refeitos em todos os apps para seguir as regras da comunidade, de spam e assédio a arte roubada, doxxing e evasão de banimento, e cada app mostra só os motivos que se aplicam a ele",
+  "changelog.r1042.153": "Ao escolher um motivo de denúncia, agora uma linha curta explica o que ele abrange",
   "changelog.r1042.16": "Os papéis de parede agora carregam no tamanho em que são desenhados, então ficam nítidos em vez de cintilar",
   "changelog.r1042.17": "A porcentagem da bateria agora fica dentro do ícone da bateria, e passar o cursor sobre o ícone de sinal, Wi-Fi ou bateria mostra o que ele mede",
   "changelog.r1042.18": "O emote do telefone agora toca uma vez ao abrir o telefone, e sair andando ou cancelá-lo não o faz voltar",

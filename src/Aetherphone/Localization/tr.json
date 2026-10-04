@@ -7080,6 +7080,8 @@
   "changelog.r1042.13": "Bir uygulama simgesinin üzerine gelince artık eski büyüteç efekti yerine simge yükseliyor ve kenarı parlıyor",
   "changelog.r1042.14": "Yan tuşlar yeniden düzenlendi: solda Rahatsız etme için Eylem düğmesi ve Konumu Kilitle tuşu, sağda Yan düğme ve Kamera Denetimi",
   "changelog.r1042.15": "Ayarlar'daki Ekran sayfasına Canlı cam (deneysel) eklendi: uygulamaların içindeki ve mini telefondaki cam, arkasındaki oyunu bulanıklaştırır",
+  "changelog.r1042.152": "Tüm uygulamalardaki bildirme nedenleri, spam ve tacizden çalıntı çizimlere, kişisel bilgi ifşasına ve yasak atlatmaya kadar topluluk kurallarına uyacak şekilde yenilendi ve her uygulama yalnızca kendisi için geçerli olan nedenleri gösteriyor",
+  "changelog.r1042.153": "Bir bildirme nedeni seçtiğinizde artık neyi kapsadığını açıklayan kısa bir satır görünüyor",
   "changelog.r1042.16": "Duvar kâğıtları artık çizildikleri boyutta yükleniyor, böylece titremek yerine net kalıyor",
   "changelog.r1042.17": "Pil yüzdesi artık pil simgesinin içinde duruyor; sinyal, Wi-Fi ya da pil simgesinin üzerine gelince neyi ölçtüğünü görebilirsin",
   "changelog.r1042.18": "Telefon emote'u artık telefonu açtığında bir kez oynatılıyor; yürüyüp gitmek ya da iptal etmek onu geri getirmiyor",
