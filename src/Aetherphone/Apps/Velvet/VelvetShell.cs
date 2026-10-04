@@ -147,7 +147,7 @@ internal sealed partial class VelvetShell : IResumableApp, ITabIconDrawer
         drawView = DrawView;
         back = () => router.Pop();
         threadView = new ThreadView(this);
-        LoadMutes();
+        LoadFilters();
     }
 
     public string Id => "velvet";
@@ -200,8 +200,6 @@ internal sealed partial class VelvetShell : IResumableApp, ITabIconDrawer
         avatarLightbox.Reset();
         store.ClearDiscover();
         ResetCards();
-        discoverInclude.Clear();
-        feedInclude.Clear();
         RefreshAndConsumeLaunch();
     }
 
