@@ -75,7 +75,13 @@ internal sealed unsafe class ServerBarEntry : IDisposable
             entry.Text = BuildText();
         }
 
-        if (hidden)
+        if (hidden || entry.UserHidden || !entry.Shown || IsHiding(addon) || !addon->RootNode->IsVisible())
+        {
+            return;
+        }
+
+        var opacity = addon->Alpha / 255f * (addon->RootNode->Color.A / 255f);
+        if (opacity <= 0f)
         {
             return;
         }
@@ -99,9 +105,20 @@ internal sealed unsafe class ServerBarEntry : IDisposable
                 MathF.Round(bounds.Min.Y + (slotHeight - size.Y) * 0.5f));
             var shadowOffset = MathF.Max(1f, MathF.Round(scale));
             drawList.AddText(UiBuilder.IconFont, fontSize,
-                new Vector2(position.X + shadowOffset, position.Y + shadowOffset), IconShadow, glyph);
-            drawList.AddText(UiBuilder.IconFont, fontSize, position, IconInk, glyph);
+                new Vector2(position.X + shadowOffset, position.Y + shadowOffset), Fade(IconShadow, opacity), glyph);
+            drawList.AddText(UiBuilder.IconFont, fontSize, position, Fade(IconInk, opacity), glyph);
         }
+    }
+
+    private static bool IsHiding(AtkUnitBase* addon)
+    {
+        return (addon->VisibilityState & AtkUnitBaseVisibilityState.Hide) != 0;
+    }
+
+    private static uint Fade(uint color, float opacity)
+    {
+        var alpha = (uint)MathF.Round((color >> 24) * opacity);
+        return (color & 0x00FFFFFFu) | (alpha << 24);
     }
 
     private SeString BuildText()
