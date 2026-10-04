@@ -132,7 +132,7 @@ internal sealed partial class ClockApp
         var daylight = WeatherSky.Daylight(bell);
         var sky = WeatherSky.Blend(WeatherKind.Clear, daylight);
         var drawList = ImGui.GetWindowDrawList();
-        var radius = ClockArt.CardRadius * scale;
+        var radius = Metrics.Radius.Grouped * scale;
         Squircle.FillVerticalGradient(drawList, origin, max, radius, ImGui.GetColorU32(sky.Top),
             ImGui.GetColorU32(sky.Bottom));
         Squircle.Stroke(drawList, origin, max, radius, ImGui.GetColorU32(sky.CardStroke), scale);
@@ -239,7 +239,7 @@ internal sealed partial class ClockApp
         var origin = ImGui.GetCursorScreenPos();
         var max = new Vector2(origin.X + width, origin.Y + rowCount * rowHeight);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, origin, max, ClockArt.CardRadius * scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var utcNow = DateTime.UtcNow;
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         UpdateCityDrag(cities.Count, rowHeight);
@@ -257,12 +257,12 @@ internal sealed partial class ClockApp
             }
 
             var top = (PinnedWorldRows + settled) * rowHeight;
-            ClockArt.Separator(drawList, origin.X + Metrics.Space.Lg * scale, max.X, origin.Y + top, ui.Hairline);
+            FeedCell.Hairline(drawList, origin.X + Metrics.Space.Lg * scale, max.X, origin.Y + top, ui.Hairline);
             DrawWorldRow(drawList, RowRect(origin, width, top, rowHeight), CitySlotOf(cities[index]),
                 ref worldDetails[index + 1], index, utcNow);
         }
 
-        ClockArt.Separator(drawList, origin.X + Metrics.Space.Lg * scale, max.X, origin.Y + rowHeight, ui.Hairline);
+        FeedCell.Hairline(drawList, origin.X + Metrics.Space.Lg * scale, max.X, origin.Y + rowHeight, ui.Hairline);
         if (dragCity >= 0 && dragCity < cities.Count)
         {
             var top = (PinnedWorldRows + dragCity) * rowHeight + dragOffset;

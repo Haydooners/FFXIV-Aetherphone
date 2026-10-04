@@ -184,7 +184,6 @@ internal sealed partial class GamesApp
         var max = rect.Center + half;
         var rounding = Metrics.Radius.Widget * scale;
         var accent = BrowseAccent(index);
-        Elevation.Card(drawList, min, max, rounding, scale, hovered ? 1f : 0.55f);
         Squircle.FillVerticalGradient(drawList, min, max, rounding,
             ImGui.GetColorU32(GamePalette.Lighten(accent, hovered ? 0.20f : 0.12f)),
             ImGui.GetColorU32(GamePalette.Darken(accent, 0.38f)));

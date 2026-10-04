@@ -1,6 +1,7 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 
 namespace Aetherphone.Windows.Components;
 
@@ -26,6 +27,31 @@ internal static class RoundButton
         var color = glyphInk ?? face.LabelInk;
         PhoneIcon.Draw(drawList, center, glyph, color with { W = face.LabelInk.W }, radius * GlyphFraction *
             (face.Face.Width / MathF.Max(radius * 2f, 0.0001f)));
+        if (enabled && tooltip.Length > 0)
+        {
+            HoverTooltip.Show(new Rect(center - new Vector2(radius, radius), center + new Vector2(radius, radius)),
+                tooltip, side);
+        }
+
+        return clicked;
+    }
+
+    public static bool FontIcon(ImDrawListPtr drawList, string id, Vector2 center, float radius,
+        FontAwesomeIcon icon, float glyphHeight, in ControlInk ink, ButtonStyle style = ButtonStyle.Gray,
+        string tooltip = "", HoverLabelSide side = HoverLabelSide.Above, bool enabled = true,
+        Vector4? glyphInk = null) =>
+        FontIcon(drawList, ImGui.GetID(id), center, radius, icon, glyphHeight, ink, style, tooltip, side, enabled,
+            glyphInk);
+
+    public static bool FontIcon(ImDrawListPtr drawList, uint key, Vector2 center, float radius,
+        FontAwesomeIcon icon, float glyphHeight, in ControlInk ink, ButtonStyle style = ButtonStyle.Gray,
+        string tooltip = "", HoverLabelSide side = HoverLabelSide.Above, bool enabled = true,
+        Vector4? glyphInk = null)
+    {
+        var clicked = Draw(drawList, key, center, radius, ink, style, enabled, false, out var face);
+        var color = glyphInk ?? face.LabelInk;
+        ProgressRing.CenterIcon(drawList, center, icon, color with { W = face.LabelInk.W },
+            glyphHeight * (face.Face.Width / MathF.Max(radius * 2f, 0.0001f)));
         if (enabled && tooltip.Length > 0)
         {
             HoverTooltip.Show(new Rect(center - new Vector2(radius, radius), center + new Vector2(radius, radius)),

@@ -106,7 +106,7 @@ internal sealed partial class VenuesApp
 
         if (index < detailDjs.Count - 1)
         {
-            VenuesArt.Hairline(drawList, ui, textLeft, rowMax.X - inset, rowMax.Y);
+            FeedCell.Hairline(drawList, textLeft, rowMax.X - inset, rowMax.Y, ui.Hairline);
         }
 
         if (hasTwitch && UiInteract.Click(rowMin, rowMax, hovered))

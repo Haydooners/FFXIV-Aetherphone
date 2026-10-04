@@ -268,7 +268,7 @@ internal sealed partial class ClockApp
         var origin = ImGui.GetCursorScreenPos();
         var drawList = ImGui.GetWindowDrawList();
         var row = 0;
-        ClockArt.Separator(drawList, origin.X, origin.X + width, origin.Y, ui.Hairline);
+        FeedCell.Hairline(drawList, origin.X, origin.X + width, origin.Y, ui.Hairline);
         if (count > swLaps.Count)
         {
             var lapStart = swLaps.Count > 0 ? swLaps[^1] : 0d;
@@ -281,7 +281,7 @@ internal sealed partial class ClockApp
                 new Vector2(origin.X + width - valueWidth, top + (rowHeight - Typography.LineHeight(style)) * 0.5f),
                 hours, minutes, seconds, centis, true, style, ui.TitleInk);
             row++;
-            ClockArt.Separator(drawList, origin.X, origin.X + width, origin.Y + row * rowHeight, ui.Hairline);
+            FeedCell.Hairline(drawList, origin.X, origin.X + width, origin.Y + row * rowHeight, ui.Hairline);
         }
 
         for (var index = swLaps.Count - 1; index >= 0; index--)
@@ -300,7 +300,7 @@ internal sealed partial class ClockApp
             }
 
             row++;
-            ClockArt.Separator(drawList, origin.X, origin.X + width, origin.Y + row * rowHeight, ui.Hairline);
+            FeedCell.Hairline(drawList, origin.X, origin.X + width, origin.Y + row * rowHeight, ui.Hairline);
         }
 
         ClockArt.Advance(origin, width, row * rowHeight, 0f, scale);

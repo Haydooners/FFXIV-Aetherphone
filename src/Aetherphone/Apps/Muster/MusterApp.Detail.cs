@@ -276,7 +276,7 @@ internal sealed partial class MusterApp
         var bannerTop = top + MusterArt.CardGap * scale;
         var min = new Vector2(left, bannerTop);
         var max = new Vector2(left + width, bannerTop + NoticeBannerHeight * scale);
-        MusterArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var centerY = (min.Y + max.Y) * 0.5f;
         var tileSize = 32f * scale;
@@ -320,7 +320,7 @@ internal sealed partial class MusterApp
                 ui.PaintAccentPill(rect, string.Empty, false, false, TextStyles.Headline);
                 LoadingPulse.Spinner(rect.Center, 9f * scale, AccentRing.Ink);
             }
-            else if (MusterArt.Pill(ui, rect, Loc.T(L.Muster.ImGoing), true))
+            else if (MusterArt.Action(ui, rect, Loc.T(L.Muster.ImGoing), true))
             {
                 SetRsvp(muster.Id, true);
             }
@@ -356,7 +356,7 @@ internal sealed partial class MusterApp
         var min = new Vector2(left, top);
         var max = new Vector2(left + width, top + RsvpRowHeight * scale);
         UiAnchors.Report("muster.rsvp", new Rect(min, max));
-        MusterArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var centerY = (min.Y + max.Y) * 0.5f;
         var radius = RsvpCheckRadius * scale;
@@ -469,7 +469,7 @@ internal sealed partial class MusterApp
         float scale)
     {
         var max = new Vector2(left + width, top + InfoRowHeight * scale);
-        MusterArt.Card(drawList, ui, new Vector2(left, top), max, scale);
+        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var centerY = (top + max.Y) * 0.5f;
         var lineHeight = Typography.LineHeight(TextStyles.Body);
@@ -488,8 +488,7 @@ internal sealed partial class MusterApp
     private float DrawWhere(ImDrawListPtr drawList, MusterDto muster, float left, float top, float width,
         bool includeTravel, float scale)
     {
-        var cursorY = MusterArt.SectionHeader(drawList, ui, new Vector2(left, top), width,
-            Loc.T(L.Muster.WhereSection), scale);
+        var cursorY = top + CardSectionHeader.Draw(drawList, new Vector2(left, top), width, Loc.T(L.Muster.WhereSection), ui.TitleInk);
         var destination = includeTravel ? ResolveTravel(muster) : default;
         var lineCount = CollectLocationLines(muster, destination.Kind == TravelKind.AlreadyThere);
         if (lineCount > 0)
@@ -497,7 +496,7 @@ internal sealed partial class MusterApp
             var pad = Metrics.Space.Lg * scale;
             var lineHeight = LocationLineHeight * scale;
             var max = new Vector2(left + width, cursorY + pad * 2f + lineCount * lineHeight);
-            MusterArt.Card(drawList, ui, new Vector2(left, cursorY), max, scale);
+            ui.Card(drawList, new Vector2(left, cursorY), max, Metrics.Radius.Grouped * scale);
             var glyph = LocationGlyph * scale;
             ProgressRing.CenterIcon(drawList, new Vector2(left + pad + glyph * 0.5f, cursorY + pad + lineHeight * 0.5f),
                 FontAwesomeIcon.MapMarkerAlt, ui.Accent, glyph);
@@ -726,7 +725,7 @@ internal sealed partial class MusterApp
         float scale)
     {
         var row = new Rect(new Vector2(left, top), new Vector2(left + width, top + MusterArt.FieldRowHeight * scale));
-        MusterArt.Card(drawList, ui, row.Min, row.Max, scale);
+        ui.Card(drawList, row.Min, row.Max, Metrics.Radius.Grouped * scale);
         var hovered = MusterArt.RowWash(drawList, ui, row, scale);
         Typography.DrawCentered(drawList, row.Center, Loc.T(L.Muster.ReportTitle), ui.Theme.Danger, TextStyles.Body);
         if (UiInteract.Click(row.Min, row.Max, hovered))

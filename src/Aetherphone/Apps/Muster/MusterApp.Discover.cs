@@ -84,7 +84,7 @@ internal sealed partial class MusterApp
         scopeLabels[2] = Loc.T(L.Muster.ScopeEverywhere);
         UiAnchors.Report("muster.scope", row);
         var selected = Math.Clamp(configuration.MusterScope, MusterScopes.MyDataCenter, MusterScopes.Everywhere);
-        var next = SegmentStrip.Draw("##musterScope", row, scopeLabels, selected, Palette.WithAlpha(ui.TitleInk, 0.07f),
+        var next = SegmentStrip.Draw("##musterScope", row, scopeLabels, selected, Surfaces.Fill(ui.TitleInk, FillLevel.Tertiary),
             ui.Accent, ui.MutedInk, AccentRing.Ink, ScopeStripHeight, TextStyles.SubheadlineEmphasized.Scale);
         if (next != selected && next >= 0)
         {
@@ -176,7 +176,7 @@ internal sealed partial class MusterApp
             return top;
         }
 
-        var cursorY = MusterArt.SectionHeader(drawList, ui, new Vector2(left, top), width, title, scale);
+        var cursorY = top + CardSectionHeader.Draw(drawList, new Vector2(left, top), width, title, ui.TitleInk);
         for (var index = 0; index < items.Count; index++)
         {
             var muster = items[index];
@@ -228,7 +228,7 @@ internal sealed partial class MusterApp
 
     private float DrawSkeleton(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
-        var cursorY = origin.Y + MusterArt.SectionHeaderHeight * scale;
+        var cursorY = origin.Y + CardSectionHeader.HeightUnits * scale;
         for (var index = 0; index < SkeletonCards; index++)
         {
             var min = new Vector2(origin.X, cursorY);

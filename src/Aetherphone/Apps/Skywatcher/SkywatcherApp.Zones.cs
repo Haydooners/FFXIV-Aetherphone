@@ -208,7 +208,7 @@ internal sealed partial class SkywatcherApp
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         var field = new Rect(origin, origin + new Vector2(width, GlassField.HeightUnits * scale));
-        WeatherCard.Panel(drawList, field, palette, sky.Density, scale, GlassField.Radius(field));
+        SearchBar.Surface(drawList, field, SkyInk(palette));
         GlassField.Search(drawList, field, "##skywatcherZoneSearch", Loc.T(L.Skywatcher.SearchZones), ref zoneQuery,
             PhoneTheme.Default, scale, ZoneQueryMaxLength, false);
         ImGui.SetCursorScreenPos(origin);

@@ -135,7 +135,7 @@ internal sealed partial class MarketApp
             return max.Y;
         }
 
-        MarketArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var listings = snapshot.Listings;
         var drawn = 0;
@@ -150,7 +150,7 @@ internal sealed partial class MarketApp
             var top = origin.Y + drawn * rowHeight;
             if (drawn > 0)
             {
-                MarketArt.Hairline(drawList, ui, origin.X + pad, max.X - pad, top);
+                FeedCell.Hairline(drawList, origin.X + pad, max.X - pad, top, ui.Hairline);
             }
 
             drawn++;
@@ -185,7 +185,7 @@ internal sealed partial class MarketApp
             return max.Y;
         }
 
-        MarketArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var sales = snapshot.Sales;
         var drawn = 0;
@@ -200,7 +200,7 @@ internal sealed partial class MarketApp
             var top = origin.Y + drawn * rowHeight;
             if (drawn > 0)
             {
-                MarketArt.Hairline(drawList, ui, origin.X + pad, max.X - pad, top);
+                FeedCell.Hairline(drawList, origin.X + pad, max.X - pad, top, ui.Hairline);
             }
 
             var slot = drawn;
@@ -324,7 +324,7 @@ internal sealed partial class MarketApp
             return max.Y;
         }
 
-        MarketArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var iconSize = MarketArt.IconSize * scale;
         MarketAlert? removed = null;
@@ -335,8 +335,8 @@ internal sealed partial class MarketApp
             var row = new Rect(new Vector2(origin.X, top), new Vector2(max.X, top + rowHeight));
             if (alertIndex > 0)
             {
-                MarketArt.Hairline(drawList, ui, origin.X + pad + iconSize + MarketArt.TextGap * scale, max.X - pad,
-                    top);
+                FeedCell.Hairline(drawList, origin.X + pad + iconSize + MarketArt.TextGap * scale, max.X - pad,
+                    top, ui.Hairline);
             }
 
             if (!ImGui.IsRectVisible(row.Min, row.Max))
@@ -352,9 +352,9 @@ internal sealed partial class MarketApp
                 var removeRadius = RemoveRadius * scale;
                 overControl |= UiInteract.Hover(removeCenter - new Vector2(removeRadius, removeRadius),
                     removeCenter + new Vector2(removeRadius, removeRadius));
-                if (HoverButton.Circle(drawList, AlertId(alertIndex), removeCenter, RemoveGlyphRadius * scale,
-                        FontAwesomeIcon.Trash, Palette.WithAlpha(ui.TitleInk, 0f), ui.MutedInk,
-                        ImGui.GetIO().DeltaTime, 1f, true, Loc.T(L.Market.RemoveAlert), HoverLabelSide.Above))
+                if (RoundButton.FontIcon(drawList, AlertId(alertIndex), removeCenter, removeRadius,
+                        FontAwesomeIcon.Trash, RemoveGlyphRadius * scale, ui.Ink, ButtonStyle.Plain,
+                        Loc.T(L.Market.RemoveAlert), glyphInk: ui.MutedInk))
                 {
                     removed = alert;
                 }

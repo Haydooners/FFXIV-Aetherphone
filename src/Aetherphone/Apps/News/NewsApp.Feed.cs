@@ -275,7 +275,7 @@ internal sealed partial class NewsApp
         }
 
         cursorY += NewsArt.SectionTopGap * scale;
-        cursorY += NewsArt.SectionHeader(drawList, new Vector2(left, cursorY), width, MoreInLabel(feed.Category),
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width, MoreInLabel(feed.Category),
             ui.TitleInk) + NewsArt.SectionHeaderGap * scale;
         for (var index = 1; index < stories.Length; index++)
         {
@@ -325,7 +325,7 @@ internal sealed partial class NewsApp
         }
 
         var hovered = UiInteract.Hover(rest.Min, rest.Max);
-        var radius = NewsArt.CardRadius * scale;
+        var radius = Metrics.Radius.Grouped * scale;
         var card = NewsArt.Lift(drawList, ui, rest, story.Id, hovered, radius);
         if (story.HasImage)
         {
@@ -389,7 +389,7 @@ internal sealed partial class NewsApp
                 cursorY += NewsArt.SectionTopGap * scale;
             }
 
-            cursorY += NewsArt.SectionHeader(drawList, new Vector2(left, cursorY), width, stories[position].DayLabel,
+            cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width, stories[position].DayLabel,
                 ui.TitleInk) + NewsArt.SectionHeaderGap * scale;
             var count = 0;
             for (var index = position; index < end && count < rowBuffer.Length; index++)
@@ -422,7 +422,7 @@ internal sealed partial class NewsApp
         }
 
         var cardMax = new Vector2(right, top + total);
-        ui.Card(drawList, new Vector2(left, top), cardMax, NewsArt.GroupRadius * scale);
+        ui.Card(drawList, new Vector2(left, top), cardMax, Metrics.Radius.Grouped * scale);
         var rowTop = top;
         for (var position = 0; position < indices.Length; position++)
         {
@@ -499,7 +499,7 @@ internal sealed partial class NewsApp
 
             drawList.AddRectFilled(row.Min, row.Max,
                 ImGui.GetColorU32(ui.TitleInk with { W = RowHighlightAlpha * highlight }),
-                NewsArt.GroupRadius * scale, corners);
+                Metrics.Radius.Grouped * scale, corners);
         }
 
         var textLeft = row.Min.X + RowPadX * scale;
@@ -560,7 +560,7 @@ internal sealed partial class NewsApp
         var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
         var pad = Metrics.Space.Lg * scale;
-        var radius = NewsArt.CardRadius * scale;
+        var radius = Metrics.Radius.Grouped * scale;
         var cursorY = origin.Y;
         SkeletonBar(drawList, origin.X, cursorY, width * 0.46f, SkeletonBarHeight * scale);
         cursorY += Typography.LineHeight(TextStyles.Subheadline) + DatelineGap * scale;
@@ -571,7 +571,7 @@ internal sealed partial class NewsApp
                              Metrics.Space.Sm * 3f * scale;
             var min = new Vector2(origin.X, cursorY);
             var max = new Vector2(origin.X + width, cursorY + cardHeight);
-            ui.Card(drawList, min, max, radius, true);
+            ui.Card(drawList, min, max, radius);
             drawList.AddRectFilled(min, new Vector2(max.X, min.Y + bannerHeight), Skeleton.Fill(), radius,
                 ImDrawFlags.RoundCornersTop);
             var barY = min.Y + bannerHeight + pad;
@@ -596,10 +596,10 @@ internal sealed partial class NewsApp
         SkeletonBar(drawList, origin.X, cursorY, width * 0.46f, SkeletonBarHeight * scale);
         cursorY += Typography.LineHeight(TextStyles.Subheadline) + DatelineGap * scale;
         SkeletonBar(drawList, origin.X, cursorY, width * 0.30f, SkeletonTitleHeight * scale);
-        cursorY += Typography.LineHeight(TextStyles.Title3) + NewsArt.SectionHeaderGap * scale;
+        cursorY += CardSectionHeader.HeightUnits * scale + NewsArt.SectionHeaderGap * scale;
         var rowHeight = SkeletonRowHeight * scale;
         var groupMax = new Vector2(origin.X + width, cursorY + rowHeight * SkeletonRows);
-        ui.Card(drawList, new Vector2(origin.X, cursorY), groupMax, NewsArt.GroupRadius * scale);
+        ui.Card(drawList, new Vector2(origin.X, cursorY), groupMax, Metrics.Radius.Grouped * scale);
         var textLeft = origin.X + RowPadX * scale;
         for (var rowIndex = 0; rowIndex < SkeletonRows; rowIndex++)
         {

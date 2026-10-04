@@ -108,7 +108,7 @@ internal sealed partial class ClockApp
         {
             if (both)
             {
-                ClockArt.SectionHeader(Loc.T(L.Clock.LocalTime), ui.TitleInk, width, scale);
+                CardSectionHeader.Flow(Loc.T(L.Clock.LocalTime), ui.TitleInk);
             }
 
             DrawAlarmCard(0, alarmLocalCount, width, scale);
@@ -124,7 +124,7 @@ internal sealed partial class ClockApp
             ImGui.Dummy(new Vector2(0f, ClockArt.SectionGap * scale - ImGui.GetStyle().ItemSpacing.Y));
         }
 
-        ClockArt.SectionHeader(Loc.T(L.Clock.EorzeaTime), ui.TitleInk, width, scale);
+        CardSectionHeader.Flow(Loc.T(L.Clock.EorzeaTime), ui.TitleInk);
         DrawAlarmCard(alarmLocalCount, eorzeaCount, width, scale);
     }
 
@@ -134,7 +134,7 @@ internal sealed partial class ClockApp
         var origin = ImGui.GetCursorScreenPos();
         var max = new Vector2(origin.X + width, origin.Y + count * rowHeight);
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, origin, max, ClockArt.CardRadius * scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var alarms = configuration.Alarms;
         for (var slot = 0; slot < count; slot++)
         {
@@ -148,7 +148,7 @@ internal sealed partial class ClockApp
             var row = RowRect(origin, width, slot * rowHeight, rowHeight);
             if (slot > 0)
             {
-                ClockArt.Separator(drawList, origin.X + Metrics.Space.Lg * scale, max.X, row.Min.Y, ui.Hairline);
+                FeedCell.Hairline(drawList, origin.X + Metrics.Space.Lg * scale, max.X, row.Min.Y, ui.Hairline);
             }
 
             DrawAlarmRow(drawList, row, alarms[alarmIndex], orderIndex, scale);

@@ -27,7 +27,7 @@ internal static class PollsArt
     private const float StateTitleGap = 18f;
     private const float StateHintGap = 6f;
     private const float StateActionGap = 20f;
-    private const float StateActionHeight = 40f;
+    private const float StateActionHeight = Button.RegularHeight;
     private const float StateActionPadding = 40f;
     private const float StateActionMinWidth = 140f;
     private const float StateMaxTextWidth = 280f;
@@ -126,13 +126,13 @@ internal static class PollsArt
             return false;
         }
 
-        var natural = Typography.Measure(actionLabel, TextStyles.Headline).X + StateActionPadding * scale;
+        var natural = Typography.Measure(actionLabel, TextStyles.SubheadlineEmphasized).X + StateActionPadding * scale;
         var width = Math.Clamp(natural, StateActionMinWidth * scale,
             MathF.Max(StateActionMinWidth * scale, body.Width - StateTextInset * scale));
         var top = bottom + StateActionGap * scale;
         var rect = new Rect(new Vector2(centerX - width * 0.5f, top),
             new Vector2(centerX + width * 0.5f, top + StateActionHeight * scale));
-        return ui.AccentPill(rect, actionLabel, true, TextStyles.Headline);
+        return Button.Draw(rect, actionLabel, ui.Ink);
     }
 
     public static float SkeletonHeight(int optionCount, float scale)
@@ -147,10 +147,9 @@ internal static class PollsArt
         int optionCount, float scale, float phase)
     {
         var max = new Vector2(min.X + width, min.Y + height);
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, min, max, radius, true);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var pulse = SkeletonBaseAlpha + SkeletonPulseAlpha * (0.5f + 0.5f * MathF.Sin(phase * SkeletonPulseRate));
-        var ink = ImGui.GetColorU32(Palette.WithAlpha(White, pulse));
+        var ink = ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, pulse));
         var pad = Metrics.Space.Lg * scale;
         var left = min.X + pad;
         var right = max.X - pad;

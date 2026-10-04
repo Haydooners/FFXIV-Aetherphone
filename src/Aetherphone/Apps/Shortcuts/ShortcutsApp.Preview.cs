@@ -12,7 +12,7 @@ namespace Aetherphone.Apps.Shortcuts;
 internal sealed partial class ShortcutsApp
 {
     private const float HeroHeight = 132f;
-    private const float AddButtonHeight = 50f;
+    private const float AddButtonHeight = Button.LargeHeight;
     private const float NoteGap = 10f;
 
     private ShortcutEntry? previewEntry;
@@ -57,8 +57,8 @@ internal sealed partial class ShortcutsApp
                 var width = ScrollLayout.StableContentWidth();
                 var cursorY = DrawPreviewHero(drawList, origin, width, entry, scale);
                 cursorY += ShortcutsArt.SectionGap * scale * 0.5f;
-                cursorY += ShortcutsArt.SectionHeader(drawList, new Vector2(origin.X, cursorY), width,
-                    Loc.T(L.Shortcuts.ImportWillRun), ui.TitleInk, scale) + ShortcutsArt.HeaderGap * scale;
+                cursorY += CardSectionHeader.Draw(drawList, new Vector2(origin.X, cursorY), width,
+                    Loc.T(L.Shortcuts.ImportWillRun), ui.TitleInk) + ShortcutsArt.HeaderGap * scale;
                 cursorY = DrawReadOnlySteps(drawList, new Vector2(origin.X, cursorY), width, entry.Steps, scale);
                 cursorY = DrawPreviewAction(drawList, new Vector2(origin.X, cursorY), width, entry, scale);
                 ShortcutsArt.ReserveTo(origin, width, cursorY + ShortcutsArt.BottomPad * scale);

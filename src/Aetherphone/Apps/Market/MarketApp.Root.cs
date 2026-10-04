@@ -153,7 +153,7 @@ internal sealed partial class MarketApp
     {
         var rowHeight = MarketArt.RowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + rowHeight * SkeletonRows);
-        MarketArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         for (var rowIndex = 0; rowIndex < SkeletonRows; rowIndex++)
         {
@@ -170,7 +170,7 @@ internal sealed partial class MarketApp
         var max = new Vector2(origin.X + width, origin.Y + QuickLookHeight * scale);
         var rect = new Rect(origin, max);
         var radius = Metrics.Radius.Widget * scale;
-        MarketArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         Material.TopGlow(drawList, origin, max, radius, ui.Accent, QuickLookGlowCoverage, QuickLookGlowStrength);
         var hovered = MarketArt.RowInteraction(drawList, ui, rect, scale);
         var pad = Metrics.Space.Lg * scale;
@@ -266,7 +266,7 @@ internal sealed partial class MarketApp
             return max.Y;
         }
 
-        MarketArt.Card(drawList, ui, new Vector2(origin.X, cursorY), max, scale);
+        ui.Card(drawList, new Vector2(origin.X, cursorY), max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         for (var rowIndex = 0; rowIndex < sectionBuffer.Count; rowIndex++)
         {
@@ -274,8 +274,8 @@ internal sealed partial class MarketApp
             var row = new Rect(new Vector2(origin.X, top), new Vector2(max.X, top + rowHeight));
             if (rowIndex > 0)
             {
-                MarketArt.Hairline(drawList, ui, origin.X + pad + (MarketArt.IconSize + MarketArt.TextGap) * scale,
-                    max.X - pad, top);
+                FeedCell.Hairline(drawList, origin.X + pad + (MarketArt.IconSize + MarketArt.TextGap) * scale,
+                    max.X - pad, top, ui.Hairline);
             }
 
             if (!ImGui.IsRectVisible(row.Min, row.Max))
@@ -397,7 +397,7 @@ internal sealed partial class MarketApp
 
     private bool DrawRecentTile(ImDrawListPtr drawList, Rect tile, MarketItemRef item, MarketScope scope, float scale)
     {
-        MarketArt.Card(drawList, ui, tile.Min, tile.Max, scale);
+        ui.Card(drawList, tile.Min, tile.Max, Metrics.Radius.Grouped * scale);
         var hovered = recentRail.Hover(tile.Min, tile.Max);
         if (hovered)
         {
@@ -448,7 +448,7 @@ internal sealed partial class MarketApp
         market.PrefetchAggregated(prefetchBuffer, scope);
         var rowHeight = MarketArt.CompactRowHeight * scale;
         var max = new Vector2(origin.X + width, origin.Y + results.Count * rowHeight);
-        MarketArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var iconSize = MarketArt.IconSize * scale;
         for (var resultIndex = 0; resultIndex < results.Count; resultIndex++)
@@ -462,8 +462,8 @@ internal sealed partial class MarketApp
 
             if (resultIndex > 0)
             {
-                MarketArt.Hairline(drawList, ui, origin.X + pad + iconSize + MarketArt.TextGap * scale, max.X - pad,
-                    top);
+                FeedCell.Hairline(drawList, origin.X + pad + iconSize + MarketArt.TextGap * scale, max.X - pad,
+                    top, ui.Hairline);
             }
 
             if (!ImGui.IsRectVisible(row.Min, row.Max))

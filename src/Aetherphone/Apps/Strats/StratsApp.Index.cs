@@ -208,7 +208,7 @@ internal sealed partial class StratsApp
         var min = rect.Center - half;
         var max = rect.Center + half;
         var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, min, max, radius, true);
+        ui.Card(drawList, min, max, radius);
         Material.TopGlow(drawList, min, max, radius, ui.Accent, FeatureGlowCoverage,
             hovered ? FeatureGlowHover : FeatureGlowRest);
         if (hovered)

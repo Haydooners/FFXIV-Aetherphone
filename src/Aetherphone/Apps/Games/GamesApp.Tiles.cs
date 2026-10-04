@@ -69,7 +69,6 @@ internal sealed partial class GamesApp
         var max = artCenter + half;
         var rounding = rect.Width * TileRoundingFactor * grow;
         var accent = library.Accent(entryIndex);
-        Elevation.Card(drawList, min, max, rounding, scale, hovered ? 1f : 0.55f);
         Squircle.FillVerticalGradient(drawList, min, max, rounding,
             ImGui.GetColorU32(GamePalette.Lighten(accent, hovered ? 0.26f : 0.18f)),
             ImGui.GetColorU32(GamePalette.Darken(accent, 0.34f)));
@@ -211,7 +210,7 @@ internal sealed partial class GamesApp
         var min = rect.Center - half;
         var max = rect.Center + half;
         var rounding = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, min, max, rounding, true);
+        ui.Card(drawList, min, max, rounding);
         if (hovered)
         {
             Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.HoverTint));
@@ -261,7 +260,7 @@ internal sealed partial class GamesApp
         var pillHeight = HeroPillHeight * scale;
         var playLabel = Loc.T(L.Games.Play);
         var pillWidth = MathF.Max(HeroPillMinWidth * scale,
-            GamesHubArt.PillWidth(playLabel, pillHeight, TextStyles.Headline));
+            GamesHubArt.ButtonWidth(playLabel, pillHeight));
         var pillRect = new Rect(new Vector2(rect.Min.X + pad, rect.Max.Y - pad - pillHeight),
             new Vector2(rect.Min.X + pad + pillWidth, rect.Max.Y - pad));
         var overPill = UiInteract.Hover(pillRect.Min, pillRect.Max);
@@ -277,7 +276,6 @@ internal sealed partial class GamesApp
         var max = center + half;
         var rounding = HeroRounding * scale;
         var accent = game.Accent;
-        Elevation.Floating(drawList, min, max, rounding, scale, phase * (hovered ? 1f : 0.8f));
         Squircle.FillVerticalGradient(drawList, min, max, rounding,
             ImGui.GetColorU32(GamePalette.Lighten(accent, 0.30f)), ImGui.GetColorU32(GamePalette.Darken(accent, 0.50f)));
         drawList.PushClipRect(min, max, true);
@@ -314,14 +312,12 @@ internal sealed partial class GamesApp
             Typography.FitText(Loc.T(GameGenres.Label(game.Genre)), textWidth, TextStyles.Subheadline),
             HeroInk with { W = 0.78f }, TextStyles.Subheadline);
 
-        var pillPress = PressFx.Scale("games.hero.play", overPill && ImGui.IsMouseDown(ImGuiMouseButton.Left),
-            Motion.PressScaleControl);
-        var pillHalf = pillRect.Size * 0.5f * pillPress;
-        var pillCenter = pillRect.Center + new Vector2(0f, lift);
-        Squircle.Fill(drawList, pillCenter - pillHalf, pillCenter + pillHalf, pillHalf.Y,
-            ImGui.GetColorU32(overPill ? BadgeFill : HeroPillFill));
-        Typography.DrawCentered(drawList, pillCenter, playLabel, GamePalette.Darken(accent, 0.35f),
-            TextStyles.Headline);
+        var liftOffset = new Vector2(0f, lift);
+        var pillCenter = pillRect.Center + liftOffset;
+        var pillFace = Button.Surface(drawList, new Rect(pillRect.Min + liftOffset, pillRect.Max + liftOffset),
+            ui.Ink.WithAccent(HeroPillFill), ButtonStyle.Prominent, ButtonRole.Normal, true, overPill,
+            ImGui.GetID("games.hero.play"));
+        Button.DrawLabel(drawList, pillFace with { LabelInk = GamePalette.Darken(accent, 0.35f) }, playLabel);
         var chipWidth = DrawStreakChip(drawList, new Vector2(max.X - pad, pillCenter.Y), accent, scale);
         var best = library.Best(featuredIndex);
         if (best.Length > 0)

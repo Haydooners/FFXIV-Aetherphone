@@ -65,7 +65,7 @@ internal sealed partial class TimersApp
         }
 
         var drawList = ImGui.GetWindowDrawList();
-        TimersArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var text = CharacterText(character.ContentId);
         var subtitle = TimerLabels.Seen(ref text.Seen, character.RetainersSeenUnix, character.World);
         DrawGroupHeader(drawList, origin, width, character.Name, subtitle, scale);
@@ -74,7 +74,7 @@ internal sealed partial class TimersApp
         var top = origin.Y + TimersArt.GroupHeaderHeight * scale;
         for (var index = 0; index < retainers.Count; index++)
         {
-            TimersArt.Hairline(drawList, ui, origin.X + pad, max.X, top);
+            FeedCell.Hairline(drawList, origin.X + pad, max.X, top, ui.Hairline);
             var row = new Rect(new Vector2(origin.X + pad, top),
                 new Vector2(max.X - pad, top + TimersArt.RowHeight * scale));
             DrawRetainerRow(drawList, row, retainers[index], nowUnix, scale);
@@ -156,7 +156,7 @@ internal sealed partial class TimersApp
         }
 
         var drawList = ImGui.GetWindowDrawList();
-        TimersArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var text = WorkshopText(workshop.Key);
         var subtitle = TimerLabels.Seen(ref text.Seen, workshop.SeenUnix, workshop.World);
         var title = workshop.Company.Length > 0 ? workshop.Company : Loc.T(L.Timers.Voyages);
@@ -166,7 +166,7 @@ internal sealed partial class TimersApp
         var top = origin.Y + TimersArt.GroupHeaderHeight * scale;
         for (var index = 0; index < vessels.Count; index++)
         {
-            TimersArt.Hairline(drawList, ui, origin.X + pad, max.X, top);
+            FeedCell.Hairline(drawList, origin.X + pad, max.X, top, ui.Hairline);
             var row = new Rect(new Vector2(origin.X + pad, top),
                 new Vector2(max.X - pad, top + TimersArt.RowHeight * scale));
             DrawVesselRow(drawList, row, vessels[index], nowUnix, scale);

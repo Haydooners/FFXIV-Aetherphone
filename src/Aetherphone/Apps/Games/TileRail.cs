@@ -8,9 +8,7 @@ namespace Aetherphone.Apps.Games;
 internal sealed class TileRail
 {
     private const float AxisSlop = 6f;
-    private const float ArrowRadius = 14f;
     private const float ArrowInset = 18f;
-    private const float ArrowGlyph = 15f;
     private const float PageFraction = 0.8f;
     private const float RestEpsilon = 0.5f;
 
@@ -93,20 +91,8 @@ internal sealed class TileRail
         }
     }
 
-    private static bool DrawArrow(ImDrawListPtr drawList, AppSkin ui, Vector2 center, string glyph, float scale)
-    {
-        var radius = ArrowRadius * scale;
-        var extent = new Vector2(radius, radius);
-        var over = UiInteract.Hover(center - extent, center + extent);
-        Material.ThemedGlass(drawList, center - extent, center + extent, radius, scale, ui.Theme, 1f);
-        PhoneIcon.Draw(drawList, center, glyph, over ? ui.Accent : ui.TitleInk, ArrowGlyph * scale);
-        if (over)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(center - extent, center + extent, over);
-    }
+    private static bool DrawArrow(ImDrawListPtr drawList, AppSkin ui, Vector2 center, string glyph, float scale) =>
+        RoundButton.Icon(drawList, center, RoundButton.SmallRadius * scale, glyph, ui.Ink);
 
     private void PageTo(float target, float maxOffset)
     {

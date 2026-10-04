@@ -108,23 +108,9 @@ internal sealed partial class CalculatorApp : IPhoneApp
         var center = new Vector2(NavBarMetrics.ButtonCenterX(content.Max.X, 0, 1, scale),
             content.Min.Y + NavBarMetrics.InlineHeight * scale * 0.5f);
         var extent = new Vector2(radius, radius);
-        var rect = new Rect(center - extent, center + extent);
-        UiAnchors.Report("calculator.history", rect);
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale("calculator.history", down, PressFx.ControlPressedScale);
-        var drawn = extent * grow;
-        var drawList = ImGui.GetWindowDrawList();
-        Material.LiquidGlass(drawList, center - drawn, center + drawn, radius * grow, scale, GlassTone.Dark, 0f);
-        AppSkin.Icon(drawList, center, IconGlyph.Of(FontAwesomeIcon.History), ui.TitleInk,
-            HistoryGlyphScale * grow);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        HoverTooltip.Show(rect, Loc.T(L.Calculator.History));
-        if (UiInteract.Click(rect.Min, rect.Max, hovered))
+        UiAnchors.Report("calculator.history", new Rect(center - extent, center + extent));
+        if (AppHeader.NavButton(ImGui.GetWindowDrawList(), ImGui.GetID("calculator.history"), center,
+                IconGlyph.Of(FontAwesomeIcon.History), Loc.T(L.Calculator.History), ui.TitleInk, ui.Theme, scale))
         {
             OpenHistory();
         }

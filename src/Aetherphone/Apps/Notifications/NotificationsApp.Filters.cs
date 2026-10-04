@@ -15,9 +15,8 @@ internal sealed partial class NotificationsApp
     private const float AppTextGap = 12f;
     private const float AppLineGap = 2f;
     private const float AppActionGap = 8f;
-    private const float AppActionHeight = 34f;
+    private const float AppActionHeight = Button.SmallHeight;
     private const float AppActionRowGap = 14f;
-    private const float ActionHoverMix = 0.5f;
     private const float FilterGap = 12f;
 
     private readonly ChipRail filterRail = new();
@@ -95,7 +94,7 @@ internal sealed partial class NotificationsApp
         var max = new Vector2(origin.X + width, origin.Y + height);
         var drawList = ImGui.GetWindowDrawList();
         var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, origin, max, radius, true);
+        ui.Card(drawList, origin, max, radius);
 
         var iconMin = new Vector2(origin.X + pad, origin.Y + pad);
         NotificationCard.DrawAppIcon(drawList, newest, iconMin, iconSize, 1f);
@@ -167,32 +166,14 @@ internal sealed partial class NotificationsApp
             var action = index == 0 ? first : index == 1 ? second : third;
             var slotLeft = left + index * (slotWidth + gap);
             var rect = new Rect(new Vector2(slotLeft, top), new Vector2(slotLeft + slotWidth, top + height));
-            if (ActionPill(drawList, rect, ActionLabel(action), action == AppAction.Unmute))
+            if (Button.Draw(drawList, rect, ActionLabel(action), ui.Ink,
+                    action == AppAction.Unmute ? ButtonStyle.Prominent : ButtonStyle.Gray))
             {
                 result = action;
             }
         }
 
         return result;
-    }
-
-    private bool ActionPill(ImDrawListPtr drawList, Rect rect, string label, bool prominent)
-    {
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var fill = prominent
-            ? hovered ? Palette.Mix(ui.Accent, White, LinkHoverLift) : ui.Accent
-            : hovered ? Palette.Mix(ui.FieldSurface, ui.HoverTint, ActionHoverMix) : ui.FieldSurface;
-        drawList.AddRectFilled(rect.Min, rect.Max, ImGui.GetColorU32(fill), rect.Height * 0.5f);
-        var fitted = Typography.FitText(label, MathF.Max(1f, rect.Width - rect.Height * 0.5f),
-            TextStyles.FootnoteEmphasized);
-        Typography.DrawCentered(drawList, rect.Center, fitted, prominent ? White : ui.TitleInk,
-            TextStyles.FootnoteEmphasized);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private static string ActionLabel(AppAction action) => action switch

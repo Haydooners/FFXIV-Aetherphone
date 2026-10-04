@@ -251,7 +251,7 @@ internal sealed partial class MarketApp : IResumableApp
         var reserve = trailing.Length > 0
             ? Typography.Measure(trailing, TextStyles.Body).X + MarketArt.ValueGap * scale
             : 0f;
-        var height = MarketArt.SectionHeader(drawList, origin, width, title, ui.TitleInk, reserve, scale);
+        var height = CardSectionHeader.Draw(drawList, origin, width, title, ui.TitleInk, reserve);
         if (trailing.Length == 0)
         {
             return height;

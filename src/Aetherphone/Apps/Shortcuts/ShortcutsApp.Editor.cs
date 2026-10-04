@@ -99,8 +99,8 @@ internal sealed partial class ShortcutsApp
                 var width = ScrollLayout.StableContentWidth();
                 var cursorY = DrawIdentity(drawList, origin, width, scale);
                 cursorY += ShortcutsArt.SectionGap * scale * 0.5f;
-                cursorY += ShortcutsArt.SectionHeader(drawList, new Vector2(origin.X, cursorY), width,
-                    Loc.T(L.Shortcuts.Steps), ui.TitleInk, scale) + ShortcutsArt.HeaderGap * scale;
+                cursorY += CardSectionHeader.Draw(drawList, new Vector2(origin.X, cursorY), width,
+                    Loc.T(L.Shortcuts.Steps), ui.TitleInk) + ShortcutsArt.HeaderGap * scale;
                 var stepsTop = cursorY;
                 cursorY = DrawEditableSteps(drawList, new Vector2(origin.X, cursorY), width, scale);
                 if (dragIndex >= 0)
@@ -146,7 +146,7 @@ internal sealed partial class ShortcutsApp
     private float DrawIdentity(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var rect = new Rect(origin, new Vector2(origin.X + width, origin.Y + IdentityHeight * scale));
-        ShortcutsArt.Card(drawList, ui, rect.Min, rect.Max, scale);
+        ui.Card(drawList, rect.Min, rect.Max, Metrics.Radius.Grouped * scale);
         var pad = IdentityPad * scale;
         var tile = IdentityTile * scale;
         var tileCenter = new Vector2(rect.Min.X + pad + tile * 0.5f, rect.Center.Y);
@@ -180,7 +180,7 @@ internal sealed partial class ShortcutsApp
         var field = new Rect(new Vector2(fieldLeft, rect.Center.Y - fieldHeight * 0.5f),
             new Vector2(rect.Max.X - pad, rect.Center.Y + fieldHeight * 0.5f));
         UiAnchors.Report("shortcuts.editor.name", field);
-        Squircle.Fill(drawList, field.Min, field.Max, Metrics.Radius.Field * scale, ImGui.GetColorU32(ui.FieldSurface));
+        SearchBar.Surface(drawList, field, ui.Ink);
         var inset = Metrics.Space.Md * scale;
         ImGui.SetCursorScreenPos(new Vector2(field.Min.X + inset, field.Center.Y - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(field.Width - inset * 2f);
@@ -202,7 +202,7 @@ internal sealed partial class ShortcutsApp
     private float DrawHomeCard(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var rect = new Rect(origin, new Vector2(origin.X + width, origin.Y + HomeCardHeight * scale));
-        ShortcutsArt.Card(drawList, ui, rect.Min, rect.Max, scale);
+        ui.Card(drawList, rect.Min, rect.Max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var tile = HomeTile * scale;
         var tileMin = new Vector2(rect.Min.X + pad, rect.Center.Y - tile * 0.5f);

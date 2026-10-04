@@ -11,7 +11,7 @@ internal static class TimersArt
 {
     public const float RowHeight = 62f;
     public const float GroupHeaderHeight = 54f;
-    public const float SectionHeaderHeight = 40f;
+    public const float SectionHeaderHeight = CardSectionHeader.HeightUnits;
     public const float SectionGap = 22f;
     public const float CardGap = 12f;
     public const float BellHitRadius = 20f;
@@ -25,7 +25,6 @@ internal static class TimersArt
     private const float DialTrackAlpha = 0.18f;
     private const float DialGlyphFraction = 0.42f;
     private const float BellGlyphSize = 15f;
-    private const float BellWashAlpha = 0.16f;
     private const float StateTileSize = 48f;
     private const float StateGlyphSize = 22f;
     private const float StateGap = 14f;
@@ -39,11 +38,10 @@ internal static class TimersArt
     public static float DialCenterX(float left, float scale) => left + DialSize * 0.5f * scale;
 
     public static void Card(ImDrawListPtr drawList, AppSkin ui, Vector2 min, Vector2 max, float scale) =>
-        ui.Card(drawList, min, max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
 
     public static void Hairline(ImDrawListPtr drawList, AppSkin ui, float left, float right, float y) =>
-        drawList.AddLine(new Vector2(left, y), new Vector2(right, y), ImGui.GetColorU32(ui.Hairline),
-            Metrics.Stroke.Hairline);
+        FeedCell.Hairline(drawList, left, right, y, ui.Hairline);
 
     public static void Dial(ImDrawListPtr drawList, Vector2 center, FontAwesomeIcon icon, Vector4 tint,
         float fraction, bool showRing, float scale)
@@ -117,23 +115,12 @@ internal static class TimersArt
     {
         var hit = new Vector2(BellHitRadius, BellHitRadius) * scale;
         var hovered = UiInteract.Hover(center - hit, center + hit);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var grow = PressFx.Scale(id, pressed, PressFx.IconPressedScale);
-        var ink = on ? ui.Accent : ui.MutedInk;
-        if (hovered || on)
-        {
-            var washAlpha = on ? BellWashAlpha : BellWashAlpha * 0.6f;
-            drawList.AddCircleFilled(center, BellHitRadius * 0.78f * scale * grow,
-                ImGui.GetColorU32(Palette.WithAlpha(on ? ui.Accent : ui.TitleInk, washAlpha)), 32);
-        }
-
-        ProgressRing.CenterIcon(drawList, center, on ? FontAwesomeIcon.Bell : FontAwesomeIcon.BellSlash, ink,
-            BellGlyphSize * scale * grow);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
+        var faceExtent = new Vector2(RoundButton.SmallRadius, RoundButton.SmallRadius) * scale;
+        var face = RoundButton.Surface(drawList, new Rect(center - faceExtent, center + faceExtent), ui.Ink,
+            on ? ButtonStyle.Tinted : ButtonStyle.Plain, true, hovered, ImGui.GetID(id));
+        var grow = face.Face.Width / MathF.Max(faceExtent.X * 2f, 0.0001f);
+        ProgressRing.CenterIcon(drawList, center, on ? FontAwesomeIcon.Bell : FontAwesomeIcon.BellSlash,
+            on ? face.LabelInk : ui.MutedInk, BellGlyphSize * scale * grow);
         HoverTooltip.Show(new Rect(center - hit, center + hit), tooltip, HoverLabelSide.Above);
         if (!UiInteract.Click(center - hit, center + hit, hovered, false))
         {
@@ -159,7 +146,7 @@ internal static class TimersArt
         FontAwesomeIcon icon, string title, string body, float scale)
     {
         var max = new Vector2(origin.X + width, origin.Y + height);
-        Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var tileSize = StateTileSize * scale;
         var tileMin = new Vector2(origin.X + pad, origin.Y + pad);
