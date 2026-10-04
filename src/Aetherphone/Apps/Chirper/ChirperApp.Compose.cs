@@ -16,20 +16,16 @@ namespace Aetherphone.Apps.Chirper;
 internal sealed partial class ChirperApp
 {
     private const float ComposeToolbarHeight = 52f;
+    private const float HeaderActionGap = 8f;
     private const float ComposeTileMax = 104f;
     private const float ComposeTileRounding = 14f;
     private const float ComposeRingRadius = 9f;
     private const float ComposeRingStroke = 2.6f;
     private const int ComposeWarnRemaining = 40;
 
-    private static readonly TextStyle ComposeTitleStyle = TextStyles.Headline;
     private static readonly TextStyle ComposeInputStyle = TextStyles.Body;
-    private static readonly TextStyle ComposeActionStyle = TextStyles.SubheadlineEmphasized;
-    private static readonly TextStyle ComposeCancelStyle = TextStyles.BodyEmphasized;
-    private static readonly TextStyle GifChipStyle = TextStyles.Caption1;
     private static readonly TextStyle RemainingStyle = TextStyles.SubheadlineEmphasized;
     private static readonly Vector4 RingTrack = new(1f, 1f, 1f, 0.14f);
-    private static readonly Vector4 DisabledPill = new(1f, 1f, 1f, 0.09f);
     private static readonly Vector4 RemoveChipFill = new(0f, 0f, 0f, 0.6f);
 
     private void DrawCompose(Rect area)
@@ -193,64 +189,29 @@ internal sealed partial class ChirperApp
 
     private void DrawComposeHeader(Rect area)
     {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var headerHeight = AppHeader.Height * scale;
-        var rowCenterY = area.Min.Y + headerHeight * 0.5f;
-        var cancelLabel = Loc.T(L.Common.Cancel);
-        var cancelSize = Typography.Measure(cancelLabel, ComposeCancelStyle);
-        var cancelMin = area.Min;
-        var cancelMax = new Vector2(area.Min.X + CellPadX * scale + cancelSize.X + 12f * scale,
-            area.Min.Y + headerHeight);
-        var cancelHovered = UiInteract.Hover(cancelMin, cancelMax);
-        Typography.Draw(drawList, new Vector2(area.Min.X + CellPadX * scale, rowCenterY - cancelSize.Y * 0.5f),
-            cancelLabel, cancelHovered ? ChirperInk.TitleInk : ChirperInk.BodyInk, ComposeCancelStyle);
-        if (cancelHovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(cancelMin, cancelMax, cancelHovered))
-        {
-            back();
-        }
-
         var actionLabel = store.Posting ? Loc.T(L.Chirper.Saving) : Loc.T(L.Chirper.ChirpAction);
-        var actionSize = Typography.Measure(actionLabel, ComposeActionStyle);
-        var pillHeight = 33f * scale;
-        var pillWidth = actionSize.X + 30f * scale;
-        var pillMax = new Vector2(area.Max.X - 12f * scale, rowCenterY + pillHeight * 0.5f);
-        var pillMin = new Vector2(pillMax.X - pillWidth, rowCenterY - pillHeight * 0.5f);
-        UiAnchors.Report("chirper.compose.post", new Rect(pillMin, pillMax));
         var canPost = (!string.IsNullOrWhiteSpace(draft) || composeAttachments.Count > 0)
             && draft.Length <= MaxPostLength && !store.Posting;
-        var pillHovered = canPost && UiInteract.Hover(pillMin, pillMax);
-        var rounding = pillHeight * 0.5f;
-        if (canPost)
-        {
-            ChirperPill.PaintAccent(drawList, pillMin, pillMax, rounding, pillHovered);
-        }
-        else
-        {
-            Squircle.Fill(drawList, pillMin, pillMax, rounding, ImGui.GetColorU32(DisabledPill));
-        }
-
-        Typography.DrawCentered(drawList, (pillMin + pillMax) * 0.5f, actionLabel,
-            canPost ? ChirperInk.White : ChirperInk.FaintInk, ComposeActionStyle);
-        if (pillHovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(pillMin, pillMax, pillHovered))
+        var action = HeaderActionRect(area, actionLabel);
+        UiAnchors.Report("chirper.compose.post", action);
+        var title = Loc.T(quoteTarget is not null ? L.Chirper.QuoteTitle : L.Chirper.NewChirp);
+        DrawScreenHeader(area, title, action.Width + HeaderActionGap * UiScale.Current);
+        if (Button.Draw(action, actionLabel, ui.Ink, ButtonStyle.Prominent, enabled: canPost,
+                id: "chirper.compose.post"))
         {
             Submit();
         }
+    }
 
-        var title = Loc.T(quoteTarget is not null ? L.Chirper.QuoteTitle : L.Chirper.NewChirp);
-        var leftReserve = (cancelMax.X - area.Min.X) / scale + 8f;
-        AppHeader.DrawTitleWithReserve(area, "chirper.compose.title", title, pillWidth + 24f * scale,
-            ChirperInk.TitleInk, scale, ComposeTitleStyle, leftReserve);
+    private static Rect HeaderActionRect(Rect area, string label)
+    {
+        var scale = UiScale.Current;
+        var height = Button.SmallHeight * scale;
+        var width = Button.WidthFor(label, ButtonSize.Small);
+        var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
+        var right = area.Max.X - CellPadX * scale;
+        return new Rect(new Vector2(right - width, rowCenterY - height * 0.5f),
+            new Vector2(right, rowCenterY + height * 0.5f));
     }
 
     private void DrawComposeToolbar(Rect area, float height)
@@ -292,24 +253,15 @@ internal sealed partial class ChirperApp
             }
         }
 
-        var gifSize = Typography.Measure("GIF", GifChipStyle);
-        var chipHeight = 22f * scale;
+        const string gifLabel = "GIF";
+        var chipHeight = Button.SmallHeight * scale;
         var gifMin = new Vector2(photoCenter.X + iconRadius + 8f * scale, centerY - chipHeight * 0.5f);
-        var gifMax = new Vector2(gifMin.X + gifSize.X + 12f * scale, centerY + chipHeight * 0.5f);
+        var gifMax = new Vector2(gifMin.X + Button.WidthFor(gifLabel, ButtonSize.Small), centerY + chipHeight * 0.5f);
         var gifEnabled = composeAttachments.Count == 0;
-        var gifHovered = UiInteract.Hover(gifMin, gifMax);
-        var gifInk = !gifEnabled ? Palette.WithAlpha(ChirperInk.MutedInk, 0.4f)
-            : gifHovered ? ChirperInk.MineInk
-            : ChirperInk.AccentLink;
-        Squircle.Stroke(drawList, gifMin, gifMax, 6f * scale, ImGui.GetColorU32(gifInk), 1.5f);
-        Typography.DrawCentered(drawList, (gifMin + gifMax) * 0.5f, "GIF", gifInk, GifChipStyle);
-        if (gifHovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
+        var gifClicked = Button.Draw(new Rect(gifMin, gifMax), gifLabel, ui.Ink,
+            gifEnabled ? ButtonStyle.Tinted : ButtonStyle.Gray, id: "chirper.compose.gif");
         HoverTooltip.Show(new Rect(gifMin, gifMax), Loc.T(L.Settings.ChirperShowGifs), HoverLabelSide.Above);
-        if (UiInteract.Click(gifMin, gifMax, gifHovered))
+        if (gifClicked)
         {
             if (gifEnabled)
             {
@@ -332,25 +284,11 @@ internal sealed partial class ChirperApp
             Loc.T(L.Common.Emoji));
         if (composeAttachments.Count > 0)
         {
-            var pillHeight = 30f * scale;
-            var pillWidth = 42f * scale;
-            var pillMin = new Vector2(emojiCenter.X + iconRadius + 8f * scale, centerY - pillHeight * 0.5f);
-            var pillMax = new Vector2(pillMin.X + pillWidth, centerY + pillHeight * 0.5f);
-            var pillHovered = UiInteract.Hover(pillMin, pillMax);
-            var fill = composeSensitive ? ChirperInk.MineFill : pillHovered ? ChirperInk.ChipHover : ChirperInk.ChipFill;
-            var stroke = composeSensitive ? ChirperInk.MineStroke : ChirperInk.ChipStroke;
-            var ink = composeSensitive ? ChirperInk.MineInk : ChirperInk.MutedInk;
-            Squircle.Fill(drawList, pillMin, pillMax, pillHeight * 0.5f, ImGui.GetColorU32(fill));
-            Squircle.Stroke(drawList, pillMin, pillMax, pillHeight * 0.5f, ImGui.GetColorU32(stroke), 1f);
-            PhoneIcon.Draw(drawList, (pillMin + pillMax) * 0.5f, PhoneIcons.EyeOff, ink, 15f * scale);
-            if (pillHovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            HoverTooltip.Show(new Rect(pillMin, pillMax),
-                Loc.T(composeSensitive ? L.Moderation.SensitiveOn : L.Moderation.MarkSensitive), HoverLabelSide.Above);
-            if (UiInteract.Click(pillMin, pillMax, pillHovered))
+            var sensitiveRadius = RoundButton.SmallRadius * scale;
+            var sensitiveCenter = new Vector2(emojiCenter.X + iconRadius + 8f * scale + sensitiveRadius, centerY);
+            if (RoundButton.Icon(drawList, sensitiveCenter, sensitiveRadius, PhoneIcons.EyeOff, ui.Ink,
+                    composeSensitive ? ButtonStyle.Tinted : ButtonStyle.Gray,
+                    Loc.T(composeSensitive ? L.Moderation.SensitiveOn : L.Moderation.MarkSensitive)))
             {
                 composeSensitive = !composeSensitive;
             }
@@ -456,14 +394,14 @@ internal sealed partial class ChirperApp
 
     private void DrawComposePicker(Rect area)
     {
-        var context = new PhoneContext(area, theme, navigation);
-        AppHeader.Draw(context, Loc.T(L.Chirper.AddPhotos), () => composePicking = false);
+        SocialChrome.DrawScreenHeader(area, Loc.T(L.Chirper.AddPhotos), ChirperInk.Shared, closeComposePicker,
+            ScreenTitleStyle);
         var scale = UiScale.Current;
         var top = area.Min.Y + AppHeader.Height * scale;
-        var importHeight = 46f * scale;
+        var importHeight = Button.LargeHeight * scale;
         var importRect = new Rect(new Vector2(area.Min.X + 16f * scale, top + 8f * scale),
             new Vector2(area.Max.X - 16f * scale, top + 8f * scale + importHeight));
-        if (ui.PillButton(importRect, Loc.T(L.Chirper.ImportFromPc), true))
+        if (Button.Draw(importRect, Loc.T(L.Chirper.ImportFromPc), ui.Ink, ButtonStyle.Prominent))
         {
             FilePicker.PickImage(Loc.T(L.Chirper.AddPhotos),
                 path => Interlocked.Exchange(ref pendingComposePickedPath, path));

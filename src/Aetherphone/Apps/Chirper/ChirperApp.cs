@@ -75,8 +75,7 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
     private const float TopBarButtonRadius = 18f;
     private const float FeedTabRowHeight = 44f;
     private const float LatestScopeRowHeight = 40f;
-    private const float LatestScopePillHeight = 28f;
-    private const float LatestScopePillPadX = 14f;
+
     private const float LatestScopePillGap = 8f;
     private const float FeedTabUnderline = 4f;
     private const int TabCount = 4;
@@ -119,6 +118,12 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
     private const float QuoteThumbSize = 44f;
     private const int QuoteBodyMaxLines = 3;
     private const float RowHeight = 44f;
+    private const float TintedAlpha = 0.20f;
+    private const float TintedHoverAlpha = 0.28f;
+
+    private static readonly ControlInk ChipControls =
+        new(ChirperInk.Accent, ChirperInk.TitleInk, ChirperInk.MutedInk, ChirperInk.Danger);
+
 
     private static readonly TextStyle NameStyle = TextStyles.Headline;
     private static readonly TextStyle MetaStyle = TextStyles.Subheadline;
@@ -136,9 +141,8 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
     private static readonly TextStyle LikeCountStyle = TextStyles.FootnoteEmphasized;
     private static readonly TextStyle SectionStyle = TextStyles.Headline;
     private static readonly TextStyle DateStyle = TextStyles.Subheadline;
-    private static readonly TextStyle CapsuleStyle = TextStyles.SubheadlineEmphasized;
     private static readonly TextStyle FeedTabStyle = TextStyles.Headline;
-    private static readonly TextStyle LatestScopeStyle = TextStyles.SubheadlineEmphasized;
+
     private static readonly TextStyle FeedTabIdleStyle = TextStyles.BodyEmphasized;
     private static readonly UnderlineTabStyle FeedTabsStyle = new(FeedTabStyle, FeedTabIdleStyle,
         ChirperInk.AccentLink, ChirperInk.SegmentIdleInk, ChirperInk.Accent, FeedTabUnderline, CellPadX,
@@ -206,6 +210,7 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
     private readonly ViewRouter<ChirperRoute> router;
     private readonly RouterDraw<ChirperRoute> drawView;
     private readonly Action back;
+    private readonly Action closeComposePicker;
     private readonly SocialActivityFeed activityFeed;
     private PhoneTheme theme = PhoneTheme.Default;
     private INavigator navigation = null!;
@@ -290,6 +295,7 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
         router = new ViewRouter<ChirperRoute>(ChirperRoute.Home);
         drawView = DrawView;
         back = () => router.Pop();
+        closeComposePicker = () => composePicking = false;
         profile = new SocialProfilePages(store, new SocialProfileStyle
         {
             Saving = L.Chirper.Saving,
@@ -557,23 +563,23 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         var rowHeight = LatestScopeRowHeight * scale;
-        var pillHeight = LatestScopePillHeight * scale;
+        var pillHeight = ChipRail.ChipHeight * scale;
         var pillTop = top + (rowHeight - pillHeight) * 0.5f;
         var left = area.Min.X + CellPadX * scale;
         var everyoneLabel = Loc.T(L.Social.FeedEveryone);
         var followingLabel = Loc.T(L.Chirper.Following);
-        var everyoneWidth = Typography.Measure(everyoneLabel, LatestScopeStyle).X + LatestScopePillPadX * 2f * scale;
-        var followingWidth = Typography.Measure(followingLabel, LatestScopeStyle).X + LatestScopePillPadX * 2f * scale;
+        var everyoneWidth = Typography.Measure(everyoneLabel, ChipRail.LabelStyle).X + ChipRail.ChipPadX * 2f * scale;
+        var followingWidth = Typography.Measure(followingLabel, ChipRail.LabelStyle).X + ChipRail.ChipPadX * 2f * scale;
         var everyoneRect = new Rect(new Vector2(left, pillTop), new Vector2(left + everyoneWidth, pillTop + pillHeight));
         var followingLeft = everyoneRect.Max.X + LatestScopePillGap * scale;
         var followingRect = new Rect(new Vector2(followingLeft, pillTop),
             new Vector2(followingLeft + followingWidth, pillTop + pillHeight));
-        if (DrawLatestScopePill(drawList, everyoneRect, everyoneLabel, activeScope == SocialFeedScope.Latest, pillHeight))
+        if (DrawLatestScopePill(drawList, everyoneRect, everyoneLabel, activeScope == SocialFeedScope.Latest))
         {
             SelectScope(SocialFeedScope.Latest);
         }
 
-        if (DrawLatestScopePill(drawList, followingRect, followingLabel, activeScope == SocialFeedScope.Following, pillHeight))
+        if (DrawLatestScopePill(drawList, followingRect, followingLabel, activeScope == SocialFeedScope.Following))
         {
             SelectScope(SocialFeedScope.Following);
         }
@@ -581,13 +587,11 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
         return top + rowHeight;
     }
 
-    private static bool DrawLatestScopePill(ImDrawListPtr drawList, Rect rect, string label, bool active, float pillHeight)
+    private bool DrawLatestScopePill(ImDrawListPtr drawList, Rect rect, string label, bool active)
     {
-        return active
-            ? SocialPill.Flat(drawList, rect, label, ChirperInk.AccentWash, ChirperInk.AccentWash,
-                Palette.WithAlpha(ChirperInk.Accent, 0.5f), ChirperInk.AccentLink, LatestScopeStyle, pillHeight * 0.5f)
-            : SocialPill.Flat(drawList, rect, label, ChirperInk.Shared.ChipHover, ChirperInk.HoverTint,
-                ChirperInk.Hairline, ChirperInk.MutedInk, LatestScopeStyle, pillHeight * 0.5f);
+        var hovered = UiInteract.Hover(rect.Min, rect.Max);
+        ChipRail.PaintChip(drawList, rect, label, active, hovered, ui.Ink);
+        return UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private void SelectScope(SocialFeedScope scope)
@@ -1554,11 +1558,8 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
         var max = new Vector2(left + width, top + height);
         var hovered = UiInteract.Hover(min, max);
         var mine = post.MyReaction >= 0;
-        var fill = mine ? ChirperInk.MineFill : hovered ? ChirperInk.ChipHover : ChirperInk.ChipFill;
-        var stroke = mine ? ChirperInk.MineStroke : ChirperInk.ChipStroke;
-        var ink = mine ? ChirperInk.MineInk : ChirperInk.BodyInk;
-        Squircle.Fill(drawList, min, max, height * 0.5f, ImGui.GetColorU32(fill));
-        Squircle.Stroke(drawList, min, max, height * 0.5f, ImGui.GetColorU32(stroke), 1f);
+        var ink = ReactionInk(mine);
+        Squircle.Fill(drawList, min, max, height * 0.5f, ImGui.GetColorU32(ReactionFill(mine, hovered)));
         var centerY = top + height * 0.5f;
         for (var index = shown - 1; index >= 0; index--)
         {
@@ -1773,11 +1774,9 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
         var grow = hovered ? 0.03f : 0f;
         var drawMin = min - new Vector2(chipWidth, chipHeight) * grow;
         var drawMax = max + new Vector2(chipWidth, chipHeight) * grow;
-        var fill = Faded(mine ? ChirperInk.MineFill : ChirperInk.ChipFill, alpha);
-        var stroke = Faded(mine ? ChirperInk.MineStroke : ChirperInk.ChipStroke, alpha);
-        var ink = Faded(mine ? ChirperInk.MineInk : ChirperInk.BodyInk, alpha);
+        var fill = Faded(ReactionFill(mine, hovered), alpha);
+        var ink = Faded(ReactionInk(mine), alpha);
         Squircle.Fill(drawList, drawMin, drawMax, (drawMax.Y - drawMin.Y) * 0.5f, ImGui.GetColorU32(fill));
-        Squircle.Stroke(drawList, drawMin, drawMax, (drawMax.Y - drawMin.Y) * 0.5f, ImGui.GetColorU32(stroke), 1f);
         var emojiSize = ReactionChipEmoji * scale;
         var emojiMin = new Vector2(min.X + 11f * scale, centerY - emojiSize * 0.5f);
         EmojiImages.TryDraw(drawList, ChirperReactions.EmojiFile(kind), emojiMin,
@@ -1799,6 +1798,12 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
     }
 
     private static Vector4 Faded(Vector4 color, float alpha) => Palette.WithAlpha(color, color.W * alpha);
+
+    private static Vector4 ReactionFill(bool mine, bool hovered) => mine
+        ? ChirperInk.Accent with { W = hovered ? TintedHoverAlpha : TintedAlpha }
+        : Surfaces.Fill(ChirperInk.TitleInk, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
+
+    private static Vector4 ReactionInk(bool mine) => mine ? ChipControls.AccentInk : ChirperInk.BodyInk;
 
     private void DrawReactionPicker(PostDto post, float left, float right, float bottom)
     {
