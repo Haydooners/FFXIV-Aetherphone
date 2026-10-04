@@ -485,7 +485,7 @@ internal sealed partial class YellowPagesApp : IPhoneApp
     private bool JustCopied(string key) =>
         copiedTimer > 0f && string.Equals(copiedKey, key, StringComparison.Ordinal);
 
-    private void SubmitReport(string adId, string? reason, Action<bool> done)
+    private void SubmitReport(string adId, ReportReason reason, Action<bool> done)
     {
         _ = Task.Run(async () =>
         {

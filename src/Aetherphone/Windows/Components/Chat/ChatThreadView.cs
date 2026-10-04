@@ -736,6 +736,7 @@ internal abstract class ChatThreadView<TMessage, TThread> : IDisposable, IChatTr
         {
             Title = Loc.T(L.Encryption.ReportMessageAction),
             Disclosure = Loc.T(L.Encryption.ReportDisclosure),
+            Venue = store.ReportVenue,
             Submit = (reason, done) => store.ReportMessage(messageId, reason, done),
         });
     }

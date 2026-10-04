@@ -97,6 +97,7 @@ internal sealed partial class VelvetShell
         report.Open(new ReportPrompt
         {
             Title = title,
+            Venue = ReportVenue.Velvet,
             Submit = (reason, done) => store.Report(targetType, targetId, reason, succeeded =>
             {
                 if (succeeded)

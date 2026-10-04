@@ -121,6 +121,7 @@ internal sealed class SocialProfilePages
         report.Open(new ReportPrompt
         {
             Title = title,
+            Venue = ReportVenue.Social,
             Submit = (reason, done) => store.Report(targetType, targetId, reason, done),
         });
     }

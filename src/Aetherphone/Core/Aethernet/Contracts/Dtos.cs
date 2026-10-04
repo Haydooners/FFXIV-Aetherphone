@@ -377,7 +377,8 @@ internal sealed record ReportRequest(
     string TargetType,
     string TargetId,
     string? Reason,
-    RevealedMessageDto[]? RevealedMessages = null);
+    RevealedMessageDto[]? RevealedMessages = null,
+    string? Category = null);
 
 internal sealed record VelvetProfileDto(
     string UserId,

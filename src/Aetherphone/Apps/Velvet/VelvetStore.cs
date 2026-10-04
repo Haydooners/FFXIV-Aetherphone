@@ -1,3 +1,4 @@
+using Aetherphone.Core.Report;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Aethernet.Clients;
@@ -254,6 +255,8 @@ internal sealed partial class VelvetStore : ChatThreadStoreBase<VelvetMessageDto
     protected override string ImageUploadScope => "velvet-dm";
     protected override string VoiceUploadScope => "velvet-voice";
     protected override string ReportTargetType => "velvet_message";
+
+    public override ReportVenue ReportVenue => ReportVenue.Velvet;
     protected override string TypingSignalType => Core.Telephony.Contracts.SignalType.VelvetTyping;
 
     protected override bool TickActive => base.TickActive && configuration.IsVelvetOnboarded() && !accessBlocked;

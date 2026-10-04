@@ -240,11 +240,12 @@ internal sealed partial class MusicApp
         {
             Title = Loc.T(L.Music.Live.ReportTitle),
             Submit = (reason, done) =>
-                SubmitChatReport(entry, RadioRoomReport.ComposeReason(reason, stationId, entry), done),
+                SubmitChatReport(entry,
+                    reason with { Details = RadioRoomReport.ComposeReason(reason.Details, stationId, entry) }, done),
         });
     }
 
-    private void SubmitChatReport(RadioChatEntry entry, string composed, Action<bool> done)
+    private void SubmitChatReport(RadioChatEntry entry, ReportReason composed, Action<bool> done)
     {
         _ = Task.Run(async () =>
         {
