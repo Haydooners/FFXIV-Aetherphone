@@ -9,6 +9,9 @@ namespace Aetherphone.Windows.Components;
 internal sealed class ChipRail
 {
     public const float RowHeight = 34f;
+    public const float ChipHeight = 30f;
+    public const float ChipPadX = 13f;
+    public static readonly TextStyle LabelStyle = TextStyles.SubheadlineEmphasized;
 
     public const float DefaultLabelPadding = 26f;
     public const float CompactLabelPadding = 14f;
@@ -24,6 +27,8 @@ internal sealed class ChipRail
 
     private static readonly Vector4 ArrowScrim = new(0.05f, 0.03f, 0.04f, 0.72f);
     private static readonly Vector4 ArrowRim = new(1f, 1f, 1f, 0.18f);
+    private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
+    private const float ActiveHoverLift = 0.10f;
 
     private float offset;
     private float maxOffset;
@@ -157,31 +162,34 @@ internal sealed class ChipRail
     }
 
     private static float ChipWidth(string label, float scale, float labelPadding) =>
-        Typography.Measure(label, TextStyles.SubheadlineEmphasized).X + labelPadding * scale;
+        Typography.Measure(label, LabelStyle).X + labelPadding * scale;
 
     private bool DrawChip(ImDrawListPtr drawList, AppSkin ui, string label, bool active, Vector2 leftCenter,
         float width, float scale, bool overlay, bool shadowed, bool interactive = true)
     {
-        var height = RowHeight * scale;
+        var height = ChipHeight * scale;
         var min = new Vector2(leftCenter.X, leftCenter.Y - height * 0.5f);
         var max = new Vector2(leftCenter.X + width, leftCenter.Y + height * 0.5f);
-        var radius = height * 0.5f;
         var hovered = interactive && !shadowed && Hovered(min, max, overlay);
-        var highlighted = hovered && !dragging;
+        PaintChip(drawList, new Rect(min, max), label, active, hovered && !dragging, ui.Ink);
+        return interactive && dragTravel <= DragSlop * scale && UiInteract.Click(min, max, hovered);
+    }
+
+    public static void PaintChip(ImDrawListPtr drawList, Rect rect, string label, bool active, bool highlighted,
+        in ControlInk ink)
+    {
+        var radius = rect.Height * 0.5f;
         var fill = active
-            ? Palette.WithAlpha(ui.Accent, highlighted ? 1f : 0.92f)
-            : highlighted ? ui.HoverTint : ui.FieldSurface;
-        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(fill));
-        var ink = active ? new Vector4(0.11f, 0.08f, 0.02f, 1f) : ui.BodyInk;
-        var labelSize = Typography.Measure(label, TextStyles.SubheadlineEmphasized);
-        var labelOrigin = new Vector2((min.X + max.X - labelSize.X) * 0.5f, (min.Y + max.Y - labelSize.Y) * 0.5f);
-        Typography.Draw(drawList, labelOrigin, label, ink, TextStyles.SubheadlineEmphasized);
+            ? Palette.Mix(ink.Accent, White, highlighted ? ActiveHoverLift : 0f)
+            : Surfaces.Fill(ink, highlighted ? FillLevel.Secondary : FillLevel.Tertiary);
+        Squircle.Fill(drawList, rect.Min, rect.Max, radius, ImGui.GetColorU32(fill));
+        var labelInk = active ? White : ink.Ink;
+        var fitted = Typography.FitText(label, MathF.Max(1f, rect.Width - rect.Height * 0.5f), LabelStyle);
+        Typography.DrawCentered(drawList, rect.Center, fitted, labelInk, LabelStyle);
         if (highlighted)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
-
-        return interactive && dragTravel <= DragSlop * scale && UiInteract.Click(min, max, hovered);
     }
 
     private static Rect ReserveRow(ChipRail rail, float scale)

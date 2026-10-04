@@ -287,7 +287,7 @@ internal sealed class DailySpinCabinet
             var enabled = DailySpinStatus.CanClaim(answer, spin.Busy);
             var pillRect = new Rect(new Vector2(left + width * 0.18f, y),
                 new Vector2(left + width * 0.82f, y + PillHeight * scale));
-            if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.SpinAction), true, enabled, ui.Theme))
+            if (ui.PillButton(pillRect, Loc.T(L.Casino.SpinAction), true, enabled))
             {
                 inlineReason = string.Empty;
                 spin.Claim();

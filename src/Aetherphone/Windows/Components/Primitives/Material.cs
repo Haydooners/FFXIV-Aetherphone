@@ -19,6 +19,12 @@ internal static class Material
     private static readonly Vector4 LightGlassHarsh = new(0.56f, 0.58f, 0.64f, 0.38f);
     private static readonly Vector4 DarkGlass = new(0.05f, 0.06f, 0.09f, 0.44f);
     private const float DarkGlassHarshBoost = 0.18f;
+    private static readonly Vector4 GroundLiftDark = new(1f, 1f, 1f, 0.12f);
+    private static readonly Vector4 GroundLiftLight = new(1f, 1f, 1f, 0.62f);
+    private const float GroundRimDark = 0.16f;
+    private const float GroundRimLight = 0.08f;
+    private const float GroundSheenDark = 0.26f;
+    private const float GroundSheenLight = 0.90f;
 
     public static void TopGlow(ImDrawListPtr drawList, Vector2 min, Vector2 max, float rounding, Vector4 accent,
         float coverage, float strength)
@@ -116,6 +122,13 @@ internal static class Material
             return;
         }
 
+        if (WallpaperBackdrop.OnAppGround)
+        {
+            GroundGlass(drawList, min, max, radius, scale, tone, opacity);
+            PointerLight(drawList, min, max, radius, scale, tone, opacity);
+            return;
+        }
+
         var band = Math.Clamp(MathF.Min(max.X - min.X, max.Y - min.Y) * EdgeBandFraction, 1.5f * scale,
             10f * scale);
         var backdrop = WallpaperBackdrop.Fill(drawList, min, max, radius, opacity, LensZoom, band, EdgeRefraction);
@@ -137,6 +150,26 @@ internal static class Material
         Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(tint with { W = tint.W * opacity }));
         GlassRim(drawList, min, max, radius, scale, tone, opacity);
         PointerLight(drawList, min, max, radius, scale, tone, opacity);
+    }
+
+    private static void GroundGlass(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
+        GlassTone tone, float opacity)
+    {
+        WallpaperBackdrop.Fill(drawList, min, max, radius, opacity, 1f, 0f, 0f);
+        var lift = tone == GlassTone.Light ? GroundLiftLight : GroundLiftDark;
+        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(lift with { W = lift.W * opacity }));
+        GroundRim(drawList, min, max, radius, scale, tone, opacity);
+    }
+
+    private static void GroundRim(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
+        GlassTone tone, float opacity)
+    {
+        var light = tone == GlassTone.Light;
+        var rim = light ? new Vector4(0f, 0f, 0f, GroundRimLight) : new Vector4(1f, 1f, 1f, GroundRimDark);
+        Squircle.Stroke(drawList, min, max, radius, ImGui.GetColorU32(rim with { W = rim.W * opacity }), 1f * scale);
+        Sheen(drawList, min, max, radius,
+            ImGui.GetColorU32(new Vector4(1f, 1f, 1f, (light ? GroundSheenLight : GroundSheenDark) * opacity)),
+            1f * scale, 1f * scale);
     }
 
     public static bool LiquidGlassBand(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float band,
@@ -214,6 +247,12 @@ internal static class Material
     {
         if (opacity <= 0f)
         {
+            return;
+        }
+
+        if (WallpaperBackdrop.OnAppGround)
+        {
+            GroundRim(drawList, min, max, radius, scale, tone, opacity);
             return;
         }
 

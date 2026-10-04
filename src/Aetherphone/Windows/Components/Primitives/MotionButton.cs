@@ -13,7 +13,7 @@ internal static class MotionButton
     public static readonly Vector4 BrandHoverTop = new(0.72f, 0.58f, 1f, 1f);
     public static readonly Vector4 BrandHoverBottom = new(0.56f, 0.40f, 1f, 1f);
 
-    private const int MotionSlots = 16;
+    private const int MotionSlots = 64;
     private const int StaleFrames = 30;
     private const float HoverLiftScale = 0.03f;
     private const float PressDepthScale = 0.045f;
@@ -35,11 +35,14 @@ internal static class MotionButton
 
     private static readonly MotionState[] States = new MotionState[MotionSlots];
 
-    public static ButtonPose Animate(Rect rect, string key, bool hovered, bool pressed)
+    public static ButtonPose Animate(Rect rect, string key, bool hovered, bool pressed) =>
+        Animate(rect, key.GetHashCode(), hovered, pressed);
+
+    public static ButtonPose Animate(Rect rect, int key, bool hovered, bool pressed)
     {
         var frame = ImGui.GetFrameCount();
         var delta = ImGui.GetIO().DeltaTime;
-        ref var state = ref StateFor(key.GetHashCode(), frame);
+        ref var state = ref StateFor(key, frame);
         if (state.LastFrame != frame - 1 && state.LastFrame != frame)
         {
             state.Hover.SnapTo(0f);

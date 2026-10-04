@@ -124,7 +124,7 @@ internal sealed class TableBrowser
 
         var pillRect = new Rect(new Vector2(card.Min.X + pad, card.Max.Y - PillHeight * scale - 12f * scale),
             new Vector2(card.Max.X - pad, card.Max.Y - 12f * scale));
-        if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.QuickSeatAction), true, !tables.IntentInFlight, ui.Theme))
+        if (ui.PillButton(pillRect, Loc.T(L.Casino.QuickSeatAction), true, !tables.IntentInFlight))
         {
             inlineReason = string.Empty;
             tables.QuickSeat(CasinoStakeTiers.From(Filter));
@@ -295,8 +295,8 @@ internal sealed class TableBrowser
         var pillRect = new Rect(new Vector2(fieldMax.X + 8f * scale, fieldTop),
             new Vector2(origin.X + width, fieldTop + FieldHeight * scale));
         var parsed = CasinoShare.TryParse(tokenBuffer, out var tableId);
-        if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.JoinAction), true,
-                parsed && !tables.IntentInFlight, ui.Theme) && parsed)
+        if (ui.PillButton(pillRect, Loc.T(L.Casino.JoinAction), true,
+                parsed && !tables.IntentInFlight) && parsed)
         {
             inlineReason = string.Empty;
             tables.ResolveToken(tableId);

@@ -132,7 +132,7 @@ internal sealed class TableDoor
 
         var pillRect = new Rect(new Vector2(card.Min.X + pad, card.Max.Y - PillHeight * scale - pad),
             new Vector2(card.Max.X - pad, card.Max.Y - pad));
-        if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.DoorCopyInvite), false, token.Length > 0, ui.Theme)
+        if (ui.PillButton(pillRect, Loc.T(L.Casino.DoorCopyInvite), false, token.Length > 0)
             && token.Length > 0)
         {
             ImGui.SetClipboardText(CasinoShare.Compose(token));
@@ -166,7 +166,7 @@ internal sealed class TableDoor
         var width = ScrollLayout.StableContentWidth();
         var origin = ImGui.GetCursorScreenPos();
         var rect = new Rect(origin, new Vector2(origin.X + width, origin.Y + PillHeight * scale));
-        if (AppSkin.PillButton(rect, Loc.T(L.Casino.DoorOpenTable), true, roomId.Length > 0, ui.Theme))
+        if (ui.PillButton(rect, Loc.T(L.Casino.DoorOpenTable), true, roomId.Length > 0))
         {
             openTable(roomId);
         }
@@ -208,7 +208,7 @@ internal sealed class TableDoor
         var approveRect = new Rect(
             new Vector2(row.Max.X - buttonWidth * 2f - 18f * scale, row.Center.Y - PillHeight * scale * 0.5f),
             new Vector2(row.Max.X - buttonWidth - 18f * scale, row.Center.Y + PillHeight * scale * 0.5f));
-        if (AppSkin.PillButton(approveRect, Loc.T(L.Casino.DoorApprove), true, !tables.IntentInFlight, ui.Theme))
+        if (ui.PillButton(approveRect, Loc.T(L.Casino.DoorApprove), true, !tables.IntentInFlight))
         {
             inlineReason = string.Empty;
             tables.AnswerKnock(roomId, knocker.UserId, true);
@@ -217,7 +217,7 @@ internal sealed class TableDoor
         var denyRect = new Rect(
             new Vector2(row.Max.X - buttonWidth - 10f * scale, row.Center.Y - PillHeight * scale * 0.5f),
             new Vector2(row.Max.X - 10f * scale, row.Center.Y + PillHeight * scale * 0.5f));
-        if (AppSkin.PillButton(denyRect, Loc.T(L.Casino.DoorDeny), false, !tables.IntentInFlight, ui.Theme))
+        if (ui.PillButton(denyRect, Loc.T(L.Casino.DoorDeny), false, !tables.IntentInFlight))
         {
             inlineReason = string.Empty;
             tables.AnswerKnock(roomId, knocker.UserId, false);

@@ -307,7 +307,7 @@ internal sealed class BarkeepCabinet
 
         var canEnd = current.CanFinish(elapsed);
         var endRect = new Rect(new Vector2(left + width * 0.2f, y), new Vector2(left + width * 0.8f, y + 44f * scale));
-        if (AppSkin.PillButton(endRect, Loc.T(L.Casino.BarkeepEndShift), true, canEnd, ui.Theme))
+        if (ui.PillButton(endRect, Loc.T(L.Casino.BarkeepEndShift), true, canEnd))
         {
             SendFinish();
         }
@@ -622,7 +622,7 @@ internal sealed class BarkeepCabinet
         y += Metrics.Space.Lg * scale;
 
         var doneRect = new Rect(new Vector2(left + width * 0.25f, y), new Vector2(left + width * 0.75f, y + 44f * scale));
-        if (AppSkin.PillButton(doneRect, Loc.T(L.Casino.BarkeepDone), true, true, ui.Theme))
+        if (ui.PillButton(doneRect, Loc.T(L.Casino.BarkeepDone), true, true))
         {
             settle = null;
             shift = null;
@@ -659,7 +659,7 @@ internal sealed class BarkeepCabinet
 
         y += Metrics.Space.Lg * scale;
         var againRect = new Rect(new Vector2(left + width * 0.2f, y), new Vector2(left + width * 0.8f, y + 44f * scale));
-        if (AppSkin.PillButton(againRect, Loc.T(L.Casino.BarkeepPracticeAgain), true, true, ui.Theme))
+        if (ui.PillButton(againRect, Loc.T(L.Casino.BarkeepPracticeAgain), true, true))
         {
             StartPractice();
         }
@@ -733,8 +733,7 @@ internal sealed class BarkeepCabinet
             var canStart = !blocked && !lowStack && !play.RoundInFlight && !startRequested;
             var startRect = new Rect(new Vector2(left + width * 0.15f, actionY),
                 new Vector2(left + width * 0.85f, actionY + 52f * scale));
-            if (AppSkin.StackedPillButton(startRect, Loc.T(L.Casino.BarkeepStart), entryText, true, canStart,
-                    ui.Theme))
+            if (AppSkin.StackedPillButton(startRect, Loc.T(L.Casino.BarkeepStart), entryText, true, canStart, ui.Ink))
             {
                 inlineReason = string.Empty;
                 StartWager();
@@ -774,7 +773,7 @@ internal sealed class BarkeepCabinet
         Typography.Draw(drawList, new Vector2(practiceMin.X + pad, bestY), best, ui.MutedInk, TextStyles.Caption1);
         var practiceRect = new Rect(new Vector2(left + width * 0.2f, bestY + 22f * scale),
             new Vector2(left + width * 0.8f, bestY + 66f * scale));
-        if (AppSkin.PillButton(practiceRect, practiceTitle, false, true, ui.Theme))
+        if (ui.PillButton(practiceRect, practiceTitle, false, true))
         {
             StartPractice();
         }

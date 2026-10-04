@@ -149,8 +149,8 @@ internal sealed partial class HuntsApp
         var width = ImGui.GetContentRegionAvail().X;
         var height = AccountButtonHeight * scale;
         var loginRect = new Rect(origin, origin + new Vector2(width, height));
-        if (AppSkin.PillButton(loginRect, busy ? Loc.T(L.Hunts.SignupLoggingIn) : Loc.T(L.Hunts.SignupLoginButton),
-                true, canSubmit, frameTheme))
+        if (ui.PillButton(loginRect, busy ? Loc.T(L.Hunts.SignupLoggingIn) : Loc.T(L.Hunts.SignupLoginButton),
+                true, canSubmit))
         {
             signupFailed = false;
             hunts.LoginFlow.Login(signupUsername, signupPassword);

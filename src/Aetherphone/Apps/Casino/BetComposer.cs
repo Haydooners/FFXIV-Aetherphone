@@ -96,7 +96,7 @@ internal sealed class BetComposer
         var confirmRect = new Rect(new Vector2(bounds.Min.X, quickBottom + RowGap * scale),
             new Vector2(bounds.Max.X, quickBottom + (RowGap + ConfirmHeight) * scale));
         var confirmEnabled = enabled && amount >= minimumBet && amount <= Ceiling(maximumBet, stack);
-        return AppSkin.PillButton(confirmRect, confirmLabel, true, confirmEnabled, skin.Theme);
+        return skin.PillButton(confirmRect, confirmLabel, true, confirmEnabled);
     }
 
     public float DrawAmount(AppSkin skin, in Rect bounds, long minimumBet, long maximumBet, long stack, long step,

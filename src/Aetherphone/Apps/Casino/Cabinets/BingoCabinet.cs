@@ -1046,7 +1046,7 @@ internal sealed class BingoCabinet
 
         var pillRect = new Rect(new Vector2(min.X + width * 0.2f, max.Y - inset - 44f * scale),
             new Vector2(min.X + width * 0.8f, max.Y - inset));
-        if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.Cashier), true, true, ui.Theme))
+        if (ui.PillButton(pillRect, Loc.T(L.Casino.Cashier), true, true))
         {
             openCashier();
         }
@@ -1077,7 +1077,7 @@ internal sealed class BingoCabinet
         var pillY = max.Y + Metrics.Space.Md * scale;
         var pillRect = new Rect(new Vector2(left + width * 0.2f, pillY),
             new Vector2(left + width * 0.8f, pillY + 44f * scale));
-        if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.WheelBackToFloor), true, true, ui.Theme))
+        if (ui.PillButton(pillRect, Loc.T(L.Casino.WheelBackToFloor), true, true))
         {
             leaveRoom();
         }

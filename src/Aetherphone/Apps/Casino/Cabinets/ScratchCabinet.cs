@@ -524,7 +524,7 @@ internal sealed class ScratchCabinet
         var pillY = max.Y + Metrics.Space.Md * scale;
         var pillRect = new Rect(new Vector2(left + width * 0.2f, pillY),
             new Vector2(left + width * 0.8f, pillY + 44f * scale));
-        if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.Cashier), true, true, ui.Theme))
+        if (ui.PillButton(pillRect, Loc.T(L.Casino.Cashier), true, true))
         {
             openCashier();
         }

@@ -1236,7 +1236,7 @@ internal sealed class BlackjackTable
             var legal = !rooms.StakeInFlight && (!wagered || affordable);
             var costLine = wagered ? NumberText.Group(cost) : string.Empty;
             if (AppSkin.StackedPillButton(rect, LabelFor(bit), costLine, bit == BlackjackRules.ActionStand,
-                    legal, ui.Theme) && legal)
+                    legal, ui.Ink) && legal)
             {
                 inlineReason = string.Empty;
                 rooms.SendBlackjackAction(bit);
@@ -1310,7 +1310,7 @@ internal sealed class BlackjackTable
     {
         var rect = new Rect(new Vector2(left + width * 0.2f, y),
             new Vector2(left + width * 0.8f, y + ActionBarHeight * scale));
-        return AppSkin.PillButton(rect, label, true, enabled, ui.Theme) && enabled;
+        return ui.PillButton(rect, label, true, enabled) && enabled;
     }
 
     private static void DrawNotice(ImDrawListPtr drawList, AppSkin ui, string title, string hint, string action,
@@ -1331,7 +1331,7 @@ internal sealed class BlackjackTable
         var pillY = max.Y + Metrics.Space.Md * scale;
         var pillRect = new Rect(new Vector2(left + width * 0.2f, pillY),
             new Vector2(left + width * 0.8f, pillY + 44f * scale));
-        if (AppSkin.PillButton(pillRect, action, true, true, ui.Theme))
+        if (ui.PillButton(pillRect, action, true, true))
         {
             onAction();
         }
