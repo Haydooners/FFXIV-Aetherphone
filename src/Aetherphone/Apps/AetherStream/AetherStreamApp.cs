@@ -47,8 +47,8 @@ internal sealed partial class AetherStreamApp : IPhoneApp
     private const int TabCount = 3;
 
     private static readonly SocialInk Ink = new(AppPalettes.AetherStream);
-    private static readonly TextStyle WordmarkStyle = new(1.4f, FontWeight.Bold);
-    private static readonly TextStyle ScreenTitleStyle = new(1.13f, FontWeight.Bold);
+    private static readonly TextStyle WordmarkStyle = TextStyles.Title2;
+    private static readonly TextStyle ScreenTitleStyle = TextStyles.Title3;
 
     private readonly VideoSuite suite;
     private readonly VideoPlayer video;

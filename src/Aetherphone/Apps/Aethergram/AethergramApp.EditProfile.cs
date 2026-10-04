@@ -16,10 +16,10 @@ internal sealed partial class AethergramApp
     private const float EditBioMinHeight = 64f;
     private const float EditCardRounding = 14f;
 
-    private static readonly TextStyle EditWordStyle = new(1.03f, FontWeight.SemiBold);
-    private static readonly TextStyle EditLabelStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle EditValueStyle = new(1f, FontWeight.Regular);
-    private static readonly TextStyle EditFootStyle = new(0.83f, FontWeight.Regular);
+    private static readonly TextStyle EditWordStyle = TextStyles.Headline;
+    private static readonly TextStyle EditLabelStyle = TextStyles.Subheadline;
+    private static readonly TextStyle EditValueStyle = TextStyles.Body;
+    private static readonly TextStyle EditFootStyle = TextStyles.Footnote;
     private static readonly TextStyle EditLinkStyle = TextStyles.SubheadlineEmphasized;
     private static readonly Vector4 EditCardFill = new(1f, 1f, 1f, 0.045f);
     private static readonly Vector4 EditCardStroke = new(1f, 1f, 1f, 0.07f);

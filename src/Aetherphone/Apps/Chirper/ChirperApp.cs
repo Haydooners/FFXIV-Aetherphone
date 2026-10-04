@@ -120,32 +120,32 @@ internal sealed partial class ChirperApp : IResumableApp, ITabIconDrawer
     private const int QuoteBodyMaxLines = 3;
     private const float RowHeight = 44f;
 
-    private static readonly TextStyle NameStyle = new(1f, FontWeight.SemiBold);
-    private static readonly TextStyle MetaStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle BodyStyle = new(1.03f, FontWeight.Regular);
-    private static readonly TextStyle HeadBodyStyle = new(1.17f, FontWeight.Regular);
-    private static readonly TextStyle CountStyle = new(0.87f, FontWeight.SemiBold);
-    private static readonly TextStyle ChipCountStyle = new(0.83f, FontWeight.SemiBold);
-    private static readonly TextStyle BannerStyle = new(0.83f, FontWeight.SemiBold);
-    private static readonly TextStyle QuoteNameStyle = new(0.9f, FontWeight.SemiBold);
-    private static readonly TextStyle QuoteMetaStyle = new(0.87f, FontWeight.Regular);
-    private static readonly TextStyle QuoteBodyStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle ReplyNameStyle = new(0.93f, FontWeight.SemiBold);
-    private static readonly TextStyle ReplyBodyStyle = new(0.95f, FontWeight.Regular);
-    private static readonly TextStyle ReplyMetaStyle = new(0.87f, FontWeight.Regular);
-    private static readonly TextStyle LikeCountStyle = new(0.77f, FontWeight.SemiBold);
-    private static readonly TextStyle SectionStyle = new(1f, FontWeight.Bold);
-    private static readonly TextStyle DateStyle = new(0.9f, FontWeight.Regular);
-    private static readonly TextStyle CapsuleStyle = new(0.87f, FontWeight.SemiBold);
-    private static readonly TextStyle FeedTabStyle = new(1.07f, FontWeight.SemiBold);
-    private static readonly TextStyle LatestScopeStyle = new(0.86f, FontWeight.SemiBold);
-    private static readonly TextStyle FeedTabIdleStyle = new(1.07f, FontWeight.Medium);
+    private static readonly TextStyle NameStyle = TextStyles.Headline;
+    private static readonly TextStyle MetaStyle = TextStyles.Subheadline;
+    private static readonly TextStyle BodyStyle = TextStyles.Body;
+    private static readonly TextStyle HeadBodyStyle = TextStyles.Body;
+    private static readonly TextStyle CountStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle ChipCountStyle = TextStyles.FootnoteEmphasized;
+    private static readonly TextStyle BannerStyle = TextStyles.FootnoteEmphasized;
+    private static readonly TextStyle QuoteNameStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle QuoteMetaStyle = TextStyles.Subheadline;
+    private static readonly TextStyle QuoteBodyStyle = TextStyles.Subheadline;
+    private static readonly TextStyle ReplyNameStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle ReplyBodyStyle = TextStyles.Callout;
+    private static readonly TextStyle ReplyMetaStyle = TextStyles.Subheadline;
+    private static readonly TextStyle LikeCountStyle = TextStyles.FootnoteEmphasized;
+    private static readonly TextStyle SectionStyle = TextStyles.Headline;
+    private static readonly TextStyle DateStyle = TextStyles.Subheadline;
+    private static readonly TextStyle CapsuleStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle FeedTabStyle = TextStyles.Headline;
+    private static readonly TextStyle LatestScopeStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle FeedTabIdleStyle = TextStyles.BodyEmphasized;
     private static readonly UnderlineTabStyle FeedTabsStyle = new(FeedTabStyle, FeedTabIdleStyle,
         ChirperInk.AccentLink, ChirperInk.SegmentIdleInk, ChirperInk.Accent, FeedTabUnderline, CellPadX,
         Motion.Release);
-    private static readonly TextStyle WordmarkStyle = new(1.4f, FontWeight.Bold);
-    private static readonly TextStyle BadgeStyle = new(0.67f, FontWeight.Bold);
-    private static readonly TextStyle PopoverRowStyle = new(0.97f, FontWeight.SemiBold);
+    private static readonly TextStyle WordmarkStyle = TextStyles.Title2;
+    private static readonly TextStyle BadgeStyle = TextStyles.Caption1;
+    private static readonly TextStyle PopoverRowStyle = TextStyles.Headline;
 
     private static readonly ActionSheetStyle SheetStyle = new(ChirperInk.GlassPanel, ChirperInk.GlassStroke,
         AppPalettes.Chirper.TitleInk, ChirperInk.Danger, AppPalettes.Chirper.Accent, ChirperInk.Hairline);

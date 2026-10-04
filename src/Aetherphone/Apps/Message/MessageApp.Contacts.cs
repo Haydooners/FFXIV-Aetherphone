@@ -354,7 +354,7 @@ internal sealed partial class MessageApp
         var wrapWidth = inputWidth - ImGui.GetStyle().FramePadding.X * 2f - 4f * scale;
         using (ImRaii.PushColor(ImGuiCol.FrameBg, Transparent))
         using (ImRaii.PushColor(ImGuiCol.Text, ui.TitleInk))
-        using (Plugin.Fonts.Push(1.05f))
+        using (Plugin.Fonts.Push(TextStyles.Body.Scale, TextStyles.Body.Weight))
         {
             SoftWrapField.Multiline("##msgNumberReason", ref reasonDraft, ReasonMaxLength,
                 new Vector2(inputWidth, fieldMax.Y - fieldMin.Y - pad * 2f), wrapWidth);
@@ -364,7 +364,7 @@ internal sealed partial class MessageApp
         {
             ImGui.SetCursorScreenPos(fieldMin + new Vector2(pad + 4f * scale, pad + 2f * scale));
             using (ImRaii.PushColor(ImGuiCol.Text, ui.MutedInk))
-            using (Plugin.Fonts.Push(1.05f))
+            using (Plugin.Fonts.Push(TextStyles.Body.Scale, TextStyles.Body.Weight))
             {
                 Typography.Plain(Loc.T(L.Friends.ReasonHint));
             }

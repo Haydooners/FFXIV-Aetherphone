@@ -32,7 +32,7 @@ internal sealed partial class MessageApp
     private const float PreviewGlyphGap = 4f;
     private const float TimeGap = 8f;
 
-    private static readonly TextStyle UnreadCountStyle = new(0.68f, FontWeight.SemiBold);
+    private static readonly TextStyle UnreadCountStyle = TextStyles.Caption1;
 
     private readonly ActionSheet.Item[] chatSheetItems = new ActionSheet.Item[4];
     private readonly ChipRail chatFilterRail = new();

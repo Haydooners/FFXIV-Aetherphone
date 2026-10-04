@@ -32,7 +32,7 @@ internal sealed partial class AethergramApp
     private const float ComposerFailureLift = 22f;
     private const int CommentSheetItemCount = 1;
 
-    private static readonly TextStyle CommentNameStyle = new(0.95f, FontWeight.SemiBold);
+    private static readonly TextStyle CommentNameStyle = TextStyles.Headline;
     private static readonly TextStyle CommentBodyStyle = TextStyles.Callout;
     private static readonly TextStyle CommentMetaStyle = TextStyles.Footnote;
     private static readonly TextStyle CommentCountStyle = TextStyles.Caption1;

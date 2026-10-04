@@ -27,10 +27,10 @@ internal sealed partial class AethergramApp
 
     private static readonly TextStyle TagNameStyle = TextStyles.Headline;
     private static readonly TextStyle TagCountStyle = TextStyles.Subheadline;
-    private static readonly TextStyle TagGlyphStyle = new(1.13f, FontWeight.Bold);
-    private static readonly TextStyle TagHeroGlyphStyle = new(1.6f, FontWeight.Bold);
+    private static readonly TextStyle TagGlyphStyle = TextStyles.Title3;
+    private static readonly TextStyle TagHeroGlyphStyle = TextStyles.Title1;
     private static readonly TextStyle TagHeroTitleStyle = TextStyles.Title3;
-    private static readonly TextStyle SectionLabelStyle = new(0.87f, FontWeight.Bold);
+    private static readonly TextStyle SectionLabelStyle = TextStyles.SubheadlineEmphasized;
 
     private readonly PullToRefresh explorePull = new();
     private string exploreDraft = string.Empty;

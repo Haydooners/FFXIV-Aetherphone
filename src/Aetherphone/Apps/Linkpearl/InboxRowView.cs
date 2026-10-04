@@ -41,7 +41,7 @@ internal static class InboxRowView
     private const float MutedTitleAlpha = 0.72f;
     private const float DotRadius = 4f;
 
-    private static readonly TextStyle UnreadCountStyle = new(0.68f, FontWeight.SemiBold);
+    private static readonly TextStyle UnreadCountStyle = TextStyles.Caption1;
     private static readonly TextStyle TagStyle = TextStyles.Caption2;
     private static readonly Dictionary<string, Spring> Reveals = new(StringComparer.Ordinal);
     private static readonly Vector4 White = new(1f, 1f, 1f, 1f);

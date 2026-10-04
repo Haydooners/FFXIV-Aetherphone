@@ -30,16 +30,16 @@ internal sealed partial class ChirperApp
     private const int MediaGridColumns = 3;
     private const float MediaGridCellGap = 2f;
 
-    private static readonly TextStyle ProfileNameStyle = new(1.4f, FontWeight.Bold);
-    private static readonly TextStyle ProfileHandleStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle ProfileBioStyle = new(1f, FontWeight.Regular);
-    private static readonly TextStyle ProfileMetaStyle = new(0.9f, FontWeight.Regular);
-    private static readonly TextStyle StatValueStyle = new(1f, FontWeight.Bold);
-    private static readonly TextStyle StatLabelStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle FollowedByStyle = new(0.83f, FontWeight.Regular);
-    private static readonly TextStyle TabStyle = new(0.97f, FontWeight.SemiBold);
-    private static readonly TextStyle TabIdleStyle = new(0.97f, FontWeight.Medium);
-    private static readonly TextStyle FollowPillStyle = new(0.97f, FontWeight.Bold);
+    private static readonly TextStyle ProfileNameStyle = TextStyles.Title2;
+    private static readonly TextStyle ProfileHandleStyle = TextStyles.Subheadline;
+    private static readonly TextStyle ProfileBioStyle = TextStyles.Body;
+    private static readonly TextStyle ProfileMetaStyle = TextStyles.Subheadline;
+    private static readonly TextStyle StatValueStyle = TextStyles.Headline;
+    private static readonly TextStyle StatLabelStyle = TextStyles.Subheadline;
+    private static readonly TextStyle FollowedByStyle = TextStyles.Footnote;
+    private static readonly TextStyle TabStyle = TextStyles.Headline;
+    private static readonly TextStyle TabIdleStyle = TextStyles.BodyEmphasized;
+    private static readonly TextStyle FollowPillStyle = TextStyles.Headline;
     private static readonly Vector4 GlassPillFill = new(1f, 1f, 1f, 0.08f);
     private static readonly Vector4 OutlinePillFill = new(1f, 1f, 1f, 0.04f);
     private static readonly Vector4 BannerScrim = new(0f, 0f, 0f, 0.4f);

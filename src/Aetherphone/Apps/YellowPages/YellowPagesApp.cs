@@ -36,8 +36,8 @@ internal sealed partial class YellowPagesApp : IPhoneApp
     private const float EmptyBodyGap = 8f;
 
     private static readonly SocialInk Ink = YellowPagesInk.Shared;
-    private static readonly TextStyle ScreenTitleStyle = new(1.05f, FontWeight.SemiBold);
-    private static readonly TextStyle WordmarkStyle = new(1.4f, FontWeight.Bold);
+    private static readonly TextStyle ScreenTitleStyle = TextStyles.Headline;
+    private static readonly TextStyle WordmarkStyle = TextStyles.Title2;
     private static readonly TextStyle EmptyTitleStyle = TextStyles.Title2;
     private static readonly TextStyle EmptyBodyStyle = TextStyles.Callout;
 

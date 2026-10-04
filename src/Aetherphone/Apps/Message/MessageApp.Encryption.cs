@@ -19,7 +19,7 @@ internal sealed partial class MessageApp
     private const float EncryptionMemberGlyph = 18f;
     private const float EncryptionSidePadding = 32f;
 
-    private static readonly TextStyle SecurityCodeStyle = new(1.02f, FontWeight.Medium);
+    private static readonly TextStyle SecurityCodeStyle = TextStyles.BodyEmphasized;
 
     private string? encryptionPeerRequestedFor;
     private string securityCode = string.Empty;

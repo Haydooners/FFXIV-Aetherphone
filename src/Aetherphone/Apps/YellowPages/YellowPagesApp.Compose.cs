@@ -65,7 +65,7 @@ internal sealed partial class YellowPagesApp
     private const int ComposeCounterWarning = 50;
 
     private static readonly int[] WeekDays = { 1, 2, 3, 4, 5, 6, 0 };
-    private static readonly TextStyle FieldLabelStyle = new(0.9f, FontWeight.Regular);
+    private static readonly TextStyle FieldLabelStyle = TextStyles.Subheadline;
     private static readonly TextStyle FieldHintStyle = TextStyles.Footnote;
     private static readonly TextStyle KindTitleStyle = TextStyles.Headline;
     private static readonly TextStyle KindHintStyle = TextStyles.Footnote;

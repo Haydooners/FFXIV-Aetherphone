@@ -22,12 +22,12 @@ internal sealed partial class ChirperApp
     private const float ComposeRingStroke = 2.6f;
     private const int ComposeWarnRemaining = 40;
 
-    private static readonly TextStyle ComposeTitleStyle = new(1.1f, FontWeight.Bold);
-    private static readonly TextStyle ComposeInputStyle = new(1.17f, FontWeight.Regular);
-    private static readonly TextStyle ComposeActionStyle = new(0.93f, FontWeight.Bold);
-    private static readonly TextStyle ComposeCancelStyle = new(0.97f, FontWeight.Medium);
-    private static readonly TextStyle GifChipStyle = new(0.73f, FontWeight.Bold);
-    private static readonly TextStyle RemainingStyle = new(0.87f, FontWeight.Bold);
+    private static readonly TextStyle ComposeTitleStyle = TextStyles.Headline;
+    private static readonly TextStyle ComposeInputStyle = TextStyles.Body;
+    private static readonly TextStyle ComposeActionStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle ComposeCancelStyle = TextStyles.BodyEmphasized;
+    private static readonly TextStyle GifChipStyle = TextStyles.Caption1;
+    private static readonly TextStyle RemainingStyle = TextStyles.SubheadlineEmphasized;
     private static readonly Vector4 RingTrack = new(1f, 1f, 1f, 0.14f);
     private static readonly Vector4 DisabledPill = new(1f, 1f, 1f, 0.09f);
     private static readonly Vector4 RemoveChipFill = new(0f, 0f, 0f, 0.6f);
@@ -106,7 +106,7 @@ internal sealed partial class ChirperApp
                 ? Typography.Measure("Ag", ComposeInputStyle).Y
                 : Typography.MeasureWrapped(draft, composeWrapWidth, ComposeInputStyle.Scale);
             var statusHeight = composeStatus.Length > 0
-                ? Typography.MeasureWrapped(composeStatus, inputWidth, 0.85f) + 6f * scale
+                ? Typography.MeasureWrapped(composeStatus, inputWidth, TextStyles.Subheadline.Scale) + 6f * scale
                 : 0f;
             var availableInput = contentLimit - inputTop - quotePreviewHeight - stripHeight - statusHeight
                 - 8f * scale;
@@ -173,7 +173,7 @@ internal sealed partial class ChirperApp
                 var statusTop = inputTop + inputHeight + stripHeight + quotePreviewHeight + 4f * scale;
                 ImGui.SetCursorScreenPos(new Vector2(inputX, statusTop));
                 using (Typography.WrapAt(inputX + inputWidth))
-                using (Plugin.Fonts.Push(0.85f))
+                using (Plugin.Fonts.Push(TextStyles.Subheadline.Scale, TextStyles.Subheadline.Weight))
                 using (ImRaii.PushColor(ImGuiCol.Text, ChirperInk.Danger))
                 {
                     Typography.Wrapped(composeStatus);

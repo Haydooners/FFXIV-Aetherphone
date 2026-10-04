@@ -23,10 +23,10 @@ internal sealed partial class ChirperApp
     private const float ReplyComposerHeight = 60f;
     private const string SourceLabel = "Aetherphone";
 
-    private static readonly TextStyle HeadNameStyle = new(1f, FontWeight.SemiBold);
-    private static readonly TextStyle HeadHandleStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle StatNumberStyle = new(0.97f, FontWeight.Bold);
-    private static readonly TextStyle StatWordStyle = new(0.93f, FontWeight.Regular);
+    private static readonly TextStyle HeadNameStyle = TextStyles.Headline;
+    private static readonly TextStyle HeadHandleStyle = TextStyles.Subheadline;
+    private static readonly TextStyle StatNumberStyle = TextStyles.Headline;
+    private static readonly TextStyle StatWordStyle = TextStyles.Subheadline;
     private static readonly Vector4 ThreadLine = new(1f, 1f, 1f, 0.14f);
 
     private CommentDto? sheetComment;

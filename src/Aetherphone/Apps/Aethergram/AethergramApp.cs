@@ -120,15 +120,15 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
     public int BadgeCount => dmStore.UnreadCount + social.UnseenCount(Id);
     public bool HasBadge => true;
     public ShareKindSet AcceptedShares => store.IsSignedIn ? ShareKindSet.Photo : ShareKindSet.None;
-    private static readonly TextStyle CardNameStyle = new(0.97f, FontWeight.SemiBold);
-    private static readonly TextStyle CardMetaStyle = new(0.85f, FontWeight.Regular);
-    private static readonly TextStyle LatestScopeStyle = new(0.86f, FontWeight.SemiBold);
+    private static readonly TextStyle CardNameStyle = TextStyles.Headline;
+    private static readonly TextStyle CardMetaStyle = TextStyles.Subheadline;
+    private static readonly TextStyle LatestScopeStyle = TextStyles.SubheadlineEmphasized;
     private static readonly TextStyle CardCountStyle = TextStyles.SubheadlineEmphasized;
-    private static readonly TextStyle CardLinkStyle = new(0.88f, FontWeight.Regular);
+    private static readonly TextStyle CardLinkStyle = TextStyles.Subheadline;
     private static readonly TextStyle CardTimeStyle = TextStyles.Footnote;
-    private static readonly TextStyle WordmarkStyle = new(1.4f, FontWeight.Bold);
-    private static readonly TextStyle FeedTabStyle = new(1.07f, FontWeight.SemiBold);
-    private static readonly TextStyle FeedTabIdleStyle = new(1.07f, FontWeight.Medium);
+    private static readonly TextStyle WordmarkStyle = TextStyles.Title2;
+    private static readonly TextStyle FeedTabStyle = TextStyles.Headline;
+    private static readonly TextStyle FeedTabIdleStyle = TextStyles.BodyEmphasized;
     private static readonly UnderlineTabStyle FeedTabsStyle = new(FeedTabStyle, FeedTabIdleStyle,
         AethergramInk.Shared.TitleInk, AethergramInk.Shared.SegmentIdleInk, AethergramInk.Shared.TitleInk,
         FeedTabUnderline, CellPadX, Motion.Release);

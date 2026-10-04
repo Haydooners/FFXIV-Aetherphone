@@ -292,7 +292,7 @@ internal sealed partial class MessageApp
         ImGui.SetNextItemWidth(rect.Width - 36f * scale);
         using (ImRaii.PushColor(ImGuiCol.FrameBg, Transparent))
         using (ImRaii.PushColor(ImGuiCol.Text, ui.TitleInk))
-        using (Plugin.Fonts.Push(1.05f))
+        using (Plugin.Fonts.Push(TextStyles.Body.Scale, TextStyles.Body.Weight))
         {
             ImGui.SetCursorScreenPos(new Vector2(rect.Min.X + 18f * scale,
                 rect.Center.Y - ImGui.GetFrameHeight() * 0.5f));
