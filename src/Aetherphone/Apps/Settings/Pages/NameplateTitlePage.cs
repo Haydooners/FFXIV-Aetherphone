@@ -12,7 +12,6 @@ namespace Aetherphone.Apps.Settings.Pages;
 internal sealed class NameplateTitlePage : ISettingsPage
 {
     private const float StageHeight = 132f;
-    private const float StageRounding = 14f;
     private const float StageInset = 18f;
     private const float NameTitleGap = 4f;
     private const float HaloRadius = 1.4f;
@@ -97,7 +96,7 @@ internal sealed class NameplateTitlePage : ISettingsPage
     private static void DrawNotInstalled(PhoneTheme theme, float scale)
     {
         var card = GroupCard.Begin(theme, StageHeight);
-        var stage = card.NextRow(StageHeight);
+        var stage = card.Bounds;
         card.End();
         PaintStage(stage, scale);
         var center = stage.Center;
@@ -117,7 +116,7 @@ internal sealed class NameplateTitlePage : ISettingsPage
         }
 
         var card = GroupCard.Begin(theme, StageHeight);
-        var stage = card.NextRow(StageHeight);
+        var stage = card.Bounds;
         card.End();
         PaintStage(stage, scale);
         var name = titles.CharacterName.Length > 0 ? titles.CharacterName : Loc.T(L.Nameplate.Example);
@@ -145,18 +144,9 @@ internal sealed class NameplateTitlePage : ISettingsPage
         SettingsSection.Hint(caption, theme);
     }
 
-    private static void PaintStage(Rect stage, float scale)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        var rounding = StageRounding * scale;
-        drawList.AddRectFilled(stage.Min, stage.Max, ImGui.GetColorU32(StageBottom), rounding);
-        var bandBottom = new Vector2(stage.Max.X, stage.Min.Y + stage.Height * 0.6f);
-        drawList.AddRectFilledMultiColor(new Vector2(stage.Min.X, stage.Min.Y + rounding),
-            bandBottom, ImGui.GetColorU32(StageTop), ImGui.GetColorU32(StageTop),
-            ImGui.GetColorU32(StageBottom), ImGui.GetColorU32(StageBottom));
-        drawList.AddRectFilled(stage.Min, new Vector2(stage.Max.X, stage.Min.Y + rounding * 2f),
-            ImGui.GetColorU32(StageTop), rounding, ImDrawFlags.RoundCornersTop);
-    }
+    private static void PaintStage(Rect stage, float scale) =>
+        Squircle.FillVerticalGradient(ImGui.GetWindowDrawList(), stage.Min, stage.Max,
+            Metrics.Radius.Grouped * scale, ImGui.GetColorU32(StageTop), ImGui.GetColorU32(StageBottom));
 
     private void DrawMasterSwitch(PhoneTheme theme, float scale)
     {
