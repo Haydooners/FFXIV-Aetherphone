@@ -19,7 +19,8 @@ internal sealed class PhoneCasePage : ISettingsPage
     private const float CheckRadius = 10f;
     private const float CheckInset = 15f;
     private const float DragSlop = 5f;
-    private const float ArrowRadius = 14f;
+    private const float ArrowRadius = RoundButton.SmallRadius;
+    private const float ArrowGlyphFraction = 0.475f;
     private const float ArrowInset = 4f;
     private const float EdgeEpsilon = 1f;
 
@@ -170,17 +171,29 @@ internal sealed class PhoneCasePage : ISettingsPage
         drawList.PopClipRect();
         var pageDelta = stride * MathF.Max(1f, MathF.Floor(VisibleCards));
         var interactive = draggingRail < 0;
-        if (showLeft && HoverButton.Circle(drawList, leftArrowIds[railIndex], leftCenter, radius,
-                FontAwesomeIcon.ChevronLeft, theme.Surface, theme.TextStrong, deltaSeconds, 1f, interactive))
+        if (showLeft && ArrowButton(drawList, leftArrowIds[railIndex], leftCenter, radius, PhoneIcons.ChevronLeft,
+                theme) && interactive)
         {
             Nudge(railIndex, -pageDelta, stride, maxOffset);
         }
 
-        if (showRight && HoverButton.Circle(drawList, rightArrowIds[railIndex], rightCenter, radius,
-                FontAwesomeIcon.ChevronRight, theme.Surface, theme.TextStrong, deltaSeconds, 1f, interactive))
+        if (showRight && ArrowButton(drawList, rightArrowIds[railIndex], rightCenter, radius, PhoneIcons.ChevronRight,
+                theme) && interactive)
         {
             Nudge(railIndex, pageDelta, stride, maxOffset);
         }
+    }
+
+    private static bool ArrowButton(ImDrawListPtr drawList, string id, Vector2 center, float radius, string glyph,
+        PhoneTheme theme)
+    {
+        var extent = new Vector2(radius, radius);
+        var rect = new Rect(center - extent, center + extent);
+        var hovered = UiInteract.Hover(rect.Min, rect.Max);
+        var face = RoundButton.Surface(drawList, rect, ControlInk.From(theme), ButtonStyle.Gray, true, hovered,
+            ImGui.GetID(id), theme.Surface);
+        PhoneIcon.Draw(drawList, center, glyph, face.LabelInk, face.Face.Width * ArrowGlyphFraction);
+        return UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private static bool OverCircle(Vector2 center, float radius)
