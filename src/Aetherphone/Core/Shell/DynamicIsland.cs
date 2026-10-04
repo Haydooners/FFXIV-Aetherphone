@@ -491,7 +491,8 @@ internal sealed partial class DynamicIsland
                 DrawLiveLabel(drawList, trailingRight, bounds.Center.Y, trailingMaxWidth, scale, accent, alpha);
                 break;
             case IslandActivity.Playback:
-                DrawPlaybackArt(drawList, bubbleCenter, bubbleRadius * CompactArtFraction, alpha);
+                DrawPlaybackArt(drawList, CompactArtCenter(bubbleCenter, scale), bubbleRadius * CompactArtFraction,
+                    alpha);
                 Equalizer.Draw(drawList, new Vector2(trailingRight - 3f * scale, bounds.Center.Y), scale,
                     bounds.Height * 0.44f, clock, accent, alpha, playback.IsPlaying);
                 break;
