@@ -233,6 +233,16 @@ Aetherphone is open source and contributions are welcome. Translators need no co
 
 → [Developer documentation](docs/README.md) · [Contributing guide](CONTRIBUTING.md) · [Translator guide](docs/translating.md)
 
+## AI usage
+
+Aetherphone is built with AI coding tools and declares the **Copilot** level of the [Dalamud AI policy](https://dalamud.dev/plugin-publishing/ai-policy/): AI carries out most of the implementation, while people write the specification, review every change, test it in game and answer for the result.
+
+**Nothing you see or hear is AI-generated.** Every icon, wallpaper, phone case, sound, ringtone and font is original, drawn by credited artists, or taken from a licensed source. English text is written by hand, and the other eight languages are AI-assisted translations reviewed by people.
+
+**Your content stays yours.** Translate sends only the text you choose. No AI moderates Aethernet, and your posts and messages are never used to train AI models.
+
+→ [AI usage](docs/ai-usage.md) · [Third-party notices](THIRD-PARTY-NOTICES.md)
+
 ## Legal
 
 Using the online features means accepting the [Terms of Service](TERMS.md). The [Privacy Policy](PRIVACY.md) covers what Aethernet does with your data, and the [Trademark and naming policy](TRADEMARK.md) covers the name.
