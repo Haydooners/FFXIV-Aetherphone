@@ -1,8 +1,7 @@
 using Aetherphone.Core.Audio;
-using Aetherphone.Core.Playback;
 using Concentus;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
 
 namespace Aetherphone.Core.Telephony.Audio;
 
@@ -14,6 +13,7 @@ internal sealed class VoiceMixer : ISampleProvider, IDisposable
         public readonly BufferedWaveProvider Buffer;
         public readonly ISampleProvider Sample;
         public float Level;
+        public float Gain = 1f;
 
         public Playout()
         {
@@ -25,57 +25,124 @@ internal sealed class VoiceMixer : ISampleProvider, IDisposable
         }
     }
 
+    public const float MaximumGain = 2f;
+    private const int OutputLatencyMilliseconds = 140;
     private const float LevelDecay = 0.6f;
     private readonly WaveFormat format = WaveFormat.CreateIeeeFloatWaveFormat(OpusAudio.SampleRate, OpusAudio.Channels);
     private readonly object gate = new();
+    private readonly object outputGate = new();
+    private readonly object switchGate = new();
     private readonly Dictionary<int, Playout> playouts = new();
     private readonly short[] decodeBuffer = new short[OpusAudio.FrameSamples * 6];
     private readonly byte[] pcmBytes = new byte[OpusAudio.FrameSamples * 6 * sizeof(short)];
     private float[] mixScratch = Array.Empty<float>();
     private IWavePlayer? output;
-    private VolumeSampleProvider? volumeProvider;
-    private float volume = 0.85f;
+    private MMDevice? outputDevice;
+    private bool closed;
+    private volatile float volume = 1f;
     public WaveFormat WaveFormat => format;
 
     public float Volume
     {
         get => volume;
-        set
+        set => volume = Math.Clamp(value, 0f, MaximumGain);
+    }
+
+    public void Start(string deviceName, float startVolume)
+    {
+        Volume = startVolume;
+        lock (switchGate)
         {
-            volume = Math.Clamp(value, 0f, 1f);
-            var provider = volumeProvider;
-            if (provider is not null)
+            lock (outputGate)
             {
-                provider.Volume = volume;
+                closed = false;
             }
+
+            Open(deviceName);
         }
     }
 
-    public void Start(int deviceNumber, float startVolume)
+    public void SwitchOutput(string deviceName)
     {
-        Stop();
-        volume = Math.Clamp(startVolume, 0f, 1f);
-        try
+        lock (switchGate)
         {
-            _ = deviceNumber;
-            var provider = new VolumeSampleProvider(this) { Volume = volume };
-            var device = AudioOutputFactory.Create(140);
-            device.Init(provider.ToWaveProvider16());
-            device.Play();
-            volumeProvider = provider;
-            output = device;
-        }
-        catch (Exception exception)
-        {
-            AepLog.Warning(exception, "Voice output failed to start");
+            IWavePlayer? previous;
+            MMDevice? previousDevice;
+            lock (outputGate)
+            {
+                if (closed)
+                {
+                    return;
+                }
+
+                previous = output;
+                previousDevice = outputDevice;
+                output = null;
+                outputDevice = null;
+            }
+
+            Release(previous, previousDevice);
+            Open(deviceName);
         }
     }
 
     public void Stop()
     {
-        var device = output;
-        output = null;
-        volumeProvider = null;
+        IWavePlayer? device;
+        MMDevice? endpoint;
+        lock (outputGate)
+        {
+            closed = true;
+            device = output;
+            endpoint = outputDevice;
+            output = null;
+            outputDevice = null;
+        }
+
+        Release(device, endpoint);
+        lock (gate)
+        {
+            foreach (var playout in playouts.Values)
+            {
+                (playout.Decoder as IDisposable)?.Dispose();
+            }
+
+            playouts.Clear();
+        }
+    }
+
+    private void Open(string deviceName)
+    {
+        var endpoint = AudioDevices.FindOutput(deviceName);
+        IWavePlayer device;
+        try
+        {
+            device = AudioOutputFactory.Create(OutputLatencyMilliseconds, endpoint);
+            device.Init(this.ToWaveProvider16());
+            device.Play();
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, "Voice output failed to start");
+            endpoint?.Dispose();
+            return;
+        }
+
+        lock (outputGate)
+        {
+            if (!closed)
+            {
+                output = device;
+                outputDevice = endpoint;
+                return;
+            }
+        }
+
+        Release(device, endpoint);
+    }
+
+    private static void Release(IWavePlayer? device, MMDevice? endpoint)
+    {
         if (device is not null)
         {
             try
@@ -90,15 +157,7 @@ internal sealed class VoiceMixer : ISampleProvider, IDisposable
             device.Dispose();
         }
 
-        lock (gate)
-        {
-            foreach (var playout in playouts.Values)
-            {
-                (playout.Decoder as IDisposable)?.Dispose();
-            }
-
-            playouts.Clear();
-        }
+        endpoint?.Dispose();
     }
 
     public void AddParticipant(int slot)
@@ -120,6 +179,20 @@ internal sealed class VoiceMixer : ISampleProvider, IDisposable
             {
                 (playout.Decoder as IDisposable)?.Dispose();
             }
+        }
+    }
+
+    public void SetGain(int slot, float gain)
+    {
+        lock (gate)
+        {
+            if (!playouts.TryGetValue(slot, out var playout))
+            {
+                playout = new Playout();
+                playouts[slot] = playout;
+            }
+
+            playout.Gain = Math.Clamp(gain, 0f, MaximumGain);
         }
     }
 
@@ -175,11 +248,12 @@ internal sealed class VoiceMixer : ISampleProvider, IDisposable
                     continue;
                 }
 
+                var gain = playout.Gain;
                 double sum = 0;
                 for (var index = 0; index < read; index++)
                 {
                     var sample = mixScratch[index];
-                    buffer[offset + index] += sample;
+                    buffer[offset + index] += sample * gain;
                     sum += sample * sample;
                 }
 
@@ -188,9 +262,10 @@ internal sealed class VoiceMixer : ISampleProvider, IDisposable
             }
         }
 
+        var master = volume;
         for (var index = 0; index < count; index++)
         {
-            buffer[offset + index] = Math.Clamp(buffer[offset + index], -1f, 1f);
+            buffer[offset + index] = Math.Clamp(buffer[offset + index] * master, -1f, 1f);
         }
 
         return count;

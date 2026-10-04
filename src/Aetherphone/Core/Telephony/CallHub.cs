@@ -336,6 +336,93 @@ internal sealed class CallHub : IDisposable
         }
     }
 
+    public float InputGain
+    {
+        get
+        {
+            lock (gate)
+            {
+                return audio.InputGainLocked;
+            }
+        }
+    }
+
+    public void SetInputGain(float value)
+    {
+        lock (gate)
+        {
+            audio.SetInputGainLocked(value);
+        }
+    }
+
+    public void SelectInputDevice(string name)
+    {
+        if (configuration.CallInputDevice == name)
+        {
+            return;
+        }
+
+        configuration.CallInputDevice = name;
+        configuration.Save();
+        lock (gate)
+        {
+            audio.SwitchInputLocked();
+        }
+    }
+
+    public void SelectOutputDevice(string name)
+    {
+        if (configuration.CallOutputDevice == name)
+        {
+            return;
+        }
+
+        configuration.CallOutputDevice = name;
+        configuration.Save();
+        lock (gate)
+        {
+            audio.SwitchOutputLocked();
+        }
+    }
+
+    public float PeerVolume(string userId)
+    {
+        lock (gate)
+        {
+            return audio.PeerVolumeLocked(userId);
+        }
+    }
+
+    public bool PeerMuted(string userId)
+    {
+        lock (gate)
+        {
+            return audio.PeerMutedLocked(userId);
+        }
+    }
+
+    public void SetPeerVolume(string userId, float value)
+    {
+        lock (gate)
+        {
+            audio.SetPeerVolumeLocked(userId, value, roster);
+        }
+    }
+
+    public void SetPeerMuted(string userId, bool value)
+    {
+        lock (gate)
+        {
+            audio.SetPeerMutedLocked(userId, value, roster);
+        }
+
+        configuration.Save();
+    }
+
+    public void SaveAudioSettings() => configuration.Save();
+
+    public string DisplayNameOf(ParticipantInfo participant) => NameOf(participant);
+
     public void Advance(float deltaSeconds)
     {
         var declineTimeout = false;

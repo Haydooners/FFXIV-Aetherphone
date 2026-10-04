@@ -12,16 +12,18 @@ internal static class VolumeSlider
     private const float ReadoutColumn = 42f;
     private const float QuietLevel = 0.5f;
 
-    public static Slider.Result Draw(string id, Rect row, float value, PhoneTheme theme)
+    public static Slider.Result Draw(string id, Rect row, float value, PhoneTheme theme, float maximum = 1f)
     {
         var scale = UiScale.Current;
         var gap = Metrics.Space.Md * scale;
-        var result = Slider.Draw(id, row, value, theme, IconColumn * scale + gap, ReadoutColumn * scale + gap);
+        var result = Slider.Draw(id, row, value / maximum, theme, IconColumn * scale + gap,
+            ReadoutColumn * scale + gap);
         ProgressRing.CenterIcon(ImGui.GetWindowDrawList(),
             new Vector2(row.Min.X + IconColumn * 0.5f * scale, row.Center.Y), LevelIcon(result.Value),
             theme.TextMuted, IconHeight * scale);
-        DrawReadout(row, result.Value, theme);
-        return result;
+        var scaled = result.Value * maximum;
+        DrawReadout(row, scaled, theme);
+        return new Slider.Result(scaled, result.Dragging, result.Released, result.Track);
     }
 
     private static void DrawReadout(Rect row, float value, PhoneTheme theme)

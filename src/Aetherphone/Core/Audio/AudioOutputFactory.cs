@@ -21,6 +21,25 @@ internal static class AudioOutputFactory
         }
     }
 
+    public static IWavePlayer Create(int desiredLatencyMs, MMDevice? device)
+    {
+        if (device is null)
+        {
+            return Create(desiredLatencyMs);
+        }
+
+        try
+        {
+            return new WasapiOut(device, AudioClientShareMode.Shared, true, desiredLatencyMs);
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, $"[Audio] Output device '{device.FriendlyName}' unavailable; using the default.");
+            device.Dispose();
+            return Create(desiredLatencyMs);
+        }
+    }
+
     [DllImport("winmm.dll")]
     private static extern int waveOutGetNumDevs();
 }

@@ -142,11 +142,13 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         refreshContacts = () => contacts.Refresh(force: true);
         groupPhotoPicker = new ImagePickCrop(library, wallpaperImages);
         threadView = new ThreadView(this);
+        callAudioPanel = new CallAudioPanel(calls, configuration);
     }
 
     public void OnOpened()
     {
         router.Reset();
+        callAudioSheet.CloseImmediately();
         activeTab = MessageTab.Chats;
         filter = string.Empty;
         ResetChatSearch();
@@ -245,7 +247,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         screenRect = screen;
         chrome.ScreenRect = screen;
         ui.Backdrop(screen);
-        using (InputShield.Engage(avatarLightbox.Expanded))
+        using (InputShield.Engage(avatarLightbox.Expanded || callAudioSheet.CapturesPointer))
         {
             router.Draw(SceneChrome.AppAreaFrom(context.Content, theme, UiScale.Current), AppSkin.Transparent,
                 delta, drawView);
@@ -260,6 +262,7 @@ internal sealed partial class MessageApp : IResumableApp, ISpotlightConversation
         DrawThreadSheet(screen);
         DrawMemberSheet(screen);
         DrawGroupPhotoSheet(screen);
+        DrawCallAudioSheet(screen);
     }
 
     private void SyncCallRoute()
