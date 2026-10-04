@@ -24,7 +24,7 @@ internal sealed partial class HuntsApp
     private const string AetherytePoiType = "aetheryte";
     private const uint AetheryteMapIconId = 60453;
     private const float DetailBarHeight = 8f;
-    private const float DetailActionHeight = 40f;
+    private const float DetailActionHeight = Button.LargeHeight;
     private const float WorldRowHeight = 52f;
     private const float WorldRingSize = 30f;
     private const float WorldRingThickness = 3.5f;
@@ -292,7 +292,7 @@ internal sealed partial class HuntsApp
 
         var card = new Rect(origin, origin + new Vector2(width, height));
         UiAnchors.Report("hunts.detail.hero", card);
-        ui.Card(drawList, card.Min, card.Max, HuntsArt.CardRadius * scale, elevated: true);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var left = card.Min.X + pad;
         var top = card.Min.Y + pad;
         var capsuleRight = left;
@@ -432,7 +432,7 @@ internal sealed partial class HuntsApp
             return;
         }
 
-        ui.SectionLabel(ResolveZoneLabel(zone.Id), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(ResolveZoneLabel(zone.Id), ui.TitleInk);
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
         var size = MathF.Min(width, MapMaxSize * scale);
@@ -518,7 +518,7 @@ internal sealed partial class HuntsApp
         }
 
         var drawList = ImGui.GetWindowDrawList();
-        detailMapZoom.Draw(stage, texture, frameTheme, HuntsArt.CardRadius * scale, showButtons: false);
+        detailMapZoom.Draw(stage, texture, frameTheme, Metrics.Radius.Grouped * scale, showButtons: false);
         var fit = PhotoZoomView.FitScale(stage, texture.Size);
         var drawnSize = texture.Size * fit * detailMapZoom.Zoom;
         var center = stage.Center + detailMapZoom.Pan;
@@ -546,7 +546,7 @@ internal sealed partial class HuntsApp
         }
 
         drawList.PopClipRect();
-        Material.EdgeSquircle(drawList, stage.Min, stage.Max, HuntsArt.CardRadius * scale, scale);
+        Material.EdgeSquircle(drawList, stage.Min, stage.Max, Metrics.Radius.Grouped * scale, scale);
     }
 
     private void FocusDetailMap(Rect stage, Vector2 textureSize, IReadOnlyList<HuntPoiState> states)
@@ -636,7 +636,7 @@ internal sealed partial class HuntsApp
             return;
         }
 
-        ui.SectionLabel(Loc.T(L.Hunts.OtherWorldsSection), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Hunts.OtherWorldsSection), ui.TitleInk);
         var card = GroupCard.Begin(ui, otherWorldRows.Count, WorldRowHeight);
         card.SeparatorInset = WorldRingSize + HuntsArt.RowGap;
         var drawList = ImGui.GetWindowDrawList();
@@ -701,7 +701,7 @@ internal sealed partial class HuntsApp
             _ => 0,
         };
         var hint = AlertHint(mode, ResolveWorldLabel(hintWorld));
-        ui.SectionLabel(Loc.T(L.Hunts.MarkAlertsSection), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Hunts.MarkAlertsSection), ui.TitleInk);
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
@@ -710,7 +710,7 @@ internal sealed partial class HuntsApp
         var height = pad + AlertStripHeight * scale + HuntsArt.RowGap * scale * 0.75f + hintHeight + pad;
         var card = new Rect(origin, origin + new Vector2(width, height));
         UiAnchors.Report("hunts.detail.alerts", card);
-        ui.Card(drawList, card.Min, card.Max, HuntsArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var strip = new Rect(new Vector2(card.Min.X + pad, card.Min.Y + pad),
             new Vector2(card.Max.X - pad, card.Min.Y + pad + AlertStripHeight * scale));
         int picked;
@@ -718,7 +718,7 @@ internal sealed partial class HuntsApp
         using (ImRaii.PushStyle(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * (signedIn ? 1f : AlertsDisabledAlpha)))
         {
             picked = SegmentStrip.Draw("hunts.detail.alertMode", strip, alertOptions, selected,
-                Palette.Mix(ui.FieldSurface, ui.TitleInk, 0.06f), ui.Accent, ui.MutedInk, AccentRing.Ink, out pressed,
+                Surfaces.Fill(ui.Ink, FillLevel.Tertiary), ui.Accent, ui.MutedInk, AccentRing.Ink, out pressed,
                 AlertStripHeight);
         }
 
@@ -835,7 +835,7 @@ internal sealed partial class HuntsApp
 
     private Rect DrawTextCard(string title, string text, string? note, int maxLines, float scale, out bool truncated)
     {
-        ui.SectionLabel(title, TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(title, ui.TitleInk);
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
@@ -850,7 +850,7 @@ internal sealed partial class HuntsApp
         var moreHeight = truncated ? Typography.LineHeight(TextStyles.SubheadlineEmphasized) : 0f;
         var height = pad + noteHeight + shown * lineHeight + moreHeight + pad * 0.75f;
         var card = new Rect(origin, origin + new Vector2(width, height));
-        ui.Card(drawList, card.Min, card.Max, HuntsArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var left = card.Min.X + pad;
         var top = card.Min.Y + pad;
         if (note is not null)
@@ -883,7 +883,7 @@ internal sealed partial class HuntsApp
             return;
         }
 
-        ui.SectionLabel(Loc.T(L.Hunts.RewardsSection), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Hunts.RewardsSection), ui.TitleInk);
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
@@ -897,7 +897,7 @@ internal sealed partial class HuntsApp
         var rows = (rewards.Count + columns - 1) / columns;
         var height = pad * 2f + rows * tileHeight + (rows - 1) * tileGap;
         var card = new Rect(origin, origin + new Vector2(width, height));
-        ui.Card(drawList, card.Min, card.Max, HuntsArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var displayLocale = HuntUiLanguage.Key();
         var searchLocale = HuntClientLanguage.Key();
         for (var index = 0; index < rewards.Count; index++)
@@ -950,7 +950,7 @@ internal sealed partial class HuntsApp
             return;
         }
 
-        ui.SectionLabel(Loc.T(L.Hunts.SpawnInfoSection), TextStyles.FootnoteEmphasized, 6f);
+        CardSectionHeader.Flow(Loc.T(L.Hunts.SpawnInfoSection), ui.TitleInk);
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
@@ -961,7 +961,7 @@ internal sealed partial class HuntsApp
         var rows = timing.Maintenance is null ? 1 : 2;
         var height = pad * 2f + rows * rowHeight + (rows - 1) * HuntsArt.RowGap * scale;
         var card = new Rect(origin, origin + new Vector2(width, height));
-        ui.Card(drawList, card.Min, card.Max, HuntsArt.CardRadius * scale);
+        ui.Card(drawList, card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var top = card.Min.Y + pad;
         DrawTimingRow(drawList, card, pad, top, normal, Loc.T(L.Hunts.TimingNormal), scale);
         if (timing.Maintenance is { } maintenance)

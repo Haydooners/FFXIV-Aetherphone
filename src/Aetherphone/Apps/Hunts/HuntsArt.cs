@@ -10,7 +10,6 @@ namespace Aetherphone.Apps.Hunts;
 
 internal static class HuntsArt
 {
-    public const float CardRadius = 22f;
     public const float CardPadding = 16f;
     public const float CardGap = 14f;
     public const float LineGap = 3f;
