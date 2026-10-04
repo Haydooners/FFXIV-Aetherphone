@@ -135,7 +135,7 @@ internal sealed partial class MinimizedPhone
     {
         var scale = frameScale;
         var art = MinimizedPhoneRenderer.MusicArtRect(inner, scale);
-        var radius = MinimizedPhoneRenderer.ArtRadius(scale);
+        var radius = MinimizedPhoneRenderer.ArtRadius(art.Width);
         if (!NowPlayingArt.TryDrawSquircle(drawList, art.Min, art.Width, radius, playback.ArtworkUrl, alpha))
         {
             var swatch = ArtGradient.FromName(playback.Title);
@@ -144,8 +144,6 @@ internal sealed partial class MinimizedPhone
                 ImGui.GetColorU32(Palette.WithAlpha(swatch.Bottom, alpha)));
         }
 
-        MinimizedPhoneRenderer.DrawMusicText(drawList, inner, "minimized.music", playback.Title, playback.Subtitle,
-            frameInk, alpha, scale);
         var state = new TransportState(playback.HasQueue, playback.HasQueue, true, playback.IsPlaying);
         var result = MinimizedPhoneRenderer.DrawTransport(drawList, inner, state, frameInk, alpha, active, scale);
         ApplyMusicControl(result.Action);

@@ -61,7 +61,6 @@ internal readonly struct TransportState
 
 internal static partial class MinimizedPhoneRenderer
 {
-    public const float MusicArtSide = 24f;
     private const float StatusIconSize = 9f;
     private const float StatusScale = 0.5f;
     private const float UnreadHeight = 11f;
@@ -72,9 +71,7 @@ internal static partial class MinimizedPhoneRenderer
     private const float IslandDot = 2.6f;
     private const float DateScale = 0.6f;
     private const float ArtRadiusFactor = 0.24f;
-    private const float ArtTextGap = 6f;
-    private const float TitleScale = 0.66f;
-    private const float SubtitleScale = 0.56f;
+    private const float ArtTransportGap = 4f;
     private const float TransportSmall = 8f;
     private const float TransportLarge = 10f;
     private const float TransportStride = 19f;
@@ -167,31 +164,15 @@ internal static partial class MinimizedPhoneRenderer
             Palette.WithAlpha(ink.Strong, alpha), clockScale, FontWeight.Bold);
     }
 
-    public static Rect MusicArtRect(Rect inner, float scale) =>
-        new(inner.Min, inner.Min + new Vector2(MusicArtSide * scale, MusicArtSide * scale));
-
-    public static float ArtRadius(float scale) => MusicArtSide * ArtRadiusFactor * scale;
-
-    public static void DrawMusicText(ImDrawListPtr drawList, Rect inner, string id, string title, string subtitle,
-        in FaceInk ink, float alpha, float scale)
+    public static Rect MusicArtRect(Rect inner, float scale)
     {
-        var left = inner.Min.X + (MusicArtSide + ArtTextGap) * scale;
-        var width = MathF.Max(1f, inner.Max.X - left);
-        var titleStyle = new TextStyle(Text(TitleScale), FontWeight.SemiBold);
-        var subtitleStyle = new TextStyle(Text(SubtitleScale), FontWeight.Regular);
-        var titleHeight = Typography.Measure(title, titleStyle).Y;
-        var subtitleHeight = subtitle.Length > 0 ? Typography.Measure(subtitle, subtitleStyle).Y : 0f;
-        var top = inner.Min.Y + (MusicArtSide * scale - titleHeight - subtitleHeight) * 0.5f;
-        Marquee.DrawLeftAuto(drawList, new MarqueeId(id, ".title"), title, left, top, width, titleStyle,
-            Palette.WithAlpha(ink.Strong, alpha));
-        if (subtitle.Length == 0)
-        {
-            return;
-        }
-
-        Marquee.DrawLeftAuto(drawList, new MarqueeId(id, ".subtitle"), subtitle, left, top + titleHeight, width,
-            subtitleStyle, Palette.WithAlpha(ink.Muted, ink.Muted.W * alpha));
+        var room = inner.Height - (TransportRowHalf * 2f + ArtTransportGap) * scale;
+        var side = MathF.Max(1f, MathF.Min(inner.Width, room));
+        var min = new Vector2(inner.Center.X - side * 0.5f, inner.Min.Y + (room - side) * 0.5f);
+        return new Rect(min, min + new Vector2(side, side));
     }
+
+    public static float ArtRadius(float side) => side * ArtRadiusFactor;
 
     public static MinimizedControlResult DrawTransport(ImDrawListPtr drawList, Rect inner, in TransportState state,
         in FaceInk ink, float alpha, bool active, float scale)
