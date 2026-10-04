@@ -259,11 +259,7 @@ internal sealed partial class NotificationsApp : IPhoneApp
     private void SectionHeader(string title, float width, float scale)
     {
         var origin = ImGui.GetCursorScreenPos();
-        var height = SectionHeaderHeight * scale;
-        var fitted = Typography.FitText(title, MathF.Max(1f, width), TextStyles.Title3);
-        var textHeight = Typography.Measure(fitted, TextStyles.Title3).Y;
-        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(origin.X, origin.Y + (height - textHeight) * 0.5f),
-            fitted, ui.TitleInk, TextStyles.Title3);
+        var height = CardSectionHeader.Draw(ImGui.GetWindowDrawList(), origin, width, title, ui.TitleInk);
         Advance(origin, width, height, 0f, scale);
     }
 
