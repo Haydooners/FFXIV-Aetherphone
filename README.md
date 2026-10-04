@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/media/readme/hero.png" width="100%" alt="Chirper, ChocoChat and Aethergram on three phones" />
+  <img src="docs/media/readme/home.png" width="320" alt="The Aetherphone home screen in game" />
 </p>
 
 <p align="center">

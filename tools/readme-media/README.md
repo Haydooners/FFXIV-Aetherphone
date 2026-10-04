@@ -2,7 +2,6 @@
 
 Renders the images and clips in `docs/media/readme/` that the repository README shows:
 
-- **hero.png**: the banner of three phones at the top of the README.
 - **numbers.png**: the Summer 2026 figures card.
 - **Clips** (`chirper.webp`, `aethergram.webp`, `chocochat.webp`, `velvet.webp`, `music.webp`, `gamba.webp`):
   looping animated WebP of each app.
@@ -13,8 +12,8 @@ script serves the website locally, lifts one phone onto a clean stage, and recor
 through Chrome's screencast. Music is a scene of its own in `scenes/music.js`, drawn after the in-game Now Playing
 sheet with an invented track and lyrics.
 
-The `.gif` files next to them (`mogcast.gif`, `mogcast-theater.gif`, `venues.gif`) are in-game recordings and are
-not generated here.
+`home.png` and the `.gif` files next to them (`mogcast.gif`, `mogcast-theater.gif`, `venues.gif`) are in-game
+captures and are not generated here.
 
 ## Run
 
@@ -23,7 +22,7 @@ npm install
 node render.mjs
 ```
 
-Pass target names to render only some of them, for example `node render.mjs hero chirper`.
+Pass target names to render only some of them, for example `node render.mjs numbers chirper`.
 
 The script expects the Aethernet repository next to this one and Google Chrome in its default Windows location.
 Override them with `AETHERNET_WEBSITE` (the website folder) and `CHROME_PATH`.

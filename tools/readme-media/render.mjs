@@ -31,8 +31,6 @@ const clips = [
   { name: 'gamba', panel: '.pscr-gamba', glow: '#37ad8a', warmupMilliseconds: 600, seconds: 8 },
 ];
 
-const banner = { name: 'hero', slots: ['chirper', 'choco', 'gram'], width: 1280, height: 720 };
-
 const stats = {
   name: 'numbers',
   width: 900,
@@ -213,21 +211,6 @@ async function renderIcons() {
   console.log(`icons  ${iconNames.length} files`);
 }
 
-async function renderBanner(browser) {
-  const page = await openStage(browser, banner.width, banner.height);
-  await mountSlots(page, banner.slots, '#8b7cf8', 300, 56);
-  await page.waitForTimeout(6000);
-  const capture = await page.screenshot();
-  await page.close();
-  const width = banner.width * pixelRatio;
-  const height = banner.height * pixelRatio;
-  await sharp(capture)
-    .composite([{ input: roundedMask(width, height, 28 * pixelRatio), blend: 'dest-in' }])
-    .png()
-    .toFile(join(outputDirectory, `${banner.name}.png`));
-  console.log(`${banner.name}.png`);
-}
-
 async function renderStats(browser) {
   const page = await openStage(browser, stats.width, stats.height);
   await page.evaluate(stats => {
@@ -280,9 +263,6 @@ async function main() {
   try {
     if (requested.length === 0 || requested.includes('icons')) {
       await renderIcons();
-    }
-    if (requested.length === 0 || requested.includes(banner.name)) {
-      await renderBanner(browser);
     }
     if (requested.length === 0 || requested.includes(stats.name)) {
       await renderStats(browser);
