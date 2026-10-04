@@ -8798,5 +8798,15 @@
   "nameplate.template.inCall": "通話中",
   "nameplate.template.dnd": "おやすみモード",
   "nameplate.template.nowPlaying": "♪ [song] · [artist]",
-  "nameplate.template.handle": "@[handle]"
+  "nameplate.template.handle": "@[handle]",
+  "nameplate.gamesHint": "開いている間、プレイ中のゲーム名。",
+  "nameplate.gambaHint": "Gamba を開いている間。",
+  "nameplate.slotsWin": "スロットの勝ち",
+  "nameplate.slotsWinHint": "スピンで勝った額を数秒間表示します。",
+  "nameplate.slotsLoss": "スロットの負け",
+  "nameplate.slotsLossHint": "スピンで負けた額を数秒間表示します。",
+  "nameplate.template.games": "[game] をプレイ中",
+  "nameplate.template.gamba": "Gamba で勝負中",
+  "nameplate.template.slotsWin": "[chips] チップ獲得！",
+  "nameplate.template.slotsLoss": "[chips] チップ負け :("
 }

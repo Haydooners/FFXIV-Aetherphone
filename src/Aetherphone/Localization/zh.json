@@ -8798,5 +8798,15 @@
   "nameplate.template.inCall": "通话中",
   "nameplate.template.dnd": "勿扰",
   "nameplate.template.nowPlaying": "♪ [song] · [artist]",
-  "nameplate.template.handle": "@[handle]"
+  "nameplate.template.handle": "@[handle]",
+  "nameplate.gamesHint": "打开游戏时显示正在玩的游戏。",
+  "nameplate.gambaHint": "打开以太赌场时。",
+  "nameplate.slotsWin": "老虎机赢钱",
+  "nameplate.slotsWinHint": "一次旋转赢了多少，显示几秒。",
+  "nameplate.slotsLoss": "老虎机输钱",
+  "nameplate.slotsLossHint": "一次旋转输了多少，显示几秒。",
+  "nameplate.template.games": "正在玩 [game]",
+  "nameplate.template.gamba": "在以太赌场试手气",
+  "nameplate.template.slotsWin": "赢了 [chips] 筹码！",
+  "nameplate.template.slotsLoss": "输了 [chips] 筹码 :("
 }

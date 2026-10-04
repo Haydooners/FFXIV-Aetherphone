@@ -18,6 +18,7 @@ internal sealed class SlotsCabinet
     private const float BannerHeight = 62f;
     private const float SpinPillHeight = Button.LargeHeight;
     private const float TurboWidth = 62f;
+    private const long ResultHoldMilliseconds = 10000;
     private const float AutoWidth = 62f;
     private const float AutoChipHeight = Button.RegularHeight;
     private const float AutoChipGap = 6f;
@@ -71,6 +72,9 @@ internal sealed class SlotsCabinet
     private int soundedReelStops;
     private int autoRemaining;
     private int autoSettledSpin = -1;
+    private bool resultTracked;
+    private long resultNet;
+    private long resultTick;
     private bool autoPickerOpen;
     private bool turbo;
     private Rect reelWindow;
@@ -137,6 +141,7 @@ internal sealed class SlotsCabinet
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         ConsumeResults();
         playback.Update(delta);
+        TrackResult();
         SoundReelStops();
         particles.Update(delta);
         lineTraceSeconds += delta;
@@ -246,6 +251,30 @@ internal sealed class SlotsCabinet
         }
 
         soundedReelStops = stopped;
+    }
+
+    public bool TryRecentResult(out long net)
+    {
+        net = resultNet;
+        return resultTick != 0 && Environment.TickCount64 - resultTick < ResultHoldMilliseconds;
+    }
+
+    private void TrackResult()
+    {
+        if (playback.Phase != SlotsPlaybackPhase.Finished)
+        {
+            resultTracked = false;
+            return;
+        }
+
+        if (resultTracked)
+        {
+            return;
+        }
+
+        resultTracked = true;
+        resultNet = playback.TotalWin - playback.Stake;
+        resultTick = Environment.TickCount64;
     }
 
     private void CelebrateSettledSpin()

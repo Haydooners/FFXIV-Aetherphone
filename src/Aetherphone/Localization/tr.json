@@ -8798,5 +8798,15 @@
   "nameplate.template.inCall": "Aramada",
   "nameplate.template.dnd": "Rahatsız etmeyin",
   "nameplate.template.nowPlaying": "♪ [song] · [artist]",
-  "nameplate.template.handle": "@[handle]"
+  "nameplate.template.handle": "@[handle]",
+  "nameplate.gamesHint": "Oynadığın oyun, açık olduğu sürece.",
+  "nameplate.gambaHint": "Gamba açıkken.",
+  "nameplate.slotsWin": "Slot kazancı",
+  "nameplate.slotsWinHint": "Bir çevirmenin kazandırdığı, birkaç saniye boyunca.",
+  "nameplate.slotsLoss": "Slot kaybı",
+  "nameplate.slotsLossHint": "Bir çevirmenin kaybettirdiği, birkaç saniye boyunca.",
+  "nameplate.template.games": "[game] oynuyor",
+  "nameplate.template.gamba": "Gamba'da kumar oynuyor",
+  "nameplate.template.slotsWin": "[chips] çip kazandım!",
+  "nameplate.template.slotsLoss": "[chips] çip kaybettim :("
 }

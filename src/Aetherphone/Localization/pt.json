@@ -8798,5 +8798,15 @@
   "nameplate.template.inCall": "Em chamada",
   "nameplate.template.dnd": "Não perturbe",
   "nameplate.template.nowPlaying": "♪ [song] · [artist]",
-  "nameplate.template.handle": "@[handle]"
+  "nameplate.template.handle": "@[handle]",
+  "nameplate.gamesHint": "O jogo que você está jogando, enquanto estiver aberto.",
+  "nameplate.gambaHint": "Enquanto o Gamba estiver aberto.",
+  "nameplate.slotsWin": "Ganho nos caça-níqueis",
+  "nameplate.slotsWinHint": "Quanto um giro te rendeu, por alguns segundos.",
+  "nameplate.slotsLoss": "Perda nos caça-níqueis",
+  "nameplate.slotsLossHint": "Quanto um giro te custou, por alguns segundos.",
+  "nameplate.template.games": "Jogando [game]",
+  "nameplate.template.gamba": "Apostando no Gamba",
+  "nameplate.template.slotsWin": "Ganhei [chips] fichas!",
+  "nameplate.template.slotsLoss": "Perdi [chips] fichas :("
 }

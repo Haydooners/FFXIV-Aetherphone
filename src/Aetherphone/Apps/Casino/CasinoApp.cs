@@ -3,6 +3,7 @@ using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Coins;
 using Aetherphone.Core.Conduct;
+using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Onboarding;
@@ -14,7 +15,7 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Casino;
 
-internal sealed partial class CasinoApp : IPhoneApp
+internal sealed partial class CasinoApp : IPhoneApp, INameplateActivitySource
 {
     private const int RulesButton = 0;
 
@@ -104,6 +105,24 @@ internal sealed partial class CasinoApp : IPhoneApp
         popRoute = PopRoute;
         openLimits = OpenLimits;
         refreshFloor = RefreshFloor;
+    }
+
+    public bool TryNameplateActivity(NameplateStatus status, out NameplateValues values)
+    {
+        values = NameplateValues.Empty;
+        switch (status)
+        {
+            case NameplateStatus.Gamba:
+                return true;
+            case NameplateStatus.SlotsWin when slots.TryRecentResult(out var won) && won > 0:
+                values = NameplateValues.Empty with { Chips = NameplateTitleService.ChipCount(won) };
+                return true;
+            case NameplateStatus.SlotsLoss when slots.TryRecentResult(out var lost) && lost < 0:
+                values = NameplateValues.Empty with { Chips = NameplateTitleService.ChipCount(-lost) };
+                return true;
+            default:
+                return false;
+        }
     }
 
     public void OnOpened()

@@ -28,6 +28,8 @@ internal sealed class NameplateTitleService : IDisposable
     private const string SampleHandle = "yourname";
     private const string SampleSong = "Answers";
     private const string SampleArtist = "Susan Calloway";
+    private const string SampleGame = "Coil";
+    private const long SampleChips = 1250;
     private static readonly Vector4 CustomInk = new(1f, 1f, 1f, 1f);
 
     private readonly Configuration configuration;
@@ -131,7 +133,7 @@ internal sealed class NameplateTitleService : IDisposable
         var handle = ResolveHandle(HandleAppId(status));
         var values = new NameplateValues(PartyCode.Display(SampleCode), SampleJamName, SampleStation,
             Loc.T(MusterCategories.Label(MusterCategories.Roleplay)), handle.Length > 0 ? handle : SampleHandle,
-            SampleSong, SampleArtist);
+            SampleSong, SampleArtist, SampleGame, ChipCount(SampleChips));
         return Compose(status, values);
     }
 
@@ -367,6 +369,9 @@ internal sealed class NameplateTitleService : IDisposable
                 });
             case NameplateStatus.Chirper or NameplateStatus.Aethergram or NameplateStatus.Velvet:
                 return ResolveAppTag(status);
+            case NameplateStatus.Games or NameplateStatus.Gamba or NameplateStatus.SlotsWin
+                or NameplateStatus.SlotsLoss:
+                return ResolveActivity(status);
             case NameplateStatus.InCall when calls.Snapshot().InCall:
             case NameplateStatus.DoNotDisturb when configuration.DoNotDisturb:
             case NameplateStatus.Custom:
@@ -405,6 +410,13 @@ internal sealed class NameplateTitleService : IDisposable
             ? NameplateTitle.None
             : Compose(status, NameplateValues.Empty with { Handle = handle });
     }
+
+    private NameplateTitle ResolveActivity(NameplateStatus status) =>
+        foregroundApp() is INameplateActivitySource source && source.TryNameplateActivity(status, out var values)
+            ? Compose(status, values)
+            : NameplateTitle.None;
+
+    public static string ChipCount(long chips) => chips.ToString("N0", Loc.Culture);
 
     private NameplateTitle ResolveIdleHandle()
     {

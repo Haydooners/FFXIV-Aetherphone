@@ -8798,5 +8798,15 @@
   "nameplate.template.inCall": "En llamada",
   "nameplate.template.dnd": "No molestar",
   "nameplate.template.nowPlaying": "♪ [song] · [artist]",
-  "nameplate.template.handle": "@[handle]"
+  "nameplate.template.handle": "@[handle]",
+  "nameplate.gamesHint": "El juego al que juegas, mientras está abierto.",
+  "nameplate.gambaHint": "Mientras Gamba está abierto.",
+  "nameplate.slotsWin": "Premio en tragaperras",
+  "nameplate.slotsWinHint": "Lo que te dio una tirada, unos segundos después de caer.",
+  "nameplate.slotsLoss": "Pérdida en tragaperras",
+  "nameplate.slotsLossHint": "Lo que te costó una tirada, unos segundos después de caer.",
+  "nameplate.template.games": "Jugando a [game]",
+  "nameplate.template.gamba": "Apostando en Gamba",
+  "nameplate.template.slotsWin": "¡Gané [chips] fichas!",
+  "nameplate.template.slotsLoss": "Perdí [chips] fichas :("
 }

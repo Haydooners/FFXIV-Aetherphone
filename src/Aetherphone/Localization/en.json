@@ -8798,5 +8798,15 @@
   "nameplate.template.inCall": "On a call",
   "nameplate.template.dnd": "Do not disturb",
   "nameplate.template.nowPlaying": "♪ [song] · [artist]",
-  "nameplate.template.handle": "@[handle]"
+  "nameplate.template.handle": "@[handle]",
+  "nameplate.gamesHint": "The game you are playing, while it is open.",
+  "nameplate.gambaHint": "While Gamba is open.",
+  "nameplate.slotsWin": "Slots win",
+  "nameplate.slotsWinHint": "What a spin won you, for a few seconds after it lands.",
+  "nameplate.slotsLoss": "Slots loss",
+  "nameplate.slotsLossHint": "What a spin cost you, for a few seconds after it lands.",
+  "nameplate.template.games": "Playing [game]",
+  "nameplate.template.gamba": "Gambling at Gamba",
+  "nameplate.template.slotsWin": "Won [chips] chips!",
+  "nameplate.template.slotsLoss": "Lost [chips] chips :("
 }

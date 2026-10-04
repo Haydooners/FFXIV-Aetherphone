@@ -23,6 +23,8 @@ internal static class NameplateStatusCatalog
     public const string HandleToken = "[handle]";
     public const string SongToken = "[song]";
     public const string ArtistToken = "[artist]";
+    public const string GameToken = "[game]";
+    public const string ChipsToken = "[chips]";
 
     private static readonly Vector4 CustomTint = new(0.11f, 0.50f, 0.58f, 1f);
     private static readonly Vector4 BusyTint = new(0.45f, 0.47f, 0.55f, 1f);
@@ -36,6 +38,14 @@ internal static class NameplateStatusCatalog
             L.Nameplate.SocialAppsHint, L.Nameplate.TemplateAethergram, HandleToken),
         new(NameplateStatus.Velvet, FontAwesomeIcon.Heart, AppAccents.For("velvet"), L.Apps.Velvet,
             L.Nameplate.VelvetHint, L.Nameplate.TemplateVelvet, HandleToken),
+        new(NameplateStatus.Games, FontAwesomeIcon.Gamepad, AppAccents.For("games"), L.Apps.Games,
+            L.Nameplate.GamesHint, L.Nameplate.TemplateGames, GameToken),
+        new(NameplateStatus.SlotsWin, FontAwesomeIcon.Coins, AccentRing.Gold, L.Nameplate.SlotsWin,
+            L.Nameplate.SlotsWinHint, L.Nameplate.TemplateSlotsWin, ChipsToken),
+        new(NameplateStatus.SlotsLoss, FontAwesomeIcon.SadTear, AccentRing.Slate, L.Nameplate.SlotsLoss,
+            L.Nameplate.SlotsLossHint, L.Nameplate.TemplateSlotsLoss, ChipsToken),
+        new(NameplateStatus.Gamba, FontAwesomeIcon.Dice, AppAccents.For("casino"), L.Apps.Casino,
+            L.Nameplate.GambaHint, L.Nameplate.TemplateGamba, string.Empty),
         new(NameplateStatus.MogCast, FontAwesomeIcon.Tv, AppAccents.For("aetherstream"), L.Nameplate.MogCast,
             L.Nameplate.MogCastHint, L.Nameplate.TemplateMogCast, CodeToken),
         new(NameplateStatus.Jam, FontAwesomeIcon.Music, AppAccents.For("music"), L.Nameplate.JamRow,

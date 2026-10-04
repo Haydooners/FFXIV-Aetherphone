@@ -8326,6 +8326,16 @@ internal static class L
         public static readonly LocString TemplateDoNotDisturb = new("nameplate.template.dnd", "Do not disturb");
         public static readonly LocString TemplateNowPlaying = new("nameplate.template.nowPlaying", "♪ [song] · [artist]");
         public static readonly LocString TemplateHandle = new("nameplate.template.handle", "@[handle]");
+        public static readonly LocString GamesHint = new("nameplate.gamesHint", "The game you are playing, while it is open.");
+        public static readonly LocString GambaHint = new("nameplate.gambaHint", "While Gamba is open.");
+        public static readonly LocString SlotsWin = new("nameplate.slotsWin", "Slots win");
+        public static readonly LocString SlotsWinHint = new("nameplate.slotsWinHint", "What a spin won you, for a few seconds after it lands.");
+        public static readonly LocString SlotsLoss = new("nameplate.slotsLoss", "Slots loss");
+        public static readonly LocString SlotsLossHint = new("nameplate.slotsLossHint", "What a spin cost you, for a few seconds after it lands.");
+        public static readonly LocString TemplateGames = new("nameplate.template.games", "Playing [game]");
+        public static readonly LocString TemplateGamba = new("nameplate.template.gamba", "Gambling at Gamba");
+        public static readonly LocString TemplateSlotsWin = new("nameplate.template.slotsWin", "Won [chips] chips!");
+        public static readonly LocString TemplateSlotsLoss = new("nameplate.template.slotsLoss", "Lost [chips] chips :(");
     }
 
     internal static class Minimized

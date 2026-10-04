@@ -8798,5 +8798,15 @@
   "nameplate.template.inCall": "Im Anruf",
   "nameplate.template.dnd": "Nicht stören",
   "nameplate.template.nowPlaying": "♪ [song] · [artist]",
-  "nameplate.template.handle": "@[handle]"
+  "nameplate.template.handle": "@[handle]",
+  "nameplate.gamesHint": "Das Spiel, das du gerade spielst, solange es offen ist.",
+  "nameplate.gambaHint": "Solange Gamba offen ist.",
+  "nameplate.slotsWin": "Slots-Gewinn",
+  "nameplate.slotsWinHint": "Was dir ein Dreh gebracht hat, ein paar Sekunden lang.",
+  "nameplate.slotsLoss": "Slots-Verlust",
+  "nameplate.slotsLossHint": "Was dich ein Dreh gekostet hat, ein paar Sekunden lang.",
+  "nameplate.template.games": "Spielt [game]",
+  "nameplate.template.gamba": "Zockt bei Gamba",
+  "nameplate.template.slotsWin": "[chips] Chips gewonnen!",
+  "nameplate.template.slotsLoss": "[chips] Chips verloren :("
 }

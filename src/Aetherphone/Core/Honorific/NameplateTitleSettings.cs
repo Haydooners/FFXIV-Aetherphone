@@ -16,6 +16,10 @@ internal enum NameplateStatus
     Aethergram = 1 << 9,
     Custom = 1 << 10,
     DoNotDisturb = 1 << 11,
+    Games = 1 << 12,
+    Gamba = 1 << 13,
+    SlotsWin = 1 << 14,
+    SlotsLoss = 1 << 15,
     Default = MogCast | Jam | RadioOnAir | Muster,
 }
 
@@ -108,14 +112,26 @@ internal sealed class NameplateTitleSettings
             }
         }
 
+        var fallback = Array.IndexOf(normalized, NameplateStatus.Handle, 0, count);
         for (var index = 0; index < catalog.Length; index++)
         {
             var status = catalog[index].Status;
-            if (Array.IndexOf(normalized, status, 0, count) < 0)
+            if (Array.IndexOf(normalized, status, 0, count) >= 0)
+            {
+                continue;
+            }
+
+            if (fallback < 0)
             {
                 normalized[count] = status;
                 count++;
+                continue;
             }
+
+            Array.Copy(normalized, fallback, normalized, fallback + 1, count - fallback);
+            normalized[fallback] = status;
+            fallback++;
+            count++;
         }
 
         Order = normalized;

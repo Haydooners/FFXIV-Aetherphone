@@ -19,6 +19,15 @@ public sealed class NameplateTitleTextTests
     }
 
     [Fact]
+    public void GameAndChipPlaceholdersFillIn()
+    {
+        var values = NameplateValues.Empty with { Game = "Coil", Chips = "1,250" };
+
+        Assert.Equal("Playing Coil", NameplateTitleText.Render("Playing [game]", values));
+        Assert.Equal("Lost 1,250 chips :(", NameplateTitleText.Render("Lost [chips] chips :(", values));
+    }
+
+    [Fact]
     public void UserTextAroundPlaceholdersIsKept()
     {
         var values = NameplateValues.Empty with { Handle = "@mira" };

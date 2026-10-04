@@ -89,6 +89,8 @@ internal static class NameplateTitleText
             NameplateStatusCatalog.HandleToken => values.Handle.TrimStart(HandleMark),
             NameplateStatusCatalog.SongToken => values.Song,
             NameplateStatusCatalog.ArtistToken => values.Artist,
+            NameplateStatusCatalog.GameToken => values.Game,
+            NameplateStatusCatalog.ChipsToken => values.Chips,
             _ => null!,
         };
         return value is not null;

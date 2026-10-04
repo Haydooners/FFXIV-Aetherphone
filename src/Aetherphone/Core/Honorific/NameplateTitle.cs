@@ -24,8 +24,10 @@ internal readonly record struct NameplateValues(
     string Type,
     string Handle,
     string Song,
-    string Artist)
+    string Artist,
+    string Game,
+    string Chips)
 {
     public static readonly NameplateValues Empty = new(string.Empty, string.Empty, string.Empty, string.Empty,
-        string.Empty, string.Empty, string.Empty);
+        string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
 }

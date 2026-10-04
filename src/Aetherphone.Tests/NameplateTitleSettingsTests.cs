@@ -36,6 +36,27 @@ public sealed class NameplateTitleSettingsTests
     }
 
     [Fact]
+    public void NormalizeSlotsNewStatusesAboveTheIdleFallbacks()
+    {
+        var settings = new NameplateTitleSettings
+        {
+            Order = new[]
+            {
+                NameplateStatus.NowPlaying, NameplateStatus.Handle, NameplateStatus.Custom,
+            },
+        };
+
+        settings.Normalize();
+
+        var handle = Array.IndexOf(settings.Order, NameplateStatus.Handle);
+        Assert.Equal(NameplateStatus.NowPlaying, settings.Order[0]);
+        Assert.Equal(settings.Order.Length - 2, handle);
+        Assert.Equal(NameplateStatus.Custom, settings.Order[^1]);
+        Assert.True(Array.IndexOf(settings.Order, NameplateStatus.SlotsWin) <
+                    Array.IndexOf(settings.Order, NameplateStatus.Gamba));
+    }
+
+    [Fact]
     public void FirstNormalizeCarriesOldCombinedSwitchesOver()
     {
         var settings = new NameplateTitleSettings { Statuses = NameplateStatus.Chirper | NameplateStatus.InCall };

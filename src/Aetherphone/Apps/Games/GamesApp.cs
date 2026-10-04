@@ -40,6 +40,7 @@ using Aetherphone.Core.Apps;
 using Aetherphone.Core.Changelog;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Games;
+using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
@@ -49,7 +50,7 @@ using Dalamud.Plugin.Services;
 
 namespace Aetherphone.Apps.Games;
 
-internal sealed partial class GamesApp : IPhoneApp, ITabRouteTarget
+internal sealed partial class GamesApp : IPhoneApp, ITabRouteTarget, INameplateActivitySource
 {
     private readonly struct CoinSessionChip
     {
@@ -153,6 +154,39 @@ internal sealed partial class GamesApp : IPhoneApp, ITabRouteTarget
     public GamesLibrary Library => library;
 
     public static string PlayRoute(string gameId) => PlayRoutePrefix + gameId;
+
+    public bool TryNameplateActivity(NameplateStatus status, out NameplateValues values)
+    {
+        values = NameplateValues.Empty;
+        if (status != NameplateStatus.Games)
+        {
+            return false;
+        }
+
+        var title = PlayingTitle();
+        if (title.Length == 0)
+        {
+            return false;
+        }
+
+        values = NameplateValues.Empty with { Game = title };
+        return true;
+    }
+
+    private string PlayingTitle()
+    {
+        if (currentGame is not null)
+        {
+            return currentGame.Title;
+        }
+
+        if (router.Current.Screen != GamesScreen.OnlineRoom || gameRooms.Room.State is not { } room)
+        {
+            return string.Empty;
+        }
+
+        return Loc.T(GamesOnlineText.GameName(room.Snapshot.GameKind));
+    }
 
     public void OpenTab(string tab) => pendingRoute = tab ?? string.Empty;
 
