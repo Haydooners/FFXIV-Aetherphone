@@ -171,8 +171,7 @@ internal sealed partial class CoinApp
         var half = (restMax - restMin) * 0.5f * press;
         var min = center - half;
         var max = center + half;
-        var radius = Metrics.Radius.Widget * scale;
-        Elevation.Card(drawList, min, max, radius, scale, 0.9f);
+        var radius = Metrics.Radius.Grouped * scale;
         var texture = category.ImageUrl.Length == 0 ? null : images.Get(category.ImageUrl);
         if (texture is null)
         {
@@ -334,7 +333,7 @@ internal sealed partial class CoinApp
         var half = (restMax - restMin) * 0.5f * press;
         var min = center - half;
         var max = center + half;
-        var radius = Metrics.Radius.Widget * scale;
+        var radius = Metrics.Radius.Grouped * scale;
         CoinArt.Card(drawList, ui, min, max, scale);
 
         var artMax = new Vector2(max.X, min.Y + (max.Y - min.Y) * TileArtFraction);
@@ -461,7 +460,7 @@ internal sealed partial class CoinApp
         CoinArt.Card(drawList, ui, min, max, scale);
         if (hovered)
         {
-            Squircle.Fill(drawList, min, max, CoinArt.CardRadius * scale, ImGui.GetColorU32(ui.HoverTint));
+            Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale, ImGui.GetColorU32(ui.HoverTint));
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
@@ -490,13 +489,12 @@ internal sealed partial class CoinApp
         if (sku.Owned)
         {
             CoinArt.Capsule(drawList, ui, ImGui.GetID(sku.Id), buttonRect, Loc.T(L.Coin.Owned), CapsuleTone.Quiet,
-                false, TextStyles.SubheadlineEmphasized);
+                false);
             return;
         }
 
         var enabled = !store.Purchasing && store.Wallet?.FrozenUntilUnix is null;
-        if (CoinArt.PriceCapsule(drawList, ui, ImGui.GetID(sku.Id), buttonRect, NumberText.Group(sku.Price), enabled,
-                TextStyles.SubheadlineEmphasized))
+        if (CoinArt.PriceCapsule(drawList, ui, ImGui.GetID(sku.Id), buttonRect, NumberText.Group(sku.Price), enabled))
         {
             AskPurchase(sku);
         }

@@ -17,9 +17,8 @@ internal enum CapsuleTone : byte
 
 internal static class CoinArt
 {
-    public const float CardRadius = Metrics.Radius.Widget;
     public const float RowHeight = 62f;
-    public const float SectionHeaderHeight = 40f;
+    public const float SectionHeaderHeight = CardSectionHeader.HeightUnits;
     public const float SectionGap = 22f;
     public const float HeaderGap = 6f;
     public const float BottomPad = 28f;
@@ -27,8 +26,8 @@ internal static class CoinArt
     public const float TextGap = 12f;
     public const float ValueGap = 10f;
     public const float LineGap = 2f;
-    public const float CapsuleHeight = 32f;
-    public const float LargeCapsuleHeight = 46f;
+    public const float CapsuleHeight = Button.RegularHeight;
+    public const float LargeCapsuleHeight = Button.LargeHeight;
 
     public static readonly Vector4 GainInk = new(0.30f, 0.84f, 0.46f, 1f);
     public static readonly Vector4 White = new(1f, 1f, 1f, 1f);
@@ -36,11 +35,6 @@ internal static class CoinArt
     private const float WashInset = 4f;
     private const float WashRadius = 16f;
     private const float PressedWash = 1.6f;
-    private const float TintedAlpha = 0.16f;
-    private const float TintedHoverAlpha = 0.24f;
-    private const float QuietAlpha = 0.08f;
-    private const float DisabledAlpha = 0.45f;
-    private const float HoverDarken = 0.12f;
     private const float StateTileSize = 48f;
     private const float StateGlyphSize = 22f;
     private const float StateGap = 14f;
@@ -56,23 +50,16 @@ internal static class CoinArt
     private const float ScreenActionWidth = 180f;
 
     public static void Card(ImDrawListPtr drawList, AppSkin ui, Vector2 min, Vector2 max, float scale) =>
-        ui.Card(drawList, min, max, CardRadius * scale, true);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
+
+    public static float SectionHeader(ImDrawListPtr drawList, Vector2 origin, float width, string title, Vector4 ink,
+        float trailingReserve, float scale) =>
+        CardSectionHeader.Draw(drawList, origin, width, title, ink, trailingReserve);
 
     public static void Reserve(Vector2 origin, float width, float bottom)
     {
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, MathF.Max(0f, bottom - origin.Y)));
-    }
-
-    public static float SectionHeader(ImDrawListPtr drawList, Vector2 origin, float width, string title, Vector4 ink,
-        float trailingReserve, float scale)
-    {
-        var height = SectionHeaderHeight * scale;
-        var fitted = Typography.FitText(title, MathF.Max(1f, width - trailingReserve), TextStyles.Title3);
-        var size = Typography.Measure(fitted, TextStyles.Title3);
-        Typography.Draw(drawList, new Vector2(origin.X, origin.Y + (height - size.Y) * 0.5f), fitted, ink,
-            TextStyles.Title3);
-        return height;
     }
 
     public static float SectionTitle(ImDrawListPtr drawList, AppSkin ui, Vector2 origin, float width, string title,
@@ -192,83 +179,35 @@ internal static class CoinArt
     }
 
     public static bool Capsule(ImDrawListPtr drawList, AppSkin ui, uint id, Rect rect, string label,
-        CapsuleTone tone, bool enabled, in TextStyle style)
+        CapsuleTone tone, bool enabled)
     {
         var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var factor = PressFx.Scale(id, pressed, Motion.PressScaleControl);
-        var half = rect.Size * 0.5f * factor;
-        var min = rect.Center - half;
-        var max = rect.Center + half;
-        var radius = (max.Y - min.Y) * 0.5f;
-        var accent = ui.Accent;
-        Vector4 fill;
-        Vector4 ink;
-        switch (tone)
+        var style = tone switch
         {
-            case CapsuleTone.Filled:
-                fill = hovered ? Palette.Mix(accent, new Vector4(0f, 0f, 0f, 1f), HoverDarken) : accent;
-                ink = White;
-                break;
-            case CapsuleTone.Tinted:
-                fill = Palette.WithAlpha(accent, hovered ? TintedHoverAlpha : TintedAlpha);
-                ink = accent;
-                break;
-            default:
-                fill = Palette.WithAlpha(ui.TitleInk, hovered ? QuietAlpha * 1.5f : QuietAlpha);
-                ink = ui.TitleInk;
-                break;
-        }
-
-        if (!enabled)
-        {
-            fill = Palette.WithAlpha(fill, fill.W * DisabledAlpha);
-            ink = Palette.WithAlpha(ink, DisabledAlpha + 0.15f);
-        }
-
-        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(fill));
-        var fitted = Typography.FitText(label, MathF.Max(1f, (max.X - min.X) - radius), style);
-        Typography.DrawCentered(drawList, (min + max) * 0.5f, fitted, ink, style);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
+            CapsuleTone.Filled => ButtonStyle.Prominent,
+            CapsuleTone.Tinted => ButtonStyle.Tinted,
+            _ => ButtonStyle.Gray,
+        };
+        var face = Button.Surface(drawList, rect, ui.Ink, style, ButtonRole.Normal, enabled, hovered, id);
+        Button.DrawLabel(drawList, face, label);
         return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     public static bool PriceCapsule(ImDrawListPtr drawList, AppSkin ui, uint id, Rect rect, string amount,
-        bool enabled, in TextStyle style)
+        bool enabled)
     {
         var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var factor = PressFx.Scale(id, pressed, Motion.PressScaleControl);
-        var half = rect.Size * 0.5f * factor;
-        var min = rect.Center - half;
-        var max = rect.Center + half;
-        var fill = Palette.WithAlpha(ui.Accent, hovered ? TintedHoverAlpha : TintedAlpha);
-        var ink = ui.Accent;
-        if (!enabled)
-        {
-            fill = Palette.WithAlpha(fill, fill.W * DisabledAlpha);
-            ink = Palette.WithAlpha(ink, DisabledAlpha + 0.15f);
-        }
-
-        Squircle.Fill(drawList, min, max, (max.Y - min.Y) * 0.5f, ImGui.GetColorU32(fill));
+        var face = Button.Surface(drawList, rect, ui.Ink, ButtonStyle.Tinted, ButtonRole.Normal, enabled, hovered, id);
+        var style = Button.LabelStyle(face.Face.Height);
         var width = PriceWidth(amount, style);
         var lineHeight = Typography.LineHeight(style);
-        Price(drawList, new Vector2((min.X + max.X - width) * 0.5f, (min.Y + max.Y - lineHeight) * 0.5f), amount, ink,
-            style);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
+        Price(drawList, new Vector2(face.Face.Center.X - width * 0.5f, face.Face.Center.Y - lineHeight * 0.5f), amount,
+            face.LabelInk, style);
         return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
-    public static float CapsuleWidth(string label, float height, in TextStyle style) =>
-        Typography.Measure(label, style).X + height * 1.1f;
+    public static float CapsuleWidth(string label, float height) =>
+        Typography.Measure(label, Button.LabelStyle(height)).X + height;
 
     public static float PanelHeight(string title, string body, float width, float scale)
     {
@@ -329,12 +268,11 @@ internal static class CoinArt
             return false;
         }
 
-        var height = CapsuleHeight * scale * 1.15f;
-        var width = MathF.Min(maxWidth, MathF.Max(ScreenActionWidth * scale,
-            CapsuleWidth(action, height, TextStyles.Headline)));
+        var height = LargeCapsuleHeight * scale;
+        var width = MathF.Min(maxWidth, MathF.Max(ScreenActionWidth * scale, CapsuleWidth(action, height)));
         var top = hintBottom + ScreenActionGap * scale;
         var rect = new Rect(new Vector2(centerX - width * 0.5f, top), new Vector2(centerX + width * 0.5f, top + height));
-        return Capsule(drawList, ui, actionId, rect, action, CapsuleTone.Filled, true, TextStyles.Headline);
+        return Capsule(drawList, ui, actionId, rect, action, CapsuleTone.Filled, true);
     }
 
     private static float PanelTextWidth(float width, float scale) =>

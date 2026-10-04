@@ -156,8 +156,7 @@ internal sealed partial class CoinApp
         }
 
         var surface = Palette.ShadeToLuminance(ui.Accent with { W = 1f }, BalanceLuminance);
-        var radius = Metrics.Radius.Widget * scale;
-        Elevation.Card(drawList, min, max, radius, scale, 0.9f);
+        var radius = Metrics.Radius.Grouped * scale;
         Material.AccentGlass(drawList, min, max, radius, scale, surface, BalanceGlassOpacity);
         DrawWatermark(drawList, min, max, height);
 
