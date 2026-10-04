@@ -54,19 +54,15 @@ internal struct VRowModel
 internal static class VRow
 {
     private const float DefaultHeight = 64f;
-    private const float PillHeight = 30f;
-    private const float PillLabelInset = 36f;
     private const float PinGlyph = 12f;
     private const float PinGap = 4f;
 
-    private static readonly TextStyle PillLabel = new(0.90f, FontWeight.SemiBold);
-
-    public static VRowHit Cell(in VRowModel model, AppSkin ui, PhoneTheme theme, RemoteImageCache images,
+    public static VRowHit Cell(in VRowModel model, PhoneTheme theme, RemoteImageCache images,
         LodestoneService lodestone)
     {
         var drawList = ImGui.GetWindowDrawList();
         var cell = FeedCell.Begin(drawList, HeightOf(model), VelvetTheme.HoverWash);
-        var hit = Paint(model, ui, theme, images, lodestone, cell.Bounds, cell.Hovered, out var overControl);
+        var hit = Paint(model, theme, images, lodestone, cell.Bounds, cell.Hovered, out var overControl);
         if (hit == VRowHit.None && !overControl)
         {
             if (cell.Hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
@@ -83,7 +79,7 @@ internal static class VRow
         return hit;
     }
 
-    public static VRowHit Draw(in VRowModel model, AppSkin ui, PhoneTheme theme, RemoteImageCache images,
+    public static VRowHit Draw(in VRowModel model, PhoneTheme theme, RemoteImageCache images,
         LodestoneService lodestone)
     {
         var scale = UiScale.Current;
@@ -96,11 +92,11 @@ internal static class VRow
         if (hovered)
         {
             Squircle.Fill(drawList, bounds.Min, bounds.Max, Metrics.Radius.Md * scale,
-                VelvetTheme.Alpha(VelvetTheme.TitleInk, 0.05f).Packed());
+                Surfaces.Fill(VelvetTheme.Ink, FillLevel.Quaternary).Packed());
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        var hit = Paint(model, ui, theme, images, lodestone, bounds, hovered, out var overControl);
+        var hit = Paint(model, theme, images, lodestone, bounds, hovered, out var overControl);
         if (hit == VRowHit.None && !overControl)
         {
             if (hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Right))
@@ -121,7 +117,7 @@ internal static class VRow
     private static float HeightOf(in VRowModel model) =>
         (model.Height <= 0f ? DefaultHeight : model.Height) * UiScale.Current;
 
-    private static VRowHit Paint(in VRowModel model, AppSkin ui, PhoneTheme theme, RemoteImageCache images,
+    private static VRowHit Paint(in VRowModel model, PhoneTheme theme, RemoteImageCache images,
         LodestoneService lodestone, Rect bounds, bool hovered, out bool overControl)
     {
         var scale = UiScale.Current;
@@ -183,22 +179,15 @@ internal static class VRow
 
         if (model.Pill != null)
         {
-            var pillHeight = PillHeight * scale;
-            var pillWidth = Typography.Measure(model.Pill, PillLabel).X + PillLabelInset * scale;
+            var pillHeight = Button.SmallHeight * scale;
+            var pillWidth = Button.WidthFor(model.Pill, ButtonSize.Small);
             var pillRect = new Rect(new Vector2(rightEdge - pillWidth, centerY - pillHeight * 0.5f),
                 new Vector2(rightEdge, centerY + pillHeight * 0.5f));
-            if (model.PillEnabled)
+            overControl |= model.PillEnabled && UiInteract.Hover(pillRect.Min, pillRect.Max);
+            if (Button.Draw(drawList, pillRect, model.Pill, VelvetTheme.Ink,
+                    model.PillFilled ? ButtonStyle.Prominent : ButtonStyle.Gray, enabled: model.PillEnabled))
             {
-                overControl |= UiInteract.Hover(pillRect.Min, pillRect.Max);
-                if (ui.PillButton(pillRect, model.Pill, model.PillFilled))
-                {
-                    hit = VRowHit.Pill;
-                }
-            }
-            else
-            {
-                Squircle.Fill(drawList, pillRect.Min, pillRect.Max, pillHeight * 0.5f, VelvetTheme.PlumWell.Packed());
-                Typography.DrawCentered(drawList, pillRect.Center, model.Pill, VelvetTheme.MutedInk, PillLabel);
+                hit = VRowHit.Pill;
             }
 
             rightEdge -= pillWidth + Metrics.Space.Sm * scale;

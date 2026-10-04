@@ -38,26 +38,20 @@ internal sealed class VelvetPostComposer
     private const float CaptionMetaGap = 6f;
     private const float CaptionMetaHeight = 34f;
     private const float EmojiRadius = 17f;
-    private const float EmojiWellAlpha = 0.08f;
-    private const float EmojiWellLitAlpha = 0.14f;
     private const float TagRowHeight = 44f;
     private const float AudienceGap = 10f;
     private const float AudienceTileHeight = 54f;
     private const float StripGap = 10f;
     private const float RowTile = 26f;
     private const float RowGlyph = 15f;
-    private const float ActionHeight = 28f;
-    private const float ShareHeight = 46f;
+    private const float ShareHeight = Button.LargeHeight;
     private const float PaneFraction = 0.5f;
     private const float GridGap = 6f;
     private const float NoticeHeight = 22f;
     private const float StatusGap = 8f;
-    private const float PreviewShadow = 0.9f;
     private const float EditDotsHeight = 18f;
     private const int CounterWarning = 50;
     private const int CircleSegments = 24;
-
-    private static readonly TextStyle ActionStyle = new(0.9f, FontWeight.SemiBold);
 
     private readonly VelvetStore store;
     private readonly StoryPresenter stories;
@@ -244,29 +238,14 @@ internal sealed class VelvetPostComposer
         return VelvetComposeResult.Open;
     }
 
-    private static bool RosePill(Rect rect, string label, bool enabled, in TextStyle style)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
-        AccentPill.Paint(drawList, rect.Min, rect.Max, rect.Height * 0.5f, hovered, VelvetTheme.Rose,
-            VelvetTheme.RoseDeep, VelvetTheme.RoseShadow, enabled ? 1f : 0.45f);
-        Typography.DrawCentered(drawList, rect.Center, label,
-            enabled ? VelvetTheme.OnAccent : VelvetTheme.Alpha(VelvetTheme.OnAccent, 0.6f), style);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
-    }
-
     private static bool HeaderAction(Rect area, string label, bool enabled, float scale)
     {
-        var height = ActionHeight * scale;
-        var width = AppSkin.PillWidthFor(label, height) + 6f * scale;
-        var max = new Vector2(area.Max.X - 12f * scale, area.Min.Y + VHeader.Height * scale * 0.5f + height * 0.5f);
+        var height = Button.SmallHeight * scale;
+        var width = Button.WidthFor(label, ButtonSize.Small) + Metrics.Space.Xs * scale;
+        var max = new Vector2(area.Max.X - Metrics.Space.Md * scale,
+            area.Min.Y + VHeader.Height * scale * 0.5f + height * 0.5f);
         var min = new Vector2(max.X - width, max.Y - height);
-        return RosePill(new Rect(min, max), label, enabled, ActionStyle);
+        return Button.Draw(new Rect(min, max), label, VelvetTheme.Ink, enabled: enabled);
     }
 
     private void DrawPick(Rect area, AppSkin ui)
@@ -409,7 +388,7 @@ internal sealed class VelvetPostComposer
         mentionPopup.Gate(captionMentions);
         var actionLabel = busy ? Loc.T(L.Velvet.Saving)
             : editing is not null ? Loc.T(L.Velvet.Save) : Loc.T(L.Velvet.Share);
-        if (RosePill(shareRect, actionLabel, !busy, TextStyles.Headline))
+        if (Button.Draw(shareRect, actionLabel, VelvetTheme.Ink, enabled: !busy))
         {
             Commit();
         }
@@ -429,6 +408,8 @@ internal sealed class VelvetPostComposer
 
     private void DrawCaptionField(Rect field, float scale)
     {
+        Squircle.Fill(ImGui.GetWindowDrawList(), field.Min, field.Max, Metrics.Radius.Md * scale,
+            Surfaces.Fill(VelvetTheme.Ink, FillLevel.Tertiary).Packed());
         var padding = ImGui.GetStyle().FramePadding;
         ImGui.SetCursorScreenPos(field.Min);
         using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
@@ -456,7 +437,7 @@ internal sealed class VelvetPostComposer
         var extent = new Vector2(radius, radius);
         var lit = captionEmoji.Open || UiInteract.Hover(center - extent, center + extent);
         drawList.AddCircleFilled(center, radius,
-            VelvetTheme.Alpha(VelvetTheme.TitleInk, lit ? EmojiWellLitAlpha : EmojiWellAlpha).Packed(), CircleSegments);
+            Surfaces.Fill(VelvetTheme.Ink, lit ? FillLevel.Primary : FillLevel.Secondary).Packed(), CircleSegments);
         captionEmoji.DrawToggle(ui, center, radius, VelvetTheme.Rose, VelvetTheme.TitleInk, Loc.T(L.Common.Emoji));
         SyncCounter();
         var size = Typography.Measure(counterText, TextStyles.Footnote);
@@ -544,18 +525,10 @@ internal sealed class VelvetPostComposer
         var active = audience == value;
         var hovered = UiInteract.Hover(tile.Min, tile.Max);
         var rounding = Metrics.Radius.Md * scale;
-        if (active)
-        {
-            AccentPill.Paint(drawList, tile.Min, tile.Max, rounding, hovered, VelvetTheme.Rose, VelvetTheme.RoseDeep,
-                VelvetTheme.RoseShadow);
-        }
-        else
-        {
-            Squircle.Fill(drawList, tile.Min, tile.Max, rounding,
-                (hovered ? VelvetTheme.Alpha(VelvetTheme.TitleInk, 0.08f) : VelvetTheme.PlumWell).Packed());
-            Squircle.Stroke(drawList, tile.Min, tile.Max, rounding, VelvetTheme.CardStroke.Packed(),
-                Metrics.Stroke.Hairline * scale);
-        }
+        var fill = active
+            ? VelvetTheme.Ink.Accent
+            : Surfaces.Fill(VelvetTheme.Ink, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
+        Squircle.Fill(drawList, tile.Min, tile.Max, rounding, fill.Packed());
 
         var ink = active ? VelvetTheme.OnAccent : VelvetTheme.MutedInk;
         PhoneIcon.Draw(drawList, new Vector2(tile.Center.X, tile.Min.Y + 18f * scale), glyph, ink, VIcon.Field * scale);
@@ -582,7 +555,6 @@ internal sealed class VelvetPostComposer
 
         var rounding = Metrics.Radius.Lg * scale;
         var drawList = ImGui.GetWindowDrawList();
-        Elevation.Card(drawList, preview.Min, preview.Max, rounding, scale, PreviewShadow);
         if (!session.TryGetPreviewUv(Aspect, AllowsReveal, out var texture, out var uv0, out var uv1))
         {
             Squircle.Fill(drawList, preview.Min, preview.Max, rounding, VelvetTheme.PlumWell.Packed());
@@ -690,7 +662,6 @@ internal sealed class VelvetPostComposer
 
         var rounding = Metrics.Radius.Lg * scale;
         var drawList = ImGui.GetWindowDrawList();
-        Elevation.Card(drawList, preview.Min, preview.Max, rounding, scale, PreviewShadow);
         var result = carousel.Draw(drawList, preview, post.Id, editingPhotos, rounding, editPreviewPage);
         Material.EdgeSquircle(drawList, preview.Min, preview.Max, rounding, scale);
         if (dotsHeight <= 0f)

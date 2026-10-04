@@ -187,12 +187,11 @@ internal sealed partial class VelvetShell
         SocialChrome.PaintBarBackdrop(ui, drawList, footer, screenRect);
         FeedCell.Hairline(drawList, footer.Min.X, footer.Max.X, footer.Min.Y + 1f, VelvetTheme.Hairline);
         var pad = SocialChrome.CellPadX * scale;
-        var buttonHeight = 44f * scale;
+        var buttonHeight = Button.LargeHeight * scale;
         var rect = new Rect(new Vector2(footer.Min.X + pad, footer.Center.Y - buttonHeight * 0.5f),
             new Vector2(footer.Max.X - pad, footer.Center.Y + buttonHeight * 0.5f));
         UiAnchors.Report("velvet.filters.done", rect);
-        if (SocialPill.Accent(drawList, rect, Loc.T(L.Velvet.FilterShowResults), VelvetInk.Shared,
-                TextStyles.SubheadlineEmphasized, buttonHeight * 0.5f))
+        if (Button.Draw(drawList, rect, Loc.T(L.Velvet.FilterShowResults), VelvetTheme.Ink))
         {
             router.Pop();
         }

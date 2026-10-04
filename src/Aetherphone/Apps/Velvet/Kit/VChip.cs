@@ -1,3 +1,4 @@
+using Aetherphone.Core;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 
@@ -20,26 +21,16 @@ internal readonly record struct VChipModel(
 
 internal static class VChip
 {
-    public const float Height = 32f;
+    public const float Height = ChipRail.ChipHeight;
 
-    private const float PadX = 13f;
+    private const float PadX = ChipRail.ChipPadX;
     private const float GlyphSlot = 20f;
     private const float GlyphInset = 6f;
     private const float RemoveSlot = 16f;
     private const float RemoveGlyph = 12f;
     private const float RemoveInset = 12f;
-    private const float SolidHoverMix = 0.12f;
-    private const float TintFill = 0.14f;
-    private const float TintFillHover = 0.22f;
-    private const float TintStroke = 0.32f;
-    private const float GhostFill = 0.10f;
-    private const float GhostFillHover = 0.16f;
-    private const float GhostStroke = 0.16f;
-    private const float MatchFill = 0.22f;
-    private const float MatchFillHover = 0.30f;
-    private const float MatchStroke = 0.85f;
 
-    private static readonly TextStyle LabelStyle = TextStyles.Subheadline;
+    private static readonly TextStyle LabelStyle = ChipRail.LabelStyle;
 
     public static float Width(string label, bool hasIcon, bool removable, float scale)
     {
@@ -63,42 +54,13 @@ internal static class VChip
         var drawList = ImGui.GetWindowDrawList();
         var width = Width(chip.Label, chip.Glyph is not null, chip.Removable, scale);
         var max = new Vector2(min.X + width, min.Y + height);
-        var radius = height * 0.5f;
         var centerY = (min.Y + max.Y) * 0.5f;
         var hovered = UiInteract.Hover(min, max);
-
-        Vector4 fill;
-        Vector4 ink;
-        var stroke = VelvetTheme.Hairline;
-        switch (chip.Style)
-        {
-            case VChipStyle.Solid:
-                fill = hovered ? Vector4.Lerp(chip.Tone, VelvetTheme.OnAccent, SolidHoverMix) : chip.Tone;
-                ink = VelvetTheme.OnAccent;
-                break;
-            case VChipStyle.Tint:
-                fill = VelvetTheme.Alpha(chip.Tone, hovered ? TintFillHover : TintFill);
-                stroke = VelvetTheme.Alpha(chip.Tone, TintStroke);
-                ink = VelvetTheme.ToneInk(chip.Tone);
-                break;
-            case VChipStyle.Match:
-                fill = VelvetTheme.Alpha(chip.Tone, hovered ? MatchFillHover : MatchFill);
-                stroke = VelvetTheme.Alpha(chip.Tone, MatchStroke);
-                ink = VelvetTheme.ToneInk(chip.Tone);
-                break;
-            default:
-                fill = VelvetTheme.Alpha(VelvetTheme.Moonlight, hovered ? GhostFillHover : GhostFill);
-                stroke = VelvetTheme.Alpha(VelvetTheme.Moonlight, GhostStroke);
-                ink = hovered ? VelvetTheme.TitleInk : VelvetTheme.BodyInk;
-                break;
-        }
-
-        Squircle.Fill(drawList, min, max, radius, fill.Packed());
-        if (chip.Style != VChipStyle.Solid)
-        {
-            var strokeWidth = chip.Style == VChipStyle.Match ? Metrics.Stroke.Ring : Metrics.Stroke.Hairline;
-            Squircle.Stroke(drawList, min, max, radius, stroke.Packed(), strokeWidth * scale);
-        }
+        var active = chip.Style is VChipStyle.Solid or VChipStyle.Match;
+        ChipRail.PaintChip(drawList, new Rect(min, max), string.Empty, active, hovered,
+            VelvetTheme.Ink.WithAccent(chip.Tone));
+        var ink = active ? VelvetTheme.OnAccent
+            : chip.Style == VChipStyle.Tint ? VelvetTheme.ToneInk(chip.Tone) : VelvetTheme.TitleInk;
 
         var cursorX = min.X + PadX * scale;
         if (chip.Glyph is { } glyph)
@@ -115,11 +77,6 @@ internal static class VChip
         {
             PhoneIcon.Draw(drawList, new Vector2(max.X - RemoveInset * scale, centerY), PhoneIcons.X, ink,
                 RemoveGlyph * scale);
-        }
-
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
         return UiInteract.Click(min, max, hovered);
