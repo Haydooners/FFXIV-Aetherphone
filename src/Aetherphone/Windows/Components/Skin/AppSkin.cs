@@ -1,5 +1,4 @@
 using Aetherphone.Core;
-using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -246,19 +245,15 @@ internal sealed class AppSkin
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
         var height = 34f * scale;
-        var trackWidth = 44f * scale;
-        var labelMaxWidth = width - trackWidth - 12f * scale;
-        Typography.Draw(new Vector2(origin.X, origin.Y + height * 0.5f - 8f * scale),
-            Typography.FitText(label, labelMaxWidth, 0.95f, FontWeight.Regular), Theme.TextStrong, 0.95f);
-        var trackHeight = 24f * scale;
-        var trackMin = new Vector2(origin.X + width - trackWidth, origin.Y + height * 0.5f - trackHeight * 0.5f);
-        var trackMax = new Vector2(trackMin.X + trackWidth, trackMin.Y + trackHeight);
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, trackMin, trackMax, trackHeight * 0.5f,
-            ImGui.GetColorU32(value ? Palette.Accent : new Vector4(1f, 1f, 1f, 0.16f)));
-        var knobX = value ? trackMax.X - trackHeight * 0.5f : trackMin.X + trackHeight * 0.5f;
-        drawList.AddCircleFilled(new Vector2(knobX, (trackMin.Y + trackMax.Y) * 0.5f), trackHeight * 0.5f - 3f * scale,
-            ImGui.GetColorU32(White), 24);
+        var trackWidth = Metrics.Size.ToggleWidth * scale;
+        var trackHeight = Metrics.Size.ToggleHeight * scale;
+        var labelMaxWidth = width - trackWidth - Metrics.Space.Md * scale;
+        var labelHeight = Typography.LineHeight(TextStyles.Body);
+        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(origin.X, origin.Y + (height - labelHeight) * 0.5f),
+            Typography.FitText(label, labelMaxWidth, TextStyles.Body), TitleInk, TextStyles.Body);
+        var trackMin = new Vector2(origin.X + width - trackWidth, origin.Y + (height - trackHeight) * 0.5f);
+        Toggle.Draw(label, new Rect(trackMin, trackMin + new Vector2(trackWidth, trackHeight)), value, Theme, 1f,
+            false);
         ImGui.SetCursorScreenPos(origin);
         if (UiInteract.HoverClick(origin, new Vector2(origin.X + width, origin.Y + height)))
         {
@@ -351,9 +346,8 @@ internal sealed class AppSkin
         var scale = UiScale.Current;
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
-        var text = Typography.FitText(Loc.Culture.TextInfo.ToUpper(label), width, TextStyles.FootnoteEmphasized);
-        Typography.Draw(ImGui.GetWindowDrawList(), origin, text, Palette.MutedInk, TextStyles.FootnoteEmphasized);
-        ImGui.Dummy(new Vector2(width, Typography.LineHeight(TextStyles.FootnoteEmphasized) + gapPixels * scale));
+        ListSection.PaintOverline(ImGui.GetWindowDrawList(), origin, label, Palette.MutedInk, width);
+        ImGui.Dummy(new Vector2(width, ListSection.OverlineHeight + gapPixels * scale));
     }
 
     public void SectionHeading(string label, float topPadPixels = 0f)

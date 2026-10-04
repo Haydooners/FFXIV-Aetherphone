@@ -1,5 +1,4 @@
 using Aetherphone.Core;
-using Aetherphone.Core.Animation;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
@@ -19,7 +18,7 @@ internal static class ConfirmDialog
     private const float CardPadding = 22f;
     private const float CardMaxWidth = 360f;
     private const float CardSideMargin = 24f;
-    private const float ButtonHeight = 38f;
+    private const float ButtonHeight = Button.LargeHeight;
     private const float ButtonGap = 10f;
     private const float TitleGap = 12f;
     private const float MessageGap = 18f;
@@ -27,7 +26,6 @@ internal static class ConfirmDialog
     private const float LineLeading = 4f;
     private const float TitleScale = 1.55f;
     private const float MessageScale = 0.92f;
-    private const float ButtonScale = 0.9f;
     private const float SectionGap = 14f;
     private const float SectionCardPad = 12f;
     private const float SectionCardRounding = 14f;
@@ -150,7 +148,7 @@ internal static class ConfirmDialog
         }
 
         var confirmLabelEffective = busy ? busyLabel : confirmLabel;
-        var confirmTone = danger ? ConfirmButtonTone.Danger : ConfirmButtonTone.Neutral;
+        var confirmTone = danger ? ConfirmButtonTone.Danger : ConfirmButtonTone.Primary;
         if (DrawPillButton(confirmRect, confirmLabelEffective, !busy, theme, cardScale, opacity, confirmTone,
                 "confirmdialog.confirm"))
         {
@@ -567,69 +565,27 @@ internal static class ConfirmDialog
     {
         var drawList = ImGui.GetWindowDrawList();
         var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var radius = rect.Height * 0.5f;
-        Vector4 fill;
-        Vector4 textColor;
-        switch (tone)
-        {
-            case ConfirmButtonTone.Danger:
-                fill = enabled
-                    ? Palette.WithAlpha(hovered ? Palette.Mix(theme.Danger, theme.TextStrong, 0.12f) : theme.Danger,
-                        opacity)
-                    : Palette.WithAlpha(theme.Danger, 0.4f * opacity);
-                textColor = new Vector4(1f, 1f, 1f, enabled ? opacity : 0.4f * opacity);
-                break;
-            case ConfirmButtonTone.Primary:
-                fill = enabled
-                    ? Palette.WithAlpha(hovered ? Palette.Mix(theme.Accent, theme.TextStrong, 0.14f) : theme.Accent,
-                        opacity)
-                    : Palette.WithAlpha(theme.Accent, 0.4f * opacity);
-                textColor = new Vector4(1f, 1f, 1f, enabled ? opacity : 0.4f * opacity);
-                break;
-            default:
-                if (enabled)
-                {
-                    fill = Palette.WithAlpha(
-                        hovered ? Palette.Mix(theme.SurfaceMuted, theme.TextStrong, 0.16f) : theme.SurfaceMuted,
-                        opacity);
-                    textColor = new Vector4(theme.TextStrong.X, theme.TextStrong.Y, theme.TextStrong.Z, opacity);
-                }
-                else
-                {
-                    fill = Palette.WithAlpha(theme.SurfaceMuted, opacity);
-                    textColor = new Vector4(theme.TextMuted.X, theme.TextMuted.Y, theme.TextMuted.Z, opacity);
-                }
-
-                break;
-        }
-
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(id ?? label, pressed);
-        var pressHalf = new Vector2(rect.Width, rect.Height) * 0.5f * press;
-        var pressMin = rect.Center - pressHalf;
-        var pressMax = rect.Center + pressHalf;
-        Squircle.Fill(drawList, pressMin, pressMax, radius * press, ImGui.GetColorU32(fill));
-        Squircle.Stroke(drawList, pressMin, pressMax, radius * press,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.12f * opacity)), 1f);
-        var style = new TextStyle(ButtonScale * cardScale, FontWeight.SemiBold);
-        var maxLabelWidth = MathF.Max(1f, rect.Width - rect.Height);
+        var style = tone == ConfirmButtonTone.Neutral ? ButtonStyle.Gray : ButtonStyle.Prominent;
+        var role = tone == ConfirmButtonTone.Danger ? ButtonRole.Destructive : ButtonRole.Normal;
+        var face = Button.Surface(drawList, rect, ControlInk.From(theme), style, role, enabled, hovered,
+            ImGui.GetID(id ?? label), opacity);
+        var safeScale = MathF.Max(cardScale, 0.0001f);
+        var ladderStyle = Button.LabelStyle(rect.Height / safeScale);
+        var labelStyle = ladderStyle with { Scale = ladderStyle.Scale * cardScale };
+        var faceRect = face.Face;
+        var maxLabelWidth = MathF.Max(1f, faceRect.Width - faceRect.Height);
         if (id is not null)
         {
-            var labelHeight = Typography.Measure(label, style).Y;
-            Marquee.DrawCenteredAuto(id, label, rect.Center.X, rect.Center.Y - labelHeight * 0.5f, maxLabelWidth,
-                style, textColor);
+            var labelHeight = Typography.Measure(label, labelStyle).Y;
+            Marquee.DrawCenteredAuto(id, label, faceRect.Center.X, faceRect.Center.Y - labelHeight * 0.5f,
+                maxLabelWidth, labelStyle, face.LabelInk);
         }
         else
         {
-            var fitted = Typography.FitText(label, maxLabelWidth, style);
-            var textSize = Typography.Measure(fitted, style);
-            Typography.Draw(rect.Center - textSize * 0.5f, fitted, textColor, style.Scale, style.Weight);
-        }
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            Typography.DrawCentered(drawList, faceRect.Center, Typography.FitText(label, maxLabelWidth, labelStyle),
+                face.LabelInk, labelStyle);
         }
 
-        return UiInteract.Click(rect.Min, rect.Max, hovered);
+        return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 }

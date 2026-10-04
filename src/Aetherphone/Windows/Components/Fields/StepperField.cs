@@ -6,74 +6,50 @@ namespace Aetherphone.Windows.Components;
 
 internal static class StepperField
 {
+    private const string KeySeed = "##stepperField";
+    private const float ButtonWidthFraction = 0.3f;
+    private const float GlyphFraction = 0.95f;
+
     public static void Draw(PhoneTheme theme, Rect rect, string valueText, float scale, Action onDecrement,
-        Action onIncrement)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        Squircle.Fill(drawList, rect.Min, rect.Max, Metrics.Radius.Md * scale,
-            ImGui.GetColorU32(theme.GroupedCard));
-        Material.EdgeSquircle(drawList, rect.Min, rect.Max, Metrics.Radius.Md * scale, scale);
-        var chevronWidth = MathF.Min(34f * scale, rect.Width * 0.3f);
-        var leftRect = new Rect(rect.Min, new Vector2(rect.Min.X + chevronWidth, rect.Max.Y));
-        var rightRect = new Rect(new Vector2(rect.Max.X - chevronWidth, rect.Min.Y), rect.Max);
-        if (DrawChevron(theme, drawList, leftRect, "<", scale))
-        {
-            onDecrement();
-        }
-
-        if (DrawChevron(theme, drawList, rightRect, ">", scale))
-        {
-            onIncrement();
-        }
-
-        Typography.DrawCentered(drawList, rect.Center, valueText, theme.TextStrong, TextStyles.Headline.Scale,
-            TextStyles.Headline.Weight);
-    }
-
-    private static bool DrawChevron(PhoneTheme theme, ImDrawListPtr drawList, Rect rect, string chevron, float scale)
-    {
-        if (UiInteract.Hover(rect.Min, rect.Max))
-        {
-            Squircle.Fill(drawList, rect.Min, rect.Max, Metrics.Radius.Sm * scale,
-                ImGui.GetColorU32(Palette.WithAlpha(theme.TextStrong, 0.08f)));
-        }
-
-        Typography.DrawCentered(drawList, rect.Center, chevron, theme.TextMuted, TextStyles.Headline.Scale,
-            TextStyles.Headline.Weight);
-        return UiInteract.HoverClick(rect.Min, rect.Max);
-    }
+        Action onIncrement) =>
+        Draw(ControlInk.From(theme), rect, valueText, scale, onDecrement, onIncrement);
 
     public static void Draw(AppSkin ui, Rect rect, string valueText, float scale, Action onDecrement,
+        Action onIncrement) =>
+        Draw(ui.Ink, rect, valueText, scale, onDecrement, onIncrement);
+
+    private static void Draw(in ControlInk ink, Rect rect, string valueText, float scale, Action onDecrement,
         Action onIncrement)
     {
         var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, rect.Min, rect.Max, Metrics.Radius.Md * scale);
-        var chevronWidth = MathF.Min(34f * scale, rect.Width * 0.3f);
-        var leftRect = new Rect(rect.Min, new Vector2(rect.Min.X + chevronWidth, rect.Max.Y));
-        var rightRect = new Rect(new Vector2(rect.Max.X - chevronWidth, rect.Min.Y), rect.Max);
-        if (DrawChevron(ui, drawList, leftRect, "<", scale))
+        var radius = MathF.Min(RoundButton.RegularRadius * scale,
+            MathF.Min(rect.Height * 0.5f, rect.Width * ButtonWidthFraction * 0.5f));
+        var gap = Metrics.Space.Sm * scale;
+        var field = new Rect(new Vector2(rect.Min.X + radius * 2f + gap, rect.Min.Y),
+            new Vector2(rect.Max.X - radius * 2f - gap, rect.Max.Y));
+        SearchBar.Surface(drawList, field, ink);
+        if (DrawStep(drawList, new Vector2(rect.Min.X + radius, rect.Center.Y), radius, PhoneIcons.ChevronLeft, ink))
         {
             onDecrement();
         }
 
-        if (DrawChevron(ui, drawList, rightRect, ">", scale))
+        if (DrawStep(drawList, new Vector2(rect.Max.X - radius, rect.Center.Y), radius, PhoneIcons.ChevronRight, ink))
         {
             onIncrement();
         }
 
-        Typography.DrawCentered(drawList, rect.Center, valueText, ui.TitleInk, TextStyles.Headline.Scale,
-            TextStyles.Headline.Weight);
+        var maxWidth = MathF.Max(1f, field.Width - Metrics.Space.Lg * 2f * scale);
+        Typography.DrawCentered(drawList, field.Center, Typography.FitText(valueText, maxWidth, TextStyles.Headline),
+            ink.Ink, TextStyles.Headline);
     }
 
-    private static bool DrawChevron(AppSkin ui, ImDrawListPtr drawList, Rect rect, string chevron, float scale)
+    private static bool DrawStep(ImDrawListPtr drawList, Vector2 center, float radius, string glyph,
+        in ControlInk ink)
     {
-        if (UiInteract.Hover(rect.Min, rect.Max))
-        {
-            Squircle.Fill(drawList, rect.Min, rect.Max, Metrics.Radius.Sm * scale, ImGui.GetColorU32(ui.HoverTint));
-        }
-
-        Typography.DrawCentered(drawList, rect.Center, chevron, ui.MutedInk, TextStyles.Headline.Scale,
-            TextStyles.Headline.Weight);
-        return UiInteract.HoverClick(rect.Min, rect.Max);
+        var clicked = RoundButton.Draw(drawList, FrameKeys.Next(KeySeed), center, radius, ink, ButtonStyle.Gray, true,
+            false, out var face);
+        PhoneIcon.Draw(drawList, center, glyph, face.LabelInk,
+            radius * GlyphFraction * (face.Face.Width / MathF.Max(radius * 2f, 0.0001f)));
+        return clicked;
     }
 }

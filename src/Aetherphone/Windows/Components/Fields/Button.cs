@@ -89,12 +89,16 @@ internal static class Button
     }
 
     public static ButtonFace Surface(ImDrawListPtr drawList, Rect rect, in ControlInk ink, ButtonStyle style,
-        ButtonRole role, bool enabled, bool hovered, uint key, float opacity = 1f)
+        ButtonRole role, bool enabled, bool hovered, uint key, float opacity = 1f) =>
+        Surface(drawList, rect, ink, style, role, enabled, hovered, key, opacity, rect.Height * 0.5f);
+
+    public static ButtonFace Surface(ImDrawListPtr drawList, Rect rect, in ControlInk ink, ButtonStyle style,
+        ButtonRole role, bool enabled, bool hovered, uint key, float opacity, float cornerRadius)
     {
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var pose = enabled ? MotionButton.Animate(rect, (int)key, hovered, pressed) : new ButtonPose(rect, 0f, 0f, -1f);
         var face = pose.Face;
-        var radius = face.Height * 0.5f;
+        var radius = MathF.Min(cornerRadius, rect.Height * 0.5f) * (face.Height / MathF.Max(rect.Height, 0.0001f));
         var alpha = (enabled ? 1f : DisabledAlpha) * opacity;
         var tone = role == ButtonRole.Destructive ? ink.Danger : ink.Accent;
         var toneInk = role == ButtonRole.Destructive ? ink.DangerInk : ink.AccentInk;

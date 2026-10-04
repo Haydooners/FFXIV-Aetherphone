@@ -299,26 +299,6 @@ internal static class Material
         Squircle.StrokeCorner(drawList, min, max, radius, 3, bright, dim, thickness);
     }
 
-    public static void Card(ImDrawListPtr drawList, Vector2 min, Vector2 max, float rounding, Vector4 fill, float scale,
-        float opacity = 1f)
-    {
-        drawList.AddRectFilled(min, max, ImGui.GetColorU32(fill with { W = fill.W * opacity }), rounding);
-        Edge(drawList, min, max, rounding, scale, opacity);
-    }
-
-    public static void Edge(ImDrawListPtr drawList, Vector2 min, Vector2 max, float rounding, float scale,
-        float opacity = 1f)
-    {
-        if (opacity <= 0f)
-        {
-            return;
-        }
-
-        drawList.AddRect(min, max, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, BorderAlpha * opacity)), rounding,
-            ImDrawFlags.RoundCornersAll, 1f * scale);
-        SheenRounded(drawList, min, max, rounding, HighlightColor(opacity), 1f * scale, 1f * scale);
-    }
-
     public static void EdgeSquircle(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, float scale,
         float opacity = 1f)
     {
@@ -340,13 +320,6 @@ internal static class Material
     {
         var box = Squircle.CornerBox(min, max, radius);
         DrawSheen(drawList, min, max, box, Squircle.EdgeInset(box, depth), color, thickness, depth);
-    }
-
-    public static void SheenRounded(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, uint color,
-        float thickness, float depth)
-    {
-        var box = Squircle.CornerBox(min, max, radius);
-        DrawSheen(drawList, min, max, box, RoundedInset(box, depth), color, thickness, depth);
     }
 
     public static void SheenBlock(ImDrawListPtr drawList, Vector2 min, Vector2 max, float radius, uint color,
@@ -383,22 +356,6 @@ internal static class Material
 
         drawList.AddRectFilledMultiColor(new Vector2(solidRight, top), new Vector2(right, bottom), color, clear, clear,
             clear);
-    }
-
-    private static float RoundedInset(float box, float depth)
-    {
-        if (box <= 0f || depth <= 0f)
-        {
-            return MathF.Max(box, 0f);
-        }
-
-        if (depth >= box)
-        {
-            return 0f;
-        }
-
-        var reach = box - depth;
-        return box - MathF.Sqrt(MathF.Max(box * box - reach * reach, 0f));
     }
 
     private static void DrawSheen(ImDrawListPtr drawList, Vector2 min, Vector2 max, float box, float inset, uint color,

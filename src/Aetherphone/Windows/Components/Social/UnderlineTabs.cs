@@ -105,7 +105,8 @@ internal static class UnderlineTabs
         {
             var size = Typography.Measure(fitted, textStyle);
             var half = new Vector2(size.X * 0.5f + HoverPadX * scale, size.Y * 0.5f + HoverPadY * scale);
-            Squircle.Fill(drawList, center - half, center + half, half.Y, ImGui.GetColorU32(ink.FieldFill));
+            Squircle.Fill(drawList, center - half, center + half, half.Y,
+                ImGui.GetColorU32(Surfaces.Fill(ink.TitleInk, FillLevel.Tertiary)));
         }
 
         Typography.DrawCentered(drawList, center, fitted, color, textStyle);
