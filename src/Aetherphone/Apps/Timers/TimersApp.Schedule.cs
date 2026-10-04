@@ -34,7 +34,7 @@ internal sealed partial class TimersApp
         }
 
         var drawList = ImGui.GetWindowDrawList();
-        TimersArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         var daily = Unix(GameSchedule.NextDailyReset(utcNow));
         var grandCompany = Unix(GameSchedule.NextGrandCompanyReset(utcNow));
         var weekly = Unix(GameSchedule.NextWeeklyReset(utcNow));
@@ -79,7 +79,7 @@ internal sealed partial class TimersApp
         }
 
         var drawList = ImGui.GetWindowDrawList();
-        TimersArt.Card(drawList, ui, origin, max, scale);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
         DrawFashionRow(drawList, CardRow(origin, max, 0, scale), utcNow, nowUnix, scale);
         DrawCactpotRow(drawList, CardRow(origin, max, 1, scale), utcNow, nowUnix, scale);
         DrawMapRow(drawList, CardRow(origin, max, 2, scale), nowUnix, scale);
@@ -93,7 +93,7 @@ internal sealed partial class TimersApp
         var top = cardMin.Y + index * TimersArt.RowHeight * scale;
         if (index > 0)
         {
-            TimersArt.Hairline(ImGui.GetWindowDrawList(), ui, cardMin.X + pad, cardMax.X, top);
+            FeedCell.Hairline(ImGui.GetWindowDrawList(), cardMin.X + pad, cardMax.X, top, ui.Hairline);
         }
 
         return new Rect(new Vector2(cardMin.X + pad, top),
