@@ -10,11 +10,7 @@ namespace Aetherphone.Apps.Aethergram;
 
 internal sealed partial class AethergramApp
 {
-    private const float ExploreSearchHeight = 36f;
     private const float ExploreSearchInset = 14f;
-    private const float ExploreSearchRounding = 12f;
-    private const float ExploreSearchGlyph = 16f;
-    private const float ExploreClearRadius = 9f;
     private const float ExploreDebounceSeconds = 0.35f;
     private const int ExploreSearchMaxLength = 64;
     private const int ExploreSkeletonRows = 4;
@@ -86,52 +82,25 @@ internal sealed partial class AethergramApp
     private void DrawExploreSearchField(Rect area)
     {
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
         var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
-        var fieldHeight = ExploreSearchHeight * scale;
-        var fieldMin = new Vector2(area.Min.X + ExploreSearchInset * scale, rowCenterY - fieldHeight * 0.5f);
-        var fieldMax = new Vector2(area.Max.X - ExploreSearchInset * scale, rowCenterY + fieldHeight * 0.5f);
-        var rounding = ExploreSearchRounding * scale;
-        Squircle.Fill(drawList, fieldMin, fieldMax, rounding, ImGui.GetColorU32(Ink.FieldFill));
-        PhoneIcon.Draw(drawList, new Vector2(fieldMin.X + 19f * scale, rowCenterY), PhoneIcons.Search, Ink.MutedInk,
-            ExploreSearchGlyph * scale);
-        var hasText = exploreDraft.Length > 0;
-        var clearRadius = ExploreClearRadius * scale;
-        var clearCenter = new Vector2(fieldMax.X - 16f * scale, rowCenterY);
-        var inputRight = hasText ? clearCenter.X - clearRadius - 6f * scale : fieldMax.X - 8f * scale;
-        ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + 34f * scale, rowCenterY - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(MathF.Max(1f, inputRight - fieldMin.X - 34f * scale));
-        var hint = Loc.T(L.Aethergram.Search);
-        Plugin.Fonts.NoticeText(hint);
-        Plugin.Fonts.NoticeText(exploreDraft);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
-        using (ImRaii.PushColor(ImGuiCol.Text, Ink.TitleInk))
-        {
-            if (ImGui.InputTextWithHint("##aethergramExplore", hint, ref exploreDraft, ExploreSearchMaxLength))
-            {
-                exploreDirtyAt = ImGui.GetTime();
-            }
-        }
-
-        if (!hasText)
+        var fieldHeight = SearchBar.HeightUnits * scale;
+        var field = new Rect(new Vector2(area.Min.X + ExploreSearchInset * scale, rowCenterY - fieldHeight * 0.5f),
+            new Vector2(area.Max.X - ExploreSearchInset * scale, rowCenterY + fieldHeight * 0.5f));
+        var previousDraft = exploreDraft;
+        SearchBar.Draw(field, "##aethergramExplore", Loc.T(L.Aethergram.Search), ref exploreDraft, ui.Ink,
+            ExploreSearchMaxLength);
+        if (string.Equals(previousDraft, exploreDraft, StringComparison.Ordinal))
         {
             return;
         }
 
-        var clearExtent = new Vector2(clearRadius, clearRadius);
-        var clearHovered = UiInteract.Hover(clearCenter - clearExtent, clearCenter + clearExtent);
-        drawList.AddCircleFilled(clearCenter, clearRadius,
-            ImGui.GetColorU32(clearHovered ? Ink.ButtonHover : Ink.ButtonFill), 24);
-        PhoneIcon.Draw(drawList, clearCenter, PhoneIcons.X, Ink.TitleInk, 11f * scale);
-        if (clearHovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(clearCenter - clearExtent, clearCenter + clearExtent, clearHovered))
+        if (exploreDraft.Length == 0)
         {
             ResetExplore();
+            return;
         }
+
+        exploreDirtyAt = ImGui.GetTime();
     }
 
     private void StepExploreQuery()

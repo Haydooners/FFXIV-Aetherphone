@@ -84,8 +84,6 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
     private const float CardHeaderBlock = 36f;
     private const float CardBannerGap = 6f;
     private const float LatestScopeRowHeight = 40f;
-    private const float LatestScopePillHeight = 28f;
-    private const float LatestScopePillPadX = 14f;
     private const float LatestScopePillGap = 8f;
     private const float CardNameGap = 10f;
     private const float CardMediaGap = 8f;
@@ -104,12 +102,11 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
     private const float CardPinGlyphSize = 12f;
     private const float CardPinGlyphGap = 3f;
     private const float TagPromptPad = 12f;
-    private const float TagPromptRounding = 12f;
     private const float TagPromptIconSize = 18f;
     private const float TagPromptIconGap = 8f;
     private const float TagPromptTitleGap = 2f;
     private const float TagPromptRowGap = 10f;
-    private const float TagPromptPillHeight = 30f;
+    private const float TagPromptPillHeight = Button.SmallHeight;
     private const float TagPromptPillWidth = 88f;
     private const float TagPromptPillGap = 8f;
 
@@ -122,7 +119,6 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
     public ShareKindSet AcceptedShares => store.IsSignedIn ? ShareKindSet.Photo : ShareKindSet.None;
     private static readonly TextStyle CardNameStyle = TextStyles.Headline;
     private static readonly TextStyle CardMetaStyle = TextStyles.Subheadline;
-    private static readonly TextStyle LatestScopeStyle = TextStyles.SubheadlineEmphasized;
     private static readonly TextStyle CardCountStyle = TextStyles.SubheadlineEmphasized;
     private static readonly TextStyle CardLinkStyle = TextStyles.Subheadline;
     private static readonly TextStyle CardTimeStyle = TextStyles.Footnote;
@@ -1106,7 +1102,7 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
     private void DrawTagPrompt(ImDrawListPtr drawList, PostDto post, PhotoTagDto tag, Rect panel)
     {
         var scale = UiScale.Current;
-        Squircle.Fill(drawList, panel.Min, panel.Max, TagPromptRounding * scale, ImGui.GetColorU32(Ink.FieldFill));
+        ui.Card(drawList, panel.Min, panel.Max, Metrics.Radius.Grouped * scale);
         var pad = TagPromptPad * scale;
         var iconSize = TagPromptIconSize * scale;
         var titleHeight = Typography.LineHeight(CardNameStyle);
@@ -1566,7 +1562,9 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         {
             Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(Ink.FieldFill));
             Typography.DrawCentered(rect.Center,
-                Loc.T(images.Failed(url) ? L.Common.ImageFailed : L.Common.Loading), Ink.MutedInk, 0.85f);
+                Loc.T(images.Failed(url) ? L.Common.ImageFailed : L.Common.Loading), Ink.MutedInk,
+                TextStyles.Subheadline);
+
         }
         else
         {
@@ -1835,23 +1833,23 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         var rowHeight = LatestScopeRowHeight * scale;
-        var pillHeight = LatestScopePillHeight * scale;
+        var pillHeight = ChipRail.ChipHeight * scale;
         var pillTop = top + (rowHeight - pillHeight) * 0.5f;
         var left = area.Min.X + CellPadX * scale;
         var everyoneLabel = Loc.T(L.Social.FeedEveryone);
         var followingLabel = Loc.T(L.Aethergram.Following);
-        var everyoneWidth = Typography.Measure(everyoneLabel, LatestScopeStyle).X + LatestScopePillPadX * 2f * scale;
-        var followingWidth = Typography.Measure(followingLabel, LatestScopeStyle).X + LatestScopePillPadX * 2f * scale;
+        var everyoneWidth = Typography.Measure(everyoneLabel, ChipRail.LabelStyle).X + ChipRail.ChipPadX * 2f * scale;
+        var followingWidth = Typography.Measure(followingLabel, ChipRail.LabelStyle).X + ChipRail.ChipPadX * 2f * scale;
         var everyoneRect = new Rect(new Vector2(left, pillTop), new Vector2(left + everyoneWidth, pillTop + pillHeight));
         var followingLeft = everyoneRect.Max.X + LatestScopePillGap * scale;
         var followingRect = new Rect(new Vector2(followingLeft, pillTop),
             new Vector2(followingLeft + followingWidth, pillTop + pillHeight));
-        if (DrawLatestScopePill(drawList, everyoneRect, everyoneLabel, activeScope == SocialFeedScope.Latest, pillHeight))
+        if (DrawLatestScopePill(drawList, everyoneRect, everyoneLabel, activeScope == SocialFeedScope.Latest))
         {
             SelectScope(SocialFeedScope.Latest);
         }
 
-        if (DrawLatestScopePill(drawList, followingRect, followingLabel, activeScope == SocialFeedScope.Following, pillHeight))
+        if (DrawLatestScopePill(drawList, followingRect, followingLabel, activeScope == SocialFeedScope.Following))
         {
             SelectScope(SocialFeedScope.Following);
         }
@@ -1859,13 +1857,11 @@ internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer
         return top + rowHeight;
     }
 
-    private static bool DrawLatestScopePill(ImDrawListPtr drawList, Rect rect, string label, bool active, float pillHeight)
+    private bool DrawLatestScopePill(ImDrawListPtr drawList, Rect rect, string label, bool active)
     {
-        return active
-            ? SocialPill.Flat(drawList, rect, label, Ink.AccentWash, Ink.AccentWash, Palette.WithAlpha(Ink.Accent, 0.5f),
-                Ink.AccentLink, LatestScopeStyle, pillHeight * 0.5f)
-            : SocialPill.Flat(drawList, rect, label, Ink.ChipHover, Ink.HoverTint, Ink.Hairline, Ink.MutedInk,
-                LatestScopeStyle, pillHeight * 0.5f);
+        var hovered = UiInteract.Hover(rect.Min, rect.Max);
+        ChipRail.PaintChip(drawList, rect, label, active, hovered, ui.Ink);
+        return UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private void DrawFeedExplainer(Rect screen)

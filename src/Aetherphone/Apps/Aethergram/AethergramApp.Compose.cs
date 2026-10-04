@@ -19,7 +19,6 @@ internal sealed partial class AethergramApp
     private const float ComposeRowGlyph = 22f;
     private const float ComposeRowLabelGap = 12f;
     private const float ComposeShareHeight = 46f;
-    private const float ComposeCardRounding = 16f;
     private const float ComposeCardPad = 14f;
     private const float ComposeCardGap = 12f;
     private const float ComposeCaptionFieldHeight = 72f;
@@ -38,7 +37,6 @@ internal sealed partial class AethergramApp
     private const float ComposeToggleHeight = 28f;
     private const float ComposeTagHintGap = 8f;
     private const int ComposeCounterWarning = 50;
-    private const int CircleSegments = 24;
 
     private static readonly TextStyle ComposeActionStyle = TextStyles.Headline;
     private static readonly TextStyle ComposeRowStyle = TextStyles.Body;
@@ -388,7 +386,7 @@ internal sealed partial class AethergramApp
     private void DrawCaptionCard(Rect card, Rect screen, float scale, string fieldId, ref string text,
         MentionAutocomplete mentions)
     {
-        ui.Card(ImGui.GetWindowDrawList(), card.Min, card.Max, ComposeCardRounding * scale, true);
+        ui.Card(ImGui.GetWindowDrawList(), card.Min, card.Max, Metrics.Radius.Grouped * scale);
         var pad = ComposeCardPad * scale;
         var field = new Rect(new Vector2(card.Min.X + pad, card.Min.Y + pad),
             new Vector2(card.Max.X - pad, card.Min.Y + pad + ComposeCaptionFieldHeight * scale));
@@ -439,9 +437,9 @@ internal sealed partial class AethergramApp
         var emojiRadius = ComposeEmojiRadius * scale;
         var emojiCenter = new Vector2(row.Min.X + emojiRadius, row.Center.Y);
         var emojiExtent = new Vector2(emojiRadius, emojiRadius);
-        var emojiLit = captionEmoji.Open || UiInteract.Hover(emojiCenter - emojiExtent, emojiCenter + emojiExtent);
-        drawList.AddCircleFilled(emojiCenter, emojiRadius, ImGui.GetColorU32(emojiLit ? Ink.ButtonHover : Ink.ButtonFill),
-            CircleSegments);
+        RoundButton.Surface(drawList, new Rect(emojiCenter - emojiExtent, emojiCenter + emojiExtent), ui.Ink,
+            captionEmoji.Open ? ButtonStyle.Tinted : ButtonStyle.Gray, true,
+            UiInteract.Hover(emojiCenter - emojiExtent, emojiCenter + emojiExtent), ImGui.GetID("aethergram.caption.emoji"));
         captionEmoji.DrawToggle(ui, emojiCenter, emojiRadius, Accent, Ink.TitleInk, Loc.T(L.Common.Emoji));
         SyncComposeCounter(textLength);
         var counterSize = Typography.Measure(composeCounter, ComposeCounterStyle);
@@ -465,7 +463,7 @@ internal sealed partial class AethergramApp
     private bool DrawComposeOptionsCard(Rect card, float scale, ref bool sensitive)
     {
         var drawList = ImGui.GetWindowDrawList();
-        var rounding = ComposeCardRounding * scale;
+        var rounding = Metrics.Radius.Grouped * scale;
         ui.Card(drawList, card.Min, card.Max, rounding);
         var tagRow = new Rect(card.Min, new Vector2(card.Max.X, card.Min.Y + ComposeRowHeight * scale));
         var tagRowTapped = DrawComposeLinkRow(tagRow, PhoneIcons.UserPlus, Loc.T(L.PhotoTag.TagPeople),

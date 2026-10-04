@@ -16,8 +16,9 @@ internal sealed partial class AethergramApp
 {
     private const float CellPadX = SocialChrome.CellPadX;
     private const float HeaderIconSize = 24f;
-    private const float PillHeight = 32f;
-    private const float PillRounding = 8f;
+    private const float PillHeight = Button.RegularHeight;
+    private const float SmallButtonCeiling = 31f;
+    private const float RegularButtonCeiling = 39f;
     private const float IconTabHeight = 44f;
     private const float IconTabUnderline = 1.5f;
     private const float IconTabIconSize = 22f;
@@ -33,7 +34,7 @@ internal sealed partial class AethergramApp
 
     private static readonly SocialInk Ink = AethergramInk.Shared;
     private static readonly TextStyle ScreenTitleStyle = TextStyles.Headline;
-    private static readonly TextStyle PillStyle = TextStyles.SubheadlineEmphasized;
+
     private static readonly TextStyle GridOverlayStyle = TextStyles.FootnoteEmphasized;
     private static readonly TextStyle EmptyTitleStyle = TextStyles.Title2;
     private static readonly TextStyle EmptyBodyStyle = TextStyles.Callout;
@@ -65,27 +66,38 @@ internal sealed partial class AethergramApp
         UnderlineTabs.DrawIcons(row, glyphs, labels, active, ref slide, Ink, IconTabIconSize, IconTabUnderline,
             Motion.Release);
 
-    private static bool DrawAccentPill(Rect rect, string label, bool enabled = true) =>
-        SocialPill.Accent(ImGui.GetWindowDrawList(), rect, label, Ink, PillStyle, PillRounding * UiScale.Current,
-            enabled);
+    private bool DrawAccentPill(Rect rect, string label, bool enabled = true) =>
+        Button.Draw(SnapButton(rect), label, ui.Ink, ButtonStyle.Prominent, enabled: enabled);
 
-    private static bool DrawGrayPill(Rect rect, string label) =>
-        SocialPill.Flat(ImGui.GetWindowDrawList(), rect, label, Ink.ButtonFill, Ink.ButtonHover, default,
-            Ink.TitleInk, PillStyle, PillRounding * UiScale.Current);
+    private bool DrawGrayPill(Rect rect, string label) =>
+        Button.Draw(SnapButton(rect), label, ui.Ink, ButtonStyle.Gray);
 
-    private static bool DrawGrayIconButton(Rect rect, string glyph, string tooltip, float iconSize = 20f) =>
-        SocialPill.Icon(ImGui.GetWindowDrawList(), rect, glyph, tooltip, Ink.ButtonFill, Ink.ButtonHover,
-            Ink.TitleInk, iconSize, PillRounding * UiScale.Current);
+    private bool DrawGrayIconButton(Rect rect, string glyph, string tooltip) =>
+        RoundButton.Icon(ImGui.GetWindowDrawList(), rect.Center, RoundButton.RegularRadius * UiScale.Current, glyph,
+            ui.Ink, ButtonStyle.Gray, tooltip, HoverLabelSide.Below);
+
+    private static Rect SnapButton(Rect rect)
+    {
+        var scale = UiScale.Current;
+        var units = rect.Height / scale;
+        var height = units <= SmallButtonCeiling ? Button.SmallHeight
+            : units <= RegularButtonCeiling ? Button.RegularHeight
+            : Button.LargeHeight;
+        var half = height * scale * 0.5f;
+        return new Rect(new Vector2(rect.Min.X, rect.Center.Y - half), new Vector2(rect.Max.X, rect.Center.Y + half));
+    }
 
     private void DrawFollowPill(Rect rect, UserDto user)
     {
         var state = SocialFeedStore.FollowStateOf(user);
+        ImGui.PushID(user.Id);
         var clicked = state switch
         {
             FollowState.Following => DrawGrayPill(rect, Loc.T(L.Aethergram.Following)),
             FollowState.Requested => DrawGrayPill(rect, Loc.T(L.Social.Requested)),
             _ => DrawAccentPill(rect, Loc.T(L.Aethergram.Follow)),
         };
+        ImGui.PopID();
         if (clicked)
         {
             store.ToggleFollow(user);
