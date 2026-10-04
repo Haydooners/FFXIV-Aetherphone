@@ -346,30 +346,37 @@ internal static class AppHeader
     {
         var pressed = -1;
         var baseKey = ImGui.GetID(id);
-        var radius = Metrics.Size.GlassButton * scale * 0.5f;
         var centerY = content.Min.Y + inlineHeight * 0.5f;
-        var hit = new Vector2(radius, radius);
         for (var index = 0; index < count; index++)
         {
             var center = new Vector2(NavBarMetrics.ButtonCenterX(content.Max.X, index, count, scale), centerY);
-            var hovered = BarHover(center - hit, center + hit);
-            var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-            var grow = PressFx.Scale(unchecked(baseKey + (uint)index + 1u), down, PressFx.ControlPressedScale);
-            var drawn = new Vector2(radius * grow, radius * grow);
-            Material.ThemedGlass(drawList, center - drawn, center + drawn, radius * grow, scale, theme);
-            AppSkin.Icon(drawList, center, buttons[index].Glyph, ink, ButtonGlyphScale * grow);
-            if (hovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            HoverTooltip.Show(new Rect(center - hit, center + hit), buttons[index].Tooltip);
-            if (UiInteract.Click(center - hit, center + hit, hovered))
+            if (NavButton(drawList, unchecked(baseKey + (uint)index + 1u), center, buttons[index].Glyph,
+                    buttons[index].Tooltip, ink, theme, scale))
             {
                 pressed = index;
             }
         }
 
         return pressed;
+    }
+
+    public static bool NavButton(ImDrawListPtr drawList, uint key, Vector2 center, string glyph, string tooltip,
+        Vector4 ink, PhoneTheme theme, float scale)
+    {
+        var radius = Metrics.Size.GlassButton * scale * 0.5f;
+        var hit = new Vector2(radius, radius);
+        var hovered = BarHover(center - hit, center + hit);
+        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var grow = PressFx.Scale(key, down, PressFx.ControlPressedScale);
+        var drawn = new Vector2(radius * grow, radius * grow);
+        Material.ThemedGlass(drawList, center - drawn, center + drawn, radius * grow, scale, theme);
+        AppSkin.Icon(drawList, center, glyph, ink, ButtonGlyphScale * grow);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        HoverTooltip.Show(new Rect(center - hit, center + hit), tooltip);
+        return UiInteract.Click(center - hit, center + hit, hovered);
     }
 }
