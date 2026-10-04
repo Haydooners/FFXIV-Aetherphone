@@ -133,8 +133,8 @@ internal sealed partial class JobsApp
         var half = rect.Size * 0.5f * press;
         var min = rect.Center - half;
         var max = rect.Center + half;
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, min, max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, min, max, radius);
         Material.TopGlow(drawList, min, max, radius, tint, HeroGlowCoverage, HeroGlowStrength);
         if (hovered)
         {
@@ -201,8 +201,8 @@ internal sealed partial class JobsApp
     private void DrawStatTile(ImDrawListPtr drawList, Rect rect, Vector4 tint, FontAwesomeIcon icon, string label,
         string value, float fraction, float scale)
     {
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, rect.Min, rect.Max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, rect.Min, rect.Max, radius);
         Material.TopGlow(drawList, rect.Min, rect.Max, radius, tint, StatGlowCoverage, StatGlowStrength);
         var pad = JobsArt.CardPad * scale;
         var glyph = StatGlyph * scale;
@@ -226,7 +226,7 @@ internal sealed partial class JobsApp
     private float SectionTop(ImDrawListPtr drawList, float left, float top, float width, string title, float scale)
     {
         var cursorY = top + JobsArt.SectionGap * scale;
-        cursorY += JobsArt.SectionHeader(drawList, new Vector2(left, cursorY), width, title, ui.TitleInk);
+        cursorY += CardSectionHeader.Draw(drawList, new Vector2(left, cursorY), width, title, ui.TitleInk);
         return cursorY + JobsArt.HeaderGap * scale;
     }
 
@@ -239,7 +239,7 @@ internal sealed partial class JobsApp
             var shelf = shelves[shelfIndex];
             var reorderWidth = shelves.Length > 1 ? ReorderRadius * 4f * scale + JobsArt.TileGap * scale : 0f;
             var headerTop = cursorY + JobsArt.SectionGap * scale;
-            var titleHeight = JobsArt.SectionHeader(drawList, new Vector2(left, headerTop), width - reorderWidth,
+            var titleHeight = CardSectionHeader.Draw(drawList, new Vector2(left, headerTop), width - reorderWidth,
                 shelf.Title, ui.TitleInk);
             if (shelves.Length > 1)
             {
@@ -300,7 +300,7 @@ internal sealed partial class JobsApp
         var text = Loc.T(L.Jobs.EmptyShelf);
         var textHeight = Typography.MeasureWrappedBlock(text, TextStyles.Footnote, width - pad * 2f).Y;
         var max = new Vector2(left + width, top + textHeight + ShelfHintPadY * 2f * scale);
-        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Grouped * scale);
         Typography.DrawWrappedLeft(new Vector2(left + pad, top + ShelfHintPadY * scale), text, ui.MutedInk,
             TextStyles.Footnote, width - pad * 2f);
         return max.Y;
@@ -349,7 +349,7 @@ internal sealed partial class JobsApp
         float scale)
     {
         var max = new Vector2(left + width, top + GridHeight(end - start, scale));
-        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Grouped * scale);
         for (var jobIndex = start; jobIndex < end; jobIndex++)
         {
             var cell = GridCell(left, top, width, jobIndex - start, scale);
@@ -374,7 +374,7 @@ internal sealed partial class JobsApp
         float scale)
     {
         var max = new Vector2(left + width, top + GridHeight(gearsetIndices.Length, scale));
-        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Grouped * scale, true);
+        ui.Card(drawList, new Vector2(left, top), max, Metrics.Radius.Grouped * scale);
         for (var slot = 0; slot < gearsetIndices.Length; slot++)
         {
             var gearset = snapshot.Gearsets[gearsetIndices[slot]];

@@ -398,7 +398,7 @@ internal sealed partial class JobsApp
         Typography.Draw(drawList, new Vector2(min.X + pad, titleTop), title, theme.TextStrong,
             TextStyles.SubheadlineEmphasized);
 
-        DrawPickerField(drawList, nameRect, theme, scale);
+        DrawPickerField(drawList, nameRect, theme);
         var named = categoryEditorName.Length > 0;
         var nameText = Typography.FitText(named ? categoryEditorName : Loc.T(L.Jobs.CategoryNamePlaceholder),
             nameRect.Width - Metrics.Space.Md * 2f * scale, TextStyles.Body);
@@ -452,18 +452,11 @@ internal sealed partial class JobsApp
     private void DrawCategorySaveButton(ImDrawListPtr drawList, Rect rect, PhoneTheme theme, float scale)
     {
         var enabled = categoryEditorName.Trim().Length > 0;
+        rect = PickerButtonRect(rect);
         var hovered = enabled && UiInteract.HoverWindowOnly(rect.Min, rect.Max);
-        var fill = !enabled
-            ? Palette.WithAlpha(theme.TextMuted, 0.2f)
-            : hovered
-                ? Palette.Mix(ui.Accent, PickerInkOnDark, 0.14f)
-                : ui.Accent;
-        Squircle.Fill(drawList, rect.Min, rect.Max, rect.Height * 0.5f, ImGui.GetColorU32(fill));
-        var ink = enabled
-            ? Palette.Luminance(fill) > 0.62f ? PickerInkOnLight : PickerInkOnDark
-            : theme.TextMuted;
-        Typography.DrawCentered(drawList, rect.Center, Loc.T(L.Jobs.SaveCategory), ink,
-            TextStyles.SubheadlineEmphasized);
+        var face = Button.Surface(drawList, rect, ui.Ink, ButtonStyle.Prominent, ButtonRole.Normal, enabled, hovered,
+            ImGui.GetID("jobs.category.save"));
+        Button.DrawLabel(drawList, face, Loc.T(L.Jobs.SaveCategory));
         if (!hovered)
         {
             return;

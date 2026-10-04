@@ -94,8 +94,8 @@ internal sealed partial class JobsApp
                           (job.IsActive ? badgeHeight + BarGap * scale : 0f);
         var height = MathF.Max(ringRadius * 2f, blockHeight) + pad * 2f;
         var max = new Vector2(origin.X + width, origin.Y + height);
-        var radius = Metrics.Radius.Widget * scale;
-        ui.Card(drawList, origin, max, radius, true);
+        var radius = Metrics.Radius.Grouped * scale;
+        ui.Card(drawList, origin, max, radius);
         Material.TopGlow(drawList, origin, max, radius, tint, DetailGlowCoverage, DetailGlowStrength);
 
         var center = new Vector2(origin.X + pad + ringRadius, (origin.Y + max.Y) * 0.5f);
@@ -158,7 +158,7 @@ internal sealed partial class JobsApp
         var height = pad * 2f + headerHeight + BarGap * scale + BarHeight * scale + BarGap * scale + footnoteHeight +
                      legendHeight;
         var max = new Vector2(left + width, cardTop + height);
-        ui.Card(drawList, new Vector2(left, cardTop), max, Metrics.Radius.Widget * scale, true);
+        ui.Card(drawList, new Vector2(left, cardTop), max, Metrics.Radius.Grouped * scale);
         UiAnchors.Report("jobs.experience", new Rect(new Vector2(left, cardTop), max));
 
         var innerLeft = left + pad;
@@ -239,7 +239,7 @@ internal sealed partial class JobsApp
         UiAnchors.Report("jobs.switch", rect);
         var pending = pendingGearsetId >= 0;
         var label = IsPending(job) ? Loc.T(L.Jobs.Switching) : best.SwitchText;
-        if (ui.AccentPill(rect, label, !pending, TextStyles.Headline))
+        if (Button.Draw(rect, label, ui.Ink, enabled: !pending))
         {
             RequestEquip(best);
         }
