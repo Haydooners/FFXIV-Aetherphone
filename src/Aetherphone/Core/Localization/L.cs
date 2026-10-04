@@ -2177,6 +2177,12 @@ internal static class L
         public static readonly LocString SectionTours = new("changelog.sectionTours", "Setup and tours");
         public static readonly LocString SectionSounds = new("changelog.sectionSounds", "Sounds");
 
+        public static readonly LocString[] Release1101Messaging =
+        {
+            new("changelog.r1101.2",
+                "Fixed the buttons at the top of Linkpearl and ChocoChat pop-out windows overlapping each other"),
+        };
+
         public static readonly LocString[] Release1101Phone =
         {
             new("changelog.r1101.1",

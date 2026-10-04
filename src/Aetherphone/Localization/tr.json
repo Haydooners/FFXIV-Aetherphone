@@ -7062,6 +7062,7 @@
   "changelog.r1041.14": "Yolu tırnak içinde yapıştırılan yerel dosyaların oynatılmaması düzeltildi",
   "changelog.r1101.0": "“Dinlediklerimi paylaş” kapalıyken çaldığın şarkının İsim Plakası Unvanı'nda görünmemesi düzeltildi",
   "changelog.r1101.1": "Oyun sunucu bilgi çubuğunu gizledikten sonra simgenin ekranda kalması düzeltildi, öğe artık telefon yerine Aethernet simgesini gösteriyor",
+  "changelog.r1101.2": "Linkpearl ve ChocoChat açılır pencerelerinin üstündeki düğmelerin birbirinin üstüne binmesi düzeltildi",
   "changelog.r1100.0": "Sunucu bilgi çubuğundaki öğe artık Aetherphone adı yerine bir telefon simgesi ve okunmamış bildirim sayını gösteriyor",
   "changelog.r1100.1": "Sunucu bilgi çubuğundaki öğenin üzerine geldiğinde artık kaç bildirimin beklediğini ve tıklamanın ne yaptığını görüyorsun",
   "changelog.r1100.2": "MogCast'in bir bağlantı beklerken bazı oyuncularda oyunu saniyede bir kareye düşürmesi düzeltildi",
