@@ -191,7 +191,7 @@ internal sealed partial class HousingApp
         var min = origin;
         var max = new Vector2(origin.X + width, origin.Y + height);
         UiAnchors.Report("housing.lottery", new Rect(min, max));
-        Material.AccentGlass(drawList, min, max, Metrics.Radius.Widget * scale, scale, HeroHue(lottery, expired));
+        Material.AccentGlass(drawList, min, max, Metrics.Radius.Grouped * scale, scale, HeroHue(lottery, expired));
         var subInk = Palette.WithAlpha(HeroInk, HeroSubAlpha);
         var left = min.X + pad;
         var right = max.X - pad;
@@ -272,7 +272,7 @@ internal sealed partial class HousingApp
         var min = new Vector2(origin.X, cursorY);
         var max = new Vector2(origin.X + width, cursorY + rowHeight * districts.Count);
         UiAnchors.Report("housing.districts", new Rect(min, max));
-        HousingArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var tileSize = HousingArt.TileSize * scale;
         for (var index = 0; index < districts.Count; index++)
@@ -413,7 +413,7 @@ internal sealed partial class HousingApp
         var rowHeight = HousingArt.RowHeight * scale;
         var min = new Vector2(origin.X, cursorY);
         var max = new Vector2(origin.X + width, cursorY + rowHeight * count);
-        HousingArt.Card(drawList, ui, min, max, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var pad = Metrics.Space.Lg * scale;
         var tileSize = HousingArt.TileSize * scale;
         var now = DateTime.UtcNow;

@@ -17,7 +17,7 @@ internal sealed partial class HousingApp
     private const float CardPad = 16f;
     private const float CardGap = 12f;
     private const float CardStatGap = 14f;
-    private const float CardActionHeight = 44f;
+    private const float CardActionHeight = Button.LargeHeight;
     private const float CardActionGap = 8f;
     private const float CardSwatch = 12f;
     private const float CardCloseRadius = 13f;
@@ -199,7 +199,7 @@ internal sealed partial class HousingApp
         var remindCenter = new Vector2(detailsCenter.X - height - gap, detailsCenter.Y);
         var watchCenter = new Vector2(remindCenter.X - height - gap, detailsCenter.Y);
         var travel = new Rect(new Vector2(left, top), new Vector2(watchCenter.X - radius - gap, top + height));
-        if (HousingChrome.PillButton(travel, Loc.T(L.Housing.TravelHere), true, ui))
+        if (Button.Draw(travel, Loc.T(L.Housing.TravelHere), ui.Ink))
         {
             TravelTo(plot.Key);
         }

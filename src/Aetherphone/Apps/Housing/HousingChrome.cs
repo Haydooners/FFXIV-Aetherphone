@@ -13,9 +13,8 @@ namespace Aetherphone.Apps.Housing;
 
 internal static class HousingChrome
 {
-    private const float DisabledAlpha = 0.45f;
+    private const float StepGlyphFraction = 0.8f;
 
-    private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 Transparent = new(0f, 0f, 0f, 0f);
 
     public static bool Hover(Vector2 min, Vector2 max, bool overlay) =>
@@ -29,44 +28,6 @@ internal static class HousingChrome
         HousingDataFreshness.Cached => AppPalettes.HousingParchment,
         _ => AppPalettes.HousingClosed,
     };
-
-    public static bool PillButton(Rect rect, string label, bool filled, AppSkin ui, bool overlay = false,
-        bool enabled = true)
-    {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var hovered = enabled && Hover(rect.Min, rect.Max, overlay);
-        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(ImGui.GetID(label), down, PressFx.ControlPressedScale);
-        var half = rect.Size * 0.5f * press;
-        var min = rect.Center - half;
-        var max = rect.Center + half;
-        var radius = (max.Y - min.Y) * 0.5f;
-        var accent = ui.Accent;
-        var fill = filled
-            ? enabled
-                ? hovered ? Palette.Mix(accent, White, 0.12f) : accent
-                : Palette.WithAlpha(accent, DisabledAlpha)
-            : enabled
-                ? hovered ? Palette.Mix(ui.FieldSurface, White, 0.06f) : ui.FieldSurface
-                : Palette.WithAlpha(ui.FieldSurface, ui.FieldSurface.W * DisabledAlpha);
-        Squircle.Fill(drawList, min, max, radius, ImGui.GetColorU32(fill));
-        var ink = filled
-            ? enabled ? AccentRing.Ink : Palette.WithAlpha(AccentRing.Ink, DisabledAlpha)
-            : enabled
-                ? ui.TitleInk
-                : ui.MutedInk;
-        var labelMaxWidth = MathF.Max(1f, rect.Width - rect.Height - 6f * scale);
-        var style = TextStyles.SubheadlineEmphasized;
-        var fitted = Typography.FitText(label, labelMaxWidth, style);
-        Typography.DrawCentered(drawList, rect.Center, fitted, ink, style);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return enabled && UiInteract.Click(rect.Min, rect.Max, hovered);
-    }
 
     public static int Segment(Rect rect, string first, string second, int selected, AppSkin ui, bool overlay = false,
         float thumb = -1f, bool surface = true)
@@ -125,17 +86,21 @@ internal static class HousingChrome
         var fieldMin = new Vector2(minusCenter.X + buttonRadius + 5f * scale, rect.Min.Y);
         var fieldMax = new Vector2(plusCenter.X - buttonRadius - 5f * scale, rect.Max.Y);
         var result = value;
-        if (RoundButton(drawList, minusCenter, buttonRadius, "-", ui, value > minimum, overlay, scale))
+        var ink = ui.Ink;
+        var key = ImGui.GetID(id);
+        if (StepButton(drawList, unchecked(key + 1u), minusCenter, buttonRadius, FontAwesomeIcon.Minus, ink,
+                value > minimum, overlay))
         {
             result = value - step;
         }
 
-        if (RoundButton(drawList, plusCenter, buttonRadius, "+", ui, value < maximum, overlay, scale))
+        if (StepButton(drawList, unchecked(key + 2u), plusCenter, buttonRadius, FontAwesomeIcon.Plus, ink,
+                value < maximum, overlay))
         {
             result = value + step;
         }
 
-        Squircle.Fill(drawList, fieldMin, fieldMax, Metrics.Radius.Sm * scale, ImGui.GetColorU32(ui.FieldSurface));
+        SearchBar.Surface(drawList, new Rect(fieldMin, fieldMax), ink);
         var typing = NumberBuffers.TryGetValue(id, out var buffer) && buffer is not null;
         var text = typing ? buffer! : value.ToString(Loc.Culture);
         var suffixWidth = suffix.Length > 0
@@ -175,34 +140,13 @@ internal static class HousingChrome
         return Math.Clamp(result, minimum, maximum);
     }
 
-    private static bool RoundButton(ImDrawListPtr drawList, Vector2 center, float radius, string glyph, AppSkin ui,
-        bool enabled, bool overlay, float scale)
+    private static bool StepButton(ImDrawListPtr drawList, uint key, Vector2 center, float radius,
+        FontAwesomeIcon icon, in ControlInk ink, bool enabled, bool overlay)
     {
-        var hit = new Vector2(radius, radius);
-        var hovered = enabled && Hover(center - hit, center + hit, overlay);
-        drawList.AddCircleFilled(center, radius,
-            ImGui.GetColorU32(hovered ? Palette.WithAlpha(ui.Accent, 0.85f) : ui.FieldSurface), 24);
-        var ink = hovered
-            ? new Vector4(0.05f, 0.09f, 0.07f, 1f)
-            : enabled
-                ? ui.TitleInk
-                : ui.MutedInk;
-        var arm = radius * 0.40f;
-        var packed = ImGui.GetColorU32(ink);
-        drawList.AddLine(new Vector2(center.X - arm, center.Y), new Vector2(center.X + arm, center.Y), packed,
-            1.8f * scale);
-        if (glyph == "+")
-        {
-            drawList.AddLine(new Vector2(center.X, center.Y - arm), new Vector2(center.X, center.Y + arm), packed,
-                1.8f * scale);
-        }
-
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return enabled && UiInteract.Click(center - hit, center + hit, hovered);
+        var clicked = RoundButton.Draw(drawList, key, center, radius, ink, ButtonStyle.Tinted, enabled, overlay,
+            out var face);
+        var grow = face.Face.Width / MathF.Max(radius * 2f, 0.0001f);
+        ProgressRing.CenterIcon(drawList, center, icon, face.LabelInk, radius * StepGlyphFraction * grow);
+        return clicked;
     }
-
 }
