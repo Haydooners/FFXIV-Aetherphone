@@ -155,7 +155,7 @@ internal static unsafe class PartyFinderReader
                     PfSlotRole.Dps => "D",
                     _ => "?",
                 };
-                list.Add(new PfSlotInfo(role, true, label));
+                list.Add(new PfSlotInfo(role, true, label, jobId));
             }
             else if (i < slots.Count)
             {
@@ -167,7 +167,7 @@ internal static unsafe class PartyFinderReader
                     PfSlotRole.Dps => "D",
                     _ => "?",
                 };
-                list.Add(new PfSlotInfo(role, false, label));
+                list.Add(new PfSlotInfo(role, false, label, 0));
             }
         }
 

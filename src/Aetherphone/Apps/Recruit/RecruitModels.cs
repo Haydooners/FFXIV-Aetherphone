@@ -266,7 +266,7 @@ internal enum PfSlotRole : byte
     Dps,
     Any,
 }
-internal readonly record struct PfSlotInfo(PfSlotRole Role, bool IsFilled, string Label);
+internal readonly record struct PfSlotInfo(PfSlotRole Role, bool IsFilled, string Label, byte JobId = 0);
 
 internal enum PfObjectiveFilter
 {

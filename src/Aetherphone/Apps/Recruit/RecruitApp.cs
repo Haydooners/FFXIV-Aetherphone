@@ -18,6 +18,7 @@ internal enum RecruitScreen
 {
     Browse,
     Detail,
+    PfDetail,
     Create,
 };
 
@@ -65,13 +66,16 @@ internal sealed partial class RecruitApp : IPhoneApp
         "Fill",
     };
 
-    private readonly AppSkin ui = new(AppPalettes.Tinted(new Vector4(0.027f, 0.569f, 0.408f, 1.0f)));
+    private readonly AppSkin ui = new(AppPalettes.Neutral(AppAccents.For("recruit")));
     private readonly ViewRouter<RecruitScreen> router;
     private readonly RouterDraw<RecruitScreen> drawView;
 
     private RecruitListing? selectedListing;
+    private PartyFinderListing? selectedPfListing;
     private readonly DropdownMenu categoryFilterMenu = new();
     private readonly List<DropdownMenu.Item> categoryFilterItems = new();
+    private readonly DropdownMenu kindFilterMenu = new();
+    private readonly List<DropdownMenu.Item> kindFilterItems = new();
     private ContentCategory? selectedCategory;
     private ListingKind? selectedKind;
     private PhoneContext currentContext;
@@ -105,8 +109,9 @@ internal sealed partial class RecruitApp : IPhoneApp
         var screen = SceneChrome.ScreenFrom(content, context.Theme, scale);
         ui.Backdrop(screen);
         categoryFilterMenu.Gate();
+        kindFilterMenu.Gate();
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        using (InputShield.Engage(PartyFinderCapturesPointer || categoryFilterMenu.Open))
+        using (InputShield.Engage(PartyFinderCapturesPointer))
         {
             router.Draw(content, AppSkin.Transparent, delta, drawView);
         }
@@ -115,12 +120,16 @@ internal sealed partial class RecruitApp : IPhoneApp
 
     private void DrawView(RecruitScreen view, Rect area, int depth)
     {
-        switch (view){
+        switch (view)
+        {
             case RecruitScreen.Browse:
                 DrawRoot(area);
                 break;
             case RecruitScreen.Detail:
                 DrawDetailScreen(currentContext, area);
+                break;
+            case RecruitScreen.PfDetail:
+                DrawPartyFinderDetailScreen(currentContext, area);
                 break;
             case RecruitScreen.Create:
                 DrawCreateScreen(currentContext, area);
@@ -153,13 +162,22 @@ internal sealed partial class RecruitApp : IPhoneApp
             theme,
             System.Runtime.InteropServices.CollectionsMarshal.AsSpan(categoryFilterItems));
         if (pickedCategory >= 0){
-            if (activeTab == RecruitTab.PartyFinder){
-                selectedPfCategory = pickedCategory == 0 ? null : (PfCategory)pickedCategory;
-                currentPfPage = 1;
-            }
-            else{
-                selectedCategory = pickedCategory == 0 ? null : AllCategories[pickedCategory - 1];
-            }
+            selectedCategory = pickedCategory == 0 ? null : AllCategories[pickedCategory - 1];
+        }
+
+        var pickedKind = kindFilterMenu.Draw(
+            area,
+            theme,
+            System.Runtime.InteropServices.CollectionsMarshal.AsSpan(kindFilterItems));
+        if (pickedKind >= 0)
+        {
+            selectedKind = pickedKind switch
+            {
+                1 => ListingKind.PlayerLfg,
+                2 => ListingKind.StaticLfm,
+                3 => ListingKind.SingleNightFill,
+                _ => null,
+            };
         }
     }
 
@@ -193,38 +211,105 @@ internal sealed partial class RecruitApp : IPhoneApp
     private void DrawStaticsTab(Rect area, float scale, PhoneTheme theme)
     {
         var accent = Accent;
-        var headerHeight = AppHeader.Height * scale;
-        var headerCenterY = area.Min.Y + headerHeight * 0.5f;
-        Typography.DrawCentered(new Vector2(area.Center.X, headerCenterY), "Statics", theme.TextStrong, 1.15f, FontWeight.SemiBold);
-        var filterRowTop = area.Min.Y + headerHeight + 2f * scale;
-        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + 12f * scale, filterRowTop));
-        DrawFilterAndKindRow(area.Width, scale, theme, accent);
-        var top = filterRowTop + 34f * scale;
-        var body = new Rect(new Vector2(area.Min.X, top), area.Max);
+        var headerHeight = 36f * scale;
+        var headerY = area.Min.Y + 8f * scale;
 
+        Typography.Draw(new Vector2(area.Min.X + 14f * scale, headerY), "Statics", theme.TextStrong, 1.25f, FontWeight.Bold);
+
+        var filterBtnWidth = 72f * scale;
+        var allBtnWidth = 52f * scale;
+        var btnHeight = 26f * scale;
+        var btnY = headerY + 2f * scale;
+        var filterMaxX = area.Max.X - 12f * scale;
+        var filterMin = new Vector2(filterMaxX - filterBtnWidth, btnY);
+        var filterMax = new Vector2(filterMaxX, btnY + btnHeight);
+        var filterHovered = UiInteract.Hover(filterMin, filterMax);
+        if (filterHovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        Squircle.Fill(ImGui.GetWindowDrawList(), filterMin, filterMax, 7f * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.SurfaceMuted, filterHovered ? 0.95f : 0.70f)));
+        Squircle.Stroke(ImGui.GetWindowDrawList(), filterMin, filterMax, 7f * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.Separator, filterHovered ? 0.6f : 0.3f)), 1f * scale);
+        
+        var filterLabelX = filterMin.X + 10f * scale;
+        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(filterLabelX, btnY + 5f * scale), "Filter", theme.TextStrong, TextStyles.Caption1);
+        AppSkin.Icon(ImGui.GetWindowDrawList(), new Vector2(filterMax.X - 14f * scale, (filterMin.Y + filterMax.Y) * 0.5f),
+            IconGlyph.Of(FontAwesomeIcon.SlidersH), theme.TextStrong, 0.75f);
+        if (UiInteract.Click(filterMin, filterMax, filterHovered))
+        {
+            OpenCategoryFilterMenu(new Rect(filterMin, filterMax));
+        }
+
+        var allMaxX = filterMin.X - 6f * scale;
+        allBtnWidth = 58f * scale;
+        var allMin = new Vector2(allMaxX - allBtnWidth, btnY);
+        var allMax = new Vector2(allMaxX, btnY + btnHeight);
+        var allHovered = UiInteract.Hover(allMin, allMax);
+        if (allHovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        var allActive = selectedKind.HasValue;
+        var allBg = allActive
+            ? Palette.WithAlpha(accent, allHovered ? 0.28f : 0.18f)
+            : (allHovered ? Palette.WithAlpha(theme.SurfaceMuted, 0.95f) : Palette.WithAlpha(theme.SurfaceMuted, 0.70f));
+        var allBorder = allActive
+            ? Palette.WithAlpha(accent, allHovered ? 0.85f : 0.65f)
+            : Palette.WithAlpha(theme.Separator, allHovered ? 0.6f : 0.3f);
+        Squircle.Fill(ImGui.GetWindowDrawList(), allMin, allMax, 7f * scale, ImGui.GetColorU32(allBg));
+        Squircle.Stroke(ImGui.GetWindowDrawList(), allMin, allMax, 7f * scale, ImGui.GetColorU32(allBorder), 1f * scale);
+        var kindText = selectedKind switch
+        {
+            ListingKind.PlayerLfg => "LFG",
+            ListingKind.StaticLfm => "LFM",
+            ListingKind.SingleNightFill => "Fill",
+            _ => "All",
+        };
+
+        var kindInk = allActive ? accent : theme.TextStrong;
+        var allLabelX = allMin.X + 8f * scale;
+        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(allLabelX, btnY + 5f * scale), kindText, kindInk, TextStyles.Caption1);
+        AppSkin.Icon(ImGui.GetWindowDrawList(), new Vector2(allMax.X - 11f * scale, (allMin.Y + allMax.Y) * 0.5f),
+            IconGlyph.Of(FontAwesomeIcon.ChevronDown), kindInk, 0.55f);
+        if (UiInteract.Click(allMin, allMax, allHovered))
+        {
+            categoryFilterMenu.Close();
+            OpenKindFilterMenu(new Rect(allMin, allMax));
+        }
+
+        var top = headerY + headerHeight + 8f * scale;
+        var body = new Rect(new Vector2(area.Min.X, top), area.Max);
         using (AppSurface.Begin(body))
         {
             var width = ScrollLayout.StableContentWidth();
-            ImGui.Dummy(new Vector2(0f, 6f * scale));
+            ImGui.Dummy(new Vector2(0f, 4f * scale));
             var listings = store.Listings;
             var renderedCount = 0;
-
-            for (var listingIndex = 0; listingIndex < listings.Count; listingIndex++){
+            for (var listingIndex = 0; listingIndex < listings.Count; listingIndex++)
+            {
                 var listing = listings[listingIndex];
-                if (listing.Kind == ListingKind.PartyFinder){
+                if (listing.Kind == ListingKind.PartyFinder)
+                {
                     continue;
                 }
-                if (selectedKind.HasValue && listing.Kind != selectedKind.Value){
+                if (selectedKind.HasValue && listing.Kind != selectedKind.Value)
+                {
                     continue;
                 }
-                if (selectedCategory.HasValue && listing.Duty.Category != selectedCategory.Value){
+                if (selectedCategory.HasValue && listing.Duty.Category != selectedCategory.Value)
+                {
                     continue;
                 }
                 DrawListingCard(width, scale, theme, accent, listing);
-                ImGui.Dummy(new Vector2(0f, 8f * scale));
+                ImGui.Dummy(new Vector2(0f, 10f * scale));
                 renderedCount++;
             }
-            if (renderedCount == 0){
+            if (renderedCount == 0)
+            {
                 Typography.DrawCentered(ImGui.GetWindowDrawList(),
                     ImGui.GetCursorScreenPos() + new Vector2(width * 0.5f, 40f * scale),
                     "No listings match your filter", theme.TextMuted, TextStyles.Body);
@@ -233,96 +318,14 @@ internal sealed partial class RecruitApp : IPhoneApp
         }
     }
 
-    private void DrawFilterAndKindRow(float totalWidth, float scale, PhoneTheme theme, Vector4 accent)
+    private void OpenKindFilterMenu(Rect anchor)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var height = 28f * scale;
-        var usableWidth = totalWidth - 24f * scale;
-        var filterLabel = selectedCategory.HasValue ? DutyCategoryLabel(selectedCategory.Value) : "All Duties";
-        var labelSize = Typography.Measure(filterLabel, TextStyles.Caption1);
-        var chevronReserve = 14f * scale;
-        var filterPillWidth = 96f * scale;
-        var filterMin = origin;
-        var filterMax = new Vector2(filterMin.X + filterPillWidth, filterMin.Y + height);
-        var filterHovered = UiInteract.Hover(filterMin, filterMax);
-
-        if (filterHovered){
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        var isFiltered = selectedCategory.HasValue;
-        var filterBg = isFiltered
-            ? Palette.WithAlpha(accent, filterHovered ? 0.28f : 0.18f)
-            : (filterHovered ? Palette.WithAlpha(theme.GroupedCard, 0.95f) : theme.GroupedCard);
-        var filterBorder = isFiltered
-            ? Palette.WithAlpha(accent, 0.70f)
-            : Palette.WithAlpha(theme.TextMuted, filterHovered ? 0.40f : 0.20f);
-        Squircle.Fill(drawList, filterMin, filterMax, 7f * scale, ImGui.GetColorU32(filterBg));
-        Squircle.Stroke(drawList, filterMin, filterMax, 7f * scale, ImGui.GetColorU32(filterBorder), 1f * scale);
-
-        var filterInk = isFiltered ? theme.TextStrong : (filterHovered ? theme.TextStrong : theme.TextMuted);
-        var maxTextWidth = filterPillWidth - chevronReserve - 12f * scale;
-        var fittedText = Typography.FitText(filterLabel, maxTextWidth, TextStyles.Caption1);
-        var fittedSize = Typography.Measure(fittedText, TextStyles.Caption1);
-        var totalContentWidth = fittedSize.X + 4f * scale + 10f * scale;
-        var contentStartX = (filterMin.X + filterMax.X - totalContentWidth) * 0.5f;
-        var textCenterY = (filterMin.Y + filterMax.Y) * 0.5f;
-
-        Typography.Draw(drawList, new Vector2(contentStartX, textCenterY - fittedSize.Y * 0.5f), fittedText, filterInk, TextStyles.Caption1);
-        var chevronCenter = new Vector2(contentStartX + fittedSize.X + 4f * scale + 5f * scale, textCenterY);
-        AppSkin.Icon(drawList, chevronCenter, IconGlyph.Of(FontAwesomeIcon.ChevronDown), filterInk, 0.60f);
-
-        if (UiInteract.Click(filterMin, filterMax, filterHovered)){
-            OpenCategoryFilterMenu(new Rect(filterMin, filterMax));
-        }
-
-        var sepX = filterMax.X + 7f * scale;
-        drawList.AddLine(
-            new Vector2(sepX, origin.Y + 4f * scale),
-            new Vector2(sepX, origin.Y + height - 4f * scale),
-            ImGui.GetColorU32(Palette.WithAlpha(theme.TextMuted, 0.25f)), 1f * scale);
-        var chipsStartX = sepX + 7f * scale;
-        var chipsAvailableWidth = (origin.X + usableWidth) - chipsStartX;
-        var chipGap = 5f * scale;
-        var chipWidth = (chipsAvailableWidth - (StaticKindLabels.Length - 1) * chipGap) / StaticKindLabels.Length;
-
-        for (var index = 0; index < StaticKindLabels.Length; index++){
-            var label = StaticKindLabels[index];
-            var active = index switch{
-                0 => !selectedKind.HasValue,
-                1 => selectedKind == ListingKind.StaticLfm,
-                2 => selectedKind == ListingKind.PlayerLfg,
-                3 => selectedKind == ListingKind.SingleNightFill,
-                _ => false,
-            };
-
-            var min = new Vector2(chipsStartX + index * (chipWidth + chipGap), origin.Y);
-            var max = new Vector2(min.X + chipWidth, min.Y + height);
-            var hovered = UiInteract.Hover(min, max);
-            var fill = active
-                ? Palette.WithAlpha(theme.Accent, 0.92f)
-                : (hovered ? Palette.WithAlpha(theme.GroupedCard, 0.95f) : theme.GroupedCard);
-            Squircle.Fill(drawList, min, max, 7f * scale, ImGui.GetColorU32(fill));
-            if (!active){
-                Squircle.Stroke(drawList, min, max, 7f * scale,
-                    ImGui.GetColorU32(Palette.WithAlpha(theme.TextMuted, hovered ? 0.35f : 0.15f)), 1f * scale);
-            }
-
-            var ink = active ? theme.TextStrong : (hovered ? theme.TextStrong : theme.TextMuted);
-            Typography.DrawCentered(drawList, (min + max) * 0.5f, label, ink, 0.88f, active ? FontWeight.SemiBold : FontWeight.Medium);
-            if (hovered){
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-            if (UiInteract.Click(min, max, hovered)){
-                selectedKind = index switch{
-                    1 => ListingKind.StaticLfm,
-                    2 => ListingKind.PlayerLfg,
-                    3 => ListingKind.SingleNightFill,
-                    _ => null,
-                };
-            }
-        }
+        kindFilterItems.Clear();
+        kindFilterItems.Add(new DropdownMenu.Item("All", Selected: !selectedKind.HasValue));
+        kindFilterItems.Add(new DropdownMenu.Item("LFG", Selected: selectedKind == ListingKind.PlayerLfg));
+        kindFilterItems.Add(new DropdownMenu.Item("LFM", Selected: selectedKind == ListingKind.StaticLfm));
+        kindFilterItems.Add(new DropdownMenu.Item("Fill", Selected: selectedKind == ListingKind.SingleNightFill));
+        kindFilterMenu.Toggle("recruit_kind_filter", anchor);
     }
 
     private void OpenCategoryFilterMenu(Rect anchor)
@@ -342,51 +345,55 @@ internal sealed partial class RecruitApp : IPhoneApp
     {
         var drawList = ImGui.GetWindowDrawList();
         var origin = ImGui.GetCursorScreenPos();
-        var cardHeight = 152f * scale;
+        var padX = 14f * scale;
+        var padY = 12f * scale;
+        var cardHeight = 156f * scale;
         var max = new Vector2(origin.X + width, origin.Y + cardHeight);
         var hovered = UiInteract.Hover(origin, max);
+        var cardBg = ImGui.GetColorU32(Palette.WithAlpha(theme.GroupedCard, hovered ? 0.98f : 0.85f));
+        var cardBorder = ImGui.GetColorU32(hovered ? Palette.WithAlpha(accent, 0.55f) : Palette.WithAlpha(theme.Separator, 0.35f));
+        Squircle.Fill(drawList, origin, max, 14f * scale, cardBg);
+        Squircle.Stroke(drawList, origin, max, 14f * scale, cardBorder, (hovered ? 1.5f : 1f) * scale);
 
-        var cardBg = ImGui.GetColorU32(Palette.WithAlpha(theme.SurfaceMuted, hovered ? 0.75f : 0.55f));
-        var cardBorder = ImGui.GetColorU32(hovered ? Palette.WithAlpha(accent, 0.65f) : Palette.WithAlpha(theme.TextMuted, 0.18f));
-        Squircle.Fill(drawList, origin, max, Metrics.Radius.Card * scale, cardBg);
-        Squircle.Stroke(drawList, origin, max, Metrics.Radius.Card * scale, cardBorder, (hovered ? 1.5f : 1f) * scale);
-
-        var kindColor = KindBadgeColor(listing.Kind);
-        var kindLabel = RecruitCatalog.KindName(listing.Kind).ToUpperInvariant();
-        DrawBadgePill(drawList, origin + new Vector2(14f * scale, 12f * scale), kindLabel, kindColor, scale);
-        var playstyleText = RecruitCatalog.CategoryName(listing.Playstyle);
+        var kindLabel = listing.Kind switch
+        {
+            ListingKind.StaticLfm => "LFM",
+            ListingKind.PlayerLfg => "PLAYER",
+            ListingKind.SingleNightFill => "FILL",
+            _ => "STATIC",
+        };
+        
+        DrawTagPill(drawList, origin + new Vector2(padX, padY), kindLabel, theme, scale);
+        var playstyleText = RecruitCatalog.CategoryName(listing.Playstyle).ToUpperInvariant();
         var playstyleSize = Typography.Measure(playstyleText, TextStyles.Caption2);
-        DrawBadgePill(drawList, origin + new Vector2(width - 14f * scale - (playstyleSize.X + 14f * scale), 12f * scale),
-            playstyleText, theme.TextMuted, scale);
+        DrawTagPill(drawList, new Vector2(max.X - padX - (playstyleSize.X + 16f * scale), origin.Y + padY),
+            playstyleText, theme, scale);
 
-        var dutyText = Typography.FitText(listing.Duty.Name, width - 28f * scale, TextStyles.Caption1);
-        Typography.Draw(drawList, origin + new Vector2(14f * scale, 34f * scale), dutyText, theme.TextMuted, TextStyles.Caption1);
+        var dutyText = Typography.FitText(listing.Duty.Name, width - padX * 2f, TextStyles.Caption1);
+        Typography.Draw(drawList, origin + new Vector2(padX, 36f * scale), dutyText, theme.TextMuted, TextStyles.Caption1);
 
-        var titleText = Typography.FitText(listing.Title, width - 28f * scale, TextStyles.SubheadlineEmphasized);
-        Typography.Draw(drawList, origin + new Vector2(14f * scale, 50f * scale), titleText, theme.TextStrong, TextStyles.SubheadlineEmphasized);
+        var titleText = Typography.FitText(listing.Title, width - padX * 2f, 1.05f, FontWeight.Bold);
+        Typography.Draw(drawList, origin + new Vector2(padX, 52f * scale), titleText, theme.TextStrong, 1.05f, FontWeight.Bold);
 
-        var dividerY = origin.Y + 74f * scale;
-        drawList.AddLine(new Vector2(origin.X + 14f * scale, dividerY),
-            new Vector2(origin.X + width - 14f * scale, dividerY),
-            ImGui.GetColorU32(Palette.WithAlpha(theme.TextMuted, 0.12f)), 1f * scale);
+        var dividerY = origin.Y + 80f * scale;
+        drawList.AddLine(new Vector2(origin.X + padX, dividerY),
+            new Vector2(max.X - padX, dividerY),
+            ImGui.GetColorU32(Palette.WithAlpha(theme.Separator, 0.25f)), 1f * scale);
 
-        var schedText = Typography.FitText(listing.FormattedSchedule, width - 28f * scale, TextStyles.Caption2);
-        Typography.Draw(drawList, origin + new Vector2(14f * scale, 80f * scale), schedText, theme.TextStrong, TextStyles.Caption2);
+        var schedText = Typography.FitText(listing.FormattedSchedule, width - padX * 2f, TextStyles.Caption1);
+        Typography.Draw(drawList, origin + new Vector2(padX, 88f * scale), schedText, theme.TextMuted, TextStyles.Caption1);
 
-        var roleOffset = 14f * scale;
-        var roleY = origin.Y + 100f * scale;
+        var roleOffset = padX;
+        var roleY = origin.Y + 112f * scale;
         for (var roleIndex = 0; roleIndex < listing.RolesNeeded.Count; roleIndex++)
         {
             var role = listing.RolesNeeded[roleIndex];
             var roleName = RecruitCatalog.RoleName(role);
-            var roleColor = RoleBadgeColor(role);
-            var pillWidth = DrawBadgePill(drawList, new Vector2(origin.X + roleOffset, roleY), roleName, roleColor, scale);
-            roleOffset += pillWidth + 6f * scale;
+            var roleColor = RoleColor(role);
+            var roleIcon = RoleIcon(role);
+            var pillWidth = DrawRolePill(drawList, new Vector2(origin.X + roleOffset, roleY), roleName, roleIcon, roleColor, scale);
+            roleOffset += pillWidth + 8f * scale;
         }
-
-        var authorText = Typography.FitText($"{listing.AuthorName} · {listing.WorldDc}", width - 28f * scale, TextStyles.Caption2);
-        Typography.Draw(drawList, origin + new Vector2(14f * scale, 126f * scale), authorText, theme.TextMuted, TextStyles.Caption2);
-
         if (UiInteract.Click(origin, max, hovered))
         {
             selectedListing = listing;
@@ -395,19 +402,38 @@ internal sealed partial class RecruitApp : IPhoneApp
         ImGui.Dummy(new Vector2(width, cardHeight));
     }
 
-    private static float DrawBadgePill(ImDrawListPtr drawList, Vector2 pos, string text, Vector4 color, float scale)
+    private static float DrawTagPill(ImDrawListPtr drawList, Vector2 pos, string text, PhoneTheme theme, float scale)
     {
         var textSize = Typography.Measure(text, TextStyles.Caption2);
-        var padX = 7f * scale;
+        var padX = 8f * scale;
         var padY = 3f * scale;
         var min = pos;
         var max = new Vector2(pos.X + textSize.X + padX * 2f, pos.Y + textSize.Y + padY * 2f);
-
-        Squircle.Fill(drawList, min, max, 5f * scale, ImGui.GetColorU32(Palette.WithAlpha(color, 0.18f)));
-        Squircle.Stroke(drawList, min, max, 5f * scale, ImGui.GetColorU32(Palette.WithAlpha(color, 0.45f)), 1f * scale);
-        Typography.DrawCentered(drawList, (min + max) * 0.5f, text, color, TextStyles.Caption2);
-
+        Squircle.Fill(drawList, min, max, 5f * scale, ImGui.GetColorU32(Palette.WithAlpha(theme.SurfaceMuted, 0.85f)));
+        Typography.DrawCentered(drawList, (min + max) * 0.5f, text, theme.TextStrong, TextStyles.Caption2);
         return max.X - min.X;
+    }
+
+    private static float DrawRolePill(ImDrawListPtr drawList, Vector2 pos, string text, FontAwesomeIcon icon, Vector4 color, float scale)
+    {
+        var textSize = Typography.Measure(text, TextStyles.Caption2);
+        var iconSize = 10f * scale;
+        var padX = 8f * scale;
+        var padY = 4f * scale;
+        var gap = 6f * scale;
+        var pillWidth = padX * 2f + textSize.X + gap + iconSize;
+        var pillHeight = textSize.Y + padY * 2f;
+        var min = pos;
+        var max = min + new Vector2(pillWidth, pillHeight);
+
+        Squircle.Fill(drawList, min, max, 6f * scale, ImGui.GetColorU32(Palette.WithAlpha(color, 0.16f)));
+        Squircle.Stroke(drawList, min, max, 6f * scale, ImGui.GetColorU32(Palette.WithAlpha(color, 0.70f)), 1f * scale);
+        var textY = (min.Y + max.Y) * 0.5f - textSize.Y * 0.5f;
+        Typography.Draw(drawList, new Vector2(min.X + padX, textY), text, color, TextStyles.Caption2);
+        var iconCenter = new Vector2(min.X + padX + textSize.X + gap + iconSize * 0.5f, (min.Y + max.Y) * 0.5f);
+        AppSkin.Icon(drawList, iconCenter, IconGlyph.Of(icon), color, 0.70f);
+
+        return pillWidth;
     }
 
     private static string DutyCategoryLabel(ContentCategory category)
@@ -415,6 +441,29 @@ internal sealed partial class RecruitApp : IPhoneApp
         var idx = Array.IndexOf(AllCategories, category);
         return idx >= 0 && idx < CategoryLabels.Length ? CategoryLabels[idx] : category.ToString();
     }
+
+    public static FontAwesomeIcon RoleIcon(RaidRole role) => role switch
+    {
+        RaidRole.Tank => FontAwesomeIcon.ShieldAlt,
+        RaidRole.PureHealer or RaidRole.BarrierHealer => FontAwesomeIcon.Heartbeat,
+        RaidRole.PhysRanged => FontAwesomeIcon.Crosshairs,
+        RaidRole.Caster => FontAwesomeIcon.Magic,
+        _ => FontAwesomeIcon.FistRaised,
+    };
+
+    public static FontAwesomeIcon PfSlotIcon(PfSlotRole role) => role switch
+    {
+        PfSlotRole.Tank => FontAwesomeIcon.ShieldAlt,
+        PfSlotRole.Healer => FontAwesomeIcon.Heartbeat,
+        _ => FontAwesomeIcon.FistRaised,
+    };
+
+    public static Vector4 RoleColor(RaidRole role) => role switch
+    {
+        RaidRole.Tank => AccentRing.Azure,
+        RaidRole.PureHealer or RaidRole.BarrierHealer => AccentRing.Green,
+        _ => AccentRing.Rose,
+    };
 
     private static Vector4 KindBadgeColor(ListingKind kind)
     {
@@ -427,14 +476,7 @@ internal sealed partial class RecruitApp : IPhoneApp
         };
     }
 
-    private static Vector4 RoleBadgeColor(RaidRole role)
-    {
-        return role switch{
-            RaidRole.Tank => new Vector4(0.28f, 0.58f, 0.95f, 1f),
-            RaidRole.PureHealer or RaidRole.BarrierHealer => new Vector4(0.28f, 0.82f, 0.48f, 1f),
-            _ => new Vector4(0.92f, 0.38f, 0.38f, 1f),
-        };
-    }
+    private static Vector4 RoleBadgeColor(RaidRole role) => RoleColor(role);
 
     public void Dispose()
     {

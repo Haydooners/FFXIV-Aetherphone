@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Game;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Animation;
@@ -30,7 +31,6 @@ internal sealed partial class RecruitApp
     };
 
     private PfCategory? selectedPfCategory;
-    private int currentPfPage = 1;
     private DateTime lastPfPollTime = DateTime.MinValue;
     private static readonly TimeSpan PfAutoRefreshInterval = TimeSpan.FromSeconds(60);
 
@@ -102,15 +102,11 @@ internal sealed partial class RecruitApp
     private void DrawPartyFinderTab(Rect area, float scale, PhoneTheme theme)
     {
         var accent = Accent;
-        var headerHeight = AppHeader.Height * scale;
-        var headerCenterY = area.Min.Y + headerHeight * 0.5f;
-        Typography.DrawCentered(new Vector2(area.Center.X, headerCenterY), "Party Finder", theme.TextStrong, 1.15f, FontWeight.SemiBold);
-        var refreshCenter = new Vector2(area.Max.X - 22f * scale, headerCenterY);
-        if (ui.IconButton(refreshCenter, 14f * scale, IconGlyph.Of(FontAwesomeIcon.Sync), theme.TextMuted, AppSkin.Transparent, 0.85f, "Refresh"))
-        {
-            lastPfPollTime = DateTime.UtcNow;
-            store.RefreshPartyFinder(force: true);
-        }
+        var headerHeight = 36f * scale;
+        var headerY = area.Min.Y + 8f * scale;
+
+        Typography.Draw(new Vector2(area.Min.X + 14f * scale, headerY), "Party Finder", theme.TextStrong, 1.25f, FontWeight.Bold);
+
         var pfListings = store.PartyFinderListings;
         var totalMatchingCount = 0;
         for (var checkIndex = 0; checkIndex < pfListings.Count; checkIndex++)
@@ -122,172 +118,70 @@ internal sealed partial class RecruitApp
                 totalMatchingCount++;
             }
         }
-        var filterRowTop = area.Min.Y + headerHeight + 2f * scale;
-        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + 12f * scale, filterRowTop));
-        DrawPartyFinderToolbar(area.Width, scale, theme, accent, totalMatchingCount);
+
+        var badgeText = totalMatchingCount.ToString();
+        var badgeTextSize = Typography.Measure(badgeText, TextStyles.Caption1);
+        var badgeCenter = new Vector2(area.Min.X + 145f * scale, headerY + 12f * scale);
+        var badgeRadius = MathF.Max(10f * scale, badgeTextSize.X * 0.5f + 4f * scale);
+        ImGui.GetWindowDrawList().AddCircleFilled(badgeCenter, badgeRadius,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.SurfaceMuted, 0.90f)));
+        Typography.DrawCentered(ImGui.GetWindowDrawList(), badgeCenter, badgeText, theme.TextStrong, TextStyles.Caption1);
+
+        var filterBtnWidth = 72f * scale;
+        var btnHeight = 26f * scale;
+        var btnY = headerY + 2f * scale;
+        var filterMaxX = area.Max.X - 12f * scale;
+        var filterMin = new Vector2(filterMaxX - filterBtnWidth, btnY);
+        var filterMax = new Vector2(filterMaxX, btnY + btnHeight);
+        var filterHovered = UiInteract.Hover(filterMin, filterMax);
+        if (filterHovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        Squircle.Fill(ImGui.GetWindowDrawList(), filterMin, filterMax, 7f * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.SurfaceMuted, filterHovered ? 0.95f : 0.70f)));
+        Squircle.Stroke(ImGui.GetWindowDrawList(), filterMin, filterMax, 7f * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.Separator, filterHovered ? 0.6f : 0.3f)), 1f * scale);
+        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(filterMin.X + 10f * scale, btnY + 5f * scale), "Filter", theme.TextStrong, TextStyles.Caption1);
+        AppSkin.Icon(ImGui.GetWindowDrawList(), new Vector2(filterMax.X - 14f * scale, (filterMin.Y + filterMax.Y) * 0.5f),
+            IconGlyph.Of(FontAwesomeIcon.SlidersH), theme.TextStrong, 0.75f);
+        if (UiInteract.Click(filterMin, filterMax, filterHovered))
+        {
+            pfFilterSheet.Open();
+        }
         if ((DateTime.UtcNow - lastPfPollTime) > PfAutoRefreshInterval)
         {
             lastPfPollTime = DateTime.UtcNow;
             store.RefreshPartyFinder();
         }
-        var knownTotal = selectedPfCategory.HasValue
-            ? totalMatchingCount
-            : Math.Max(totalMatchingCount, PartyFinderReader.TotalListingsCount);
-        const int pageSize = 50;
-        var totalPages = Math.Max(1, (int)Math.Ceiling((float)knownTotal / pageSize));
-        if (currentPfPage > totalPages)
-        {
-            currentPfPage = totalPages;
-        }
-        if (currentPfPage < 1)
-        {
-            currentPfPage = 1;
-        }
-        var pagerTop = filterRowTop + 36f * scale;
-        var pagerHeight = 28f * scale;
-        ImGui.SetCursorScreenPos(new Vector2(area.Min.X + 12f * scale, pagerTop));
-        DrawPfPaginationBar(area.Width - 24f * scale, pagerHeight, scale, theme, accent, totalPages);
-        var top = pagerTop + pagerHeight + 6f * scale;
+
+        var top = headerY + headerHeight + 8f * scale;
         var body = new Rect(new Vector2(area.Min.X, top), area.Max);
         using (AppSurface.Begin(body))
         {
             var width = ScrollLayout.StableContentWidth();
-            ImGui.Dummy(new Vector2(0f, 6f * scale));
-            var startIndex = (currentPfPage - 1) * pageSize;
-            var endIndex = Math.Min(startIndex + pageSize, totalMatchingCount);
-            var matchingIndex = 0;
+            ImGui.Dummy(new Vector2(0f, 4f * scale));
             var renderedCount = 0;
             for (var index = 0; index < pfListings.Count; index++)
             {
                 var listing = pfListings[index];
-                if (selectedPfCategory.HasValue && !MatchesPfCategory(listing, selectedPfCategory.Value))
-                {
-                    continue;
-                }
-                if (!MatchesPfCriteria(listing, pfFilterCriteria))
-                {
-                    continue;
-                }
-                if (matchingIndex >= startIndex && matchingIndex < endIndex)
+                if ((!selectedPfCategory.HasValue || MatchesPfCategory(listing, selectedPfCategory.Value))
+                    && MatchesPfCriteria(listing, pfFilterCriteria))
                 {
                     DrawPartyFinderCard(width, scale, theme, accent, listing);
-                    ImGui.Dummy(new Vector2(0f, 8f * scale));
+                    ImGui.Dummy(new Vector2(0f, 10f * scale));
                     renderedCount++;
                 }
-                matchingIndex++;
             }
             if (renderedCount == 0)
             {
-                var emptyMsg = knownTotal > totalMatchingCount && currentPfPage > 1
-                    ? $"Page {currentPfPage} listings are syncing...\nTap Refresh if they do not appear."
-                    : "No in-game Party Finder listings found.\nTap Refresh to search.";
                 Typography.DrawCentered(ImGui.GetWindowDrawList(),
                     ImGui.GetCursorScreenPos() + new Vector2(width * 0.5f, 40f * scale),
-                    emptyMsg, theme.TextMuted, TextStyles.Body);
+                    "No Party Finder listings found", theme.TextMuted, TextStyles.Body);
             }
             ImGui.Dummy(new Vector2(0f, 16f * scale));
         }
-    }
-
-    private void DrawPartyFinderToolbar(float totalWidth, float scale, PhoneTheme theme, Vector4 accent, int count)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var height = 32f * scale;
-        var filterBtnSize = 32f * scale;
-        var gap = 6f * scale;
-        var categoryWidth = totalWidth - 24f * scale - filterBtnSize - gap;
-        var barMin = origin;
-        var barMax = new Vector2(barMin.X + categoryWidth, barMin.Y + height);
-        var hovered = UiInteract.Hover(barMin, barMax);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-        
-        var isFiltered = selectedPfCategory.HasValue;
-        var bg = isFiltered
-            ? Palette.WithAlpha(accent, hovered ? 0.22f : 0.14f)
-            : (hovered ? Palette.WithAlpha(theme.GroupedCard, 0.95f) : Palette.WithAlpha(theme.GroupedCard, 0.70f));
-        var border = isFiltered
-            ? Palette.WithAlpha(accent, hovered ? 0.75f : 0.55f)
-            : Palette.WithAlpha(theme.TextMuted, hovered ? 0.35f : 0.18f);
-        Squircle.Fill(drawList, barMin, barMax, Metrics.Radius.Field * scale, ImGui.GetColorU32(bg));
-        Squircle.Stroke(drawList, barMin, barMax, Metrics.Radius.Field * scale, ImGui.GetColorU32(border), 1f * scale);
-        var centerY = (barMin.Y + barMax.Y) * 0.5f;
-        var iconColor = isFiltered ? accent : (hovered ? theme.TextStrong : theme.TextMuted);
-        var currentIcon = selectedPfCategory.HasValue ? PfCategoryIcon(selectedPfCategory.Value) : IconGlyph.Of(FontAwesomeIcon.Filter);
-        var iconCenter = new Vector2(barMin.X + 16f * scale, centerY);
-        AppSkin.Icon(drawList, iconCenter, currentIcon, iconColor, 0.75f);
-        var textStartX = barMin.X + 32f * scale;
-        var currentLabel = selectedPfCategory.HasValue ? PfCategoryLabels[(int)selectedPfCategory.Value] : "All Duties";
-        if (isFiltered)
-        {
-            var prefix = "Category: ";
-            var prefixSize = Typography.Measure(prefix, TextStyles.Caption2);
-            Typography.Draw(drawList, new Vector2(textStartX, centerY - prefixSize.Y * 0.5f), prefix, theme.TextMuted, TextStyles.Caption2);
-            var valueStartX = textStartX + prefixSize.X;
-            var valueSize = Typography.Measure(currentLabel, TextStyles.Caption1);
-            Typography.Draw(drawList, new Vector2(valueStartX, centerY - valueSize.Y * 0.5f), currentLabel, theme.TextStrong, TextStyles.Caption1);
-        }
-        else
-        {
-            var labelSize = Typography.Measure(currentLabel, TextStyles.Caption1);
-            Typography.Draw(drawList, new Vector2(textStartX, centerY - labelSize.Y * 0.5f), currentLabel, hovered ? theme.TextStrong : theme.TextMuted, TextStyles.Caption1);
-        }
-        var chevronRight = barMax.X - 14f * scale;
-        AppSkin.Icon(drawList, new Vector2(chevronRight, centerY), IconGlyph.Of(FontAwesomeIcon.ChevronDown), iconColor, 0.60f);
-        if (count > 0)
-        {
-            var countText = count == 1 ? "1 listing" : $"{count} listings";
-            var countSize = Typography.Measure(countText, TextStyles.Caption2);
-            var countPos = new Vector2(chevronRight - 14f * scale - countSize.X, centerY - countSize.Y * 0.5f);
-            Typography.Draw(drawList, countPos, countText, theme.TextMuted, TextStyles.Caption2);
-        }
-        if (UiInteract.Click(barMin, barMax, hovered))
-        {
-            OpenPfCategoryFilterMenu(new Rect(barMin, barMax));
-        }
-        var filterBtnMin = new Vector2(barMax.X + gap, barMin.Y);
-        var filterBtnMax = new Vector2(filterBtnMin.X + filterBtnSize, filterBtnMin.Y + height);
-        var filterHovered = UiInteract.Hover(filterBtnMin, filterBtnMax);
-        if (filterHovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-        var filterActive = pfFilterCriteria.IsActive;
-        var filterBtnBg = filterActive
-            ? Palette.WithAlpha(accent, filterHovered ? 0.28f : 0.18f)
-            : (filterHovered ? Palette.WithAlpha(theme.GroupedCard, 0.95f) : Palette.WithAlpha(theme.GroupedCard, 0.70f));
-        var filterBtnBorder = filterActive
-            ? Palette.WithAlpha(accent, filterHovered ? 0.85f : 0.65f)
-            : Palette.WithAlpha(theme.TextMuted, filterHovered ? 0.35f : 0.18f);
-        Squircle.Fill(drawList, filterBtnMin, filterBtnMax, Metrics.Radius.Field * scale, ImGui.GetColorU32(filterBtnBg));
-        Squircle.Stroke(drawList, filterBtnMin, filterBtnMax, Metrics.Radius.Field * scale, ImGui.GetColorU32(filterBtnBorder), 1f * scale);
-        var filterIconCenter = (filterBtnMin + filterBtnMax) * 0.5f;
-        var filterIconColor = filterActive ? accent : (filterHovered ? theme.TextStrong : theme.TextMuted);
-        AppSkin.Icon(drawList, filterIconCenter, IconGlyph.Of(FontAwesomeIcon.SlidersH), filterIconColor, 0.75f);
-        if (filterActive)
-        {
-            var pipPos = new Vector2(filterBtnMax.X - 5f * scale, filterBtnMin.Y + 5f * scale);
-            drawList.AddCircleFilled(pipPos, 3f * scale, ImGui.GetColorU32(accent));
-        }
-        if (UiInteract.Click(filterBtnMin, filterBtnMax, filterHovered))
-        {
-            pfFilterSheet.Toggle();
-        }
-    }
-
-    private void OpenPfCategoryFilterMenu(Rect anchor)
-    {
-        categoryFilterItems.Clear();
-        categoryFilterItems.Add(new DropdownMenu.Item("All Duties", Selected: !selectedPfCategory.HasValue));
-        for (var index = 1; index < PfCategoryLabels.Length; index++)
-        {
-            var category = (PfCategory)index;
-            categoryFilterItems.Add(new DropdownMenu.Item(PfCategoryLabels[index], Selected: selectedPfCategory == category));
-        }
-        categoryFilterMenu.Toggle("recruit_pf_category_filter", anchor);
     }
 
     private static string PfCategoryIcon(PfCategory category) => category switch
@@ -347,184 +241,93 @@ internal sealed partial class RecruitApp
         };
     }
 
-    private void DrawPfPaginationBar(float width, float height, float scale, PhoneTheme theme, Vector4 accent, int totalPages)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        var min = ImGui.GetCursorScreenPos();
-        var max = min + new Vector2(width, height);
-        var bg = theme.SurfaceMuted;
-        bg.W *= 0.5f;
-        Squircle.Fill(drawList, min, max, 8f * scale, ImGui.GetColorU32(bg));
-        Squircle.Stroke(drawList, min, max, 8f * scale, ImGui.GetColorU32(Palette.WithAlpha(theme.Hairline, 0.4f)), 1f * scale);
-        var btnWidth = 32f * scale;
-        var hasPrev = currentPfPage > 1;
-        var hasNext = currentPfPage < totalPages;
-        var prevMin = min + new Vector2(2f * scale, 2f * scale);
-        var prevMax = new Vector2(min.X + btnWidth, max.Y - 2f * scale);
-        var prevHovered = ImGui.IsMouseHoveringRect(prevMin, prevMax);
-        if (hasPrev && prevHovered)
-        {
-            Squircle.Fill(drawList, prevMin, prevMax, 6f * scale, ImGui.GetColorU32(Palette.WithAlpha(accent, 0.25f)));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            if (UiInteract.Click(prevMin, prevMax, prevHovered))
-            {
-                currentPfPage--;
-            }
-        }
-        var prevColor = hasPrev ? (prevHovered ? theme.TextStrong : theme.TextStrong) : theme.TextMuted;
-        Typography.DrawCentered(drawList, (prevMin + prevMax) * 0.5f, "<", prevColor, 0.9f, FontWeight.SemiBold);
-        var nextMin = new Vector2(max.X - btnWidth, min.Y + 2f * scale);
-        var nextMax = max - new Vector2(2f * scale, 2f * scale);
-        var nextHovered = ImGui.IsMouseHoveringRect(nextMin, nextMax);
-        if (hasNext && nextHovered)
-        {
-            Squircle.Fill(drawList, nextMin, nextMax, 6f * scale, ImGui.GetColorU32(Palette.WithAlpha(accent, 0.25f)));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            if (UiInteract.Click(nextMin, nextMax, nextHovered))
-            {
-                currentPfPage++;
-                if (store.PartyFinderListings.Count < PartyFinderReader.TotalListingsCount)
-                {
-                    store.RefreshPartyFinder();
-                }
-            }
-        }
-        var nextColor = hasNext ? (nextHovered ? theme.TextStrong : theme.TextStrong) : theme.TextMuted;
-        Typography.DrawCentered(drawList, (nextMin + nextMax) * 0.5f, ">", nextColor, 0.9f, FontWeight.SemiBold);
-        var centerPos = new Vector2((min.X + max.X) * 0.5f, (min.Y + max.Y) * 0.5f);
-        var pageText = $"Page {currentPfPage} of {totalPages}";
-        Typography.DrawCentered(drawList, centerPos, pageText, theme.TextStrong, 0.85f, FontWeight.Medium);
-        ImGui.SetCursorScreenPos(new Vector2(min.X, max.Y));
-        ImGui.Dummy(new Vector2(width, 0));
-    }
-
     private void DrawPartyFinderCard(float width, float scale, PhoneTheme theme, Vector4 accent, PartyFinderListing listing)
     {
         var min = ImGui.GetCursorScreenPos();
         var padX = 14f * scale;
         var padY = 12f * scale;
         var contentWidth = width - padX * 2f;
-        var titleSize = Typography.Measure(listing.DutyName, 1.05f, FontWeight.SemiBold);
-        var hasComment = !string.IsNullOrWhiteSpace(listing.Comment);
-        var commentHeight = hasComment
-            ? Typography.MeasureWrappedBlock(listing.Comment, TextStyles.Footnote, contentWidth).Y
-            : 0f;
-        var metaText = $"Posted by: {listing.AuthorName} · {listing.WorldName}";
-        var metaSize = Typography.Measure(metaText, TextStyles.Caption1);
-        var badgeHeight = 18f * scale;
-        var badgeToTitleGap = 8f * scale;
-        var titleToCommentGap = hasComment ? 6f * scale : 0f;
-        var slotsHeight = listing.Slots != null && listing.Slots.Count > 0 ? 20f * scale : 0f;
-        var slotsToMetaGap = slotsHeight > 0 ? 8f * scale : 0f;
-        var commentToSlotsGap = hasComment ? 8f * scale : 0f;
-        var commentToMetaGap = 10f * scale;
-        var cardHeight = padY + badgeHeight + badgeToTitleGap + titleSize.Y 
-            + titleToCommentGap + commentHeight + commentToSlotsGap + slotsHeight + slotsToMetaGap + metaSize.Y + padY;
+        var cardHeight = 152f * scale;
         var max = min + new Vector2(width, cardHeight);
         var hovered = UiInteract.Hover(min, max);
         if (hovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
-        if (UiInteract.Click(min, max, hovered))
-        {
-            var opened = PartyFinderReader.OpenListing(listing.ListingId);
-            if (!opened)
-            {
-                store.RefreshPartyFinder();
-            }
-        }
 
         var drawList = ImGui.GetWindowDrawList();
         var cardBg = hovered ? Palette.WithAlpha(theme.GroupedCard, 0.98f) : theme.GroupedCard;
-        var cardBorder = hovered ? Palette.WithAlpha(accent, 0.6f) : Palette.WithAlpha(theme.Separator, 0.4f);
-        Squircle.Fill(drawList, min, max, Metrics.Radius.Card * scale, ImGui.GetColorU32(cardBg));
-        Squircle.Stroke(drawList, min, max, Metrics.Radius.Card * scale, ImGui.GetColorU32(cardBorder), (hovered ? 1.5f : 1f) * scale);
-        var closeSize = 20f * scale;
-        var closeMin = new Vector2(max.X - padX - closeSize, min.Y + padY);
-        var closeMax = closeMin + new Vector2(closeSize, closeSize);
-        var closeHovered = UiInteract.Hover(closeMin, closeMax);
-    
-        if (closeHovered)
+        var cardBorder = hovered ? Palette.WithAlpha(accent, 0.6f) : Palette.WithAlpha(theme.Separator, 0.35f);
+        Squircle.Fill(drawList, min, max, 14f * scale, ImGui.GetColorU32(cardBg));
+        Squircle.Stroke(drawList, min, max, 14f * scale, ImGui.GetColorU32(cardBorder), (hovered ? 1.5f : 1f) * scale);
+
+        var catName = !string.IsNullOrWhiteSpace(listing.CategoryName) ? listing.CategoryName.ToUpperInvariant() : "DUTY";
+        DrawTagPill(drawList, min + new Vector2(padX, padY), catName, theme, scale);
+
+        var titleY = min.Y + padY + 22f * scale;
+        var titleColor = hovered ? new Vector4(0.24f, 0.72f, 0.98f, 1f) : theme.TextStrong;
+        var titleFitted = Typography.FitText(listing.DutyName, contentWidth, 1.05f, FontWeight.Bold);
+        Typography.Draw(drawList, new Vector2(min.X + padX, titleY), titleFitted, titleColor, 1.05f, FontWeight.Bold);
+
+        var commentY = titleY + 22f * scale;
+        if (!string.IsNullOrWhiteSpace(listing.Comment))
         {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-        Typography.DrawCentered(drawList, (closeMin + closeMax) * 0.5f, "X", 
-            closeHovered ? theme.Danger : theme.TextMuted, 0.85f, FontWeight.Bold);
-            
-        if (UiInteract.Click(closeMin, closeMax, closeHovered))
-        {
-            store.RemovePartyFinderListing(listing.ListingId);
-            return;
+            var commentFitted = Typography.FitText(listing.Comment, contentWidth, TextStyles.Footnote);
+            Typography.Draw(drawList, new Vector2(min.X + padX, commentY), commentFitted, theme.TextMuted, TextStyles.Footnote);
         }
 
-        var pfBadgeColor = new Vector4(0.38f, 0.72f, 0.88f, 1.0f);
-        var pfTextSize = Typography.Measure("PARTY FINDER", 0.75f, FontWeight.SemiBold);
-        var pfBadgeMin = min + new Vector2(padX, padY);
-        var pfBadgeMax = pfBadgeMin + new Vector2(pfTextSize.X + 12f * scale, 18f * scale);
-        Squircle.Fill(drawList, pfBadgeMin, pfBadgeMax, 4f * scale, ImGui.GetColorU32(Palette.WithAlpha(pfBadgeColor, 0.22f)));
-        Typography.DrawCentered(drawList, (pfBadgeMin + pfBadgeMax) * 0.5f, "PARTY FINDER", pfBadgeColor, 0.75f, FontWeight.SemiBold);
-        var catTextSize = Typography.Measure(listing.CategoryName.ToUpperInvariant(), 0.75f, FontWeight.SemiBold);
-        var catBadgeMin = new Vector2(pfBadgeMax.X + 6f * scale, pfBadgeMin.Y);
-        var catBadgeMax = catBadgeMin + new Vector2(catTextSize.X + 12f * scale, 18f * scale);
-        Squircle.Fill(drawList, catBadgeMin, catBadgeMax, 4f * scale, ImGui.GetColorU32(Palette.WithAlpha(theme.SurfaceMuted, 0.7f)));
-        Typography.DrawCentered(drawList, (catBadgeMin + catBadgeMax) * 0.5f, listing.CategoryName.ToUpperInvariant(), theme.TextMuted, 0.75f, FontWeight.SemiBold);
-        var curY = pfBadgeMax.Y + badgeToTitleGap;
-        Typography.Draw(drawList, new Vector2(min.X + padX, curY), listing.DutyName, theme.TextStrong, 1.05f, FontWeight.SemiBold);
-        curY += titleSize.Y;
-        if (hasComment)
-        {
-            curY += titleToCommentGap;
-            var drawnCommentHeight = Typography.DrawWrappedLeft(new Vector2(min.X + padX, curY), listing.Comment, theme.TextMuted, TextStyles.Footnote, contentWidth);
-            curY += drawnCommentHeight;
-        }
-        if (listing.Slots != null && listing.Slots.Count > 0)
-        {
-            curY += commentToSlotsGap;
-            DrawPfSlotsRow(drawList, new Vector2(min.X + padX, curY), listing.Slots, scale, theme);
-            curY += slotsHeight + slotsToMetaGap;
-        }
-        else
-        {
-            curY += commentToMetaGap;
-        }
+        var slotsY = min.Y + 84f * scale;
+        DrawPfSlotsRow(drawList, new Vector2(min.X + padX, slotsY), listing.Slots, scale, theme);
 
-        Typography.Draw(drawList, new Vector2(min.X + padX, curY), metaText, theme.TextMuted, TextStyles.Caption1);
+        var metaText = $"Posted by: {listing.AuthorName} - {listing.WorldName}";
+        Typography.Draw(drawList, new Vector2(min.X + padX, min.Y + cardHeight - padY - 14f * scale),
+            Typography.FitText(metaText, contentWidth, TextStyles.Caption1), theme.TextMuted, TextStyles.Caption1);
+        if (UiInteract.Click(min, max, hovered))
+        {
+            selectedPfListing = listing;
+            router.Push(RecruitScreen.PfDetail);
+        }
         ImGui.Dummy(new Vector2(width, cardHeight));
     }
 
-    private static void DrawPfSlotsRow(ImDrawListPtr drawList, Vector2 pos, IReadOnlyList<PfSlotInfo> slots, float scale, PhoneTheme theme)
+    private static void DrawPfSlotsRow(ImDrawListPtr drawList, Vector2 pos, IReadOnlyList<PfSlotInfo>? slots, float scale, PhoneTheme theme)
     {
-        var slotWidth = 24f * scale;
-        var slotHeight = 18f * scale;
-        var gap = 5f * scale;
+        var boxSize = 18f * scale;
+        var gap = 4f * scale;
         var currentX = pos.X;
-        for (var i = 0; i < slots.Count; i++)
+        var totalSlots = slots != null && slots.Count > 0 ? Math.Min(8, slots.Count) : 8;
+
+        for (var i = 0; i < totalSlots; i++)
         {
-            var slot = slots[i];
             var min = new Vector2(currentX, pos.Y);
-            var max = new Vector2(min.X + slotWidth, min.Y + slotHeight);
+            var max = min + new Vector2(boxSize, boxSize);
             var center = (min + max) * 0.5f;
-            var baseColor = slot.Role switch
+            if (slots != null && i < slots.Count)
             {
-                PfSlotRole.Tank => new Vector4(0.28f, 0.58f, 0.95f, 1f),
-                PfSlotRole.Healer => new Vector4(0.28f, 0.82f, 0.48f, 1f),
-                PfSlotRole.Dps => new Vector4(0.92f, 0.38f, 0.38f, 1f),
-                _ => new Vector4(0.70f, 0.70f, 0.70f, 1f),
-            };
-            if (slot.IsFilled)
-            {
-                var dimmedBg = Palette.WithAlpha(baseColor, 0.40f);
-                Squircle.Fill(drawList, min, max, 4f * scale, ImGui.GetColorU32(dimmedBg));
-                Squircle.Stroke(drawList, min, max, 4f * scale, ImGui.GetColorU32(Palette.WithAlpha(baseColor, 0.55f)), 1f * scale);
-                AppSkin.Icon(drawList, center, IconGlyph.Of(FontAwesomeIcon.Check), new Vector4(1f, 1f, 1f, 0.85f), 0.65f);
+                var slot = slots[i];
+                var baseColor = slot.Role switch
+                {
+                    PfSlotRole.Tank => AccentRing.Azure,
+                    PfSlotRole.Healer => AccentRing.Green,
+                    _ => AccentRing.Rose,
+                };
+                if (slot.IsFilled)
+                {
+                    Squircle.Fill(drawList, min, max, 3.5f * scale, ImGui.GetColorU32(baseColor));
+                    AppSkin.Icon(drawList, center, IconGlyph.Of(FontAwesomeIcon.Check), new Vector4(1f, 1f, 1f, 1f), 0.60f);
+                }
+                else
+                {
+                    Squircle.Fill(drawList, min, max, 3.5f * scale, ImGui.GetColorU32(Palette.WithAlpha(baseColor, 0.25f)));
+                    Squircle.Stroke(drawList, min, max, 3.5f * scale, ImGui.GetColorU32(Palette.WithAlpha(baseColor, 0.55f)), 1f * scale);
+                }
             }
             else
             {
-                Squircle.Fill(drawList, min, max, 4f * scale, ImGui.GetColorU32(baseColor));
-                Typography.DrawCentered(drawList, center, slot.Label, new Vector4(1f, 1f, 1f, 1f), 0.75f, FontWeight.Bold);
+                var emptyColor = Palette.WithAlpha(new Vector4(0.70f, 0.68f, 0.62f, 1f), 0.30f);
+                Squircle.Fill(drawList, min, max, 3.5f * scale, ImGui.GetColorU32(emptyColor));
             }
-            currentX += slotWidth + gap;
+            currentX += boxSize + gap;
         }
     }
 
@@ -727,15 +530,15 @@ internal sealed partial class RecruitApp
             ImGui.Dummy(new Vector2(toggleWidth, toggleHeight + 6f * scale));
             var roleRowX = ImGui.GetCursorScreenPos().X;
             var roleRowY = ImGui.GetCursorScreenPos().Y + 12f * scale;
-            if (DrawCustomFilterChip(ref roleRowX, roleRowY, gap, "Tank", pfFilterCriteria.TankOpen, new Vector4(0.28f, 0.58f, 0.95f, 1f), theme))
+            if (DrawCustomFilterChip(ref roleRowX, roleRowY, gap, "Tank", pfFilterCriteria.TankOpen, AccentRing.Azure, theme))
             {
                 pfFilterCriteria.TankOpen = !pfFilterCriteria.TankOpen;
             }
-            if (DrawCustomFilterChip(ref roleRowX, roleRowY, gap, "Healer", pfFilterCriteria.HealerOpen, new Vector4(0.28f, 0.82f, 0.48f, 1f), theme))
+            if (DrawCustomFilterChip(ref roleRowX, roleRowY, gap, "Healer", pfFilterCriteria.HealerOpen, AccentRing.Green, theme))
             {
                 pfFilterCriteria.HealerOpen = !pfFilterCriteria.HealerOpen;
             }
-            if (DrawCustomFilterChip(ref roleRowX, roleRowY, gap, "DPS", pfFilterCriteria.DpsOpen, new Vector4(0.92f, 0.38f, 0.38f, 1f), theme))
+            if (DrawCustomFilterChip(ref roleRowX, roleRowY, gap, "DPS", pfFilterCriteria.DpsOpen, AccentRing.Rose, theme))
             {
                 pfFilterCriteria.DpsOpen = !pfFilterCriteria.DpsOpen;
             }
@@ -995,5 +798,159 @@ internal sealed partial class RecruitApp
         var pos = ImGui.GetCursorScreenPos();
         Typography.Draw(ImGui.GetWindowDrawList(), pos, label, theme.TextMuted, 0.72f, FontWeight.Bold);
         ImGui.Dummy(new Vector2(0f, 16f * scale));
+    }
+
+    private void DrawPartyFinderDetailScreen(in PhoneContext context, Rect area)
+    {
+        if (selectedPfListing is null)
+        {
+            router.Pop();
+            return;
+        }
+        var scale = UiScale.Current;
+        var theme = ui.Theme;
+        var listing = selectedPfListing;
+        var padX = 16f * scale;
+
+        var headerY = area.Min.Y + 8f * scale;
+        var backCenter = new Vector2(area.Min.X + padX + 8f * scale, headerY + 12f * scale);
+        if (ui.IconButton(backCenter, 14f * scale, IconGlyph.Of(FontAwesomeIcon.ChevronLeft), theme.TextStrong, AppSkin.Transparent, 0.90f, "Back"))
+        {
+            router.Pop();
+            return;
+        }
+
+        var top = headerY + 36f * scale;
+        var body = new Rect(new Vector2(area.Min.X, top), area.Max);
+        using (AppSurface.Begin(body))
+        {
+            var width = ScrollLayout.StableContentWidth();
+            var originX = ImGui.GetCursorScreenPos().X;
+            ImGui.Dummy(new Vector2(0f, 4f * scale));
+            var catName = !string.IsNullOrWhiteSpace(listing.CategoryName) ? listing.CategoryName.ToUpperInvariant() : "DUTY";
+            DrawTagPill(ImGui.GetWindowDrawList(), new Vector2(originX, ImGui.GetCursorScreenPos().Y), catName, theme, scale);
+            ImGui.Dummy(new Vector2(0f, 22f * scale));
+            var titleColor = new Vector4(0.24f, 0.74f, 0.98f, 1f);
+            Typography.Draw(new Vector2(originX, ImGui.GetCursorScreenPos().Y), listing.DutyName, titleColor, 1.25f, FontWeight.Bold);
+            ImGui.Dummy(new Vector2(0f, 26f * scale));
+            var metaY = ImGui.GetCursorScreenPos().Y;
+            Typography.Draw(new Vector2(originX, metaY), "Location", theme.TextMuted, TextStyles.Subheadline);
+            Typography.Draw(new Vector2(originX + 75f * scale, metaY), listing.WorldName, theme.TextStrong, TextStyles.Subheadline);
+            ImGui.Dummy(new Vector2(0f, 20f * scale));
+            var timeY = ImGui.GetCursorScreenPos().Y;
+            Typography.Draw(new Vector2(originX, timeY), "Time Limit", theme.TextMuted, TextStyles.Subheadline);
+            Typography.Draw(new Vector2(originX + 85f * scale, timeY), "22 minutes remaining", theme.TextStrong, TextStyles.Subheadline);
+            ImGui.Dummy(new Vector2(0f, 24f * scale));
+            if (!string.IsNullOrWhiteSpace(listing.Comment))
+            {
+                var descHeight = Typography.DrawWrappedLeft(new Vector2(originX, ImGui.GetCursorScreenPos().Y),
+                    listing.Comment, theme.TextMuted, TextStyles.Subheadline, width);
+                ImGui.Dummy(new Vector2(0f, descHeight + 16f * scale));
+            }
+            
+            var leaderY = ImGui.GetCursorScreenPos().Y;
+            Typography.Draw(new Vector2(originX, leaderY), "Leader", theme.TextStrong, 1.05f, FontWeight.Bold);
+            Typography.Draw(new Vector2(originX + 65f * scale, leaderY), listing.AuthorName, theme.TextStrong, 1.05f, FontWeight.Medium);
+            ImGui.Dummy(new Vector2(0f, 32f * scale));
+            DrawPfDetailSlotsGrid(width, scale, theme, listing.Slots);
+            ImGui.Dummy(new Vector2(0f, 20f * scale));
+            DrawDetailActionButtons(width, scale, theme, listing);
+            ImGui.Dummy(new Vector2(0f, 24f * scale));
+        }
+    }
+
+    private static void DrawPfDetailSlotsGrid(float width, float scale, PhoneTheme theme, IReadOnlyList<PfSlotInfo>? slots)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var origin = ImGui.GetCursorScreenPos();
+        var pad = 12f * scale;
+        var gap = 8f * scale;
+        var tileWidth = (width - pad * 2f - gap * 3f) / 4f;
+        var tileHeight = tileWidth;
+        var containerHeight = pad * 2f + tileHeight * 2f + gap;
+        var containerMax = origin + new Vector2(width, containerHeight);
+
+        Squircle.Fill(drawList, origin, containerMax, 14f * scale, ImGui.GetColorU32(Palette.WithAlpha(theme.GroupedCard, 0.90f)));
+        for (var i = 0; i < 8; i++)
+        {
+            var col = i % 4;
+            var row = i / 4;
+            var tileMin = new Vector2(origin.X + pad + col * (tileWidth + gap), origin.Y + pad + row * (tileHeight + gap));
+            var tileMax = tileMin + new Vector2(tileWidth, tileHeight);
+            var center = (tileMin + tileMax) * 0.5f;
+            if (slots != null && i < slots.Count)
+            {
+                var slot = slots[i];
+                var baseColor = slot.Role switch
+                {
+                    PfSlotRole.Tank => AccentRing.Azure,
+                    PfSlotRole.Healer => AccentRing.Green,
+                    _ => AccentRing.Rose,
+                };
+
+                Squircle.Fill(drawList, tileMin, tileMax, 8f * scale, ImGui.GetColorU32(baseColor));
+                var iconDrawn = false;
+                if (slot.JobId > 0)
+                {
+                    var iconId = GameData.JobIconId(slot.JobId);
+                    var iconInset = 8f * scale;
+                    iconDrawn = GameIconTile.Draw(drawList, Plugin.TextureProvider, iconId,
+                        tileMin + new Vector2(iconInset), tileMax - new Vector2(iconInset), 4f * scale, scale);
+                }
+                if (!iconDrawn)
+                {
+                    var roleIcon = PfSlotIcon(slot.Role);
+                    AppSkin.Icon(drawList, center, IconGlyph.Of(roleIcon), new Vector4(1f, 1f, 1f, 0.95f), 1.1f);
+                }
+            }
+            else
+            {
+                var emptyColor = Palette.WithAlpha(new Vector4(0.70f, 0.68f, 0.62f, 1f), 0.25f);
+                Squircle.Fill(drawList, tileMin, tileMax, 8f * scale, ImGui.GetColorU32(emptyColor));
+            }
+        }
+        ImGui.Dummy(new Vector2(width, containerHeight));
+    }
+
+    private void DrawDetailActionButtons(float width, float scale, PhoneTheme theme, PartyFinderListing listing)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var btnHeight = 42f * scale;
+
+        var joinMin = ImGui.GetCursorScreenPos();
+        var joinMax = joinMin + new Vector2(width, btnHeight);
+        var joinHovered = UiInteract.Hover(joinMin, joinMax);
+        if (joinHovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+        Squircle.Fill(drawList, joinMin, joinMax, 10f * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.GroupedCard, joinHovered ? 0.98f : 0.85f)));
+        Squircle.Stroke(drawList, joinMin, joinMax, 10f * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.Separator, joinHovered ? 0.6f : 0.35f)), 1f * scale);
+        Typography.DrawCentered(drawList, (joinMin + joinMax) * 0.5f, "Join Party", theme.TextStrong, 1.0f, FontWeight.Bold);
+        if (UiInteract.Click(joinMin, joinMax, joinHovered))
+        {
+            PartyFinderReader.OpenListing(listing.ListingId);
+        }
+        ImGui.Dummy(new Vector2(width, btnHeight + 8f * scale));
+
+        var tellMin = ImGui.GetCursorScreenPos();
+        var tellMax = tellMin + new Vector2(width, btnHeight);
+        var tellHovered = UiInteract.Hover(tellMin, tellMax);
+        if (tellHovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+        Squircle.Fill(drawList, tellMin, tellMax, 10f * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.GroupedCard, tellHovered ? 0.98f : 0.85f)));
+        Squircle.Stroke(drawList, tellMin, tellMax, 10f * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(theme.Separator, tellHovered ? 0.6f : 0.35f)), 1f * scale);
+        Typography.DrawCentered(drawList, (tellMin + tellMax) * 0.5f, "Send/Tell", theme.TextStrong, 1.0f, FontWeight.Bold);
+        if (UiInteract.Click(tellMin, tellMax, tellHovered))
+        {
+            ImGui.SetClipboardText($"/tell {listing.AuthorName}@{listing.WorldName} ");
+        }
+        ImGui.Dummy(new Vector2(width, btnHeight));
     }
 }
