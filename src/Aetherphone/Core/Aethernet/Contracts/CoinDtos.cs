@@ -89,7 +89,25 @@ internal sealed record CoinGameSessionDto(
     int DeepSeconds,
     long ExpiresAtUnix,
     string Reason = "",
-    long StartedAtUnix = 0);
+    long StartedAtUnix = 0,
+    int CooldownSeconds = 0);
+
+internal sealed record CoinQuestDto(
+    string Id,
+    string Group,
+    string App,
+    int Progress,
+    int Target,
+    long Amount,
+    bool Claimed);
+
+internal sealed record CoinQuestBoardDto(int DayIndex, long ResetsAtUnix, CoinQuestDto[] Quests);
+
+internal sealed record CoinListenStartRequest(string StationId);
+
+internal sealed record CoinListenStartDto(bool Started, string Reason = "", string SessionId = "");
+
+internal sealed record CoinListenEndDto(bool Credited, int Seconds, int MinutesToday);
 
 internal sealed record CoinPurchaseRequest(string SkuId, long ExpectedPrice);
 

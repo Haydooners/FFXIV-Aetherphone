@@ -43,7 +43,7 @@ internal sealed class VelvetFilterSelection
         Tags.Clear();
     }
 
-    public void LoadFrom(VelvetMutePreferences stored)
+    public void LoadFrom(VelvetFilterPreferences stored)
     {
         Clear();
         Intent = stored.Intent;
@@ -59,7 +59,7 @@ internal sealed class VelvetFilterSelection
         CopyInto(stored.Tags, Tags);
     }
 
-    public void SaveInto(VelvetMutePreferences stored)
+    public void SaveInto(VelvetFilterPreferences stored)
     {
         stored.Intent = Intent;
         stored.Gender = Gender;

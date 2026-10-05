@@ -1,10 +1,12 @@
 using Aetherphone.Apps.Settings.Pages;
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Changelog;
 using Aetherphone.Core.Crypto;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Moderation;
 using Aetherphone.Core.Notifications;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Photos;
 using Aetherphone.Core.Sharing;
 using Aetherphone.Core.Theme;
@@ -20,11 +22,13 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
     public string Id => "settings";
     public string DisplayName => Loc.T(L.Apps.Settings);
     public string Glyph => "S";
-    public int BadgeCount => configuration.HasUnseenChangelog ? 1 : 0;
+    public int BadgeCount => (configuration.HasUnseenChangelog ? 1 : 0)
+        + (configuration.HasUnseenFeaturePin(NewFeaturePins.Nameplate) ? 1 : 0);
     public bool HasBadge => true;
     public bool BadgeAsDot => true;
     public bool WantsSystemTheme => true;
     public ShareKindSet AcceptedShares => ShareKindSet.Photo;
+    private const float BackAnchorFraction = 0.32f;
     private readonly Configuration configuration;
     private readonly ViewRouter<ISettingsPage> router;
     private readonly ISettingsPage[] searchablePages;
@@ -46,7 +50,10 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
     private readonly EncryptionPage encryptionPage;
     private readonly ChangelogPage changelogPage;
     private readonly PrivacyPage privacyPage;
+    private readonly LinkedDevicesPage linkedDevicesPage;
     private readonly TagsMentionsPage tagsMentionsPage;
+    private readonly InstalledAppList installedApps;
+    private readonly AppSettingsPages appSettingsPages;
     private readonly ThemeProvider themes;
     private readonly WallpaperLibrary wallpapers;
     private readonly WallpaperImageCache wallpaperImages;
@@ -74,14 +81,16 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         var coinPage = new CoinPage(services.Coins);
         accountPage = new AccountPage(configuration, aethernetSession, aethernet.Auth, aethernet.Account,
             services.AccountState, aethernet.Media, gameData, remoteImages, lodestone, this, namePage, profilePage,
-            encryptionPage, coinPage, photoLibrary, confirm, wallpaperImages);
+            encryptionPage, coinPage, photoLibrary, confirm, wallpaperImages, services.CacheStorage,
+            services.ChatHistory);
         var appearance = new AppearancePage(configuration, themes, this, photoLibrary, confirm, wallpapers,
-            wallpaperImages, services.MinimizedLayout);
+            wallpaperImages, services.Looks);
+        var display = new DisplayPage(configuration, this, services.MinimizedLayout);
         var language = new LanguagePage(configuration, services.Translation);
         var general = new GeneralPage(configuration, services.Translation, confirm);
         var tutorials = new TutorialsPage(configuration);
         callsPage = new CallsPage(calls, configuration);
-        var appNotifications = new AppNotificationPage(configuration, sound);
+        var nameplatePage = new NameplateTitlePage(services.NameplateTitles, configuration, this, services.PcMedia);
         var notificationSoundPage = new SoundSettingsPage(sound, SoundKind.Notification, L.Settings.NotificationSound,
             FontAwesomeIcon.Bell, new Vector4(0.98f, 0.27f, 0.25f, 1f), "settings.notificationVolume",
             () => configuration.NotificationSound, token =>
@@ -93,7 +102,11 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
                 configuration.NotificationVolume = volume;
                 configuration.Save();
             });
-        notificationsPage = new NotificationsPage(configuration, this, appNotifications, services.Installer, apps);
+        installedApps = new InstalledAppList(services.Installer, apps);
+        appSettingsPages = new AppSettingsPages(configuration, sound, services.Installer, confirm, this,
+            services.PcMedia);
+        notificationsPage = new NotificationsPage(configuration, this, installedApps, appSettingsPages);
+        var appsPage = new AppsPage(installedApps, appSettingsPages, this, configuration);
         var ringtonePage = new SoundSettingsPage(sound, SoundKind.Ringtone, L.Settings.Ringtone, FontAwesomeIcon.Music,
             new Vector4(0.95f, 0.40f, 0.65f, 1f), "settings.ringtoneVolume",
             () => configuration.RingtoneSound, token =>
@@ -113,14 +126,16 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         var commands = new CommandsPage();
         tagsMentionsPage = new TagsMentionsPage(aethernetSession, aethernet.Account, this);
         privacyPage = new PrivacyPage(configuration, aethernetSession, aethernet.Account, aethernet.Safety,
-            confirm, this, tagsMentionsPage);
+            confirm, this, tagsMentionsPage, services.CacheStorage);
         var about = new AboutPage(configuration, gameData, aethernetSession);
         changelogPage = new ChangelogPage(configuration);
+        linkedDevicesPage = new LinkedDevicesPage(configuration, aethernetSession, aethernet.Auth, this);
         var groups = new[]
         {
-            new ISettingsPage[] { general, appearance, sounds, notificationsPage, callsPage, language },
-            new ISettingsPage[] { privacyPage, safetyPage },
+            new ISettingsPage[] { general, appearance, display, sounds, notificationsPage, callsPage, nameplatePage, language },
+            new ISettingsPage[] { privacyPage, safetyPage, linkedDevicesPage },
             new ISettingsPage[] { tutorials, commands, changelogPage, about },
+            new ISettingsPage[] { appsPage },
         };
         var searchableCount = 0;
         for (var groupIndex = 0; groupIndex < groups.Length; groupIndex++)
@@ -138,9 +153,12 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
             }
         }
 
+        var profileCard = new ProfileCard(aethernetSession, gameData, services.CharacterWatch, remoteImages,
+            lodestone);
         router = new ViewRouter<ISettingsPage>(
-            new RootSettingsPage(this, groups, configuration, aethernetSession, remoteImages, lodestone,
-                accountPage));
+            new RootSettingsPage(this, groups, configuration, accountPage,
+                new SupportPage(this, accountPage, aethernetSession, services.RemoteImages, services.Lodestone,
+                    services.FrameCatalog), profileCard, installedApps, appSettingsPages));
         drawPage = DrawPage;
         popBack = PopBack;
         assignWallpaper = AssignWallpaper;
@@ -194,6 +212,11 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
             configuration.MarkChangelogSeen();
         }
 
+        if (page is NameplateTitlePage)
+        {
+            configuration.MarkFeaturePinSeen(NewFeaturePins.Nameplate);
+        }
+
         router.Push(page);
     }
 
@@ -221,6 +244,8 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
     public int SpotlightPageCount => searchablePages.Length;
 
     public string SpotlightPageTitle(int pageIndex) => searchablePages[pageIndex].Title;
+
+    public bool IsSpotlightPageHidden(int pageIndex) => searchablePages[pageIndex].IsHidden;
 
     public void RequestSpotlightPage(int pageIndex) => pendingPage = searchablePages[pageIndex];
 
@@ -260,6 +285,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         {
             router.Reset();
             router.Push(PageFor(requestedPage));
+            PushAppNotifications(settingsLauncher.TryConsumeAppId());
         }
 
         frameTheme = context.Theme;
@@ -276,11 +302,17 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
             return;
         }
 
-        var onBack = depth > 1 ? popBack : null;
-        AppHeader.Draw(context, page.Title, onBack);
-        var scale = UiScale.Current;
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
-        page.Draw(context, body);
+        var navBar = AppHeader.BeginLargeTitle(context, depth > 1);
+        page.Draw(context, navBar.Body);
+        if (depth > 1)
+        {
+            UiAnchors.Report("settings.back", new Rect(area.Min, new Vector2(area.Min.X + area.Width * BackAnchorFraction,
+                area.Min.Y + NavBarMetrics.InlineHeight * UiScale.Current)));
+        }
+
+        var backTitle = depth > 1 && router.TryGetView(depth - 2, out var previous) ? previous.Title : string.Empty;
+        AppHeader.EndLargeTitle(in navBar, context, "settings.nav", page.Title, NavBarStyle.From(frameTheme),
+            ReadOnlySpan<NavBarButton>.Empty, backTitle, depth > 1 ? popBack : null);
     }
 
     private ISettingsPage PageFor(SettingsPageKind kind) => kind switch
@@ -290,6 +322,26 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         SettingsPageKind.Calls => callsPage,
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
+
+    private void PushAppNotifications(string? appId)
+    {
+        if (appId is null)
+        {
+            return;
+        }
+
+        var entries = installedApps.Entries;
+        for (var index = 0; index < entries.Length; index++)
+        {
+            if (!string.Equals(entries[index].AppId, appId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            router.Push(appSettingsPages.For(entries[index]));
+            return;
+        }
+    }
 
     private void PopBack()
     {
@@ -305,5 +357,7 @@ internal sealed class SettingsApp : IResumableApp, ISettingsNavigator, ISpotligh
         encryptionPage.Dispose();
         privacyPage.Dispose();
         tagsMentionsPage.Dispose();
+        linkedDevicesPage.Dispose();
+        installedApps.Dispose();
     }
 }

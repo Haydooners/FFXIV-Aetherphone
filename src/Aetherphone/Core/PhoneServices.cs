@@ -2,18 +2,23 @@ using Aetherphone.Core.Activity;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Announcements;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Clock;
 using Aetherphone.Core.Collections;
 using Aetherphone.Core.Conduct;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Crypto;
+using Aetherphone.Core.Fishing;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Games;
 using Aetherphone.Core.Health;
+using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Housing;
 using Aetherphone.Core.Hunts;
 using Aetherphone.Core.Inventory;
+using Aetherphone.Core.Jam;
 using Aetherphone.Core.Lodestone;
+using Aetherphone.Core.Lyrics;
 using Aetherphone.Core.Maps;
 using Aetherphone.Core.Market;
 using Aetherphone.Core.Media;
@@ -25,6 +30,7 @@ using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Playback;
 using Aetherphone.Core.Radio;
 using Aetherphone.Core.Report;
+using Aetherphone.Core.Rolladeck;
 using Aetherphone.Core.Runtime;
 using Aetherphone.Core.Recruit;
 using Aetherphone.Core.Sharing;
@@ -32,6 +38,7 @@ using Aetherphone.Core.Shell;
 using Aetherphone.Core.Shortcuts;
 using Aetherphone.Core.Songs;
 using Aetherphone.Core.Strats;
+using Aetherphone.Core.SystemMedia;
 using Aetherphone.Core.Telephony;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Translation;
@@ -42,6 +49,7 @@ using Aetherphone.Core.YellowPages;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
 using YoutubeExplode;
+using WalletService = Aetherphone.Core.Wallet.WalletService;
 
 namespace Aetherphone.Core;
 
@@ -50,11 +58,14 @@ internal sealed class PhoneServices : IDisposable
     public required Home.AppInstaller Installer { get; init; }
     public required Configuration Configuration { get; init; }
     public required ThemeProvider Themes { get; init; }
+    public required Home.HomeLookService Looks { get; init; }
     public required GameData GameData { get; init; }
     public required CharacterWatch CharacterWatch { get; init; }
     public required MapData Maps { get; init; }
     public required HousingService Housing { get; init; }
     public required HousingReminderService HousingReminders { get; init; }
+    public required FishingCatalog Fishing { get; init; }
+    public required FishingAlerts FishingAlerts { get; init; }
     public required ITextureProvider Textures { get; init; }
     public required Windows.Components.ArtworkCache Artwork { get; init; }
     public required WeatherService Weather { get; init; }
@@ -70,6 +81,7 @@ internal sealed class PhoneServices : IDisposable
     public required SafetyLauncher SafetyLauncher { get; init; }
     public required SettingsLauncher SettingsLauncher { get; init; }
     public required SoundService Sound { get; init; }
+    public required AlarmRinger AlarmRinger { get; init; }
     public required UiSoundService UiSound { get; init; }
     public required FrameworkTicker UiSoundTicker { get; init; }
     public required LinkpearlLauncher LinkpearlLauncher { get; init; }
@@ -89,6 +101,7 @@ internal sealed class PhoneServices : IDisposable
     public required HttpService Http { get; init; }
     public required MediaCache Media { get; init; }
     public required RemoteImageCache RemoteImages { get; init; }
+    public required CacheStorage CacheStorage { get; init; }
 
     public required Social.BadgeCatalogStore BadgeCatalog { get; init; }
 
@@ -101,6 +114,10 @@ internal sealed class PhoneServices : IDisposable
     public required Coins.CoinCatalogStore CoinCatalog { get; init; }
 
     public required Coins.CoinGameSessionTracker CoinSessions { get; init; }
+
+    public required Coins.CoinQuestStore CoinQuests { get; init; }
+
+    public required Coins.CoinRadioListenTracker CoinRadio { get; init; }
 
     public required Coins.CoinEarnNotifier CoinEarnNotifier { get; init; }
 
@@ -140,6 +157,7 @@ internal sealed class PhoneServices : IDisposable
     public required TranslationService Translation { get; init; }
     public required MarketLauncher MarketLauncher { get; init; }
     public required MarketAlertService MarketAlerts { get; init; }
+    public required MarketWatchlist MarketWatchlist { get; init; }
     public required NewsService News { get; init; }
     public required RadioService Radio { get; init; }
     public required RadioPlayer RadioPlayer { get; init; }
@@ -147,11 +165,18 @@ internal sealed class PhoneServices : IDisposable
     public required VideoUrlResolver VideoMetadata { get; init; }
     public required SongPlayer SongPlayer { get; init; }
     public required SongLinkResolver SongResolver { get; init; }
-    public required SongHistory SongHistory { get; init; }
-    public required PlaylistStore Playlists { get; init; }
     public required PlaybackHub Playback { get; init; }
+    public required LibraryStore MusicLibrary { get; init; }
+    public required ListeningPresence Listening { get; init; }
+    public required DownloadStore MusicDownloads { get; init; }
+    public required WindowsMediaSessions WindowsMedia { get; init; }
+    public required PcMediaSource PcMedia { get; init; }
+    public required WindowsMediaPublisher WindowsMediaPublisher { get; init; }
+    public required PlaybackSystemBridge PlaybackBridge { get; init; }
+    public required LyricsService Lyrics { get; init; }
     public required GameStatsStore GameStats { get; init; }
     public required VenuesService Venues { get; init; }
+    public required RolladeckService Rolladeck { get; init; }
     public required StratsManifestStore StratsManifest { get; init; }
     public required StratsGuideStore StratsGuides { get; init; }
     public required MusterStore Musters { get; init; }
@@ -159,18 +184,23 @@ internal sealed class PhoneServices : IDisposable
     public required MusterLauncher MusterLauncher { get; init; }
 
     public required RadioLauncher RadioLauncher { get; init; }
+    public required JamSession Jam { get; init; }
+    public required JamLauncher JamLauncher { get; init; }
     public required YellowPagesStore YellowPages { get; init; }
 
     public required AdInquiryStore AdInquiries { get; init; }
     public required YellowPagesLauncher YellowPagesLauncher { get; init; }
     public required AnnouncementsLauncher AnnouncementsLauncher { get; init; }
     public required CollectionsCatalogService Collections { get; init; }
+    public required CollectionsJournal CollectionsJournal { get; init; }
     public required InventoryCaptureService InventoryCapture { get; init; }
     public required ActivityTracker Activity { get; init; }
     public required ActivityRingNotifier RingNotifier { get; init; }
     public required HealthTracker Health { get; init; }
+    public required ContactBook Contacts { get; init; }
     public required CallHub Calls { get; init; }
     public required StreamSignalRouter StreamSignals { get; init; }
+    public required RadioRoomRouter RadioRooms { get; init; }
     public required PhoneVisibility Visibility { get; init; }
     public required RealtimeSignalBus RealtimeSignals { get; init; }
     public required LoadingScreen Loading { get; init; }
@@ -179,16 +209,22 @@ internal sealed class PhoneServices : IDisposable
     public required ShareService Share { get; init; }
     public required ConductGateService Conduct { get; init; }
     public required WallpaperLibrary Wallpapers { get; init; }
+    public required LiveBackdrop LiveBackdrop { get; init; }
     public required WallpaperImageCache WallpaperImages { get; init; }
     public required Hunts.HuntsService Hunts { get; init; }
+    public required Timers.GameTimers GameTimers { get; init; }
+    public required Dailies.DailiesTracker Dailies { get; init; }
+    public required WalletService Wallet { get; init; }
     public required Hunts.HuntMobCatalog HuntMobCatalog { get; init; }
     public required Hunts.HuntZoneCatalog HuntZoneCatalog { get; init; }
     public required Maps.ZoneMapTextures ZoneMapTextures { get; init; }
     public required Hunts.HuntMobRewardCatalog HuntMobRewardCatalog { get; init; }
     public required Hunts.HuntCandidateCache HuntCandidateCache { get; init; }
     public required Hunts.HuntsLauncher HuntsLauncher { get; init; }
+    public required Feedback.FeedbackLauncher FeedbackLauncher { get; init; }
     public required Maps.HuntsMapMarkers HuntsMapMarkers { get; init; }
     public required Shell.MinimizedLayoutService MinimizedLayout { get; init; }
+    public required NameplateTitleService NameplateTitles { get; init; }
 
     public static PhoneServices Build(Configuration configuration, IChatGui chatGui, IDataManager dataManager,
         IObjectTable objectTable, IClientState clientState, IFramework framework, IDutyState dutyState,
@@ -200,6 +236,7 @@ internal sealed class PhoneServices : IDisposable
         var customWallpaperDirectory = new DirectoryInfo(Path.Combine(configDirectory.FullName, "Wallpapers"));
         var wallpapers = new WallpaperLibrary(textures, builtInWallpaperDirectory, customWallpaperDirectory,
             configuration);
+        var liveBackdrop = new LiveBackdrop(textures, configuration);
         var themes = new ThemeProvider(configuration, wallpapers);
         var gameData = new GameData(dataManager, objectTable, framework);
         var maps = new MapData(dataManager, clientState);
@@ -214,12 +251,15 @@ internal sealed class PhoneServices : IDisposable
             new DirectoryInfo(Path.Combine(soundUserRoot, "Ringtones")));
         var notificationLibrary = new SoundLibrary(new DirectoryInfo(Path.Combine(soundBundledRoot, "Notifications")),
             new DirectoryInfo(Path.Combine(soundUserRoot, "Notifications")));
-        var sound = new SoundService(configuration, ringtoneLibrary, notificationLibrary, new SoundEffectPlayer());
+        var sound = new SoundService(configuration, ringtoneLibrary, notificationLibrary, new SoundEffectPlayer(),
+            new SoundEffectPlayer(), Path.Combine(soundBundledRoot, "Ui"));
+        var alarmRinger = new AlarmRinger(sound.StartAlarmTone, sound.StopAlarmTone);
         var uiSound = new UiSoundService(configuration, new UiSoundPlayer(new DirectoryInfo(soundBundledRoot)));
         var uiSoundTicker = new FrameworkTicker(framework, 1000, uiSound.Maintain);
         UiFeedback.Bind(uiSound);
         var notifications = new NotificationService(sound, configuration, installer, framework);
         var characterWatch = new CharacterWatch(framework);
+        var looks = new Home.HomeLookService(configuration, themes, characterWatch);
         var messageArchive = new MessageArchive(new DirectoryInfo(Path.Combine(configDirectory.FullName, "Messages")));
         var linkpearlNotificationGate = new LinkpearlNotificationGate(configuration);
         var linkpearlGate = installer.Gate("messages");
@@ -244,10 +284,10 @@ internal sealed class PhoneServices : IDisposable
         var mediaRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "media"));
         var aethernetSession = new AethernetSession(configuration, framework);
         var http = new HttpService(new AethernetClientIdentity(aethernetSession.BaseUrl, aethernetSession.ReportSourceStatus));
-        var disk = new DiskCache(mediaRoot, 64L * 1024 * 1024);
+        var disk = new DiskCache(mediaRoot, 64L * 1024 * 1024, protect: true);
         var media = new MediaCache(textures, disk);
         var imageRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "images"));
-        var imageDisk = new DiskCache(imageRoot, 128L * 1024 * 1024);
+        var imageDisk = new DiskCache(imageRoot, 128L * 1024 * 1024, protect: true);
         var remoteImages = new RemoteImageCache(http, imageDisk);
         var pluginCatalog = new PluginCatalog(remoteImages, http, imageDisk);
         var wallpaperImages = new WallpaperImageCache();
@@ -265,11 +305,13 @@ internal sealed class PhoneServices : IDisposable
         var loadoutStore = new Social.LoadoutStore(aethernetSession, aethernet.Account);
         Social.Frames.Use(frameCatalog);
         Windows.Components.UserName.Configure(badgeCatalog, remoteImages);
+        Windows.Components.NowPlayingArt.Configure(remoteImages);
         Moderation.ModerationNoticeText.Configure(badgeCatalog, frameCatalog);
         var coinApi = new AethernetApi(http, aethernetSession, "coin");
         var coins = new Coins.CoinStore(aethernetSession, coinApi.Coins);
         var coinCatalog = new Coins.CoinCatalogStore(aethernetSession, coinApi.Coins);
         var coinSessions = new Coins.CoinGameSessionTracker(configuration, aethernetSession, coinApi.Coins);
+        var coinQuests = new Coins.CoinQuestStore(aethernetSession, coinApi.Coins, coins);
         var coinEarnNotifier = new Coins.CoinEarnNotifier(coins, notifications);
         var casinoApi = new AethernetApi(http, aethernetSession, "casino");
         var casino = new Casino.CasinoStore(configuration, aethernetSession, casinoApi.Casino, coins);
@@ -284,6 +326,7 @@ internal sealed class PhoneServices : IDisposable
         var market = new MarketboardService(http);
         var marketLauncher = new MarketLauncher();
         var marketAlerts = new MarketAlertService(market, notifications, configuration, installer.Gate("market"));
+        var marketWatchlist = new MarketWatchlist(market, configuration, gameData);
         var news = new NewsService(http, aethernetSession);
         var radio = new RadioService(http);
         var radioPlayer = new RadioPlayer();
@@ -294,11 +337,22 @@ internal sealed class PhoneServices : IDisposable
         var songSearch = new SongSearchService(youtube, songResolver);
         var videoMetadata = new VideoUrlResolver(youtube);
         var songPlayer = new SongPlayer(youtube, audioCache, songResolver);
-        var songHistory = new SongHistory(configuration);
-        var playlists = new PlaylistStore(configuration);
-        var playback = new PlaybackHub(radioPlayer, songPlayer, configuration);
+        var musicLibrary = new LibraryStore(new DirectoryInfo(Path.Combine(configDirectory.FullName, "Music")),
+            configuration);
+        var musicDownloads = new DownloadStore(
+            new DirectoryInfo(Path.Combine(configDirectory.FullName, "Music", "downloads")), audioCache, songResolver,
+            musicLibrary, action => _ = framework.RunOnFrameworkThread(action));
+        songPlayer.OfflineSource = musicDownloads.TryRead;
+        var playback = new PlaybackHub(radioPlayer, songPlayer, musicLibrary, songResolver, configuration, framework);
+        var coinRadio = new Coins.CoinRadioListenTracker(aethernetSession, coinApi.Coins, radioPlayer, framework);
+        var lyricsDisk = new DiskCache(new DirectoryInfo(Path.Combine(cacheRoot.FullName, "lyrics")),
+            16L * 1024 * 1024);
+        var lyrics = new LyricsService(new LrcLibClient(http), lyricsDisk);
+        var mediaPublisher = new WindowsMediaPublisher(configuration, framework,
+            static () => Platform.GameWindowHandle.Current);
         var gameStats = new GameStatsStore(configuration);
-        var venues = new VenuesService(http, notifications, configuration, gameData);
+        var rolladeck = new RolladeckService(http);
+        var venues = new VenuesService(http, notifications, configuration, gameData, rolladeck);
         var stratsRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "strats"));
         var stratsDisk = new DiskCache(stratsRoot, 24L * 1024 * 1024);
         var stratsManifest = new StratsManifestStore(http, stratsDisk);
@@ -306,6 +360,9 @@ internal sealed class PhoneServices : IDisposable
         var collectionsRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "collections"));
         var collectionsDisk = new DiskCache(collectionsRoot, 32L * 1024 * 1024);
         var collections = new CollectionsCatalogService(http, collectionsDisk, dataManager, unlockState, framework);
+        var collectionsJournal = new CollectionsJournal(framework, unlockState, gameData, collections, notifications,
+            configDirectory, installer.Gate(CollectionsJournal.AppId));
+        var cacheStorage = new CacheStorage(new[] { imageDisk, disk, audioCache, stratsDisk, collectionsDisk, lyricsDisk });
         var inventoryRoot = new DirectoryInfo(Path.Combine(cacheRoot.FullName, "inventory"));
         var inventoryStore = new InventoryStore(inventoryRoot);
         var inventoryCapture = new InventoryCaptureService(framework, inventoryStore, installer.Gate("inventory"));
@@ -319,29 +376,38 @@ internal sealed class PhoneServices : IDisposable
         var housingGameMaps = new HousingGameMaps(dataManager, textures);
         var housing = new HousingService(http, configuration, gameData, framework, housingGameMaps, visibility,
             housingCacheRoot, housingGate);
+        var fishing = new FishingCatalog(dataManager,
+            Plugin.PluginInterface.AssemblyLocation.DirectoryName ?? string.Empty);
+        var fishingAlerts = new FishingAlerts(configuration, fishing, notifications, clientState, framework,
+            installer.Gate(FishingCatalog.AppId));
         var housingReminders = new HousingReminderService(configuration, framework, notifications, housing.Watch,
             housingGate);
         var confirm = new ConfirmService();
         var deviceLinks = new DeviceLinkWatcher(keyVault, aethernetSession, confirm, realtimeSignals);
         var encryptionGuide = new EncryptionGuide(keyVault, aethernetSession, notifications);
         Windows.UrlActions.Configure(confirm);
+        var contacts = new ContactBook(aethernet.Contacts, aethernetSession);
         var calls = new CallHub(configuration, aethernetSession, notifications, sound, playback, realtimeSignals,
-            confirm, installer.Gate("message"));
+            confirm, installer.Gate("message"), contacts);
         var streamSignals = new StreamSignalRouter(calls.Router);
+        var radioRooms = new RadioRoomRouter(realtimeSignals, aethernetSession, framework);
+        var jam = new JamSession(calls.Router, playback, aethernetSession, notifications, framework);
+        var listening = new ListeningPresence(aethernet.MusicListening, aethernetSession, playback, jam, configuration,
+            framework);
         var characterSwitcher = new CharacterSessionManager(framework, aethernetSession, aethernet.Account,
             gameData, configuration, confirm);
         var socialNotifications = new SocialNotificationService(aethernetSession, aethernet.Account, notifications, configuration, framework, visibility, realtimeSignals, installer);
         var moderationNotices = new ModerationNoticeService(aethernetSession, aethernet.Account, framework,
             visibility, realtimeSignals);
-        var accountState = new AccountStateService(aethernetSession, aethernet.Account, framework, visibility);
+        var accountState = new AccountStateService(aethernetSession, aethernet.Account, framework, visibility,
+            realtimeSignals);
         var moderationPresenter = new ModerationNoticePresenter(moderationNotices, confirm, notifications,
             accountState, framework);
         var moderationArchive = new ModerationNoticeArchive(aethernetSession, aethernet.Account);
         var safetyLauncher = new SafetyLauncher();
         var casinoRooms = new Casino.CasinoRoomsStore(aethernetSession, casinoApi.Casino, casino, visibility,
             realtimeSignals);
-        var casinoTables = new Casino.CasinoTablesStore(aethernetSession, casinoApi.Casino, casino, visibility,
-            realtimeSignals);
+        var casinoTables = new Casino.CasinoTablesStore(aethernetSession, casinoApi.Casino, casino, visibility);
         var casinoTurns = new Casino.CasinoTurnNotifier(aethernetSession, casinoRooms, notifications,
             Apps.AppAccents.For("casino"));
         var gameRooms = new Games.GameRoomsStore(aethernetSession, aethernet.Games, visibility,
@@ -351,8 +417,9 @@ internal sealed class PhoneServices : IDisposable
             visibility, realtimeSignals, installer.Gate(MusterStore.AppId));
         var yellowPages = new YellowPagesStore(aethernetSession, aethernet.Ads, aethernet.Media, configuration,
             visibility, realtimeSignals, installer.Gate(YellowPagesStore.AppId));
-        var adInquiries = new AdInquiryStore(aethernetSession, aethernet.Ads, aethernet.Safety, keyVault, conversationKeys,
-            chatHistory, visibility, realtimeSignals, installer.Gate(YellowPagesStore.AppId));
+        var adInquiries = new AdInquiryStore(aethernetSession, aethernet.Ads, aethernet.Safety, aethernet.Media,
+            notifications, keyVault, conversationKeys, chatHistory, visibility, realtimeSignals,
+            installer.Gate(YellowPagesStore.AppId));
         var huntMobsFile = new FileInfo(Path.Combine(
             Plugin.PluginInterface.AssemblyLocation.DirectoryName ?? string.Empty, "Hunts", "HuntMob.json"));
         var huntMobCatalog = new HuntMobCatalog(huntMobsFile);
@@ -372,9 +439,20 @@ internal sealed class PhoneServices : IDisposable
         var huntsClient = new HuntsClient(http, huntsAuthTokens);
         var hunts = new HuntsService(huntsClient, huntsAuthTokens, huntMobCatalog, gameData, characterWatch,
             notifications, configuration);
+        var gameTimers = new Timers.GameTimers(configuration, framework, characterWatch, gameData, dataManager,
+            installer.Gate("timers"));
+        var dailies = new Dailies.DailiesTracker(configuration, framework, gameData, characterWatch, notifications,
+            installer.Gate("dailies"));
+        var wallet = new WalletService(framework, gameData, characterWatch, clientState, configDirectory,
+            installer.Gate(WalletService.AppId));
         var huntCandidateCache = new HuntCandidateCache(huntMobCatalog, huntZoneCatalog, hunts);
         var huntsMapMarkers = new Maps.HuntsMapMarkers(configuration, hunts, huntMobCatalog, huntZoneCatalog,
             huntCandidateCache);
+        var windowsMedia = new WindowsMediaSessions(configuration);
+        var pcMedia = new PcMediaSource(configuration, windowsMedia);
+        var nameplateTitles = new NameplateTitleService(configuration, framework, clientState, objectTable,
+            aethernetSession, playback, pcMedia, jam, radioRooms, musters, calls,
+            new HonorificBridge(Plugin.PluginInterface));
 
 
         return new PhoneServices
@@ -383,11 +461,14 @@ internal sealed class PhoneServices : IDisposable
             Configuration = configuration,
             MinimizedLayout = new Shell.MinimizedLayoutService(configuration),
             Themes = themes,
+            Looks = looks,
             GameData = gameData,
             CharacterWatch = characterWatch,
             Maps = maps,
             Housing = housing,
             HousingReminders = housingReminders,
+            Fishing = fishing,
+            FishingAlerts = fishingAlerts,
             Textures = textures,
             Artwork = new Windows.Components.ArtworkCache(textures),
             Weather = weather,
@@ -402,6 +483,7 @@ internal sealed class PhoneServices : IDisposable
             SafetyLauncher = safetyLauncher,
             SettingsLauncher = new SettingsLauncher(),
             Sound = sound,
+            AlarmRinger = alarmRinger,
             UiSound = uiSound,
             UiSoundTicker = uiSoundTicker,
             LinkpearlLauncher = linkpearlLauncher,
@@ -421,6 +503,7 @@ internal sealed class PhoneServices : IDisposable
             Http = http,
             Media = media,
             RemoteImages = remoteImages,
+            CacheStorage = cacheStorage,
             BadgeCatalog = badgeCatalog,
             FrameCatalog = frameCatalog,
             Recruit = recruit,
@@ -428,6 +511,8 @@ internal sealed class PhoneServices : IDisposable
             Coins = coins,
             CoinCatalog = coinCatalog,
             CoinSessions = coinSessions,
+            CoinQuests = coinQuests,
+            CoinRadio = coinRadio,
             CoinEarnNotifier = coinEarnNotifier,
             Casino = casino,
             CasinoPlay = casinoPlay,
@@ -461,6 +546,7 @@ internal sealed class PhoneServices : IDisposable
             Translation = translation,
             MarketLauncher = marketLauncher,
             MarketAlerts = marketAlerts,
+            MarketWatchlist = marketWatchlist,
             News = news,
             Radio = radio,
             RadioPlayer = radioPlayer,
@@ -468,27 +554,40 @@ internal sealed class PhoneServices : IDisposable
             VideoMetadata = videoMetadata,
             SongPlayer = songPlayer,
             SongResolver = songResolver,
-            SongHistory = songHistory,
-            Playlists = playlists,
             Playback = playback,
+            MusicLibrary = musicLibrary,
+            Listening = listening,
+            MusicDownloads = musicDownloads,
+            WindowsMedia = windowsMedia,
+            PcMedia = pcMedia,
+            WindowsMediaPublisher = mediaPublisher,
+            PlaybackBridge = new PlaybackSystemBridge(playback, mediaPublisher, remoteImages, configuration,
+                framework),
+            Lyrics = lyrics,
             GameStats = gameStats,
             Venues = venues,
+            Rolladeck = rolladeck,
             StratsManifest = stratsManifest,
             StratsGuides = stratsGuides,
             Musters = musters,
             MusterLauncher = new MusterLauncher(),
             RadioLauncher = new RadioLauncher(),
+            Jam = jam,
+            JamLauncher = new JamLauncher(),
             YellowPages = yellowPages,
             AdInquiries = adInquiries,
             YellowPagesLauncher = new YellowPagesLauncher(),
             AnnouncementsLauncher = new AnnouncementsLauncher(),
             Collections = collections,
+            CollectionsJournal = collectionsJournal,
             InventoryCapture = inventoryCapture,
             Activity = activity,
             RingNotifier = ringNotifier,
             Health = health,
+            Contacts = contacts,
             Calls = calls,
             StreamSignals = streamSignals,
+            RadioRooms = radioRooms,
             Visibility = visibility,
             RealtimeSignals = realtimeSignals,
             Loading = new LoadingScreen(configuration),
@@ -497,21 +596,29 @@ internal sealed class PhoneServices : IDisposable
             Share = new ShareService(installer),
             Conduct = new ConductGateService(configuration),
             Wallpapers = wallpapers,
+            LiveBackdrop = liveBackdrop,
             WallpaperImages = wallpaperImages,
             Hunts = hunts,
+            GameTimers = gameTimers,
+            Dailies = dailies,
+            Wallet = wallet,
             HuntMobCatalog = huntMobCatalog,
             HuntZoneCatalog = huntZoneCatalog,
             ZoneMapTextures = zoneMapTextures,
             HuntMobRewardCatalog = huntMobRewardCatalog,
             HuntCandidateCache = huntCandidateCache,
             HuntsLauncher = new Hunts.HuntsLauncher(),
+            FeedbackLauncher = new Feedback.FeedbackLauncher(),
             HuntsMapMarkers = huntsMapMarkers,
+            NameplateTitles = nameplateTitles,
         };
     }
 
     public void Dispose()
     {
+        NameplateTitles.Dispose();
         CharacterSwitcher.Dispose();
+        Looks.Dispose();
         CharacterWatch.Dispose();
         WeatherControl.Dispose();
         GameUiVisibility.Dispose();
@@ -522,24 +629,41 @@ internal sealed class PhoneServices : IDisposable
         ChatHistory.Dispose();
         DeviceLinks.Dispose();
         KeyVault.Dispose();
+        RadioRooms.Dispose();
+        Listening.Dispose();
+        Jam.Dispose();
         StreamSignals.Dispose();
         Calls.Dispose();
+        Contacts.Dispose();
+        CollectionsJournal.Dispose();
         Collections.Dispose();
         InventoryCapture.Dispose();
         RingNotifier.Dispose();
         Health.Dispose();
         Activity.Dispose();
         HousingReminders.Dispose();
+        FishingAlerts.Dispose();
         Housing.Dispose();
         Venues.Dispose();
         Hunts.Dispose();
         Recruit.Dispose();
+        GameTimers.Dispose();
+        Dailies.Dispose();
+        Wallet.Dispose();
         StratsManifest.Dispose();
         StratsGuides.Dispose();
         Musters.Dispose();
         YellowPages.Dispose();
         AdInquiries.Dispose();
+        Lyrics.Dispose();
+        PlaybackBridge.Dispose();
+        Playback.Dispose();
+        WindowsMediaPublisher.Dispose();
+        PcMedia.Dispose();
+        WindowsMedia.Dispose();
         SongPlayer.Dispose();
+        MusicDownloads.Dispose();
+        MusicLibrary.Dispose();
         SongSearch.Dispose();
         VideoMetadata.Dispose();
         RadioPlayer.Dispose();
@@ -574,6 +698,8 @@ internal sealed class PhoneServices : IDisposable
         CasinoPlay.Dispose();
         Casino.Dispose();
         CoinEarnNotifier.Dispose();
+        CoinRadio.Dispose();
+        CoinQuests.Dispose();
         CoinSessions.Dispose();
         CoinCatalog.Dispose();
         Coins.Dispose();
@@ -582,6 +708,7 @@ internal sealed class PhoneServices : IDisposable
         Loadout.Dispose();
         Availability.Dispose();
         Http.Dispose();
+        LiveBackdrop.Dispose();
         Wallpapers.Dispose();
         WallpaperImages.Dispose();
         HuntsMapMarkers.Dispose();

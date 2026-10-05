@@ -1,9 +1,11 @@
+using System.Globalization;
 using Aetherphone.Core;
-using Aetherphone.Core.Clock;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
+using Aetherphone.Core.Clock;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Theme;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
@@ -12,220 +14,269 @@ namespace Aetherphone.Apps.Clock;
 
 internal sealed partial class ClockApp
 {
-    private const float AlarmRowHeight = 68f;
-    private const int AlarmLabelMaxLength = 40;
+    private const float AlarmRowHeight = 92f;
+    private const float AlarmBadgeRadius = 11f;
+    private const float AlarmBadgeSpan = 36f;
+    private const float AlarmSubtitleGap = 2f;
+    private const float AlarmChevronSize = 14f;
+    private const float AlarmToggleGap = 12f;
+    private const float AlarmsEmptyUnits = 420f;
 
-    private static readonly DayOfWeek[] WeekOrder =
+    private static readonly TextStyle AlarmTimeStyle = TextStyles.WidgetDisplay;
+
+    private int[] alarmOrder = new int[8];
+    private string[] alarmSubtitles = new string[8];
+    private string[] alarmToggleIds = new string[8];
+    private int alarmLocalCount;
+    private int alarmOrderCount = -1;
+    private CultureInfo? alarmCulture;
+    private int alarmFormat = -1;
+    private bool alarmsDirty = true;
+    private bool editingAlarms;
+    private Guid pendingDeleteAlarm;
+
+    private void DrawAlarms(in PhoneContext context)
     {
-        DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday,
-        DayOfWeek.Saturday, DayOfWeek.Sunday,
-    };
-
-    private Guid editAlarmId;
-    private int editHour;
-    private int editMinute;
-    private byte editRepeat;
-    private string editLabel = string.Empty;
-    private bool editIsNew;
-
-    private void DrawAlarms(Rect body, float scale)
-    {
-        using (AppSurface.Begin(body))
+        var scale = UiScale.Current;
+        var alarms = configuration.Alarms;
+        if (alarms.Count == 0)
         {
-            var alarms = configuration.Alarms;
+            editingAlarms = false;
+        }
+
+        EnsureAlarmOrder();
+        var navBar = AppHeader.BeginLargeTitle(context, false);
+        using (ImRaii.PushId("clock.alarms"))
+        using (AppSurface.Begin(navBar.Body))
+        {
+            var width = ImGui.GetContentRegionAvail().X;
             if (alarms.Count == 0)
             {
-                Typography.DrawCentered(new Vector2(body.Center.X, body.Min.Y + 70f * scale),
-                    Loc.T(L.Clock.AlarmsEmpty), ui.MutedInk, TextStyles.Subheadline);
-                return;
+                DrawAlarmsEmpty(width, scale);
             }
-
-            var card = GroupCard.Begin(ui, alarms.Count, AlarmRowHeight);
-            for (var index = 0; index < alarms.Count; index++)
+            else
             {
-                DrawAlarmRow(card.NextRow(), alarms[index]);
+                DrawAlarmSections(width, scale);
             }
 
-            card.End();
-            ImGui.Dummy(new Vector2(0f, 10f * scale));
+            ImGui.Dummy(new Vector2(0f, ClockArt.BottomPad * scale));
+        }
+
+        ApplyPendingAlarmDelete();
+        var count = 0;
+        if (alarms.Count > 0)
+        {
+            count = NavButton(count, editingAlarms ? PhoneIcons.Check : PhoneIcons.Edit,
+                Loc.T(editingAlarms ? L.Clock.Done : L.Clock.Edit));
+        }
+
+        var addIndex = count;
+        count = NavButton(count, PhoneIcons.Plus, Loc.T(L.Clock.NewAlarm));
+        UiAnchors.Report("clock.add", AppHeader.LargeTitleButtonRect(in navBar, addIndex, count));
+        var pressed = AppHeader.EndLargeTitle(in navBar, context, "clock.alarms.nav", Loc.T(L.Clock.TabAlarms),
+            NavBarStyle.From(ui), navButtons.AsSpan(0, count));
+        if (pressed == addIndex)
+        {
+            editingAlarms = false;
+            StartNewAlarm();
+        }
+        else if (pressed == 0)
+        {
+            editingAlarms = !editingAlarms;
         }
     }
 
-    private void DrawAlarmRow(Rect row, AlarmEntry alarm)
+    private void DrawAlarmsEmpty(float width, float scale)
     {
-        var scale = UiScale.Current;
-        var timeInk = alarm.Enabled ? ui.TitleInk : ui.MutedInk;
-        var time = $"{alarm.Hour:D2}:{alarm.Minute:D2}";
-        var timeSize = Typography.Measure(time, TextStyles.Title1);
-        Typography.Draw(new Vector2(row.Min.X, row.Center.Y - timeSize.Y * 0.5f), time, timeInk, TextStyles.Title1);
-
-        var subtitle = AlarmSchedule.RepeatLabel(alarm);
-        if (alarm.Label.Length > 0)
+        var origin = ImGui.GetCursorScreenPos();
+        var height = MathF.Max(ImGui.GetContentRegionAvail().Y, AlarmsEmptyUnits * scale);
+        var area = new Rect(origin, origin + new Vector2(width, height));
+        if (EmptyState.Draw(area, ui, PhoneIcons.Bell, Loc.T(L.Clock.AlarmsEmptyTitle),
+                Loc.T(L.Clock.AlarmsEmptyHint), Loc.T(L.Clock.NewAlarm)))
         {
-            subtitle = subtitle.Length > 0 ? $"{alarm.Label} · {subtitle}" : alarm.Label;
+            StartNewAlarm();
         }
 
-        var subtitleLeft = row.Min.X + timeSize.X + 12f * scale;
-        var subtitleMaxWidth = MathF.Max(1f, row.Max.X - Metrics.Size.ToggleWidth * scale - 8f * scale - subtitleLeft);
-        Marquee.DrawLeftAuto(new MarqueeId("clock.alarmrow.sub.", alarm.Id.ToString()), subtitle, subtitleLeft, row.Center.Y - 8f * scale,
-            subtitleMaxWidth, TextStyles.Footnote, ui.MutedInk);
+        ClockArt.Advance(origin, width, height, 0f, scale);
+    }
 
-        var width = Metrics.Size.ToggleWidth * scale;
-        var height = Metrics.Size.ToggleHeight * scale;
-        var toggleMin = new Vector2(row.Max.X - width, row.Center.Y - height * 0.5f);
-        var toggleRect = new Rect(toggleMin, toggleMin + new Vector2(width, height));
-        var newValue = Toggle.Draw($"alarm.{alarm.Id}", toggleRect, alarm.Enabled, theme);
-        if (newValue != alarm.Enabled)
+    private void DrawAlarmSections(float width, float scale)
+    {
+        var eorzeaCount = alarmOrderCount - alarmLocalCount;
+        var both = alarmLocalCount > 0 && eorzeaCount > 0;
+        if (alarmLocalCount > 0)
         {
-            alarm.Enabled = newValue;
-            configuration.Save();
+            if (both)
+            {
+                CardSectionHeader.Flow(Loc.T(L.Clock.LocalTime), ui.TitleInk);
+            }
+
+            DrawAlarmCard(0, alarmLocalCount, width, scale);
         }
 
-        var tapRect = new Rect(row.Min, new Vector2(toggleMin.X - 8f * scale, row.Max.Y));
-        if (UiInteract.HoverClick(tapRect.Min, tapRect.Max))
+        if (eorzeaCount <= 0)
+        {
+            return;
+        }
+
+        if (alarmLocalCount > 0)
+        {
+            ImGui.Dummy(new Vector2(0f, ClockArt.SectionGap * scale - ImGui.GetStyle().ItemSpacing.Y));
+        }
+
+        CardSectionHeader.Flow(Loc.T(L.Clock.EorzeaTime), ui.TitleInk);
+        DrawAlarmCard(alarmLocalCount, eorzeaCount, width, scale);
+    }
+
+    private void DrawAlarmCard(int first, int count, float width, float scale)
+    {
+        var rowHeight = AlarmRowHeight * scale;
+        var origin = ImGui.GetCursorScreenPos();
+        var max = new Vector2(origin.X + width, origin.Y + count * rowHeight);
+        var drawList = ImGui.GetWindowDrawList();
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
+        var alarms = configuration.Alarms;
+        for (var slot = 0; slot < count; slot++)
+        {
+            var orderIndex = first + slot;
+            var alarmIndex = alarmOrder[orderIndex];
+            if (alarmIndex >= alarms.Count)
+            {
+                continue;
+            }
+
+            var row = RowRect(origin, width, slot * rowHeight, rowHeight);
+            if (slot > 0)
+            {
+                FeedCell.Hairline(drawList, origin.X + Metrics.Space.Lg * scale, max.X, row.Min.Y, ui.Hairline);
+            }
+
+            DrawAlarmRow(drawList, row, alarms[alarmIndex], orderIndex, scale);
+        }
+
+        ClockArt.Advance(origin, width, max.Y - origin.Y, 0f, scale);
+    }
+
+    private void DrawAlarmRow(ImDrawListPtr drawList, Rect row, AlarmEntry alarm, int orderIndex, float scale)
+    {
+        var subtitle = alarmSubtitles[orderIndex];
+        if (!ImGui.IsRectVisible(row.Min, row.Max))
+        {
+            return;
+        }
+
+        var inset = Metrics.Space.Lg * scale;
+        var left = row.Min.X + inset;
+        var right = row.Max.X - inset;
+        var overChild = false;
+        if (editingAlarms)
+        {
+            var badgeCenter = new Vector2(left + AlarmBadgeRadius * scale, row.Center.Y);
+            overChild |= DrawAlarmRemoveBadge(drawList, badgeCenter, alarm, scale);
+            left += AlarmBadgeSpan * scale;
+        }
+
+        var ink = alarm.Enabled ? ui.TitleInk : ui.MutedInk;
+        var timeHeight = Typography.LineHeight(AlarmTimeStyle);
+        var subtitleHeight = Typography.LineHeight(TextStyles.Subheadline);
+        var top = row.Center.Y - (timeHeight + AlarmSubtitleGap * scale + subtitleHeight) * 0.5f;
+        var suffix = alarm.Eorzea ? Loc.T(L.Clock.EorzeaShort) : null;
+        ClockArt.DrawTime(drawList, new Vector2(left, top), alarm.Hour, alarm.Minute, alarm.Eorzea, AlarmTimeStyle,
+            TextStyles.Title3, ink, alarm.Eorzea && alarm.Enabled ? ui.Accent : ink, suffix);
+
+        float controlLeft;
+        if (editingAlarms)
+        {
+            var chevron = AlarmChevronSize * scale;
+            PhoneIcon.Draw(drawList, new Vector2(right - chevron * 0.5f, row.Center.Y), PhoneIcons.ChevronRight,
+                ui.MutedInk, chevron);
+            controlLeft = right - chevron;
+        }
+        else
+        {
+            var toggleSize = new Vector2(Metrics.Size.ToggleWidth, Metrics.Size.ToggleHeight) * scale;
+            var toggleMin = new Vector2(right - toggleSize.X, row.Center.Y - toggleSize.Y * 0.5f);
+            var toggleRect = new Rect(toggleMin, toggleMin + toggleSize);
+            overChild |= UiInteract.Hover(toggleRect.Min, toggleRect.Max);
+            var next = Toggle.Draw(alarmToggleIds[orderIndex], toggleRect, alarm.Enabled, theme);
+            if (next != alarm.Enabled)
+            {
+                SetAlarmEnabled(alarm, next);
+            }
+
+            controlLeft = toggleMin.X;
+        }
+
+        var subtitleWidth = MathF.Max(1f, controlLeft - AlarmToggleGap * scale - left);
+        Typography.Draw(drawList, new Vector2(left, top + timeHeight + AlarmSubtitleGap * scale),
+            Typography.FitText(subtitle, subtitleWidth, TextStyles.Subheadline),
+            alarm.Enabled ? ui.BodyInk : ui.MutedInk, TextStyles.Subheadline);
+
+        var hovered = !overChild && UiInteract.Hover(row.Min, row.Max);
+        if (hovered)
+        {
+            drawList.AddRectFilled(row.Min, row.Max, ImGui.GetColorU32(ui.HoverWash));
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        if (!overChild && UiInteract.Click(row.Min, row.Max, hovered))
         {
             StartEditAlarm(alarm);
         }
     }
 
-    private void StartNewAlarm()
+    private bool DrawAlarmRemoveBadge(ImDrawListPtr drawList, Vector2 center, AlarmEntry alarm, float scale)
     {
-        var now = DateTime.Now;
-        editIsNew = true;
-        editAlarmId = Guid.Empty;
-        editHour = now.Hour;
-        editMinute = now.Minute;
-        editRepeat = 0;
-        editLabel = string.Empty;
-        router.Push(ClockScreen.EditAlarm);
+        var hit = new Vector2(Metrics.Size.TapTarget * 0.5f * scale);
+        var hovered = UiInteract.Hover(center - hit, center + hit);
+        var grow = PressFx.Scale(ImGui.GetID($"clock.alarm.remove.{alarm.Id}"),
+            hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left), Motion.PressScaleControl);
+        ClockArt.MinusBadge(drawList, center, AlarmBadgeRadius * scale * grow, theme.Danger);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        if (UiInteract.Click(center - hit, center + hit, hovered))
+        {
+            pendingDeleteAlarm = alarm.Id;
+        }
+
+        return hovered;
     }
 
-    private void StartEditAlarm(AlarmEntry alarm)
+    private void SetAlarmEnabled(AlarmEntry alarm, bool enabled)
     {
-        editIsNew = false;
-        editAlarmId = alarm.Id;
-        editHour = alarm.Hour;
-        editMinute = alarm.Minute;
-        editRepeat = alarm.RepeatDays;
-        editLabel = alarm.Label;
-        router.Push(ClockScreen.EditAlarm);
-    }
-
-    private void DrawAlarmEditor(Rect content, float scale)
-    {
-        var context = new PhoneContext(content, theme, navigation);
-        var title = editIsNew ? Loc.T(L.Clock.NewAlarm) : Loc.T(L.Clock.EditAlarm);
-        AppHeader.Draw(context, title, back);
-
-        var margin = Metrics.Space.Lg * scale;
-        var gap = Metrics.Space.Md * scale;
-        var top = content.Min.Y + AppHeader.Height * scale + Metrics.Space.Lg * scale;
-        var left = content.Min.X + margin;
-        var right = content.Max.X - margin;
-
-        var timeHeight = 60f * scale;
-        var timeRow = new Rect(new Vector2(left, top), new Vector2(right, top + timeHeight));
-        var half = timeRow.Width * 0.5f - 12f * scale;
-        var hourRect = new Rect(timeRow.Min, new Vector2(timeRow.Min.X + half, timeRow.Max.Y));
-        var minuteRect = new Rect(new Vector2(timeRow.Max.X - half, timeRow.Min.Y), timeRow.Max);
-        StepperField.Draw(ui, hourRect, editHour.ToString("D2"), scale, () => editHour = (editHour + 23) % 24,
-            () => editHour = (editHour + 1) % 24);
-        StepperField.Draw(ui, minuteRect, editMinute.ToString("D2"), scale, () => editMinute = (editMinute + 59) % 60,
-            () => editMinute = (editMinute + 1) % 60);
-        Typography.DrawCentered(ImGui.GetWindowDrawList(), timeRow.Center, ":", ui.TitleInk, TextStyles.Title1.Scale,
-            TextStyles.Title1.Weight);
-
-        var repeatLabelY = timeRow.Max.Y + gap;
-        Typography.Draw(new Vector2(left, repeatLabelY), Loc.T(L.Clock.Repeat), ui.MutedInk, TextStyles.Footnote);
-        var chipTop = repeatLabelY + Typography.Measure("A", TextStyles.Footnote).Y + Metrics.Space.Xs * scale;
-        var chipHeight = 34f * scale;
-        var chipGap = 6f * scale;
-        var chipWidth = (timeRow.Width - chipGap * (WeekOrder.Length - 1)) / WeekOrder.Length;
-        var abbreviations = Loc.Culture.DateTimeFormat.AbbreviatedDayNames;
-        for (var index = 0; index < WeekOrder.Length; index++)
+        alarm.Enabled = enabled;
+        if (enabled)
         {
-            var day = WeekOrder[index];
-            var chipMin = new Vector2(left + index * (chipWidth + chipGap), chipTop);
-            var chipRect = new Rect(chipMin, chipMin + new Vector2(chipWidth, chipHeight));
-            var active = (editRepeat & (1 << (int)day)) != 0;
-            if (ui.Chip(chipRect, abbreviations[(int)day], active))
-            {
-                editRepeat = (byte)(editRepeat ^ (1 << (int)day));
-            }
-        }
-
-        var labelTop = chipTop + chipHeight + gap;
-        var labelHeight = Metrics.Size.Row * scale;
-        var labelRect = new Rect(new Vector2(left, labelTop), new Vector2(right, labelTop + labelHeight));
-        DrawAlarmLabelField(labelRect, scale);
-
-        var buttonHeight = Metrics.Size.Row * scale;
-        var saveTop = content.Max.Y - margin - buttonHeight;
-        if (!editIsNew)
-        {
-            var deleteTop = saveTop - buttonHeight - gap;
-            var deleteRect = new Rect(new Vector2(left, deleteTop), new Vector2(right, deleteTop + buttonHeight));
-            if (DrawPillButton(deleteRect, Loc.T(L.Clock.DeleteAlarm), Palette.WithAlpha(theme.Danger, 0.16f),
-                    theme.Danger))
-            {
-                AskDeleteAlarm(editAlarmId);
-            }
-        }
-
-        var saveRect = new Rect(new Vector2(left, saveTop), new Vector2(right, saveTop + buttonHeight));
-        if (DrawPillButton(saveRect, Loc.T(L.Clock.Save), ui.Accent, new Vector4(1f, 1f, 1f, 1f)))
-        {
-            CommitAlarm();
-        }
-    }
-
-    private void DrawAlarmLabelField(Rect rect, float scale)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        ui.Card(drawList, rect.Min, rect.Max, Metrics.Radius.Md * scale);
-        ImGui.SetCursorScreenPos(new Vector2(rect.Min.X + Metrics.Space.Md * scale,
-            rect.Min.Y + rect.Height * 0.5f - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(rect.Width - Metrics.Space.Md * 2f * scale);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
-        using (ImRaii.PushColor(ImGuiCol.Text, ui.TitleInk))
-        {
-            ImGui.InputTextWithHint("##alarmLabel", Loc.T(L.Clock.AlarmLabelHint), ref editLabel, AlarmLabelMaxLength,
-                ImGuiInputTextFlags.None);
-        }
-    }
-
-    private void CommitAlarm()
-    {
-        if (editIsNew)
-        {
-            configuration.Alarms.Add(new AlarmEntry
-            {
-                Hour = editHour,
-                Minute = editMinute,
-                RepeatDays = editRepeat,
-                Label = editLabel.Trim(),
-                Enabled = true,
-            });
-        }
-        else
-        {
-            var alarm = configuration.Alarms.Find(entry => entry.Id == editAlarmId);
-            if (alarm is not null)
-            {
-                alarm.Hour = editHour;
-                alarm.Minute = editMinute;
-                alarm.RepeatDays = editRepeat;
-                alarm.Label = editLabel.Trim();
-                alarm.Enabled = true;
-                alarm.LastFiredEpochMinute = 0;
-            }
+            var now = DateTime.Now;
+            AlarmSchedule.Arm(alarm, now, now.ToUniversalTime());
+            ShowRingsToast(alarm, now);
         }
 
         configuration.Save();
-        router.Pop();
     }
 
-    private void AskDeleteAlarm(Guid id)
+    private static void ShowRingsToast(AlarmEntry alarm, DateTime now)
+    {
+        var next = AlarmSchedule.NextOccurrence(alarm, now);
+        ShellToast.Show(Loc.T(L.Clock.AlarmSetToast, TimeText.Until(next - now)));
+    }
+
+    private void ApplyPendingAlarmDelete()
+    {
+        if (pendingDeleteAlarm == Guid.Empty)
+        {
+            return;
+        }
+
+        var id = pendingDeleteAlarm;
+        pendingDeleteAlarm = Guid.Empty;
+        AskDeleteAlarm(id, false);
+    }
+
+    private void AskDeleteAlarm(Guid id, bool popAfter)
     {
         confirm.Ask(new ConfirmRequest
         {
@@ -233,14 +284,86 @@ internal sealed partial class ClockApp
             ConfirmLabel = Loc.T(L.Clock.Delete),
             CancelLabel = Loc.T(L.Clock.KeepIt),
             Sheet = true,
-            Confirm = () => DeleteAlarm(id),
+            Confirm = () => DeleteAlarm(id, popAfter),
         });
     }
 
-    private void DeleteAlarm(Guid id)
+    private void DeleteAlarm(Guid id, bool popAfter)
     {
         configuration.Alarms.RemoveAll(entry => entry.Id == id);
         configuration.Save();
-        router.Pop();
+        alarmsDirty = true;
+        if (popAfter)
+        {
+            router.Pop();
+        }
+    }
+
+    private void EnsureAlarmOrder()
+    {
+        var alarms = configuration.Alarms;
+        if (!alarmsDirty && alarms.Count == alarmOrderCount && ReferenceEquals(alarmCulture, Loc.Culture) &&
+            alarmFormat == TimeText.FormatVersion)
+        {
+            return;
+        }
+
+        alarmsDirty = false;
+        alarmCulture = Loc.Culture;
+        alarmFormat = TimeText.FormatVersion;
+        alarmOrderCount = alarms.Count;
+        if (alarmOrder.Length < alarms.Count)
+        {
+            var size = Math.Max(alarms.Count, alarmOrder.Length * 2);
+            alarmOrder = new int[size];
+            alarmSubtitles = new string[size];
+            alarmToggleIds = new string[size];
+        }
+
+        alarmLocalCount = 0;
+        for (var index = 0; index < alarms.Count; index++)
+        {
+            alarmOrder[index] = index;
+            if (!alarms[index].Eorzea)
+            {
+                alarmLocalCount++;
+            }
+        }
+
+        for (var index = 1; index < alarms.Count; index++)
+        {
+            var current = alarmOrder[index];
+            var target = index - 1;
+            while (target >= 0 && AlarmBefore(alarms[current], alarms[alarmOrder[target]]))
+            {
+                alarmOrder[target + 1] = alarmOrder[target];
+                target--;
+            }
+
+            alarmOrder[target + 1] = current;
+        }
+
+        for (var index = 0; index < alarms.Count; index++)
+        {
+            var alarm = alarms[alarmOrder[index]];
+            alarmSubtitles[index] = AlarmSubtitle(alarm);
+            alarmToggleIds[index] = string.Concat("clock.alarm.", alarm.Id.ToString("N"));
+        }
+    }
+
+    private static bool AlarmBefore(AlarmEntry left, AlarmEntry right)
+    {
+        if (left.Eorzea != right.Eorzea)
+        {
+            return !left.Eorzea;
+        }
+
+        return left.MinuteOfDay < right.MinuteOfDay;
+    }
+
+    private static string AlarmSubtitle(AlarmEntry alarm)
+    {
+        var name = alarm.Label.Length > 0 ? alarm.Label : Loc.T(L.Clock.Alarm);
+        return alarm.Repeats ? string.Concat(name, ", ", AlarmSchedule.RepeatLabel(alarm)) : name;
     }
 }

@@ -2,154 +2,330 @@ using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
+using Aetherphone.Core.Shell.Home;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.AppStore;
 
 internal sealed partial class AppStoreApp
 {
-    private const float DetailIconSize = 96f;
-    private const float PreviewHeight = 148f;
+    private const float DetailIconSize = 104f;
+    private const float DetailTextGap = 16f;
+    private const float DetailPillWidth = 84f;
+    private const float DetailPillHeight = Button.SmallHeight;
+    private const float DetailButtonGap = 10f;
+    private const float RemoveRowHeight = 50f;
+    private const float StripHeight = 82f;
+    private const float StripCellPad = 6f;
+    private const float StripGlyphScale = 1.25f;
+    private const float StripDividerInset = 18f;
+    private const float BulletGap = 8f;
+    private const float BulletRadius = 2.5f;
+    private const float BulletIndent = 14f;
+    private const float WidgetGap = 12f;
+    private const float WidgetCaptionGap = 6f;
+    private const float NoteGlyphScale = 1.1f;
+    private const float NotePad = 14f;
+    private const int MaxReleaseLines = 4;
     private const int LanguageCount = 9;
 
-    private void DrawDetail(Rect area, string appId)
+    private void DrawDetail(in PhoneContext context, in StoreView view, int depth)
     {
-        var scale = UiScale.Current;
-        var app = Find(appId);
-        if (app is null)
+        var app = Find(view.AppId);
+        var navBar = AppHeader.BeginLargeTitle(context);
+        using (ImRaii.PushId("appstore.detail"))
+        using (ImRaii.PushId(view.Serial))
+        using (AppSurface.Begin(navBar.Body))
         {
-            router.Pop();
-            return;
-        }
-
-        DrawNavBar(area, app.DisplayName, scale);
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
-        using (AppSurface.Begin(body))
-        {
-            var origin = ImGui.GetCursorScreenPos();
-            var width = ScrollLayout.StableContentWidth();
-            var entry = AppStoreCatalog.For(app.Id);
-            var top = DrawDetailHead(origin, width, app, entry, scale);
-            top = DrawPreviewStrip(origin, width, top, app, entry, scale);
-            top = DrawAbout(origin, width, top, entry, scale);
-            top = DrawInformation(origin, width, top, app, entry, scale);
-            ImGui.SetCursorScreenPos(new Vector2(origin.X, top));
-            ImGui.Dummy(new Vector2(width, Metrics.Space.Lg * scale));
-        }
-    }
-
-    private void DrawNavBar(Rect area, string title, float scale) =>
-        AppHeader.DrawNavBar(area, "appstore.back", title, ui.TitleInk, () => router.Pop());
-
-    private float DrawDetailHead(Vector2 origin, float width, IPhoneApp app, in StoreEntry entry, float scale)
-    {
-        var drawList = ImGui.GetWindowDrawList();
-        var top = origin.Y + Metrics.Space.Sm * scale;
-        var iconCenter = new Vector2(origin.X + DetailIconSize * 0.5f * scale, top + DetailIconSize * 0.5f * scale);
-        DrawIcon(drawList, iconCenter, DetailIconSize * scale, app);
-        var textLeft = origin.X + (DetailIconSize + 14f) * scale;
-        var textWidth = origin.X + width - textLeft;
-        var nameY = top + 6f * scale;
-        var nameHovering = UiInteract.Hover(new Vector2(textLeft, nameY),
-            new Vector2(textLeft + textWidth, nameY + Typography.Measure(app.DisplayName, TextStyles.Title2).Y));
-        Marquee.DrawLeft(new MarqueeId("appstore.detail.name.", app.Id), app.DisplayName, textLeft, nameY, textWidth,
-            TextStyles.Title2, ui.TitleInk, nameHovering);
-        Typography.DrawWrappedLeft(new Vector2(textLeft, top + 32f * scale), Loc.T(entry.Subtitle), ui.MutedInk,
-            TextStyles.Footnote, textWidth);
-
-        var pillHeight = 30f * scale;
-        var pillWidth = 78f * scale;
-        var pillTop = top + (DetailIconSize - 34f) * scale;
-        var pill = new Rect(new Vector2(textLeft, pillTop), new Vector2(textLeft + pillWidth, pillTop + pillHeight));
-        if (app.IsAvailable)
-        {
-            DrawStatePill(pill, app, UiInteract.Hover(pill.Min, pill.Max), scale);
-        }
-        else
-        {
-            Typography.Draw(drawList, new Vector2(textLeft, pillTop + 8f * scale), Loc.T(L.Store.Unavailable),
-                ui.MutedInk, TextStyles.Footnote);
-        }
-
-        if (installer.IsInstalled(app.Id) && AppInstaller.CanUninstall(app.Id))
-        {
-            var removeWidth = 92f * scale;
-            var remove = new Rect(new Vector2(pill.Max.X + 10f * scale, pillTop),
-                new Vector2(pill.Max.X + 10f * scale + removeWidth, pillTop + pillHeight));
-            if (ui.DangerGhostButton(remove, Loc.T(L.Store.Remove)))
+            if (app is not null)
             {
-                installer.Uninstall(app.Id);
+                DrawDetailBody(app);
             }
         }
 
-        return top + (DetailIconSize + Metrics.Space.Xl) * scale;
+        AppHeader.EndLargeTitle(in navBar, context, "appstore.detail.nav", app?.DisplayName ?? Loc.T(L.Store.Apps),
+            NavBarStyle.From(ui), ReadOnlySpan<NavBarButton>.Empty, BackTitle(depth), back);
+        if (app is null)
+        {
+            router.Pop(false);
+        }
     }
 
-    private float DrawPreviewStrip(Vector2 origin, float width, float top, IPhoneApp app, in StoreEntry entry,
-        float scale)
+    private void DrawDetailBody(IPhoneApp app)
     {
+        var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
-        Typography.Draw(drawList, new Vector2(origin.X, top), Loc.T(L.Store.Preview), ui.TitleInk, TextStyles.Title3);
-        top += 28f * scale;
-        const int cards = 3;
-        var gap = 10f * scale;
-        var cardWidth = (width - gap * (cards - 1)) / cards;
-        var rounding = Metrics.Radius.Card * scale;
-        for (var index = 0; index < cards; index++)
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ScrollLayout.StableContentWidth();
+        var entry = AppStoreCatalog.For(app.Id);
+        var top = DrawDetailHead(drawList, origin, width, app, entry, scale);
+        top = DrawInfoStrip(drawList, new Vector2(origin.X, top + SectionGap * scale), width, app, entry, scale);
+        if (index.TryRelease(app.Id, out var release))
         {
-            var min = new Vector2(origin.X + index * (cardWidth + gap), top);
-            var max = new Vector2(min.X + cardWidth, top + PreviewHeight * scale);
-            var tint = index switch
-            {
-                0 => Palette.Darken(app.Accent, 0.35f),
-                1 => Palette.Darken(app.Accent, 0.52f),
-                _ => Palette.Darken(app.Accent, 0.66f),
-            };
-            Squircle.FillVerticalGradient(drawList, min, max, rounding,
-                ImGui.GetColorU32(Palette.Lighten(tint, 0.10f)), ImGui.GetColorU32(Palette.Darken(tint, 0.35f)));
-            Squircle.Stroke(drawList, min, max, rounding,
-                ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, 0.08f)), 1f);
-            var center = new Vector2((min.X + max.X) * 0.5f, min.Y + PreviewHeight * 0.42f * scale);
-            DrawIcon(drawList, center, cardWidth * 0.46f, app);
-            var caption = index == 0 ? app.DisplayName : Loc.T(index == 1 ? entry.Subtitle : AppStoreCatalog.Name(entry.Category));
-            Typography.DrawCentered(drawList,
-                new Vector2(center.X, max.Y - 22f * scale),
-                Typography.FitText(caption, cardWidth - 12f * scale, TextStyles.Caption1),
-                Palette.WithAlpha(ui.TitleInk, 0.82f), TextStyles.Caption1);
+            top = DrawWhatsNew(drawList, new Vector2(origin.X, top + SectionGap * scale), width, release, scale);
         }
 
-        return top + (PreviewHeight + Metrics.Space.Xl) * scale;
-    }
-
-    private float DrawAbout(Vector2 origin, float width, float top, in StoreEntry entry, float scale)
-    {
-        Typography.Draw(new Vector2(origin.X, top), Loc.T(L.Store.Description), ui.TitleInk, TextStyles.Title3);
-        top += 28f * scale;
-        var height = Typography.DrawWrappedLeft(new Vector2(origin.X, top), Loc.T(entry.Body), ui.BodyInk,
+        top = DrawWidgetShelf(drawList, new Vector2(origin.X, top), width, app, scale);
+        top = DrawSectionHeader(drawList, new Vector2(origin.X, top + SectionGap * scale), width,
+            Loc.T(L.Store.Description), false, out _);
+        top += Typography.DrawWrappedLeft(new Vector2(origin.X, top), Loc.T(entry.Body), ui.BodyInk,
             TextStyles.Callout, width);
-        return top + height + Metrics.Space.Xl * scale;
+        if (!AppInstaller.CanUninstall(app.Id))
+        {
+            top = DrawBuiltInNote(drawList, new Vector2(origin.X, top + SectionGap * scale), width, scale);
+        }
+        else if (installer.IsInstalled(app.Id) && !installing.ContainsKey(app.Id))
+        {
+            top = DrawRemoveRow(new Vector2(origin.X, top + SectionGap * scale), width, app, scale);
+        }
+
+        Reserve(origin, width, top);
     }
 
-    private float DrawInformation(Vector2 origin, float width, float top, IPhoneApp app, in StoreEntry entry,
+    private float DrawDetailHead(ImDrawListPtr drawList, Vector2 origin, float width, IPhoneApp app,
+        in StoreEntry entry, float scale)
+    {
+        var iconSize = DetailIconSize * scale;
+        DrawIcon(drawList, new Vector2(origin.X + iconSize * 0.5f, origin.Y + iconSize * 0.5f), iconSize, app);
+        var textLeft = origin.X + iconSize + DetailTextGap * scale;
+        var textWidth = MathF.Max(1f, origin.X + width - textLeft);
+        var subtitleHeight = Typography.DrawWrappedLeft(new Vector2(textLeft, origin.Y), Loc.T(entry.Subtitle),
+            ui.MutedInk, TextStyles.Subheadline, textWidth);
+        Typography.Draw(drawList, new Vector2(textLeft, origin.Y + subtitleHeight),
+            Typography.FitText(Loc.T(AppStoreCatalog.Name(entry.Category)), textWidth, TextStyles.Footnote),
+            Palette.Lighten(app.Accent, PillInkLift), TextStyles.Footnote);
+
+        var pillTop = origin.Y + iconSize - DetailPillHeight * scale;
+        var pill = new Rect(new Vector2(textLeft, pillTop),
+            new Vector2(textLeft + DetailPillWidth * scale, pillTop + DetailPillHeight * scale));
+        if (!app.IsAvailable)
+        {
+            Typography.Draw(drawList,
+                new Vector2(textLeft, pill.Center.Y - Typography.LineHeight(TextStyles.Footnote) * 0.5f),
+                Typography.FitText(Loc.T(L.Store.Unavailable), textWidth, TextStyles.Footnote), ui.MutedInk,
+                TextStyles.Footnote);
+            return origin.Y + iconSize;
+        }
+
+        UiAnchors.Report("appstore.detail.get", pill);
+        DrawStatePill(drawList, pill, app, UiInteract.Hover(pill.Min, pill.Max), ui.Ink,
+            Palette.Lighten(app.Accent, PillInkLift), scale);
+        if (!AppInstaller.CanUninstall(app.Id))
+        {
+            DrawBuiltInTag(drawList, new Vector2(pill.Max.X + DetailButtonGap * scale, pill.Center.Y), scale);
+        }
+
+        return origin.Y + iconSize;
+    }
+
+    private float DrawRemoveRow(Vector2 origin, float width, IPhoneApp app, float scale)
+    {
+        var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + RemoveRowHeight * scale));
+        var hovered = UiInteract.Hover(row.Min, row.Max);
+        var drawList = ImGui.GetWindowDrawList();
+        ui.Card(drawList, row.Min, row.Max, Metrics.Radius.Grouped * scale);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            Squircle.Fill(drawList, row.Min, row.Max, Metrics.Radius.Grouped * scale,
+                ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, HairlineAlpha)));
+        }
+
+        Typography.DrawCentered(drawList, row.Center,
+            Typography.FitText(Loc.T(L.Store.Remove), row.Width - DetailButtonGap * 2f * scale, TextStyles.Body),
+            ui.Theme.Danger, TextStyles.Body);
+        if (UiInteract.Click(row.Min, row.Max, hovered))
+        {
+            AskRemove(app);
+        }
+
+        return row.Max.Y;
+    }
+
+    private void DrawBuiltInTag(ImDrawListPtr drawList, Vector2 leftCenter, float scale)
+    {
+        var glyph = IconGlyph.Of(FontAwesomeIcon.Lock);
+        var glyphSize = Typography.LineHeight(TextStyles.Footnote);
+        AppSkin.Icon(drawList, new Vector2(leftCenter.X + glyphSize * 0.5f, leftCenter.Y), glyph, ui.MutedInk, 0.8f);
+        Typography.Draw(drawList,
+            new Vector2(leftCenter.X + glyphSize + Metrics.Space.Xxs * scale, leftCenter.Y - glyphSize * 0.5f),
+            Loc.T(L.Store.BuiltIn), ui.MutedInk, TextStyles.Footnote);
+    }
+
+    private float DrawInfoStrip(ImDrawListPtr drawList, Vector2 origin, float width, IPhoneApp app,
+        in StoreEntry entry, float scale)
+    {
+        var widgetCount = WidgetsFor(app.Id).Count;
+        var cells = widgetCount > 0 ? 4 : 3;
+        var cardMax = new Vector2(origin.X + width, origin.Y + StripHeight * scale);
+        var hairline = ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, HairlineAlpha * 2f));
+        drawList.AddLine(origin, new Vector2(cardMax.X, origin.Y), hairline, 1f);
+        drawList.AddLine(new Vector2(origin.X, cardMax.Y), cardMax, hairline, 1f);
+        var cellWidth = width / cells;
+        var category = entry.Category;
+        DrawStripCell(drawList, origin, cellWidth, 0, Loc.T(L.Store.Category),
+            IconGlyph.Of(AppStoreCatalog.Icon(category)), true, Loc.T(AppStoreCatalog.Name(category)), scale);
+        DrawStripCell(drawList, origin, cellWidth, 1, Loc.T(L.Store.Developer),
+            IconGlyph.Of(FontAwesomeIcon.UserCircle), true, DeveloperName(app), scale);
+        DrawStripCell(drawList, origin, cellWidth, 2, Loc.T(L.Store.Languages), texts.Count(LanguageCount), false,
+            string.Empty, scale);
+        if (widgetCount > 0)
+        {
+            DrawStripCell(drawList, origin, cellWidth, 3, Loc.T(L.Store.Widgets), texts.Count(widgetCount), false,
+                string.Empty, scale);
+        }
+
+        return cardMax.Y;
+    }
+
+    private void DrawStripCell(ImDrawListPtr drawList, Vector2 origin, float cellWidth, int cellIndex, string caption,
+        string value, bool glyph, string footer, float scale)
+    {
+        var left = origin.X + cellIndex * cellWidth;
+        var centerX = left + cellWidth * 0.5f;
+        var innerWidth = MathF.Max(1f, cellWidth - StripCellPad * 2f * scale);
+        if (cellIndex > 0)
+        {
+            drawList.AddLine(new Vector2(left, origin.Y + StripDividerInset * scale),
+                new Vector2(left, origin.Y + (StripHeight - StripDividerInset) * scale),
+                ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, HairlineAlpha * 2f)), 1f);
+        }
+
+        var captionHeight = Typography.LineHeight(TextStyles.Caption1);
+        var valueHeight = Typography.LineHeight(TextStyles.Title3);
+        var footerHeight = footer.Length > 0 ? Typography.LineHeight(TextStyles.Caption1) : 0f;
+        var top = origin.Y + (StripHeight * scale - captionHeight - valueHeight - footerHeight) * 0.5f;
+        Typography.DrawCentered(drawList, new Vector2(centerX, top + captionHeight * 0.5f),
+            Typography.FitText(caption, innerWidth, TextStyles.Caption1), ui.MutedInk, TextStyles.Caption1);
+        var valueCenter = new Vector2(centerX, top + captionHeight + valueHeight * 0.5f);
+        if (glyph)
+        {
+            AppSkin.Icon(drawList, valueCenter, value, ui.MutedInk, StripGlyphScale);
+        }
+        else
+        {
+            Typography.DrawCentered(drawList, valueCenter, value, ui.MutedInk, TextStyles.Title3);
+        }
+
+        if (footer.Length == 0)
+        {
+            return;
+        }
+
+        Typography.DrawCentered(drawList,
+            new Vector2(centerX, top + captionHeight + valueHeight + footerHeight * 0.5f),
+            Typography.FitText(footer, innerWidth, TextStyles.Caption1), ui.MutedInk, TextStyles.Caption1);
+    }
+
+    private float DrawWhatsNew(ImDrawListPtr drawList, Vector2 origin, float width, in StoreRelease release,
         float scale)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        Typography.Draw(drawList, new Vector2(origin.X, top), Loc.T(L.Store.Information), ui.TitleInk,
-            TextStyles.Title3);
-        top += 28f * scale;
-        const int rowCount = 3;
-        var rowHeight = 44f * scale;
-        var cardMin = new Vector2(origin.X, top);
-        var cardMax = new Vector2(origin.X + width, top + rowCount * rowHeight);
-        ui.Card(drawList, cardMin, cardMax, Metrics.Radius.Card * scale, true);
-        DrawInfoRow(drawList, cardMin, cardMax, 0, rowHeight, Loc.T(L.Store.Developer), DeveloperName(app), scale);
-        DrawInfoRow(drawList, cardMin, cardMax, 1, rowHeight, Loc.T(L.Store.Category),
-            Loc.T(AppStoreCatalog.Name(entry.Category)), scale);
-        DrawInfoRow(drawList, cardMin, cardMax, 2, rowHeight, Loc.T(L.Store.Languages),
-            Loc.T(L.Store.LanguageCount, LanguageCount), scale);
-        return cardMax.Y + Metrics.Space.Xl * scale;
+        var top = DrawSectionHeader(drawList, origin, width, Loc.T(L.Store.WhatsNew), false, out _);
+        var version = texts.Version(release.Version);
+        var date = texts.ReleaseDate(release.Date);
+        var metaHeight = Typography.LineHeight(TextStyles.Subheadline);
+        Typography.Draw(drawList, new Vector2(origin.X, top), version, ui.MutedInk, TextStyles.Subheadline);
+        var dateWidth = Typography.Measure(date, TextStyles.Subheadline).X;
+        Typography.Draw(drawList, new Vector2(origin.X + width - dateWidth, top), date, ui.MutedInk,
+            TextStyles.Subheadline);
+        top += metaHeight + BulletGap * scale;
+        var lines = Math.Min(release.Highlights.Count, MaxReleaseLines);
+        var textLeft = origin.X + BulletIndent * scale;
+        var textWidth = MathF.Max(1f, width - BulletIndent * scale);
+        var bodyLine = Typography.LineHeight(TextStyles.Body);
+        for (var lineIndex = 0; lineIndex < lines; lineIndex++)
+        {
+            drawList.AddCircleFilled(new Vector2(origin.X + BulletRadius * scale, top + bodyLine * 0.5f),
+                BulletRadius * scale, ImGui.GetColorU32(ui.MutedInk), 12);
+            top += Typography.DrawWrappedLeft(new Vector2(textLeft, top), Loc.T(release.Highlights[lineIndex]),
+                ui.BodyInk, TextStyles.Body, textWidth);
+            top += BulletGap * scale;
+        }
+
+        return top;
+    }
+
+    private float DrawWidgetShelf(ImDrawListPtr drawList, Vector2 origin, float width, IPhoneApp app, float scale)
+    {
+        var widgets = WidgetsFor(app.Id);
+        if (widgets.Count == 0 || widgetHost is null || widgetRegistry is null)
+        {
+            return origin.Y;
+        }
+
+        var top = DrawSectionHeader(drawList, new Vector2(origin.X, origin.Y + SectionGap * scale), width,
+            Loc.T(L.Store.Widgets), false, out _);
+        var gap = WidgetGap * scale;
+        var smallSide = (width - gap) * 0.5f;
+        var captionHeight = Typography.LineHeight(TextStyles.Footnote) + WidgetCaptionGap * scale;
+        var column = 0;
+        var rowBottom = top;
+        var delta = ImGui.GetIO().DeltaTime;
+        for (var widgetIndex = 0; widgetIndex < widgets.Count; widgetIndex++)
+        {
+            var widget = widgets[widgetIndex];
+            if (!widgetRegistry.IsAvailable(widget))
+            {
+                continue;
+            }
+
+            var size = WidgetSizes.Smallest(widget.Sizes);
+            Rect rect;
+            if (size == WidgetSize.Small)
+            {
+                var left = origin.X + column * (smallSide + gap);
+                rect = new Rect(new Vector2(left, top), new Vector2(left + smallSide, top + smallSide));
+                column++;
+            }
+            else
+            {
+                if (column > 0)
+                {
+                    top = rowBottom + gap;
+                    column = 0;
+                }
+
+                var height = size == WidgetSize.Medium ? width * WidgetMediumAspect : width;
+                rect = new Rect(new Vector2(origin.X, top), new Vector2(origin.X + width, top + height));
+                column = CategoryColumns;
+            }
+
+            WidgetGalleryPreview.Draw(drawList, widgetHost, widget, size, rect, theme, scale, delta);
+            Typography.DrawCentered(drawList,
+                new Vector2(rect.Center.X, rect.Max.Y + captionHeight * 0.5f + WidgetCaptionGap * 0.5f * scale),
+                Typography.FitText(widget.DisplayName, rect.Width, TextStyles.Footnote), ui.MutedInk,
+                TextStyles.Footnote);
+            rowBottom = MathF.Max(rowBottom, rect.Max.Y + captionHeight);
+            if (column >= CategoryColumns)
+            {
+                top = rowBottom + gap;
+                column = 0;
+            }
+        }
+
+        return MathF.Max(rowBottom, top - gap);
+    }
+
+    private float DrawBuiltInNote(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
+    {
+        var pad = NotePad * scale;
+        var glyphSize = Typography.LineHeight(TextStyles.Subheadline);
+        var textLeft = origin.X + pad + glyphSize + Metrics.Space.Sm * scale;
+        var textWidth = MathF.Max(1f, origin.X + width - pad - textLeft);
+        var hint = Loc.T(L.Store.BuiltInHint);
+        var textHeight = Typography.MeasureWrappedBlock(hint, TextStyles.Subheadline, textWidth).Y;
+        var cardMax = new Vector2(origin.X + width, origin.Y + textHeight + pad * 2f);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
+        AppSkin.Icon(drawList, new Vector2(origin.X + pad + glyphSize * 0.5f, origin.Y + pad + glyphSize * 0.5f),
+            IconGlyph.Of(FontAwesomeIcon.Lock), ui.MutedInk, NoteGlyphScale);
+        Typography.DrawWrappedLeft(new Vector2(textLeft, origin.Y + pad), hint, ui.MutedInk, TextStyles.Subheadline,
+            textWidth);
+        return cardMax.Y;
     }
 
     private static string DeveloperName(IPhoneApp app) => app.Id switch
@@ -160,22 +336,4 @@ internal sealed partial class AppStoreApp
         "jobs" => "K.I.R.O",
         _ => Loc.T(L.Store.DeveloperName),
     };
-
-    private void DrawInfoRow(ImDrawListPtr drawList, Vector2 cardMin, Vector2 cardMax, int index, float rowHeight,
-        string label, string value, float scale)
-    {
-        var rowTop = cardMin.Y + index * rowHeight;
-        if (index > 0)
-        {
-            drawList.AddLine(new Vector2(cardMin.X + 14f * scale, rowTop), new Vector2(cardMax.X - 14f * scale, rowTop),
-                ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, 0.06f)), 1f);
-        }
-
-        var centerY = rowTop + rowHeight * 0.5f;
-        Typography.Draw(drawList, new Vector2(cardMin.X + 14f * scale, centerY - 8f * scale), label, ui.MutedInk,
-            TextStyles.Footnote);
-        var size = Typography.Measure(value, TextStyles.FootnoteEmphasized);
-        Typography.Draw(drawList, new Vector2(cardMax.X - 14f * scale - size.X, centerY - 8f * scale), value,
-            ui.TitleInk, TextStyles.FootnoteEmphasized);
-    }
 }

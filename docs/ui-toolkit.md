@@ -33,11 +33,11 @@ A component used by exactly one app does not belong here. It lives in that app, 
 | src/Aetherphone/Windows/Components/FeedCell.cs | Edge-to-edge list cell: flat hover wash, whole-cell tap, trailing hairline |
 | src/Aetherphone/Windows/Components/GroupCard.cs | Grouped inset list card (theme or AppSkin overload) with fixed rows |
 | src/Aetherphone/Windows/Components/ListSection.cs | Section header over cell lists (SettingsSection and ListSection.Label delegate here) |
-| src/Aetherphone/Windows/Components/ActionSheet.cs | iOS bottom action sheet with an optional header band |
+| src/Aetherphone/Windows/Components/Sheets/Sheet.cs | Bottom sheet presenter: veil, themed glass panel at the screen radius, grabber, medium and large detents, drag to dismiss |
+| src/Aetherphone/Windows/Components/Sheets/ActionSheet.cs | iOS bottom action sheet with an optional header band, built on `Sheet` |
 | src/Aetherphone/Windows/Components/Social/SocialInk.cs | Social ink token set derived from any `AppPalette` (accent link/deep/wash, faint ink, glass, chips, button fills) |
 | src/Aetherphone/Windows/Components/Social/SocialChrome.cs | Glass back chip screen header, top bar icon buttons with knockout count badges, inline stats, section labels, bar backdrop |
 | src/Aetherphone/Windows/Components/Social/UnderlineTabs.cs | Sliding underline tabs: a text pair or an icon row |
-| src/Aetherphone/Windows/Components/Social/SocialPill.cs | Accent gradient, outline, flat and icon pills |
 | src/Aetherphone/Windows/Components/Social/SocialUserRow.cs | Avatar + badged name + subtitle row with a trailing slot for a pill |
 | src/Aetherphone/Windows/Components/Social/SocialProfilePages.cs | Social confirm/report plumbing (block, delete post/comment) plus handle validation and list titles |
 | src/Aetherphone/Windows/Components/Social/FeedFilterSheet.cs | Bottom sheet of iOS toggles plus a region chip row and a Done pill for feed filters |
@@ -45,6 +45,7 @@ A component used by exactly one app does not belong here. It lives in that app, 
 | src/Aetherphone/Windows/Components/ShellToast.cs | Shell-level bottom-pill toast (replaced the mouse-anchored CopyToast) |
 | src/Aetherphone/Windows/Components/Toggle.cs | iOS-style switch |
 | src/Aetherphone/Windows/Components/ChipRail.cs | Single pannable row of filter chips |
+| src/Aetherphone/Windows/Components/Layout/PanRail.cs | Horizontal kinetic pan state for a row of cards drawn by the caller (Photos month rail) |
 | src/Aetherphone/Windows/Components/SoftWrapField.cs | Multiline input with soft wrapping and mention support |
 | src/Aetherphone/Windows/Components/ConfirmOverlay.cs | Modal confirm layer driven by `ConfirmService` |
 | src/Aetherphone/Windows/Components/EmojiRender.cs | Draws emoji images inline with text |
@@ -170,7 +171,7 @@ The `openedFrame` guard is mandatory in any popup you build: the click that open
 
 For confirms, do not draw `ConfirmDialog` yourself. Apps receive a `ConfirmService` (src/Aetherphone/Core/Confirm/ConfirmService.cs) and call `confirm.Ask(new ConfirmRequest { ... })` or `confirm.Alert(...)`; the shell-level `ConfirmOverlay` dims the screen, animates the card in, and routes the buttons back to your `Confirm`/`Cancel` callbacks. A request is stamped with the host that raised it: `ConfirmHosts.Current` is the phone unless a window wraps its own draw in `ConfirmHosts.Enter(host)`, and each `ConfirmOverlay` only shows requests for its own host, so a dialog raised inside a Linkpearl pop-out appears over that window instead of vanishing with a minimized phone. A window that hosts confirms owns them for their lifetime: call `confirm.CancelHost(host)` when it collapses, unbinds, or is suppressed, or the dialog is stranded where nobody can answer it. Set `Sheet = true` on the request for a destructive confirm and the overlay presents it as an iOS bottom action sheet (title and message in a muted header band, the confirm label as the action row) instead of the centered alert; leave it unset for money, consent, and irreversible-account flows. `ConfirmDialog` (src/Aetherphone/Windows/Components/ConfirmDialog.cs) is the presentational layer for both, and its `DrawPillButton` is reusable for pill-shaped buttons.
 
-`ActionSheet` (src/Aetherphone/Windows/Components/ActionSheet.cs) is the multi-action bottom sheet for post and row overflow menus: per-app instance, `Gate()` early in the frame, `Open()`/`Close()`, `Draw(screen, style, items, cancelLabel, keepOpen, title)` returns the picked index. Build the style with `ActionSheetStyle.From(theme)` or `From(ui)` rather than hand-picking colors; Chirper remains the reference host (sheet picks the action, `ConfirmService` still owns anything irreversible, a toast reports the result). For transient feedback anywhere, `ShellToast.Show(text)` raises the shell-level bottom pill; it renders in whichever host (phone screen, Linkpearl popout, minimized phone) the pointer was in when it was raised. Per-app `ScreenToast` instances stay for app-styled toasts.
+`ActionSheet` (src/Aetherphone/Windows/Components/Sheets/ActionSheet.cs) is the multi-action bottom sheet for post and row overflow menus. It and `ShareSheet` are built on the shared `Sheet` presenter (src/Aetherphone/Windows/Components/Sheets/Sheet.cs), which owns the veil (`SheetMetrics.AppVeil` inside apps, `HomeVeil` over home), the themed glass panel at the screen radius, the 36 by 5 grabber, the medium (50 percent) and large (92 percent) detents with drag between them, the drag past the bottom to dismiss, and the tap-outside dismissal with its `openedFrame` guard. Hosts call `sheet.Begin(drawList, screen, theme, detents, veil)`, draw into `frame.Content` (clipped to the panel), then `sheet.End(in frame)`; `SheetDetents.Fitted(height)` makes a non-resizable sheet. `ActionSheet` usage: per-app instance, `Gate()` early in the frame, `Open()`/`Close()`, `Draw(screen, style, items, cancelLabel, keepOpen, title)` returns the picked index. Build the style with `ActionSheetStyle.From(theme)` or `From(ui)` rather than hand-picking colors; Chirper remains the reference host (sheet picks the action, `ConfirmService` still owns anything irreversible, a toast reports the result). For transient feedback anywhere, `ShellToast.Show(text)` raises the shell-level bottom pill; it renders in whichever host (phone screen, Linkpearl popout, minimized phone) the pointer was in when it was raised. Per-app `ScreenToast` instances stay for app-styled toasts.
 
 Web links that other users supplied (post bodies, chat bubbles, venue and ad buttons, chat-log URLs) go through `UrlActions.AskThenOpen` (src/Aetherphone/Windows/UrlActions.cs), which shows the open-link confirmation with a host-first destination chip before calling `OpenInBrowser`. Both entry points normalize a scheme-less link first (a bare `www.` host becomes `https://`), because link scanners match `www.` too and `Process.Start` only accepts an absolute http or https URL. `LinkText` already does this for clickable URLs inside text, so anything drawn through `LinkText`, `ChatBubble`, or `ChatTranscript` gets the gate for free. `PhoneServices.Build` binds the single `ConfirmService` with `UrlActions.Configure`. Reserve a direct `OpenInBrowser` for first-party destinations (Patreon, Discord, Lodestone, sign-in verification pages).
 
@@ -248,12 +249,17 @@ A tap only registers if the pointer traveled less than the drag slop, so panning
 
 | Widget | One-liner |
 | --- | --- |
+| `Button.Draw(rect, label, ink, style, role)` | The one labelled button: Prominent, Tinted, Gray or Plain capsule with shared hover and press motion; `ui.Ink` or `ControlInk.From(theme)` supplies the colours (src/Aetherphone/Windows/Components/Fields/Button.cs) |
+| `RoundButton.Icon(drawList, center, radius, glyph, ink, style)` | Content-layer circular icon button in the same styles (src/Aetherphone/Windows/Components/Fields/RoundButton.cs) |
+| `SearchBar.Surface` / `SearchBar.Draw` | Filled 36 tall capsule behind a search or text field (src/Aetherphone/Windows/Components/Fields/SearchBar.cs) |
+| `Surfaces.Fill(ink, FillLevel)` | Content fill ladder derived from the title ink, right in dark and light (src/Aetherphone/Windows/Components/Primitives/Surfaces.cs) |
 | `EmptyState.Draw(body, ui, glyph, title, hint)` | Centered icon, title, and wrapped hint for empty lists; takes a `PhoneIcons` glyph or a `FontAwesomeIcon` (src/Aetherphone/Windows/Components/Fields/EmptyState.cs) |
 | `AvatarView.Draw` / `AvatarView.DrawRemote` | Circular avatar with monogram fallback, loading pulse, and fade-in (src/Aetherphone/Windows/Components/AvatarView.cs) |
 | `SoftWrapField.Multiline(id, ref value, maxLength, size, wrapWidth)` | Multiline composer input; wraps visually without inserting real newlines, supports `MentionAutocomplete` (src/Aetherphone/Windows/Components/SoftWrapField.cs) |
 | `SearchField.Draw` / `SearchField.DrawSubmit` | Pill search input with search icon; `Draw` adds a clear button, `DrawSubmit` returns true on Enter (src/Aetherphone/Windows/Components/SearchField.cs) |
 | `Elevation.Card` / `Elevation.Floating` | Layered soft drop shadows behind cards and floating surfaces (src/Aetherphone/Windows/Components/Elevation.cs) |
-| `AppHeader.Draw(context, title, onBack)` | Standard app title bar with optional back button (src/Aetherphone/Windows/Components/AppHeader.cs) |
+| `AppHeader.Draw(context, title, onBack)` | Standard inline app title bar with optional back button (src/Aetherphone/Windows/Components/Layout/AppHeader.cs) |
+| `AppHeader.BeginLargeTitle` / `EndLargeTitle` | Collapsing large-title navigation bar: `Begin` returns a `NavBarFrame` whose `Body` the screen passes to `AppSurface.Begin`; the surface scrolls under the bar and `End` (called after the body) draws the 96 unit large title collapsing over 60 units of scroll into the 52 unit glass inline bar, the back control with the previous screen's title, and up to two glass circle buttons (`NavBarButton`), returning the pressed button index (src/Aetherphone/Windows/Components/Layout/AppHeader.cs, metrics in Layout/NavBar.cs) |
 | `GroupCard.Begin(theme, rowCount)` + `NextRow()` | The inset card that every list of rows sits in, hairlines drawn for you (src/Aetherphone/Windows/Components/GroupCard.cs) |
 | `SettingsRow.Link` / `AppLink` / `Disclosure` / `Bool` / `Switch` / `Info` / `Selectable` / `Action` | The row vocabulary for a GroupCard; `Switch` is the icon-tile row with an inline toggle, `Bool` the plain one, both taking an optional `hint` that becomes a question-mark icon (src/Aetherphone/Windows/Components/SettingsRow.cs) |
 | `SettingsSection.Header(title, theme, hint)` | Uppercase section label, with an optional hint icon for a whole section (src/Aetherphone/Windows/Components/SettingsSection.cs) |
@@ -278,7 +284,7 @@ You rarely call these directly. `RichText.Build` (src/Aetherphone/Windows/Compon
 
 ## Motion
 
-Animated components (the `Toggle` knob, `ConfirmOverlay` reveal) use `Spring` (src/Aetherphone/Core/Animation/Spring.cs), a critically damped smoother that clamps on target crossing, so motion settles without bouncing. Follow that: no overshoot or bounce in phone UI. `Easing` (src/Aetherphone/Core/Animation) provides curves like `EaseOutQuint` for reveals.
+Animated components (the `Toggle` knob, `ConfirmOverlay` reveal) use `Spring` (src/Aetherphone/Core/Animation/Spring.cs), a critically damped smoother that clamps on target crossing, so motion settles without bouncing. Follow that: no overshoot or bounce in phone UI. Smooth times and press scales come from `Motion` (src/Aetherphone/Core/Animation/Motion.cs): `PressIn`, `Release`, `HoverLift`, `PageSettle`, `Sheet`, `Island`, `SwitcherReveal`, `TabBar`, `Appear`, plus `PressScaleControl`, `PressScaleCard`, `HoverLiftIcon` and `HoverLiftCard`. Draw with the raw spring value; do not layer an `Easing` curve over it. `Easing.Lerp`, `Clamp01` and `Segment` are linear helpers and stay; the curves belong to games and the boot sequence.
 
 A spring started from rest spends its first frames barely moving, which reads as input lag. For anything the user just triggered (a screen push, an app launch), start it with `Spring.Launch(value, TransitionTiming.LaunchVelocity(smoothTime))`: the kick is half the spring's natural frequency, so the motion begins immediately and decelerates into place without ever overshooting (see `SpringLaunchTests`). Step transitions with a delta clamped to `TransitionTiming.MotionFrameSeconds`, not `MaxFrameSeconds`, so a dropped frame slows the motion instead of skipping a third of it.
 
@@ -298,6 +304,8 @@ To move, scale or fade a whole screen, do not paint it at a shifted rect or a sm
 | Inset a card inside an edge-to-edge surface | shift both edges by `FeedCell.PadX * scale` |
 | Size rows inside a scroll region | `ScrollLayout.StableContentWidth()` |
 | Render a long feed | `FeedVirtualizer` + `InfiniteScroll.ReachedBottom` |
+| Draw a labelled button | `Button.Draw` (or the AppSkin pill helpers that forward to it) |
+| Put a round icon button on a card | `RoundButton.Icon` (glass `GlassCircle` only in the navigation layer) |
 | Make a rect clickable | `UiInteract.HoverClick` (or `Hover` + `Click`) |
 | Flip a boolean setting | `Toggle.Draw` |
 | Offer filters in a row | `ChipRail` |
@@ -308,7 +316,7 @@ To move, scale or fade a whole screen, do not paint it at a shifted rect or a sm
 | Head a social sub-screen | `SocialChrome.DrawScreenHeader` (glass back chip, left or centred title) |
 | Put icon buttons in a social top bar | `SocialChrome.DrawHeaderIcon` + `HeaderSlot` (count badge built in) |
 | Switch between two feeds or an icon tab row | `UnderlineTabs.Draw` / `UnderlineTabs.DrawIcons` |
-| Draw a Follow, Edit profile or Send button | `SocialPill.Accent` / `Outline` / `Flat` |
+| Draw a Follow, Edit profile or Send button | `Button.Draw` (Prominent, Tinted or Gray) |
 | List people with a follow pill | `SocialUserRow.Draw` and fill the returned `Trailing` rect |
 | Anchor a popover to a row and dismiss it on tap-outside | `ActionReveal<TPanel>` + `PopoverSurface.DrawGlass` |
 | Format a like or follower count | `CountText.Compact` |

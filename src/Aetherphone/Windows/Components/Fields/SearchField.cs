@@ -28,7 +28,7 @@ internal static class SearchField
         var drawList = ImGui.GetWindowDrawList();
         var pillMin = new Vector2(bar.Min.X + sideInset * scale, bar.Min.Y + 9f * scale);
         var pillMax = new Vector2(bar.Max.X - sideInset * scale, bar.Max.Y - 9f * scale);
-        Squircle.Fill(drawList, pillMin, pillMax, (pillMax.Y - pillMin.Y) * 0.5f, ImGui.GetColorU32(fieldSurface));
+        Squircle.Fill(drawList, pillMin, pillMax, (pillMax.Y - pillMin.Y) * 0.5f, ImGui.GetColorU32(Surfaces.Fill(titleInk, FillLevel.Tertiary)));
         PhoneIcon.Draw(drawList, new Vector2(pillMin.X + 16f * scale, (pillMin.Y + pillMax.Y) * 0.5f),
             PhoneIcons.Search, mutedInk, GlyphSize * scale);
         ImGui.SetCursorScreenPos(new Vector2(pillMin.X + 32f * scale,
@@ -44,25 +44,25 @@ internal static class SearchField
     }
 
     public static void Draw(Rect bar, string imguiId, string hint, ref string text, PhoneTheme theme,
-        int maxLength = 100, bool focus = false) =>
+        int maxLength = 100, bool focus = false, bool overlayOwned = false) =>
         Draw(bar, imguiId, hint, ref text, theme.GroupedCard, theme.TextMuted, theme.TextStrong, theme.SurfaceMuted,
-            theme.AppBackground, maxLength, focus);
+            theme.AppBackground, maxLength, focus, overlayOwned);
 
     public static void Draw(Rect bar, string imguiId, string hint, ref string text, in AppPalette palette,
-        int maxLength = 100, bool focus = false) =>
+        int maxLength = 100, bool focus = false, bool overlayOwned = false) =>
         Draw(bar, imguiId, hint, ref text, palette.FieldSurface, palette.MutedInk, palette.TitleInk,
-            new Vector4(1f, 1f, 1f, 0.14f), palette.BackdropBottom, maxLength, focus);
+            new Vector4(1f, 1f, 1f, 0.14f), palette.BackdropBottom, maxLength, focus, overlayOwned);
 
     public static void Draw(Rect bar, string imguiId, string hint, ref string text, Vector4 fieldSurface,
         Vector4 mutedInk, Vector4 titleInk, Vector4 clearFill, Vector4 clearCross, int maxLength,
-        bool focus = false)
+        bool focus = false, bool overlayOwned = false)
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         var pillMin = new Vector2(bar.Min.X, bar.Center.Y - PillHalfHeight * scale);
         var pillMax = new Vector2(bar.Max.X, bar.Center.Y + PillHalfHeight * scale);
         var radius = (pillMax.Y - pillMin.Y) * 0.5f;
-        Squircle.Fill(drawList, pillMin, pillMax, radius, ImGui.GetColorU32(fieldSurface));
+        Squircle.Fill(drawList, pillMin, pillMax, radius, ImGui.GetColorU32(Surfaces.Fill(titleInk, FillLevel.Tertiary)));
         var glyphCenter = new Vector2(pillMin.X + 16f * scale, bar.Center.Y);
         PhoneIcon.Draw(drawList, glyphCenter, PhoneIcons.Search, mutedInk, GlyphSize * scale);
         var hasText = text.Length > 0;
@@ -90,8 +90,11 @@ internal static class SearchField
             return;
         }
 
-        var hovered = UiInteract.Hover(clearCenter - new Vector2(clearRadius, clearRadius),
-            clearCenter + new Vector2(clearRadius, clearRadius));
+        var clearMin = clearCenter - new Vector2(clearRadius, clearRadius);
+        var clearMax = clearCenter + new Vector2(clearRadius, clearRadius);
+        var hovered = overlayOwned
+            ? !UiInteract.InputBlocked && UiInteract.HoverWindowOnly(clearMin, clearMax)
+            : UiInteract.Hover(clearMin, clearMax);
         drawList.AddCircleFilled(clearCenter, clearRadius,
             ImGui.GetColorU32(hovered ? mutedInk : clearFill), 16);
         var arm = 3.2f * scale;
@@ -105,7 +108,7 @@ internal static class SearchField
         }
 
         ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        if (ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+        if (UiInteract.Click(clearMin, clearMax, hovered))
         {
             text = string.Empty;
         }

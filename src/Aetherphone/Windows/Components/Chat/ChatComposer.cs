@@ -31,7 +31,7 @@ internal struct ChatComposerModel
     public bool CanHandleEscape;
     public bool Blocked;
     public string BlockedNotice;
-    public Action OnBlockedTap;
+    public Action? OnBlockedTap;
     public Func<int> ResolveVoiceInput;
     public Action<string> OnPickImage;
     public Action<string> OnShareLocation;
@@ -244,9 +244,10 @@ internal sealed class ChatComposer : IDisposable
         var fieldWidth = MathF.Max(1f, textRight - textLeft);
         editor.Rewrap(MathF.Max(1f, fieldWidth - padding.X * 2f - 4f * scale));
         var lineHeight = ImGui.GetTextLineHeight();
-        var fits = Math.Max(1, (int)MathF.Floor((pill.Max.Y - pill.Min.Y - padding.Y * 2f) / lineHeight));
-        var lines = Math.Clamp(editor.LineCount, 1, Math.Min(MaxLines, fits));
-        fieldGrowth = (lines - 1) * lineHeight;
+        var wantedLines = Math.Clamp(editor.LineCount, 1, MaxLines);
+        fieldGrowth = (wantedLines - 1) * lineHeight;
+        var fits = Math.Max(1, (int)MathF.Floor((pill.Height - padding.Y * 2f) / lineHeight));
+        var lines = Math.Min(wantedLines, fits);
         var fieldHeight = lines * lineHeight + padding.Y * 2f;
         var fieldTop = (pill.Min.Y + pill.Max.Y) * 0.5f - fieldHeight * 0.5f;
         ImGui.SetCursorScreenPos(new Vector2(textLeft, fieldTop));
@@ -469,6 +470,11 @@ internal sealed class ChatComposer : IDisposable
         Typography.Draw(drawList, new Vector2(textLeft, area.Center.Y - labelSize.Y * 0.5f), label, ui.MutedInk,
             TextStyles.Footnote);
 
+        if (model.OnBlockedTap is not { } onBlockedTap)
+        {
+            return;
+        }
+
         if (UiInteract.Hover(area.Min, area.Max))
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -476,7 +482,7 @@ internal sealed class ChatComposer : IDisposable
 
         if (UiInteract.HoverClick(area.Min, area.Max))
         {
-            model.OnBlockedTap?.Invoke();
+            onBlockedTap();
         }
     }
 

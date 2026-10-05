@@ -128,7 +128,7 @@ internal sealed class WallpaperCropPage : ISettingsPage
         Dalamud.Interface.Textures.TextureWraps.IDalamudTextureWrap? texture, float aspect, float scale)
     {
         Typography.DrawCentered(new Vector2(body.Center.X, body.Max.Y - 94f * scale), Loc.T(L.Wallpaper.GestureHint),
-            theme.TextMuted, 0.78f);
+            theme.TextMuted, TextStyles.Caption1);
         var trackWidth = body.Width * 0.62f;
         var track = new Rect(new Vector2(body.Center.X - trackWidth * 0.5f, body.Max.Y - 70f * scale),
             new Vector2(body.Center.X + trackWidth * 0.5f, body.Max.Y - 66f * scale));
@@ -138,19 +138,21 @@ internal sealed class WallpaperCropPage : ISettingsPage
         var pad = 16f * scale;
         var gap = 12f * scale;
         var buttonWidth = (body.Width - pad * 2f - gap) * 0.5f;
-        var buttonHeight = 42f * scale;
+        var buttonHeight = Button.LargeHeight * scale;
         var buttonY = body.Max.Y - pad - buttonHeight;
         var cancelRect = new Rect(new Vector2(body.Min.X + pad, buttonY),
             new Vector2(body.Min.X + pad + buttonWidth, buttonY + buttonHeight));
         var setRect = new Rect(new Vector2(cancelRect.Max.X + gap, buttonY),
             new Vector2(body.Max.X - pad, buttonY + buttonHeight));
-        if (DrawButton(cancelRect, Loc.T(L.Common.Cancel), false, true, theme, scale))
+        var ink = ControlInk.From(theme);
+        if (Button.Draw(cancelRect, Loc.T(L.Common.Cancel), ink, ButtonStyle.Gray))
         {
             navigator.Back();
             return;
         }
 
-        if (DrawButton(setRect, Loc.T(L.Wallpaper.Set), true, texture is not null, theme, scale) && texture is not null)
+        if (Button.Draw(setRect, Loc.T(L.Wallpaper.Set), ink, ButtonStyle.Prominent, enabled: texture is not null)
+            && texture is not null)
         {
             var finalCrop = new WallpaperCrop(targetZoom, targetCenterX, targetCenterY).Clamped(texture.Size, aspect);
             var id = wallpapers.AddCustom(sourcePath, finalCrop);
@@ -159,33 +161,6 @@ internal sealed class WallpaperCropPage : ISettingsPage
         }
     }
 
-    private static bool DrawButton(Rect rect, string label, bool primary, bool enabled, PhoneTheme theme, float scale)
-    {
-        var dl = ImGui.GetWindowDrawList();
-        var rounding = 12f * scale;
-        var hovered = enabled && UiInteract.Hover(rect.Min, rect.Max);
-        var fill = primary ? theme.Accent : theme.SurfaceMuted;
-        if (!enabled)
-        {
-            fill = fill with { W = fill.W * 0.4f };
-        }
-        else if (hovered)
-        {
-            fill = Palette.Mix(fill, theme.TextStrong, 0.12f);
-        }
-
-        Squircle.Fill(dl, rect.Min, rect.Max, rounding, ImGui.GetColorU32(fill));
-        Material.EdgeSquircle(dl, rect.Min, rect.Max, rounding, scale);
-        var textColor = primary ? new Vector4(1f, 1f, 1f, 1f) : theme.TextStrong;
-        Typography.DrawCentered(rect.Center, label, textColor with { W = enabled ? textColor.W : 0.5f }, 1.0f,
-            FontWeight.SemiBold);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
-    }
 
     private static Rect FitAspect(Rect area, float aspect)
     {

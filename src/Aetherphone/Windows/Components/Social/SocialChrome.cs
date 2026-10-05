@@ -7,10 +7,11 @@ namespace Aetherphone.Windows.Components;
 internal static class SocialChrome
 {
     public const float CellPadX = 16f;
-    public const float BackChipRadius = 17f;
-    public const float HeaderIconRadius = 18f;
+    public const float BackChipRadius = Metrics.Size.GlassButton * 0.5f;
+    public const float HeaderIconRadius = Metrics.Size.GlassButton * 0.5f;
     public const float HeaderIconPitch = 40f;
 
+    private const string BackChipKey = "##socialBackChip";
     private const float BackChipInset = 12f;
     private const float BackChipHitHalf = 22f;
     private const float BackChipGlyph = 17f;
@@ -101,18 +102,10 @@ internal static class SocialChrome
     public static bool DrawBackChip(ImDrawListPtr drawList, Vector2 center, float radius, SocialInk ink)
     {
         var scale = UiScale.Current;
-        var hitHalf = BackChipHitHalf * scale;
-        var hitMin = center - new Vector2(hitHalf, hitHalf);
-        var hitMax = center + new Vector2(hitHalf, hitHalf);
-        var hovered = UiInteract.Hover(hitMin, hitMax);
-        drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(hovered ? ink.BackChipHover : ink.BackChipFill), 32);
-        PhoneIcon.Draw(drawList, center, PhoneIcons.ChevronLeft, ink.TitleInk, BackChipGlyph * scale);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(hitMin, hitMax, hovered);
+        var clicked = GlassButton(drawList, ImGui.GetID(BackChipKey), center, radius, BackChipHitHalf * scale, ink,
+            false, out var grow);
+        PhoneIcon.Draw(drawList, center, PhoneIcons.ChevronLeft, ink.TitleInk, BackChipGlyph * scale * grow);
+        return clicked;
     }
 
     public static bool DrawHeaderIcon(ImDrawListPtr drawList, Vector2 center, float radius, string glyph,
@@ -120,21 +113,15 @@ internal static class SocialChrome
         HoverLabelSide side = HoverLabelSide.Below)
     {
         var scale = UiScale.Current;
-        var extent = new Vector2(radius, radius);
-        var hovered = UiInteract.Hover(center - extent, center + extent);
-        if (hovered || highlighted)
-        {
-            drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(highlighted ? ink.AccentWash : ink.FieldFill), 32);
-            if (hovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-        }
-
-        PhoneIcon.Draw(drawList, center, glyph, highlighted ? ink.AccentLink : idleInk, iconSize * scale);
+        var buttonRadius = HeaderIconRadius * scale;
+        var extent = new Vector2(buttonRadius, buttonRadius);
+        var clicked = GlassButton(drawList, ImGui.GetID(tooltip.Length > 0 ? tooltip : glyph), center, buttonRadius,
+            buttonRadius, ink, highlighted, out var grow);
+        PhoneIcon.Draw(drawList, center, glyph, highlighted ? ink.White : idleInk,
+            NavBarMetrics.GlyphSize * scale * grow);
         DrawCountBadge(drawList, center + new Vector2(10f * scale, -10f * scale), badge, ink);
         HoverTooltip.Show(new Rect(center - extent, center + extent), tooltip, side);
-        return UiInteract.Click(center - extent, center + extent, hovered);
+        return clicked;
     }
 
     public static void DrawCountBadge(ImDrawListPtr drawList, Vector2 center, int count, SocialInk ink)
@@ -195,11 +182,11 @@ internal static class SocialChrome
         var scale = UiScale.Current;
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
-        var height = Typography.LineHeight(style) + 12f * scale;
-        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(origin.X + CellPadX * scale, origin.Y + 8f * scale),
-            Loc.Culture.TextInfo.ToUpper(label), ink.FaintInk, style);
+        var padX = CellPadX * scale;
+        ListSection.PaintOverline(ImGui.GetWindowDrawList(), new Vector2(origin.X + padX, origin.Y + 8f * scale),
+            label, ink.MutedInk, MathF.Max(1f, width - padX * 2f));
         ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
+        ImGui.Dummy(new Vector2(width, ListSection.OverlineHeight + 12f * scale));
     }
 
     public static void DrawMetaChip(ImDrawListPtr drawList, ref float cursorX, float right, float centerY,
@@ -236,5 +223,31 @@ internal static class SocialChrome
     {
         var target = new Rect(bar.Min, new Vector2(bar.Max.X, MathF.Max(bar.Max.Y, screen.Max.Y)));
         ui.PaintGradient(drawList, target, screen, 0f);
+    }
+
+    private static bool GlassButton(ImDrawListPtr drawList, uint key, Vector2 center, float radius, float hitHalf,
+        SocialInk ink, bool highlighted, out float grow)
+    {
+        var scale = UiScale.Current;
+        var hit = new Vector2(hitHalf, hitHalf);
+        var hovered = UiInteract.Hover(center - hit, center + hit);
+        var down = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        grow = PressFx.Scale(key, down, PressFx.ControlPressedScale);
+        var drawn = new Vector2(radius * grow, radius * grow);
+        if (highlighted)
+        {
+            Material.AccentGlass(drawList, center - drawn, center + drawn, drawn.X, scale, ink.Accent);
+        }
+        else
+        {
+            Material.ThemedGlass(drawList, center - drawn, center + drawn, drawn.X, scale, ink.BackdropTop);
+        }
+
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        return UiInteract.Click(center - hit, center + hit, hovered);
     }
 }

@@ -18,6 +18,8 @@ internal sealed class HttpService : IDisposable
     private static readonly TimeSpan UploadTimeout = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan DefaultRateLimitPause = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan MaxRateLimitPause = TimeSpan.FromSeconds(30);
+    private const int EdgeShedRetryMinMilliseconds = 750;
+    private const int EdgeShedRetryMaxMilliseconds = 2000;
     private readonly HttpClient client;
     private readonly AethernetClientIdentity? identity;
     private readonly EtagCache etagCache = new();
@@ -122,6 +124,12 @@ internal sealed class HttpService : IDisposable
                 using var response = await client.GetAsync(uri, scope.Token).ConfigureAwait(false);
                 if (response.StatusCode == HttpStatusCode.TooManyRequests)
                 {
+                    if (IsEdgeShed(response) && attempt < MaxAttempts)
+                    {
+                        await BackOffAsync(attempt, null, token).ConfigureAwait(false);
+                        continue;
+                    }
+
                     PauseHost(uri, response);
                     Report(onFailure, await DescribeAsync(response, scope.Token).ConfigureAwait(false));
                     return null;
@@ -159,9 +167,14 @@ internal sealed class HttpService : IDisposable
 
     public async Task<T?> GetJsonAsync<T>(string url, JsonTypeInfo<T> typeInfo, string? bearer, CancellationToken token,
         Action<int>? onStatus = null, string? appScope = null, Action<AepFailure>? onFailure = null,
-        bool rawAuthorization = false)
+        bool rawAuthorization = false, string? userAgent = null)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        if (!string.IsNullOrEmpty(userAgent))
+        {
+            request.Headers.TryAddWithoutValidation("User-Agent", userAgent);
+        }
+
         return await SendForJsonAsync(request, typeInfo, bearer, onStatus, appScope, token, onFailure, rawAuthorization)
             .ConfigureAwait(false);
     }
@@ -325,7 +338,7 @@ internal sealed class HttpService : IDisposable
 
     private async Task<T?> SendForJsonAsync<T>(HttpRequestMessage request, JsonTypeInfo<T> typeInfo, string? bearer,
         Action<int>? onStatus, string? appScope, CancellationToken token, Action<AepFailure>? onFailure = null,
-        bool rawAuthorization = false)
+        bool rawAuthorization = false, bool retriedAfterEdgeShed = false)
     {
         if (IsPollingPaused(request))
         {
@@ -351,6 +364,19 @@ internal sealed class HttpService : IDisposable
         {
             using var scope = TimeoutScope(token, RequestTimeout);
             using var response = await client.SendAsync(request, scope.Token).ConfigureAwait(false);
+            if (ShouldRetryAfterEdgeShed(request, response, retriedAfterEdgeShed))
+            {
+                await Task.Delay(EdgeShedRetryDelay(), token).ConfigureAwait(false);
+                using var retry = new HttpRequestMessage(request.Method, request.RequestUri);
+                foreach (var product in request.Headers.UserAgent)
+                {
+                    retry.Headers.UserAgent.Add(product);
+                }
+
+                return await SendForJsonAsync(retry, typeInfo, bearer, onStatus, appScope, token, onFailure,
+                    rawAuthorization, retriedAfterEdgeShed: true).ConfigureAwait(false);
+            }
+
             onStatus?.Invoke((int)response.StatusCode);
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
             {
@@ -512,10 +538,32 @@ internal sealed class HttpService : IDisposable
         return false;
     }
 
+    private static bool IsEdgeShed(HttpResponseMessage response)
+    {
+        return response.StatusCode == HttpStatusCode.TooManyRequests && response.Headers.RetryAfter is null;
+    }
+
+    private static bool ShouldRetryAfterEdgeShed(HttpRequestMessage request, HttpResponseMessage response,
+        bool alreadyRetried)
+    {
+        return !alreadyRetried && request.Method == HttpMethod.Get && IsEdgeShed(response);
+    }
+
+    private static TimeSpan EdgeShedRetryDelay()
+    {
+        return TimeSpan.FromMilliseconds(Random.Shared.Next(EdgeShedRetryMinMilliseconds, EdgeShedRetryMaxMilliseconds));
+    }
+
     private void PauseHost(Uri? uri, HttpResponseMessage response)
     {
         if (uri is null)
         {
+            return;
+        }
+
+        if (IsEdgeShed(response))
+        {
+            AepLog.Debug($"{uri.Host} shed one request at the edge; not pausing the host");
             return;
         }
 

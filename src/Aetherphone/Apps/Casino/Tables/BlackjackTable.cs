@@ -6,6 +6,7 @@ using Aetherphone.Core.Casino;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Lodestone;
 using Aetherphone.Core.Media;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Social;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
@@ -18,7 +19,7 @@ internal sealed class BlackjackTable
     private const float PadX = 16f;
     private const float StatusRowHeight = 22f;
     private const float BannerHeight = 30f;
-    private const float ActionBarHeight = 46f;
+    private const float ActionBarHeight = Button.LargeHeight;
     private const float BetFlightSeconds = 0.4f;
     private const float PlatePopSeconds = 0.2f;
     private const float SettleFlightSeconds = 0.55f;
@@ -995,14 +996,21 @@ internal sealed class BlackjackTable
         }
 
         winRoll.Snap(0);
+        var witnessed = motions[mySeat].SettleClock < SnappedClock;
+        var stake = TotalBet(hands);
+        var bigWin = stake > 0 && settledDelta >= stake * 10;
+        if (witnessed)
+        {
+            SoundSettledHand(settledDelta, bigWin);
+        }
+
         if (settledDelta <= 0)
         {
             return;
         }
 
         var origin = new Vector2(felt.Center.X, BlackjackTableLayout.HeroFanY(felt));
-        var stake = TotalBet(hands);
-        if (stake > 0 && settledDelta >= stake * 10)
+        if (bigWin)
         {
             particles.Confetti(origin, 90, ConfettiPalette, 330f * scale, 5f, 1.6f);
             particles.Sparkle(origin, 24, Gold, 190f * scale, 4f, 1.0f);
@@ -1010,6 +1018,26 @@ internal sealed class BlackjackTable
         }
 
         particles.Confetti(origin, 40, ConfettiPalette, 250f * scale, 4f, 1.2f);
+    }
+
+    private static void SoundSettledHand(long delta, bool bigWin)
+    {
+        if (bigWin)
+        {
+            UiFeedback.Play(UiSound.GamePowerUp);
+            return;
+        }
+
+        if (delta > 0)
+        {
+            UiFeedback.Play(UiSound.GameWin);
+            return;
+        }
+
+        if (delta < 0)
+        {
+            UiFeedback.Play(UiSound.GameWrong);
+        }
     }
 
     private static bool Settled(CasinoBlackjackHandDto[] hands)
@@ -1165,6 +1193,7 @@ internal sealed class BlackjackTable
         {
             inlineReason = string.Empty;
             rooms.PlaceBlackjackBet(composer.Amount);
+            UiFeedback.Play(UiSound.CasinoChips);
         }
     }
 
@@ -1207,10 +1236,14 @@ internal sealed class BlackjackTable
             var legal = !rooms.StakeInFlight && (!wagered || affordable);
             var costLine = wagered ? NumberText.Group(cost) : string.Empty;
             if (AppSkin.StackedPillButton(rect, LabelFor(bit), costLine, bit == BlackjackRules.ActionStand,
-                    legal, ui.Theme) && legal)
+                    legal, ui.Ink) && legal)
             {
                 inlineReason = string.Empty;
                 rooms.SendBlackjackAction(bit);
+                if (wagered)
+                {
+                    UiFeedback.Play(UiSound.CasinoChips);
+                }
             }
         }
     }
@@ -1277,7 +1310,7 @@ internal sealed class BlackjackTable
     {
         var rect = new Rect(new Vector2(left + width * 0.2f, y),
             new Vector2(left + width * 0.8f, y + ActionBarHeight * scale));
-        return AppSkin.PillButton(rect, label, true, enabled, ui.Theme) && enabled;
+        return ui.PillButton(rect, label, true, enabled) && enabled;
     }
 
     private static void DrawNotice(ImDrawListPtr drawList, AppSkin ui, string title, string hint, string action,
@@ -1289,7 +1322,7 @@ internal sealed class BlackjackTable
         var height = titleSize.Y + block.Y + pad * 2f + 6f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), title, ui.TitleInk,
             TextStyles.SubheadlineEmphasized);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad + titleSize.Y + 6f * scale), hint,
@@ -1298,7 +1331,7 @@ internal sealed class BlackjackTable
         var pillY = max.Y + Metrics.Space.Md * scale;
         var pillRect = new Rect(new Vector2(left + width * 0.2f, pillY),
             new Vector2(left + width * 0.8f, pillY + 44f * scale));
-        if (AppSkin.PillButton(pillRect, action, true, true, ui.Theme))
+        if (ui.PillButton(pillRect, action, true, true))
         {
             onAction();
         }

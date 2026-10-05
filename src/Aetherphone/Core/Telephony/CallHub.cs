@@ -24,6 +24,7 @@ internal sealed class CallHub : IDisposable
     private readonly CallLogStore log;
     private readonly ConfirmService confirm;
     private readonly AppGate installed;
+    private readonly ContactBook contacts;
     private readonly object gate = new();
     private CallState state = CallState.Idle;
     private CallView snapshotView;
@@ -33,7 +34,7 @@ internal sealed class CallHub : IDisposable
     private Guid callId;
     private ParticipantInfo[] roster = Array.Empty<ParticipantInfo>();
     private ParticipantInfo? incomingFrom;
-    private string? realtimeAccountId;
+    private string? realtimeToken;
     private CallContact? dialingTo;
     private float stateTimer;
     private long connectionLostTicks;
@@ -41,7 +42,7 @@ internal sealed class CallHub : IDisposable
 
     public CallHub(Configuration configuration, AethernetSession session, NotificationService notifications,
         SoundService sound, PlaybackHub playback, RealtimeSignalBus signals, ConfirmService confirm,
-        AppGate installed)
+        AppGate installed, ContactBook contacts)
     {
         this.configuration = configuration;
         this.session = session;
@@ -49,6 +50,7 @@ internal sealed class CallHub : IDisposable
         this.sound = sound;
         this.confirm = confirm;
         this.installed = installed;
+        this.contacts = contacts;
         router = new CallSignalRouter(session, signals);
         audio = new CallAudioController(configuration, playback, router.Connection);
         log = new CallLogStore(configuration);
@@ -212,6 +214,7 @@ internal sealed class CallHub : IDisposable
         {
             Type = SignalType.Start, CallId = id.ToString("D"), InviteeIds = new[] { target.UserId },
         });
+        sound.StartRingback();
     }
 
     private bool InvolvesLocked(string userId)
@@ -333,6 +336,93 @@ internal sealed class CallHub : IDisposable
         }
     }
 
+    public float InputGain
+    {
+        get
+        {
+            lock (gate)
+            {
+                return audio.InputGainLocked;
+            }
+        }
+    }
+
+    public void SetInputGain(float value)
+    {
+        lock (gate)
+        {
+            audio.SetInputGainLocked(value);
+        }
+    }
+
+    public void SelectInputDevice(string name)
+    {
+        if (configuration.CallInputDevice == name)
+        {
+            return;
+        }
+
+        configuration.CallInputDevice = name;
+        configuration.Save();
+        lock (gate)
+        {
+            audio.SwitchInputLocked();
+        }
+    }
+
+    public void SelectOutputDevice(string name)
+    {
+        if (configuration.CallOutputDevice == name)
+        {
+            return;
+        }
+
+        configuration.CallOutputDevice = name;
+        configuration.Save();
+        lock (gate)
+        {
+            audio.SwitchOutputLocked();
+        }
+    }
+
+    public float PeerVolume(string userId)
+    {
+        lock (gate)
+        {
+            return audio.PeerVolumeLocked(userId);
+        }
+    }
+
+    public bool PeerMuted(string userId)
+    {
+        lock (gate)
+        {
+            return audio.PeerMutedLocked(userId);
+        }
+    }
+
+    public void SetPeerVolume(string userId, float value)
+    {
+        lock (gate)
+        {
+            audio.SetPeerVolumeLocked(userId, value, roster);
+        }
+    }
+
+    public void SetPeerMuted(string userId, bool value)
+    {
+        lock (gate)
+        {
+            audio.SetPeerMutedLocked(userId, value, roster);
+        }
+
+        configuration.Save();
+    }
+
+    public void SaveAudioSettings() => configuration.Save();
+
+    public string DisplayNameOf(ParticipantInfo participant) => NameOf(participant);
+
     public void Advance(float deltaSeconds)
     {
         var declineTimeout = false;
@@ -419,7 +509,7 @@ internal sealed class CallHub : IDisposable
         }
 
         sound.StartCallRing();
-        notifications.Notify(new PhoneNotification("message", message.From.DisplayName, Loc.T(L.Phone.IncomingCallBody), DateTime.Now,
+        notifications.Notify(new PhoneNotification("message", NameOf(message.From), Loc.T(L.Phone.IncomingCallBody), DateTime.Now,
             Accent, "call:" + message.From.UserId)
         {
             ChannelId = NotificationChannels.PhoneChannel,
@@ -473,6 +563,7 @@ internal sealed class CallHub : IDisposable
         sessionToDispose?.Dispose();
         if (becameActive)
         {
+            sound.StopCallRing();
             UiFeedback.Play(UiSound.CallConnect);
         }
     }
@@ -687,7 +778,7 @@ internal sealed class CallHub : IDisposable
     {
         if (dialingTo is not null && dialingTo.DisplayName.Length > 0)
         {
-            return dialingTo.DisplayName;
+            return contacts.NameFor(dialingTo.UserId, dialingTo.DisplayName);
         }
 
         var localId = LocalUserId;
@@ -695,12 +786,14 @@ internal sealed class CallHub : IDisposable
         {
             if (roster[index].UserId != localId && roster[index].DisplayName.Length > 0)
             {
-                return roster[index].DisplayName;
+                return NameOf(roster[index]);
             }
         }
 
-        return incomingFrom?.DisplayName ?? string.Empty;
+        return incomingFrom is { } caller ? NameOf(caller) : string.Empty;
     }
+
+    private string NameOf(ParticipantInfo participant) => contacts.NameFor(participant.UserId, participant.DisplayName);
 
     private CallSession? ClearLocked()
     {
@@ -733,9 +826,11 @@ internal sealed class CallHub : IDisposable
         switch (state)
         {
             case CallState.Dialing:
-                return dialingTo?.DisplayName ?? Loc.T(L.Phone.StatusCalling);
+                return dialingTo is { } target
+                    ? contacts.NameFor(target.UserId, target.DisplayName)
+                    : Loc.T(L.Phone.StatusCalling);
             case CallState.Ringing:
-                return incomingFrom?.DisplayName ?? Loc.T(L.Phone.IncomingCallBody);
+                return incomingFrom is { } caller ? NameOf(caller) : Loc.T(L.Phone.IncomingCallBody);
             case CallState.Connecting:
                 return Loc.T(L.Phone.StatusConnecting);
             case CallState.Active:
@@ -750,7 +845,7 @@ internal sealed class CallHub : IDisposable
                     }
                 }
 
-                return others == 1 && only is not null ? only.DisplayName : Loc.T(L.Phone.GroupCall);
+                return others == 1 && only is not null ? NameOf(only) : Loc.T(L.Phone.GroupCall);
             default:
                 return string.Empty;
         }
@@ -771,19 +866,19 @@ internal sealed class CallHub : IDisposable
         if (!session.IsSignedIn)
         {
             EndCall(CallEndReason.None);
-            realtimeAccountId = null;
+            realtimeToken = null;
             router.Stop();
             return;
         }
 
-        var accountId = session.CurrentUser?.Id;
-        if (realtimeAccountId is not null && !string.Equals(accountId, realtimeAccountId, StringComparison.Ordinal))
+        var token = session.Token;
+        if (realtimeToken is not null && !string.Equals(token, realtimeToken, StringComparison.Ordinal))
         {
             EndCall(CallEndReason.None);
             router.Stop();
         }
 
-        realtimeAccountId = accountId;
+        realtimeToken = token;
         router.Start();
         if (!configuration.CallsEnabled)
         {

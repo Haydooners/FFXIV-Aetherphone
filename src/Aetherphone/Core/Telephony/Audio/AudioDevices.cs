@@ -1,20 +1,35 @@
-using System.Runtime.InteropServices;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace Aetherphone.Core.Telephony.Audio;
 
 internal static class AudioDevices
 {
-    public static string[] InputNames()
+    private const long RefreshMilliseconds = 3000;
+    private static string[] inputs = Array.Empty<string>();
+    private static string[] outputs = Array.Empty<string>();
+    private static long refreshedAt = long.MinValue;
+    private static int refreshing;
+
+    public static string[] Inputs => Volatile.Read(ref inputs);
+
+    public static string[] Outputs => Volatile.Read(ref outputs);
+
+    public static void Refresh()
     {
-        var count = WaveInEvent.DeviceCount;
-        var names = new string[count];
-        for (var index = 0; index < count; index++)
+        var now = Environment.TickCount64;
+        if (now - Interlocked.Read(ref refreshedAt) < RefreshMilliseconds)
         {
-            names[index] = WaveInEvent.GetCapabilities(index).ProductName;
+            return;
         }
 
-        return names;
+        if (Interlocked.Exchange(ref refreshing, 1) == 1)
+        {
+            return;
+        }
+
+        Interlocked.Exchange(ref refreshedAt, now);
+        _ = Task.Run(Enumerate);
     }
 
     public static int ResolveInput(string name)
@@ -36,93 +51,76 @@ internal static class AudioDevices
         return 0;
     }
 
-    public const int SystemDefaultOutput = -1;
-
-    public static string[] OutputNames()
+    public static MMDevice? FindOutput(string name)
     {
-        var count = OutputCount();
-        if (count <= 0)
+        if (string.IsNullOrEmpty(name))
         {
-            return Array.Empty<string>();
+            return null;
         }
 
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            var endpoints = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+            for (var index = 0; index < endpoints.Count; index++)
+            {
+                var endpoint = endpoints[index];
+                if (string.Equals(endpoint.FriendlyName, name, StringComparison.Ordinal))
+                {
+                    return endpoint;
+                }
+
+                endpoint.Dispose();
+            }
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, "Audio output lookup unavailable");
+        }
+
+        return null;
+    }
+
+    private static void Enumerate()
+    {
+        try
+        {
+            Volatile.Write(ref inputs, InputNames());
+            Volatile.Write(ref outputs, OutputNames());
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, "Audio device enumeration unavailable");
+        }
+        finally
+        {
+            Interlocked.Exchange(ref refreshing, 0);
+        }
+    }
+
+    private static string[] InputNames()
+    {
+        var count = WaveInEvent.DeviceCount;
         var names = new string[count];
         for (var index = 0; index < count; index++)
         {
-            names[index] = OutputName(index);
+            names[index] = WaveInEvent.GetCapabilities(index).ProductName;
         }
 
         return names;
     }
 
-    public static int ResolveOutput(string name)
+    private static string[] OutputNames()
     {
-        if (string.IsNullOrEmpty(name))
+        using var enumerator = new MMDeviceEnumerator();
+        var endpoints = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+        var names = new string[endpoints.Count];
+        for (var index = 0; index < names.Length; index++)
         {
-            return SystemDefaultOutput;
+            using var endpoint = endpoints[index];
+            names[index] = endpoint.FriendlyName;
         }
 
-        var count = OutputCount();
-        for (var index = 0; index < count; index++)
-        {
-            if (string.Equals(OutputName(index), name, StringComparison.Ordinal))
-            {
-                return index;
-            }
-        }
-
-        return SystemDefaultOutput;
+        return names;
     }
-
-    private static int OutputCount()
-    {
-        try
-        {
-            return WaveOutGetNumDevs();
-        }
-        catch (Exception exception)
-        {
-            AepLog.Warning(exception, "Audio output enumeration unavailable");
-            return 0;
-        }
-    }
-
-    private static string OutputName(int index)
-    {
-        try
-        {
-            return WaveOutGetDevCaps((IntPtr)index, out var caps, Marshal.SizeOf<WaveOutCaps>()) == 0
-                ? caps.ProductName
-                : string.Empty;
-        }
-        catch (Exception exception)
-        {
-            AepLog.Warning(exception, $"Audio output name unavailable for {index}");
-            return string.Empty;
-        }
-    }
-
-    [DllImport("winmm.dll", EntryPoint = "waveOutGetNumDevs")]
-    private static extern int WaveOutGetNumDevs();
-
-    [DllImport("winmm.dll", EntryPoint = "waveOutGetDevCapsW", CharSet = CharSet.Unicode)]
-    private static extern int WaveOutGetDevCaps(IntPtr deviceId, out WaveOutCaps caps, int capsSize);
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct WaveOutCaps
-    {
-        public short Mid;
-        public short Pid;
-        public int DriverVersion;
-
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MaxProductNameLength)]
-        public string ProductName;
-
-        public int Formats;
-        public short Channels;
-        public short Reserved;
-        public int Support;
-    }
-
-    private const int MaxProductNameLength = 32;
 }

@@ -14,6 +14,7 @@ internal sealed class FrameCatalogStore : IDisposable
     private readonly StoreWork work = new("FrameCatalog");
 
     private volatile Dictionary<string, FrameStyle> stylesById = new(StringComparer.Ordinal);
+    private volatile string[] patreonFrameIds = Array.Empty<string>();
     private long loadedAtTick;
     private long attemptedAtTick;
     private int fetching;
@@ -39,6 +40,18 @@ internal sealed class FrameCatalogStore : IDisposable
 
         Refresh(RefreshAfterUnknownIdMilliseconds);
         return null;
+    }
+
+    public FrameStyle? FindPatreonFrame(int tierIndex)
+    {
+        var frameIds = patreonFrameIds;
+        if (tierIndex < 0 || tierIndex >= frameIds.Length)
+        {
+            EnsureFresh();
+            return null;
+        }
+
+        return Find(frameIds[tierIndex]);
     }
 
     public void EnsureFresh()
@@ -95,6 +108,7 @@ internal sealed class FrameCatalogStore : IDisposable
             }
 
             stylesById = next;
+            patreonFrameIds = catalog.PatreonFrames ?? Array.Empty<string>();
             Interlocked.Exchange(ref loadedAtTick, Environment.TickCount64);
             Interlocked.Exchange(ref attemptedAtTick, 0);
             AepLog.Debug($"[FrameCatalog] loaded {next.Count} frames");

@@ -11,14 +11,15 @@ internal sealed class CallSession : IDisposable
     private byte localSlot;
     private ushort sequence;
 
-    public CallSession(Guid callId, RealtimeConnection connection, int inputDevice, int outputDevice,
-        float outputVolume)
+    public CallSession(Guid callId, RealtimeConnection connection, int inputDevice, string outputDevice,
+        float outputVolume, float inputGain)
     {
         this.callId = callId;
         this.connection = connection;
         capture = new AudioCapture();
         mixer = new VoiceMixer();
         capture.FrameEncoded = OnFrameEncoded;
+        capture.Gain = inputGain;
         connection.MediaReceived += OnMediaReceived;
         mixer.Start(outputDevice, outputVolume);
         capture.Start(inputDevice);
@@ -38,6 +39,16 @@ internal sealed class CallSession : IDisposable
         set => mixer.Volume = value;
     }
 
+    public float InputGain
+    {
+        get => capture.Gain;
+        set => capture.Gain = value;
+    }
+
+    public void SwitchInput(string deviceName) =>
+        _ = Task.Run(() => capture.Start(AudioDevices.ResolveInput(deviceName)));
+    public void SwitchOutput(string deviceName) => _ = Task.Run(() => mixer.SwitchOutput(deviceName));
+    public void SetRemoteGain(int slot, float gain) => mixer.SetGain(slot, gain);
     public void SetLocalSlot(int slot) => localSlot = (byte)slot;
     public void AddRemote(int slot) => mixer.AddParticipant(slot);
     public void RemoveRemote(int slot) => mixer.RemoveParticipant(slot);

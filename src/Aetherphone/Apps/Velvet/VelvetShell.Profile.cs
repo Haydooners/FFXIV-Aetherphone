@@ -26,11 +26,10 @@ internal sealed partial class VelvetShell
     private const float ProfileStatColumnPad = 10f;
     private const float ProfileBlockGap = 10f;
     private const float ProfileTabHeight = 44f;
-    private const float ProfileActionHeight = 40f;
+    private const float ProfileActionHeight = Button.RegularHeight;
     private const float ProfileBottomPad = 14f;
     private const float ProfileGridGap = 1.5f;
     private const float ProfileTabUnderline = 2f;
-    private const float ProfileTabSmoothTime = 0.1f;
     private const float ProfileAboutLead = 4f;
     private const int ProfileColumns = 3;
     private const int MaxFacts = 4;
@@ -38,14 +37,14 @@ internal sealed partial class VelvetShell
 
     private static readonly Vector4 RoleTone = new(0.62f, 0.22f, 0.60f, 1f);
     private static readonly Vector4 KinkTone = new(0.647f, 0.482f, 0.839f, 1f);
-    private static readonly TextStyle ProfileNameStyle = new(1.35f, FontWeight.Bold);
-    private static readonly TextStyle ProfileStatValueStyle = new(1.1f, FontWeight.Bold);
+    private static readonly TextStyle ProfileNameStyle = TextStyles.Title2;
+    private static readonly TextStyle ProfileStatValueStyle = TextStyles.Title3;
     private static readonly TextStyle ProfileStatLabelStyle = TextStyles.Subheadline;
-    private static readonly TextStyle ProfileTabStyle = new(1.02f, FontWeight.SemiBold);
-    private static readonly TextStyle ProfileTabIdleStyle = new(1.02f, FontWeight.Medium);
+    private static readonly TextStyle ProfileTabStyle = TextStyles.Headline;
+    private static readonly TextStyle ProfileTabIdleStyle = TextStyles.BodyEmphasized;
     private static readonly UnderlineTabStyle ProfileTabsStyle = new(ProfileTabStyle, ProfileTabIdleStyle,
         VelvetTheme.TitleInk, VelvetTheme.MutedInk, VelvetTheme.Rose, ProfileTabUnderline, SocialChrome.CellPadX,
-        ProfileTabSmoothTime);
+        Motion.Release);
 
     private readonly VFact[] facts = new VFact[MaxFacts];
     private readonly float[] factHeights = new float[MaxFacts];
@@ -269,11 +268,9 @@ internal sealed partial class VelvetShell
     private void DrawProfileAction(VelvetProfileDto user, bool isMe, Rect rect)
     {
         var drawList = ImGui.GetWindowDrawList();
-        var rounding = rect.Height * 0.5f;
         if (isMe)
         {
-            if (SocialPill.Outline(drawList, rect, Loc.T(L.Velvet.EditProfile), VelvetInk.Shared,
-                    TextStyles.SubheadlineEmphasized, rounding, VelvetInk.Shared.ButtonFill))
+            if (Button.Draw(drawList, rect, Loc.T(L.Velvet.EditProfile), VelvetTheme.Ink, ButtonStyle.Gray))
             {
                 BeginEditProfile();
                 router.Push(VelvetView.EditProfile);
@@ -285,40 +282,35 @@ internal sealed partial class VelvetShell
         switch (user.ConnectionState)
         {
             case VelvetConnectionState.Connected:
-                if (SocialPill.Accent(drawList, rect, Loc.T(L.Velvet.Message), VelvetInk.Shared,
-                        TextStyles.SubheadlineEmphasized, rounding))
+                if (Button.Draw(drawList, rect, Loc.T(L.Velvet.Message), VelvetTheme.Ink))
                 {
                     OpenThread(user.UserId);
                 }
 
                 break;
             case VelvetConnectionState.OutgoingRequest:
-                if (SocialPill.Outline(drawList, rect, Loc.T(L.Velvet.Requested), VelvetInk.Shared,
-                        TextStyles.SubheadlineEmphasized, rounding, VelvetInk.Shared.ButtonFill))
+                if (Button.Draw(drawList, rect, Loc.T(L.Velvet.Requested), VelvetTheme.Ink, ButtonStyle.Gray))
                 {
                     store.CancelRequest(user.UserId);
                 }
 
                 break;
             case VelvetConnectionState.IncomingRequest:
-                if (SocialPill.Accent(drawList, rect, Loc.T(L.Velvet.Reply), VelvetInk.Shared,
-                        TextStyles.SubheadlineEmphasized, rounding))
+                if (Button.Draw(drawList, rect, Loc.T(L.Velvet.Reply), VelvetTheme.Ink))
                 {
                     OpenThread(user.UserId);
                 }
 
                 break;
             case VelvetConnectionState.Blocked:
-                if (SocialPill.Outline(drawList, rect, Loc.T(L.Velvet.Unblock), VelvetInk.Shared,
-                        TextStyles.SubheadlineEmphasized, rounding, VelvetInk.Shared.ButtonFill))
+                if (Button.Draw(drawList, rect, Loc.T(L.Velvet.Unblock), VelvetTheme.Ink, ButtonStyle.Gray))
                 {
                     store.Unblock(user.UserId);
                 }
 
                 break;
             default:
-                if (SocialPill.Accent(drawList, rect, Loc.T(L.Velvet.Connect), VelvetInk.Shared,
-                        TextStyles.SubheadlineEmphasized, rounding))
+                if (Button.Draw(drawList, rect, Loc.T(L.Velvet.Connect), VelvetTheme.Ink))
                 {
                     RequestIntro(user.UserId, user.DisplayName, user.Handle, user.AvatarUrl);
                 }

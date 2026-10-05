@@ -53,7 +53,37 @@ internal sealed class StoryStore : IDisposable
         }
 
         RemoveOpenStory(removal.ContentId);
-        RefreshTray();
+        if (removal.ParentId is { Length: > 0 } authorId)
+        {
+            ShrinkRing(authorId);
+        }
+    }
+
+    private void ShrinkRing(string authorId)
+    {
+        var snapshot = rings;
+        for (var index = 0; index < snapshot.Length; index++)
+        {
+            var ring = snapshot[index];
+            if (ring.AuthorId != authorId)
+            {
+                continue;
+            }
+
+            if (ring.Count > 1)
+            {
+                var shrunk = (StoryRingDto[])snapshot.Clone();
+                shrunk[index] = ring with { Count = ring.Count - 1 };
+                rings = shrunk;
+                return;
+            }
+
+            var kept = new StoryRingDto[snapshot.Length - 1];
+            Array.Copy(snapshot, 0, kept, 0, index);
+            Array.Copy(snapshot, index + 1, kept, index, snapshot.Length - index - 1);
+            rings = kept;
+            return;
+        }
     }
 
     private void OnSessionChanged()
@@ -262,7 +292,8 @@ internal sealed class StoryStore : IDisposable
         HoldAuthorSeen(story.AuthorId);
     }
 
-    public void CreateStory(string sourcePath, WallpaperCrop crop, string caption, Action<bool> onComplete)
+    public void CreateStory(string sourcePath, WallpaperCrop crop, PhotoEdit edit, string caption,
+        Action<bool> onComplete)
     {
         if (posting)
         {
@@ -272,7 +303,7 @@ internal sealed class StoryStore : IDisposable
         posting = true;
         work.Run("create story", async token =>
         {
-            var baked = ImageProcessor.BakeCroppedJpeg(sourcePath, crop, StoryWidth, StoryHeight);
+            var baked = ImageProcessor.BakeCroppedJpeg(sourcePath, crop, StoryWidth, StoryHeight, false, edit);
             var upload = await media.UploadUrlAsync("image/jpeg", "story", token).ConfigureAwait(false);
             if (upload is null)
             {

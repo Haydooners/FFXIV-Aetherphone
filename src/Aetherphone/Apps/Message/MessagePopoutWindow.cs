@@ -34,8 +34,8 @@ internal sealed class MessagePopoutWindow : Window
     private const float Rounding = 18f;
     private const float BodyInset = 4f;
     private const float AvatarRadius = 14f;
-    private const float ButtonRadius = 14f;
-    private const float ButtonPitch = 31f;
+    private const float ButtonRadius = SocialChrome.HeaderIconRadius;
+    private const float ButtonPitch = SocialChrome.HeaderIconPitch;
     private const float EdgeInset = 14f;
     private const float CaretGap = 6f;
     private const float StaggerStep = 28f;
@@ -46,7 +46,7 @@ internal sealed class MessagePopoutWindow : Window
 
     private static readonly Vector4 GripInk = new(1f, 1f, 1f, 0.22f);
     private static readonly TextStyle TitleStyle = TextStyles.Headline;
-    private static readonly TextStyle SubtitleStyle = new(0.76f, FontWeight.Regular);
+    private static readonly TextStyle SubtitleStyle = TextStyles.Footnote;
 
     private readonly MessagePopouts owner;
     private readonly int slot;
@@ -283,10 +283,10 @@ internal sealed class MessagePopoutWindow : Window
         }
 
         using (ConfirmHosts.Enter(confirmHost))
-        using (Plugin.Fonts.Push(1f))
+        using (Plugin.Fonts.Push(TextStyles.Body.Scale, TextStyles.Body.Weight))
         {
             var theme = CurrentTheme;
-            ui.Palette = MessageThemes.PaletteFor(configuration.MessageChatTheme);
+            ui.Palette = ChatThemes.PaletteFor(configuration.MessageChatTheme);
             ui.Theme = theme;
             var scale = UiScale.Current;
             var barHeight = MathF.Min(TitleHeight * scale, frame.Height);
@@ -350,7 +350,7 @@ internal sealed class MessagePopoutWindow : Window
                 view.DrawEncryptionScreen(body);
                 return;
             default:
-                view.Draw(body, conversationId);
+                view.Draw(body, conversationId, true);
                 return;
         }
     }
@@ -522,9 +522,10 @@ internal sealed class MessagePopoutWindow : Window
         var avatarRadius = AvatarRadius * scale;
         var avatarCenter = new Vector2(bar.Min.X + EdgeInset * scale + avatarRadius, centerY);
         var conversation = store?.Conversation;
+        var headerTitle = HeaderTitle();
         if (conversation is not null && Holds(conversation.Id))
         {
-            ConversationAvatar.Draw(drawList, conversation, avatarCenter, avatarRadius, theme, ui,
+            ConversationAvatar.Draw(drawList, conversation, headerTitle, avatarCenter, avatarRadius, theme, ui,
                 services.Images, services.Lodestone);
         }
         else
@@ -535,7 +536,6 @@ internal sealed class MessagePopoutWindow : Window
         var textLeft = avatarCenter.X + avatarRadius + Metrics.Space.Sm * scale;
         var textLimit = collapseCenter.X - radius - Metrics.Space.Sm * scale;
         var caretWidth = 10f * scale;
-        var headerTitle = HeaderTitle();
         var titleSize = Typography.Measure(headerTitle, TitleStyle);
         var titleWidth = MathF.Min(titleSize.X, MathF.Max(1f, textLimit - textLeft - caretWidth));
         var subtitle = Subtitle(conversation);
@@ -586,9 +586,9 @@ internal sealed class MessagePopoutWindow : Window
     private string HeaderTitle()
     {
         var conversation = store?.Conversation;
-        if (conversation is not null && Holds(conversation.Id))
+        if (store is not null && conversation is not null && Holds(conversation.Id))
         {
-            return DirectMessagesStore.DisplayTitle(conversation);
+            return store.DisplayTitle(conversation);
         }
 
         return title.Length > 0 ? title : Loc.T(L.Apps.Message);
@@ -632,11 +632,12 @@ internal sealed class MessagePopoutWindow : Window
         switchItems.Clear();
         switchIds.Clear();
         switchTitles.Clear();
-        var conversations = owner.Inbox.Conversations;
+        var inbox = owner.Inbox;
+        var conversations = inbox.Conversations;
         for (var index = 0; index < conversations.Length && switchItems.Count < SwitchMenuLimit; index++)
         {
             var item = conversations[index];
-            var label = DirectMessagesStore.DisplayTitle(item);
+            var label = inbox.DisplayTitle(item);
             switchItems.Add(new DropdownMenu.Item(label,
                 IconGlyph.Of(item.IsGroup ? FontAwesomeIcon.Users : FontAwesomeIcon.User), false, Holds(item.Id)));
             switchIds.Add(item.Id);
@@ -697,7 +698,7 @@ internal sealed class MessagePopoutWindow : Window
 
         protected override Action BackAction => back;
 
-        protected override MessageTheme ChatTheme => MessageThemes.Resolve(configuration.MessageChatTheme);
+        protected override ChatTheme ChatTheme => ChatThemes.Resolve(configuration.MessageChatTheme);
 
         protected override void DrawHeader(Rect area, string threadId)
         {

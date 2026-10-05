@@ -12,13 +12,18 @@ internal sealed class SocialClient
         this.net = net;
     }
 
-    public Task<FeedPage?> FeedAsync(string scope, string? cursor, string? regions, CancellationToken token,
+    public Task<FeedPage?> FeedAsync(string scope, string? cursor, string? regions, bool includeSensitive, CancellationToken token,
         Action<AepFailure>? onFailure = null)
     {
         var path = $"/feed?scope={scope}";
         if (regions is not null)
         {
             path += $"&regions={Uri.EscapeDataString(regions)}";
+        }
+
+        if (!includeSensitive)
+        {
+            path += "&sensitive=false";
         }
 
         if (cursor is not null)
@@ -167,14 +172,6 @@ internal sealed class SocialClient
     {
         return net.SendJsonAsync(HttpMethod.Put, $"/posts/{Uri.EscapeDataString(postId)}/sensitive",
             new SetSensitiveRequest(sensitive), AethernetJsonContext.Default.SetSensitiveRequest,
-            AethernetJsonContext.Default.PostDto, token, null, onFailure);
-    }
-
-    public Task<PostDto?> EditCaptionAsync(string postId, string caption, CancellationToken token,
-        Action<AepFailure>? onFailure = null)
-    {
-        return net.SendJsonAsync(HttpMethod.Put, $"/posts/{Uri.EscapeDataString(postId)}/caption",
-            new EditGramCaptionRequest(caption), AethernetJsonContext.Default.EditGramCaptionRequest,
             AethernetJsonContext.Default.PostDto, token, null, onFailure);
     }
 

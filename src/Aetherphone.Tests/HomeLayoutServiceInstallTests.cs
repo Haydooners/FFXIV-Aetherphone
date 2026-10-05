@@ -134,6 +134,10 @@ public sealed class HomeLayoutServiceInstallTests
     [InlineData("appstore")]
     [InlineData("settings")]
     [InlineData("announcements")]
+    [InlineData("messages")]
+    [InlineData("camera")]
+    [InlineData("photos")]
+    [InlineData("notifications")]
     public void MandatoryApp_IsAlwaysInstalledAndCannotBeUninstalled(string appId)
     {
         var apps = new List<IPhoneApp> { new FakeApp("a"), new FakeApp(appId) };
@@ -203,6 +207,53 @@ public sealed class HomeLayoutServiceInstallTests
     }
 
     [Fact]
+    public void WidgetInstanceKeyAndConfig_SurviveAReload()
+    {
+        var apps = MakeApps();
+        var widget = new FakeWidget("c.widget", "c");
+        var configuration = SavedWith("a", "b", "c");
+        var layout = BuildLayout(apps, configuration, widget);
+        Assert.True(layout.AddWidget(widget, WidgetSize.Medium, 0));
+        var tile = FindWidget(layout, widget.Id)!;
+        layout.SetWidgetConfig(tile, "city=Limsa;zone=3");
+
+        var reloaded = FindWidget(BuildLayout(apps, configuration, widget), widget.Id)!;
+
+        Assert.False(string.IsNullOrEmpty(tile.InstanceKey));
+        Assert.Equal(tile.InstanceKey, reloaded.InstanceKey);
+        Assert.Equal("city=Limsa;zone=3", reloaded.Config);
+    }
+
+    [Fact]
+    public void LegacyWidgetWithoutKey_GetsTheSameDerivedKeyOnEveryLoad()
+    {
+        var apps = MakeApps();
+        var widget = new FakeWidget("c.widget", "c");
+        var configuration = SavedWith("a", "b", "c");
+        configuration.Home!.Pages[0].Items.Add(new HomeItem
+        {
+            Kind = "widget",
+            WidgetId = widget.Id,
+            WidgetSize = WidgetSizes.Serialize(WidgetSize.Medium),
+        });
+        configuration.Home.Pages[0].Items.Add(new HomeItem
+        {
+            Kind = "widget",
+            WidgetId = widget.Id,
+            WidgetSize = WidgetSizes.Serialize(WidgetSize.Medium),
+        });
+
+        var first = BuildLayout(apps, configuration, widget).Page(0);
+        var second = BuildLayout(apps, configuration, widget).Page(0);
+        var firstKeys = WidgetKeys(first);
+        var secondKeys = WidgetKeys(second);
+
+        Assert.Equal(2, firstKeys.Count);
+        Assert.NotEqual(firstKeys[0], firstKeys[1]);
+        Assert.Equal(firstKeys, secondKeys);
+    }
+
+    [Fact]
     public void InstallAndUninstall_RaiseInstalledChanged()
     {
         var apps = MakeApps();
@@ -252,6 +303,37 @@ public sealed class HomeLayoutServiceInstallTests
         }
 
         return false;
+    }
+
+    private static HomeTile? FindWidget(HomeLayoutService layout, string widgetId)
+    {
+        for (var page = 0; page < layout.PageCount; page++)
+        {
+            var tiles = layout.Page(page);
+            for (var index = 0; index < tiles.Count; index++)
+            {
+                if (tiles[index].Widget?.Id == widgetId)
+                {
+                    return tiles[index];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static List<string> WidgetKeys(IReadOnlyList<HomeTile> tiles)
+    {
+        var keys = new List<string>();
+        for (var index = 0; index < tiles.Count; index++)
+        {
+            if (tiles[index].IsWidget)
+            {
+                keys.Add(tiles[index].InstanceKey);
+            }
+        }
+
+        return keys;
     }
 
     private static HomeLayoutService BuildLayout(List<IPhoneApp> apps, FakeHomeConfiguration configuration,
@@ -335,6 +417,7 @@ public sealed class HomeLayoutServiceInstallTests
 
         public string Id { get; }
         public string DisplayName => Id;
+        public string Description => Id;
         public string AppId { get; }
         public WidgetSizeSet Sizes => WidgetSizeSet.Medium;
         public void Draw(in WidgetContext context) { }

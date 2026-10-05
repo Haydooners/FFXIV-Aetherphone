@@ -70,12 +70,28 @@ internal sealed class ShellScreenPainter
 
     public void PaintApp(Rect screen, float screenRadius, PhoneTheme theme, IPhoneApp app)
     {
+        var underBackdrop = WallpaperBackdrop.Snapshot();
+        WallpaperBackdrop.Clear();
+        try
+        {
+            PaintAppSurface(screen, screenRadius, theme, app);
+        }
+        finally
+        {
+            WallpaperBackdrop.Restore(underBackdrop);
+        }
+    }
+
+    private void PaintAppSurface(Rect screen, float screenRadius, PhoneTheme theme, IPhoneApp app)
+    {
         var content = themes.ForApp(app.WantsSystemTheme);
         if (!app.WantsTransparentScreen)
         {
             DeviceChrome.FillScreen(screen, screenRadius, content.AppBackground);
+            WallpaperBackdrop.RecordAppGround(screen, content.AppBackground, content.AppBackground);
         }
 
+        Plugin.LiveBackdrop.Record(screen, content.AppBackground);
         var contentRect = ContentRect(screen, theme);
         try
         {

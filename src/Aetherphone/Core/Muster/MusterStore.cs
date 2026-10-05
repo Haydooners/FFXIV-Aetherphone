@@ -27,6 +27,8 @@ internal sealed class MusterStore : IDisposable
     private readonly StoreWork work = new("Muster");
 
     private string? lastAccountId;
+    private readonly object stateLock = new();
+    private int mutationVersion;
     private volatile MusterDto? mine;
     private volatile MusterAttendeeDto[] mineAttendees = Array.Empty<MusterAttendeeDto>();
     private volatile MusterDto[] contactMusters = Array.Empty<MusterDto>();
@@ -65,7 +67,7 @@ internal sealed class MusterStore : IDisposable
         this.configuration = configuration;
         this.signals = signals;
         this.gate = gate;
-        cadence = new PollCadence(visibility, ForegroundPollInterval, BackgroundPollInterval);
+        cadence = new PollCadence(visibility, ForegroundPollInterval, BackgroundPollInterval, signals);
         session.Changed += OnSessionChanged;
         signals.MusterPinged += OnMusterPinged;
         signals.ConnectedChanged += OnRealtimeConnected;
@@ -77,6 +79,8 @@ internal sealed class MusterStore : IDisposable
     public bool Syncing => syncing;
 
     public bool Primed => primed;
+
+    public void NoteWatched() => cadence.NoteWatched();
 
     public MusterDto? Mine => mine;
 
@@ -147,11 +151,23 @@ internal sealed class MusterStore : IDisposable
         }
 
         syncing = true;
+        var version = Volatile.Read(ref mutationVersion);
         work.Run("muster sync", async token =>
         {
             var sync = await client.SyncAsync(token).ConfigureAwait(false);
-            if (sync is not null)
+            if (sync is null)
             {
+                return;
+            }
+
+            lock (stateLock)
+            {
+                if (version != Volatile.Read(ref mutationVersion))
+                {
+                    cadence.RequestImmediate();
+                    return;
+                }
+
                 ApplySync(sync);
             }
         }, () => syncing = false);
@@ -178,7 +194,7 @@ internal sealed class MusterStore : IDisposable
 
     public void RefreshDirectory()
     {
-        if (!session.IsSignedIn || directoryLoading)
+        if (!session.IsSignedIn)
         {
             return;
         }
@@ -188,11 +204,12 @@ internal sealed class MusterStore : IDisposable
         CaptureScopeFilters();
         var dataCenterId = directoryDataCenterId;
         var regions = directoryRegions;
+        var categories = configuration.MusterCategoryFilter;
         var generation = Interlocked.Increment(ref directoryGeneration);
         work.Run("muster directory", async token =>
         {
-            var page = await client.DirectoryAsync(configuration.MusterCategoryFilter,
-                regions, dataCenterId, null, token).ConfigureAwait(false);
+            var page = await client.DirectoryAsync(categories, regions, dataCenterId, null, token)
+                .ConfigureAwait(false);
             if (generation != Volatile.Read(ref directoryGeneration))
             {
                 return;
@@ -209,7 +226,13 @@ internal sealed class MusterStore : IDisposable
             directoryHasMore = page.NextCursor is not null;
             directoryLoadedOnce = true;
             MergeKnown(page.Items);
-        }, () => directoryLoading = false);
+        }, () =>
+        {
+            if (generation == Volatile.Read(ref directoryGeneration))
+            {
+                directoryLoading = false;
+            }
+        });
     }
 
     public void LoadMoreDirectory()
@@ -324,9 +347,14 @@ internal sealed class MusterStore : IDisposable
                 return false;
             }
 
-            mine = created;
-            mineAttendees = Array.Empty<MusterAttendeeDto>();
-            MergeKnown(new[] { created });
+            lock (stateLock)
+            {
+                Interlocked.Increment(ref mutationVersion);
+                mine = created;
+                mineAttendees = Array.Empty<MusterAttendeeDto>();
+                MergeKnown(new[] { created });
+            }
+
             return true;
         }, ok => done(ok ? MusterCreateOutcome.Created : status switch
         {
@@ -352,8 +380,12 @@ internal sealed class MusterStore : IDisposable
             {
                 if (ok)
                 {
-                    mine = null;
-                    mineAttendees = Array.Empty<MusterAttendeeDto>();
+                    lock (stateLock)
+                    {
+                        Interlocked.Increment(ref mutationVersion);
+                        mine = null;
+                        mineAttendees = Array.Empty<MusterAttendeeDto>();
+                    }
                 }
 
                 done(ok);
@@ -376,7 +408,12 @@ internal sealed class MusterStore : IDisposable
                 return false;
             }
 
-            ApplyRsvpResult(musterId, result);
+            lock (stateLock)
+            {
+                Interlocked.Increment(ref mutationVersion);
+                ApplyRsvpResult(musterId, result);
+            }
+
             return true;
         }, done);
     }
@@ -395,9 +432,13 @@ internal sealed class MusterStore : IDisposable
             {
                 if (ok)
                 {
-                    var next = new Dictionary<string, int>(myStatusByMusterId, StringComparer.Ordinal);
-                    next[musterId] = status;
-                    myStatusByMusterId = next;
+                    lock (stateLock)
+                    {
+                        Interlocked.Increment(ref mutationVersion);
+                        var next = new Dictionary<string, int>(myStatusByMusterId, StringComparer.Ordinal);
+                        next[musterId] = status;
+                        myStatusByMusterId = next;
+                    }
                 }
 
                 done(ok);
@@ -419,11 +460,16 @@ internal sealed class MusterStore : IDisposable
             {
                 if (ok)
                 {
-                    mine = current with
+                    lock (stateLock)
                     {
-                        HostNotice = request.Notice,
-                        HostNoticeAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                    };
+                        Interlocked.Increment(ref mutationVersion);
+                        mine = current with
+                        {
+                            HostNotice = request.Notice,
+                            HostNoticeAtUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                        };
+                    }
+
                     cadence.RequestImmediate();
                 }
 
@@ -440,7 +486,7 @@ internal sealed class MusterStore : IDisposable
     {
         if (connected)
         {
-            cadence.RequestImmediate();
+            cadence.RequestAfterReconnect();
         }
     }
 
@@ -708,13 +754,16 @@ internal sealed class MusterStore : IDisposable
             return;
         }
 
-        var next = new Dictionary<string, MusterDto>(knownMusters, StringComparer.Ordinal);
-        for (var index = 0; index < musters.Count; index++)
+        lock (stateLock)
         {
-            next[musters[index].Id] = musters[index];
-        }
+            var next = new Dictionary<string, MusterDto>(knownMusters, StringComparer.Ordinal);
+            for (var index = 0; index < musters.Count; index++)
+            {
+                next[musters[index].Id] = musters[index];
+            }
 
-        knownMusters = next;
+            knownMusters = next;
+        }
     }
 
     private void ApplyRsvpResult(string musterId, MusterRsvpResult result)
@@ -732,10 +781,57 @@ internal sealed class MusterStore : IDisposable
         goingIds = nextGoing;
         directory = WithRsvp(directory, musterId, result);
         contactMusters = WithRsvp(contactMusters, musterId, result);
+        MusterDto? updated = null;
         if (knownMusters.TryGetValue(musterId, out var cached))
         {
-            MergeKnown(new[] { cached with { RsvpCount = result.RsvpCount, Going = result.Going } });
+            updated = cached with { RsvpCount = result.RsvpCount, Going = result.Going };
+            MergeKnown(new[] { updated });
         }
+
+        goingMusters = WithGoing(goingMusters, musterId, updated, result.Going);
+    }
+
+    private static MusterDto[] WithGoing(MusterDto[] source, string musterId, MusterDto? updated, bool going)
+    {
+        var index = -1;
+        for (var candidate = 0; candidate < source.Length; candidate++)
+        {
+            if (source[candidate].Id == musterId)
+            {
+                index = candidate;
+                break;
+            }
+        }
+
+        if (!going)
+        {
+            if (index < 0)
+            {
+                return source;
+            }
+
+            var trimmed = new MusterDto[source.Length - 1];
+            Array.Copy(source, 0, trimmed, 0, index);
+            Array.Copy(source, index + 1, trimmed, index, source.Length - index - 1);
+            return trimmed;
+        }
+
+        if (updated is null)
+        {
+            return source;
+        }
+
+        if (index >= 0)
+        {
+            var replaced = (MusterDto[])source.Clone();
+            replaced[index] = updated;
+            return replaced;
+        }
+
+        var grown = new MusterDto[source.Length + 1];
+        Array.Copy(source, grown, source.Length);
+        grown[source.Length] = updated;
+        return grown;
     }
 
     private static MusterDto[] WithRsvp(MusterDto[] source, string musterId, MusterRsvpResult result)

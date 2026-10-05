@@ -1,192 +1,196 @@
+using Aetherphone.Apps.Coin;
 using Aetherphone.Core;
 using Aetherphone.Core.Localization;
-using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Casino;
 
 internal sealed partial class CasinoApp
 {
-    private const float LiveRowHeight = 84f;
-    private const float TableRowHeight = 76f;
-    private const float LiveRowGap = 8f;
-
+    private const float LiveRowHeight = 76f;
+    private const float LiveRowTile = 44f;
+    private const float HouseRowHeight = 84f;
+    private const float HouseRowTile = 40f;
+    private const float SitHeight = Button.RegularHeight;
+    private const float SeatEmptyAlpha = 0.18f;
 
     private void DrawLiveTab(Rect body)
     {
         var scale = UiScale.Current;
-        using var surface = AppSurface.Begin(body);
-
-        DrawStakeNotice(scale);
-
-        var roomsOrigin = ImGui.GetCursorScreenPos();
-        var roomsWidth = ScrollLayout.StableContentWidth();
-        ui.SectionHeading(Loc.T(L.Casino.LiveRoomsHeading), 4f);
-        DrawLiveRoomRow(CasinoGames.Wheel, Core.Casino.CasinoRoomIds.WheelFloor, L.Casino.GameWheel, scale);
-        ImGui.Dummy(new Vector2(0f, LiveRowGap * scale));
-        DrawLiveRoomRow(CasinoGames.Bingo, Core.Casino.CasinoRoomIds.BingoHall, L.Casino.GameBingo, scale);
-        UiAnchors.Report("casino.live.rooms", new Rect(roomsOrigin,
-            new Vector2(roomsOrigin.X + roomsWidth, ImGui.GetCursorScreenPos().Y)));
-
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-        ui.SectionHeading(Loc.T(L.Casino.LiveTablesHeading), 4f);
-        DrawHouseTables(scale);
-
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-        if (DrawNavRow(FontAwesomeIcon.ThList, L.Casino.TablesRow, L.Casino.TablesRowHint, scale))
+        using (ImRaii.PushId("casino.live"))
+        using (AppSurface.Begin(body))
         {
-            OpenTables();
-        }
+            var drawList = ImGui.GetWindowDrawList();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            var cursorY = DrawStakeNotice(origin, width, scale);
+            var roomsTop = cursorY + CoinArt.HeaderGap * scale +
+                           CardSectionHeader.Draw(drawList, new Vector2(origin.X, cursorY), width,
+                               Loc.T(L.Casino.LiveRoomsHeading), ui.TitleInk);
+            var rowHeight = LiveRowHeight * scale;
+            var roomsMin = new Vector2(origin.X, roomsTop);
+            var roomsMax = new Vector2(origin.X + width, roomsTop + rowHeight * 2f);
+            ui.Card(drawList, roomsMin, roomsMax, Metrics.Radius.Grouped * scale);
+            if (DrawLiveRoomRow(drawList, RowAt(roomsMin, roomsMax.X, rowHeight, 0), CasinoGames.Wheel,
+                    L.Casino.GameWheel, false, scale))
+            {
+                OpenGame(CasinoGames.Wheel);
+            }
 
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
+            if (DrawLiveRoomRow(drawList, RowAt(roomsMin, roomsMax.X, rowHeight, 1), CasinoGames.Bingo,
+                    L.Casino.GameBingo, true, scale))
+            {
+                OpenGame(CasinoGames.Bingo);
+            }
+
+            var tablesTop = SectionTitle(drawList, new Vector2(origin.X, roomsMax.Y), width,
+                Loc.T(L.Casino.LiveTablesHeading), scale);
+            cursorY = DrawHouseTables(drawList, new Vector2(origin.X, tablesTop), width, scale);
+            cursorY = DrawTablesLink(drawList, new Vector2(origin.X, cursorY + CardGap * scale), width, scale);
+            CoinArt.Reserve(origin, width, cursorY + CoinArt.BottomPad * scale);
+        }
     }
 
-    private void DrawLiveRoomRow(string gameId, string roomId, LocString name, float scale)
+    private bool DrawLiveRoomRow(ImDrawListPtr drawList, Rect row, string gameId, LocString name, bool hairline,
+        float scale)
     {
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        var height = LiveRowHeight * scale;
-        var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var rounding = Metrics.Radius.Card * scale;
-        var hovered = UiInteract.Hover(row.Min, row.Max);
-
-        ui.Card(drawList, row.Min, row.Max, rounding);
-        if (hovered)
+        var pad = Metrics.Space.Lg * scale;
+        var tile = LiveRowTile * scale;
+        if (hairline)
         {
-            Squircle.Fill(drawList, row.Min, row.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            CoinArt.Hairline(drawList, ui, row.Min.X + pad + tile + CoinArt.TextGap * scale, row.Max.X, row.Min.Y);
         }
 
-        var occupancy = casinoRooms.OccupancyOf(roomId);
-        var open = casinoRooms.TryRoomClock(roomId, out var phase, out var endsAtUnixMs) && endsAtUnixMs > 0;
-        var inset = 14f * scale;
+        var hovered = CoinArt.RowInteraction(drawList, ui, row, scale);
+        var tileCenter = new Vector2(row.Min.X + pad + tile * 0.5f, row.Center.Y);
+        CasinoArt.GameTile(drawList, gameId, tileCenter, tile);
 
-        var glyphCenter = new Vector2(row.Min.X + 38f * scale, row.Center.Y);
-        drawList.AddCircleFilled(glyphCenter, 20f * scale, ImGui.GetColorU32(ui.Palette.FieldSurface), 40);
-        CasinoGlyphs.Draw(drawList, gameId, glyphCenter, 11f * scale, ImGui.GetColorU32(ui.TitleInk),
-            ImGui.GetColorU32(ui.Palette.FieldSurface));
+        var chevronCenter = new Vector2(row.Max.X - pad - 4f * scale, row.Center.Y);
+        CasinoArt.Chevron(drawList, chevronCenter, ui.MutedInk);
+        var occupancy = CrowdAt(gameId);
+        var crowd = texts.Count(L.Casino.LivePlayers, occupancy);
+        var crowdSize = Typography.Measure(crowd, TextStyles.Footnote);
+        var crowdX = chevronCenter.X - CoinArt.ValueGap * scale - crowdSize.X;
+        var live = occupancy > 0;
+        Typography.Draw(drawList, new Vector2(crowdX, row.Center.Y - crowdSize.Y * 0.5f), crowd,
+            live ? ui.Accent : ui.MutedInk, TextStyles.Footnote);
+        CasinoArt.LiveDot(drawList, new Vector2(crowdX - (CasinoArt.LiveDotRadius + 4f) * scale, row.Center.Y), scale,
+            live ? ui.Accent : ui.MutedInk, live);
 
-        var textLeft = row.Min.X + 68f * scale;
-        var title = Typography.FitText(Loc.T(name), width - 140f * scale, TextStyles.SubheadlineEmphasized);
-        Typography.Draw(drawList, new Vector2(textLeft, row.Min.Y + 14f * scale), title, ui.TitleInk,
-            TextStyles.SubheadlineEmphasized);
-
-        var phaseLine = open ? RoomPhaseLine(gameId, roomId) : Loc.T(L.Casino.RoomIdle);
-        var fitted = Typography.FitText(phaseLine, width - 140f * scale, TextStyles.Footnote);
-        Typography.Draw(drawList, new Vector2(textLeft, row.Min.Y + 36f * scale), fitted,
-            open ? ui.Accent : ui.MutedInk, TextStyles.Footnote);
-
-        var stakeLine = MinimumStakeLine(gameId);
-        Typography.Draw(drawList, new Vector2(textLeft, row.Max.Y - 24f * scale), stakeLine, ui.MutedInk,
-            TextStyles.Caption2);
-
-        var headcount = Loc.T(L.Casino.LivePlayers, Apps.Games.Framework.GameNumber.Label(occupancy));
-        var headSize = Typography.Measure(headcount, TextStyles.Caption1);
-        Typography.Draw(drawList, new Vector2(row.Max.X - inset - headSize.X, row.Min.Y + 16f * scale), headcount,
-            occupancy > 0 ? ui.Accent : ui.MutedInk, TextStyles.Caption1);
-
-        AppSkin.Icon(drawList, new Vector2(row.Max.X - inset - 4f * scale, row.Center.Y + 12f * scale),
-            IconGlyph.Of(FontAwesomeIcon.ChevronRight), ui.MutedInk, 0.8f);
-
-        var clicked = UiInteract.Click(row.Min, row.Max, hovered);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
-        if (clicked)
-        {
-            OpenGame(gameId);
-        }
+        var phase = RoomPhaseLine(gameId, RoomOf(gameId), out var open);
+        var subtitle = phase.Length > 0 ? phase : Loc.T(L.Casino.RoomIdle);
+        var textLeft = tileCenter.X + tile * 0.5f + CoinArt.TextGap * scale;
+        var textRight = crowdX - (CasinoArt.LiveDotRadius * 2f + 4f + CoinArt.ValueGap) * scale;
+        CoinArt.Labels(drawList, textLeft, textRight, row.Center.Y, Loc.T(name), subtitle, ui.TitleInk,
+            open ? ui.Accent : ui.MutedInk, scale);
+        return UiInteract.Click(row.Min, row.Max, hovered);
     }
 
-    private void DrawHouseTables(float scale)
+    private float DrawHouseTables(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
         var tables = casinoTables.Tables;
         var tierOrder = Core.Casino.CasinoHouseTiers.All;
+        var count = 0;
+        for (var order = 0; order < tierOrder.Length; order++)
+        {
+            for (var index = 0; index < tables.Length; index++)
+            {
+                if (tables[index].Kind == Core.Casino.CasinoTableKinds.House && tables[index].StakeTier == tierOrder[order])
+                {
+                    count++;
+                }
+            }
+        }
+
+        if (count == 0)
+        {
+            var hint = casinoTables.Loaded ? Loc.T(L.Casino.NoHouseTables) : Loc.T(L.Casino.TablesLoading);
+            return CoinArt.DrawPanel(ui, origin, width, FontAwesomeIcon.Couch, CasinoArt.TintOf(CasinoGames.Blackjack),
+                Loc.T(L.Casino.LiveTablesHeading), hint, scale);
+        }
+
+        var rowHeight = HouseRowHeight * scale;
+        var min = origin;
+        var max = new Vector2(origin.X + width, origin.Y + rowHeight * count);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         var drawn = 0;
         for (var order = 0; order < tierOrder.Length; order++)
         {
-            var tier = tierOrder[order];
             for (var index = 0; index < tables.Length; index++)
             {
                 var table = tables[index];
-                if (table.Kind != Core.Casino.CasinoTableKinds.House || table.StakeTier != tier)
+                if (table.Kind != Core.Casino.CasinoTableKinds.House || table.StakeTier != tierOrder[order])
                 {
                     continue;
                 }
 
-                if (drawn > 0)
+                using (ImRaii.PushId(index))
                 {
-                    ImGui.Dummy(new Vector2(0f, LiveRowGap * scale));
+                    DrawHouseTableRow(drawList, RowAt(min, max.X, rowHeight, drawn), table, drawn > 0, scale);
                 }
 
-                DrawHouseTableRow(table, scale);
                 drawn++;
             }
         }
 
-        if (drawn > 0)
+        return max.Y;
+    }
+
+    private void DrawHouseTableRow(ImDrawListPtr drawList, Rect row, Core.Aethernet.Contracts.CasinoTableRowDto table,
+        bool hairline, float scale)
+    {
+        var pad = Metrics.Space.Lg * scale;
+        var tile = HouseRowTile * scale;
+        if (hairline)
         {
+            CoinArt.Hairline(drawList, ui, row.Min.X + pad + tile + CoinArt.TextGap * scale, row.Max.X, row.Min.Y);
+        }
+
+        var full = table.MaxSeats > 0 && table.SeatedCount >= table.MaxSeats;
+        var canSit = !full && table.Admitted;
+        var sitLabel = full ? Loc.T(L.Casino.TableFullBadge) : Loc.T(L.Casino.TableSit);
+        var sitHeight = SitHeight * scale;
+        var sitWidth = Button.WidthFor(sitLabel, ButtonSize.Regular);
+        var sitRect = new Rect(new Vector2(row.Max.X - pad - sitWidth, row.Center.Y - sitHeight * 0.5f),
+            new Vector2(row.Max.X - pad, row.Center.Y + sitHeight * 0.5f));
+        var overSit = UiInteract.Hover(sitRect.Min, sitRect.Max);
+        var hovered = !overSit && CoinArt.RowInteraction(drawList, ui, row, scale);
+
+        var tileCenter = new Vector2(row.Min.X + pad + tile * 0.5f, row.Center.Y);
+        CasinoArt.GameTile(drawList, CasinoGames.Blackjack, tileCenter, tile);
+        var textLeft = tileCenter.X + tile * 0.5f + CoinArt.TextGap * scale;
+        var textWidth = MathF.Max(1f, sitRect.Min.X - CoinArt.ValueGap * scale - textLeft);
+        var headline = Typography.LineHeight(TextStyles.Headline);
+        var footnote = Typography.LineHeight(TextStyles.Footnote);
+        var top = row.Center.Y - (headline + footnote * 2f) * 0.5f;
+        Typography.Draw(drawList, new Vector2(textLeft, top),
+            Typography.FitText(Loc.T(TierLabel(table.StakeTier)), textWidth, TextStyles.Headline), ui.TitleInk,
+            TextStyles.Headline);
+        top += headline;
+        Typography.Draw(drawList, new Vector2(textLeft, top),
+            Typography.FitText(texts.Numbers(L.Casino.TableStakes, table.MinBet, table.MaxBet), textWidth,
+                TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
+        top += footnote;
+        var seatInk = table.SeatedCount > 0 ? ui.Accent : ui.MutedInk;
+        var dotsWidth = CasinoArt.SeatDots(drawList, new Vector2(textLeft, top + footnote * 0.5f), table.SeatedCount,
+            Math.Min(table.MaxSeats, 8), seatInk, Palette.WithAlpha(ui.TitleInk, SeatEmptyAlpha), scale);
+        var seatsLeft = textLeft + dotsWidth + (dotsWidth > 0f ? Metrics.Space.Sm * scale : 0f);
+        Typography.Draw(drawList, new Vector2(seatsLeft, top),
+            Typography.FitText(texts.Counts(L.Casino.TableSeats, table.SeatedCount, table.MaxSeats),
+                MathF.Max(1f, textLeft + textWidth - seatsLeft), TextStyles.Footnote), seatInk, TextStyles.Footnote);
+
+        if (Button.Draw(drawList, sitRect, sitLabel, ui.Ink, canSit ? ButtonStyle.Tinted : ButtonStyle.Gray,
+                enabled: canSit, id: "casino.live.sit"))
+        {
+            OpenTable(table.TableId);
             return;
         }
 
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var hint = casinoTables.Loaded ? Loc.T(L.Casino.NoHouseTables) : Loc.T(L.Common.Loading);
-        var block = Typography.MeasureWrappedBlock(hint, TextStyles.Footnote, width);
-        Typography.DrawWrappedLeft(origin, hint, ui.MutedInk, TextStyles.Footnote, width);
-        ImGui.Dummy(new Vector2(width, block.Y));
-    }
-
-    private void DrawHouseTableRow(Core.Aethernet.Contracts.CasinoTableRowDto table, float scale)
-    {
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        var height = TableRowHeight * scale;
-        var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var rounding = Metrics.Radius.Card * scale;
-        var hovered = UiInteract.Hover(row.Min, row.Max);
-
-        ui.Card(drawList, row.Min, row.Max, rounding);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, row.Min, row.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        var inset = 14f * scale;
-        var tierName = Typography.FitText(Loc.T(TierLabel(table.StakeTier)), width * 0.55f,
-            TextStyles.SubheadlineEmphasized);
-        Typography.Draw(drawList, new Vector2(row.Min.X + inset, row.Min.Y + 13f * scale), tierName, ui.TitleInk,
-            TextStyles.SubheadlineEmphasized);
-
-        var bets = Loc.T(L.Casino.TableStakes, NumberText.Group(table.MinBet),
-            NumberText.Group(table.MaxBet));
-        Typography.Draw(drawList, new Vector2(row.Min.X + inset, row.Min.Y + 34f * scale),
-            Typography.FitText(bets, width * 0.6f, TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
-
-        var seats = Loc.T(L.Casino.TableSeats, Apps.Games.Framework.GameNumber.Label(table.SeatedCount),
-            Apps.Games.Framework.GameNumber.Label(table.MaxSeats));
-        Typography.Draw(drawList, new Vector2(row.Min.X + inset, row.Max.Y - 22f * scale), seats,
-            table.SeatedCount > 0 ? ui.Accent : ui.MutedInk, TextStyles.Caption1);
-
-        var full = table.MaxSeats > 0 && table.SeatedCount >= table.MaxSeats;
-        var pillLabel = full ? Loc.T(L.Casino.TableFullBadge) : Loc.T(L.Casino.TableSit);
-        var pillHeight = 32f * scale;
-        var pillMax = new Vector2(row.Max.X - inset, row.Center.Y + pillHeight * 0.5f);
-        var pillMin = new Vector2(pillMax.X - 84f * scale, row.Center.Y - pillHeight * 0.5f);
-        if (AppSkin.PillButton(new Rect(pillMin, pillMax), pillLabel, !full, !full && table.Admitted, theme))
-        {
-            OpenTable(table.TableId);
-        }
-
-        var clicked = UiInteract.Click(row.Min, row.Max, hovered);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
-        if (clicked)
+        if (UiInteract.Click(row.Min, row.Max, hovered))
         {
             OpenTable(table.TableId);
         }

@@ -4,6 +4,7 @@ using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Casino;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -15,10 +16,11 @@ internal sealed class SlotsCabinet
     private const float PadX = 16f;
     private const float InfoRowHeight = 48f;
     private const float BannerHeight = 62f;
-    private const float SpinPillHeight = 50f;
+    private const float SpinPillHeight = Button.LargeHeight;
     private const float TurboWidth = 62f;
+    private const long ResultHoldMilliseconds = 10000;
     private const float AutoWidth = 62f;
-    private const float AutoChipHeight = 34f;
+    private const float AutoChipHeight = Button.RegularHeight;
     private const float AutoChipGap = 6f;
 
     private const float SpinRowsPerSecond = 15f;
@@ -67,8 +69,12 @@ internal sealed class SlotsCabinet
     private float lineTraceSeconds;
     private float jackpotFlourishSeconds;
     private int celebratedSpinIndex = -1;
+    private int soundedReelStops;
     private int autoRemaining;
     private int autoSettledSpin = -1;
+    private bool resultTracked;
+    private long resultNet;
+    private long resultTick;
     private bool autoPickerOpen;
     private bool turbo;
     private Rect reelWindow;
@@ -135,6 +141,8 @@ internal sealed class SlotsCabinet
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         ConsumeResults();
         playback.Update(delta);
+        TrackResult();
+        SoundReelStops();
         particles.Update(delta);
         lineTraceSeconds += delta;
         CelebrateSettledSpin();
@@ -201,6 +209,8 @@ internal sealed class SlotsCabinet
                 inlineReason = string.Empty;
                 winRoll.Snap(0);
                 celebratedSpinIndex = -1;
+                soundedReelStops = 0;
+                UiFeedback.Play(UiSound.CasinoChips);
             }
             else
             {
@@ -212,6 +222,59 @@ internal sealed class SlotsCabinet
         {
             inlineReason = CasinoReasons.Unreachable;
         }
+    }
+
+    private void SoundReelStops()
+    {
+        if (playback.Phase != SlotsPlaybackPhase.Spinning)
+        {
+            if (playback.Phase == SlotsPlaybackPhase.Presenting && soundedReelStops > 0
+                && soundedReelStops < SlotsRules.ReelCount)
+            {
+                UiFeedback.Play(UiSound.GameTick);
+            }
+
+            soundedReelStops = playback.Phase == SlotsPlaybackPhase.Presenting ? SlotsRules.ReelCount : 0;
+            return;
+        }
+
+        var choreography = playback.Choreography;
+        var stopped = 0;
+        while (stopped < SlotsRules.ReelCount && choreography.ReelStopped(stopped))
+        {
+            stopped++;
+        }
+
+        if (stopped > soundedReelStops)
+        {
+            UiFeedback.Play(UiSound.GameTick);
+        }
+
+        soundedReelStops = stopped;
+    }
+
+    public bool TryRecentResult(out long net)
+    {
+        net = resultNet;
+        return resultTick != 0 && Environment.TickCount64 - resultTick < ResultHoldMilliseconds;
+    }
+
+    private void TrackResult()
+    {
+        if (playback.Phase != SlotsPlaybackPhase.Finished)
+        {
+            resultTracked = false;
+            return;
+        }
+
+        if (resultTracked)
+        {
+            return;
+        }
+
+        resultTracked = true;
+        resultNet = playback.TotalWin - playback.Stake;
+        resultTick = Environment.TickCount64;
     }
 
     private void CelebrateSettledSpin()
@@ -234,6 +297,7 @@ internal sealed class SlotsCabinet
         var origin = new Vector2(reelWindow.Center.X, reelWindow.Min.Y + reelWindow.Height * 0.3f);
         if (playback.JackpotLanded && playback.SpinIndex == 0)
         {
+            UiFeedback.Play(UiSound.GamePowerUp);
             jackpotFlourishSeconds = 0f;
             particles.Confetti(origin, 160, ConfettiPalette, 420f * scale, 6f, 2.4f);
             particles.Sparkle(origin, 48, Gold, 260f * scale, 5f, 1.6f);
@@ -242,15 +306,18 @@ internal sealed class SlotsCabinet
 
         if (spin.Win >= playback.Stake * SlotsRoundPlayback.BigWinMultiple)
         {
+            UiFeedback.Play(UiSound.GamePowerUp);
             particles.Confetti(origin, 90, ConfettiPalette, 330f * scale, 5f, 1.6f);
             particles.Sparkle(origin, 24, Gold, 190f * scale, 4f, 1.0f);
         }
         else if (spin.Win >= playback.Stake * SmallCelebrationMultiple)
         {
+            UiFeedback.Play(UiSound.GameWin);
             particles.Confetti(origin, 36, ConfettiPalette, 250f * scale, 4f, 1.2f);
         }
         else
         {
+            UiFeedback.Play(UiSound.GameMatch);
             particles.Sparkle(origin, 10, Gold, 130f * scale, 3f, 0.8f);
         }
     }
@@ -736,23 +803,10 @@ internal sealed class SlotsCabinet
         }
 
         var label = Loc.T(L.Casino.SlotsSkip);
-        var labelSize = Typography.Measure(label, TextStyles.FootnoteEmphasized);
-        var chipHeight = 28f * scale;
+        var chipHeight = Button.SmallHeight * scale;
         var chipMax = new Vector2(left + width, y + chipHeight);
-        var chipMin = new Vector2(chipMax.X - labelSize.X - 24f * scale, y);
-        var hovered = UiInteract.Hover(chipMin, chipMax);
-        Squircle.Fill(drawList, chipMin, chipMax, chipHeight * 0.5f, ImGui.GetColorU32(ui.FieldSurface));
-        Squircle.Stroke(drawList, chipMin, chipMax, chipHeight * 0.5f,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.3f)), 1f * scale);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, chipMin, chipMax, chipHeight * 0.5f, ImGui.GetColorU32(ui.HoverTint));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        Typography.DrawCentered(drawList, (chipMin + chipMax) * 0.5f, label, ui.BodyInk,
-            TextStyles.FootnoteEmphasized);
-        if (UiInteract.Click(chipMin, chipMax, hovered))
+        var chipMin = new Vector2(chipMax.X - Button.WidthFor(label, ButtonSize.Small), y);
+        if (Button.Draw(drawList, new Rect(chipMin, chipMax), label, ui.Ink, ButtonStyle.Gray, id: "casino.slots.skip"))
         {
             playback.Skip();
             winRoll.Snap((int)playback.TotalWin);
@@ -970,21 +1024,8 @@ internal sealed class SlotsCabinet
             var min = new Vector2(left + index * (chipWidth + gap), y);
             var max = new Vector2(min.X + chipWidth, y + height);
             var affordable = stake > 0 && sitting.Stack >= stake;
-            var rounding = height * 0.5f;
-            var hovered = affordable && UiInteract.Hover(min, max);
-            Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.FieldSurface));
-            Squircle.Stroke(drawList, min, max, rounding,
-                ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, affordable ? 0.30f : 0.14f)), 1f * scale);
-            if (hovered)
-            {
-                Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.HoverTint));
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            Typography.DrawCentered(drawList, (min + max) * 0.5f, GameNumber.Label(rounds),
-                affordable ? ui.TitleInk : Palette.WithAlpha(ui.MutedInk, 0.6f),
-                TextStyles.SubheadlineEmphasized);
-            if (UiInteract.Click(min, max, hovered))
+            if (Button.Draw(drawList, new Rect(min, max), GameNumber.Label(rounds), ui.Ink, ButtonStyle.Gray,
+                    enabled: affordable))
             {
                 inlineReason = string.Empty;
                 autoRemaining = rounds;
@@ -1002,42 +1043,14 @@ internal sealed class SlotsCabinet
 
     private bool DrawAutoToggle(ImDrawListPtr drawList, AppSkin ui, Rect rect, float scale)
     {
-        var rounding = rect.Height * 0.5f;
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
         var lit = AutoRunning || autoPickerOpen;
-        var fill = lit ? Palette.WithAlpha(ui.Accent, 0.22f) : ui.FieldSurface;
-        Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(fill));
-        Squircle.Stroke(drawList, rect.Min, rect.Max, rounding,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, lit ? 0.7f : 0.25f)), 1f * scale);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        Typography.DrawCentered(drawList, rect.Center, Loc.T(L.Casino.SlotsAuto),
-            lit ? ui.Accent : ui.MutedInk, TextStyles.FootnoteEmphasized);
-        return hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+        return Button.Draw(drawList, rect, Loc.T(L.Casino.SlotsAuto), ui.Ink,
+            lit ? ButtonStyle.Tinted : ButtonStyle.Gray, id: "casino.slots.auto");
     }
 
-    private bool DrawTurboToggle(ImDrawListPtr drawList, AppSkin ui, Rect rect, float scale)
-    {
-        var rounding = rect.Height * 0.5f;
-        var hovered = UiInteract.Hover(rect.Min, rect.Max);
-        var fill = turbo ? Palette.WithAlpha(ui.Accent, 0.22f) : ui.FieldSurface;
-        Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(fill));
-        Squircle.Stroke(drawList, rect.Min, rect.Max, rounding,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, turbo ? 0.7f : 0.25f)), 1f * scale);
-        if (hovered)
-        {
-            Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        Typography.DrawCentered(drawList, rect.Center, Loc.T(L.Casino.SlotsTurbo),
-            turbo ? ui.Accent : ui.MutedInk, TextStyles.FootnoteEmphasized);
-        return hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
-    }
+    private bool DrawTurboToggle(ImDrawListPtr drawList, AppSkin ui, Rect rect, float scale) =>
+        Button.Draw(drawList, rect, Loc.T(L.Casino.SlotsTurbo), ui.Ink, turbo ? ButtonStyle.Tinted : ButtonStyle.Gray,
+            id: "casino.slots.turbo");
 
     private static float DrawReasonCard(ImDrawListPtr drawList, AppSkin ui, string message, float left, float y,
         float width, float scale)
@@ -1047,8 +1060,9 @@ internal sealed class SlotsCabinet
         var height = block.Y + pad * 2f;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, 16f * scale,
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), message, ui.TitleInk,
             TextStyles.Footnote, width - pad * 2f);
@@ -1065,7 +1079,7 @@ internal sealed class SlotsCabinet
         var cardHeight = titleSize.Y + hintBlock.Y + pad * 2f + 6f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + cardHeight);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), title, ui.TitleInk,
             TextStyles.SubheadlineEmphasized);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad + titleSize.Y + 6f * scale), hint,
@@ -1074,7 +1088,7 @@ internal sealed class SlotsCabinet
         var pillY = max.Y + Metrics.Space.Md * scale;
         var pillRect = new Rect(new Vector2(left + width * 0.2f, pillY),
             new Vector2(left + width * 0.8f, pillY + 44f * scale));
-        if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.Cashier), true, true, ui.Theme))
+        if (ui.PillButton(pillRect, Loc.T(L.Casino.Cashier), true, true))
         {
             openCashier();
         }

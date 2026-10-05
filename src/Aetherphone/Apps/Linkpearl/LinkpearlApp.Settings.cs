@@ -1,26 +1,17 @@
 using System.Runtime.InteropServices;
 using Aetherphone.Core;
-using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Localization;
 using Aetherphone.Windows;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Linkpearl;
 
 internal sealed partial class LinkpearlApp
 {
-    private const float SettingsSliderRowHeight = 52f;
-    private const float SliderLabelWidth = 0.42f;
-    private const float PopoutOpacityMinimum = 0.5f;
-    private const float SettingsLinkRowHeight = 62f;
-    private const float IdleOpacityMinimum = 0.15f;
-    private const float OpacityEpsilon = 0.002f;
-
-    private static readonly float[] TextScaleChoices = { 0.8f, 0.9f, 1f, 1.15f, 1.3f, 1.5f };
+    private const float SettingsBottomPad = 24f;
 
     private readonly List<DropdownMenu.Item> settingsItems = new(6);
 
@@ -32,54 +23,122 @@ internal sealed partial class LinkpearlApp
 
     private static readonly Vector4[] SettingsSectionTints =
     {
-        new(0.36f, 0.55f, 0.95f, 1f),
-        new(0.95f, 0.68f, 0.25f, 1f),
-        new(0.20f, 0.70f, 0.62f, 1f),
-        new(0.62f, 0.45f, 0.92f, 1f),
-        new(0.40f, 0.62f, 0.48f, 1f),
+        ChatListChrome.TintAzure, ChatListChrome.TintGold, ChatListChrome.TintTeal, ChatListChrome.TintViolet,
+        ChatListChrome.TintGreen,
     };
 
-    private void DrawSettings(Rect area)
+    private void DrawSettingsTab(Rect area)
     {
         var scale = UiScale.Current;
-        var context = new PhoneContext(area, frameTheme, frameNavigation);
-        AppHeader.Draw(context, Loc.T(L.Linkpearl.ChatSettings), backToList);
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
-        using (AppSurface.Begin(body))
+        using (AppSurface.BeginEdgeToEdge(area))
         {
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-            var alerts = GroupCard.Begin(frameTheme, 1);
-            var paused = SettingsRow.Bool(alerts.NextRow(), Loc.T(L.Messages.PauseNotifications),
-                notificationGate.Paused, frameTheme, "linkpearl.settings.pause");
+            var drawList = ImGui.GetWindowDrawList();
+            chrome.DrawSectionLabel(Loc.T(L.Linkpearl.Appearance));
+            if (chrome.DrawSettingRow(drawList, PhoneIcons.Palette, activeTheme.Accent, Loc.T(L.Message.ChatTheme),
+                    Loc.T(activeTheme.Name)))
+            {
+                router.Push(LinkpearlRoute.ChatTheme);
+            }
+
+            if (chrome.DrawSettingRow(drawList, PhoneIcons.Wallpaper, ChatListChrome.TintViolet,
+                    Loc.T(L.Message.Wallpaper)))
+            {
+                router.Push(LinkpearlRoute.Wallpaper(string.Empty));
+            }
+
+            var layoutRow = NextSettingRow(scale);
+            var bubblesDefault = configuration.LinkpearlDefaultDensity == (int)ChatDensity.Bubbles;
+            if (chrome.DrawSettingRow(drawList, PhoneIcons.LayoutList, ChatListChrome.TintAzure,
+                    Loc.T(L.Linkpearl.DefaultLayout),
+                    Loc.T(bubblesDefault ? L.Linkpearl.LayoutBubbles : L.Linkpearl.LayoutLog)))
+            {
+                settingsMenu.Toggle("linkpearl.settings.layout", layoutRow);
+            }
+
+            var textSizeRow = NextSettingRow(scale);
+            if (chrome.DrawSettingRow(drawList, PhoneIcons.TextSize, ChatListChrome.TintTeal,
+                    Loc.T(L.Linkpearl.TextSize), LinkpearlSettingRows.PercentLabel(configuration.LinkpearlTextScale)))
+            {
+                settingsMenu.Toggle("linkpearl.settings.textScale", textSizeRow);
+            }
+
+            DrawLogSwitch(drawList, PhoneIcons.Clock, ChatListChrome.TintSlate, L.Linkpearl.LogTimestamps,
+                configuration.LinkpearlLogTimestamps, "linkpearl.settings.logTimestamps",
+                static (configuration, value) => configuration.LinkpearlLogTimestamps = value);
+            DrawLogSwitch(drawList, PhoneIcons.World, ChatListChrome.TintAzure, L.Linkpearl.LogWorldNames,
+                configuration.LinkpearlLogWorldNames, "linkpearl.settings.logWorldNames",
+                static (configuration, value) => configuration.LinkpearlLogWorldNames = value);
+            DrawLogSwitch(drawList, PhoneIcons.Brush, ChatListChrome.TintGold, L.Linkpearl.LogGameColors,
+                configuration.LinkpearlLogGameColors, "linkpearl.settings.logGameColors",
+                static (configuration, value) => configuration.LinkpearlLogGameColors = value);
+            DrawLogSwitch(drawList, PhoneIcons.Users, ChatListChrome.TintGreen, L.Linkpearl.LogGroupLines,
+                configuration.LinkpearlLogGroupLines, "linkpearl.settings.logGroupLines",
+                static (configuration, value) => configuration.LinkpearlLogGroupLines = value);
+            DrawLogSwitch(drawList, PhoneIcons.Checks, ChatListChrome.TintViolet, L.Linkpearl.CollapseDuplicates,
+                configuration.LinkpearlCollapseDuplicates, "linkpearl.settings.collapseDuplicates",
+                static (configuration, value) => configuration.LinkpearlCollapseDuplicates = value, false);
+
+            chrome.DrawSectionLabel(Loc.T(L.Settings.Notifications));
+            var paused = chrome.DrawSwitchRow(drawList, PhoneIcons.BellOff, ChatListChrome.TintSlate,
+                Loc.T(L.Messages.PauseNotifications), notificationGate.Paused, "linkpearl.settings.pause",
+                separator: false);
             if (paused != notificationGate.Paused)
             {
                 notificationGate.SetPaused(paused);
             }
 
-            alerts.End();
-            SettingsSection.Hint(Loc.T(L.Linkpearl.PauseHint), frameTheme);
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
-            var card = GroupCard.Begin(frameTheme, SettingsSections.Length, SettingsLinkRowHeight);
+            chrome.DrawSectionLabel(Loc.T(L.Settings.Privacy));
+            var screenshotMode = chrome.DrawSwitchRow(drawList, PhoneIcons.Eye, ChatListChrome.TintSlate,
+                Loc.T(L.Linkpearl.ScreenshotMode), NameMask.Enabled, "linkpearl.settings.screenshotMode",
+                separator: false);
+            if (screenshotMode != NameMask.Enabled)
+            {
+                NameMask.Set(screenshotMode);
+                ChatRuns.Reset();
+                RunText.Reset();
+            }
+
+            chrome.DrawSectionLabel(Loc.T(L.Linkpearl.ChatSettings));
             for (var index = 0; index < SettingsSections.Length; index++)
             {
                 var section = SettingsSections[index];
-                if (SettingsRow.Link(card.NextRow(), SectionIcon(section), SettingsSectionTints[index],
-                        Loc.T(SectionTitle(section)), string.Empty, frameTheme))
+                if (chrome.DrawSettingRow(drawList, SectionGlyph(section), SettingsSectionTints[index],
+                        Loc.T(SectionTitle(section)), separator: index < SettingsSections.Length - 1))
                 {
                     router.Push(LinkpearlRoute.SettingsFor(section));
                 }
             }
 
-            card.End();
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Xxl * scale));
+            ImGui.Dummy(new Vector2(0f, SettingsBottomPad * scale));
         }
+
+        DrawSettingsMenu(area);
+    }
+
+    private static Rect NextSettingRow(float scale)
+    {
+        var origin = ImGui.GetCursorScreenPos();
+        return new Rect(origin,
+            new Vector2(origin.X + ScrollLayout.StableContentWidth(), origin.Y + ChatListChrome.SettingRowHeight * scale));
+    }
+
+    private void DrawLogSwitch(ImDrawListPtr drawList, string glyph, Vector4 tint, LocString label, bool value,
+        string id, Action<Configuration, bool> apply, bool separator = true)
+    {
+        var next = chrome.DrawSwitchRow(drawList, glyph, tint, Loc.T(label), value, id, separator);
+        if (next == value)
+        {
+            return;
+        }
+
+        apply(configuration, next);
+        configuration.Save();
     }
 
     private void DrawSettingsSection(Rect area, LinkpearlSettingsSection section)
     {
         var scale = UiScale.Current;
-        var context = new PhoneContext(area, frameTheme, frameNavigation);
-        AppHeader.Draw(context, Loc.T(SectionTitle(section)), backToSettings);
+        chrome.DrawScreenHeader(area, Loc.T(SectionTitle(section)), backToSettings);
         var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
         using (AppSurface.Begin(body))
         {
@@ -108,13 +167,13 @@ internal sealed partial class LinkpearlApp
         DrawSettingsMenu(area);
     }
 
-    private static FontAwesomeIcon SectionIcon(LinkpearlSettingsSection section) => section switch
+    private static string SectionGlyph(LinkpearlSettingsSection section) => section switch
     {
-        LinkpearlSettingsSection.Popouts => FontAwesomeIcon.ExternalLinkAlt,
-        LinkpearlSettingsSection.Behavior => FontAwesomeIcon.SlidersH,
-        LinkpearlSettingsSection.Composer => FontAwesomeIcon.PenAlt,
-        LinkpearlSettingsSection.Channels => FontAwesomeIcon.Hashtag,
-        _ => FontAwesomeIcon.History,
+        LinkpearlSettingsSection.Popouts => PhoneIcons.ExternalLink,
+        LinkpearlSettingsSection.Behavior => PhoneIcons.AdjustmentsHorizontal,
+        LinkpearlSettingsSection.Composer => PhoneIcons.Pencil,
+        LinkpearlSettingsSection.Channels => PhoneIcons.Hash,
+        _ => PhoneIcons.Clock,
     };
 
     private static LocString SectionTitle(LinkpearlSettingsSection section) => section switch
@@ -129,13 +188,21 @@ internal sealed partial class LinkpearlApp
     private void DrawPopoutSettings(float scale)
     {
         SettingsSection.Header(Loc.T(L.Linkpearl.PopoutSection), frameTheme);
-        var behaviour = GroupCard.Begin(frameTheme, 5);
+        var behaviour = GroupCard.Begin(frameTheme, 8);
         var grouped = SettingsRow.Bool(behaviour.NextRow(), Loc.T(L.Linkpearl.PopoutTabs),
             configuration.LinkpearlPopoutTabs, frameTheme, "linkpearl.settings.popoutTabs");
         if (grouped != configuration.LinkpearlPopoutTabs)
         {
             configuration.LinkpearlPopoutTabs = grouped;
             configuration.Save();
+        }
+
+        var placementRow = behaviour.NextRow();
+        if (SettingsRow.Disclosure(placementRow, Loc.T(L.Linkpearl.PopoutPlacement),
+                Loc.T(PlacementLabel(configuration.LinkpearlPopoutPlacement)), frameTheme,
+                "linkpearl.settings.placement"))
+        {
+            settingsMenu.Toggle("linkpearl.settings.placement", placementRow);
         }
 
         var popTells = SettingsRow.Bool(behaviour.NextRow(), Loc.T(L.Linkpearl.PopoutTells),
@@ -146,12 +213,30 @@ internal sealed partial class LinkpearlApp
             configuration.Save();
         }
 
+        var whilePhoneOpen = SettingsRow.Bool(behaviour.NextRow(), Loc.T(L.Linkpearl.PopoutTellsWhilePhoneOpen),
+            configuration.LinkpearlPopoutTellsWhilePhoneOpen, frameTheme, "linkpearl.settings.tellsWhilePhoneOpen",
+            null, !popTells);
+        if (whilePhoneOpen != configuration.LinkpearlPopoutTellsWhilePhoneOpen)
+        {
+            configuration.LinkpearlPopoutTellsWhilePhoneOpen = whilePhoneOpen;
+            configuration.Save();
+        }
+
         var outgoing = SettingsRow.Bool(behaviour.NextRow(), Loc.T(L.Linkpearl.PopoutOutgoingTells),
             configuration.LinkpearlPopoutOutgoingTells, frameTheme, "linkpearl.settings.outgoingTells", null,
             !popTells);
         if (outgoing != configuration.LinkpearlPopoutOutgoingTells)
         {
             configuration.LinkpearlPopoutOutgoingTells = outgoing;
+            configuration.Save();
+        }
+
+        var inBackground = SettingsRow.Bool(behaviour.NextRow(), Loc.T(L.Linkpearl.PopoutTellsInBackground),
+            configuration.LinkpearlPopoutTellsInBackground, frameTheme, "linkpearl.settings.tellsInBackground",
+            null, !popTells);
+        if (inBackground != configuration.LinkpearlPopoutTellsInBackground)
+        {
+            configuration.LinkpearlPopoutTellsInBackground = inBackground;
             configuration.Save();
         }
 
@@ -192,7 +277,7 @@ internal sealed partial class LinkpearlApp
 
         var textSizeRow = look.NextRow();
         if (SettingsRow.Disclosure(textSizeRow, Loc.T(L.Linkpearl.PopoutTextSize),
-                PercentLabel(configuration.LinkpearlPopoutTextScale), frameTheme, "linkpearl.settings.textSize"))
+                LinkpearlSettingRows.PercentLabel(configuration.LinkpearlPopoutTextScale), frameTheme, "linkpearl.settings.textSize"))
         {
             settingsMenu.Toggle("linkpearl.settings.textSize", textSizeRow);
         }
@@ -225,9 +310,9 @@ internal sealed partial class LinkpearlApp
 
     private void DrawOpacityRow(Rect row, float scale)
     {
-        configuration.LinkpearlPopoutOpacity = DrawOpacitySlider(row, scale, "linkpearl.settings.opacity",
-            Loc.T(L.Linkpearl.PopoutOpacity), configuration.LinkpearlPopoutOpacity, PopoutOpacityMinimum,
-            out var released);
+        configuration.LinkpearlPopoutOpacity = LinkpearlSettingRows.OpacitySlider(row, scale,
+            "linkpearl.settings.opacity", Loc.T(L.Linkpearl.PopoutOpacity), configuration.LinkpearlPopoutOpacity,
+            LinkpearlSettingRows.PopoutOpacityMinimum, frameTheme, out var released);
         if (released)
         {
             configuration.Save();
@@ -236,30 +321,14 @@ internal sealed partial class LinkpearlApp
 
     private void DrawIdleOpacityRow(Rect row, float scale)
     {
-        configuration.LinkpearlPopoutIdleOpacity = DrawOpacitySlider(row, scale, "linkpearl.settings.idleOpacity",
-            Loc.T(L.Linkpearl.PopoutIdleOpacity), configuration.LinkpearlPopoutIdleOpacity, IdleOpacityMinimum,
+        configuration.LinkpearlPopoutIdleOpacity = LinkpearlSettingRows.OpacitySlider(row, scale,
+            "linkpearl.settings.idleOpacity", Loc.T(L.Linkpearl.PopoutIdleOpacity),
+            configuration.LinkpearlPopoutIdleOpacity, LinkpearlSettingRows.IdleOpacityMinimum, frameTheme,
             out var released);
         if (released)
         {
             configuration.Save();
         }
-    }
-
-    private float DrawOpacitySlider(Rect row, float scale, string id, string label, float value, float minimum,
-        out bool released)
-    {
-        var labelSize = Typography.Measure(label, TextStyles.BodyEmphasized);
-        var labelWidth = row.Width * SliderLabelWidth;
-        Typography.Draw(ImGui.GetWindowDrawList(), new Vector2(row.Min.X, row.Center.Y - labelSize.Y * 0.5f),
-            Typography.FitText(label, labelWidth, TextStyles.BodyEmphasized), frameTheme.TextStrong,
-            TextStyles.BodyEmphasized);
-        var span = 1f - minimum;
-        var normalized = (Math.Clamp(value, minimum, 1f) - minimum) / span;
-        var result = Slider.Draw(id, row, normalized, frameTheme, labelWidth + Metrics.Space.Md * scale,
-            Metrics.Space.Xs * scale);
-        released = result.Released;
-        var next = minimum + result.Value * span;
-        return MathF.Abs(next - value) > OpacityEpsilon ? next : value;
     }
 
     private void DrawHistorySettings(float scale)
@@ -285,6 +354,14 @@ internal sealed partial class LinkpearlApp
 
         card.End();
         SettingsSection.Hint(Loc.T(L.Linkpearl.StoredOnThisPc), frameTheme);
+        ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
+        var exportCard = GroupCard.Begin(frameTheme, 1);
+        if (SettingsRow.Action(exportCard.NextRow(), Loc.T(L.Linkpearl.ExportHistory), frameTheme.Accent, frameTheme))
+        {
+            ShellToast.Show(Loc.T(archive.Export() is null ? L.Linkpearl.ExportFailed : L.Linkpearl.ExportedHistory));
+        }
+
+        exportCard.End();
         ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
         var dangerCard = GroupCard.Begin(frameTheme, 1);
         if (SettingsRow.Action(dangerCard.NextRow(), Loc.T(L.Linkpearl.ClearAllHistory), frameTheme.Danger, frameTheme))
@@ -295,21 +372,93 @@ internal sealed partial class LinkpearlApp
         dangerCard.End();
     }
 
+    private static readonly PopoutPlacement[] PlacementChoices =
+    {
+        PopoutPlacement.BesidePhone, PopoutPlacement.TopLeft, PopoutPlacement.TopRight, PopoutPlacement.BottomLeft,
+        PopoutPlacement.BottomRight,
+    };
+
+    private static LocString PlacementLabel(int placement) => (PopoutPlacement)placement switch
+    {
+        PopoutPlacement.TopLeft => L.Linkpearl.PlacementTopLeft,
+        PopoutPlacement.TopRight => L.Linkpearl.PlacementTopRight,
+        PopoutPlacement.BottomLeft => L.Linkpearl.PlacementBottomLeft,
+        PopoutPlacement.BottomRight => L.Linkpearl.PlacementBottomRight,
+        _ => L.Linkpearl.PlacementBesidePhone,
+    };
+
     private void DrawSettingsMenu(Rect area)
     {
+        if (settingsMenu.IsOpenFor("linkpearl.settings.placement"))
+        {
+            settingsItems.Clear();
+            for (var index = 0; index < PlacementChoices.Length; index++)
+            {
+                settingsItems.Add(new DropdownMenu.Item(Loc.T(PlacementLabel((int)PlacementChoices[index])),
+                    string.Empty, false, configuration.LinkpearlPopoutPlacement == (int)PlacementChoices[index]));
+            }
+
+            var pickedPlacement = settingsMenu.Draw(area, frameTheme, CollectionsMarshal.AsSpan(settingsItems));
+            if (pickedPlacement >= 0)
+            {
+                configuration.LinkpearlPopoutPlacement = (int)PlacementChoices[pickedPlacement];
+                configuration.LinkpearlPopoutLastPlacement = null;
+                configuration.Save();
+            }
+
+            return;
+        }
+
+        if (settingsMenu.IsOpenFor("linkpearl.settings.layout"))
+        {
+            settingsItems.Clear();
+            var bubbles = configuration.LinkpearlDefaultDensity == (int)ChatDensity.Bubbles;
+            settingsItems.Add(new DropdownMenu.Item(Loc.T(L.Linkpearl.LayoutLog), string.Empty, false, !bubbles));
+            settingsItems.Add(new DropdownMenu.Item(Loc.T(L.Linkpearl.LayoutBubbles), string.Empty, false, bubbles));
+            var pickedLayout = settingsMenu.Draw(area, frameTheme, CollectionsMarshal.AsSpan(settingsItems));
+            if (pickedLayout >= 0)
+            {
+                configuration.LinkpearlDefaultDensity = pickedLayout == 1
+                    ? (int)ChatDensity.Bubbles
+                    : (int)ChatDensity.Log;
+                configuration.Save();
+            }
+
+            return;
+        }
+
+        if (settingsMenu.IsOpenFor("linkpearl.settings.textScale"))
+        {
+            settingsItems.Clear();
+            for (var index = 0; index < LinkpearlSettingRows.TextScaleChoices.Length; index++)
+            {
+                settingsItems.Add(new DropdownMenu.Item(LinkpearlSettingRows.PercentLabel(LinkpearlSettingRows.TextScaleChoices[index]), string.Empty, false,
+                    MathF.Abs(LinkpearlSettingRows.TextScaleChoices[index] - configuration.LinkpearlTextScale) < 0.01f));
+            }
+
+            var pickedScale = settingsMenu.Draw(area, frameTheme, CollectionsMarshal.AsSpan(settingsItems));
+            if (pickedScale >= 0)
+            {
+                configuration.LinkpearlTextScale = LinkpearlSettingRows.TextScaleChoices[pickedScale];
+                configuration.Save();
+            }
+
+            return;
+        }
+
         if (settingsMenu.IsOpenFor("linkpearl.settings.textSize"))
         {
             settingsItems.Clear();
-            for (var index = 0; index < TextScaleChoices.Length; index++)
+            for (var index = 0; index < LinkpearlSettingRows.TextScaleChoices.Length; index++)
             {
-                settingsItems.Add(new DropdownMenu.Item(PercentLabel(TextScaleChoices[index]), string.Empty, false,
-                    MathF.Abs(TextScaleChoices[index] - configuration.LinkpearlPopoutTextScale) < 0.01f));
+                settingsItems.Add(new DropdownMenu.Item(LinkpearlSettingRows.PercentLabel(LinkpearlSettingRows.TextScaleChoices[index]), string.Empty, false,
+                    MathF.Abs(LinkpearlSettingRows.TextScaleChoices[index] - configuration.LinkpearlPopoutTextScale) < 0.01f));
             }
 
             var picked = settingsMenu.Draw(area, frameTheme, CollectionsMarshal.AsSpan(settingsItems));
             if (picked >= 0)
             {
-                configuration.LinkpearlPopoutTextScale = TextScaleChoices[picked];
+                configuration.LinkpearlPopoutTextScale = LinkpearlSettingRows.TextScaleChoices[picked];
                 configuration.Save();
             }
 
@@ -356,7 +505,4 @@ internal sealed partial class LinkpearlApp
                 threadKey = string.Empty;
             },
         });
-
-    private static string PercentLabel(float value) =>
-        string.Concat(MathF.Round(value * 100f).ToString(Loc.Culture), "%");
 }

@@ -22,13 +22,13 @@ internal sealed partial class MessageApp
     private const float HeroActionGap = 8f;
     private const float NotesCardHeight = 96f;
 
-    private static readonly Vector4 TintGold = new(0.93f, 0.68f, 0.18f, 1f);
-    private static readonly Vector4 TintRed = new(0.92f, 0.33f, 0.31f, 1f);
-    private static readonly Vector4 TintTeal = new(0.13f, 0.63f, 0.62f, 1f);
-    private static readonly Vector4 TintAzure = new(0.20f, 0.55f, 0.92f, 1f);
-    private static readonly Vector4 TintSlate = new(0.50f, 0.54f, 0.60f, 1f);
-    private static readonly Vector4 TintGreen = new(0.20f, 0.68f, 0.38f, 1f);
-    private static readonly Vector4 TintViolet = new(0.60f, 0.45f, 0.92f, 1f);
+    private static readonly Vector4 TintGold = ChatListChrome.TintGold;
+    private static readonly Vector4 TintRed = ChatListChrome.TintRed;
+    private static readonly Vector4 TintTeal = ChatListChrome.TintTeal;
+    private static readonly Vector4 TintAzure = ChatListChrome.TintAzure;
+    private static readonly Vector4 TintSlate = ChatListChrome.TintSlate;
+    private static readonly Vector4 TintGreen = ChatListChrome.TintGreen;
+    private static readonly Vector4 TintViolet = ChatListChrome.TintViolet;
 
     private string notesDraft = string.Empty;
     private string? notesLoadedFor;
@@ -165,7 +165,7 @@ internal sealed partial class MessageApp
     private float DrawContactNameEditor(ContactDto contact, float left, float width, float nameY, float scale)
     {
         var fieldHeight = FieldHeight * scale;
-        var iconRadius = 15f * scale;
+        var iconRadius = RoundButton.SmallRadius * scale;
         var gap = 10f * scale;
         var iconSpan = (iconRadius * 2f + gap) * 2f;
         var top = nameY;
@@ -175,16 +175,16 @@ internal sealed partial class MessageApp
         var centerY = top + fieldHeight * 0.5f;
         var saveCenter = new Vector2(fieldRect.Max.X + gap + iconRadius, centerY);
         var canSave = !renameBusy && !string.Equals(contactNameDraft.Trim(), contact.Alias, StringComparison.Ordinal);
-        var saveBackground = canSave ? ui.Accent : ui.FieldSurface;
-        var saveInk = canSave ? White : ui.MutedInk;
-        if ((ui.IconButton(saveCenter, iconRadius, PhoneIcons.Check, saveInk, saveBackground, 0.95f,
-                Loc.T(L.DirectMessages.Save), HoverLabelSide.Below) || submitted) && canSave)
+        var drawList = ImGui.GetWindowDrawList();
+        if ((RoundButton.Icon(drawList, saveCenter, iconRadius, PhoneIcons.Check, ui.Ink,
+                canSave ? ButtonStyle.Prominent : ButtonStyle.Gray, Loc.T(L.DirectMessages.Save),
+                HoverLabelSide.Below) || submitted) && canSave)
         {
             SubmitRename(contact.UserId);
         }
 
         var cancelCenter = new Vector2(saveCenter.X + iconRadius + gap + iconRadius, centerY);
-        if (ui.IconButton(cancelCenter, iconRadius, PhoneIcons.X, ui.MutedInk, ui.FieldSurface, 0.95f,
+        if (RoundButton.Icon(drawList, cancelCenter, iconRadius, PhoneIcons.X, ui.Ink, ButtonStyle.Gray,
                 Loc.T(L.Common.Cancel), HoverLabelSide.Below))
         {
             editingContactName = false;
@@ -319,7 +319,7 @@ internal sealed partial class MessageApp
         var pad = 12f * scale;
         var cardMin = origin;
         var cardMax = new Vector2(origin.X + width, origin.Y + NotesCardHeight * scale);
-        ui.Card(ImGui.GetWindowDrawList(), cardMin, cardMax, Metrics.Radius.Md * scale);
+        ui.Card(ImGui.GetWindowDrawList(), cardMin, cardMax, Metrics.Radius.Grouped * scale);
         ImGui.SetCursorScreenPos(cardMin + new Vector2(pad, pad));
         var inputWidth = cardMax.X - cardMin.X - pad * 2f;
         var wrapWidth = inputWidth - ImGui.GetStyle().FramePadding.X * 2f - 4f * scale;

@@ -14,7 +14,8 @@ This page explains where Aetherphone keeps every kind of data: plugin settings, 
 | src/Aetherphone/Core/Aethernet/AethernetSession.cs | Active account state; stashes and loads per-character session snapshots |
 | src/Aetherphone/Core/Aethernet/CharacterSessionManager.cs | Drives session switching every frame from the played character |
 | src/Aetherphone/Core/Aethernet/CharacterSession.cs | The serialized per-character token and key-cache snapshot |
-| src/Aetherphone/Core/Photos/PhotoLibrary.cs | Photo storage, `AEP_` naming, import and delete |
+| src/Aetherphone/Core/Photos/PhotoLibrary.cs | Photo storage, `AEP_` naming, import, edited copies, and delete |
+| src/Aetherphone/Core/Photos/PhotoEdit.cs, PhotoEditor.cs | The edit recipe (orientation, straighten, adjustments, looks) and the scalar pixel pipeline that applies it |
 | src/Aetherphone/Core/Photos/ScreenshotImportService.cs | Watches screenshot folders and copies new captures into the library |
 | src/Aetherphone/Core/GameChat/ChatArchive.cs | Per-character game chat history on disk, one file per conversation |
 | src/Aetherphone/Core/Linkpearl/MessageArchive.cs | The legacy /tell archive, read once to migrate into ChatArchive |
@@ -97,6 +98,7 @@ Per-character state comes in two shapes:
 **Dictionaries inside `Configuration`, keyed by `ulong` ContentId.** Used when the per-character payload is small:
 
 - `JobsCategoriesByCharacter` (custom gearset categories)
+- `LookByCharacter` (which saved Look, a bundle of home layout, theme, accent, case and wallpapers, each character uses; `HomeLookService` in src/Aetherphone/Core/Home/ swaps the flat appearance fields when the character changes, the same mirror pattern `AethernetSession` uses for account slots)
 - `MutedLinkshellsByCharacter` (legacy per-character linkshell mutes; nothing writes it anymore, and its only reader is `TabStore.ReadLegacyMutes`, which seeds mute state for newly created Linkpearl tabs)
 - `CharacterSessions` (account session snapshots, see below)
 
@@ -110,7 +112,7 @@ Per-character state comes in two shapes:
 | `<config>/Health/<CONTENTID>.json` (uppercase hex) | Health tracker samples | `HealthStore` (src/Aetherphone/Core/Health/HealthStore.cs) |
 | `<config>/cache/inventory/<contentid>.json` (lowercase hex) | Inventory snapshots | `InventoryStore` (src/Aetherphone/Core/Inventory/InventoryStore.cs) |
 
-Exactly two stores subscribe to `CharacterWatch.Changed` today: `ChatArchive` and `TabStore` (both in src/Aetherphone/Core/GameChat/). The others reach per-character state differently: `HealthTracker` polls `watch.CurrentContentId` on its own sample tick and swaps profiles when it changes, while `ActivityTracker` and the inventory capture path read the current ContentId straight from game state on their own ticks and receive no `CharacterWatch` at all. `ChatArchive.OnCharacterChanged` shows the reload pattern, verbatim from src/Aetherphone/Core/GameChat/ChatArchive.cs:
+Three services subscribe to `CharacterWatch.Changed` today: `ChatArchive` and `TabStore` (both in src/Aetherphone/Core/GameChat/) and `HomeLookService` (src/Aetherphone/Core/Home/). The others reach per-character state differently: `HealthTracker` polls `watch.CurrentContentId` on its own sample tick and swaps profiles when it changes, while `ActivityTracker` and the inventory capture path read the current ContentId straight from game state on their own ticks and receive no `CharacterWatch` at all. `ChatArchive.OnCharacterChanged` shows the reload pattern, verbatim from src/Aetherphone/Core/GameChat/ChatArchive.cs:
 
 ```csharp
 private void OnCharacterChanged(ulong contentId)
@@ -164,11 +166,12 @@ All user media lives under `<config>` next to the config file. Bundled read-only
 | --- | --- |
 | `<config>/Photos/` | The photo library: camera saves and imported screenshots |
 | `<config>/Photos/.thumbs/` | JPEG thumbnails, one per photo (`PhotoLibrary.ThumbnailPathFor`) |
+| `<config>/Photos/.trash/` | Recently Deleted: `PhotoLibrary.Delete` moves photos here and stamps the file creation time; `PurgeExpired` removes them 30 days later, `Restore` moves them back |
 | `<config>/Sounds/Ringtones/`, `<config>/Sounds/Notifications/` | User custom sounds (mp3, wav), copied in by `SoundLibrary.AddUserFile` |
 | `<config>/Wallpapers/` | Imported wallpapers, named `custom-<guid>` by `WallpaperLibrary.AddCustom` |
 | `<config>/cache/media/`, `.../images/`, `.../audio/`, `.../collections/` | `DiskCache` folders with byte budgets of 64, 128, 256, and 32 MB (set in `PhoneServices.Build`) |
 
-**Photos and the `AEP_` prefix.** `PhotoLibrary.Save` names camera captures `AEP_yyyyMMdd_HHmmss_fff.png`. `PhotoLibrary.Import` *copies* (never moves) an external file into the library under the same `AEP_` pattern, stamping the name from the taken timestamp its caller passes in and probing up to 100 millisecond offsets to avoid collisions. `ScreenshotImportService` feeds it: while `Configuration.ImportScreenshots` is on, it watches the game's screenshot folder plus ReShade and GShade save paths, waits for each new file to finish writing, then imports it with the file's last write time as the taken timestamp. The Photos app derives a photo's taken-date by parsing that name (`ResolveTaken` in src/Aetherphone/Apps/Photos/PhotosApp.cs), falling back to the file's write time.
+**Photos and the `AEP_` prefix.** `PhotoLibrary.Save` names camera captures `AEP_yyyyMMdd_HHmmss_fff.png`. `PhotoLibrary.Import` *copies* (never moves) an external file into the library under the same `AEP_` pattern, stamping the name from the taken timestamp its caller passes in and probing up to 100 millisecond offsets to avoid collisions. `ScreenshotImportService` feeds it: while `Configuration.ImportScreenshots` is on, it watches the game's screenshot folder plus ReShade and GShade save paths, waits for each new file to finish writing, then imports it with the file's last write time as the taken timestamp. The Photos app derives a photo's taken-date by parsing that name (`ResolveTaken` in src/Aetherphone/Apps/Photos/PhotosApp.cs), falling back to the file's write time. Editing never rewrites a file: the editor in the Photos viewer renders the recipe (`PhotoEditor.Apply`, then the crop) over the full-resolution source and hands the result to `PhotoLibrary.SaveEdited`, which writes a new `AEP_` PNG stamped with the current time beside the untouched original, so an edit sorts as the newest photo and reverting is deleting the copy.
 
 **Custom sounds.** `SoundLibrary` merges bundled and user folders; config properties like `RingtoneSound` store a token of the form `file:<name>` (`SoundTokens.FilePrefix`), never a path. `TryResolvePath` prefers the user folder over the bundled one for the same file name.
 

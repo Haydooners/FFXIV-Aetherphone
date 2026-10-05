@@ -6,6 +6,10 @@ namespace Aetherphone.Core.Health;
 internal static class HealthFormat
 {
     public const double YalmsPerMalm = 1760d;
+    public const double GlassMillilitres = 250d;
+    public const double MinServingMillilitres = 50d;
+    public const double MaxServingMillilitres = 2000d;
+    public const double MetricServingStep = 50d;
 
     private const double MetresPerYalm = 1d;
     private const double FeetPerMetre = 3.28084d;
@@ -86,6 +90,48 @@ internal static class HealthFormat
         };
     }
 
+    public static string WeightNumber(double kg, HealthUnits units) =>
+        WeightFromKg(Sane(kg), units).ToString("0.0", Culture);
+
+    public static string WeightUnit(HealthUnits units) => Loc.T(units switch
+    {
+        HealthUnits.Metric => L.Health.WeightUnitKg,
+        HealthUnits.Imperial => L.Health.WeightUnitLb,
+        _ => L.Health.WeightUnitPonz,
+    });
+
+    public static string WeightPrecise(double kg, HealthUnits units) =>
+        string.Concat(WeightNumber(kg, units), " ", WeightUnit(units));
+
+    public static string WeightChange(double deltaKg, HealthUnits units)
+    {
+        var magnitude = WeightFromKg(Math.Abs(deltaKg), units);
+        var sign = deltaKg > 0d ? "+" : deltaKg < 0d ? "-" : string.Empty;
+        return string.Concat(sign, magnitude.ToString("0.0", Culture), " ", WeightUnit(units));
+    }
+
+    public static double ServingStep(HealthUnits units) =>
+        units == HealthUnits.Imperial ? MlPerFlOz : MetricServingStep;
+
+    public static double SnapServing(double millilitres, HealthUnits units)
+    {
+        var step = ServingStep(units);
+        var snapped = Math.Round(millilitres / step) * step;
+        return Math.Clamp(snapped, MinServingMillilitres, MaxServingMillilitres);
+    }
+
+    public static (string Value, string Unit) DistanceParts(double yalms, HealthUnits units) =>
+        Split(Distance(yalms, units));
+
+    public static (string Value, string Unit) VolumeParts(double millilitres, HealthUnits units) =>
+        Split(Volume(millilitres, units));
+
+    private static (string Value, string Unit) Split(string text)
+    {
+        var space = text.IndexOf(' ');
+        return space <= 0 ? (text, string.Empty) : (text[..space], text[(space + 1)..]);
+    }
+
     public static double WeightToKg(double value, HealthUnits units) =>
         units == HealthUnits.Metric ? value : value / LbPerKg;
 
@@ -124,8 +170,23 @@ internal static class HealthFormat
         GoalKeys.Drinks4 => Loc.T(L.Health.DefaultGoalDrinks),
         GoalKeys.Active30 => Loc.T(L.Health.DefaultGoalActive30),
         GoalKeys.New => Loc.T(L.Health.NewGoal),
-        _ => goal.Name.Length > 0 ? goal.Name : Loc.T(L.Health.GoalFallback),
+        _ => goal.Name.Length > 0 ? goal.Name : GoalTypeName(goal.Type),
     };
+
+    public static string GoalTypeName(HealthGoalType type) => Loc.T(type switch
+    {
+        HealthGoalType.Steps => L.Health.TypeSteps,
+        HealthGoalType.OnFootDistance => L.Health.TypeOnFootDistance,
+        HealthGoalType.WalkDistance => L.Health.TypeWalkingDistance,
+        HealthGoalType.RunDistance => L.Health.TypeRunningDistance,
+        HealthGoalType.SwimDistance => L.Health.TypeSwimmingDistance,
+        HealthGoalType.ActiveTime => L.Health.TypeActiveTime,
+        HealthGoalType.HydrationCount => L.Health.TypeDrinksLogged,
+        HealthGoalType.HydrationVolume => L.Health.TypeDrinkVolume,
+        HealthGoalType.Teleports => L.Health.TypeTeleports,
+        HealthGoalType.TeleportDistance => L.Health.TypeTeleportDistance,
+        _ => L.Health.TypeEnergy,
+    });
 
     public static long Steps(double onFootYalms, double strideYalms)
     {
@@ -187,9 +248,6 @@ internal static class HealthFormat
         var t = Math.Clamp(heightSlider / 100d, 0d, 1d);
         return r.FactorCm * (r.Min + (r.Max - r.Min) * t);
     }
-
-    public static double SuggestStride(double heightCm) =>
-        heightCm > 0 ? Math.Clamp(heightCm * 0.00415d, 0.30d, 1.50d) : 0.75d;
 
     private static double Sane(double value) => double.IsFinite(value) && value > 0 ? value : 0d;
 }

@@ -173,7 +173,9 @@ internal interface INavigator
 
 ### The back button
 
-`AppHeader.Draw(in PhoneContext context, string title, Action? onBack = null)` (src/Aetherphone/Windows/Components/AppHeader.cs) draws the title and the back chevron. When clicked it invokes `onBack` if you passed one, otherwise `context.Navigation.Back()`, which leaves the app. The standard wiring is a cached delegate that pops the router while it has depth, so the chevron walks your screen stack first and exits the app only from the root:
+`AppHeader.Draw(in PhoneContext context, string title, Action? onBack = null)` (src/Aetherphone/Windows/Components/Layout/AppHeader.cs) draws the inline title and the back chevron. When clicked it invokes `onBack` if you passed one, otherwise `context.Navigation.Back()`, which leaves the app. The standard wiring is a cached delegate that pops the router while it has depth, so the chevron walks your screen stack first and exits the app only from the root:
+
+Top-level screens can opt into the collapsing large title instead: `var navBar = AppHeader.BeginLargeTitle(context);` before the body, pass `navBar.Body` to `AppSurface.Begin` (the surface extends under the bar and reserves the title band, so content scrolls beneath it), and after the body call `AppHeader.EndLargeTitle(in navBar, context, id, title, NavBarStyle.From(ui), buttons, backTitle, onBack)`. The collapse follows the surface's scroll offset directly, the back control shows the previous screen's title (take it from the router, `router.TryGetView(depth - 2, out var previous)`), and `buttons` is a preallocated `NavBarButton[]` of at most two glass circles; the return value is the pressed button index or -1. Notes, Calendar and Settings are the reference adopters.
 
 ```csharp
 internal sealed class RecipeApp : IPhoneApp
@@ -276,7 +278,7 @@ Dismissing the sheet (`ShareService.Dismiss`) clears `Pending` but intentionally
 - The grid is 4 columns (`Columns`) by 5 to 8 rows (`MinRows`/`MaxRows`, default 6), plus a dock of up to 4 apps (`DockCapacity`).
 - Pages hold `HomeTile` items: an app, a shortcut, a folder of apps and/or shortcuts, or a widget. Layout is persisted as `HomeLayout` (src/Aetherphone/Core/Home/HomeLayout.cs) with per-item `Column`/`Row`, the `Installed` app list, the `Known` list (apps the user has ever seen), and the `Dock`.
 - Placement is free-form and sticky: each tile keeps its saved `GridCell`, and the solver (`HomeGridSolver`) only assigns cells to tiles that have none or that conflict. Removing a tile leaves a hole; the grid never auto-compacts.
-- `Installed` decides which apps exist on the phone. First run seeds it with every available app; installing via the App Store app (`AppStoreApp`, id `"appstore"`) appends a tile to the last page. `MandatoryApps` (`"appstore"`, `"settings"`, `"announcements"`) cannot be uninstalled.
+- `Installed` decides which apps exist on the phone. First run seeds it with every available app; installing via the App Store app (`AppStoreApp`, id `"appstore"`) appends a tile to the last page. `MandatoryApps` (`"appstore"`, `"settings"`, `"announcements"`, `"messages"` for Linkpearl, `"camera"`, `"photos"`, `"notifications"`) cannot be uninstalled, show no remove badge in edit mode, come back on the next load if a saved layout lacks them, and appear in the App Store as Built in (Open, no Remove).
 - `AppInstaller` (src/Aetherphone/Core/Home/AppInstaller.cs) is the facade other systems use: `IsInstalled` (which also folds in availability), `Install`, `Uninstall`, and `Gate(appId)` returning an `AppGate` that background services (alarm timers, reminders) check before emitting notifications for an app that may be uninstalled.
 
 State persistence details live in [State and persistence](state-and-persistence.md).
@@ -370,7 +372,7 @@ internal struct RefreshCadence
 }
 ```
 
-`Advance` accumulates frame time and returns true once the interval has elapsed; you then do the work and call `Reset`. `FishingApp` refreshes its voyage table every 5 seconds this way, and `TimersApp` and `ActivityApp` use the same pattern. Keep it for cheap local recomputation; network polling belongs in stores with their own cadence (see [Networking](networking.md)).
+`Advance` accumulates frame time and returns true once the interval has elapsed; you then do the work and call `Reset`. `FishingApp` refreshes its voyage table every 5 seconds this way, and `TimersApp` uses the same pattern. Keep it for cheap local recomputation; network polling belongs in stores with their own cadence (see [Networking](networking.md)).
 
 ## Gotchas
 

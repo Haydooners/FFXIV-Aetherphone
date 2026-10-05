@@ -1,4 +1,5 @@
 using Aetherphone.Core.Clock;
+using Aetherphone.Core.Game;
 using Aetherphone.Core.Home;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Runtime;
@@ -9,17 +10,18 @@ namespace Aetherphone.Core.Notifications;
 internal sealed class ClockAlarmService : IDisposable
 {
     private const long TickIntervalMilliseconds = 1000;
-    private static readonly TimeSpan CatchUpWindow = TimeSpan.FromMinutes(10);
     private static readonly Vector4 Accent = new(1.00f, 0.58f, 0.00f, 1f);
     private readonly Configuration configuration;
     private readonly FrameworkTicker ticker;
     private readonly NotificationService notifications;
+    private readonly AlarmRinger ringer;
 
     public ClockAlarmService(Configuration configuration, IFramework framework, NotificationService notifications,
-        AppGate gate)
+        AlarmRinger ringer, AppGate gate)
     {
         this.configuration = configuration;
         this.notifications = notifications;
+        this.ringer = ringer;
         ticker = new FrameworkTicker(framework, TickIntervalMilliseconds, OnTick, gate);
     }
 
@@ -30,7 +32,8 @@ internal sealed class ClockAlarmService : IDisposable
 
     private void OnTick()
     {
-        var dirty = CheckAlarms(DateTime.Now);
+        ringer.Tick(DateTime.UtcNow);
+        var dirty = CheckAlarms(DateTime.Now, DateTime.UtcNow);
         dirty |= CheckTimer(DateTime.UtcNow);
         if (dirty)
         {
@@ -38,19 +41,18 @@ internal sealed class ClockAlarmService : IDisposable
         }
     }
 
-    private bool CheckAlarms(DateTime nowLocal)
+    private bool CheckAlarms(DateTime nowLocal, DateTime nowUtc)
     {
         var dirty = false;
         var alarms = configuration.Alarms;
         for (var index = 0; index < alarms.Count; index++)
         {
             var alarm = alarms[index];
-            if (!alarm.Enabled || !TryResolveDue(alarm, nowLocal, out var due))
+            if (!alarm.Enabled || !AlarmSchedule.TryResolveDue(alarm, nowLocal, nowUtc, out var dueUtc, out var key))
             {
                 continue;
             }
 
-            var key = AlarmSchedule.MinuteKey(due);
             if (alarm.LastFiredEpochMinute == key)
             {
                 continue;
@@ -64,34 +66,17 @@ internal sealed class ClockAlarmService : IDisposable
 
             dirty = true;
             var title = alarm.Label.Length > 0 ? alarm.Label : Loc.T(L.Clock.Alarm);
-            notifications.Notify(new PhoneNotification("clock", title, TimeText.Clock(due), DateTime.Now, Accent));
+            var body = alarm.Eorzea
+                ? Loc.T(L.Clock.EorzeaTimeOf, new EorzeaTime(alarm.Hour, alarm.Minute).Formatted)
+                : TimeText.Clock(dueUtc.ToLocalTime());
+            notifications.Notify(new PhoneNotification("clock", title, body, DateTime.Now, Accent)
+            {
+                Muted = true,
+            });
+            ringer.Ring(AlarmRingKind.Alarm, alarm.Label, nowUtc, alarm.SnoozeLength);
         }
 
         return dirty;
-    }
-
-    private static bool TryResolveDue(AlarmEntry alarm, DateTime nowLocal, out DateTime due)
-    {
-        due = default;
-        for (var dayOffset = 0; dayOffset <= 1; dayOffset++)
-        {
-            var candidate = nowLocal.Date.AddDays(-dayOffset).AddHours(alarm.Hour).AddMinutes(alarm.Minute);
-            var elapsed = nowLocal - candidate;
-            if (elapsed < TimeSpan.Zero || elapsed > CatchUpWindow)
-            {
-                continue;
-            }
-
-            if (alarm.Repeats && !alarm.RepeatsOn(candidate.DayOfWeek))
-            {
-                continue;
-            }
-
-            due = candidate;
-            return true;
-        }
-
-        return false;
     }
 
     private bool CheckTimer(DateTime utcNow)
@@ -102,8 +87,13 @@ internal sealed class ClockAlarmService : IDisposable
         }
 
         configuration.TimerNotified = true;
-        notifications.Notify(new PhoneNotification("clock", Loc.T(L.Clock.TimerTitle), Loc.T(L.Clock.TimerFinished),
-            DateTime.Now, Accent));
+        var label = configuration.TimerLabel;
+        notifications.Notify(new PhoneNotification("clock", label.Length > 0 ? label : Loc.T(L.Clock.TimerTitle),
+            Loc.T(L.Clock.TimerFinished), DateTime.Now, Accent)
+        {
+            Muted = true,
+        });
+        ringer.Ring(AlarmRingKind.Timer, label, DateTime.UtcNow);
         return true;
     }
 }

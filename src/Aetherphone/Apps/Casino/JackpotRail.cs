@@ -12,7 +12,6 @@ internal sealed class JackpotRail
 {
     public const float Height = 116f;
 
-    private const float Rounding = 24f;
     private const float Inset = 18f;
     private const float AmountMaxScale = 2.30f;
     private const float AmountMinScale = 1.15f;
@@ -39,26 +38,21 @@ internal sealed class JackpotRail
         meterFill.SnapTo(0f);
     }
 
-    public bool Draw(AppSkin ui, long chips)
+    public bool Draw(AppSkin ui, long chips, Vector2 origin, float width, out float bottom)
     {
         var scale = UiScale.Current;
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
         var drawList = ImGui.GetWindowDrawList();
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
         var height = Height * scale;
-        var min = origin;
-        var max = new Vector2(origin.X + width, origin.Y + height);
-        var rounding = Rounding * scale;
-        var hovered = UiInteract.Hover(min, max);
+        var restMax = new Vector2(origin.X + width, origin.Y + height);
+        var rounding = Metrics.Radius.Widget * scale;
+        var hovered = CasinoArt.PressCard(ImGui.GetID(HintMarqueeId), origin, restMax, out var min, out var max);
 
-        Elevation.Card(drawList, min, max, rounding, scale, 0.95f);
         Squircle.FillVerticalGradient(drawList, min, max, rounding,
             ImGui.GetColorU32(Crown), ImGui.GetColorU32(Bed));
         if (hovered)
         {
             Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(ui.HoverTint));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
         Squircle.Stroke(drawList, min, max, rounding,
@@ -101,12 +95,9 @@ internal sealed class JackpotRail
             available, TextStyles.Footnote, Palette.WithAlpha(Ink, 0.72f), hovered);
 
         DrawMeter(drawList, min, max, coins, delta, scale);
-        Material.EdgeSquircle(drawList, min, max, rounding, scale);
 
-        var clicked = UiInteract.Click(min, max, hovered);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Sm * scale));
-        return clicked;
+        bottom = restMax.Y;
+        return UiInteract.Click(origin, restMax, hovered);
     }
 
     private static void DrawBulbs(ImDrawListPtr drawList, Vector2 min, Vector2 max, float scale)

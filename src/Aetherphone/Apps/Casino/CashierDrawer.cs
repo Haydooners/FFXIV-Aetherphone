@@ -5,6 +5,7 @@ using Aetherphone.Core.Casino;
 using Aetherphone.Core.Coins;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -17,14 +18,14 @@ internal sealed class CashierDrawer
     private const ImGuiWindowFlags OverlayFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
                                                   ImGuiWindowFlags.NoBackground;
 
-    private const float RevealSmoothTime = 0.16f;
     private const float MaxDim = 0.45f;
-    private const float PanelRounding = 26f;
+    private const float GrabberTop = 8f;
     private const float PadX = 18f;
     private const float SectionGap = 10f;
     private const float SummaryRowHeight = 22f;
     private const float CardPad = 12f;
-    private const float PillHeight = 44f;
+    private const float PillHeight = Button.LargeHeight;
+    private const float HintGap = 6f;
     private const float LotHeight = 42f;
     private const float LotGap = 8f;
     private const int LotColumns = 2;
@@ -59,6 +60,7 @@ internal sealed class CashierDrawer
 
         open = true;
         openedFrame = ImGui.GetFrameCount();
+        UiFeedback.Play(UiSound.SheetPresent);
         selectedLot = 0;
         lotPinned = false;
         inlineReason = string.Empty;
@@ -79,7 +81,13 @@ internal sealed class CashierDrawer
 
     public void Close()
     {
+        if (!open)
+        {
+            return;
+        }
+
         open = false;
+        UiFeedback.Play(UiSound.SheetDismiss);
     }
 
     public void Gate()
@@ -94,7 +102,7 @@ internal sealed class CashierDrawer
     {
         ConsumeResults(openLimits);
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        reveal.Step(open ? 1f : 0f, RevealSmoothTime, delta);
+        reveal.Step(open ? 1f : 0f, Motion.Sheet, delta);
         if (!open && reveal.IsResting(0f, 0.001f, 0.005f))
         {
             reveal.SnapTo(0f);
@@ -102,15 +110,13 @@ internal sealed class CashierDrawer
         }
 
         var opacity = Math.Clamp(reveal.Value, 0f, 1f);
-        var slide = Easing.EaseOutQuint(opacity);
         ImGui.SetCursorScreenPos(screen.Min);
         using (ImRaii.Child("##cashierDrawer", screen.Size, false, OverlayFlags))
         {
             var drawList = ImGui.GetWindowDrawList();
-            drawList.AddRectFilled(screen.Min, screen.Max,
-                ImGui.GetColorU32(new Vector4(0f, 0f, 0f, MaxDim * opacity)));
+            Material.Veil(drawList, screen.Min, screen.Max, MaxDim * opacity);
             var interactive = open && confirm.Active is null && opacity > 0.5f;
-            var panel = DrawPanel(screen, ui, drawList, slide, interactive);
+            var panel = DrawPanel(screen, ui, drawList, opacity, interactive);
             if (!interactive)
             {
                 return;
@@ -128,12 +134,22 @@ internal sealed class CashierDrawer
         var sitting = store.TakeSittingResult();
         if (sitting is not null)
         {
+            if (sitting.Granted)
+            {
+                UiFeedback.Play(UiSound.CasinoChips);
+            }
+
             HandleOutcome(sitting.Reason, openLimits, true);
         }
 
         var closed = store.TakeCloseResult();
         if (closed is not null)
         {
+            if (closed.Granted)
+            {
+                UiFeedback.Play(UiSound.Payout);
+            }
+
             HandleOutcome(closed.Reason, openLimits, false);
         }
 
@@ -227,22 +243,31 @@ internal sealed class CashierDrawer
         var stakeHeight = stakeBlocked
             ? 0f
             : (18f + 6f + lotRows * LotHeight + (lotRows - 1) * LotGap + SectionGap + PillHeight) * scale;
-        var cashOutHeight = sittingOpen ? (SectionGap + PillHeight + 20f) * scale : 0f;
-        var panelHeight = 14f * scale + titleHeight + SectionGap * scale + summaryHeight + SectionGap * scale
+        var cashOutHeight = sittingOpen
+            ? (SectionGap + PillHeight + HintGap) * scale +
+              Typography.MeasureWrappedBlock(Loc.T(L.Casino.CashOutHint), TextStyles.Footnote, innerWidth).Y
+            : 0f;
+        var grabberBlock = (GrabberTop + Metrics.Size.GrabberHeight + Metrics.Space.Md) * scale;
+        var panelHeight = grabberBlock + titleHeight + SectionGap * scale + summaryHeight + SectionGap * scale
             + noticeHeight + reasonHeight + stakeHeight + cashOutHeight + 18f * scale;
 
         var panelBottom = screen.Max.Y + panelHeight * (1f - slide);
         var panelTop = panelBottom - panelHeight;
         var panelMin = new Vector2(screen.Min.X, panelTop);
         var panelMax = new Vector2(screen.Max.X, panelBottom);
-        var rounding = PanelRounding * scale;
-        Squircle.Fill(drawList, panelMin, panelMax, rounding,
-            ImGui.GetColorU32(Palette.Lighten(ui.Palette.BackdropTop, 0.10f) with { W = 1f }));
-        Squircle.Stroke(drawList, panelMin, panelMax, rounding,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, 0.08f)), Metrics.Stroke.Hairline);
+        var rounding = ui.Theme.ScreenRounding * scale;
+        var skin = CasinoArt.Sheet(ui);
+        Squircle.Fill(drawList, panelMin, panelMax, rounding, ImGui.GetColorU32(skin.Panel));
+        Squircle.Stroke(drawList, panelMin, panelMax, rounding, ImGui.GetColorU32(skin.Stroke),
+            Metrics.Stroke.Hairline);
+        var grabberWidth = Metrics.Size.GrabberWidth * scale;
+        var grabberHeight = Metrics.Size.GrabberHeight * scale;
+        var grabberMin = new Vector2(screen.Center.X - grabberWidth * 0.5f, panelTop + GrabberTop * scale);
+        drawList.AddRectFilled(grabberMin, grabberMin + new Vector2(grabberWidth, grabberHeight),
+            ImGui.GetColorU32(skin.Grabber), grabberHeight * 0.5f);
 
         var left = panelMin.X + PadX * scale;
-        var y = panelTop + 14f * scale;
+        var y = panelTop + grabberBlock;
         Typography.DrawCentered(drawList, new Vector2(screen.Center.X, y + titleHeight * 0.5f),
             Loc.T(L.Casino.Cashier), ui.TitleInk, TextStyles.Headline);
         y += titleHeight + SectionGap * scale;
@@ -284,8 +309,7 @@ internal sealed class CashierDrawer
         var height = rows * SummaryRowHeight * scale + CardPad * 2f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + innerWidth, y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(ui.Palette.CardFill));
-        Material.EdgeSquircle(drawList, min, max, 16f * scale, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
 
         var rowY = min.Y + CardPad * scale;
         var balanceText = NumberText.Group(wallet?.Balance ?? 0);
@@ -332,8 +356,7 @@ internal sealed class CashierDrawer
         var height = titleSize.Y + hintBlock.Y + pad * 2f + 6f * scale;
         var min = new Vector2(left, y);
         var max = new Vector2(left + innerWidth, y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(ui.Palette.CardFill));
-        Material.EdgeSquircle(drawList, min, max, 16f * scale, scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), title, ui.Accent,
             TextStyles.FootnoteEmphasized);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad + titleSize.Y + 6f * scale), hint,
@@ -349,9 +372,9 @@ internal sealed class CashierDrawer
         var height = block.Y + pad * 2f;
         var min = new Vector2(left, y);
         var max = new Vector2(left + innerWidth, y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale,
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, 16f * scale,
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), message, ui.TitleInk,
             TextStyles.Footnote, innerWidth - pad * 2f);
@@ -433,7 +456,8 @@ internal sealed class CashierDrawer
             : Loc.T(L.Casino.NotEnoughCoins);
         var confirmRect = new Rect(new Vector2(left, y), new Vector2(left + innerWidth, y + PillHeight * scale));
         var canConfirm = interactive && amountValid && !busy;
-        if (RawPill(drawList, confirmRect, label, true, canConfirm, ui, scale))
+        if (Button.Draw(drawList, confirmRect, label, ui.Ink, ButtonStyle.Prominent, enabled: canConfirm,
+                overlay: true, id: "cashier.confirm"))
         {
             AskStake(sittingOpen, amount);
         }
@@ -476,7 +500,7 @@ internal sealed class CashierDrawer
             CurrencyKind.Chips, chipInk, TextStyles.SubheadlineEmphasized, glyphAlpha);
         CurrencyGlyph.DrawAmount(drawList, new Vector2(rect.Center.X - costSize.X * 0.5f, top + chipSize.Y),
             costText, CurrencyKind.Coins, costInk, TextStyles.Caption1, glyphAlpha);
-        return hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+        return UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private void AskStake(bool sittingOpen, long amount)
@@ -513,7 +537,8 @@ internal sealed class CashierDrawer
         var stackText = NumberText.Group(sitting.Stack);
         var rect = new Rect(new Vector2(left, y), new Vector2(left + innerWidth, y + PillHeight * scale));
         var canCashOut = interactive && !store.MovingMoney;
-        if (RawPill(drawList, rect, Loc.T(L.Casino.CashOutFor, stackText), false, canCashOut, ui, scale))
+        if (Button.Draw(drawList, rect, Loc.T(L.Casino.CashOutFor, stackText), ui.Ink, ButtonStyle.Tinted,
+                enabled: canCashOut, overlay: true, id: "cashier.cashout"))
         {
             confirm.Ask(new ConfirmRequest
             {
@@ -526,36 +551,7 @@ internal sealed class CashierDrawer
             });
         }
 
-        Typography.Draw(drawList, new Vector2(left, y + PillHeight * scale + 4f * scale),
-            Loc.T(L.Casino.CashOutHint), ui.MutedInk, TextStyles.Caption1);
-    }
-
-    private static bool RawPill(ImDrawListPtr drawList, Rect rect, string label, bool filled, bool enabled,
-        AppSkin ui, float scale)
-    {
-        var rounding = rect.Height * 0.5f;
-        var hovered = enabled && UiInteract.HoverWindowOnly(rect.Min, rect.Max);
-        var fill = filled
-            ? Palette.WithAlpha(ui.Accent, enabled ? 1f : 0.4f)
-            : Palette.WithAlpha(ui.FieldSurface, enabled ? 1f : 0.5f);
-        Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(fill));
-        if (!filled)
-        {
-            Squircle.Stroke(drawList, rect.Min, rect.Max, rounding,
-                ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.30f)), 1f * scale);
-        }
-
-        if (hovered)
-        {
-            Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        var ink = filled ? ui.Palette.HeaderInk : ui.TitleInk;
-        var fitted = Typography.FitText(label, rect.Width - rect.Height, 0.9f, FontWeight.SemiBold);
-        var textSize = Typography.Measure(fitted, 0.9f, FontWeight.SemiBold);
-        Typography.Draw(drawList, rect.Center - textSize * 0.5f, fitted,
-            enabled ? ink : Palette.WithAlpha(ink, 0.6f), 0.9f, FontWeight.SemiBold);
-        return hovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left);
+        Typography.DrawWrappedLeft(new Vector2(left, y + (PillHeight + HintGap) * scale), Loc.T(L.Casino.CashOutHint),
+            ui.MutedInk, TextStyles.Footnote, innerWidth);
     }
 }

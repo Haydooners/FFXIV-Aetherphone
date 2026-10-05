@@ -8,9 +8,13 @@ using Aetherphone.Core.Notes;
 using Aetherphone.Core.Changelog;
 using Aetherphone.Core.ControlCenter;
 using Aetherphone.Core.Dailies;
+using Aetherphone.Core.Feedback;
+using Aetherphone.Core.Fishing;
 using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Games;
+using Aetherphone.Core.Geography;
 using Aetherphone.Core.Home;
+using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Housing;
 using Aetherphone.Core.Hunts;
 using Aetherphone.Core.Jobs;
@@ -43,6 +47,23 @@ internal sealed class ScreenPositionPreset
     public float Roll { get; set; }
     public float Scale { get; set; } = 1.0f;
     public bool Flat { get; set; }
+    public float? Curve { get; set; }
+
+    [JsonIgnore]
+    public float CurveAmount => Curve ?? (Flat ? 0f : 1f);
+}
+
+[Serializable]
+internal sealed class ScreenPlacementRecord
+{
+    public string Place { get; set; } = "";
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
+    public float Yaw { get; set; }
+    public float Pitch { get; set; }
+    public float Roll { get; set; }
+    public float Scale { get; set; } = 1.0f;
 }
 
 [Serializable]
@@ -56,6 +77,36 @@ internal sealed class VideoQueueRecord
 }
 
 [Serializable]
+internal sealed class VideoHistoryRecord
+{
+    public string Url { get; set; } = "";
+    public string Title { get; set; } = "";
+    public string Source { get; set; } = "";
+    public double? DurationSeconds { get; set; }
+    public string? ThumbnailUrl { get; set; }
+    public double PositionSeconds { get; set; }
+    public long WatchedAtUnix { get; set; }
+
+    [JsonIgnore]
+    public string? SubtitleCache { get; set; }
+}
+
+[Serializable]
+internal sealed class VideoPlaylistRecord
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string SourceUrl { get; set; } = "";
+    public List<VideoQueueRecord> Entries { get; set; } = new();
+
+    [JsonIgnore]
+    public string? CountLabel { get; set; }
+
+    [JsonIgnore]
+    public string? CountFormat { get; set; }
+}
+
+[Serializable]
 internal sealed class VideoLocalFileMapRecord
 {
     public string Key { get; set; } = "";
@@ -64,8 +115,8 @@ internal sealed class VideoLocalFileMapRecord
 }
 
 [Serializable]
-internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, IControlConfiguration,
-    IMinimizedConfiguration
+internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, ILookConfiguration,
+    IControlConfiguration, IMinimizedConfiguration
 {
     public int Version { get; set; } = 1;
     public bool OpenOnStartup { get; set; } = true;
@@ -81,9 +132,9 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public Vector2? LandscapePosition { get; set; }
     public MinimizedLayout? MinimizedLayout { get; set; }
     public MinimizedShape MinimizedShape { get; set; } = MinimizedShape.Phone;
-    public MinimizedMapSize MinimizedMapSize { get; set; } = MinimizedMapSize.Medium;
     public int MinimizedMapZoom { get; set; } = MinimizedShapes.DefaultMapZoom;
-    public bool MinimizedWallpaper { get; set; }
+    public bool MinimizedWallpaper { get; set; } = true;
+    public float MinimizedScale { get; set; } = 1f;
     public bool DoNotDisturb { get; set; }
     public bool QuietWhileBusy { get; set; } = true;
     public bool Vibration { get; set; } = true;
@@ -96,6 +147,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool ChirperShowCommentMedia { get; set; } = true;
     public bool AethergramShowGifPosts { get; set; } = true;
     public bool AethergramShowCommentMedia { get; set; } = true;
+    public bool AethergramShowSensitivePosts { get; set; } = true;
     public int ChirperFeedRegionMask { get; set; }
     public int AethergramFeedRegionMask { get; set; }
     public int ChirperFeedScope { get; set; }
@@ -106,6 +158,14 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool NotifyWeeklyReset { get; set; }
     public bool NotifyGrandCompanyReset { get; set; }
     public bool NotifyRetainerVentures { get; set; }
+    public bool NotifyVoyages { get; set; }
+    public bool NotifyMapAllowance { get; set; }
+    public bool NotifyJumboCactpot { get; set; }
+    public bool NotifyFashionReport { get; set; }
+    public List<Core.Timers.TimerCharacterRecord> TimerCharacters { get; set; } = new();
+    public List<Core.Timers.TimerWorkshopRecord> TimerWorkshops { get; set; } = new();
+    public string TimerRegionCode { get; set; } = string.Empty;
+    public List<Core.Calculator.CalculatorHistoryRecord> CalculatorHistory { get; set; } = new();
     [JsonProperty("ShowWalletBadge")]
     public bool LegacyShowWalletBadge { get; set; } = true;
     [JsonProperty("ShowDailiesBadge")]
@@ -115,9 +175,14 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public Dictionary<string, bool> BadgeSettings { get; set; } = new();
     public bool BadgeSettingsMigrated { get; set; }
     public List<DailyCheckRecord> DailyChecks { get; set; } = new();
+    public List<DailyCustomTask> DailyCustomTasks { get; set; } = new();
+    public List<string> DailyHiddenItems { get; set; } = new();
+    public bool NotifyDailiesBeforeDailyReset { get; set; }
+    public bool NotifyDailiesBeforeWeeklyReset { get; set; }
     public float ActivityGoalLevels { get; set; } = 1f;
     public int ActivityGoalDuties { get; set; } = 3;
     public long ActivityGoalGil { get; set; } = 50000;
+    public long ActivityGoalEndgame { get; set; } = 200;
     public bool ScrollWhileIdle { get; set; } = true;
     public bool ShowLodestonePortraits { get; set; } = true;
     public int LodestoneIdIndexVersion { get; set; }
@@ -132,27 +197,39 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool CameraGrid { get; set; }
     public bool CameraFlash { get; set; } = true;
     public bool CameraShowUi { get; set; }
+    public int CameraTimerSeconds { get; set; }
     public int PhotosSegment { get; set; }
+    public int PhotosLibraryLevel { get; set; } = 2;
+    public int PhotosSortKey { get; set; }
+    public bool PhotosSortAscending { get; set; }
+    public int PhotosFilter { get; set; }
+    public int PhotosGridColumns { get; set; }
+    public bool PhotosAspectGrid { get; set; }
+    public bool PhotosMonthlyAlbums { get; set; }
+    public bool PhotosMonthlyAlbumsAsked { get; set; }
     public string Language { get; set; } = string.Empty;
     public string TranslationTargetLanguage { get; set; } = string.Empty;
     public bool TranslationDisclosureSeen { get; set; }
     public bool AutoTranslatePosts { get; set; }
     public List<string> TranslatedConversations { get; set; } = new();
     public ThemeMode ThemeMode { get; set; } = ThemeMode.Dark;
+    public bool LiveGlass { get; set; }
+    public LiveGlassSource LiveGlassSource { get; set; } = LiveGlassSource.World;
     public string AccentName { get; set; } = "Violet";
     public string AccentCustomHex { get; set; } = string.Empty;
     public string PhoneCaseName { get; set; } = "Titanium";
     public string JobsAccentName { get; set; } = "Blue";
     public List<JobsCustomColor> JobsCustomColors { get; set; } = new();
     public Dictionary<ulong, List<JobsCategory>> JobsCategoriesByCharacter { get; set; } = new();
-    public string LightWallpaperId { get; set; } = "DuskLight";
-    public string DarkWallpaperId { get; set; } = "DuskDark";
+    public string LightWallpaperId { get; set; } = BuiltInWallpapers.DefaultLightId;
+    public string DarkWallpaperId { get; set; } = BuiltInWallpapers.DefaultDarkId;
     public List<CustomWallpaper> CustomWallpapers { get; set; } = new();
     public string RingtoneSound { get; set; } = SoundLibrary.BundledRingtoneToken;
     public string NotificationSound { get; set; } = SoundLibrary.BundledNotificationToken;
     public float RingtoneVolume { get; set; } = 0.8f;
     public float NotificationVolume { get; set; } = 0.8f;
     public bool SilentMode { get; set; }
+    public bool LinkedDevicesUnlocked { get; set; }
     public bool RingtoneEnabled { get; set; } = true;
     public bool NotificationSoundsEnabled { get; set; } = true;
     public bool UiSounds { get; set; } = true;
@@ -168,6 +245,14 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public float MusicVolume { get; set; } = 0.6f;
     public int MusicRepeat { get; set; }
     public bool MusicShuffle { get; set; }
+    public bool MusicAutoplay { get; set; } = true;
+    public float MusicCrossfadeSeconds { get; set; }
+    public bool MusicSoundCheck { get; set; } = true;
+    public bool ShowWindowsMedia { get; set; } = true;
+    public string WindowsMediaSource { get; set; } = string.Empty;
+    public bool PublishToWindowsMedia { get; set; } = true;
+    public bool ShareListeningActivity { get; set; }
+    public bool ListeningPromptShown { get; set; }
     public float VideoVolume { get; set; } = 0.6f;
     public int VideoMaxQualityHeight { get; set; } = 720;
     public bool VideoHideNameplates { get; set; } = true;
@@ -178,8 +263,34 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool VideoStreamDiscoverable { get; set; } = true;
     public bool VideoScreenVisible { get; set; } = true;
     public bool VideoScreenCurved { get; set; } = true;
+    public float? VideoScreenCurveAmount { get; set; }
+
+    [JsonIgnore]
+    public float VideoScreenCurve
+    {
+        get => VideoScreenCurveAmount ?? (VideoScreenCurved ? 1f : 0f);
+        set
+        {
+            VideoScreenCurveAmount = value;
+            VideoScreenCurved = value > 0f;
+        }
+    }
+
+    public bool VideoRememberPlacement { get; set; } = true;
+    public bool VideoFollowHostScreen { get; set; } = true;
+    public bool VideoChatBubbles { get; set; } = true;
+    public int VideoChatBubbleChannels { get; set; } = Core.Video.ScreenChatChannels.Default;
+    public bool VideoSpatialAudio { get; set; }
+    public float VideoSpatialRange { get; set; } = Core.Video.SpatialVolume.DefaultRange;
+    public bool VideoMuteInBackground { get; set; }
+    public bool VideoPartyGuestsCanAdd { get; set; }
+    public bool VideoPartyGuestsCanControl { get; set; }
+    public bool VideoPartyCodeEnabled { get; set; }
     public List<ScreenPositionPreset> ScreenPresets { get; set; } = new();
+    public List<ScreenPlacementRecord> VideoScreenPlacements { get; set; } = new();
     public List<VideoQueueRecord> VideoQueue { get; set; } = new();
+    public List<VideoHistoryRecord> VideoHistory { get; set; } = new();
+    public List<VideoPlaylistRecord> VideoPlaylists { get; set; } = new();
     public List<VideoLocalFileMapRecord> VideoLocalFileMap { get; set; } = new();
     public bool GameSoundsCleared { get; set; }
     public const string TestAethernetBaseUrl = "https://aethernet-dev-production.up.railway.app";
@@ -223,6 +334,10 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool CallsEnabled { get; set; }
     public string CallInputDevice { get; set; } = string.Empty;
     public string CallOutputDevice { get; set; } = string.Empty;
+    public float CallOutputVolume { get; set; } = 1f;
+    public float CallInputGain { get; set; } = 1f;
+    public Dictionary<string, float> CallPeerVolumes { get; set; } = new();
+    public HashSet<string> CallPeerMuted { get; set; } = new();
     public List<CallLogEntry> CallLog { get; set; } = new();
     public long CallLogSeenUnix { get; set; }
     public MarketScopeKind MarketScope { get; set; } = MarketScopeKind.DataCenter;
@@ -238,6 +353,7 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public string WordRunBank { get; set; } = string.Empty;
     public bool TetrisModern { get; set; }
     public string PendingCoinGameSession { get; set; } = string.Empty;
+    public Dictionary<string, Core.Coins.CoinSavingGoal> CoinSavingGoals { get; set; } = new();
     public Dictionary<ulong, string> PendingCasinoSittings { get; set; } = new();
     public Dictionary<ulong, long> CasinoSittingSeenAtUnix { get; set; } = new();
     public Dictionary<ulong, PendingCasinoRound> PendingCasinoRounds { get; set; } = new();
@@ -245,20 +361,37 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public Dictionary<string, bool> AppFlags { get; set; } = new();
     public int HomeGridRows { get; set; } = 6;
     public bool ShowAppNames { get; set; } = true;
+    public IconAppearance IconAppearance { get; set; } = IconAppearance.Default;
+    public List<HomeLook> Looks { get; set; } = new();
+    public Dictionary<ulong, Guid> LookByCharacter { get; set; } = new();
+    public Dictionary<ulong, NameplateTitleSettings> NameplateTitleByCharacter { get; set; } = new();
+    public Guid ActiveLookId { get; set; }
     public ControlLayout? ControlPanel { get; set; }
     public bool ControlPanelRepacked { get; set; }
-    public VenueTimeFilter VenueTimeFilter { get; set; } = VenueTimeFilter.LiveNow;
     public int VenueSourceFilter { get; set; }
     public bool VenueAllDataCenters { get; set; }
+    public GeoScopeKind VenueScope { get; set; }
+    public string VenueScopeValue { get; set; } = string.Empty;
+    public bool VenueHideAdult { get; set; }
     public bool VenueNotifyNewEvents { get; set; } = true;
     public List<string> VenueFavorites { get; set; } = new();
+    public List<string> VenueRecents { get; set; } = new();
     public int MusterCategoryFilter { get; set; }
     public int MusterScope { get; set; }
     public int MusterDataCenterId { get; set; }
     public int YellowPagesCategoryFilter { get; set; }
     public int YellowPagesScope { get; set; }
+    public GeoScopeKind YellowPagesScopeKind { get; set; } = GeoScopeKind.MyRegion;
+    public string YellowPagesScopeValue { get; set; } = string.Empty;
     public bool YellowPagesAfterDark { get; set; }
+    public int YellowPagesDirection { get; set; }
+    public int YellowPagesSort { get; set; }
+    public bool YellowPagesCompactCards { get; set; }
+    public List<string> YellowPagesPinnedInquiries { get; set; } = new();
+    public List<string> YellowPagesArchivedInquiries { get; set; } = new();
     public List<uint> MapFavorites { get; set; } = new();
+    public List<uint> MapRecents { get; set; } = new();
+    public List<uint> SkywatcherZones { get; set; } = new();
     public uint HousingWorldId { get; set; }
     public uint HousingDistrictId { get; set; } = 339u;
     public int HousingWard { get; set; } = HousingDefaults.DefaultWard;
@@ -282,6 +415,8 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public List<RadioStationRecord> RadioFavorites { get; set; } = new();
     public List<string> CustomAlbumOrder { get; set; } = new();
     public Dictionary<string, List<string>> CustomAlbumPhotos { get; set; } = new();
+    public List<string> PhotoFavorites { get; set; } = new();
+    public Dictionary<string, uint> PhotoPlaces { get; set; } = new();
     public const int VelvetGateVersion = 1;
     public const int VelvetOnboardVersion = 3;
     public bool VelvetAcknowledgedGate { get; set; }
@@ -291,8 +426,13 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
 
     public bool IsVelvetOnboarded() => VelvetOnboarded && VelvetOnboardedVersion >= VelvetOnboardVersion;
     public bool VelvetBlurByDefault { get; set; } = true;
-    public VelvetMutePreferences VelvetMutes { get; set; } = new();
+    public VelvetFilterPreferences VelvetMutes { get; set; } = new();
+    public VelvetFilterPreferences VelvetDiscoverFilters { get; set; } = new();
+    public VelvetFilterPreferences VelvetFeedFilters { get; set; } = new();
     public List<string> VelvetPinnedThreads { get; set; } = new();
+    public List<string> VelvetArchivedThreads { get; set; } = new();
+    public List<string> AethergramPinnedThreads { get; set; } = new();
+    public List<string> AethergramArchivedThreads { get; set; } = new();
     public List<string> MessagePinnedChats { get; set; } = new();
     public List<string> MessageArchivedChats { get; set; } = new();
     public List<string> MessageFavoriteContacts { get; set; } = new();
@@ -304,6 +444,17 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public string MessageWallpaper { get; set; } = string.Empty;
     public bool MessageWallpaperPattern { get; set; } = true;
     public Dictionary<string, string> MessageChatWallpapers { get; set; } = new();
+    public string LinkpearlChatTheme { get; set; } = string.Empty;
+    public string LinkpearlWallpaper { get; set; } = string.Empty;
+    public bool LinkpearlWallpaperPattern { get; set; } = true;
+    public Dictionary<string, string> LinkpearlChatWallpapers { get; set; } = new();
+    public int LinkpearlDefaultDensity { get; set; }
+    public float LinkpearlTextScale { get; set; } = 1f;
+    public bool LinkpearlLogTimestamps { get; set; } = true;
+    public bool LinkpearlLogWorldNames { get; set; } = true;
+    public bool LinkpearlLogGameColors { get; set; }
+    public bool LinkpearlLogGroupLines { get; set; }
+    public bool LinkpearlCollapseDuplicates { get; set; }
     public bool ArchiveTellsToDisk { get; set; } = true;
     public bool LinkpearlNotificationsPaused { get; set; }
     public bool MessageMigrated { get; set; }
@@ -322,20 +473,27 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public Dictionary<string, long> LinkpearlSeen { get; set; } = new();
     public List<string> LinkpearlPinnedTells { get; set; } = new();
     public List<string> LinkpearlMutedTells { get; set; } = new();
+    public Dictionary<string, int> LinkpearlTellLayouts { get; set; } = new();
     public bool LinkpearlPopoutTells { get; set; } = true;
     public float LinkpearlPopoutOpacity { get; set; } = 0.96f;
     public float LinkpearlPopoutTextScale { get; set; } = 1f;
     public List<LinkpearlPopoutState> LinkpearlPopouts { get; set; } = new();
+    public LinkpearlPopoutState? LinkpearlPopoutLastPlacement { get; set; }
     public bool LinkpearlPopoutTabs { get; set; } = true;
     public bool LinkpearlPopoutFade { get; set; } = true;
     public float LinkpearlPopoutIdleOpacity { get; set; } = 0.62f;
     public bool LinkpearlPopoutOutgoingTells { get; set; } = true;
+    public bool LinkpearlPopoutTellsWhilePhoneOpen { get; set; }
+    public bool LinkpearlPopoutTellsInBackground { get; set; }
     public bool LinkpearlPopoutCloseOnLogout { get; set; }
     public bool LinkpearlPopoutFlash { get; set; } = true;
     public bool LinkpearlPopoutHideInCombat { get; set; } = true;
     public bool LinkpearlPopoutHideInDuty { get; set; }
     public bool LinkpearlPopoutFieldOperationsExempt { get; set; } = true;
     public bool LinkpearlPopoutReopenAfterCombat { get; set; } = true;
+    public bool LinkpearlPopoutHideInCutscene { get; set; } = true;
+    public int LinkpearlPopoutPlacement { get; set; }
+    public bool LinkpearlPopoutHideWhenUiHidden { get; set; } = true;
     public bool LinkpearlHotkeyEnabled { get; set; }
     public int LinkpearlHotkeyModifier { get; set; }
     public int LinkpearlHotkeyKey { get; set; }
@@ -361,19 +519,30 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
     public bool TimeZoneManual { get; set; }
     public int ManualUtcOffsetMinutes { get; set; }
     public long LastFeedbackSentUnix { get; set; }
+    public Dictionary<string, FeedbackUpdateMarks> FeedbackMarks { get; set; } = new();
     public List<CalendarCustomEvent> CalendarCustomEvents { get; set; } = new();
+    public List<CalendarEventGroup> CalendarGroups { get; set; } = new();
+    public bool CalendarGameEventsInApp { get; set; } = true;
+    public bool CalendarGameEventsInWidget { get; set; } = true;
     public List<PhoneNote> Notes { get; set; } = new();
+    public List<PhoneNote> RecentlyDeletedNotes { get; set; } = new();
     public List<ShortcutEntry> Shortcuts { get; set; } = new();
     public List<string> CustomShortcutIconIds { get; set; } = new();
     public List<ReminderItem> Reminders { get; set; } = new();
     public List<WorldClockEntry> WorldClocks { get; set; } = new();
     public List<AlarmEntry> Alarms { get; set; } = new();
+    public List<uint> FishingAlarms { get; set; } = new();
+    public List<FishingVoyageReminder> FishingVoyageReminders { get; set; } = new();
     public DateTime? TimerEndsAtUtc { get; set; }
     public int TimerDurationSeconds { get; set; }
     public bool TimerNotified { get; set; }
+    public int TimerPausedSeconds { get; set; }
+    public string TimerLabel { get; set; } = string.Empty;
+    public List<int> ClockRecentTimers { get; set; } = new();
     public string LastSeenChangelogVersion { get; set; } = string.Empty;
     public bool ChangelogSeenInitialized { get; set; }
-    
+    public HashSet<string> SeenFeaturePins { get; set; } = new();
+
     public bool MarketContextMenu { get; set; } = true;
     public bool LinkpearlContextMenu { get; set; }
 
@@ -387,6 +556,18 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
         }
 
         LastSeenChangelogVersion = ChangelogData.LatestVersion;
+        Save();
+    }
+
+    public bool HasUnseenFeaturePin(string key) => !SeenFeaturePins.Contains(key);
+
+    public void MarkFeaturePinSeen(string key)
+    {
+        if (!SeenFeaturePins.Add(key))
+        {
+            return;
+        }
+
         Save();
     }
 
@@ -410,19 +591,6 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
         }
 
         SetupCompleted = true;
-        Save();
-    }
-
-    public void SkipOnboardingOnBeta()
-    {
-        if (!AepConstants.IsBeta || SetupCompleted)
-        {
-            return;
-        }
-
-        WelcomeShown = true;
-        SetupCompleted = true;
-        TutorialsEnabled = false;
         Save();
     }
 
@@ -498,6 +666,71 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
         }
 
         Save();
+    }
+
+    public void MigrateHomeLooks()
+    {
+        if (Looks.Count > 0)
+        {
+            return;
+        }
+
+        var look = new HomeLook { Id = Guid.NewGuid() };
+        HomeLookMirror.Capture(this, look);
+        Looks.Add(look);
+        ActiveLookId = look.Id;
+        Save();
+    }
+
+    public void MigrateRetiredSounds()
+    {
+        if (!ReplaceRetiredSounds())
+        {
+            return;
+        }
+
+        Save();
+    }
+
+    public bool ReplaceRetiredSounds()
+    {
+        var changed = false;
+        RingtoneSound = RetiredSounds.Replace(RingtoneSound, SoundKind.Ringtone, ref changed) ??
+            SoundLibrary.BundledRingtoneToken;
+        NotificationSound = RetiredSounds.Replace(NotificationSound, SoundKind.Notification, ref changed) ??
+            SoundLibrary.BundledNotificationToken;
+        foreach (var pair in NotificationSettings)
+        {
+            var setting = pair.Value;
+            setting.Sound = RetiredSounds.Replace(setting.Sound, SoundKind.Notification, ref changed);
+        }
+
+        return changed;
+    }
+
+    public void MigrateRetiredWallpapers()
+    {
+        if (!ReplaceRetiredWallpapers())
+        {
+            return;
+        }
+
+        Save();
+    }
+
+    public bool ReplaceRetiredWallpapers()
+    {
+        var changed = false;
+        LightWallpaperId = BuiltInWallpapers.Replace(LightWallpaperId, ref changed);
+        DarkWallpaperId = BuiltInWallpapers.Replace(DarkWallpaperId, ref changed);
+        for (var index = 0; index < Looks.Count; index++)
+        {
+            var look = Looks[index];
+            look.LightWallpaperId = BuiltInWallpapers.Replace(look.LightWallpaperId, ref changed);
+            look.DarkWallpaperId = BuiltInWallpapers.Replace(look.DarkWallpaperId, ref changed);
+        }
+
+        return changed;
     }
 
     public void MigrateEncryptionKeyStore()
@@ -749,6 +982,9 @@ internal sealed class Configuration : IPluginConfiguration, IHomeConfiguration, 
 
     public bool ShouldShowNotificationBanner(string appId) =>
         !NotificationSettings.TryGetValue(appId, out var setting) || setting.ShowNotificationBanner;
+
+    public bool ShouldPlayNotificationSound(string appId) =>
+        !NotificationSettings.TryGetValue(appId, out var setting) || setting.PlaySound;
 
     public string? AppSoundOverride(string appId) =>
         NotificationSettings.TryGetValue(appId, out var setting) && !string.IsNullOrEmpty(setting.Sound)

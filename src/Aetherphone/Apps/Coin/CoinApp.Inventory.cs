@@ -1,247 +1,441 @@
 using Aetherphone.Core;
+using Aetherphone.Core.Apps;
 using Aetherphone.Core.Aethernet.Contracts;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Social;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Coin;
 
 internal sealed partial class CoinApp
 {
-    private const float SwatchDiameter = 78f;
-    private const float SwatchGap = 12f;
-    private const float SwatchRingOverhang = 6f;
-    private const float SwatchLabelHeight = 18f;
-    private const float BadgeRowHeight = 52f;
-    private const float SectionGap = 18f;
-    private const float SectionHeaderHeight = 30f;
+    private const float LookHeight = 178f;
+    private const float LookAvatar = 42f;
+    private const float LookNameGap = 12f;
+    private const float LookBadgeGap = 6f;
+    private const int SwatchColumns = 3;
+    private const float SwatchGap = 10f;
+    private const float SwatchLabelGap = 6f;
+    private const float SwatchAvatarFraction = 0.30f;
+    private const float SwatchSelectedStroke = 2f;
+    private const float SwatchCheck = 18f;
+    private const float BadgeGlyph = 24f;
+    private const float BadgePillWidth = 74f;
+    private const float NameColorMarkerRadius = 15f;
+    private const float NameColorGlyphScale = 0.55f;
+    private const int NameColorSlot = 1;
 
-    private void DrawInventory(Rect body)
+    private readonly Dictionary<string, BadgeStyle> itemBadgeStyles = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, FrameStyle> itemFrameStyles = new(StringComparer.Ordinal);
+    private InventorySectionDto[]? styledSections;
+    private InventoryCounters slotsText;
+
+    private struct InventoryCounters
     {
-        inventory.EnsureFresh();
-        frameCatalog.EnsureFresh();
-        catalog.EnsureFresh();
-
-        using var surface = AppSurface.Begin(body);
-        var scale = UiScale.Current;
-        inventoryRefresh.Draw(body, surface.Pull, surface.Dragging, inventory.Fetching, ui.MutedInk,
-            RefreshInventory);
-
-        if (!inventory.LoadedOnce)
-        {
-            LoadingPulse.Draw(body.Center, 16f * scale, ui.Palette.Accent, ui.MutedInk, LoadingPulse.SafeLabel());
-            return;
-        }
-
-        var width = ScrollLayout.StableContentWidth();
-        DrawFrameSection(width, scale);
-        ImGui.Dummy(new Vector2(0f, SectionGap * scale));
-        DrawBadgeSection(width, scale);
-        ImGui.Dummy(new Vector2(0f, 16f * scale));
+        public Windows.Widgets.CachedText Frames;
+        public Windows.Widgets.CachedText Badges;
     }
 
-    private void DrawFrameSection(float width, float scale)
+    private void DrawInventory(in PhoneContext context)
     {
-        var section = inventory.Section(LoadoutStore.FrameKind);
-        var items = section?.Items ?? Array.Empty<InventoryItemDto>();
-        DrawSectionHeader(Loc.T(L.Loadout.FramesTitle), WornCount(items), section?.Slots ?? 0, width, scale);
-
-        if (items.Length == 0)
+        var navBar = AppHeader.BeginLargeTitle(context, false);
+        using (ImRaii.PushId("coin.items"))
+        using (var surface = AppSurface.Begin(navBar.Body))
         {
-            DrawSectionEmpty(Loc.T(L.Loadout.FramesEmpty), Loc.T(L.Loadout.FramesEmptyHint), width, scale);
-            return;
-        }
-
-        var diameter = SwatchDiameter * scale;
-        var gap = SwatchGap * scale;
-        var ringPad = SwatchRingOverhang * scale;
-        var cellWidth = diameter + gap;
-        var perRow = MathF.Max(1f, MathF.Floor((width - ringPad) / cellWidth));
-        var cellHeight = diameter + SwatchLabelHeight * scale + gap;
-        var totalCells = items.Length + 1;
-        var rows = MathF.Ceiling(totalCells / perRow);
-
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        for (var index = 0; index < totalCells; index++)
-        {
-            var column = index % (int)perRow;
-            var row = index / (int)perRow;
-            var cellMin = new Vector2(origin.X + ringPad + column * cellWidth, origin.Y + row * cellHeight);
-            var center = new Vector2(cellMin.X + diameter * 0.5f, cellMin.Y + diameter * 0.5f);
-
-            if (index == 0)
+            inventory.EnsureFresh();
+            frameCatalog.EnsureFresh();
+            inventoryRefresh.Draw(navBar.Body, surface.Pull, surface.Dragging, inventory.Fetching, ui.MutedInk,
+                RefreshInventory);
+            if (!inventory.LoadedOnce)
             {
-                DrawNoneSwatch(drawList, center, diameter * 0.5f, cellMin, diameter, scale);
-                continue;
+                LoadingPulse.Draw(navBar.Body.Center, 16f * UiScale.Current, ui.Palette.Accent, ui.MutedInk,
+                    LoadingPulse.SafeLabel());
             }
-
-            DrawFrameSwatch(drawList, items[index - 1], center, diameter * 0.5f, cellMin, diameter, scale);
+            else
+            {
+                DrawInventoryBody();
+            }
         }
 
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, rows * cellHeight));
+        AppHeader.EndLargeTitle(in navBar, context, "coin.items.nav", TabTitle(CoinTab.Items), NavBarStyle.From(ui),
+            ReadOnlySpan<NavBarButton>.Empty);
     }
 
-    private void DrawNoneSwatch(ImDrawListPtr drawList, Vector2 center, float radius, Vector2 cellMin, float diameter,
-        float scale)
+    private void DrawInventoryBody()
     {
-        var selected = WornFrameId().Length == 0;
-        DrawSwatchRing(drawList, center, radius, selected, scale);
-        drawList.AddCircleFilled(center, radius - 4f * scale, ImGui.GetColorU32(ui.Palette.FieldSurface), 48);
-        ProgressRing.CenterIcon(drawList, center, FontAwesomeIcon.Ban, ui.MutedInk, radius * 0.6f);
-        DrawSwatchLabel(drawList, Loc.T(L.Loadout.NoneOption), cellMin, diameter, scale);
-
-        if (UiInteract.HoverClick(center - new Vector2(radius, radius), center + new Vector2(radius, radius))
-            && !selected)
-        {
-            inventory.Equip(LoadoutStore.FrameKind, WornFrameId(), 0);
-        }
-    }
-
-    private void DrawFrameSwatch(ImDrawListPtr drawList, InventoryItemDto item, Vector2 center, float radius,
-        Vector2 cellMin, float diameter, float scale)
-    {
-        var selected = item.Slot > 0;
-        DrawSwatchRing(drawList, center, radius, selected, scale);
-
-        var style = item.Frame is null ? null : FrameStyle.From(item.Frame);
-        var avatarRadius = radius / (style?.Scale ?? 1f);
-        var user = session.CurrentUser;
-        AvatarView.DrawRemote(drawList, center, avatarRadius, theme, user?.Name ?? string.Empty,
-            user?.World ?? string.Empty, user?.AvatarUrl, images, lodestone, 0.8f, 40, 1f, style);
-
-        DrawSwatchLabel(drawList, style?.Name ?? string.Empty, cellMin, diameter, scale);
-
-        if (UiInteract.HoverClick(center - new Vector2(radius, radius), center + new Vector2(radius, radius)))
-        {
-            inventory.Equip(LoadoutStore.FrameKind, item.Id, selected ? 0 : 1);
-        }
-    }
-
-    private void DrawSwatchRing(ImDrawListPtr drawList, Vector2 center, float radius, bool selected, float scale)
-    {
-        if (!selected)
-        {
-            return;
-        }
-
-        drawList.AddCircle(center, radius + 3f * scale, ImGui.GetColorU32(ui.Palette.Accent), 48,
-            Metrics.Stroke.Ring * scale * 1.6f);
-    }
-
-    private void DrawSwatchLabel(ImDrawListPtr drawList, string label, Vector2 cellMin, float diameter, float scale)
-    {
-        if (label.Length == 0)
-        {
-            return;
-        }
-
-        var fitted = Typography.FitText(label, diameter, TextStyles.Caption2);
-        var size = Typography.Measure(fitted, TextStyles.Caption2);
-        var position = new Vector2(cellMin.X + (diameter - size.X) * 0.5f, cellMin.Y + diameter + 4f * scale);
-        Typography.Draw(drawList, position, fitted, ui.MutedInk, TextStyles.Caption2);
-    }
-
-    private void DrawBadgeSection(float width, float scale)
-    {
-        var section = inventory.Section(LoadoutStore.BadgeKind);
-        var items = section?.Items ?? Array.Empty<InventoryItemDto>();
-        DrawSectionHeader(Loc.T(L.Loadout.BadgesTitle), WornCount(items), section?.Slots ?? 0, width, scale);
-
-        if (items.Length == 0)
-        {
-            DrawSectionEmpty(Loc.T(L.Loadout.BadgesEmpty), Loc.T(L.Loadout.BadgesEmptyHint), width, scale);
-            return;
-        }
-
-        var rowHeight = BadgeRowHeight * scale;
+        SyncItemStyles();
+        var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
-        for (var index = 0; index < items.Length; index++)
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ScrollLayout.StableContentWidth();
+        var cursorY = DrawLook(drawList, origin, width, scale);
+        cursorY = DrawFrameSection(drawList, new Vector2(origin.X, cursorY), width, scale);
+        cursorY = DrawBadgeSection(drawList, new Vector2(origin.X, cursorY), width, scale);
+        CoinArt.Reserve(origin, width, cursorY + CoinArt.BottomPad * scale);
+    }
+
+    private void SyncItemStyles()
+    {
+        var sections = inventory.Sections;
+        if (ReferenceEquals(sections, styledSections))
         {
-            var origin = ImGui.GetCursorScreenPos();
-            var row = new Rect(origin, origin + new Vector2(width, rowHeight));
-            DrawBadgeRow(drawList, items[index], row, index, scale);
-            ImGui.SetCursorScreenPos(origin);
-            ImGui.Dummy(new Vector2(width, rowHeight));
+            return;
+        }
+
+        styledSections = sections;
+        itemBadgeStyles.Clear();
+        itemFrameStyles.Clear();
+        for (var sectionIndex = 0; sectionIndex < sections.Length; sectionIndex++)
+        {
+            var items = sections[sectionIndex].Items;
+            for (var itemIndex = 0; itemIndex < items.Length; itemIndex++)
+            {
+                var item = items[itemIndex];
+                if (item.Badge is not null)
+                {
+                    itemBadgeStyles[item.Id] = BadgeStyle.From(item.Badge);
+                }
+
+                if (item.Frame is not null)
+                {
+                    itemFrameStyles[item.Id] = FrameStyle.From(item.Frame);
+                }
+            }
         }
     }
 
-    private void DrawBadgeRow(ImDrawListPtr drawList, InventoryItemDto item, Rect row, int index, float scale)
+    private BadgeStyle? BadgeFor(InventoryItemDto item) =>
+        itemBadgeStyles.TryGetValue(item.Id, out var style) ? style : null;
+
+    private FrameStyle? FrameFor(InventoryItemDto item) =>
+        itemFrameStyles.TryGetValue(item.Id, out var style) ? style : null;
+
+    private float DrawLook(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
     {
+        var max = new Vector2(origin.X + width, origin.Y + LookHeight * scale);
+        CoinArt.Card(drawList, ui, origin, max, scale);
         var light = RoleInk.IsLight(theme);
-        var worn = item.Slot > 0;
-        var inset = 14f * scale;
-        var glyph = 22f * scale;
-        var center = new Vector2(row.Min.X + inset + glyph * 0.5f, row.Center.Y);
+        var avatarRadius = LookAvatar * scale;
+        var worn = WornFrame();
+        var frame = worn is null ? null : FrameFor(worn);
+        var avatarCenter = new Vector2(origin.X + width * 0.5f,
+            origin.Y + Metrics.Space.Lg * scale + avatarRadius * (frame?.Scale ?? 1f));
+        DrawBloom(drawList, new Rect(origin, max), avatarCenter, width * 0.36f, avatarRadius * 1.6f, ui.Accent);
+        var user = session.CurrentUser;
+        AvatarView.DrawRemote(drawList, avatarCenter, avatarRadius, theme, user?.Name ?? string.Empty,
+            user?.World ?? string.Empty, user?.AvatarUrl, images, lodestone, 1.2f, 48, 1f, frame);
 
-        var style = item.Badge is null ? null : BadgeStyle.From(item.Badge);
-        BadgeStrip.DrawOne(drawList, center, style, images, light, glyph);
-
-        var pillWidth = 74f * scale;
-        var pillHeight = 30f * scale;
-        var pill = new Rect(
-            new Vector2(row.Max.X - inset - pillWidth, row.Center.Y - pillHeight * 0.5f),
-            new Vector2(row.Max.X - inset, row.Center.Y + pillHeight * 0.5f));
-
-        var labelLeft = center.X + glyph * 0.5f + 12f * scale;
-        var labelWidth = MathF.Max(1f, pill.Min.X - 10f * scale - labelLeft);
-        var name = style?.Name ?? string.Empty;
-        var labelSize = Typography.Measure(name, TextStyles.BodyEmphasized);
-        Marquee.DrawLeftAuto(new MarqueeId("inventory.badge.", index), name, labelLeft, row.Center.Y - labelSize.Y * 0.5f,
-            labelWidth, TextStyles.BodyEmphasized, theme.TextStrong);
-
-        var label = worn ? item.Slot.ToString(Loc.Culture) : Loc.T(L.Loadout.Wear);
-        if (ui.PillButton(pill, label, worn, "inventory.badge.toggle." + index))
+        var nameBadge = WornBadge(NameColorSlot);
+        var secondBadge = WornBadge(NameColorSlot + 1);
+        var nameStyle = TextStyles.Title3;
+        var nameHeight = Typography.LineHeight(nameStyle);
+        var glyph = nameHeight * GlyphFraction;
+        var gap = LookBadgeGap * scale;
+        var badgeCount = (nameBadge is null ? 0 : 1) + (secondBadge is null ? 0 : 1);
+        var badgesWidth = badgeCount * (glyph + gap);
+        var name = Typography.FitText(PreviewName(), MathF.Max(1f, width - Metrics.Space.Lg * scale * 2f - badgesWidth),
+            nameStyle);
+        var nameWidth = Typography.Measure(name, nameStyle).X;
+        var nameTop = max.Y - Metrics.Space.Lg * scale - nameHeight;
+        var left = origin.X + (width - nameWidth - badgesWidth) * 0.5f;
+        var badgeStyle = nameBadge is null ? null : BadgeFor(nameBadge);
+        var ink = badgeStyle is null ? ui.TitleInk : RoleInk.For(badgeStyle.Colors[0], light);
+        if (badgeStyle is null)
         {
-            inventory.Equip(LoadoutStore.BadgeKind, item.Id, worn ? 0 : null);
+            Typography.Draw(drawList, new Vector2(left, nameTop), name, ink, nameStyle);
         }
+        else
+        {
+            Typography.Draw(drawList, new Vector2(left, nameTop), name, ink, nameStyle, NameEffects.For(badgeStyle, light));
+        }
+
+        var badgeX = left + nameWidth + gap + glyph * 0.5f;
+        var badgeY = nameTop + nameHeight * 0.5f;
+        if (nameBadge is not null)
+        {
+            BadgeStrip.DrawOne(drawList, new Vector2(badgeX, badgeY), BadgeFor(nameBadge), images, light, glyph);
+            badgeX += glyph + gap;
+        }
+
+        if (secondBadge is not null)
+        {
+            BadgeStrip.DrawOne(drawList, new Vector2(badgeX, badgeY), BadgeFor(secondBadge), images, light, glyph);
+        }
+
+        return max.Y;
     }
 
-    private void DrawSectionHeader(string title, int worn, int slots, float width, float scale)
-    {
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        Typography.Draw(drawList, origin, title, theme.TextStrong, TextStyles.Title3);
-
-        var counter = Loc.T(L.Loadout.SlotsUsed, worn, slots);
-        var size = Typography.Measure(counter, TextStyles.Caption1);
-        Typography.Draw(drawList, new Vector2(origin.X + width - size.X, origin.Y + 4f * scale), counter,
-            ui.MutedInk, TextStyles.Caption1);
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, SectionHeaderHeight * scale));
-    }
-
-    private void DrawSectionEmpty(string title, string hint, float width, float scale)
-    {
-        var origin = ImGui.GetCursorScreenPos();
-        var height = 96f * scale;
-        EmptyState.Draw(new Rect(origin, origin + new Vector2(width, height)), ui, FontAwesomeIcon.Store, title, hint);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
-    }
-
-    private string WornFrameId()
+    private InventoryItemDto? WornFrame()
     {
         var section = inventory.Section(LoadoutStore.FrameKind);
         if (section is null)
         {
-            return string.Empty;
+            return null;
         }
 
         for (var index = 0; index < section.Items.Length; index++)
         {
             if (section.Items[index].Slot > 0)
             {
-                return section.Items[index].Id;
+                return section.Items[index];
             }
         }
 
-        return string.Empty;
+        return null;
+    }
+
+    private InventoryItemDto? WornBadge(int slot)
+    {
+        var section = inventory.Section(LoadoutStore.BadgeKind);
+        if (section is null)
+        {
+            return null;
+        }
+
+        for (var index = 0; index < section.Items.Length; index++)
+        {
+            if (section.Items[index].Slot == slot)
+            {
+                return section.Items[index];
+            }
+        }
+
+        return null;
+    }
+
+    private float DrawInventoryHeader(ImDrawListPtr drawList, Vector2 origin, float width, string title,
+        ref Windows.Widgets.CachedText counterCache, int worn, int slots, float scale)
+    {
+        var key = ((long)worn << 16) | (uint)slots;
+        var counter = counterCache.IsCurrent(key)
+            ? counterCache.Value
+            : counterCache.Store(key, Loc.T(L.Loadout.SlotsUsed, worn, slots));
+        var counterSize = Typography.Measure(counter, TextStyles.Subheadline);
+        var height = CoinArt.SectionHeader(drawList, origin, width, title, ui.TitleInk,
+            counterSize.X + CoinArt.ValueGap * scale, scale);
+        if (slots > 0)
+        {
+            Typography.Draw(drawList, new Vector2(origin.X + width - counterSize.X, origin.Y + (height - counterSize.Y) * 0.5f),
+                counter, ui.MutedInk, TextStyles.Subheadline);
+        }
+
+        return origin.Y + height + CoinArt.HeaderGap * scale;
+    }
+
+    private float DrawFrameSection(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
+    {
+        var section = inventory.Section(LoadoutStore.FrameKind);
+        var items = section?.Items ?? Array.Empty<InventoryItemDto>();
+        var cursorY = DrawInventoryHeader(drawList, new Vector2(origin.X, origin.Y + CoinArt.SectionGap * scale),
+            width, Loc.T(L.Loadout.FramesTitle), ref slotsText.Frames, WornCount(items), section?.Slots ?? 0, scale);
+        if (items.Length == 0)
+        {
+            return DrawInventoryEmpty(new Vector2(origin.X, cursorY), width, FontAwesomeIcon.UserCircle,
+                Loc.T(L.Loadout.FramesEmpty), Loc.T(L.Loadout.FramesEmptyHint), "coin.items.frames.shop", scale);
+        }
+
+        var gap = SwatchGap * scale;
+        var cellWidth = (width - gap * (SwatchColumns - 1)) / SwatchColumns;
+        var labelHeight = Typography.LineHeight(TextStyles.Footnote);
+        var cellHeight = cellWidth + SwatchLabelGap * scale + labelHeight;
+        var total = items.Length + 1;
+        var wornId = WornFrame()?.Id ?? string.Empty;
+        for (var index = 0; index < total; index++)
+        {
+            var column = index % SwatchColumns;
+            var row = index / SwatchColumns;
+            var min = new Vector2(origin.X + column * (cellWidth + gap), cursorY + row * (cellHeight + gap));
+            if (index == 0)
+            {
+                DrawFrameSwatch(drawList, min, cellWidth, null, wornId.Length == 0, wornId, scale);
+                continue;
+            }
+
+            var item = items[index - 1];
+            DrawFrameSwatch(drawList, min, cellWidth, item, item.Slot > 0, wornId, scale);
+        }
+
+        var rows = (total + SwatchColumns - 1) / SwatchColumns;
+        return cursorY + rows * (cellHeight + gap) - gap;
+    }
+
+    private void DrawFrameSwatch(ImDrawListPtr drawList, Vector2 min, float size, InventoryItemDto? item,
+        bool selected, string wornId, float scale)
+    {
+        var max = min + new Vector2(size, size);
+        var hovered = !selected && !inventory.Equipping && UiInteract.Hover(min, max);
+        var press = PressFx.Scale(ImGui.GetID(item?.Id ?? "coin.frame.none"),
+            hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left), Core.Animation.Motion.PressScaleControl);
+        var center = (min + max) * 0.5f;
+        var half = new Vector2(size, size) * 0.5f * press;
+        var drawMin = center - half;
+        var drawMax = center + half;
+        var radius = Metrics.Radius.Grouped * scale;
+        CoinArt.Card(drawList, ui, drawMin, drawMax, scale);
+        if (hovered)
+        {
+            Squircle.Fill(drawList, drawMin, drawMax, radius, ImGui.GetColorU32(ui.HoverTint));
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        if (item is null)
+        {
+            drawList.AddCircleFilled(center, size * SwatchAvatarFraction, ImGui.GetColorU32(ui.Palette.FieldSurface), 48);
+            ProgressRing.CenterIcon(drawList, center, FontAwesomeIcon.Ban, ui.MutedInk, size * SwatchAvatarFraction);
+        }
+        else
+        {
+            var style = FrameFor(item);
+            var avatarRadius = size * SwatchAvatarFraction * press;
+            var user = session.CurrentUser;
+            AvatarView.DrawRemote(drawList, center, avatarRadius, theme, user?.Name ?? string.Empty,
+                user?.World ?? string.Empty, user?.AvatarUrl, images, lodestone, 0.8f, 40, 1f, style);
+        }
+
+        if (selected)
+        {
+            Squircle.Stroke(drawList, drawMin, drawMax, radius, ImGui.GetColorU32(ui.Accent),
+                SwatchSelectedStroke * scale);
+            var check = SwatchCheck * scale;
+            var checkCenter = new Vector2(drawMax.X - check * 0.5f - Metrics.Space.Xs * scale,
+                drawMin.Y + check * 0.5f + Metrics.Space.Xs * scale);
+            drawList.AddCircleFilled(checkCenter, check * 0.5f, ImGui.GetColorU32(ui.Accent), 24);
+            ProgressRing.CenterIcon(drawList, checkCenter, FontAwesomeIcon.Check, CoinArt.White, check * 0.5f);
+        }
+
+        var label = item is null ? Loc.T(L.Loadout.NoneOption) : FrameFor(item)?.Name ?? string.Empty;
+        if (label.Length > 0)
+        {
+            var fitted = Typography.FitText(label, size, TextStyles.Footnote);
+            var labelWidth = Typography.Measure(fitted, TextStyles.Footnote).X;
+            Typography.Draw(drawList, new Vector2(min.X + (size - labelWidth) * 0.5f, max.Y + SwatchLabelGap * scale),
+                fitted, selected ? ui.TitleInk : ui.MutedInk, TextStyles.Footnote);
+        }
+
+        if (!UiInteract.Click(min, max, hovered))
+        {
+            return;
+        }
+
+        UiFeedback.Play(UiSound.ToggleOn);
+        if (item is null)
+        {
+            inventory.Equip(LoadoutStore.FrameKind, wornId, 0);
+            return;
+        }
+
+        inventory.Equip(LoadoutStore.FrameKind, item.Id, FrameSlot);
+    }
+
+    private float DrawBadgeSection(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
+    {
+        var section = inventory.Section(LoadoutStore.BadgeKind);
+        var items = section?.Items ?? Array.Empty<InventoryItemDto>();
+        var cursorY = DrawInventoryHeader(drawList, new Vector2(origin.X, origin.Y + CoinArt.SectionGap * scale),
+            width, Loc.T(L.Loadout.BadgesTitle), ref slotsText.Badges, WornCount(items), section?.Slots ?? 0, scale);
+        if (items.Length == 0)
+        {
+            return DrawInventoryEmpty(new Vector2(origin.X, cursorY), width, FontAwesomeIcon.Star,
+                Loc.T(L.Loadout.BadgesEmpty), Loc.T(L.Loadout.BadgesEmptyHint), "coin.items.badges.shop", scale);
+        }
+
+        cursorY += Typography.DrawWrappedLeft(new Vector2(origin.X, cursorY), Loc.T(L.Loadout.BadgesHint), ui.MutedInk,
+            TextStyles.Footnote, width);
+        cursorY += Metrics.Space.Sm * scale;
+        var rowHeight = CoinArt.RowHeight * scale;
+        var min = new Vector2(origin.X, cursorY);
+        var max = new Vector2(origin.X + width, cursorY + rowHeight * items.Length);
+        CoinArt.Card(drawList, ui, min, max, scale);
+        for (var index = 0; index < items.Length; index++)
+        {
+            var top = cursorY + index * rowHeight;
+            var row = new Rect(new Vector2(min.X, top), new Vector2(max.X, top + rowHeight));
+            if (index > 0)
+            {
+                CoinArt.Hairline(drawList, ui, row.Min.X + (Metrics.Space.Lg + BadgeGlyph + CoinArt.TextGap) * scale,
+                    row.Max.X - Metrics.Space.Lg * scale, top);
+            }
+
+            DrawBadgeRow(drawList, items[index], row, index, scale);
+        }
+
+        return max.Y;
+    }
+
+    private void DrawBadgeRow(ImDrawListPtr drawList, InventoryItemDto item, Rect row, int index, float scale)
+    {
+        var light = RoleInk.IsLight(theme);
+        var worn = item.Slot > 0;
+        var pad = Metrics.Space.Lg * scale;
+        var glyph = BadgeGlyph * scale;
+        var center = new Vector2(row.Min.X + pad + glyph * 0.5f, row.Center.Y);
+        var style = BadgeFor(item);
+        BadgeStrip.DrawOne(drawList, center, style, images, light, glyph);
+
+        var pillWidth = BadgePillWidth * scale;
+        var pillHeight = CoinArt.CapsuleHeight * scale;
+        var pill = new Rect(new Vector2(row.Max.X - pad - pillWidth, row.Center.Y - pillHeight * 0.5f),
+            new Vector2(row.Max.X - pad, row.Center.Y + pillHeight * 0.5f));
+        var labelRight = worn ? DrawNameColorMarker(item, pill, index, scale) : pill.Min.X;
+        var labelLeft = center.X + glyph * 0.5f + CoinArt.TextGap * scale;
+        var labelWidth = MathF.Max(1f, labelRight - CoinArt.ValueGap * scale - labelLeft);
+        var name = style?.Name ?? string.Empty;
+        var labelHeight = Typography.LineHeight(TextStyles.BodyEmphasized);
+        Marquee.DrawLeftAuto(new MarqueeId("inventory.badge.", index), name, labelLeft,
+            row.Center.Y - labelHeight * 0.5f, labelWidth, TextStyles.BodyEmphasized, ui.TitleInk);
+
+        var label = worn ? NumberText.Group(item.Slot) : Loc.T(L.Loadout.Wear);
+        if (CoinArt.Capsule(drawList, ui, ImGui.GetID(item.Id), pill, label,
+                worn ? CapsuleTone.Filled : CapsuleTone.Tinted, !inventory.Equipping))
+        {
+            UiFeedback.Play(worn ? UiSound.ToggleOff : UiSound.ToggleOn);
+            inventory.Equip(LoadoutStore.BadgeKind, item.Id, worn ? 0 : null);
+        }
+    }
+
+    private float DrawNameColorMarker(InventoryItemDto item, Rect pill, int index, float scale)
+    {
+        var radius = NameColorMarkerRadius * scale;
+        var center = new Vector2(pill.Min.X - Metrics.Space.Sm * scale - radius, pill.Center.Y);
+        var glyph = IconGlyph.Of(FontAwesomeIcon.Palette);
+        if (item.Slot == NameColorSlot)
+        {
+            AppSkin.Icon(center, glyph, ui.Palette.Accent, NameColorGlyphScale);
+            HoverTooltip.Show(new Rect(center - new Vector2(radius, radius),
+                center + new Vector2(radius, radius)), Loc.T(L.Loadout.ColorsName));
+            return center.X - radius;
+        }
+
+        if (ui.IconButton(center, radius, glyph, ui.MutedInk, ui.Palette.FieldSurface, NameColorGlyphScale,
+                Loc.T(L.Loadout.UseForNameColor)))
+        {
+            UiFeedback.Play(UiSound.ToggleOn);
+            inventory.Equip(LoadoutStore.BadgeKind, item.Id, NameColorSlot);
+        }
+
+        return center.X - radius;
+    }
+
+    private float DrawInventoryEmpty(Vector2 origin, float width, FontAwesomeIcon icon, string title, string hint,
+        string actionId, float scale)
+    {
+        var bottom = CoinArt.DrawPanel(ui, origin, width, icon, ui.Accent, title, hint, scale);
+        var height = CoinArt.LargeCapsuleHeight * scale;
+        var top = bottom + Metrics.Space.Md * scale;
+        var rect = new Rect(new Vector2(origin.X, top), new Vector2(origin.X + width, top + height));
+        if (CoinArt.Capsule(ImGui.GetWindowDrawList(), ui, ImGui.GetID(actionId), rect, Loc.T(L.Coin.BrowseShop),
+                CapsuleTone.Tinted, true))
+        {
+            UiFeedback.Play(UiSound.Tap);
+            SelectTab(CoinTab.Shop);
+        }
+
+        return rect.Max.Y;
     }
 
     private static int WornCount(InventoryItemDto[] items)

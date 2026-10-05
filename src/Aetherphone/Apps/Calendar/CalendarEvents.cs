@@ -1,5 +1,4 @@
 using System.Collections.Frozen;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Aetherphone.Core;
@@ -25,6 +24,12 @@ internal sealed class CalendarEvents : IDisposable
         new(0.157f, 0.761f, 0.796f, 1f),
     };
 
+    private static readonly Comparison<ParsedEvent> ByStart = static (left, right) =>
+    {
+        var begin = left.Begin.CompareTo(right.Begin);
+        return begin != 0 ? begin : string.CompareOrdinal(left.Name, right.Name);
+    };
+
     private readonly HttpService http;
     private readonly AethernetSession session;
     private readonly CancellationTokenSource cancellation = new();
@@ -33,10 +38,12 @@ internal sealed class CalendarEvents : IDisposable
     private bool loaded;
     private bool loading;
     private bool failed;
+    private int customRevision;
 
     public bool IsLoaded => loaded;
     public bool IsLoading => loading;
     public bool HasFailed => failed;
+    public int CustomRevision => customRevision;
     public FrozenDictionary<long, ParsedEvent[]> Events => events;
 
     public CalendarEvents(HttpService http, AethernetSession session)
@@ -61,6 +68,18 @@ internal sealed class CalendarEvents : IDisposable
             return;
         }
 
+        loading = true;
+        _ = Task.Run(FetchAndProcessAsync);
+    }
+
+    public void Retry()
+    {
+        if (loading)
+        {
+            return;
+        }
+
+        failed = false;
         loading = true;
         _ = Task.Run(FetchAndProcessAsync);
     }
@@ -160,7 +179,12 @@ internal sealed class CalendarEvents : IDisposable
         }
 
         var builder = new Dictionary<long, List<ParsedEvent>>();
-        var colorQueue = new Queue<int>(Enumerable.Range(0, EventPalette.Length));
+        var colorQueue = new Queue<int>(EventPalette.Length);
+        for (var paletteIndex = 0; paletteIndex < EventPalette.Length; paletteIndex++)
+        {
+            colorQueue.Enqueue(paletteIndex);
+        }
+
         var usedColors = new Dictionary<long, int>(records.Length);
 
         for (var index = 0; index < records.Length; index++)
@@ -181,7 +205,7 @@ internal sealed class CalendarEvents : IDisposable
             var paletteColor = EventPalette[colorIndex];
             var dimmed = new Vector4(paletteColor.X, paletteColor.Y, paletteColor.Z, 0.42f);
 
-            foreach (var day in EachDay(record.Begin, record.End))
+            for (var day = record.Begin.Date; day <= record.End.Date; day = day.AddDays(1))
             {
                 var key = day.Ticks;
                 if (!builder.TryGetValue(key, out var dayEvents))
@@ -201,6 +225,7 @@ internal sealed class CalendarEvents : IDisposable
                     Url = record.Url,
                     Color = paletteColor,
                     DimColor = dimmed,
+                    GroupName = string.Empty,
                 });
             }
         }
@@ -209,34 +234,16 @@ internal sealed class CalendarEvents : IDisposable
         foreach (var pair in builder)
         {
             var array = pair.Value.ToArray();
-            for (var index = 0; index < array.Length; index++)
-            {
-                array[index].Spacing = index * 10f;
-            }
-
+            Array.Sort(array, ByStart);
             frozen[pair.Key] = array;
         }
 
         events = frozen.ToFrozenDictionary();
     }
 
-    public ParsedEvent[] GetEvents(DateTime day)
+    public void MarkCustomChanged()
     {
-        var key = day.Date.Ticks;
-        return events.TryGetValue(key, out var dayEvents) ? dayEvents : Array.Empty<ParsedEvent>();
-    }
-
-    public bool HasEvents(DateTime day)
-    {
-        return events.ContainsKey(day.Date.Ticks);
-    }
-
-    private static IEnumerable<DateTime> EachDay(DateTime begin, DateTime end)
-    {
-        for (var day = begin.Date; day <= end.Date; day = day.AddDays(1))
-        {
-            yield return day;
-        }
+        customRevision++;
     }
 
     public void Dispose()
@@ -274,7 +281,12 @@ internal struct ParsedEvent
     public string Url;
     public Vector4 Color;
     public Vector4 DimColor;
-    public float Spacing;
     public bool IsCustom;
     public Guid CustomId;
+    public string GroupName;
+    public bool Repeats;
+
+    public readonly bool SpansDays => End > Begin && End.AddTicks(-1).Date > Begin.Date;
+
+    public readonly bool HasEnd => End > Begin;
 }

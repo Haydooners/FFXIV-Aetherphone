@@ -23,10 +23,10 @@ internal sealed partial class ChirperApp
     private const float ReplyComposerHeight = 60f;
     private const string SourceLabel = "Aetherphone";
 
-    private static readonly TextStyle HeadNameStyle = new(1f, FontWeight.SemiBold);
-    private static readonly TextStyle HeadHandleStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle StatNumberStyle = new(0.97f, FontWeight.Bold);
-    private static readonly TextStyle StatWordStyle = new(0.93f, FontWeight.Regular);
+    private static readonly TextStyle HeadNameStyle = TextStyles.Headline;
+    private static readonly TextStyle HeadHandleStyle = TextStyles.Subheadline;
+    private static readonly TextStyle StatNumberStyle = TextStyles.Headline;
+    private static readonly TextStyle StatWordStyle = TextStyles.Subheadline;
     private static readonly Vector4 ThreadLine = new(1f, 1f, 1f, 0.14f);
 
     private CommentDto? sheetComment;
@@ -34,7 +34,7 @@ internal sealed partial class ChirperApp
     private void DrawThread(Rect area, string postId)
     {
         var post = store.DetailPost;
-        DrawCenteredHeader(area, Loc.T(L.Chirper.ThreadTitle));
+        DrawScreenHeader(area, Loc.T(L.Chirper.ThreadTitle), centered: true);
         var scale = UiScale.Current;
         var top = area.Min.Y + AppHeader.Height * scale;
         if (post is null || post.Id != postId)
@@ -94,33 +94,6 @@ internal sealed partial class ChirperApp
         }
 
         DrawCommentComposer(new Rect(new Vector2(area.Min.X, area.Max.Y - composerHeight), area.Max), area, postId);
-    }
-
-    private void DrawCenteredHeader(Rect area, string title)
-    {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
-        var backCenter = new Vector2(area.Min.X + CellPadX * scale + 9f * scale, rowCenterY);
-        var hitHalf = 22f * scale;
-        var hitMin = backCenter - new Vector2(hitHalf, hitHalf);
-        var hitMax = backCenter + new Vector2(hitHalf, hitHalf);
-        var hovered = UiInteract.Hover(hitMin, hitMax);
-        PhoneIcon.Draw(drawList, backCenter, PhoneIcons.ChevronLeft,
-            hovered ? ChirperInk.White : ChirperInk.TitleInk, 20f * scale);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(hitMin, hitMax, hovered))
-        {
-            back();
-        }
-
-        var fitted = Typography.FitText(title, MathF.Max(1f, area.Width - 120f * scale), ScreenTitleStyle);
-        Typography.DrawCentered(drawList, new Vector2(area.Center.X, rowCenterY), fitted, ChirperInk.TitleInk,
-            ScreenTitleStyle);
     }
 
     private void DrawThreadHead(PostDto post)
@@ -452,21 +425,11 @@ internal sealed partial class ChirperApp
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
         var label = Loc.T(L.Chirper.EarlierComments);
-        var size = Typography.Measure(label, CapsuleStyle);
-        var height = 30f * scale;
-        var padX = 14f * scale;
-        var min = new Vector2(origin.X + CellPadX * scale, origin.Y + 10f * scale);
-        var max = new Vector2(min.X + size.X + padX * 2f, min.Y + height);
-        var hovered = UiInteract.Hover(min, max);
-        Squircle.Fill(drawList, min, max, height * 0.5f,
-            ImGui.GetColorU32(hovered ? Palette.WithAlpha(ChirperInk.Accent, 0.24f) : ChirperInk.MineFill));
-        Typography.DrawCentered(drawList, (min + max) * 0.5f, label, ChirperInk.AccentLink, CapsuleStyle);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
+        var height = Button.SmallHeight * scale;
+        var min = new Vector2(origin.X + CellPadX * scale, origin.Y + 11f * scale);
+        var max = new Vector2(min.X + Button.WidthFor(label, ButtonSize.Small), min.Y + height);
+        if (Button.Draw(drawList, new Rect(min, max), label, ui.Ink, ButtonStyle.Tinted))
 
-        if (UiInteract.Click(min, max, hovered))
         {
             store.LoadMoreComments();
         }
@@ -781,7 +744,7 @@ internal sealed partial class ChirperApp
         replyFocusPending = false;
         var canSend = !string.IsNullOrWhiteSpace(commentDraft) || commentAttachment.Path is not null;
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        replySendReveal.Step(canSend ? 1f : 0f, SendRevealSmoothTime, delta);
+        replySendReveal.Step(canSend ? 1f : 0f, Motion.Appear, delta);
         var fieldBar = new Rect(new Vector2(fieldLeft, bar.Min.Y), bar.Max);
         if (CommentComposerBar.Draw(fieldBar, screen, ui, theme, style, "##chirperComment", Loc.T(L.Chirper.AddComment),
                 ref commentDraft, MaxCommentLength, commentMentions, mentionPopup, images, lodestone, store.Commenting,

@@ -34,6 +34,8 @@ internal sealed class SocialInk
     public readonly Vector4 Danger = new(1f, 0.373f, 0.420f, 1f);
     public readonly Vector4 PresenceGreen = new(0.188f, 0.820f, 0.345f, 1f);
 
+    public ControlInk Control => new(Accent, TitleInk, MutedInk, Danger);
+
     public SocialInk(in AppPalette palette)
     {
         Accent = palette.Accent;

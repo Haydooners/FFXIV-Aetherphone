@@ -37,9 +37,11 @@ internal enum VelvetScreenId
     CardPreview,
     PostTags,
     TagPosts,
-    EditCaption,
+    EditPost,
     Encryption,
     UserPosts,
+    Archive,
+    ArchivedChats,
 }
 
 internal readonly record struct VelvetView(VelvetScreenId Screen, string? Arg = null)
@@ -56,13 +58,15 @@ internal readonly record struct VelvetView(VelvetScreenId Screen, string? Arg = 
     public static readonly VelvetView CardPreview = new(VelvetScreenId.CardPreview);
     public static readonly VelvetView PostTags = new(VelvetScreenId.PostTags);
     public static readonly VelvetView Encryption = new(VelvetScreenId.Encryption);
+    public static readonly VelvetView Archive = new(VelvetScreenId.Archive);
+    public static readonly VelvetView ArchivedChats = new(VelvetScreenId.ArchivedChats);
 
     public static VelvetView Profile(string userId) => new(VelvetScreenId.Profile, userId);
     public static VelvetView Thread(string userId) => new(VelvetScreenId.Thread, userId);
     public static VelvetView PostDetail(string postId) => new(VelvetScreenId.PostDetail, postId);
     public static VelvetView Likers(string postId) => new(VelvetScreenId.Likers, postId);
 
-    public static VelvetView EditCaption(string postId) => new(VelvetScreenId.EditCaption, postId);
+    public static VelvetView EditPost(string postId) => new(VelvetScreenId.EditPost, postId);
     public static VelvetView ChatImage(string userId) => new(VelvetScreenId.ChatImage, userId);
     public static VelvetView ImageView(string messageId) => new(VelvetScreenId.ImageView, messageId);
     public static VelvetView Intro(string userId) => new(VelvetScreenId.Intro, userId);

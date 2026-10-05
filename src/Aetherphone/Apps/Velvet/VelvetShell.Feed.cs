@@ -79,7 +79,7 @@ internal sealed partial class VelvetShell
             }
         }
 
-        if (ComposeFab.Draw(area, "velvetCompose", VelvetTheme.Rose, PhoneIcons.Plus,
+        if (ComposeFab.Draw(TabBar.ContentArea(area, scale), "velvetCompose", VelvetTheme.Rose, PhoneIcons.Plus,
                 Loc.T(L.Velvet.Share), "velvet.compose", VelvetTheme.RoseDeep, FabRadius, true))
         {
             post.Open();
@@ -201,7 +201,7 @@ internal sealed partial class VelvetShell
         return CardActionTap.None;
     }
 
-    private void DrawPostCard(VelvetPostDto entry, float width)
+    private void DrawPostCard(VelvetPostDto entry, float width, bool showPinned = false)
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
@@ -267,11 +267,19 @@ internal sealed partial class VelvetShell
             headerTextMaxWidth, TextStyles.Headline, VelvetTheme.TitleInk, nameHovering, false);
         var ownerSub = SocialIdentity.FeedMeta(entry.OwnerHandle, PostTimestamp(entry));
         var ownerSubY = nameTop + PostCardMetrics.SublineTop * scale;
+        var ownerSubLeft = nameLeft;
+        if (showPinned && entry.PinnedAtUnix is not null)
+        {
+            ownerSubLeft += DrawPinnedGlyph(drawList, nameLeft, ownerSubY, Typography.LineHeight(TextStyles.Subheadline));
+            ownerSub = $"{Loc.T(L.Social.PinnedLabel)} · {ownerSub}";
+        }
+
+        var ownerSubMaxWidth = MathF.Max(1f, headerTextRight - ownerSubLeft);
         var ownerSubSize = Typography.Measure(ownerSub, TextStyles.Subheadline);
-        var ownerSubHovering = UiInteract.Hover(new Vector2(nameLeft, ownerSubY),
-            new Vector2(nameLeft + headerTextMaxWidth, ownerSubY + ownerSubSize.Y));
-        Marquee.DrawLeft(new MarqueeId("velvet.feed.ownersub.", entry.Id), ownerSub, nameLeft, ownerSubY,
-            headerTextMaxWidth, TextStyles.Subheadline, VelvetTheme.MutedInk, ownerSubHovering);
+        var ownerSubHovering = UiInteract.Hover(new Vector2(ownerSubLeft, ownerSubY),
+            new Vector2(ownerSubLeft + ownerSubMaxWidth, ownerSubY + ownerSubSize.Y));
+        Marquee.DrawLeft(new MarqueeId("velvet.feed.ownersub.", entry.Id), ownerSub, ownerSubLeft, ownerSubY,
+            ownerSubMaxWidth, TextStyles.Subheadline, VelvetTheme.MutedInk, ownerSubHovering);
         var overRing = hasStory &&
             (ImGui.GetMousePos() - avatarCenter).LengthSquared() <= ringRadius * ringRadius;
         if (hasStory && UiInteract.HoverClickCircle(avatarCenter, ringRadius))
@@ -446,21 +454,7 @@ internal sealed partial class VelvetShell
             return;
         }
 
-        var texture = images.Get(url);
-        if (texture is null)
-        {
-            VMediaTile.Placeholder(drawList, min, max, rounding);
-            Typography.DrawCentered(new Vector2((min.X + max.X) * 0.5f, (min.Y + max.Y) * 0.5f),
-                images.Failed(url) ? Loc.T(L.Velvet.ImageUnavailable) : Loc.T(L.Common.Loading), VelvetTheme.MutedInk,
-                TextStyles.Footnote);
-        }
-        else
-        {
-            var (uv0, uv1) = ImageFit.Cover(texture.Size.X, texture.Size.Y, max.X - min.X, max.Y - min.Y);
-            drawList.AddImageRounded(texture.Handle, min, max, uv0, uv1, 0xFFFFFFFFu, rounding,
-                ImDrawFlags.RoundCornersAll);
-        }
-
+        VMediaTile.DrawPhoto(drawList, min, max, url, rounding, images);
         ModerationOverlay.Draw(drawList, min, max, rounding, scanStatus);
     }
 

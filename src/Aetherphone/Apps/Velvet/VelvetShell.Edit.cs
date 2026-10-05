@@ -187,16 +187,16 @@ internal sealed partial class VelvetShell
             DrawEditPhoto();
             Gap(14f);
 
-            VSectionHeader.Card(PhoneIcons.User, Loc.T(L.Velvet.CardIdentity));
+            CardSectionHeader.Flow(Loc.T(L.Velvet.CardIdentity), VelvetTheme.TitleInk);
             Gap(4f);
-            ui.Field(Loc.T(L.Velvet.DisplayNameLabel), "##ed_name", ref editDisplayName, 40, false);
-            ui.Field(Loc.T(L.Velvet.HandleLabel), "##ed_handle", ref editHandle, 15, false);
+            DrawEditField(Loc.T(L.Velvet.DisplayNameLabel), "##ed_name", ref editDisplayName, 40, false);
+            DrawEditField(Loc.T(L.Velvet.HandleLabel), "##ed_handle", ref editHandle, 15, false);
             Gap(16f);
 
-            VSectionHeader.Card(PhoneIcons.Feather, Loc.T(L.Velvet.CardAbout));
+            CardSectionHeader.Flow(Loc.T(L.Velvet.CardAbout), VelvetTheme.TitleInk);
             Gap(4f);
-            ui.Field(Loc.T(L.Velvet.IntroduceYourself), "##ed_intro", ref editIntro, EditIntroMaxLength, true);
-            ui.Field(Loc.T(L.Velvet.PronounsLabel), "##ed_pronouns", ref editPronouns, 40, false);
+            DrawEditField(Loc.T(L.Velvet.IntroduceYourself), "##ed_intro", ref editIntro, EditIntroMaxLength, true);
+            DrawEditField(Loc.T(L.Velvet.PronounsLabel), "##ed_pronouns", ref editPronouns, 40, false);
             Gap(16f);
 
             VSectionHeader.Overline(Loc.T(L.Velvet.EditDetailsHeader));
@@ -211,6 +211,43 @@ internal sealed partial class VelvetShell
 
             Gap(40f);
         }
+    }
+
+    private void DrawEditField(string label, string id, ref string value, int maxLength, bool multiline)
+    {
+        var scale = UiScale.Current;
+        ui.SectionLabel(label);
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        var height = (multiline ? Metrics.Size.FieldMultiline : SearchBar.HeightUnits) * scale;
+        var field = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
+        var drawList = ImGui.GetWindowDrawList();
+        var inset = Metrics.Space.Md * scale;
+        using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
+        using (ImRaii.PushColor(ImGuiCol.Text, VelvetTheme.TitleInk))
+        {
+            if (multiline)
+            {
+                Squircle.Fill(drawList, field.Min, field.Max, Metrics.Radius.Md * scale,
+                    Surfaces.Fill(VelvetTheme.Ink, FillLevel.Tertiary).Packed());
+                ImGui.SetCursorScreenPos(new Vector2(field.Min.X + inset, field.Min.Y + Metrics.Space.Sm * scale));
+                var fieldSize = new Vector2(width - inset * 2f, height - Metrics.Space.Lg * scale);
+                var wrapWidth = fieldSize.X - ImGui.GetStyle().FramePadding.X * 2f - Metrics.Space.Xxs * scale;
+                SoftWrapField.Multiline(id, ref value, maxLength, fieldSize, wrapWidth);
+            }
+            else
+            {
+                SearchBar.Surface(drawList, field, VelvetTheme.Ink);
+                ImGui.SetCursorScreenPos(new Vector2(field.Min.X + inset,
+                    field.Center.Y - ImGui.GetFrameHeight() * 0.5f));
+                ImGui.SetNextItemWidth(width - inset * 2f);
+                Plugin.Fonts.NoticeText(value);
+                ImGui.InputText(id, ref value, maxLength);
+            }
+        }
+
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height));
     }
 
     private void DrawEditSection(VelvetEditSection section, int slot)
@@ -706,7 +743,7 @@ internal sealed partial class VelvetShell
     private const float CardPhotoAspect = 1f / GridCardAspect;
     private const float CardPhotoRounding = 12f;
     private const float CardPhotoSpinnerRadius = 8f;
-    private const float PreviewButtonHeight = 38f;
+    private const float PreviewButtonHeight = Button.RegularHeight;
     private const int PhotoSheetMaxItems = 2;
 
     private readonly ActionSheet photoSheet = new();
@@ -717,7 +754,7 @@ internal sealed partial class VelvetShell
     private void DrawEditPhoto()
     {
         var photos = store.Me is { } me ? CardPhotos(me) : NoCardPhotos;
-        VSectionHeader.Card(PhoneIcons.Photo, Loc.T(L.Velvet.PhotoSection));
+        CardSectionHeader.Flow(Loc.T(L.Velvet.PhotoSection), VelvetTheme.TitleInk);
         Gap(6f);
         var width = ScrollLayout.StableContentWidth();
         var height = width * GridCardAspect;
@@ -743,7 +780,7 @@ internal sealed partial class VelvetShell
         Gap(8f);
         ui.HelpText(Loc.T(L.Velvet.PhotoHint));
         Gap(8f);
-        if (ui.GhostButton(Reserve(PreviewButtonHeight), Loc.T(L.Velvet.PreviewCard)))
+        if (Button.Draw(Reserve(PreviewButtonHeight), Loc.T(L.Velvet.PreviewCard), VelvetTheme.Ink, ButtonStyle.Gray))
         {
             OpenCardPreview();
         }
@@ -769,7 +806,8 @@ internal sealed partial class VelvetShell
         var scale = UiScale.Current;
         var rounding = CardPhotoRounding * scale;
         var hovered = next && !busy && UiInteract.Hover(min, max);
-        Squircle.Fill(drawList, min, max, rounding, (hovered ? VelvetTheme.CardHi : VelvetTheme.PlumWell).Packed());
+        Squircle.Fill(drawList, min, max, rounding,
+            Surfaces.Fill(VelvetTheme.Ink, hovered ? FillLevel.Secondary : FillLevel.Tertiary).Packed());
         Squircle.Stroke(drawList, min, max, rounding,
             (next ? VelvetTheme.Alpha(VelvetTheme.RoseInk, 0.55f) : VelvetTheme.Hairline).Packed(),
             Metrics.Stroke.Hairline * scale);
@@ -852,8 +890,8 @@ internal sealed partial class VelvetShell
         var pillWidth = 150f * scale;
         var pillTop = center.Y + radius + 16f * scale;
         var changeRect = new Rect(new Vector2(block.Center.X - pillWidth * 0.5f, pillTop),
-            new Vector2(block.Center.X + pillWidth * 0.5f, pillTop + 34f * scale));
-        var pillClicked = ui.GhostButton(changeRect, Loc.T(L.Velvet.ChangePhoto));
+            new Vector2(block.Center.X + pillWidth * 0.5f, pillTop + Button.RegularHeight * scale));
+        var pillClicked = Button.Draw(changeRect, Loc.T(L.Velvet.ChangePhoto), VelvetTheme.Ink, ButtonStyle.Gray);
         if (pillClicked || (avatarHovered && ImGui.IsMouseClicked(ImGuiMouseButton.Left)))
         {
             avatar.Open();

@@ -16,21 +16,25 @@ internal sealed partial class AethergramApp
 {
     private const float CellPadX = SocialChrome.CellPadX;
     private const float HeaderIconSize = 24f;
-    private const float PillHeight = 32f;
-    private const float PillRounding = 8f;
+    private const float PillHeight = Button.RegularHeight;
+    private const float SmallButtonCeiling = 31f;
+    private const float RegularButtonCeiling = 39f;
     private const float IconTabHeight = 44f;
     private const float IconTabUnderline = 1.5f;
     private const float IconTabIconSize = 22f;
-    private const float TabSmoothTime = 0.09f;
     private const float GridGap = 1.5f;
+    private const float GridThumbnailOversample = 2f;
+    private const float GridBadgeInset = 12f;
+    private const float GridBadgeSize = 16f;
+    private const float GridBadgeGap = 18f;
     private const float UserRowHeight = 64f;
     private const float UserRowAvatarRadius = 22f;
     private const float FollowPillWidth = 96f;
     private const float EmptyStateTop = 72f;
 
     private static readonly SocialInk Ink = AethergramInk.Shared;
-    private static readonly TextStyle ScreenTitleStyle = new(1.05f, FontWeight.SemiBold);
-    private static readonly TextStyle PillStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle ScreenTitleStyle = TextStyles.Headline;
+
     private static readonly TextStyle GridOverlayStyle = TextStyles.FootnoteEmphasized;
     private static readonly TextStyle EmptyTitleStyle = TextStyles.Title2;
     private static readonly TextStyle EmptyBodyStyle = TextStyles.Callout;
@@ -60,29 +64,40 @@ internal sealed partial class AethergramApp
     private static int DrawIconTabs(Rect row, ReadOnlySpan<string> glyphs, ReadOnlySpan<string> labels, int active,
         ref Spring slide) =>
         UnderlineTabs.DrawIcons(row, glyphs, labels, active, ref slide, Ink, IconTabIconSize, IconTabUnderline,
-            TabSmoothTime);
+            Motion.Release);
 
-    private static bool DrawAccentPill(Rect rect, string label, bool enabled = true) =>
-        SocialPill.Accent(ImGui.GetWindowDrawList(), rect, label, Ink, PillStyle, PillRounding * UiScale.Current,
-            enabled);
+    private bool DrawAccentPill(Rect rect, string label, bool enabled = true) =>
+        Button.Draw(SnapButton(rect), label, ui.Ink, ButtonStyle.Prominent, enabled: enabled);
 
-    private static bool DrawGrayPill(Rect rect, string label) =>
-        SocialPill.Flat(ImGui.GetWindowDrawList(), rect, label, Ink.ButtonFill, Ink.ButtonHover, default,
-            Ink.TitleInk, PillStyle, PillRounding * UiScale.Current);
+    private bool DrawGrayPill(Rect rect, string label) =>
+        Button.Draw(SnapButton(rect), label, ui.Ink, ButtonStyle.Gray);
 
-    private static bool DrawGrayIconButton(Rect rect, string glyph, string tooltip, float iconSize = 20f) =>
-        SocialPill.Icon(ImGui.GetWindowDrawList(), rect, glyph, tooltip, Ink.ButtonFill, Ink.ButtonHover,
-            Ink.TitleInk, iconSize, PillRounding * UiScale.Current);
+    private bool DrawGrayIconButton(Rect rect, string glyph, string tooltip) =>
+        RoundButton.Icon(ImGui.GetWindowDrawList(), rect.Center, RoundButton.RegularRadius * UiScale.Current, glyph,
+            ui.Ink, ButtonStyle.Gray, tooltip, HoverLabelSide.Below);
+
+    private static Rect SnapButton(Rect rect)
+    {
+        var scale = UiScale.Current;
+        var units = rect.Height / scale;
+        var height = units <= SmallButtonCeiling ? Button.SmallHeight
+            : units <= RegularButtonCeiling ? Button.RegularHeight
+            : Button.LargeHeight;
+        var half = height * scale * 0.5f;
+        return new Rect(new Vector2(rect.Min.X, rect.Center.Y - half), new Vector2(rect.Max.X, rect.Center.Y + half));
+    }
 
     private void DrawFollowPill(Rect rect, UserDto user)
     {
         var state = SocialFeedStore.FollowStateOf(user);
+        ImGui.PushID(user.Id);
         var clicked = state switch
         {
             FollowState.Following => DrawGrayPill(rect, Loc.T(L.Aethergram.Following)),
             FollowState.Requested => DrawGrayPill(rect, Loc.T(L.Social.Requested)),
             _ => DrawAccentPill(rect, Loc.T(L.Aethergram.Follow)),
         };
+        ImGui.PopID();
         if (clicked)
         {
             store.ToggleFollow(user);
@@ -113,10 +128,13 @@ internal sealed partial class AethergramApp
                 ImGui.Dummy(new Vector2(cellWidth, cellHeight));
                 var min = ImGui.GetItemRectMin();
                 var max = ImGui.GetItemRectMax();
-                DrawGridTile(posts[index], min, max, style);
-                if (UiInteract.Click(min, max, UiInteract.Hover(min, max)))
+                if (ImGui.IsRectVisible(min, max))
                 {
-                    OpenPosts(posts[index].Id, source);
+                    DrawGridTile(posts[index], min, max, style, source == PostSource.Profile);
+                    if (UiInteract.Click(min, max, UiInteract.Hover(min, max)))
+                    {
+                        OpenPosts(posts[index].Id, source);
+                    }
                 }
 
                 if (index % GridColumns != GridColumns - 1)
@@ -139,18 +157,21 @@ internal sealed partial class AethergramApp
         ImGui.Dummy(new Vector2(0f, 24f * scale));
     }
 
-    private void DrawGridTile(PostDto post, Vector2 min, Vector2 max, in PostGridStyle style)
+    private void DrawGridTile(PostDto post, Vector2 min, Vector2 max, in PostGridStyle style, bool showPin)
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         var photos = PostMedia.Photos(post.MediaUrls, post.MediaUrl);
+        var pinned = showPin && post.PinnedAtUnix is not null;
+        var badgeCenter = new Vector2(max.X - GridBadgeInset * scale, min.Y + GridBadgeInset * scale);
         if (SensitiveReveals.ShouldVeil(post.Sensitive, post.Id, configuration.ShowSensitiveContent))
         {
             SensitiveVeil.Draw(drawList, min, max, 0f);
         }
         else
         {
-            var texture = images.Get(photos.Length > 0 ? photos[0] : null);
+            var texture = images.Sized(photos.Length > 0 ? photos[0] : null,
+                MathF.Max(max.X - min.X, max.Y - min.Y) * GridThumbnailOversample);
             if (texture is null)
             {
                 drawList.AddRectFilled(min, max, ImGui.GetColorU32(Ink.ThumbFill));
@@ -161,9 +182,14 @@ internal sealed partial class AethergramApp
             drawList.AddImage(texture.Handle, min, max, uv0, uv1);
             if (photos.Length > 1)
             {
-                PhoneIcon.Draw(drawList, new Vector2(max.X - 12f * scale, min.Y + 12f * scale), PhoneIcons.Copy,
-                    Ink.White, 16f * scale);
+                var carouselCenter = pinned ? badgeCenter - new Vector2(GridBadgeGap * scale, 0f) : badgeCenter;
+                PhoneIcon.Draw(drawList, carouselCenter, PhoneIcons.Copy, Ink.White, GridBadgeSize * scale);
             }
+        }
+
+        if (pinned)
+        {
+            PhoneIcon.Draw(drawList, badgeCenter, PhoneIcons.PinFilled, Ink.White, GridBadgeSize * scale);
         }
 
         if (style.ShowLikes)

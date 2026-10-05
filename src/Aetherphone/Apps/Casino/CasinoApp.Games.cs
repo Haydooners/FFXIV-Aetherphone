@@ -1,133 +1,173 @@
+using Aetherphone.Apps.Coin;
 using Aetherphone.Core;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
+using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Casino;
 
 internal sealed partial class CasinoApp
 {
-    private const float GameRowHeight = 96f;
-    private const float GameRowGap = 10f;
-    private const float InfoButtonSize = 30f;
+    private const float GameRowPad = 16f;
+    private const float GameRowTile = 52f;
+    private const float GameRowLineGap = 4f;
+    private const int GamePitchLines = 2;
+    private const float InfoButtonSize = 32f;
+    private const float InfoGlyphScale = 0.72f;
+    private const float InfoFillAlpha = 0.10f;
+    private const float InfoHoverAlpha = 0.18f;
 
     private void DrawGamesTab(Rect body)
     {
         var scale = UiScale.Current;
-        using var surface = AppSurface.Begin(body);
-
-        DrawStakeNotice(scale);
-        ui.SectionHeading(Loc.T(L.Casino.GamesHeading), 4f);
-
-        for (var index = 0; index < FloorTiles.Length; index++)
+        using (ImRaii.PushId("casino.games"))
+        using (AppSurface.Begin(body))
         {
-            DrawGameRow(FloorTiles[index], scale);
-            if (index + 1 < FloorTiles.Length)
+            var drawList = ImGui.GetWindowDrawList();
+            var origin = ImGui.GetCursorScreenPos();
+            var width = ScrollLayout.StableContentWidth();
+            var cursorY = DrawStakeNotice(origin, width, scale);
+            for (var index = 0; index < FloorGameIds.Length; index++)
             {
-                ImGui.Dummy(new Vector2(0f, GameRowGap * scale));
+                if (index > 0)
+                {
+                    cursorY += CardGap * scale;
+                }
+
+                using (ImRaii.PushId(index))
+                {
+                    cursorY = DrawGameRow(drawList, new Vector2(origin.X, cursorY), width, index, scale);
+                }
             }
-        }
 
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-        if (DrawNavRow(FontAwesomeIcon.ThList, L.Casino.TablesRow, L.Casino.TablesRowHint, scale))
-        {
-            OpenTables();
+            cursorY = DrawTablesLink(drawList, new Vector2(origin.X, cursorY + CoinArt.SectionGap * scale), width,
+                scale);
+            CoinArt.Reserve(origin, width, cursorY + CoinArt.BottomPad * scale);
         }
-
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
     }
 
-    private void DrawGameRow(in FloorTileDefinition definition, float scale)
+    private float DrawGameRow(ImDrawListPtr drawList, Vector2 origin, float width, int gameIndex, float scale)
     {
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        var height = GameRowHeight * scale;
-        var row = new Rect(origin, new Vector2(origin.X + width, origin.Y + height));
-        var rounding = Metrics.Radius.Card * scale;
+        var gameId = FloorGameIds[gameIndex];
+        var pad = GameRowPad * scale;
+        var tile = GameRowTile * scale;
+        var info = InfoButtonSize * scale;
+        var textLeft = origin.X + pad + tile + CoinArt.TextGap * scale;
+        var textRight = origin.X + width - pad - info - CoinArt.ValueGap * scale;
+        var textWidth = MathF.Max(1f, textRight - textLeft);
+        var pitch = WidgetText.Clamp(Loc.T(CasinoRules.PitchOf(gameId)), TextStyles.Footnote, textWidth,
+            GamePitchLines);
+        var headline = Typography.LineHeight(TextStyles.Headline);
+        var footnote = Typography.LineHeight(TextStyles.Footnote);
+        var textHeight = headline + GameRowLineGap * scale + pitch.Length * footnote + GameRowLineGap * scale +
+                         footnote;
+        var height = MathF.Max(tile, textHeight) + pad * 2f;
+        var min = origin;
+        var max = new Vector2(origin.X + width, origin.Y + height);
 
-        var infoMax = new Vector2(row.Max.X - 12f * scale, row.Min.Y + 12f * scale + InfoButtonSize * scale);
-        var infoMin = new Vector2(infoMax.X - InfoButtonSize * scale, row.Min.Y + 12f * scale);
-        var infoRect = new Rect(infoMin, infoMax);
-        var infoHovered = UiInteract.Hover(infoRect.Min, infoRect.Max);
-        var hovered = definition.Playable && !infoHovered && UiInteract.Hover(row.Min, row.Max);
+        var infoMin = new Vector2(max.X - pad - info, min.Y + pad);
+        var infoMax = infoMin + new Vector2(info, info);
+        if (gameIndex == 0)
+        {
+            UiAnchors.Report("casino.rules", new Rect(infoMin, infoMax));
+        }
 
-        ui.Card(drawList, row.Min, row.Max, rounding);
+        var overInfo = UiInteract.Hover(infoMin, infoMax);
+        var hovered = !overInfo && UiInteract.Hover(min, max);
+        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var factor = PressFx.Scale(ImGui.GetID("card"), pressed, Core.Animation.Motion.PressScaleCard);
+        var center = (min + max) * 0.5f;
+        var half = (max - min) * 0.5f * factor;
+        ui.Card(drawList, center - half, center + half, Metrics.Radius.Grouped * scale);
         if (hovered)
         {
-            Squircle.Fill(drawList, row.Min, row.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        var glyphCenter = new Vector2(row.Min.X + 42f * scale, row.Min.Y + 40f * scale);
-        var glyphRadius = 22f * scale;
-        drawList.AddCircleFilled(glyphCenter, glyphRadius, ImGui.GetColorU32(ui.Palette.FieldSurface), 40);
-        drawList.AddCircle(glyphCenter, glyphRadius,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 40, Metrics.Stroke.Thin * scale);
-        CasinoGlyphs.Draw(drawList, definition.GameId, glyphCenter, 12f * scale,
-            ImGui.GetColorU32(ui.TitleInk), ImGui.GetColorU32(ui.Palette.FieldSurface));
-
-        var textLeft = row.Min.X + 76f * scale;
-        var textRight = infoMin.X - 10f * scale;
-        var textWidth = textRight - textLeft;
-
-        var name = Typography.FitText(Loc.T(definition.Name), textWidth, TextStyles.Headline);
-        Typography.Draw(drawList, new Vector2(textLeft, row.Min.Y + 14f * scale), name, ui.TitleInk,
+        CasinoArt.GameTile(drawList, gameId, new Vector2(min.X + pad + tile * 0.5f, min.Y + pad + tile * 0.5f),
+            tile);
+        var top = min.Y + pad;
+        Typography.Draw(drawList, new Vector2(textLeft, top),
+            Typography.FitText(Loc.T(FloorGameNames[gameIndex]), textWidth, TextStyles.Headline), ui.TitleInk,
             TextStyles.Headline);
+        top += headline + GameRowLineGap * scale;
+        top = WidgetText.Lines(drawList, pitch, new Vector2(textLeft, top), ui.MutedInk, TextStyles.Footnote,
+            footnote);
+        top += GameRowLineGap * scale;
+        DrawGameRowFooter(drawList, gameId, textLeft, max.X - pad, top, scale);
 
-        var pitch = Typography.FitText(Loc.T(CasinoRules.PitchOf(definition.GameId)), textWidth,
-            TextStyles.Footnote);
-        Typography.Draw(drawList, new Vector2(textLeft, row.Min.Y + 38f * scale), pitch, ui.MutedInk,
-            TextStyles.Footnote);
-
-        var stakeLine = MinimumStakeLine(definition.GameId);
-        if (stakeLine.Length > 0)
+        DrawInfoButton(drawList, new Rect(infoMin, infoMax), overInfo);
+        if (UiInteract.Click(infoMin, infoMax, overInfo))
         {
-            Typography.Draw(drawList, new Vector2(textLeft, row.Max.Y - 26f * scale), stakeLine, ui.BodyInk,
-                TextStyles.Caption1);
+            rulesSheet.Open(gameId);
+        }
+        else if (UiInteract.Click(min, max, hovered))
+        {
+            OpenGame(gameId);
         }
 
-        var crowd = CrowdAt(definition);
+        return max.Y;
+    }
+
+    private void DrawGameRowFooter(ImDrawListPtr drawList, string gameId, float left, float right, float top,
+        float scale)
+    {
+        var crowd = CrowdAt(gameId);
+        var crowdWidth = 0f;
         if (crowd > 0)
         {
-            var crowdText = Loc.T(L.Casino.LivePlayers, Apps.Games.Framework.GameNumber.Label(crowd));
-            var crowdSize = Typography.Measure(crowdText, TextStyles.Caption1);
-            var dotCenter = new Vector2(row.Max.X - 14f * scale - crowdSize.X - 10f * scale, row.Max.Y - 20f * scale);
-            drawList.AddCircleFilled(dotCenter, 3.5f * scale, ImGui.GetColorU32(ui.Accent), 12);
-            Typography.Draw(drawList, new Vector2(dotCenter.X + 8f * scale, row.Max.Y - 26f * scale), crowdText,
-                ui.Accent, TextStyles.Caption1);
+            var crowdText = texts.Count(L.Casino.LivePlayers, crowd);
+            var crowdSize = Typography.Measure(crowdText, TextStyles.FootnoteEmphasized);
+            var crowdX = right - crowdSize.X;
+            Typography.Draw(drawList, new Vector2(crowdX, top), crowdText, ui.Accent, TextStyles.FootnoteEmphasized);
+            CasinoArt.LiveDot(drawList, new Vector2(crowdX - (CasinoArt.LiveDotRadius + 4f) * scale,
+                top + crowdSize.Y * 0.5f), scale, ui.Accent, true);
+            crowdWidth = crowdSize.X + (CasinoArt.LiveDotRadius * 2f + 4f + CoinArt.ValueGap) * scale;
         }
 
-        DrawInfoButton(drawList, infoRect, infoHovered, scale);
-
-        if (UiInteract.Click(infoRect.Min, infoRect.Max, infoHovered))
+        var stake = MinimumStakeLine(gameId);
+        if (stake.Length == 0)
         {
-            rulesSheet.Open(definition.GameId);
             return;
         }
 
-        var clicked = UiInteract.Click(row.Min, row.Max, hovered);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height));
-        if (clicked)
-        {
-            OpenGame(definition.GameId);
-        }
+        Typography.Draw(drawList, new Vector2(left, top),
+            Typography.FitText(stake, MathF.Max(1f, right - crowdWidth - left), TextStyles.Footnote), ui.BodyInk,
+            TextStyles.Footnote);
     }
 
-    private void DrawInfoButton(ImDrawListPtr drawList, Rect rect, bool hovered, float scale)
+    private void DrawInfoButton(ImDrawListPtr drawList, Rect rect, bool hovered)
     {
-        var rounding = rect.Height * 0.5f;
-        Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(ui.FieldSurface));
+        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
+        var factor = PressFx.Scale(ImGui.GetID("info"), pressed, Core.Animation.Motion.PressScaleControl);
+        var radius = rect.Height * 0.5f * factor;
+        drawList.AddCircleFilled(rect.Center, radius,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.TitleInk, hovered ? InfoHoverAlpha : InfoFillAlpha)), 32);
         if (hovered)
         {
-            Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
         AppSkin.Icon(drawList, rect.Center, IconGlyph.Of(FontAwesomeIcon.Question),
-            hovered ? ui.Accent : ui.MutedInk, 0.72f);
+            hovered ? ui.Accent : ui.BodyInk, InfoGlyphScale);
+    }
+
+    private float DrawTablesLink(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
+    {
+        var rowHeight = RecordRowHeight * scale;
+        var max = new Vector2(origin.X + width, origin.Y + rowHeight);
+        ui.Card(drawList, origin, max, Metrics.Radius.Grouped * scale);
+        if (DrawRecordRow(drawList, new Rect(origin, max), FontAwesomeIcon.ThList, CasinoArt.TintOf(CasinoGames.Blackjack),
+                L.Casino.TablesRow, L.Casino.TablesRowHint, false, scale))
+        {
+            OpenTables();
+        }
+
+        return max.Y;
     }
 }

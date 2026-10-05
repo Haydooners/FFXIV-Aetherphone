@@ -8,11 +8,11 @@ internal static class MusterText
 {
     private const int CacheCapacity = 512;
 
-    private static readonly Dictionary<string, string> PlaceById = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, LocatedText> PlaceById = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, string> IdentityById = new(StringComparer.Ordinal);
-    private static readonly Dictionary<string, string> WorldLineById = new(StringComparer.Ordinal);
-    private static readonly Dictionary<string, string> HousingById = new(StringComparer.Ordinal);
-    private static readonly Dictionary<string, string> CoordinatesById = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, LocatedText> WorldLineById = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, LocatedText> HousingById = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, LocatedText> CoordinatesById = new(StringComparer.Ordinal);
     private static string cachedLanguageCode = string.Empty;
 
     public static string HostLabel(MusterDto muster)
@@ -32,9 +32,9 @@ internal static class MusterText
     public static string Place(MusterDto muster)
     {
         EnsureLanguage();
-        if (PlaceById.TryGetValue(muster.Id, out var cached))
+        if (PlaceById.TryGetValue(muster.Id, out var cached) && SameLocation(cached.Source, muster))
         {
-            return cached;
+            return cached.Text;
         }
 
         var zone = LocationShare.ZoneName((uint)muster.TerritoryId);
@@ -57,7 +57,7 @@ internal static class MusterText
             place = muster.Spot;
         }
 
-        Store(PlaceById, muster.Id, place);
+        Store(PlaceById, muster.Id, new LocatedText(muster, place));
         return place;
     }
 
@@ -79,42 +79,42 @@ internal static class MusterText
     public static string WorldLine(MusterDto muster)
     {
         EnsureLanguage();
-        if (WorldLineById.TryGetValue(muster.Id, out var cached))
+        if (WorldLineById.TryGetValue(muster.Id, out var cached) && SameLocation(cached.Source, muster))
         {
-            return cached;
+            return cached.Text;
         }
 
         var location = Location(muster);
         var line = LocationShare.WorldLine(in location);
-        Store(WorldLineById, muster.Id, line);
+        Store(WorldLineById, muster.Id, new LocatedText(muster, line));
         return line;
     }
 
     public static string HousingLine(MusterDto muster)
     {
         EnsureLanguage();
-        if (HousingById.TryGetValue(muster.Id, out var cached))
+        if (HousingById.TryGetValue(muster.Id, out var cached) && SameLocation(cached.Source, muster))
         {
-            return cached;
+            return cached.Text;
         }
 
         var location = Location(muster);
         var line = muster.Ward > 0 ? LocationShare.HousingLine(in location) : string.Empty;
-        Store(HousingById, muster.Id, line);
+        Store(HousingById, muster.Id, new LocatedText(muster, line));
         return line;
     }
 
     public static string Coordinates(MusterDto muster)
     {
         EnsureLanguage();
-        if (CoordinatesById.TryGetValue(muster.Id, out var cached))
+        if (CoordinatesById.TryGetValue(muster.Id, out var cached) && SameLocation(cached.Source, muster))
         {
-            return cached;
+            return cached.Text;
         }
 
         var location = Location(muster);
         var line = LocationShare.CoordinateText(in location);
-        Store(CoordinatesById, muster.Id, line);
+        Store(CoordinatesById, muster.Id, new LocatedText(muster, line));
         return line;
     }
 
@@ -157,7 +157,14 @@ internal static class MusterText
         CoordinatesById.Clear();
     }
 
-    private static void Store(Dictionary<string, string> cache, string key, string value)
+    private static bool SameLocation(MusterDto cached, MusterDto current) =>
+        ReferenceEquals(cached, current)
+        || (cached.TerritoryId == current.TerritoryId && cached.MapId == current.MapId && cached.MapX == current.MapX
+            && cached.MapY == current.MapY && cached.WorldId == current.WorldId && cached.Ward == current.Ward
+            && cached.Plot == current.Plot && cached.Room == current.Room
+            && string.Equals(cached.Spot, current.Spot, StringComparison.Ordinal));
+
+    private static void Store<T>(Dictionary<string, T> cache, string key, T value)
     {
         if (cache.Count >= CacheCapacity)
         {
@@ -166,4 +173,6 @@ internal static class MusterText
 
         cache[key] = value;
     }
+
+    private readonly record struct LocatedText(MusterDto Source, string Text);
 }

@@ -1,5 +1,5 @@
 using System.Globalization;
-using Aetherphone.Core.Localization;
+using Aetherphone.Core.Calculator;
 
 namespace Aetherphone.Apps.Calculator;
 
@@ -12,74 +12,123 @@ internal enum CalcOp : byte
     Divide,
 }
 
-internal readonly record struct CalcHistoryEntry(string Expression, string Result);
-
 internal sealed class CalculatorEngine
 {
+    public const int MaxHistory = 100;
     private const int MaxDigits = 9;
-    private const int MaxHistory = 50;
+    private const int RoundingDecimals = 8;
+    private const double ScientificAbove = 1e15;
+    private const double ScientificBelow = 1e-8;
+    private const string Zero = "0";
+    private const string NegativeZero = "-0";
 
-    private readonly List<CalcHistoryEntry> history = new();
-    private double accumulator;
-    private double lastOperand;
-    private CalcOp pending;
+    private readonly List<CalculatorHistoryRecord> history;
+    private readonly Func<long> clock;
+    private readonly List<double> operands = new();
+    private readonly List<CalcOp> operators = new();
+    private CalcOp repeatOperator;
+    private double repeatOperand;
     private bool freshEntry = true;
+    private bool entryLocked;
     private bool justEvaluated;
-    private bool error;
-    private string exprPrefix = string.Empty;
+    private string expressionPrefix = string.Empty;
     private string lastExpression = string.Empty;
+    private string expression = string.Empty;
+    private string? expressionSourcePrefix;
+    private string? expressionSourceDisplay;
+    private string? expressionSourceLast;
+    private bool expressionSourceFresh;
+    private bool expressionSourceEvaluated;
 
-    public string Display { get; private set; } = "0";
+    public CalculatorEngine() : this(new List<CalculatorHistoryRecord>(), UnixNow)
+    {
+    }
 
-    public IReadOnlyList<CalcHistoryEntry> History => history;
+    public CalculatorEngine(List<CalculatorHistoryRecord> history, Func<long> clock)
+    {
+        this.history = history;
+        this.clock = clock;
+        TrimHistory();
+    }
 
-    public CalcOp ActiveOperator => pending != CalcOp.None && freshEntry && !justEvaluated ? pending : CalcOp.None;
+    public string Display { get; private set; } = Zero;
 
-    public bool ShowAllClear => Display == "0" && !error;
+    public bool IsError { get; private set; }
+
+    public IReadOnlyList<CalculatorHistoryRecord> History => history;
+
+    public int SolvedCount { get; private set; }
+
+    public int HistoryVersion { get; private set; }
+
+    public CalcOp ActiveOperator =>
+        operators.Count > 0 && freshEntry && !justEvaluated && !IsError ? operators[^1] : CalcOp.None;
+
+    public bool CanBackspace => !IsError && !freshEntry && !entryLocked && !justEvaluated && Display != Zero;
 
     public string Expression
     {
         get
         {
-            if (justEvaluated)
+            if (ReferenceEquals(expressionSourcePrefix, expressionPrefix) &&
+                ReferenceEquals(expressionSourceDisplay, Display) &&
+                ReferenceEquals(expressionSourceLast, lastExpression) && expressionSourceFresh == freshEntry &&
+                expressionSourceEvaluated == justEvaluated)
             {
-                return lastExpression.Length > 0 ? lastExpression + " =" : string.Empty;
+                return expression;
             }
 
-            if (exprPrefix.Length == 0 && freshEntry)
-            {
-                return string.Empty;
-            }
-
-            return (exprPrefix + (freshEntry ? string.Empty : Display)).TrimEnd();
+            expressionSourcePrefix = expressionPrefix;
+            expressionSourceDisplay = Display;
+            expressionSourceLast = lastExpression;
+            expressionSourceFresh = freshEntry;
+            expressionSourceEvaluated = justEvaluated;
+            expression = BuildExpression();
+            return expression;
         }
+    }
+
+    private string BuildExpression()
+    {
+        if (justEvaluated)
+        {
+            return lastExpression.Length > 0 ? lastExpression + " =" : string.Empty;
+        }
+
+        if (expressionPrefix.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        return freshEntry ? expressionPrefix.TrimEnd() : expressionPrefix + Display;
     }
 
     public void InputDigit(int digit)
     {
-        if (error)
+        if (digit is < 0 or > 9)
         {
-            Reset();
+            return;
         }
 
-        StartFreshAfterEvaluation();
-
-        if (freshEntry)
+        PrepareForInput();
+        var text = digit.ToString(CultureInfo.InvariantCulture);
+        if (freshEntry || entryLocked)
         {
-            Display = digit.ToString(CultureInfo.InvariantCulture);
+            Display = text;
             freshEntry = false;
+            entryLocked = false;
             return;
         }
 
-        if (Display == "0")
+        if (Display == Zero)
         {
-            Display = digit.ToString(CultureInfo.InvariantCulture);
+            Display = text;
             return;
         }
 
-        if (Display == "-0")
+        if (Display == NegativeZero)
         {
-            Display = "-" + digit.ToString(CultureInfo.InvariantCulture);
+            Display = "-" + text;
             return;
         }
 
@@ -88,157 +137,327 @@ internal sealed class CalculatorEngine
             return;
         }
 
-        Display += digit.ToString(CultureInfo.InvariantCulture);
+        Display += text;
     }
 
     public void InputDecimal()
     {
-        if (error)
-        {
-            Reset();
-        }
-
-        StartFreshAfterEvaluation();
-
-        if (freshEntry)
+        PrepareForInput();
+        if (freshEntry || entryLocked)
         {
             Display = "0.";
             freshEntry = false;
+            entryLocked = false;
             return;
         }
 
-        if (!Display.Contains('.'))
+        if (Display.Contains('.'))
         {
-            Display += ".";
+            return;
         }
+
+        if (SignificantDigits(Display) >= MaxDigits)
+        {
+            return;
+        }
+
+        Display += ".";
     }
 
     public void SetOperator(CalcOp op)
     {
-        if (error)
+        if (IsError || op == CalcOp.None)
         {
             return;
         }
 
         if (justEvaluated)
         {
-            exprPrefix = Display + " " + Symbol(op) + " ";
-            accumulator = Parse(Display);
-            pending = op;
-            freshEntry = true;
             justEvaluated = false;
             lastExpression = string.Empty;
-            return;
+            ClearTerms();
         }
-
-        if (freshEntry && pending != CalcOp.None)
+        else if (freshEntry && operators.Count > 0)
         {
-            pending = op;
-            exprPrefix = ReplaceTrailingOperator(exprPrefix, op);
+            operators[^1] = op;
+            expressionPrefix = ReplaceTrailingOperator(expressionPrefix, op);
+            ShowPartial(op);
             return;
         }
 
         var entryText = Display;
-        if (pending != CalcOp.None)
-        {
-            accumulator = Apply(accumulator, pending, Parse(Display));
-            Display = Format(accumulator);
-            if (error)
-            {
-                return;
-            }
-        }
-        else
-        {
-            accumulator = Parse(Display);
-        }
-
-        exprPrefix += entryText + " " + Symbol(op) + " ";
-        pending = op;
+        operands.Add(Parse(entryText));
+        operators.Add(op);
+        expressionPrefix += entryText + " " + Symbol(op) + " ";
         freshEntry = true;
+        entryLocked = false;
+        ShowPartial(op);
     }
 
     public void Equals()
     {
-        if (error || pending == CalcOp.None)
+        if (IsError)
         {
-            justEvaluated = true;
-            freshEntry = true;
             return;
         }
 
-        var entryText = freshEntry ? Format(lastOperand) : Display;
-        var operand = freshEntry ? lastOperand : Parse(Display);
-        lastOperand = operand;
-        var fullExpression = exprPrefix + entryText;
-        accumulator = Apply(accumulator, pending, operand);
-        Display = Format(accumulator);
-        lastExpression = fullExpression;
-        if (!error)
+        if (justEvaluated)
         {
-            PushHistory(fullExpression, Display);
+            RepeatLast();
+            return;
         }
 
-        exprPrefix = string.Empty;
-        pending = CalcOp.None;
-        freshEntry = true;
-        justEvaluated = true;
+        if (operators.Count == 0)
+        {
+            freshEntry = false;
+            entryLocked = true;
+            return;
+        }
+
+        var entryText = Display;
+        var entry = Parse(entryText);
+        operands.Add(entry);
+        repeatOperator = operators[^1];
+        repeatOperand = entry;
+        if (!TryFold(operands.Count, out var sum, out var sumOperator, out var term))
+        {
+            Fail();
+            return;
+        }
+
+        Commit(expressionPrefix + entryText, Combine(sum, sumOperator, term));
     }
 
     public void Negate()
     {
-        if (error)
+        if (IsError)
         {
             return;
         }
 
-        if (Display.StartsWith('-'))
+        if (justEvaluated)
         {
-            Display = Display.Substring(1);
+            var value = -Parse(Display);
+            StartFreshAfterEvaluation();
+            Display = Format(value);
+            freshEntry = false;
+            entryLocked = true;
+            return;
         }
-        else if (Display != "0")
+
+        if (freshEntry)
         {
-            Display = "-" + Display;
+            Display = NegativeZero;
+            freshEntry = false;
+            entryLocked = false;
+            return;
         }
+
+        Display = Display.StartsWith('-') ? Display.Substring(1) : "-" + Display;
     }
 
     public void Percent()
     {
-        if (error)
+        if (IsError)
         {
             return;
         }
 
-        Display = Format(Parse(Display) / 100.0);
-        justEvaluated = false;
-    }
-
-    public void Clear()
-    {
-        if (Display != "0")
+        if (justEvaluated)
         {
-            Display = "0";
-            freshEntry = true;
-            justEvaluated = false;
+            var result = Parse(Display);
+            StartFreshAfterEvaluation();
+            Lock(result / 100.0);
             return;
         }
 
-        Reset();
+        var entry = Parse(Display);
+        if (operators.Count > 0 && operators[^1] is CalcOp.Add or CalcOp.Subtract)
+        {
+            if (!TryFold(operands.Count, out var sum, out var sumOperator, out var term))
+            {
+                Fail();
+                return;
+            }
+
+            Lock(Combine(sum, sumOperator, term) * entry / 100.0);
+            return;
+        }
+
+        Lock(entry / 100.0);
     }
 
-    public void Recall(string result)
+    public void Backspace()
     {
-        Display = result;
-        accumulator = Parse(result);
-        exprPrefix = string.Empty;
+        if (!CanBackspace)
+        {
+            return;
+        }
+
+        var trimmed = Display.Substring(0, Display.Length - 1);
+        Display = trimmed.Length == 0 || trimmed == "-" ? Zero : trimmed;
+    }
+
+    public void AllClear()
+    {
+        ClearTerms();
+        repeatOperator = CalcOp.None;
+        repeatOperand = 0.0;
+        Display = Zero;
         lastExpression = string.Empty;
-        pending = CalcOp.None;
         freshEntry = true;
+        entryLocked = false;
         justEvaluated = false;
-        error = false;
+        IsError = false;
     }
 
-    public void ClearHistory() => history.Clear();
+    public void Enter(double value)
+    {
+        if (!double.IsFinite(value))
+        {
+            return;
+        }
+
+        PrepareForInput();
+        Lock(value);
+    }
+
+    public bool Recall(CalculatorHistoryRecord record)
+    {
+        if (!TryParse(record.Result, out var value))
+        {
+            return false;
+        }
+
+        Enter(value);
+        return true;
+    }
+
+    public void Remove(CalculatorHistoryRecord record)
+    {
+        if (history.Remove(record))
+        {
+            HistoryVersion++;
+        }
+    }
+
+    public void ClearHistory()
+    {
+        if (history.Count == 0)
+        {
+            return;
+        }
+
+        history.Clear();
+        HistoryVersion++;
+    }
+
+    public static string Format(double value)
+    {
+        var magnitude = Math.Abs(value);
+        if (magnitude >= ScientificAbove || (magnitude > 0.0 && magnitude < ScientificBelow))
+        {
+            return value.ToString("0.########e0", CultureInfo.InvariantCulture);
+        }
+
+        var rounded = Math.Round(value, RoundingDecimals, MidpointRounding.AwayFromZero);
+        if (rounded == 0.0)
+        {
+            return Zero;
+        }
+
+        return rounded.ToString("0.########", CultureInfo.InvariantCulture);
+    }
+
+    public static bool TryParse(string text, out double value) =>
+        double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) && double.IsFinite(value);
+
+    private void PrepareForInput()
+    {
+        if (IsError)
+        {
+            AllClear();
+        }
+
+        StartFreshAfterEvaluation();
+    }
+
+    private void Lock(double value)
+    {
+        if (!double.IsFinite(value))
+        {
+            Fail();
+            return;
+        }
+
+        Display = Format(value);
+        freshEntry = false;
+        entryLocked = true;
+    }
+
+    private void ShowPartial(CalcOp op)
+    {
+        if (!TryFold(operands.Count, out var sum, out var sumOperator, out var term))
+        {
+            Fail();
+            return;
+        }
+
+        Display = Format(op is CalcOp.Multiply or CalcOp.Divide ? term : Combine(sum, sumOperator, term));
+    }
+
+    private void RepeatLast()
+    {
+        if (repeatOperator == CalcOp.None)
+        {
+            return;
+        }
+
+        var current = Display;
+        if (!TryApply(Parse(current), repeatOperator, repeatOperand, out var result))
+        {
+            Fail();
+            return;
+        }
+
+        Commit(current + " " + Symbol(repeatOperator) + " " + Format(repeatOperand), result);
+    }
+
+    private void Commit(string expression, double result)
+    {
+        if (!double.IsFinite(result))
+        {
+            Fail();
+            return;
+        }
+
+        Display = Format(result);
+        lastExpression = expression;
+        PushHistory(expression, Display);
+        ClearTerms();
+        freshEntry = true;
+        entryLocked = false;
+        justEvaluated = true;
+    }
+
+    private void Fail()
+    {
+        ClearTerms();
+        repeatOperator = CalcOp.None;
+        Display = Zero;
+        lastExpression = string.Empty;
+        freshEntry = true;
+        entryLocked = false;
+        justEvaluated = false;
+        IsError = true;
+    }
+
+    private void ClearTerms()
+    {
+        operands.Clear();
+        operators.Clear();
+        expressionPrefix = string.Empty;
+    }
 
     private void StartFreshAfterEvaluation()
     {
@@ -247,77 +466,97 @@ internal sealed class CalculatorEngine
             return;
         }
 
-        accumulator = 0;
-        pending = CalcOp.None;
-        exprPrefix = string.Empty;
+        ClearTerms();
         lastExpression = string.Empty;
         justEvaluated = false;
         freshEntry = true;
+        entryLocked = false;
     }
 
-    private void PushHistory(string expression, string result)
+    private bool TryFold(int count, out double sum, out CalcOp sumOperator, out double term)
     {
-        history.Insert(0, new CalcHistoryEntry(expression, result));
-        if (history.Count > MaxHistory)
+        sum = 0.0;
+        sumOperator = CalcOp.Add;
+        term = count > 0 ? operands[0] : 0.0;
+        for (var index = 1; index < count; index++)
         {
-            history.RemoveAt(history.Count - 1);
+            var op = operators[index - 1];
+            var right = operands[index];
+            if (op is CalcOp.Multiply or CalcOp.Divide)
+            {
+                if (!TryApply(term, op, right, out term))
+                {
+                    return false;
+                }
+
+                continue;
+            }
+
+            sum = Combine(sum, sumOperator, term);
+            sumOperator = op;
+            term = right;
         }
+
+        return double.IsFinite(sum) && double.IsFinite(term);
     }
 
-    private void Reset()
-    {
-        accumulator = 0;
-        lastOperand = 0;
-        pending = CalcOp.None;
-        Display = "0";
-        exprPrefix = string.Empty;
-        lastExpression = string.Empty;
-        freshEntry = true;
-        justEvaluated = false;
-        error = false;
-    }
+    private static double Combine(double sum, CalcOp op, double term) =>
+        op == CalcOp.Subtract ? sum - term : sum + term;
 
-    private double Apply(double left, CalcOp op, double right)
+    private static bool TryApply(double left, CalcOp op, double right, out double result)
     {
         switch (op)
         {
             case CalcOp.Add:
-                return left + right;
+                result = left + right;
+                break;
             case CalcOp.Subtract:
-                return left - right;
+                result = left - right;
+                break;
             case CalcOp.Multiply:
-                return left * right;
+                result = left * right;
+                break;
             case CalcOp.Divide:
                 if (right == 0.0)
                 {
-                    error = true;
-                    return 0.0;
+                    result = 0.0;
+                    return false;
                 }
 
-                return left / right;
+                result = left / right;
+                break;
             default:
-                return right;
+                result = right;
+                break;
         }
+
+        return double.IsFinite(result);
     }
 
-    private string Format(double value)
+    private void PushHistory(string expression, string result)
     {
-        if (error || double.IsNaN(value) || double.IsInfinity(value))
+        history.Insert(0, new CalculatorHistoryRecord
         {
-            error = true;
-            return Loc.T(L.Calculator.Error);
-        }
-
-        var rounded = Math.Round(value, 8, MidpointRounding.AwayFromZero);
-        if (rounded == 0.0)
-        {
-            return "0";
-        }
-
-        return rounded.ToString("0.########", CultureInfo.InvariantCulture);
+            Expression = expression,
+            Result = result,
+            SolvedAtUnix = clock(),
+        });
+        TrimHistory();
+        SolvedCount++;
+        HistoryVersion++;
     }
 
-    private static string Symbol(CalcOp op)
+    private void TrimHistory()
+    {
+        if (history.Count > MaxHistory)
+        {
+            history.RemoveRange(MaxHistory, history.Count - MaxHistory);
+        }
+    }
+
+    private static long UnixNow() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+    public static string Symbol(CalcOp op)
     {
         return op switch
         {
@@ -337,17 +576,14 @@ internal sealed class CalculatorEngine
         return head + " " + Symbol(op) + " ";
     }
 
-    private static double Parse(string text)
-    {
-        return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ? value : 0.0;
-    }
+    private static double Parse(string text) => TryParse(text, out var value) ? value : 0.0;
 
     private static int SignificantDigits(string text)
     {
         var count = 0;
         for (var index = 0; index < text.Length; index++)
         {
-            if (char.IsDigit(text[index]))
+            if (char.IsAsciiDigit(text[index]))
             {
                 count++;
             }

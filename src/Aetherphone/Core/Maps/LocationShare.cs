@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using Aetherphone.Core.Housing;
 using Aetherphone.Core.Localization;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Lumina.Excel.Sheets;
@@ -44,8 +45,13 @@ internal static class LocationShare
         }
 
         var (ward, plot, room) = ReadHousing();
-        var territoryId = NamedHousingTerritory(currentTerritoryId, ward);
-        if (!Plugin.DataManager.GetExcelSheet<TerritoryType>().TryGetRow(territoryId, out var territory))
+        var worldId = player.CurrentWorld.RowId;
+        if (TryCaptureHousePlot(ward, plot, room, worldId, out var housePlot))
+        {
+            return housePlot;
+        }
+
+        if (!Plugin.DataManager.GetExcelSheet<TerritoryType>().TryGetRow(currentTerritoryId, out var territory))
         {
             return null;
         }
@@ -60,57 +66,74 @@ internal static class LocationShare
             mapY = ToMapCoordinate(position.Z, map.SizeFactor, map.OffsetY);
         }
 
-        return new SharedLocation(territoryId, mapId, mapX, mapY, player.CurrentWorld.RowId, ward, plot, room);
+        return new SharedLocation(currentTerritoryId, mapId, mapX, mapY, worldId, ward, plot, room);
     }
 
-    // Since patch 7.2 every house interior loads into one shared, nameless territory; the district only
-    // survives through HousingManager, so a share from inside a house is stamped with the named territory.
-    private static uint NamedHousingTerritory(uint territoryId, short ward)
+    // Since patch 7.1 a house can wear any district's interior, so the territory it loads into names the
+    // design's district (a classic design) or nothing at all (a newer one); only the house address knows
+    // where it stands and only the plot outside has a map.
+    private static bool TryCaptureHousePlot(short ward, short plot, short room, uint worldId,
+        out SharedLocation location)
     {
-        if (ward == 0 || ZoneName(territoryId).Length > 0)
+        location = default;
+        var districtId = ReadIndoorHouseDistrict();
+        if (districtId == 0 || ZoneName(districtId).Length == 0)
         {
-            return territoryId;
+            return false;
         }
 
-        var sheet = Plugin.DataManager.GetExcelSheet<TerritoryType>();
-        var (original, district) = ReadHouseTerritories();
-        if (original != 0 && sheet.HasRow(original) && ZoneName(original).Length > 0)
-        {
-            return original;
-        }
-
-        if (district != 0 && sheet.HasRow(district) && ZoneName(district).Length > 0)
-        {
-            return district;
-        }
-
-        return territoryId;
+        var (mapId, mapX, mapY) = PlotMarker(districtId, plot);
+        location = new SharedLocation(districtId, mapId, mapX, mapY, worldId, ward, plot, room);
+        return true;
     }
 
-    private static (uint Original, uint District) ReadHouseTerritories()
+    private static uint ReadIndoorHouseDistrict()
     {
         try
         {
             unsafe
             {
                 var housing = FFXIVClientStructs.FFXIV.Client.Game.HousingManager.Instance();
-                if (housing == null)
+                if (housing == null || housing->IndoorTerritory == null)
                 {
-                    return (0, 0);
+                    return 0;
                 }
 
-                var original = FFXIVClientStructs.FFXIV.Client.Game.HousingManager.GetOriginalHouseTerritoryTypeId();
-                var house = housing->IndoorTerritory != null
-                    ? housing->GetCurrentIndoorHouseId()
-                    : housing->GetCurrentHouseId();
-                return (original, house.TerritoryTypeId);
+                var house = housing->GetCurrentIndoorHouseId();
+                if (house.IsApartment || house.IsWorkshop)
+                {
+                    return 0;
+                }
+
+                return house.TerritoryTypeId;
             }
         }
         catch (Exception exception)
         {
-            AepLog.Warning(exception, "[LocationShare] house territory read failed");
-            return (0, 0);
+            AepLog.Warning(exception, "[LocationShare] house district read failed");
+            return 0;
         }
+    }
+
+    private static (uint MapId, float MapX, float MapY) PlotMarker(uint districtId, short plot)
+    {
+        if (plot <= 0 || plot > HousingDistricts.PlotsPerWard)
+        {
+            return (0, 0f, 0f);
+        }
+
+        var plotIndex = (ushort)(plot - 1);
+        if (!Plugin.DataManager.GetSubrowExcelSheet<HousingMapMarkerInfo>()
+                .TryGetSubrow(districtId, plotIndex, out var marker)
+            || marker.Map.RowId == 0
+            || !Plugin.DataManager.GetExcelSheet<Map>().TryGetRow(marker.Map.RowId, out var map))
+        {
+            return (0, 0f, 0f);
+        }
+
+        return (marker.Map.RowId,
+            ToMapCoordinate(marker.X, map.SizeFactor, map.OffsetX),
+            ToMapCoordinate(marker.Z, map.SizeFactor, map.OffsetY));
     }
 
     public static uint CurrentWorldId()
@@ -124,6 +147,25 @@ internal static class LocationShare
     }
 
     public static (short Ward, short Plot, short Room) CurrentHousing() => ReadHousing();
+
+    public static uint CurrentHouseDistrict() => ReadIndoorHouseDistrict();
+
+    public static bool IsIndoors()
+    {
+        try
+        {
+            unsafe
+            {
+                var housing = FFXIVClientStructs.FFXIV.Client.Game.HousingManager.Instance();
+                return housing != null && housing->IndoorTerritory != null;
+            }
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, "[LocationShare] indoor check failed");
+            return false;
+        }
+    }
 
     public static string Compose(in SharedLocation location)
     {
@@ -285,14 +327,25 @@ internal static class LocationShare
         return line;
     }
 
-    public static string Summary(in SharedLocation location)
+    public static string Headline(in SharedLocation location)
     {
         var zone = ZoneName(location.TerritoryId);
         var worldLine = WorldLine(location);
-        var headline = zone.Length > 0 && worldLine.Length > 0
-            ? $"{zone} · {worldLine}"
-            : zone.Length > 0 ? zone : worldLine;
-        var detail = location.Ward > 0 ? HousingLine(location) : CoordinateText(location);
+        if (zone.Length > 0 && worldLine.Length > 0)
+        {
+            return $"{zone} · {worldLine}";
+        }
+
+        return zone.Length > 0 ? zone : worldLine;
+    }
+
+    public static string DetailLine(in SharedLocation location) =>
+        location.Ward > 0 ? HousingLine(location) : CoordinateText(location);
+
+    public static string Summary(in SharedLocation location)
+    {
+        var headline = Headline(location);
+        var detail = DetailLine(location);
         if (headline.Length > 0 && detail.Length > 0)
         {
             return $"{headline}\n{detail}";

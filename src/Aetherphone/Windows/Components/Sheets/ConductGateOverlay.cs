@@ -15,7 +15,6 @@ internal sealed class ConductGateOverlay
     private const ImGuiWindowFlags OverlayFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse |
                                                   ImGuiWindowFlags.NoBackground;
 
-    private const float RevealSmoothTime = 0.18f;
     private const float MaxDim = 0.74f;
     private const float MinPanelScale = 0.96f;
     private const float PanelRounding = 28f;
@@ -67,7 +66,7 @@ internal sealed class ConductGateOverlay
         wasActive = active is not null;
 
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        reveal.Step(active is not null ? 1f : 0f, RevealSmoothTime, delta);
+        reveal.Step(active is not null ? 1f : 0f, Motion.Appear, delta);
         if (shown is null)
         {
             return;
@@ -276,6 +275,10 @@ internal sealed class ConductGateOverlay
         var leadHeight = leadText is null
             ? 0f
             : Typography.MeasureWrappedBlock(leadText, TextStyles.Subheadline, innerWidth).Y;
+        var noteText = section.Note is { } trailingNote ? Loc.T(trailingNote) : null;
+        var noteHeight = noteText is null
+            ? 0f
+            : Typography.MeasureWrappedBlock(noteText, TextStyles.Footnote, innerWidth).Y;
 
         var itemHeights = section.Items.Length > 0 ? stackalloc float[section.Items.Length] : default;
         var itemsHeight = 0f;
@@ -301,6 +304,11 @@ internal sealed class ConductGateOverlay
         if (section.Items.Length > 0)
         {
             cardHeight += blockGap + itemsHeight;
+        }
+
+        if (noteText is not null)
+        {
+            cardHeight += blockGap + noteHeight;
         }
 
         var origin = ImGui.GetCursorScreenPos();
@@ -380,6 +388,13 @@ internal sealed class ConductGateOverlay
                     cursorY += itemGap;
                 }
             }
+        }
+
+        if (noteText is not null)
+        {
+            cursorY += blockGap;
+            Typography.DrawWrappedLeft(new Vector2(left, cursorY), noteText,
+                Palette.WithAlpha(theme.TextMuted, opacity), TextStyles.Footnote, innerWidth);
         }
 
         ImGui.SetCursorScreenPos(origin);

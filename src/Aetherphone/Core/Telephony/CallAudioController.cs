@@ -12,7 +12,6 @@ internal sealed class CallAudioController
     private readonly HashSet<int> remoteSlots = new();
     private CallSession? session;
     private bool muted;
-    private float volume = 0.85f;
     private long startTicks;
     private float peakMicLevel;
 
@@ -24,7 +23,8 @@ internal sealed class CallAudioController
     }
 
     public bool MutedLocked => muted;
-    public float VolumeLocked => volume;
+    public float VolumeLocked => configuration.CallOutputVolume;
+    public float InputGainLocked => configuration.CallInputGain;
     public float MicLevelLocked => session?.MicLevel ?? 0f;
 
     public float PeakMicLevelLocked
@@ -60,8 +60,8 @@ internal sealed class CallAudioController
         }
 
         var input = AudioDevices.ResolveInput(configuration.CallInputDevice);
-        var output = AudioDevices.ResolveOutput(configuration.CallOutputDevice);
-        var created = new CallSession(callId, connection, input, output, volume) { Muted = muted, };
+        var created = new CallSession(callId, connection, input, configuration.CallOutputDevice,
+            configuration.CallOutputVolume, configuration.CallInputGain) { Muted = muted, };
         if (localSlot >= 0)
         {
             created.SetLocalSlot(localSlot);
@@ -99,6 +99,8 @@ internal sealed class CallAudioController
             {
                 session.AddRemote(participant.Slot);
             }
+
+            session.SetRemoteGain(participant.Slot, PeerGainLocked(participant.UserId));
         }
 
         if (remoteSlots.Count == presentCount)
@@ -143,10 +145,77 @@ internal sealed class CallAudioController
 
     public void SetVolumeLocked(float value)
     {
-        volume = Math.Clamp(value, 0f, 1f);
+        var volume = Math.Clamp(value, 0f, VoiceMixer.MaximumGain);
+        configuration.CallOutputVolume = volume;
         if (session is not null)
         {
             session.Volume = volume;
+        }
+    }
+
+    public void SetInputGainLocked(float value)
+    {
+        var gain = Math.Clamp(value, 0f, AudioCapture.MaximumGain);
+        configuration.CallInputGain = gain;
+        if (session is not null)
+        {
+            session.InputGain = gain;
+        }
+    }
+
+    public void SwitchInputLocked() => session?.SwitchInput(configuration.CallInputDevice);
+
+    public void SwitchOutputLocked() => session?.SwitchOutput(configuration.CallOutputDevice);
+
+    public float PeerVolumeLocked(string userId) =>
+        configuration.CallPeerVolumes.TryGetValue(userId, out var stored) ? stored : 1f;
+
+    public bool PeerMutedLocked(string userId) => configuration.CallPeerMuted.Contains(userId);
+
+    public void SetPeerVolumeLocked(string userId, float value, ParticipantInfo[] participants)
+    {
+        var volume = Math.Clamp(value, 0f, VoiceMixer.MaximumGain);
+        if (MathF.Abs(volume - 1f) < 0.005f)
+        {
+            configuration.CallPeerVolumes.Remove(userId);
+        }
+        else
+        {
+            configuration.CallPeerVolumes[userId] = volume;
+        }
+
+        ApplyPeerLocked(userId, participants);
+    }
+
+    public void SetPeerMutedLocked(string userId, bool value, ParticipantInfo[] participants)
+    {
+        if (value)
+        {
+            configuration.CallPeerMuted.Add(userId);
+        }
+        else
+        {
+            configuration.CallPeerMuted.Remove(userId);
+        }
+
+        ApplyPeerLocked(userId, participants);
+    }
+
+    private float PeerGainLocked(string userId) => PeerMutedLocked(userId) ? 0f : PeerVolumeLocked(userId);
+
+    private void ApplyPeerLocked(string userId, ParticipantInfo[] participants)
+    {
+        if (session is null)
+        {
+            return;
+        }
+
+        for (var index = 0; index < participants.Length; index++)
+        {
+            if (participants[index].UserId == userId)
+            {
+                session.SetRemoteGain(participants[index].Slot, PeerGainLocked(userId));
+            }
         }
     }
 

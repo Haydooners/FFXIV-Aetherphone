@@ -14,6 +14,7 @@ internal sealed partial class VelvetShell
 {
     private const float MessagesSearchHeight = 52f;
     private const float MessagesSearchRevealSeconds = 0.12f;
+    private const int MaxPinnedChats = 3;
 
     private const int IntroLimit = 140;
     private const float HeroAvatarRadius = 38f;
@@ -28,29 +29,41 @@ internal sealed partial class VelvetShell
     private const float IntroHeaderGap = 12f;
     private const float IntroFieldHeight = 118f;
     private const float IntroFieldPad = 10f;
-    private const float IntroWellAlpha = 0.55f;
     private const float IntroHintGap = 10f;
     private const float IntroSendGap = 18f;
-    private const float IntroSendHeight = 48f;
+    private const float IntroSendHeight = Button.LargeHeight;
     private const float IntroSkipGap = 16f;
     private const float IntroSkipHintGap = 8f;
-    private const float IntroSkipHeight = 44f;
+    private const float IntroSkipHeight = Button.LargeHeight;
     private const float IntroBottomGap = 32f;
     private const float RequestTopGap = 18f;
     private const float RequestMetaGap = 10f;
     private const float RequestActionGap = 22f;
-    private const float RequestActionHeight = 48f;
-    private const float RequestSecondaryHeight = 44f;
+    private const float RequestActionHeight = Button.LargeHeight;
+    private const float RequestSecondaryHeight = Button.LargeHeight;
     private const float RequestSecondaryGap = 10f;
     private const float RequestBottomGap = 32f;
 
     private static readonly TextStyle HeroNameStyle = TextStyles.Title2;
     private static readonly TextStyle HeroHandleStyle = TextStyles.Subheadline;
-    private static readonly TextStyle IntroSendStyle = TextStyles.SubheadlineEmphasized;
 
-    private readonly List<VelvetThreadDto> chatsFiltered = new();
-    private VelvetThreadDto[] chatsFilterSource = Array.Empty<VelvetThreadDto>();
-    private string chatsFilterQuery = string.Empty;
+    private static readonly Comparison<VelvetChatRow> ChatRowsNewestFirst = (left, right) =>
+    {
+        var byActivity = right.ActivityUnix.CompareTo(left.ActivityUnix);
+        return byActivity != 0 ? byActivity : string.CompareOrdinal(left.UserId, right.UserId);
+    };
+
+    private readonly List<VelvetChatRow> chatRows = new();
+    private readonly List<VelvetChatRow> pinnedChatRows = new();
+    private readonly HashSet<string> chatRowThreadUserIds = new(StringComparer.Ordinal);
+    private VelvetThreadDto[] chatRowsThreads = Array.Empty<VelvetThreadDto>();
+    private VelvetConnectionDto[] chatRowsConnections = Array.Empty<VelvetConnectionDto>();
+    private string chatRowsQuery = string.Empty;
+    private bool chatRowsArchivedView;
+    private bool chatRowsDirty;
+    private string archivedChatsCountLabel = string.Empty;
+    private int archivedChatsCountValue = -1;
+    private int chatRowsSourceCount;
     private string chatsDraft = string.Empty;
     private bool chatsSearchOpen;
     private bool chatsSearchFocus;
@@ -191,31 +204,80 @@ internal sealed partial class VelvetShell
         chatsSearchReveal.SnapTo(0f);
     }
 
-    private void RefreshChatsFilter(VelvetThreadDto[] threads)
+    private void RefreshChatRows(VelvetThreadDto[] threads, VelvetConnectionDto[] connections, bool archivedView)
     {
         var query = chatsDraft.Trim();
-        if (ReferenceEquals(threads, chatsFilterSource) &&
-            string.Equals(query, chatsFilterQuery, StringComparison.Ordinal))
+        if (!chatRowsDirty && ReferenceEquals(threads, chatRowsThreads)
+            && ReferenceEquals(connections, chatRowsConnections) && chatRowsArchivedView == archivedView
+            && string.Equals(query, chatRowsQuery, StringComparison.Ordinal))
         {
             return;
         }
 
-        chatsFilterSource = threads;
-        chatsFilterQuery = query;
-        chatsFiltered.Clear();
+        chatRowsDirty = false;
+        chatRowsThreads = threads;
+        chatRowsConnections = connections;
+        chatRowsArchivedView = archivedView;
+        chatRowsQuery = query;
+        chatRows.Clear();
+        pinnedChatRows.Clear();
+        chatRowThreadUserIds.Clear();
+        chatRowsSourceCount = 0;
         for (var index = 0; index < threads.Length; index++)
         {
             var thread = threads[index];
+            chatRowThreadUserIds.Add(thread.OtherUserId);
+            if (configuration.VelvetArchivedThreads.Contains(thread.OtherUserId) != archivedView)
+            {
+                continue;
+            }
+
+            chatRowsSourceCount++;
             if (query.Length == 0 || ChatRowMatches(thread, query))
             {
-                chatsFiltered.Add(thread);
+                AddChatRow(new VelvetChatRow(thread), archivedView);
             }
         }
+
+        for (var index = 0; index < connections.Length; index++)
+        {
+            var connection = connections[index];
+            if (connection.State != VelvetConnectionState.Connected
+                || chatRowThreadUserIds.Contains(connection.UserId)
+                || configuration.VelvetArchivedThreads.Contains(connection.UserId) != archivedView)
+            {
+                continue;
+            }
+
+            chatRowsSourceCount++;
+            if (query.Length == 0 || ChatRowMatches(connection, query))
+            {
+                AddChatRow(new VelvetChatRow(connection), archivedView);
+            }
+        }
+
+        pinnedChatRows.Sort(ChatRowsNewestFirst);
+        chatRows.Sort(ChatRowsNewestFirst);
+    }
+
+    private void AddChatRow(VelvetChatRow row, bool archivedView)
+    {
+        if (!archivedView && configuration.VelvetPinnedThreads.Contains(row.UserId))
+        {
+            pinnedChatRows.Add(row);
+            return;
+        }
+
+        chatRows.Add(row);
     }
 
     private static bool ChatRowMatches(VelvetThreadDto thread, string query) =>
         thread.OtherDisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)
         || thread.OtherHandle.Contains(query, StringComparison.OrdinalIgnoreCase);
+
+    private static bool ChatRowMatches(VelvetConnectionDto connection, string query) =>
+        connection.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)
+        || connection.Handle.Contains(query, StringComparison.OrdinalIgnoreCase);
 
     private void DrawChatsList(Rect listRect)
     {
@@ -230,12 +292,18 @@ internal sealed partial class VelvetShell
             store.RefreshConnections();
         }
 
-        var threads = store.Threads;
-        RefreshChatsFilter(threads);
-        if (chatsFiltered.Count == 0)
+        RefreshChatRows(store.Threads, store.Connections, false);
+        var showArchivedRow = chatRowsQuery.Length == 0 && configuration.VelvetArchivedThreads.Count > 0;
+        if (pinnedChatRows.Count == 0 && chatRows.Count == 0)
         {
+            if (showArchivedRow)
+            {
+                Gap(2f);
+                DrawArchivedChatsRow();
+            }
+
             var empty = new Rect(new Vector2(listRect.Min.X, ImGui.GetCursorScreenPos().Y), listRect.Max);
-            if (threads.Length > 0)
+            if (chatRowsSourceCount > 0)
             {
                 DrawEmpty(empty, Loc.T(L.Social.ListEmpty), string.Empty);
             }
@@ -248,35 +316,19 @@ internal sealed partial class VelvetShell
         }
 
         Gap(2f);
-        for (var index = 0; index < chatsFiltered.Count; index++)
+        if (showArchivedRow)
         {
-            var thread = chatsFiltered[index];
-            var preview = string.IsNullOrEmpty(thread.LastMessagePreview)
-                ? Loc.T(L.Velvet.ThreadEmpty)
-                : ChatText.ListPreview(thread.LastMessagePreview);
-            var model = new VRowModel
-            {
-                Title = DisplayNameOf(thread.OtherDisplayName, thread.OtherHandle),
-                Subtitle = preview,
-                Height = 64f,
-                Leading = VRowLeading.Avatar,
-                AvatarRadius = 22f,
-                Name = DisplayNameOf(thread.OtherDisplayName, thread.OtherHandle),
-                World = string.Empty,
-                AvatarUrl = thread.OtherAvatarUrl,
-                Presence = thread.Presence,
-                Time = TimeText.Short(thread.LastMessageAtUnix),
-                Badge = thread.UnreadCount,
-            };
-            var hit = VRow.Cell(in model, ui, theme, images, lodestone);
-            if (hit == VRowHit.Body)
-            {
-                OpenThread(thread.OtherUserId);
-            }
-            else if (hit == VRowHit.Overflow)
-            {
-                OpenThreadSheet(thread.OtherUserId);
-            }
+            DrawArchivedChatsRow();
+        }
+
+        for (var index = 0; index < pinnedChatRows.Count; index++)
+        {
+            DrawChatRowEntry(pinnedChatRows[index], true);
+        }
+
+        for (var index = 0; index < chatRows.Count; index++)
+        {
+            DrawChatRowEntry(chatRows[index], false);
         }
 
         if (store.LoadingMoreThreads)
@@ -289,6 +341,131 @@ internal sealed partial class VelvetShell
         }
 
         Gap(40f);
+    }
+
+    private void DrawChatRowEntry(in VelvetChatRow row, bool pinned)
+    {
+        if (row.Thread is { } thread)
+        {
+            DrawChatRow(thread, pinned);
+        }
+        else if (row.Connection is { } connection)
+        {
+            DrawSilentConnectionRow(connection, pinned);
+        }
+    }
+
+    private void DrawArchivedChatsRow()
+    {
+        var count = configuration.VelvetArchivedThreads.Count;
+        if (archivedChatsCountValue != count)
+        {
+            archivedChatsCountValue = count;
+            archivedChatsCountLabel = count.ToString(Loc.Culture);
+        }
+
+        var model = new VRowModel
+        {
+            Title = Loc.T(L.Social.ArchivedChats),
+            Subtitle = string.Empty,
+            Height = 56f,
+            Leading = VRowLeading.IconTile,
+            TileIcon = PhoneIcons.Archive,
+            TileTint = VelvetTheme.MutedInk,
+            Value = archivedChatsCountLabel,
+            Chevron = true,
+        };
+        if (VRow.Cell(in model, theme, images, lodestone) == VRowHit.Body)
+        {
+            router.Push(VelvetView.ArchivedChats);
+        }
+    }
+
+    private void DrawArchivedChats(Rect area)
+    {
+        var scale = UiScale.Current;
+        if (VHeader.Push(area, Loc.T(L.Social.ArchivedChats)))
+        {
+            router.Pop();
+            return;
+        }
+
+        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + VHeader.Height * scale), area.Max);
+        using (AppSurface.BeginEdgeToEdge(body))
+        {
+            RefreshChatRows(store.Threads, store.Connections, true);
+            if (chatRows.Count == 0)
+            {
+                DrawEmpty(body, Loc.T(L.Social.NoArchivedChats), string.Empty);
+                return;
+            }
+
+            Gap(2f);
+            for (var index = 0; index < chatRows.Count; index++)
+            {
+                DrawChatRowEntry(chatRows[index], false);
+            }
+
+            Gap(40f);
+        }
+    }
+
+    private void DrawChatRow(VelvetThreadDto thread, bool pinned)
+    {
+        var preview = string.IsNullOrEmpty(thread.LastMessagePreview)
+            ? Loc.T(L.Velvet.ThreadEmpty)
+            : ChatText.ListPreview(thread.LastMessagePreview);
+        var model = new VRowModel
+        {
+            Title = DisplayNameOf(thread.OtherDisplayName, thread.OtherHandle),
+            Subtitle = preview,
+            Height = 64f,
+            Leading = VRowLeading.Avatar,
+            AvatarRadius = 22f,
+            Name = DisplayNameOf(thread.OtherDisplayName, thread.OtherHandle),
+            World = string.Empty,
+            AvatarUrl = thread.OtherAvatarUrl,
+            Presence = thread.Presence,
+            Time = TimeText.Short(thread.LastMessageAtUnix),
+            Badge = thread.UnreadCount,
+            Pinned = pinned,
+        };
+        var hit = VRow.Cell(in model, theme, images, lodestone);
+        if (hit == VRowHit.Body)
+        {
+            OpenThread(thread.OtherUserId);
+        }
+        else if (hit == VRowHit.Overflow)
+        {
+            OpenThreadSheet(thread.OtherUserId);
+        }
+    }
+
+    private void DrawSilentConnectionRow(VelvetConnectionDto connection, bool pinned)
+    {
+        var model = new VRowModel
+        {
+            Title = DisplayNameOf(connection.DisplayName, connection.Handle),
+            Subtitle = Loc.T(L.Velvet.ThreadEmpty),
+            Height = 64f,
+            Leading = VRowLeading.Avatar,
+            AvatarRadius = 22f,
+            Name = DisplayNameOf(connection.DisplayName, connection.Handle),
+            World = string.Empty,
+            AvatarUrl = connection.AvatarUrl,
+            Presence = connection.Presence,
+            Time = TimeText.Short(connection.ConnectedAtUnix),
+            Pinned = pinned,
+        };
+        var hit = VRow.Cell(in model, theme, images, lodestone);
+        if (hit == VRowHit.Body)
+        {
+            OpenThread(connection.UserId);
+        }
+        else if (hit == VRowHit.Overflow)
+        {
+            OpenThreadSheet(connection.UserId);
+        }
     }
 
     private void DrawRequestsList(Rect listRect)
@@ -345,7 +522,7 @@ internal sealed partial class VelvetShell
                     PillFilled = false,
                     PillEnabled = true,
                 };
-                var hit = VRow.Cell(in model, ui, theme, images, lodestone);
+                var hit = VRow.Cell(in model, theme, images, lodestone);
                 if (hit == VRowHit.Pill)
                 {
                     store.CancelRequest(request.UserId);
@@ -373,7 +550,7 @@ internal sealed partial class VelvetShell
             AvatarUrl = request.AvatarUrl,
             Chevron = true,
         };
-        if (VRow.Cell(in model, ui, theme, images, lodestone) == VRowHit.Body)
+        if (VRow.Cell(in model, theme, images, lodestone) == VRowHit.Body)
         {
             OpenRequest(request.UserId);
         }
@@ -382,7 +559,13 @@ internal sealed partial class VelvetShell
     private void OpenThreadSheet(string otherId)
     {
         sheetThreadId = otherId;
-        threadSheetItems[0] = new ActionSheet.Item(Loc.T(L.Velvet.DeleteConversation), string.Empty, true);
+        var pinned = configuration.VelvetPinnedThreads.Contains(otherId);
+        var archived = configuration.VelvetArchivedThreads.Contains(otherId);
+        threadSheetItems[0] = new ActionSheet.Item(Loc.T(pinned ? L.Common.Unpin : L.Common.Pin),
+            pinned ? PhoneIcons.PinFilled : PhoneIcons.Pin);
+        threadSheetItems[1] = new ActionSheet.Item(
+            Loc.T(archived ? L.Social.UnarchiveAction : L.Social.ArchiveAction), PhoneIcons.Archive);
+        threadSheetItems[2] = new ActionSheet.Item(Loc.T(L.Velvet.DeleteConversation), PhoneIcons.Trash, true);
         threadSheet.Open();
     }
 
@@ -395,10 +578,55 @@ internal sealed partial class VelvetShell
 
         var picked = threadSheet.Draw(screen, ActionSheetStyle.From(ui), threadSheetItems, Loc.T(L.Common.Cancel),
             false);
-        if (picked == 0 && sheetThreadId is { } otherId)
+        if (picked < 0 || sheetThreadId is not { } otherId)
         {
-            AskDeleteConversation(otherId);
+            return;
         }
+
+        switch (picked)
+        {
+            case 0:
+                ToggleThreadPinned(otherId);
+                break;
+            case 1:
+                ToggleThreadArchived(otherId);
+                break;
+            case 2:
+                AskDeleteConversation(otherId);
+                break;
+        }
+    }
+
+    private void ToggleThreadPinned(string otherId)
+    {
+        var pinned = configuration.VelvetPinnedThreads;
+        if (!pinned.Remove(otherId))
+        {
+            if (pinned.Count >= MaxPinnedChats)
+            {
+                toast.Show(Loc.T(L.Social.PinChatLimit, MaxPinnedChats));
+                return;
+            }
+
+            pinned.Add(otherId);
+            configuration.VelvetArchivedThreads.Remove(otherId);
+        }
+
+        configuration.Save();
+        chatRowsDirty = true;
+    }
+
+    private void ToggleThreadArchived(string otherId)
+    {
+        var archived = configuration.VelvetArchivedThreads;
+        if (!archived.Remove(otherId))
+        {
+            archived.Add(otherId);
+            configuration.VelvetPinnedThreads.Remove(otherId);
+        }
+
+        configuration.Save();
+        chatRowsDirty = true;
     }
 
     private void AskDeleteConversation(string otherId)
@@ -419,6 +647,12 @@ internal sealed partial class VelvetShell
     {
         var current = router.Current;
         var threadOpen = current.Screen == VelvetScreenId.Thread && current.Arg == otherId;
+        if (configuration.VelvetPinnedThreads.Remove(otherId) | configuration.VelvetArchivedThreads.Remove(otherId))
+        {
+            configuration.Save();
+            chatRowsDirty = true;
+        }
+
         store.DeleteThread(otherId);
         if (threadOpen)
         {
@@ -551,8 +785,7 @@ internal sealed partial class VelvetShell
         var origin = ImGui.GetCursorScreenPos();
         var accept = new Rect(new Vector2(origin.X + inset, origin.Y),
             new Vector2(origin.X + inset + contentWidth, origin.Y + RequestActionHeight * scale));
-        if (SocialPill.Accent(drawList, accept, Loc.T(L.Velvet.Accept), VelvetInk.Shared,
-                TextStyles.SubheadlineEmphasized, accept.Height * 0.5f))
+        if (Button.Draw(drawList, accept, Loc.T(L.Velvet.Accept), VelvetTheme.Ink))
         {
             store.AcceptRequest(userId);
             router.Pop(false);
@@ -569,18 +802,13 @@ internal sealed partial class VelvetShell
             new Vector2(secondary.X + inset + half, bottom));
         var view = new Rect(new Vector2(decline.Max.X + RequestSecondaryGap * scale, secondary.Y),
             new Vector2(decline.Max.X + RequestSecondaryGap * scale + half, bottom));
-        var ink = VelvetInk.Shared;
-        if (SocialPill.Flat(drawList, decline, Loc.T(L.Phone.Decline), ink.ButtonFill, ink.ButtonHover,
-                VelvetTheme.Hairline, VelvetTheme.TitleInk, TextStyles.SubheadlineEmphasized,
-                decline.Height * 0.5f))
+        if (Button.Draw(drawList, decline, Loc.T(L.Phone.Decline), VelvetTheme.Ink, ButtonStyle.Gray))
         {
             store.DeclineRequest(userId);
             router.Pop();
         }
 
-        if (SocialPill.Flat(drawList, view, Loc.T(L.Social.ViewProfile), ink.ButtonFill, ink.ButtonHover,
-                VelvetTheme.Hairline, VelvetTheme.TitleInk, TextStyles.SubheadlineEmphasized,
-                view.Height * 0.5f))
+        if (Button.Draw(drawList, view, Loc.T(L.Social.ViewProfile), VelvetTheme.Ink, ButtonStyle.Gray))
         {
             OpenProfile(userId);
         }
@@ -627,8 +855,8 @@ internal sealed partial class VelvetShell
             var sendOrigin = ImGui.GetCursorScreenPos();
             var send = new Rect(new Vector2(sendOrigin.X + inset, sendOrigin.Y),
                 new Vector2(sendOrigin.X + inset + contentWidth, sendOrigin.Y + IntroSendHeight * scale));
-            if (SocialPill.Accent(drawList, send, Loc.T(L.Velvet.SendIntro), VelvetInk.Shared, IntroSendStyle,
-                    send.Height * 0.5f, !string.IsNullOrWhiteSpace(introText) && !store.IntroBusy))
+            if (Button.Draw(drawList, send, Loc.T(L.Velvet.SendIntro), VelvetTheme.Ink,
+                    enabled: !string.IsNullOrWhiteSpace(introText) && !store.IntroBusy))
             {
                 SendIntro(userId);
             }
@@ -641,8 +869,7 @@ internal sealed partial class VelvetShell
             var skipOrigin = ImGui.GetCursorScreenPos();
             var skip = new Rect(new Vector2(skipOrigin.X + inset, skipOrigin.Y),
                 new Vector2(skipOrigin.X + inset + contentWidth, skipOrigin.Y + IntroSkipHeight * scale));
-            if (SocialPill.Flat(drawList, skip, Loc.T(L.Velvet.JustConnectMe), VelvetTheme.Card, VelvetTheme.CardHi,
-                    VelvetTheme.Hairline, VelvetTheme.TitleInk, IntroSendStyle, skip.Height * 0.5f))
+            if (Button.Draw(drawList, skip, Loc.T(L.Velvet.JustConnectMe), VelvetTheme.Ink, ButtonStyle.Gray))
             {
                 ConnectWithoutIntro(userId);
             }
@@ -708,7 +935,7 @@ internal sealed partial class VelvetShell
     {
         var drawList = ImGui.GetWindowDrawList();
         Squircle.Fill(drawList, field.Min, field.Max, Metrics.Radius.Md * scale,
-            VelvetTheme.Alpha(VelvetTheme.Sunken, IntroWellAlpha).Packed());
+            Surfaces.Fill(VelvetTheme.Ink, FillLevel.Tertiary).Packed());
         var padding = ImGui.GetStyle().FramePadding;
         var textLeft = field.Min.X + IntroFieldPad * scale;
         var wrapWidth = MathF.Max(1f, field.Width - (IntroFieldPad * 2f) * scale - padding.X * 2f - 4f * scale);
@@ -770,4 +997,28 @@ internal sealed partial class VelvetShell
 
     private static string IntroLineOf(VelvetConnectionDto request) =>
         string.IsNullOrWhiteSpace(request.Intro) ? Loc.T(L.Velvet.WantsToConnect) : request.Intro;
+}
+
+internal readonly struct VelvetChatRow
+{
+    public readonly VelvetThreadDto? Thread;
+    public readonly VelvetConnectionDto? Connection;
+    public readonly long ActivityUnix;
+    public readonly string UserId;
+
+    public VelvetChatRow(VelvetThreadDto thread)
+    {
+        Thread = thread;
+        Connection = null;
+        ActivityUnix = thread.LastMessageAtUnix;
+        UserId = thread.OtherUserId;
+    }
+
+    public VelvetChatRow(VelvetConnectionDto connection)
+    {
+        Thread = null;
+        Connection = connection;
+        ActivityUnix = connection.ConnectedAtUnix;
+        UserId = connection.UserId;
+    }
 }

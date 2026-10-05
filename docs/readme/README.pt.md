@@ -1,114 +1,252 @@
 <p align="center">
-  <img src="../../src/Aetherphone/Images/Icon.png" width="180" alt="Aetherphone icon" />
+  <img src="../../src/Aetherphone/Images/Icon.png" width="96" alt="Ícone do Aetherphone" />
 </p>
 
 <h1 align="center">Aetherphone</h1>
 
 <p align="center">
-  <a href="https://www.aetherphone.net/"><img alt="Website" src="https://img.shields.io/badge/website-aetherphone.net-blue?style=flat-square"></a>
-  <a href="https://discord.gg/3HbJCscMyS"><img alt="Discord" src="https://img.shields.io/badge/Discord-join-5865F2?style=flat-square&logo=discord&logoColor=white"></a>
+  <strong>Seu personagem acabou de ganhar um celular.</strong><br>
+  Uma rede social, um mensageiro, um player de música e quarenta e dois apps, encaixados dentro de FINAL FANTASY XIV.
+</p>
+
+<p align="center">
   <a href="https://github.com/XeldarAlz/FFXIV-Aetherphone/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/XeldarAlz/FFXIV-Aetherphone?style=flat-square&color=blue"></a>
   <a href="https://github.com/XeldarAlz/FFXIV-Aetherphone/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/XeldarAlz/FFXIV-Aetherphone/total?style=flat-square&color=blue&cacheSeconds=300"></a>
-  <a href="https://github.com/XeldarAlz/FFXIV-Aetherphone/actions/workflows/release.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/XeldarAlz/FFXIV-Aetherphone/release.yml?style=flat-square"></a>
-  <a href="../../LICENSE.md"><img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue?style=flat-square"></a>
+  <a href="https://discord.gg/3HbJCscMyS"><img alt="Discord" src="https://img.shields.io/badge/Discord-join-5865F2?style=flat-square&logo=discord&logoColor=white"></a>
+  <a href="../../LICENSE.md"><img alt="Licença" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue?style=flat-square"></a>
 </p>
 
 <p align="center">
-  <a href="../../README.md"><img alt="English" src="https://img.shields.io/badge/English-lightgrey?style=flat-square"></a>
-  <a href="README.de.md"><img alt="Deutsch" src="https://img.shields.io/badge/Deutsch-lightgrey?style=flat-square"></a>
-  <a href="README.fr.md"><img alt="Français" src="https://img.shields.io/badge/Fran%C3%A7ais-lightgrey?style=flat-square"></a>
-  <a href="README.es.md"><img alt="Español" src="https://img.shields.io/badge/Espa%C3%B1ol-lightgrey?style=flat-square"></a>
-  <a href="README.pt.md"><img alt="Português" src="https://img.shields.io/badge/Portugu%C3%AAs-blue?style=flat-square"></a>
-  <a href="README.tr.md"><img alt="Türkçe" src="https://img.shields.io/badge/T%C3%BCrk%C3%A7e-lightgrey?style=flat-square"></a>
-  <a href="README.zh.md"><img alt="中文" src="https://img.shields.io/badge/%E4%B8%AD%E6%96%87-lightgrey?style=flat-square"></a>
-  <a href="README.ja.md"><img alt="日本語" src="https://img.shields.io/badge/%E6%97%A5%E6%9C%AC%E8%AA%9E-lightgrey?style=flat-square"></a>
-  <a href="README.ru.md"><img alt="Русский" src="https://img.shields.io/badge/%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9-lightgrey?style=flat-square"></a>
+  <a href="#install"><strong>Instalar</strong></a> ·
+  <a href="https://www.aetherphone.net/"><strong>Site</strong></a> ·
+  <a href="https://www.aetherphone.net/summer-2026/"><strong>Retrospectiva do Verão</strong></a> ·
+  <a href="https://discord.gg/3HbJCscMyS"><strong>Discord</strong></a>
 </p>
 
 <p align="center">
-  <em>Um smartphone, feito para você. Construído sobre o Dalamud.</em>
+  <img src="../media/readme/home.png" width="320" alt="A tela inicial do Aetherphone no jogo" />
 </p>
 
 <p align="center">
-  <a href="https://www.aetherphone.net/"><strong>www.aetherphone.net</strong></a>
+  <a href="../../README.md">English</a> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.es.md">Español</a> ·
+  <strong>Português</strong> ·
+  <a href="README.tr.md">Türkçe</a> ·
+  <a href="README.zh.md">中文</a> ·
+  <a href="README.ja.md">日本語</a> ·
+  <a href="README.ru.md">Русский</a>
 </p>
 
----
+## O primeiro verão em números
+
+O Aethernet abriu em 2 de julho de 2026. Até o fim da temporada, jogadores de 113 mundos fizeram tudo isto:
 
 <p align="center">
-  <img src="../../src/Aetherphone/Images/screenshots/Home.png" width="280" alt="Aetherphone in-game" />
+  <a href="https://www.aetherphone.net/summer-2026/"><img src="../media/readme/numbers.png" width="100%" alt="14,4 milhões de ações registradas, 5,8 milhões de mensagens privadas, 3,2 milhões de curtidas, 348 mil fotos, 343 mil conexões, 113 mundos" /></a>
 </p>
 
-## O que é
+<p align="center"><sub>Números de 28 de setembro de 2026. <a href="https://www.aetherphone.net/summer-2026/">Veja a Retrospectiva do Verão 2026 completa</a>.</sub></p>
 
-Aetherphone é o primeiro e único plugin de telefone totalmente funcional para FINAL FANTASY XIV: um aparelho encaixado e sempre à vista, com tela inicial, alternador de apps e notificações. Por trás dos apps roda uma rede social própria, então o que você publica, envia e guarda acompanha você entre personagens, mundos e sessões em vez de ficar só na sua máquina.
+## Uma vida social dentro do jogo
 
-## Destaques
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="../media/readme/chirper.webp" width="100%" alt="Linha do tempo do Chirper com novos chirps chegando" />
+      <h3><img src="../media/readme/icons/chirper.png" width="28" align="top" alt="" /> Chirper</h3>
+      <em>Posts curtos de toda Eorzea.</em>
+      <ul>
+        <li>Linhas do tempo Para você e Seguindo</li>
+        <li>Rechirps, citações, respostas e hashtags</li>
+        <li>Fotos, GIFs e treze reações</li>
+        <li>Qualquer chirp traduzido com um toque</li>
+      </ul>
+    </td>
+    <td width="50%" valign="top">
+      <img src="../media/readme/aethergram.webp" width="100%" alt="Feed do Aethergram com stories e uma foto curtida" />
+      <h3><img src="../media/readme/icons/aethergram.png" width="28" align="top" alt="" /> Aethergram</h3>
+      <em>Clicado no jogo. Compartilhado no Aethergram.</em>
+      <ul>
+        <li>Até oito fotos direto da sua galeria</li>
+        <li>Stories que duram um dia</li>
+        <li>Marque quem aparece na foto</li>
+        <li>Um editor de fotos embutido antes de compartilhar</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-- **Um telefone dentro da sua HUD.** Arraste para onde quiser, ajuste o tamanho como preferir e minimize numa faixa que mostra só os widgets que você escolher. Ele também se dobra num minimapa de zona ao vivo e ocupa o lugar do minimapa do jogo.
-- **Fale com qualquer um, em qualquer mundo.** O ChocoChat alcança qualquer pessoa com Aetherphone, não importa o mundo nem o data center, com notas de voz, grupos e chamadas de voz feitas direto pelo contato. Sem grupo, sem lista de amigos, sem viagem.
-- **Apps sociais próprios.** Chirper para posts curtos, Aethergram para fotos e Velvet, um app complementar 18+ opcional. Uma identidade vale para todos e segue você entre personagens.
-- **Todos os canais de chat do jogo, reorganizados.** O Linkpearl coloca o chat inteiro do jogo em abas montadas por você, com sussurros como conversas separadas, cores por canal e um campo de texto que divide e ritma as mensagens que o jogo cortaria.
-- **Converse com o telefone fechado.** Destaque qualquer conversa numa janela flutuante, junte janelas em abas e deixe que sumam em combate e em atividades e voltem sozinhas depois.
-- **Apps que jogam com você.** Strats para colas de raide com sua posição marcada em cada mecânica, Caçadas para marcas e trens, Pesca para as viagens oceânicas, além de Mercado, Housing, Mapas, Locais, Diárias, Coleções e Inventário.
-- **E o dia a dia também.** Notas, Calendário, Temporizadores para resets e retentores, Calculadora, Carteira, Câmera e Fotos, Relógio, Vigia do Céu para o clima e Atalhos que você dispara por macro na barra.
-- **Assistir e ouvir junto.** O MogCast projeta vídeo numa tela dentro do mundo, com reprodução sincronizada para todo mundo presente, e a Música traz rádios da comunidade ao vivo e sets de DJ do Rolladeck para dentro do jogo.
-- **Fala a sua língua.** Tradução com um toque em posts, perfis e mensagens privadas, e feeds e conversas podem traduzir tudo conforme chega.
-- **Descanso incluso.** O Gamba é um cassino de dinheiro fictício com blackjack, caça-níqueis, raspadinhas, bingo e uma roleta coletiva, e nada ali tem valor em dinheiro. Jogos é um fliperama com mais de trinta títulos, Doom entre eles, mais Uno, Xadrez e Sinuca online contra amigos.
-- **Deixe do seu jeito.** Papéis de parede próprios, seus toques de chamada e de notificação, qualquer cor de destaque, retratos de personagem do Lodestone, sons de interface discretos e um zoom no tamanho do texto.
-- **Privado por concepção.** Mensagens, anexos e notas de voz têm criptografia de ponta a ponta, chamadas são criptografadas em trânsito e uma equipe humana de moderação revisa posts e imagens públicas.
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="../media/readme/chocochat.webp" width="100%" alt="Conversa no ChocoChat com uma foto e uma nota de voz" />
+      <h3><img src="../media/readme/icons/message.png" width="28" align="top" alt="" /> ChocoChat</h3>
+      <em>Seu número. Sua galera.</em>
+      <ul>
+        <li>Mande mensagens para jogadores de qualquer mundo ou data center</li>
+        <li>Notas de voz, fotos e conversas em grupo</li>
+        <li>Chamadas de voz, a dois ou em grupo</li>
+        <li>Criptografia de ponta a ponta por padrão</li>
+      </ul>
+    </td>
+    <td width="50%" valign="top">
+      <img src="../media/readme/velvet.webp" width="100%" alt="Cartão de perfil e apresentação no Velvet" />
+      <h3><img src="../media/readme/icons/velvet.png" width="28" align="top" alt="" /> Velvet <sup>18+</sup></h3>
+      <em>Depois que escurece, do seu jeito.</em>
+      <ul>
+        <li>Um cartão que diz o que você procura</li>
+        <li>Encontre pessoas pela intenção</li>
+        <li>A conversa só começa quando respondem à sua apresentação</li>
+        <li>Só para adultos, com perfil e regras próprios</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-42 apps no total. O tour completo pelos recursos, capturas de tela e detalhes estão no site:
+Uma única conta do Aethernet faz seu login em todos os apps sociais, e cada app pode manter seu próprio nome de exibição e nome de usuário.
 
-→ **[www.aetherphone.net](https://www.aetherphone.net/)**
+## Assista, ouça e jogue junto
+
+<table>
+  <tr>
+    <td valign="top">
+      <img src="../media/readme/mogcast.gif" width="100%" alt="Posicionando uma tela do MogCast no mundo: arrastando, girando e curvando" />
+      <img src="../media/readme/mogcast-theater.gif" width="100%" alt="MogCast exibindo um trailer em tela cheia no celular" />
+      <h3><img src="../media/readme/icons/aetherstream.png" width="28" align="top" alt="" /> MogCast</h3>
+      <em>Sessões de vídeo em grupo numa tela que você coloca no mundo.</em>
+      <ul>
+        <li>Arraste, gire, curve e redimensione a tela bem onde você está</li>
+        <li>Reprodução sincronizada para todo mundo da sessão</li>
+        <li>Jogadores por perto entram com um toque, amigos de qualquer lugar com um código</li>
+        <li>Coloque playlists inteiras do YouTube na fila e reajam juntos na tela</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <img src="../media/readme/music.webp" width="100%" alt="Música tocando agora e, em seguida, a letra sincronizada" />
+      <h3><img src="../media/readme/icons/music.png" width="28" align="top" alt="" /> Música</h3>
+      <em>Um app de música completo, com seus amigos junto.</em>
+      <ul>
+        <li>Letras sincronizadas, playlists e reprodução offline</li>
+        <li>Jam: a mesma música, em sincronia, com os amigos</li>
+        <li>Milhares de estações de rádio</li>
+        <li>Controle o Spotify ou o seu navegador no PC</li>
+      </ul>
+    </td>
+    <td width="33%" valign="top">
+      <img src="../media/readme/venues.gif" width="100%" alt="Categorias de Locais e a agenda de eventos da semana" />
+      <h3><img src="../media/readme/icons/venues.png" width="28" align="top" alt="" /> Locais</h3>
+      <em>Onde a noite está acontecendo.</em>
+      <ul>
+        <li>Clubes, bares e cafés abertos agora</li>
+        <li>Todos os eventos da semana, no seu horário local</li>
+        <li>Viagem até a porta com um toque</li>
+      </ul>
+    </td>
+    <td width="33%" valign="top">
+      <img src="../media/readme/gamba.webp" width="100%" alt="Saguão do cassino Gamba" />
+      <h3><img src="../media/readme/icons/casino.png" width="28" align="top" alt="" /> Gamba</h3>
+      <em>1,7 bilhão de fichas de mentira apostadas.</em>
+      <ul>
+        <li>Blackjack, caça-níqueis, bingo e muito mais</li>
+        <li>Salas ao vivo com todo mundo que está online</li>
+        <li>Um limite diário de perdas opcional</li>
+        <li>As fichas não podem ser compradas nem trocadas por dinheiro</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+## E tudo mais que um celular deve fazer
+
+**Joga com você**<br>
+<img src="../media/readme/icons/messages.png" width="36" alt="Linkpearl" title="Linkpearl" /> <img src="../media/readme/icons/strats.png" width="36" alt="Strats" title="Strats" /> <img src="../media/readme/icons/hunts.png" width="36" alt="Caçadas" title="Caçadas" /> <img src="../media/readme/icons/market.png" width="36" alt="Mercado" title="Mercado" /> <img src="../media/readme/icons/housing.png" width="36" alt="Housing" title="Housing" /> <img src="../media/readme/icons/fishing.png" width="36" alt="Pesca" title="Pesca" /> <img src="../media/readme/icons/jobs.png" width="36" alt="Jobs" title="Jobs" /> <img src="../media/readme/icons/inventory.png" width="36" alt="Inventário" title="Inventário" /> <img src="../media/readme/icons/dailies.png" width="36" alt="Diárias" title="Diárias" /> <img src="../media/readme/icons/timers.png" width="36" alt="Temporizadores" title="Temporizadores" /><br>
+<sub>Abas de chat do Linkpearl · Strats de raide · Caçadas ao vivo · preços e alertas do Mercado · loteria de Housing · janelas de Pesca · Jobs e gearsets · busca no Inventário · Diárias · Temporizadores de retainers</sub>
+
+**Aproxima as pessoas**<br>
+<img src="../media/readme/icons/muster.png" width="36" alt="Muster" title="Muster" /> <img src="../media/readme/icons/yellowpages.png" width="36" alt="Yellow Pages" title="Yellow Pages" /> <img src="../media/readme/icons/announcements.png" width="36" alt="Avisos" title="Avisos" /> <img src="../media/readme/icons/polls.png" width="36" alt="Enquetes" title="Enquetes" /> <img src="../media/readme/icons/coin.png" width="36" alt="Aether Coin" title="Aether Coin" /><br>
+<sub>Encontros no Muster · classificados no Yellow Pages · Avisos · Enquetes · insígnias e molduras com Aether Coin</sub>
+
+**Utilidades do dia a dia**<br>
+<img src="../media/readme/icons/camera.png" width="36" alt="Câmera" title="Câmera" /> <img src="../media/readme/icons/photos.png" width="36" alt="Fotos" title="Fotos" /> <img src="../media/readme/icons/notes.png" width="36" alt="Notas" title="Notas" /> <img src="../media/readme/icons/calendar.png" width="36" alt="Calendário" title="Calendário" /> <img src="../media/readme/icons/clock.png" width="36" alt="Relógio" title="Relógio" /> <img src="../media/readme/icons/skywatcher.png" width="36" alt="Vigia do Céu" title="Vigia do Céu" /> <img src="../media/readme/icons/wallet.png" width="36" alt="Carteira" title="Carteira" /> <img src="../media/readme/icons/health.png" width="36" alt="Saúde" title="Saúde" /> <img src="../media/readme/icons/shortcuts.png" width="36" alt="Atalhos" title="Atalhos" /> <img src="../media/readme/icons/news.png" width="36" alt="Notícias" title="Notícias" /><br>
+<sub>Câmera · Fotos com editor de fotos · Notas · Calendário · Relógio com o horário de Eorzea · clima no Vigia do Céu · Carteira · Saúde · Atalhos · Notícias do Lodestone</sub>
+
+**Pra relaxar**<br>
+<img src="../media/readme/icons/games.png" width="36" alt="Jogos" title="Jogos" /> <img src="../media/readme/icons/doom.png" width="36" alt="Doom" title="Doom" /> <img src="../media/readme/icons/chess.png" width="36" alt="Xadrez" title="Xadrez" /> <img src="../media/readme/icons/tetris.png" width="36" alt="Tetris" title="Tetris" /> <img src="../media/readme/icons/wordrun.png" width="36" alt="Word Run" title="Word Run" /> <img src="../media/readme/icons/solitaire.png" width="36" alt="Solitaire" title="Solitaire" /> <img src="../media/readme/icons/2048.png" width="36" alt="2048" title="2048" /><br>
+<sub>Um fliperama com trinta e três jogos, Doom entre eles, além de Uno, Xadrez e Sinuca bola 8 online com amigos</sub>
+
+## Feito como o celular no seu bolso
+
+<img src="../../src/Aetherphone/Images/screenshots/Home.png" align="right" width="260" alt="Tela inicial do Aetherphone no jogo" />
+
+**Mora na sua HUD.** Arraste para onde quiser, redimensione ou reduza a um minicelular com relógio, widgets, música e chamadas.
+
+**Widgets e Pilhas Inteligentes.** Um widget para quase todo app, redimensionado pelo canto e empilhado ao soltar um sobre o outro.
+
+**Uma Ilha Dinâmica** para chamadas, reprodução, temporizadores, viagens, sessões de vídeo em grupo e encontros.
+
+**Deixe do seu jeito.** Papéis de parede, toques, cores de destaque e estilos de ícone, salvos como um Visual que acompanha cada personagem.
+
+**Fala a sua língua.** Nove idiomas de interface e tradução com um toque em posts, perfis e mensagens.
+
+**Privacidade desde a origem.** Mensagens, fotos e notas de voz têm criptografia de ponta a ponta. Uma equipe humana de moderação analisa o conteúdo denunciado.
+
+<br clear="right" />
+
+<a id="install"></a>
 
 ## Instalação
 
 No jogo: `/xlsettings` → **Experimental** → cole em **Custom Plugin Repositories**:
 
 ```
-https://raw.githubusercontent.com/XeldarAlz/DalamudPlugins/main/repo.json
+https://aetherphone.net/repo.json
 ```
 
-Marque **Enabled**, clique em **+** e depois em **Save and Close**. Abra `/xlplugins` → **All Plugins**, busque **Aetherphone** e instale.
+Marque **Enabled**, clique em **+** e depois em **Save and Close**. Abra `/xlplugins` → **All Plugins**, busque **Aetherphone** e instale. Digite `/phone` para pegar o celular.
 
-Você joga a versão chinesa do jogo? O telefone a detecta, faz seu login pelo perfil do Rising Stones (石之家) em vez do Lodestone e aponta os apps que precisam disso para os mundos e o feed de notícias chineses.
+Joga no cliente chinês? O celular detecta isso e faz seu login pelo perfil do Rising Stones (石之家).
 
-## Comandos
+<details>
+<summary><strong>Comandos</strong></summary>
 
 | Comando | Ação |
 |---|---|
-| `/phone` | Mostrar/ocultar o telefone |
+| `/phone` | Mostrar ou ocultar o celular |
 | `/aetherphone` | Atalho para `/phone` |
-| `/phone run <name>` | Executar um atalho pelo nome, para que ele possa ficar em uma macro da hotbar |
+| `/phone run <name>` | Executar um atalho pelo nome, para que ele possa ficar numa macro da hotbar |
 | `/phone market [item]` | Abrir o mercado, buscando um item se você indicar um |
-| `/phone reset` | Recentralizar o telefone na tela |
+| `/phone reset` | Recentralizar o celular na tela |
 | `/phone test` | Enviar uma notificação de exemplo |
 
-## Comunidade
+</details>
 
-Tem dúvidas, ideias ou só quer bater um papo com outros jogadores? Venha dar um oi no Discord.
+## Comunidade e contribuições
 
-→ [Entre no nosso Discord](https://discord.gg/3HbJCscMyS)
+Suporte, relatos de bugs e sugestões ficam no **[Discord do Aetherphone](https://discord.gg/3HbJCscMyS)**.
 
-## Contribuir
-
-O Aetherphone é de código aberto e contribuições são bem-vindas. Comece pela documentação para desenvolvedores (em inglês) e depois leia o guia de contribuição. Prefere melhorar uma das oito traduções? Para isso não é preciso código, build nem git: o guia do tradutor mostra o passo a passo no navegador.
+O Aetherphone é de código aberto e contribuições são bem-vindas. Tradutores não precisam de código nem de build: o guia do tradutor funciona no navegador.
 
 → [Documentação para desenvolvedores](../README.md) · [Guia de contribuição](../../CONTRIBUTING.md) · [Guia do tradutor](../translating.md)
 
-## Mais coisas minhas
+## Uso de IA
 
-Se você gostou deste plugin, dê uma olhada nos meus outros trabalhos para Dalamud. Talvez encontre algo mais para você lá.
+O Aetherphone é desenvolvido com ferramentas de programação com IA e declara o nível **Copilot** da [política de IA do Dalamud](https://dalamud.dev/plugin-publishing/ai-policy/): a IA faz a maior parte da implementação, enquanto pessoas escrevem a especificação, revisam cada mudança, testam no jogo e respondem pelo resultado.
 
-→ [XeldarAlz Dalamud Plugins](https://github.com/XeldarAlz/DalamudPlugins)
+**Nada do que você vê ou ouve é gerado por IA.** Todos os ícones, papéis de parede, capinhas, sons, toques e fontes são originais, desenhados por artistas creditados ou vêm de fontes licenciadas. O texto em inglês é escrito à mão, e os outros oito idiomas são traduções assistidas por IA revisadas por pessoas.
+
+**Seu conteúdo continua sendo seu.** A tradução envia apenas o texto que você escolher. Nenhuma IA modera o Aethernet, e seus posts e mensagens nunca são usados para treinar modelos de IA.
+
+→ [Uso de IA](../ai-usage.md) · [Avisos de terceiros](../../THIRD-PARTY-NOTICES.md)
 
 ## Aviso legal
 
-Usar os recursos online significa aceitar os termos de serviço. A política de privacidade cobre o que o serviço Aethernet faz com os seus dados; os recursos offline ficam na sua máquina, embora alguns aplicativos busquem dados públicos do jogo diretamente de serviços de terceiros, o que a política também cobre.
+Usar os recursos online significa aceitar os [Termos de Serviço](../../TERMS.md). A [Política de Privacidade](../../PRIVACY.md) cobre o que o Aethernet faz com os seus dados, e a [Política de Marca e Nome](../../TRADEMARK.md) cobre o nome.
 
-→ [Termos de Serviço](../../TERMS.md) · [Política de Privacidade](../../PRIVACY.md) · [Política de Marca e Nome](../../TRADEMARK.md)
-
-## Licença
-
-AGPL-3.0-or-later. Consulte [LICENSE.md](../../LICENSE.md).
+Licenciado sob AGPL-3.0-or-later. Consulte [LICENSE.md](../../LICENSE.md). Um projeto independente de fãs, sem afiliação nem endosso da Square Enix.

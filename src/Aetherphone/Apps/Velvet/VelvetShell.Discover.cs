@@ -10,22 +10,16 @@ namespace Aetherphone.Apps.Velvet;
 
 internal sealed partial class VelvetShell
 {
-    private const float CardPressShrink = 0.94f;
-    private const float CardHoverGrow = 0.06f;
-    private const float CardHoverTopLift = 0.18f;
-    private const float CardHoverBottomLift = 0.10f;
     private const float CardRimAlpha = 0.30f;
     private const float CardRimWeight = 1.5f;
-    private const float CardGlowReach = 8f;
     private const float FilterSummaryHeight = 30f;
     private const float FilterSummaryGlyphGap = 8f;
     private const string FilterSummarySeparator = " · ";
     private const float EndActionWidth = 168f;
-    private const float EndActionHeight = 38f;
+    private const float EndActionHeight = Button.RegularHeight;
     private const float EndActionGap = 10f;
     private const float EndActionTop = 22f;
 
-    private static readonly Vector4 CardShadow = new(0f, 0f, 0f, 0.30f);
     private static readonly TextStyle FilterSummaryStyle = TextStyles.FootnoteEmphasized;
 
     private readonly List<VelvetProfileDto> cards = new();
@@ -204,9 +198,6 @@ internal sealed partial class VelvetShell
         ApplyDiscoverFilters();
     }
 
-    private static Vector4 CardBodyTone(Vector4 tone, float lift, float alpha) =>
-        VelvetTheme.Alpha(VelvetTheme.Lerp(tone, VelvetTheme.OnAccent, lift), alpha);
-
     private void DrawDiscoverEmpty(Rect body)
     {
         var scale = UiScale.Current;
@@ -229,7 +220,7 @@ internal sealed partial class VelvetShell
         var actionTop = bottom + EndActionTop * scale;
         if (failed)
         {
-            if (DrawEndAction(body, ref actionTop, Loc.T(L.Common.Retry), ConfirmButtonTone.Primary,
+            if (DrawEndAction(body, ref actionTop, Loc.T(L.Common.Retry), ButtonStyle.Prominent,
                     "velvet.discover.retry"))
             {
                 ApplyDiscoverFilters();
@@ -252,6 +243,7 @@ internal sealed partial class VelvetShell
                 NextTone(ref lead), "velvet.discover.clear"))
         {
             discoverInclude.Clear();
+            SaveFilters();
             ApplyDiscoverFilters();
         }
 
@@ -262,25 +254,25 @@ internal sealed partial class VelvetShell
         }
     }
 
-    private static ConfirmButtonTone NextTone(ref bool lead)
+    private static ButtonStyle NextTone(ref bool lead)
     {
         if (!lead)
         {
-            return ConfirmButtonTone.Neutral;
+            return ButtonStyle.Gray;
         }
 
         lead = false;
-        return ConfirmButtonTone.Primary;
+        return ButtonStyle.Prominent;
     }
 
-    private bool DrawEndAction(Rect body, ref float top, string label, ConfirmButtonTone tone, string id)
+    private bool DrawEndAction(Rect body, ref float top, string label, ButtonStyle style, string id)
     {
         var scale = UiScale.Current;
         var halfWidth = EndActionWidth * scale * 0.5f;
         var rect = new Rect(new Vector2(body.Center.X - halfWidth, top),
             new Vector2(body.Center.X + halfWidth, top + EndActionHeight * scale));
         top = rect.Max.Y + EndActionGap * scale;
-        return ConfirmDialog.DrawPillButton(rect, label, true, theme, 1f, 1f, tone, id);
+        return Button.Draw(rect, label, VelvetTheme.Ink, style, id: id);
     }
 
     private Rect DrawFilterSummary(Rect area)

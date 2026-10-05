@@ -13,7 +13,7 @@ internal sealed class CommandsPage : ISettingsPage
 
     private readonly record struct CommandEntry(string Syntax, LocString Description);
 
-    private static readonly CommandEntry[] Entries =
+    private static readonly CommandEntry[] Commands =
     {
         new(AepConstants.PrimaryCommand, L.Settings.CommandToggle),
         new(AepConstants.AliasCommand, L.Settings.CommandAlias),
@@ -22,10 +22,20 @@ internal sealed class CommandsPage : ISettingsPage
         new($"{AepConstants.PrimaryCommand} test", L.Settings.CommandTest),
     };
 
+    private static readonly SettingsEntry[] Searchable =
+    {
+        new(L.Settings.CommandToggle),
+        new(L.Settings.CommandAlias),
+        new(L.Settings.CommandMarket),
+        new(L.Settings.CommandReset),
+        new(L.Settings.CommandTest),
+    };
+
     public string Title => Loc.T(L.Settings.Commands);
     public string Summary => string.Empty;
     public FontAwesomeIcon Icon => FontAwesomeIcon.Terminal;
     public Vector4 Tint => new(0.46f, 0.62f, 0.92f, 1f);
+    public ReadOnlySpan<SettingsEntry> Entries => Searchable;
 
     public void Draw(in PhoneContext context, Rect body)
     {
@@ -34,10 +44,10 @@ internal sealed class CommandsPage : ISettingsPage
         using (AppSurface.Begin(body))
         {
             SettingsSection.Header(Loc.T(L.Settings.Commands), theme, Loc.T(L.Settings.CommandsHint));
-            var card = GroupCard.Begin(theme, Entries.Length, RowHeight);
-            for (var index = 0; index < Entries.Length; index++)
+            var card = GroupCard.Begin(theme, Commands.Length, RowHeight);
+            for (var index = 0; index < Commands.Length; index++)
             {
-                DrawRow(card.NextRow(), Entries[index], theme, scale);
+                DrawRow(card.NextRow(), Commands[index], theme, scale);
             }
 
             card.End();
@@ -46,12 +56,14 @@ internal sealed class CommandsPage : ISettingsPage
 
     private static void DrawRow(Rect row, CommandEntry entry, Core.Theme.PhoneTheme theme, float scale)
     {
-        var syntax = Typography.FitText(entry.Syntax, row.Width, 0.92f, FontWeight.SemiBold);
-        var syntaxHeight = Typography.Measure(syntax, 0.92f, FontWeight.SemiBold).Y;
-        Typography.Draw(new Vector2(row.Min.X, row.Min.Y + 10f * scale), syntax, theme.Accent, 0.92f,
-            FontWeight.SemiBold);
-        var description = Typography.FitText(Loc.T(entry.Description), row.Width, 0.8f, FontWeight.Regular);
-        Typography.Draw(new Vector2(row.Min.X, row.Min.Y + 10f * scale + syntaxHeight + 4f * scale), description,
-            theme.TextMuted, 0.8f);
+        var syntax = Typography.FitText(entry.Syntax, row.Width, TextStyles.SubheadlineEmphasized);
+        var syntaxHeight = Typography.Measure(syntax, TextStyles.SubheadlineEmphasized).Y;
+        Typography.Draw(new Vector2(row.Min.X, row.Min.Y + Metrics.Space.Md * scale), syntax, theme.Accent,
+            TextStyles.SubheadlineEmphasized);
+        var description = Typography.FitText(Loc.T(entry.Description), row.Width, TextStyles.Footnote);
+        Typography.Draw(
+            new Vector2(row.Min.X, row.Min.Y + Metrics.Space.Md * scale + syntaxHeight + Metrics.Space.Xxs * scale),
+            description, theme.TextMuted, TextStyles.Footnote);
+
     }
 }

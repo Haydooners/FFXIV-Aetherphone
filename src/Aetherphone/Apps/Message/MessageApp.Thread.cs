@@ -28,7 +28,7 @@ internal sealed partial class MessageApp
     private const float ThreadHeaderNameGap = 10f;
 
     private static readonly TextStyle ThreadNameStyle = TextStyles.Headline;
-    private static readonly TextStyle ThreadSubStyle = new(0.76f, FontWeight.Regular);
+    private static readonly TextStyle ThreadSubStyle = TextStyles.Footnote;
 
     private readonly ActionSheet threadSheet = new();
     private readonly ActionSheet.Item[] threadSheetItems = new ActionSheet.Item[9];
@@ -56,7 +56,7 @@ internal sealed partial class MessageApp
 
         protected override Action BackAction => app.back;
 
-        protected override MessageTheme ChatTheme => app.activeTheme;
+        protected override ChatTheme ChatTheme => app.activeTheme;
 
         protected override ChatMenuModel BuildMenuModel()
         {
@@ -154,7 +154,7 @@ internal sealed partial class MessageApp
             var avatarRadius = ThreadHeaderAvatarRadius * scale;
             var avatarCenter = new Vector2(chipCenter.X + chipRadius + ThreadHeaderAvatarGap * scale + avatarRadius,
                 rowCenterY);
-            var name = conversation is null ? app.DisplayName : DirectMessagesStore.DisplayTitle(conversation);
+            var name = conversation is null ? app.DisplayName : app.store.DisplayTitle(conversation);
             if (conversation is null)
             {
                 app.DrawGroupAvatar(drawList, avatarCenter, avatarRadius, name, null);
@@ -216,20 +216,10 @@ internal sealed partial class MessageApp
         }
     }
 
-    private Rect PaintHeaderBand(Rect area)
-    {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var band = new Rect(area.Min, new Vector2(area.Max.X, area.Min.Y + AppHeader.Height * scale));
-        ui.PaintGradient(drawList, band, screenRect, 0f);
-        drawList.AddLine(new Vector2(band.Min.X, band.Max.Y), band.Max, ImGui.GetColorU32(ui.Hairline), 1f);
-        return band;
-    }
-
     private void OpenThreadSheet(ConversationDto conversation)
     {
         threadSheetConversationId = conversation.Id;
-        threadSheetTitle = DirectMessagesStore.DisplayTitle(conversation);
+        threadSheetTitle = store.DisplayTitle(conversation);
         var count = 0;
         var isGroup = conversation.IsGroup;
         if (isGroup || contacts.Find(conversation.OtherUserId) is not null)
@@ -340,7 +330,7 @@ internal sealed partial class MessageApp
             return;
         }
 
-        var title = conversation is null ? DisplayName : DirectMessagesStore.DisplayTitle(conversation);
+        var title = conversation is null ? DisplayName : store.DisplayTitle(conversation);
         if (!popouts.Open(conversationId, title))
         {
             ShellToast.Show(Loc.T(L.Message.PopoutLimit, MessagePopouts.MaxWindows));
@@ -389,8 +379,8 @@ internal sealed partial class MessageApp
         {
             ConversationId = conversation.Id,
             MessageId = messageId,
-            ConversationTitle = DirectMessagesStore.DisplayTitle(conversation),
-            SenderName = message.SenderId == store.MyUserId ? Loc.T(L.Message.You) : message.SenderDisplayName,
+            ConversationTitle = store.DisplayTitle(conversation),
+            SenderName = message.SenderId == store.MyUserId ? Loc.T(L.Message.You) : store.SenderLabel(message),
             Preview = ChatText.QuotePreview(message.Body, message.Kind),
             Kind = ChatText.EffectiveKind(message.Body, message.Kind),
             CreatedAtUnix = message.CreatedAtUnix,

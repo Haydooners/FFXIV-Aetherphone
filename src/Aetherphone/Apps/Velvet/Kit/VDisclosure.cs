@@ -9,7 +9,7 @@ internal static class VDisclosure
     public const float HeaderHeight = 52f;
     public const float PanelPadX = VCard.Pad;
     public const float PanelPadY = 12f;
-    public const float RevealSmoothTime = 0.14f;
+    public const float RevealSmoothTime = Aetherphone.Core.Animation.Motion.Appear;
     private const float TileGap = 10f;
     private const float SummaryGap = 8f;
     private const float TitleSummaryGap = 12f;
@@ -17,7 +17,7 @@ internal static class VDisclosure
     public static bool Card(ImDrawListPtr drawList, in Rect header, float visible, string glyph, Vector4 tone,
         string title, string summary, float reveal, float scale)
     {
-        var radius = Metrics.Radius.Card * scale;
+        var radius = VCard.Radius * scale;
         VCard.Paint(drawList, header.Min, new Vector2(header.Max.X, header.Max.Y + visible), scale);
         var hovered = UiInteract.Hover(header.Min, header.Max);
         if (hovered)

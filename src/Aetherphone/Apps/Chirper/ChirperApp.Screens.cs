@@ -25,41 +25,30 @@ internal sealed partial class ChirperApp
     private const float TagRowHeight = 60f;
     private const float TagGlyphSize = 38f;
     private const float EditAvatarRadius = 46f;
-    private const float EditRowHeight = 46f;
+    private const float EditFieldHeight = SearchBar.HeightUnits;
     private const float EditBioMinHeight = 64f;
 
-    private static readonly TextStyle ScreenTitleStyle = new(1.13f, FontWeight.Bold);
-    private static readonly TextStyle ScreenSubtitleStyle = new(0.8f, FontWeight.Regular);
-    private static readonly TextStyle UserNameStyle = new(0.97f, FontWeight.SemiBold);
-    private static readonly TextStyle UserSubStyle = new(0.87f, FontWeight.Regular);
-    private static readonly TextStyle SmallPillStyle = new(0.83f, FontWeight.Bold);
+    private static readonly TextStyle ScreenTitleStyle = TextStyles.Title3;
+    private static readonly TextStyle ScreenSubtitleStyle = TextStyles.Footnote;
+    private static readonly TextStyle UserNameStyle = TextStyles.Headline;
+    private static readonly TextStyle UserSubStyle = TextStyles.Subheadline;
     private static readonly SocialUserRowStyle UserRowStyle = new(UserRowHeight, FeedAvatarRadius, CellPadX, AvatarGap,
         FollowPillHeight, UserNameStyle, UserSubStyle, RowHover);
-    private static readonly TextStyle SectionLabelStyle = new(0.87f, FontWeight.Bold);
-    private static readonly TextStyle TagNameStyle = new(1f, FontWeight.SemiBold);
-    private static readonly TextStyle TagCountStyle = new(0.87f, FontWeight.Regular);
-    private static readonly TextStyle TagGlyphStyle = new(1.13f, FontWeight.Bold);
-    private static readonly TextStyle ActivityActorStyle = new(0.95f, FontWeight.Bold);
-    private static readonly TextStyle ActivityBodyStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle ActivityTimeStyle = new(0.8f, FontWeight.Regular);
-    private static readonly TextStyle EditLabelStyle = new(0.93f, FontWeight.Regular);
-    private static readonly TextStyle EditValueStyle = new(1f, FontWeight.Regular);
-    private static readonly TextStyle EditHintStyle = new(0.8f, FontWeight.SemiBold);
-    private static readonly TextStyle EditFootStyle = new(0.83f, FontWeight.Regular);
-    private static readonly TextStyle SaveWordStyle = new(1.03f, FontWeight.Bold);
-    private static readonly Vector4 SolidPillFill = new(0.949f, 0.961f, 0.980f, 1f);
-    private static readonly Vector4 SolidPillInk = new(0.043f, 0.078f, 0.125f, 1f);
-    private static readonly Vector4 GlassPillInk = new(0.875f, 0.902f, 0.941f, 1f);
-    private static readonly Vector4 GlassPillStroke = new(1f, 1f, 1f, 0.12f);
+    private static readonly TextStyle SectionLabelStyle = TextStyles.SubheadlineEmphasized;
+    private static readonly TextStyle TagNameStyle = TextStyles.Headline;
+    private static readonly TextStyle TagCountStyle = TextStyles.Subheadline;
+    private static readonly TextStyle TagGlyphStyle = TextStyles.Title3;
+    private static readonly TextStyle ActivityActorStyle = TextStyles.Headline;
+    private static readonly TextStyle ActivityBodyStyle = TextStyles.Subheadline;
+    private static readonly TextStyle ActivityTimeStyle = TextStyles.Footnote;
+    private static readonly TextStyle EditValueStyle = TextStyles.Body;
+    private static readonly TextStyle EditHintStyle = TextStyles.FootnoteEmphasized;
+    private static readonly TextStyle EditFootStyle = TextStyles.Footnote;
     private static readonly Vector4 RowHover = new(1f, 1f, 1f, 0.03f);
     private static readonly Vector4 MentionInk = new(0.718f, 0.612f, 1f, 1f);
     private static readonly Vector4 ActivityBadgeRing = new(0f, 0f, 0f, 0.55f);
     private static readonly Vector4 UnreadTint = Palette.WithAlpha(ChirperInk.Accent, 0.045f);
-    private static readonly Vector4 EditCardFill = new(1f, 1f, 1f, 0.045f);
-    private static readonly Vector4 EditCardStroke = new(1f, 1f, 1f, 0.07f);
-    private static readonly Vector4 EditRowHairline = new(1f, 1f, 1f, 0.06f);
-    private static readonly Vector4 SearchFieldFill = new(1f, 1f, 1f, 0.08f);
-    private static readonly Vector4 SearchFieldStroke = new(1f, 1f, 1f, 0.07f);
+
 
     private bool mentionsOnly;
     private Spring activitySegment;
@@ -72,9 +61,9 @@ internal sealed partial class ChirperApp
     private volatile int editOutcome;
 
     private float DrawScreenHeader(Rect area, string title, float trailingReserve = 0f, string subtitle = "",
-        bool showBack = true, TextStyle? titleStyle = null) =>
+        bool showBack = true, TextStyle? titleStyle = null, bool centered = false) =>
         SocialChrome.DrawScreenHeader(area, title, ChirperInk.Shared, back, titleStyle ?? ScreenTitleStyle,
-            trailingReserve / UiScale.Current, subtitle, showBack);
+            trailingReserve / UiScale.Current, subtitle, showBack, centered);
 
     private void DrawDiscover(Rect area, bool root = false)
     {
@@ -94,25 +83,14 @@ internal sealed partial class ChirperApp
             fieldLeft = chipCenter.X + chipRadius + 10f * scale;
         }
 
-        var fieldHeight = 36f * scale;
-        var fieldMin = new Vector2(fieldLeft, rowCenterY - fieldHeight * 0.5f);
-        var fieldMax = new Vector2(area.Max.X - 14f * scale, rowCenterY + fieldHeight * 0.5f);
-        Squircle.Fill(drawList, fieldMin, fieldMax, 12f * scale, ImGui.GetColorU32(SearchFieldFill));
-        Squircle.Stroke(drawList, fieldMin, fieldMax, 12f * scale, ImGui.GetColorU32(SearchFieldStroke), 1f);
-        PhoneIcon.Draw(drawList, new Vector2(fieldMin.X + 19f * scale, rowCenterY), PhoneIcons.Search,
-            ChirperInk.MutedInk, 15f * scale);
-        ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + 32f * scale, rowCenterY - ImGui.GetFrameHeight() * 0.5f));
-        ImGui.SetNextItemWidth(fieldMax.X - fieldMin.X - 40f * scale);
-        var hint = Loc.T(L.Chirper.SearchHint);
-        Plugin.Fonts.NoticeText(hint);
-        Plugin.Fonts.NoticeText(searchDraft);
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
-        using (ImRaii.PushColor(ImGuiCol.Text, ChirperInk.TitleInk))
+        var fieldHeight = SearchBar.HeightUnits * scale;
+        var field = new Rect(new Vector2(fieldLeft, rowCenterY - fieldHeight * 0.5f),
+            new Vector2(area.Max.X - 14f * scale, rowCenterY + fieldHeight * 0.5f));
+        var previousDraft = searchDraft;
+        SearchBar.Draw(field, "##chirperSearch", Loc.T(L.Chirper.SearchHint), ref searchDraft, ui.Ink, 64);
+        if (!string.Equals(previousDraft, searchDraft, StringComparison.Ordinal))
         {
-            if (ImGui.InputTextWithHint("##chirperSearch", hint, ref searchDraft, 64))
-            {
-                searchDirtyAt = ImGui.GetTime();
-            }
+            searchDirtyAt = ImGui.GetTime();
         }
 
         var searchingTags = searchDraft.TrimStart().StartsWith('#');
@@ -247,7 +225,7 @@ internal sealed partial class ChirperApp
             FollowState.Requested => Loc.T(L.Social.Requested),
             _ => Loc.T(L.Chirper.Follow),
         };
-        var pillWidth = pillLabel.Length > 0 ? Typography.Measure(pillLabel, SmallPillStyle).X / scale + 30f : 0f;
+        var pillWidth = pillLabel.Length > 0 ? Button.WidthFor(pillLabel, ButtonSize.Small) / scale : 0f;
         var regionCode = SocialRegion.Resolve(user.Region, user.World, gameData);
         var sub = user.Bio.Length > 0 && user.Handle.Length > 0
             ? $"@{user.Handle} · {user.Bio}"
@@ -258,13 +236,15 @@ internal sealed partial class ChirperApp
         if (pillLabel.Length > 0)
         {
             var solid = state == FollowState.None;
-            var rounding = row.Trailing.Height * 0.5f;
-            var clicked = solid
-                ? SocialPill.Flat(drawList, row.Trailing, pillLabel, SolidPillFill, ChirperInk.White, default,
-                    SolidPillInk, SmallPillStyle, rounding)
-                : SocialPill.Flat(drawList, row.Trailing, pillLabel, GlassPillFill, ChirperInk.ChipHover,
-                    GlassPillStroke, GlassPillInk, SmallPillStyle, rounding);
+            var pillHeight = Button.SmallHeight * scale;
+            var pill = new Rect(new Vector2(row.Trailing.Min.X, row.Trailing.Center.Y - pillHeight * 0.5f),
+                new Vector2(row.Trailing.Max.X, row.Trailing.Center.Y + pillHeight * 0.5f));
+            ImGui.PushID(user.Id);
+            var clicked = Button.Draw(drawList, pill, pillLabel, ui.Ink,
+                solid ? ButtonStyle.Prominent : ButtonStyle.Gray);
+            ImGui.PopID();
             if (clicked)
+
             {
                 store.ToggleFollow(user);
             }
@@ -411,11 +391,12 @@ internal sealed partial class ChirperApp
         var min = new Vector2(x, centerY - chipHeight * 0.5f);
         var max = new Vector2(x + chipWidth, centerY + chipHeight * 0.5f);
         var hovered = UiInteract.Hover(min, max);
-        var fill = selected ? ChirperInk.MineFill : ChirperInk.ChipFill;
-        var stroke = selected ? ChirperInk.MineStroke : ChirperInk.ChipStroke;
-        var ink = selected ? ChirperInk.MineInk : ChirperInk.BodyInk;
+        var fill = selected
+            ? ChirperInk.Accent
+            : Surfaces.Fill(ChirperInk.TitleInk, hovered ? FillLevel.Secondary : FillLevel.Tertiary);
+        var ink = selected ? ChirperInk.White : ChirperInk.TitleInk;
         Squircle.Fill(drawList, min, max, chipHeight * 0.5f, ImGui.GetColorU32(fill));
-        Squircle.Stroke(drawList, min, max, chipHeight * 0.5f, ImGui.GetColorU32(stroke), 1f);
+
         var leadLeft = min.X + 11f * scale;
         if (kind < 0)
         {
@@ -640,30 +621,10 @@ internal sealed partial class ChirperApp
     {
         var me = store.Me ?? (store.ProfileUser is { IsMe: true } self ? self : null);
         var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
-        var cancelLabel = Loc.T(L.Common.Cancel);
-        var cancelSize = Typography.Measure(cancelLabel, ComposeCancelStyle);
-        var cancelMin = area.Min;
-        var cancelMax = new Vector2(area.Min.X + CellPadX * scale + cancelSize.X + 12f * scale, area.Min.Y + AppHeader.Height * scale);
-        var cancelHovered = UiInteract.Hover(cancelMin, cancelMax);
-        Typography.Draw(drawList, new Vector2(area.Min.X + CellPadX * scale, rowCenterY - cancelSize.Y * 0.5f), cancelLabel,
-            cancelHovered ? ChirperInk.TitleInk : ChirperInk.BodyInk, ComposeCancelStyle);
-        if (cancelHovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(cancelMin, cancelMax, cancelHovered))
-        {
-            back();
-        }
-
         if (me is null)
         {
             store.EnsureMe();
-            AppHeader.DrawTitleWithReserve(area, "chirper.edit.title", Loc.T(L.Chirper.EditProfile), 0f, ChirperInk.TitleInk,
-                scale, ComposeTitleStyle);
+            DrawScreenHeader(area, Loc.T(L.Chirper.EditProfile));
             Typography.DrawCentered(new Vector2(area.Center.X, area.Min.Y + 120f * scale), Loc.T(L.Common.Loading),
                 ChirperInk.MutedInk);
             return;
@@ -696,24 +657,12 @@ internal sealed partial class ChirperApp
         var handleValid = SocialProfilePages.IsHandleValid(editHandle);
         var canSave = !editBusy && !string.IsNullOrWhiteSpace(editDisplay) && handleValid;
         var saveLabel = editBusy ? Loc.T(L.Chirper.Saving) : Loc.T(L.Chirper.Save);
-        var saveSize = Typography.Measure(saveLabel, SaveWordStyle);
-        var saveMax = new Vector2(area.Max.X, area.Min.Y + AppHeader.Height * scale);
-        var saveMin = new Vector2(area.Max.X - CellPadX * scale - saveSize.X - 12f * scale, area.Min.Y);
-        var saveHovered = canSave && UiInteract.Hover(saveMin, saveMax);
-        Typography.Draw(drawList, new Vector2(area.Max.X - CellPadX * scale - saveSize.X, rowCenterY - saveSize.Y * 0.5f),
-            saveLabel, !canSave ? ChirperInk.FaintInk : saveHovered ? ChirperInk.MineInk : ChirperInk.AccentLink, SaveWordStyle);
-        if (saveHovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        if (UiInteract.Click(saveMin, saveMax, saveHovered))
+        var save = HeaderActionRect(area, saveLabel);
+        DrawScreenHeader(area, Loc.T(L.Chirper.EditProfile), save.Width + HeaderActionGap * scale);
+        if (Button.Draw(save, saveLabel, ui.Ink, ButtonStyle.Prominent, enabled: canSave, id: "chirper.edit.save"))
         {
             SaveProfile();
         }
-
-        AppHeader.DrawTitleWithReserve(area, "chirper.edit.title", Loc.T(L.Chirper.EditProfile), saveSize.X + 28f * scale,
-            ChirperInk.TitleInk, scale, ComposeTitleStyle, (cancelMax.X - area.Min.X) / scale + 8f);
 
         var top = area.Min.Y + AppHeader.Height * scale;
         var body = new Rect(new Vector2(area.Min.X, top), area.Max);
@@ -725,12 +674,14 @@ internal sealed partial class ChirperApp
             var padX = CellPadX * scale;
             var avatarRadius = EditAvatarRadius * scale;
             var avatarCenter = new Vector2(origin.X + width * 0.5f, origin.Y + 14f * scale + avatarRadius);
-            DrawAvatar(listDrawList, avatarCenter, avatarRadius, me.Name, me.World, me.AvatarUrl, 1.4f, 64, Frames.Of(me.FrameId));
+            DrawAvatar(listDrawList, avatarCenter, avatarRadius, me.Name, me.World, me.AvatarUrl, 1.4f, 64,
+                Frames.Of(me.FrameId));
             var badgeRadius = 15f * scale;
-            var badgeCenter = avatarCenter + new Vector2(avatarRadius - badgeRadius + 2f * scale, avatarRadius - badgeRadius + 2f * scale);
-            listDrawList.AddCircleFilled(badgeCenter, badgeRadius + 3f * scale, ImGui.GetColorU32(ChirperInk.BackdropTop), 32);
-            Squircle.FillCircleVerticalGradient(listDrawList, badgeCenter, badgeRadius, ImGui.GetColorU32(ChirperInk.Accent),
-                ImGui.GetColorU32(ChirperInk.AccentDeep));
+            var badgeCenter = avatarCenter + new Vector2(avatarRadius - badgeRadius + 2f * scale,
+                avatarRadius - badgeRadius + 2f * scale);
+            listDrawList.AddCircleFilled(badgeCenter, badgeRadius + 3f * scale,
+                ImGui.GetColorU32(ChirperInk.BackdropTop), 32);
+            listDrawList.AddCircleFilled(badgeCenter, badgeRadius, ImGui.GetColorU32(ChirperInk.Accent), 32);
             PhoneIcon.Draw(listDrawList, badgeCenter, PhoneIcons.Camera, ChirperInk.White, 13f * scale);
             var avatarExtent = new Vector2(avatarRadius + 4f * scale, avatarRadius + 4f * scale);
             if (UiInteract.HoverClick(avatarCenter - avatarExtent, avatarCenter + avatarExtent))
@@ -738,91 +689,90 @@ internal sealed partial class ChirperApp
                 OpenAvatarComposer();
             }
 
-            var cardTop = avatarCenter.Y + avatarRadius + 18f * scale;
-            var cardMin = new Vector2(origin.X + padX, cardTop);
-            var cardRight = origin.X + width - padX;
-            var rowHeight = EditRowHeight * scale;
-            var labelWidth = 104f * scale;
-            var innerPad = 14f * scale;
-            var bioLabelHeight = Typography.LineHeight(EditLabelStyle);
-            var bioFieldHeight = EditBioMinHeight * scale;
-            var bioRowHeight = 12f * scale + bioLabelHeight + 5f * scale + bioFieldHeight + 12f * scale;
-            var cardMax = new Vector2(cardRight, cardTop + rowHeight * 2f + bioRowHeight);
-            Squircle.Fill(listDrawList, cardMin, cardMax, 16f * scale, ImGui.GetColorU32(EditCardFill));
-            Squircle.Stroke(listDrawList, cardMin, cardMax, 16f * scale, ImGui.GetColorU32(EditCardStroke), 1f);
+            var left = origin.X + padX;
+            var right = origin.X + width - padX;
+            var fieldGap = Metrics.Space.Lg * scale;
+            var inset = Metrics.Space.Lg * scale;
+            ImGui.SetCursorScreenPos(new Vector2(left, avatarCenter.Y + avatarRadius + 18f * scale));
+            ui.SectionLabel(Loc.T(L.Chirper.NameLabel));
+            var nameField = ReserveEditField(left, right, EditFieldHeight * scale);
+            SearchBar.Surface(listDrawList, nameField, ui.Ink);
+            DrawEditInput("##chirperEditName", nameField.Min.X + inset, nameField.Max.X - inset, nameField.Min.Y,
+                nameField.Height, ref editDisplay, SocialProfilePages.DisplayNameMax, ImGuiInputTextFlags.None,
+                ChirperInk.TitleInk);
 
-            var nameRowTop = cardTop;
-            DrawEditLabel(listDrawList, cardMin.X + innerPad, nameRowTop, rowHeight, Loc.T(L.Chirper.NameLabel));
-            DrawEditInput("##chirperEditName", cardMin.X + innerPad + labelWidth, cardRight - innerPad, nameRowTop, rowHeight,
-                ref editDisplay, SocialProfilePages.DisplayNameMax, ImGuiInputTextFlags.None, ChirperInk.TitleInk);
-            listDrawList.AddLine(new Vector2(cardMin.X, nameRowTop + rowHeight), new Vector2(cardRight, nameRowTop + rowHeight),
-                ImGui.GetColorU32(EditRowHairline), 1f);
-
-            var handleRowTop = nameRowTop + rowHeight;
-            DrawEditLabel(listDrawList, cardMin.X + innerPad, handleRowTop, rowHeight, Loc.T(L.Chirper.HandleShort));
+            ImGui.SetCursorScreenPos(new Vector2(left, nameField.Max.Y + fieldGap));
+            ui.SectionLabel(Loc.T(L.Chirper.HandleShort));
+            var handleField = ReserveEditField(left, right, EditFieldHeight * scale);
+            SearchBar.Surface(listDrawList, handleField, ui.Ink);
             var atSize = Typography.Measure("@", EditValueStyle);
-            Typography.Draw(listDrawList, new Vector2(cardMin.X + innerPad + labelWidth, handleRowTop + (rowHeight - atSize.Y) * 0.5f),
-                "@", ChirperInk.FaintInk, EditValueStyle);
+            Typography.Draw(listDrawList,
+                new Vector2(handleField.Min.X + inset, handleField.Center.Y - atSize.Y * 0.5f), "@",
+                ChirperInk.FaintInk, EditValueStyle);
             var availableLabel = Loc.T(L.Chirper.HandleAvailable);
             var availableSize = Typography.Measure(availableLabel, EditHintStyle);
             var showAvailable = handleValid && string.Equals(editHandle, me.Handle, StringComparison.Ordinal);
-            var handleRight = cardRight - innerPad - (showAvailable ? availableSize.X + 22f * scale : 0f);
-            if (DrawEditInput("##chirperEditHandle", cardMin.X + innerPad + labelWidth + atSize.X + 2f * scale, handleRight,
-                    handleRowTop, rowHeight, ref editHandle, SocialProfilePages.HandleMax, ImGuiInputTextFlags.CharsNoBlank,
-                    handleValid ? ChirperInk.TitleInk : ChirperInk.Danger))
+            var handleRight = handleField.Max.X - inset - (showAvailable ? availableSize.X + 22f * scale : 0f);
+            if (DrawEditInput("##chirperEditHandle", handleField.Min.X + inset + atSize.X + 2f * scale, handleRight,
+                    handleField.Min.Y, handleField.Height, ref editHandle, SocialProfilePages.HandleMax,
+                    ImGuiInputTextFlags.CharsNoBlank, handleValid ? ChirperInk.TitleInk : ChirperInk.Danger))
             {
                 editHandle = editHandle.ToLowerInvariant();
             }
 
             if (showAvailable)
             {
-                var checkCenter = new Vector2(cardRight - innerPad - availableSize.X - 9f * scale, handleRowTop + rowHeight * 0.5f);
-                PhoneIcon.Draw(listDrawList, checkCenter, PhoneIcons.Check,
-                    ChirperInk.RechirpGreen, 13f * scale);
-                Typography.Draw(listDrawList, new Vector2(cardRight - innerPad - availableSize.X, handleRowTop + (rowHeight - availableSize.Y) * 0.5f),
+                var checkCenter = new Vector2(handleField.Max.X - inset - availableSize.X - 9f * scale,
+                    handleField.Center.Y);
+                PhoneIcon.Draw(listDrawList, checkCenter, PhoneIcons.Check, ChirperInk.RechirpGreen, 13f * scale);
+                Typography.Draw(listDrawList,
+                    new Vector2(handleField.Max.X - inset - availableSize.X,
+                        handleField.Center.Y - availableSize.Y * 0.5f),
                     availableLabel, ChirperInk.RechirpGreen, EditHintStyle);
             }
 
-            listDrawList.AddLine(new Vector2(cardMin.X, handleRowTop + rowHeight), new Vector2(cardRight, handleRowTop + rowHeight),
-                ImGui.GetColorU32(EditRowHairline), 1f);
-
-            var bioRowTop = handleRowTop + rowHeight;
-            var bioLabelTop = bioRowTop + 12f * scale;
-            Typography.Draw(listDrawList, new Vector2(cardMin.X + innerPad, bioLabelTop), Loc.T(L.Chirper.BioLabel), ChirperInk.MutedInk,
-                EditLabelStyle);
+            var bioLabelTop = handleField.Max.Y + fieldGap;
             var counter = $"{editBio.Length.ToString(Loc.Culture)}/{SocialProfilePages.BioMax.ToString(Loc.Culture)}";
             var counterSize = Typography.Measure(counter, EditFootStyle);
-            Typography.Draw(listDrawList, new Vector2(cardRight - innerPad - counterSize.X, bioLabelTop + (bioLabelHeight - counterSize.Y) * 0.5f),
-                counter, ChirperInk.FaintInk, EditFootStyle);
-            var bioFieldTop = bioLabelTop + bioLabelHeight + 5f * scale;
-            var bioFieldWidth = cardRight - innerPad - (cardMin.X + innerPad);
-            ImGui.SetCursorScreenPos(new Vector2(cardMin.X + innerPad, bioFieldTop));
+            Typography.Draw(listDrawList, new Vector2(right - counterSize.X, bioLabelTop), counter,
+                ChirperInk.FaintInk, EditFootStyle);
+            ImGui.SetCursorScreenPos(new Vector2(left, bioLabelTop));
+            ui.SectionLabel(Loc.T(L.Chirper.BioLabel));
+            var bioField = ReserveEditField(left, right, EditBioMinHeight * scale);
+            var bioRadius = Metrics.Radius.Md * scale;
+            Squircle.Fill(listDrawList, bioField.Min, bioField.Max, bioRadius,
+                ImGui.GetColorU32(Surfaces.Fill(ui.Ink, FillLevel.Tertiary)));
+            var bioInputMin = new Vector2(bioField.Min.X + Metrics.Space.Sm * scale,
+                bioField.Min.Y + Metrics.Space.Xs * scale);
+            var bioInputSize = new Vector2(bioField.Width - Metrics.Space.Sm * 2f * scale,
+                bioField.Height - Metrics.Space.Xs * 2f * scale);
+            ImGui.SetCursorScreenPos(bioInputMin);
             using (ImRaii.PushColor(ImGuiCol.FrameBg, AppSkin.Transparent))
             using (ImRaii.PushColor(ImGuiCol.Text, ChirperInk.TitleInk))
             {
-                var wrapWidth = bioFieldWidth - ImGui.GetStyle().FramePadding.X * 2f - 4f * scale;
-                SoftWrapField.Multiline("##chirperEditBio", ref editBio, SocialProfilePages.BioMax,
-                    new Vector2(bioFieldWidth, bioFieldHeight), wrapWidth);
+                var wrapWidth = bioInputSize.X - ImGui.GetStyle().FramePadding.X * 2f - 4f * scale;
+                SoftWrapField.Multiline("##chirperEditBio", ref editBio, SocialProfilePages.BioMax, bioInputSize,
+                    wrapWidth);
             }
 
-            var footTop = cardMax.Y + 12f * scale;
+            var footTop = bioField.Max.Y + Metrics.Space.Md * scale;
             var footText = editStatus.Length > 0 ? editStatus : Loc.T(L.Chirper.HandleRules);
-            Typography.DrawWrappedLeft(new Vector2(cardMin.X + 4f * scale, footTop), footText,
-                editStatus.Length > 0 ? ChirperInk.Danger : ChirperInk.FaintInk, EditFootStyle, cardRight - cardMin.X - 8f * scale);
+            Typography.DrawWrappedLeft(new Vector2(left + 4f * scale, footTop), footText,
+                editStatus.Length > 0 ? ChirperInk.Danger : ChirperInk.FaintInk, EditFootStyle,
+                right - left - 8f * scale);
             ImGui.SetCursorScreenPos(origin);
             ImGui.Dummy(new Vector2(width, footTop + 60f * scale - origin.Y));
         }
     }
 
-    private static void DrawEditLabel(ImDrawListPtr drawList, float left, float rowTop, float rowHeight, string label)
+    private static Rect ReserveEditField(float left, float right, float height)
     {
-        var size = Typography.Measure(label, EditLabelStyle);
-        Typography.Draw(drawList, new Vector2(left, rowTop + (rowHeight - size.Y) * 0.5f), label, ChirperInk.MutedInk,
-            EditLabelStyle);
+        var top = ImGui.GetCursorScreenPos().Y;
+        return new Rect(new Vector2(left, top), new Vector2(right, top + height));
     }
 
-    private static bool DrawEditInput(string id, float left, float right, float rowTop, float rowHeight, ref string value,
-        int maxLength, ImGuiInputTextFlags flags, Vector4 ink)
+    private static bool DrawEditInput(string id, float left, float right, float rowTop, float rowHeight,
+        ref string value, int maxLength, ImGuiInputTextFlags flags, Vector4 ink)
     {
         ImGui.SetCursorScreenPos(new Vector2(left, rowTop + rowHeight * 0.5f - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(MathF.Max(1f, right - left));
@@ -833,7 +783,6 @@ internal sealed partial class ChirperApp
             return ImGui.InputText(id, ref value, maxLength, flags);
         }
     }
-
     private void SaveProfile()
     {
         if (!store.IsSignedIn || editBusy)

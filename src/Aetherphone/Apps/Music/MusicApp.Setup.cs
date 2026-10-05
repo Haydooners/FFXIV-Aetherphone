@@ -12,12 +12,10 @@ namespace Aetherphone.Apps.Music;
 internal sealed partial class MusicApp
 {
     private const float SetupCardHeight = 74f;
-    private const float SetupButtonHeight = 46f;
+    private const float SetupButtonHeight = Button.LargeHeight;
 
     private bool setupDismissed;
     private bool setupChecked;
-    private PhoneTheme setupAccentedTheme = PhoneTheme.Default;
-    private PhoneTheme setupAccentSource = PhoneTheme.Default;
 
     private bool NeedsSetup => songResolver.Media is not null && !songResolver.IsInstalled && !setupDismissed;
 
@@ -95,13 +93,7 @@ internal sealed partial class MusicApp
                         DependencySetup.FormatMegabytes(pending))
                     : Loc.T(L.AetherStream.SetupInstall);
 
-        if (!ReferenceEquals(setupAccentSource, theme))
-        {
-            setupAccentSource = theme;
-            setupAccentedTheme = PhoneTheme.WithAccent(theme, ui.Accent);
-        }
-
-        if (AppSkin.PillButton(button, label, true, !busy, setupAccentedTheme) && !busy)
+        if (Button.Draw(button, label, ui.Ink, ButtonStyle.Prominent, enabled: !busy) && !busy)
         {
             resolverWork.Run("install song components",
                 async token => await media.EnsureSongsReadyAsync(token).ConfigureAwait(false));

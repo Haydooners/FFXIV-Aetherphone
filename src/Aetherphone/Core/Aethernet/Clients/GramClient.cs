@@ -18,13 +18,68 @@ internal sealed class GramClient
         return net.PostAsync("/grams", new CreateGramRequest(caption, mediaKeys[0], width, height, mediaKeys, photoTags, sensitive), AethernetJsonContext.Default.CreateGramRequest, AethernetJsonContext.Default.PostDto, token, null, onFailure);
     }
 
-    public Task<FeedPage?> FeedAsync(string scope, string? cursor, string? regions, CancellationToken token,
+    public Task<PostDto?> EditAsync(string postId, string caption, PhotoTagInput[] photoTags, bool sensitive,
+        CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return net.SendJsonAsync(HttpMethod.Put, $"/posts/{Uri.EscapeDataString(postId)}",
+            new EditGramRequest(caption, photoTags, sensitive), AethernetJsonContext.Default.EditGramRequest,
+            AethernetJsonContext.Default.PostDto, token, null, onFailure);
+    }
+
+    public Task<PinPostResponse?> PinAsync(string postId, bool replace, CancellationToken token,
+        Action<AepFailure>? onFailure = null)
+    {
+        var path = $"/posts/{Uri.EscapeDataString(postId)}/pin";
+        if (replace)
+        {
+            path += "?replace=true";
+        }
+
+        return net.RequestAsync(HttpMethod.Put, path, AethernetJsonContext.Default.PinPostResponse, token, null,
+            onFailure);
+    }
+
+    public Task<PostDto?> UnpinAsync(string postId, CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return net.RequestAsync(HttpMethod.Delete, $"/posts/{Uri.EscapeDataString(postId)}/pin",
+            AethernetJsonContext.Default.PostDto, token, null, onFailure);
+    }
+
+    public Task<PostDto?> ArchiveAsync(string postId, CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return net.RequestAsync(HttpMethod.Put, $"/posts/{Uri.EscapeDataString(postId)}/archive",
+            AethernetJsonContext.Default.PostDto, token, null, onFailure);
+    }
+
+    public Task<PostDto?> UnarchiveAsync(string postId, CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return net.RequestAsync(HttpMethod.Delete, $"/posts/{Uri.EscapeDataString(postId)}/archive",
+            AethernetJsonContext.Default.PostDto, token, null, onFailure);
+    }
+
+    public Task<FeedPage?> ArchivedAsync(string? cursor, CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        var path = "/me/archived?kind=1";
+        if (cursor is not null)
+        {
+            path += $"&cursor={Uri.EscapeDataString(cursor)}";
+        }
+
+        return net.GetAsync(path, AethernetJsonContext.Default.FeedPage, token, null, onFailure);
+    }
+
+    public Task<FeedPage?> FeedAsync(string scope, string? cursor, string? regions, bool includeSensitive, CancellationToken token,
         Action<AepFailure>? onFailure = null)
     {
         var path = $"/feed?scope={scope}&kind=1";
         if (regions is not null)
         {
             path += $"&regions={Uri.EscapeDataString(regions)}";
+        }
+
+        if (!includeSensitive)
+        {
+            path += "&sensitive=false";
         }
 
         if (cursor is not null)
@@ -57,6 +112,29 @@ internal sealed class GramClient
         }
 
         return net.GetAsync(path, AethernetJsonContext.Default.FeedPage, token, null, onFailure);
+    }
+
+    public Task<FeedPage?> PendingTaggedAsync(string? cursor, CancellationToken token,
+        Action<AepFailure>? onFailure = null)
+    {
+        var path = "/phototags/pending/posts";
+        if (cursor is not null)
+        {
+            path += $"?cursor={Uri.EscapeDataString(cursor)}";
+        }
+
+        return net.GetAsync(path, AethernetJsonContext.Default.FeedPage, token, null, onFailure);
+    }
+
+    public Task<bool> ApproveTagAsync(string tagId, CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return net.SendAsync(HttpMethod.Post, $"/phototags/{Uri.EscapeDataString(tagId)}/approve", token, null,
+            onFailure);
+    }
+
+    public Task<bool> RemoveTagAsync(string tagId, CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return net.SendAsync(HttpMethod.Delete, $"/phototags/{Uri.EscapeDataString(tagId)}", token, null, onFailure);
     }
 
     public Task<FeedPage?> TagPostsAsync(string tag, string? cursor, CancellationToken token,

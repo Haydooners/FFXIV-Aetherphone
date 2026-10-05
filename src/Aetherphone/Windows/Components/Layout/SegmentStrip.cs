@@ -8,21 +8,32 @@ namespace Aetherphone.Windows.Components;
 internal static class SegmentStrip
 {
     private const float TrackHeight = 30f;
-    private const float ThumbSmoothTime = 0.13f;
-    private static readonly Vector4 FrostTrack = new(1f, 1f, 1f, 0.08f);
     private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
     private static readonly Dictionary<string, Spring> Thumbs = new(StringComparer.Ordinal);
 
     public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, PhoneTheme theme) =>
-        Draw(id, row, options, selected, theme.ToggleOff, theme.Accent, theme.TextMuted, theme.TextStrong);
+        Draw(id, row, options, selected, theme, out _);
+
+    public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, PhoneTheme theme,
+        out bool pressed) =>
+        Draw(id, row, options, selected, Surfaces.Fill(theme.TextStrong, FillLevel.Tertiary), theme.Accent,
+            theme.TextMuted, White, out pressed);
 
     public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, in AppPalette palette,
         float trackHeight = TrackHeight, float textScale = 0.82f) =>
-        Draw(id, row, options, selected, FrostTrack, palette.Accent, palette.MutedInk, White, trackHeight, textScale);
+        Draw(id, row, options, selected, Surfaces.Fill(palette.TitleInk, FillLevel.Tertiary), palette.Accent,
+            palette.MutedInk, White, out _, trackHeight, textScale);
 
     public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, Vector4 track,
-        Vector4 accent, Vector4 mutedInk, Vector4 activeInk, float trackHeight = TrackHeight, float textScale = 0.82f)
+        Vector4 accent, Vector4 mutedInk, Vector4 activeInk, float trackHeight = TrackHeight, float textScale = 0.82f,
+        bool overlay = false) =>
+        Draw(id, row, options, selected, track, accent, mutedInk, activeInk, out _, trackHeight, textScale, overlay);
+
+    public static int Draw(string id, Rect row, IReadOnlyList<string> options, int selected, Vector4 track,
+        Vector4 accent, Vector4 mutedInk, Vector4 activeInk, out bool pressed, float trackHeight = TrackHeight,
+        float textScale = 0.82f, bool overlay = false)
     {
+        pressed = false;
         if (options.Count == 0)
         {
             return selected;
@@ -34,14 +45,16 @@ internal static class SegmentStrip
         var trackMin = new Vector2(row.Min.X, row.Center.Y - height * 0.5f);
         var trackMax = new Vector2(row.Max.X, row.Center.Y + height * 0.5f);
         var radius = height * 0.5f;
-        drawList.AddRectFilled(trackMin, trackMax, ImGui.GetColorU32(track), radius);
+        Squircle.Fill(drawList, trackMin, trackMax, radius, ImGui.GetColorU32(track));
         var segmentWidth = (trackMax.X - trackMin.X) / options.Count;
         var result = selected;
         for (var index = 0; index < options.Count; index++)
         {
             var segmentMin = new Vector2(trackMin.X + index * segmentWidth, trackMin.Y);
             var segmentMax = new Vector2(trackMin.X + (index + 1) * segmentWidth, trackMax.Y);
-            var segmentHovered = UiInteract.Hover(segmentMin, segmentMax);
+            var segmentHovered = overlay
+                ? UiInteract.HoverWindowOnly(segmentMin, segmentMax)
+                : UiInteract.Hover(segmentMin, segmentMax);
             if (segmentHovered)
             {
                 ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -50,6 +63,7 @@ internal static class SegmentStrip
             if (UiInteract.Click(segmentMin, segmentMax, segmentHovered))
             {
                 result = index;
+                pressed = true;
             }
         }
 
@@ -60,14 +74,9 @@ internal static class SegmentStrip
         var thumbMin = new Vector2(thumbCenterX - thumbHalf, trackMin.Y + inset);
         var thumbMax = new Vector2(thumbCenterX + thumbHalf, trackMax.Y - inset);
         var thumbRadius = radius - inset;
-        var shadow = new Vector2(0f, 1.5f * scale);
-        drawList.AddRectFilled(thumbMin + shadow, thumbMax + shadow, ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.28f)),
-            thumbRadius);
-        Squircle.Fill(drawList, thumbMin, thumbMax, thumbRadius, ImGui.GetColorU32(accent));
-        var gloss = ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.16f));
-        drawList.AddLine(new Vector2(thumbMin.X + thumbRadius, thumbMin.Y + 1f * scale),
-            new Vector2(thumbMax.X - thumbRadius, thumbMin.Y + 1f * scale), gloss, 1f * scale);
-        var labelMaxWidth = MathF.Max(1f, segmentWidth - 8f * scale);
+        Squircle.Fill(drawList, thumbMin, thumbMax, thumbRadius, ImGui.GetColorU32(accent with { W = 1f }));
+        var labelMaxWidth = MathF.Max(1f, segmentWidth - Metrics.Space.Sm * scale);
+        var labelStyle = new TextStyle(textScale, FontWeight.SemiBold);
         for (var index = 0; index < options.Count; index++)
         {
             var segmentMin = new Vector2(trackMin.X + index * segmentWidth, trackMin.Y);
@@ -76,12 +85,21 @@ internal static class SegmentStrip
             var proximity = 1f - Math.Clamp(MathF.Abs(position - index), 0f, 1f);
             var color = Vector4.Lerp(mutedInk, activeInk, proximity);
             var hovering = UiInteract.Hover(segmentMin, segmentMax);
-            var labelHeight = Typography.Measure(options[index], textScale, FontWeight.SemiBold).Y;
-            Marquee.DrawCentered(id + "." + index, options[index], center.X, center.Y - labelHeight * 0.5f,
-                labelMaxWidth, new TextStyle(textScale, FontWeight.SemiBold), color, hovering);
+            var labelHeight = Typography.Measure(options[index], labelStyle).Y;
+            Marquee.DrawCentered(new MarqueeId(id, index), options[index], center.X, center.Y - labelHeight * 0.5f,
+                labelMaxWidth, labelStyle, color, hovering);
         }
 
         return result;
+    }
+
+    public static Rect SegmentRect(Rect row, int index, int count, float trackHeight = TrackHeight)
+    {
+        var height = trackHeight * UiScale.Current;
+        var segmentWidth = row.Width / Math.Max(1, count);
+        var left = row.Min.X + index * segmentWidth;
+        return new Rect(new Vector2(left, row.Center.Y - height * 0.5f),
+            new Vector2(left + segmentWidth, row.Center.Y + height * 0.5f));
     }
 
     private static float AnimateThumb(string id, int selected)
@@ -92,7 +110,7 @@ internal static class SegmentStrip
         }
 
         var deltaSeconds = MathF.Min(ImGui.GetIO().DeltaTime, 0.1f);
-        var position = spring.Step(selected, ThumbSmoothTime, deltaSeconds);
+        var position = spring.Step(selected, Motion.Release, deltaSeconds);
         Thumbs[id] = spring;
         return position;
     }

@@ -74,8 +74,8 @@ internal sealed class ChangelogPage : ISettingsPage
         var width = ImGui.GetContentRegionAvail().X;
         var heroTop = origin.Y + 6f * scale;
         Typography.Draw(drawList, new Vector2(origin.X, heroTop), Loc.T(L.Settings.ChangelogHero), theme.TextStrong,
-            TextStyles.LargeTitle.Scale, TextStyles.LargeTitle.Weight);
-        var heroHeight = Typography.Measure(Loc.T(L.Settings.ChangelogHero), TextStyles.LargeTitle).Y;
+            TextStyles.Title2.Scale, TextStyles.Title2.Weight);
+        var heroHeight = Typography.Measure(Loc.T(L.Settings.ChangelogHero), TextStyles.Title2).Y;
         var subtitleTop = heroTop + heroHeight + 2f * scale;
         Typography.Draw(drawList, new Vector2(origin.X, subtitleTop), AepConstants.Name, theme.TextMuted,
             TextStyles.Subheadline.Scale, TextStyles.Subheadline.Weight);
@@ -169,9 +169,7 @@ internal sealed class ChangelogPage : ISettingsPage
         var textLeft = innerLeft + BulletColumn * scale;
         var max = new Vector2(right, origin.Y + layout.CardHeight);
         var rounding = CardRounding * scale;
-        Elevation.Card(drawList, origin, max, rounding, scale);
         Squircle.Fill(drawList, origin, max, rounding, ImGui.GetColorU32(theme.GroupedCard));
-        Material.TopGlow(drawList, origin, max, rounding, theme.Accent, 0.5f, isLatest ? 0.14f : 0.09f);
         Material.EdgeSquircle(drawList, origin, max, rounding, scale);
         var versionTop = origin.Y + CardPaddingY * scale;
         Typography.Draw(drawList, new Vector2(innerLeft, versionTop), layout.VersionLabel, theme.Accent,

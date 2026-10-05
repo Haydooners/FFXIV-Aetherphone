@@ -1,5 +1,5 @@
+using Aetherphone.Core.Calendar;
 using Aetherphone.Core.Home;
-using Aetherphone.Core.Localization;
 using Aetherphone.Core.Runtime;
 using Dalamud.Plugin.Services;
 
@@ -34,15 +34,19 @@ internal sealed class CalendarReminderService : IDisposable
         for (var index = 0; index < events.Count; index++)
         {
             var calendarEvent = events[index];
-            if (calendarEvent.Notified || calendarEvent.When > nowLocal)
+            var due = CalendarReminder.Due(calendarEvent, nowLocal, out var occurrence);
+            if (due == CalendarReminderDue.None)
             {
                 continue;
             }
 
-            calendarEvent.Notified = true;
+            CalendarReminder.MarkHandled(calendarEvent, occurrence);
             dirty = true;
-            notifications.Notify(new PhoneNotification("calendar", calendarEvent.Title,
-                TimeText.Clock(calendarEvent.When), DateTime.Now, Accent));
+            if (due == CalendarReminderDue.Notify)
+            {
+                notifications.Notify(new PhoneNotification("calendar", calendarEvent.Title,
+                    CalendarReminder.Body(occurrence, nowLocal), nowLocal, Accent));
+            }
         }
 
         if (dirty)

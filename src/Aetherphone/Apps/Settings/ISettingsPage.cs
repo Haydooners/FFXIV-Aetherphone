@@ -12,6 +12,8 @@ internal interface ISettingsPage
     Vector4 Tint { get; }
     bool ShowsBadge => false;
     bool OwnsChrome => false;
+    bool IsHidden => false;
     string? GuideAnchor => null;
+    ReadOnlySpan<SettingsEntry> Entries => ReadOnlySpan<SettingsEntry>.Empty;
     void Draw(in PhoneContext context, Rect body);
 }

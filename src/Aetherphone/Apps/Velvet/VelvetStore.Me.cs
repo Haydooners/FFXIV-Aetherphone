@@ -31,6 +31,22 @@ internal sealed partial class VelvetStore
             return;
         }
 
+        LoadMe();
+    }
+
+    public void RetryAccess()
+    {
+        if (loadingMe)
+        {
+            return;
+        }
+
+        meGate.Reset();
+        EnsureMe();
+    }
+
+    private void LoadMe()
+    {
         loadingMe = true;
         var epoch = accountEpoch;
         work.Run("profile load", async token =>
@@ -48,12 +64,12 @@ internal sealed partial class VelvetStore
             {
                 me = profile;
                 accessBlocked = false;
-                regionBlocked = false;
+                raceUnverified = false;
             }
-            else if (status == 403)
+            else if (status == StatusForbidden)
             {
                 accessBlocked = true;
-                regionBlocked = refusal.Code == FailureCodes.VelvetRegionBlocked;
+                raceUnverified = IsRaceUnverified(refusal);
             }
         }, () => loadingMe = false);
     }

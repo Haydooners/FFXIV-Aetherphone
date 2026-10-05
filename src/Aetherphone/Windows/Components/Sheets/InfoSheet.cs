@@ -10,7 +10,6 @@ internal sealed class InfoSheet
 {
     public const int MaxParagraphs = 6;
 
-    private const float RevealSmoothTime = 0.11f;
     private const float MaxDim = 0.45f;
     private const float Rounding = 24f;
     private const float PadX = 22f;
@@ -18,7 +17,8 @@ internal sealed class InfoSheet
     private const float GrabberHeight = 4.5f;
     private const float TopInset = 0.14f;
     private const float ParagraphGap = 14f;
-    private const float DoneHeight = 44f;
+    private const float DoneHeight = Button.LargeHeight;
+    private const string DoneKey = "##infosheet.done";
     private const float BottomPad = 30f;
     private const float PanelLift = 0.08f;
     private const float PanelAlpha = 0.96f;
@@ -26,7 +26,6 @@ internal sealed class InfoSheet
 
     private static readonly TextStyle TitleStyle = new(1.13f, FontWeight.Bold);
     private static readonly TextStyle BodyStyle = new(0.95f, FontWeight.Regular);
-    private static readonly TextStyle DoneStyle = new(1f, FontWeight.Bold);
     private static readonly Vector4 GrabberFill = new(1f, 1f, 1f, 0.22f);
     private static readonly Vector4 PanelStroke = new(1f, 1f, 1f, 0.10f);
 
@@ -43,12 +42,22 @@ internal sealed class InfoSheet
         if (!open)
         {
             openedFrame = ImGui.GetFrameCount();
+            UiFeedback.Play(UiSound.SheetPresent);
         }
 
         open = true;
     }
 
-    public void Close() => open = false;
+    public void Close()
+    {
+        if (!open)
+        {
+            return;
+        }
+
+        open = false;
+        UiFeedback.Play(UiSound.SheetDismiss);
+    }
 
     public void Gate()
     {
@@ -61,7 +70,7 @@ internal sealed class InfoSheet
     public void Draw(Rect screen, SocialInk ink, string title, ReadOnlySpan<string> paragraphs, string doneLabel)
     {
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        reveal.Step(open ? 1f : 0f, RevealSmoothTime, delta);
+        reveal.Step(open ? 1f : 0f, Motion.Sheet, delta);
         if (!open && reveal.IsResting(0f, 0.001f, 0.005f))
         {
             reveal.SnapTo(0f);
@@ -70,13 +79,12 @@ internal sealed class InfoSheet
 
         var scale = UiScale.Current;
         var opacity = Math.Clamp(reveal.Value, 0f, 1f);
-        var slide = Easing.EaseOutQuint(opacity);
         var drawList = ImGui.GetForegroundDrawList();
         drawList.PushClipRect(screen.Min, screen.Max, false);
         drawList.AddRectFilled(screen.Min, screen.Max, ImGui.GetColorU32(new Vector4(0f, 0f, 0f, MaxDim * opacity)));
 
         var panelHeight = screen.Height * (1f - TopInset);
-        var panelTop = screen.Max.Y - panelHeight + panelHeight * (1f - slide);
+        var panelTop = screen.Max.Y - panelHeight + panelHeight * (1f - opacity);
         var panelMin = new Vector2(screen.Min.X, panelTop);
         var panelMax = new Vector2(screen.Max.X, screen.Max.Y + Rounding * scale);
         var rounding = Rounding * scale;
@@ -116,10 +124,9 @@ internal sealed class InfoSheet
         var doneMin = new Vector2(left, doneTop);
         var doneMax = new Vector2(right, doneTop + DoneHeight * scale);
         var doneHovered = interactive && UiInteract.HoverWindowOnly(doneMin, doneMax, false);
-        AccentPill.Paint(drawList, doneMin, doneMax, DoneHeight * scale * 0.5f, doneHovered, ink.Accent,
-            ink.AccentDeep, ink.AccentShadow, opacity);
-        Typography.DrawCentered(drawList, (doneMin + doneMax) * 0.5f, doneLabel, Palette.WithAlpha(ink.White, opacity),
-            DoneStyle);
+        var doneFace = Button.Surface(drawList, new Rect(doneMin, doneMax), ink.Control, ButtonStyle.Prominent,
+            ButtonRole.Normal, true, doneHovered, ImGui.GetID(DoneKey), opacity);
+        Button.DrawLabel(drawList, doneFace, doneLabel);
         if (doneHovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);

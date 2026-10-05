@@ -664,12 +664,6 @@ internal sealed class CasinoRoomsStore : IDisposable
 
     private void OnCasinoSignal(CasinoSignal signal)
     {
-        if (string.Equals(signal.Type, SignalType.CasinoPing, StringComparison.Ordinal))
-        {
-            directoryCadence.RequestImmediate();
-            return;
-        }
-
         room.Receive(signal, NowUnixMilliseconds());
     }
 
@@ -678,7 +672,7 @@ internal sealed class CasinoRoomsStore : IDisposable
         room.OnRealtimeConnected(connected);
         if (connected)
         {
-            directoryCadence.RequestImmediate();
+            directoryCadence.RequestAfterReconnect();
             return;
         }
 

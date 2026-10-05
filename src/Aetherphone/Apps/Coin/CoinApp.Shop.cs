@@ -4,10 +4,13 @@ using Aetherphone.Core.Coins;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Notifications;
+using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
+using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Coin;
 
@@ -15,36 +18,54 @@ internal sealed partial class CoinApp
 {
     private const string FlairKind = "flair";
     private const string FrameKind = "frame";
-    private const string PlainKind = "";
 
-    private const float TileHeight = 136f;
+    private const float BalanceStripHeight = 52f;
+    private const float FeaturedAspect = 0.52f;
+    private const float FeaturedIconFraction = 0.42f;
+    private const float FeaturedScrimAlpha = 0.62f;
+    private const float FeaturedTagPadX = 10f;
+    private const float FeaturedTagPadY = 4f;
+    private const float FeaturedTagAlpha = 0.88f;
+    private const float TileHeight = 168f;
+    private const float TileArtFraction = 0.56f;
+    private const float TileIconFraction = 0.38f;
     private const float TileGap = 12f;
-    private const float TileIconFraction = 0.34f;
-    private const float TileImageFraction = 0.52f;
-    private const float SkuCardGap = 12f;
-    private const float FlairCardHeight = 200f;
-    private const float PlainCardHeight = 112f;
-    private const float FrameCellHeight = 260f;
-    private const float FrameCellStageHeight = 150f;
-    private const float FrameCellButtonHeight = 34f;
-    private const float StageHeight = 92f;
-    private const float StagePadding = 20f;
+    private const float TileBarHeight = 3f;
+    private const float TileLeavingDot = 4f;
+    private const float ItemStageFraction = 0.86f;
+    private const float ItemCellGap = 12f;
+    private const float ItemPad = 10f;
+    private const float StagePadding = 14f;
+    private const float StageRounding = 16f;
     private const float GlyphFraction = 0.72f;
     private const float GlyphGapFraction = 0.34f;
     private const float PreviewMaxScale = 1.90f;
-    private const float PreviewMinScale = 1.00f;
-    private const float BloomAlpha = 0.14f;
-    private const float ButtonHeight = 44f;
-    private const long FallbackCategoryIcon = 0xF07A;
+    private const float PreviewMinScale = 0.80f;
+    private const float BloomAlpha = 0.16f;
+    private const float PlainGlyphFraction = 0.36f;
+    private const float TagAlpha = 0.22f;
+    private const long FallbackCategoryIcon = 0xF290;
 
-    private void DrawShop(Rect body)
+    private CachedText balanceStripText;
+
+    private void DrawShop(in PhoneContext context)
+    {
+        var navBar = AppHeader.BeginLargeTitle(context, false);
+        using (ImRaii.PushId("coin.shop"))
+        using (var surface = AppSurface.Begin(navBar.Body))
+        {
+            catalog.EnsureFresh();
+            shopRefresh.Draw(navBar.Body, surface.Pull, surface.Dragging, catalog.Fetching, ui.MutedInk, RefreshShop);
+            DrawShopBody(navBar.Body);
+        }
+
+        AppHeader.EndLargeTitle(in navBar, context, "coin.shop.nav", TabTitle(CoinTab.Shop), NavBarStyle.From(ui),
+            ReadOnlySpan<NavBarButton>.Empty);
+    }
+
+    private void DrawShopBody(Rect body)
     {
         var scale = UiScale.Current;
-        catalog.EnsureFresh();
-        using var surface = AppSurface.Begin(body);
-        shopRefresh.Draw(body, surface.Pull, surface.Dragging, catalog.Fetching, ui.MutedInk, RefreshShop);
-        ConsumePurchaseResult();
-
         var categories = catalog.Categories;
         if (categories.Length == 0)
         {
@@ -54,34 +75,187 @@ internal sealed partial class CoinApp
             }
             else
             {
-                EmptyState.Draw(body, ui, FontAwesomeIcon.Store, Loc.T(L.Coin.ShopEmpty),
-                    Loc.T(L.Coin.ShopEmptyHint));
+                CoinArt.StateScreen(ImGui.GetWindowDrawList(), ui, body, FontAwesomeIcon.Store,
+                    Loc.T(L.Coin.ShopEmpty), Loc.T(L.Coin.ShopEmptyHint), string.Empty, 0u, scale);
             }
 
             return;
         }
 
+        var drawList = ImGui.GetWindowDrawList();
+        var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
-        DrawCategoryTiles(string.Empty, width, scale);
-        ImGui.Dummy(new Vector2(0f, 16f * scale));
+        var cursorY = DrawBalanceStrip(drawList, origin, width, scale);
+        cursorY = DrawFeatured(drawList, new Vector2(origin.X, cursorY), width, scale);
+        cursorY += CoinArt.SectionGap * scale;
+        cursorY += CoinArt.SectionHeader(drawList, new Vector2(origin.X, cursorY), width, Loc.T(L.Coin.Categories),
+            ui.TitleInk, 0f, scale) + CoinArt.HeaderGap * scale;
+        var tilesTop = cursorY;
+        cursorY = DrawCategoryTiles(new Vector2(origin.X, cursorY), string.Empty, width, scale);
+        var tilesBottom = MathF.Min(cursorY, body.Max.Y);
+        if (tilesBottom > tilesTop)
+        {
+            UiAnchors.Report("coin.shop", new Rect(new Vector2(origin.X, tilesTop),
+                new Vector2(origin.X + width, tilesBottom)));
+        }
+
+        CoinArt.Reserve(origin, width, cursorY + CoinArt.BottomPad * scale);
     }
 
-    private void DrawShopBrowse(CoinRoute route, Rect area)
+    private float DrawBalanceStrip(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
+    {
+        var wallet = store.Wallet;
+        if (wallet is null)
+        {
+            return origin.Y;
+        }
+
+        var max = new Vector2(origin.X + width, origin.Y + BalanceStripHeight * scale);
+        CoinArt.Card(drawList, ui, origin, max, scale);
+        var pad = Metrics.Space.Lg * scale;
+        var centerY = (origin.Y + max.Y) * 0.5f;
+        var amount = BalanceText(wallet.Balance);
+        var amountWidth = CoinArt.PriceWidth(amount, TextStyles.Headline);
+        var lineHeight = Typography.LineHeight(TextStyles.Headline);
+        CoinArt.Price(drawList, new Vector2(max.X - pad - amountWidth, centerY - lineHeight * 0.5f), amount,
+            ui.TitleInk, TextStyles.Headline);
+        var labelHeight = Typography.LineHeight(TextStyles.Body);
+        Typography.Draw(drawList, new Vector2(origin.X + pad, centerY - labelHeight * 0.5f),
+            Typography.FitText(Loc.T(L.Coin.YourBalance), MathF.Max(1f, width - pad * 3f - amountWidth),
+                TextStyles.Body), ui.MutedInk, TextStyles.Body);
+        return max.Y;
+    }
+
+    private string BalanceText(long balance) =>
+        balanceStripText.IsCurrent(balance)
+            ? balanceStripText.Value
+            : balanceStripText.Store(balance, NumberText.Group(balance));
+
+    private CoinShopCategoryStyle? FeaturedCategory()
+    {
+        CoinShopCategoryStyle? best = null;
+        var categories = catalog.Categories;
+        for (var index = 0; index < categories.Length; index++)
+        {
+            var category = categories[index];
+            if (category.SoonestLeavingUnix is not { } leaving || HasChildren(category.Id))
+            {
+                continue;
+            }
+
+            if (best is null || leaving < best.SoonestLeavingUnix)
+            {
+                best = category;
+            }
+        }
+
+        return best;
+    }
+
+    private float DrawFeatured(ImDrawListPtr drawList, Vector2 origin, float width, float scale)
+    {
+        var category = FeaturedCategory();
+        if (category is null)
+        {
+            return origin.Y;
+        }
+
+        var top = origin.Y + Metrics.Space.Md * scale;
+        var height = width * FeaturedAspect;
+        var restMin = new Vector2(origin.X, top);
+        var restMax = new Vector2(origin.X + width, top + height);
+        var hovered = UiInteract.Hover(restMin, restMax);
+        var press = PressFx.Scale("coin.featured", hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left),
+            Core.Animation.Motion.PressScaleCard);
+        var center = (restMin + restMax) * 0.5f;
+        var half = (restMax - restMin) * 0.5f * press;
+        var min = center - half;
+        var max = center + half;
+        var radius = Metrics.Radius.Grouped * scale;
+        var texture = category.ImageUrl.Length == 0 ? null : images.Get(category.ImageUrl);
+        if (texture is null)
+        {
+            IconTile.FillShaded(drawList, min, max, radius, IconTile.Surface(ui.Accent));
+            var icon = category.Icon == 0 ? FallbackCategoryIcon : category.Icon;
+            var iconSize = height * FeaturedIconFraction;
+            ProgressRing.CenterIcon(drawList, new Vector2(max.X - iconSize * 0.9f, min.Y + height * 0.42f),
+                (FontAwesomeIcon)icon, Palette.WithAlpha(CoinArt.White, 0.85f), iconSize);
+        }
+        else
+        {
+            var (uv0, uv1) = ImageFit.Cover(texture.Size.X, texture.Size.Y, max.X - min.X, max.Y - min.Y);
+            Squircle.FillImage(drawList, min, max, radius, texture.Handle, 0xFFFFFFFFu, uv0, uv1);
+        }
+
+        Squircle.FillVerticalGradient(drawList, min, max, radius, 0u,
+            ImGui.GetColorU32(new Vector4(0f, 0f, 0f, FeaturedScrimAlpha)));
+        Material.EdgeSquircle(drawList, min, max, radius, scale);
+
+        var pad = Metrics.Space.Lg * scale;
+        DrawTag(drawList, new Vector2(min.X + pad, min.Y + pad), LeavingText(category.SoonestLeavingUnix ?? 0),
+            (max.X - min.X) - pad * 2f, ui.Accent, scale);
+        var counter = CategoryCounter(category);
+        var counterHeight = Typography.LineHeight(TextStyles.Subheadline);
+        var titleHeight = Typography.LineHeight(TextStyles.Title2);
+        var textWidth = (max.X - min.X) - pad * 2f;
+        Typography.Draw(drawList, new Vector2(min.X + pad, max.Y - pad - counterHeight),
+            Typography.FitText(counter, textWidth, TextStyles.Subheadline), Palette.WithAlpha(CoinArt.White, 0.82f),
+            TextStyles.Subheadline);
+        Typography.Draw(drawList, new Vector2(min.X + pad, max.Y - pad - counterHeight - titleHeight),
+            Typography.FitText(CategoryTitle(category), textWidth, TextStyles.Title2), CoinArt.White,
+            TextStyles.Title2);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        if (UiInteract.Click(restMin, restMax, hovered))
+        {
+            EnterCategory(category);
+        }
+
+        return restMax.Y;
+    }
+
+    private static void DrawTag(ImDrawListPtr drawList, Vector2 topLeft, string label, float maxWidth, Vector4 tint,
+        float scale)
+    {
+        var padX = FeaturedTagPadX * scale;
+        var padY = FeaturedTagPadY * scale;
+        var fitted = Typography.FitText(label, MathF.Max(1f, maxWidth - padX * 2f), TextStyles.FootnoteEmphasized);
+        var size = Typography.Measure(fitted, TextStyles.FootnoteEmphasized);
+        var max = topLeft + new Vector2(size.X + padX * 2f, size.Y + padY * 2f);
+        Squircle.Fill(drawList, topLeft, max, (max.Y - topLeft.Y) * 0.5f,
+            ImGui.GetColorU32(Palette.WithAlpha(Palette.Darken(tint, 0.25f), FeaturedTagAlpha)));
+        Typography.Draw(drawList, topLeft + new Vector2(padX, padY), fitted, CoinArt.White,
+            TextStyles.FootnoteEmphasized);
+    }
+
+    private void DrawShopBrowse(in PhoneContext context, CoinRoute route, int depth)
+    {
+        var category = catalog.Category(route.CategoryId);
+        var navBar = AppHeader.BeginLargeTitle(context);
+        using (ImRaii.PushId("coin.browse"))
+        using (var surface = AppSurface.Begin(navBar.Body))
+        {
+            browseRefresh.Draw(navBar.Body, surface.Pull, surface.Dragging, catalog.Fetching, ui.MutedInk,
+                RefreshShop);
+            DrawBrowseBody(navBar.Body, route);
+        }
+
+        AppHeader.EndLargeTitle(in navBar, context, "coin.browse.nav", CategoryTitle(category), NavBarStyle.From(ui),
+            ReadOnlySpan<NavBarButton>.Empty, BackTitle(depth), back);
+    }
+
+    private void DrawBrowseBody(Rect body, CoinRoute route)
     {
         var scale = UiScale.Current;
-        var category = catalog.Category(route.CategoryId);
-        AppHeader.Draw(new PhoneContext(area, theme, navigation), CategoryTitle(category), LeaveBrowse);
-
-        var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale + 6f * scale), area.Max);
-        using var surface = AppSurface.Begin(body);
-        browseRefresh.Draw(body, surface.Pull, surface.Dragging, catalog.Fetching, ui.MutedInk, RefreshShop);
-        ConsumePurchaseResult();
-
+        var origin = ImGui.GetCursorScreenPos();
         var width = ScrollLayout.StableContentWidth();
         if (route.Screen == CoinScreen.ShopFolder)
         {
-            DrawCategoryTiles(route.CategoryId, width, scale);
-            ImGui.Dummy(new Vector2(0f, 16f * scale));
+            var bottom = DrawCategoryTiles(origin, route.CategoryId, width, scale);
+            CoinArt.Reserve(origin, width, bottom + CoinArt.BottomPad * scale);
             return;
         }
 
@@ -91,8 +265,8 @@ internal sealed partial class CoinApp
         {
             if (catalog.ShelfLoaded(route.CategoryId) || catalog.ItemsComplete)
             {
-                EmptyState.Draw(body, ui, FontAwesomeIcon.Store, Loc.T(L.Coin.ShopShelfEmpty),
-                    Loc.T(L.Coin.ShopEmptyHint));
+                CoinArt.StateScreen(ImGui.GetWindowDrawList(), ui, body, FontAwesomeIcon.Store,
+                    Loc.T(L.Coin.ShopShelfEmpty), Loc.T(L.Coin.ShopEmptyHint), string.Empty, 0u, scale);
             }
             else
             {
@@ -102,13 +276,8 @@ internal sealed partial class CoinApp
             return;
         }
 
-        DrawShelfItems(items, width, scale);
-        ImGui.Dummy(new Vector2(0f, 16f * scale));
-    }
-
-    private void LeaveBrowse()
-    {
-        router.Pop();
+        var itemsBottom = DrawItemGrid(origin, items, route.CategoryId, width, scale);
+        CoinArt.Reserve(origin, width, itemsBottom + CoinArt.BottomPad * scale);
     }
 
     private string CategoryTitle(CoinShopCategoryStyle? category)
@@ -121,13 +290,12 @@ internal sealed partial class CoinApp
         return category.IsUnfiled ? Loc.T(L.Coin.ShopUnfiled) : category.Name;
     }
 
-    private void DrawCategoryTiles(string parentId, float width, float scale)
+    private float DrawCategoryTiles(Vector2 origin, string parentId, float width, float scale)
     {
         var categories = catalog.Categories;
         var gap = TileGap * scale;
         var cellWidth = (width - gap) * 0.5f;
         var cellHeight = TileHeight * scale;
-        var origin = ImGui.GetCursorScreenPos();
         var cell = 0;
         for (var index = 0; index < categories.Length; index++)
         {
@@ -140,76 +308,94 @@ internal sealed partial class CoinApp
             var column = cell % 2;
             var row = cell / 2;
             var min = new Vector2(origin.X + column * (cellWidth + gap), origin.Y + row * (cellHeight + gap));
-            DrawCategoryTile(category, min, cellWidth, cellHeight, scale);
+            if (ImGui.IsRectVisible(min, min + new Vector2(cellWidth, cellHeight)))
+            {
+                DrawCategoryTile(category, min, cellWidth, cellHeight, scale);
+            }
+
             cell++;
         }
 
         var rows = (cell + 1) / 2;
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, rows * (cellHeight + gap)));
+        return origin.Y + MathF.Max(0f, rows * (cellHeight + gap) - gap);
     }
 
     private void DrawCategoryTile(CoinShopCategoryStyle category, Vector2 origin, float cellWidth, float cellHeight,
         float scale)
     {
         var drawList = ImGui.GetWindowDrawList();
-        var min = origin;
-        var max = origin + new Vector2(cellWidth, cellHeight);
-        var hovered = UiInteract.Hover(min, max);
-        ui.Card(drawList, min, max, 18f * scale, hovered);
+        var restMin = origin;
+        var restMax = origin + new Vector2(cellWidth, cellHeight);
+        var hovered = UiInteract.Hover(restMin, restMax);
+        var press = PressFx.Scale(ImGui.GetID(category.Id.Length == 0 ? "coin.tile.unfiled" : category.Id),
+            hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left), Core.Animation.Motion.PressScaleCard);
+        var center = (restMin + restMax) * 0.5f;
+        var half = (restMax - restMin) * 0.5f * press;
+        var min = center - half;
+        var max = center + half;
+        var radius = Metrics.Radius.Grouped * scale;
+        CoinArt.Card(drawList, ui, min, max, scale);
 
-        var titleY = DrawTileArt(drawList, category, min, cellWidth, cellHeight, scale);
+        var artMax = new Vector2(max.X, min.Y + (max.Y - min.Y) * TileArtFraction);
+        var texture = category.ImageUrl.Length == 0 ? null : images.Get(category.ImageUrl);
+        if (texture is null)
+        {
+            var inset = Metrics.Space.Sm * scale;
+            var artMin = min + new Vector2(inset, inset);
+            var artInnerMax = new Vector2(max.X - inset, artMax.Y);
+            IconTile.FillShaded(drawList, artMin, artInnerMax, radius - inset, IconTile.Surface(ui.Accent));
+            var icon = category.Icon == 0 ? FallbackCategoryIcon : category.Icon;
+            ProgressRing.CenterIcon(drawList, (artMin + artInnerMax) * 0.5f, (FontAwesomeIcon)icon, AccentRing.Ink,
+                (artInnerMax.Y - artMin.Y) * TileIconFraction);
+        }
+        else
+        {
+            var (uv0, uv1) = ImageFit.Cover(texture.Size.X, texture.Size.Y, max.X - min.X, artMax.Y - min.Y);
+            drawList.AddImageRounded(texture.Handle, min, artMax, uv0, uv1, 0xFFFFFFFFu, radius,
+                ImDrawFlags.RoundCornersTop);
+        }
 
-        var title = category.IsUnfiled ? Loc.T(L.Coin.ShopUnfiled) : category.Name;
-        var inset = 12f * scale;
-        var titleFit = Typography.FitText(title, cellWidth - inset * 2f, TextStyles.BodyEmphasized);
-        var titleSize = Typography.Measure(titleFit, TextStyles.BodyEmphasized);
-        Typography.Draw(drawList, new Vector2(min.X + (cellWidth - titleSize.X) * 0.5f, titleY), titleFit,
-            ui.Palette.TitleInk, TextStyles.BodyEmphasized);
-
-        var counter = category.OwnedCount is { } owned
-            ? Loc.T(L.Coin.SectionOwned, owned, category.ItemCount)
-            : Loc.Plural(L.Coin.ShopItemCount, category.ItemCount);
-        var counterFit = Typography.FitText(counter, cellWidth - inset * 2f, TextStyles.Caption1);
-        var counterSize = Typography.Measure(counterFit, TextStyles.Caption1);
-        Typography.Draw(drawList, new Vector2(min.X + (cellWidth - counterSize.X) * 0.5f,
-                titleY + titleSize.Y + 4f * scale), counterFit, ui.MutedInk, TextStyles.Caption1);
+        var pad = Metrics.Space.Md * scale;
+        var textWidth = (max.X - min.X) - pad * 2f;
+        var titleTop = artMax.Y + Metrics.Space.Sm * scale;
+        Typography.Draw(drawList, new Vector2(min.X + pad, titleTop),
+            Typography.FitText(CategoryTitle(category), textWidth, TextStyles.BodyEmphasized), ui.TitleInk,
+            TextStyles.BodyEmphasized);
+        var counterTop = titleTop + Typography.LineHeight(TextStyles.BodyEmphasized) + CoinArt.LineGap * scale;
+        Typography.Draw(drawList, new Vector2(min.X + pad, counterTop),
+            Typography.FitText(CategoryCounter(category), textWidth, TextStyles.Footnote), ui.MutedInk,
+            TextStyles.Footnote);
+        if (category.OwnedCount is { } owned && category.ItemCount > 0)
+        {
+            var barTop = max.Y - pad - TileBarHeight * scale;
+            CoinArt.Bar(drawList, new Vector2(min.X + pad, barTop), new Vector2(max.X - pad, barTop + TileBarHeight * scale),
+                owned / (float)category.ItemCount, Palette.WithAlpha(ui.TitleInk, 0.12f), ui.Accent);
+        }
 
         if (category.SoonestLeavingUnix is not null)
         {
-            var dotRadius = 4f * scale;
-            drawList.AddCircleFilled(new Vector2(max.X - inset - dotRadius, min.Y + inset + dotRadius), dotRadius,
-                ImGui.GetColorU32(ui.Palette.Accent), 16);
+            var dot = TileLeavingDot * scale;
+            drawList.AddCircleFilled(new Vector2(max.X - pad - dot, artMax.Y + pad + dot), dot,
+                ImGui.GetColorU32(ui.Accent), 16);
         }
 
-        if (UiInteract.HoverClick(min, max))
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        if (UiInteract.Click(restMin, restMax, hovered))
         {
             EnterCategory(category);
         }
     }
 
-    private float DrawTileArt(ImDrawListPtr drawList, CoinShopCategoryStyle category, Vector2 min, float cellWidth,
-        float cellHeight, float scale)
-    {
-        var texture = category.ImageUrl.Length == 0 ? null : images.Get(category.ImageUrl);
-        if (texture is null)
-        {
-            var iconSize = cellHeight * TileIconFraction;
-            var iconCenter = new Vector2(min.X + cellWidth * 0.5f, min.Y + iconSize * 0.5f + 18f * scale);
-            var icon = category.Icon == 0 ? FallbackCategoryIcon : category.Icon;
-            ProgressRing.CenterIcon(drawList, iconCenter, (FontAwesomeIcon)icon, ui.Palette.Accent, iconSize);
-            return iconCenter.Y + iconSize * 0.5f + 12f * scale;
-        }
-
-        var heroMax = new Vector2(min.X + cellWidth, min.Y + cellHeight * TileImageFraction);
-        var (uv0, uv1) = ImageFit.Cover(texture.Size.X, texture.Size.Y, cellWidth, heroMax.Y - min.Y);
-        drawList.AddImageRounded(texture.Handle, min, heroMax, uv0, uv1, 0xFFFFFFFFu, 18f * scale,
-            ImDrawFlags.RoundCornersTop);
-        return heroMax.Y + 10f * scale;
-    }
+    private string CategoryCounter(CoinShopCategoryStyle category) =>
+        texts.Counter(category.OwnedCount, category.ItemCount);
 
     private void EnterCategory(CoinShopCategoryStyle category)
     {
+        UiFeedback.Play(UiSound.Tap);
         router.Push(HasChildren(category.Id) ? CoinRoute.Folder(category.Id) : CoinRoute.Shelf(category.Id));
     }
 
@@ -232,235 +418,137 @@ internal sealed partial class CoinApp
         return false;
     }
 
-    private void DrawShelfItems(CoinSkuStyle[] items, float width, float scale)
+    private float DrawItemGrid(Vector2 origin, CoinSkuStyle[] items, string categoryId, float width, float scale)
     {
-        var start = 0;
-        while (start < items.Length)
+        var gap = ItemCellGap * scale;
+        var cellWidth = (width - gap) * 0.5f;
+        var cellHeight = ItemCellHeight(cellWidth, scale);
+        for (var index = 0; index < items.Length; index++)
         {
-            var kind = EffectiveKind(items[start]);
-            var end = start + 1;
-            while (end < items.Length && string.Equals(EffectiveKind(items[end]), kind, StringComparison.Ordinal))
-            {
-                end++;
-            }
-
-            DrawItemRun(items, start, end, SpecFor(kind), width, scale);
-            start = end;
-        }
-    }
-
-    private void DrawItemRun(CoinSkuStyle[] items, int start, int end, in ShopCardSpec spec, float width, float scale)
-    {
-        var gap = SkuCardGap * scale;
-        var cellWidth = spec.Columns == 1 ? width : (width - gap) * (1f / spec.Columns);
-        var cellHeight = spec.Height * scale;
-        var origin = ImGui.GetCursorScreenPos();
-        for (var index = start; index < end; index++)
-        {
-            var cell = index - start;
-            var column = cell % spec.Columns;
-            var row = cell / spec.Columns;
+            var column = index % 2;
+            var row = index / 2;
             var min = new Vector2(origin.X + column * (cellWidth + gap), origin.Y + row * (cellHeight + gap));
-            DrawShopItem(items[index], spec, min, cellWidth, scale);
+            if (ImGui.IsRectVisible(min, min + new Vector2(cellWidth, cellHeight)))
+            {
+                DrawItemTile(items[index], categoryId, min, cellWidth, cellHeight, scale);
+            }
         }
 
-        var rows = (end - start + spec.Columns - 1) / spec.Columns;
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, rows * (cellHeight + gap)));
+        var rows = (items.Length + 1) / 2;
+        return origin.Y + MathF.Max(0f, rows * (cellHeight + gap) - gap);
     }
 
-    private readonly record struct ShopCardSpec(int Columns, float Height, float StageHeight, float ButtonHeight,
-        bool Centered);
-
-    private static ShopCardSpec SpecFor(string kind)
+    private static float ItemCellHeight(float cellWidth, float scale)
     {
-        if (string.Equals(kind, FrameKind, StringComparison.Ordinal))
-        {
-            return new ShopCardSpec(2, FrameCellHeight, FrameCellStageHeight, FrameCellButtonHeight, true);
-        }
-
-        if (string.Equals(kind, FlairKind, StringComparison.Ordinal))
-        {
-            return new ShopCardSpec(1, FlairCardHeight, StageHeight, ButtonHeight, false);
-        }
-
-        return new ShopCardSpec(1, PlainCardHeight, 0f, ButtonHeight, false);
+        var pad = ItemPad * scale;
+        var stage = (cellWidth - pad * 2f) * ItemStageFraction;
+        return pad + stage + Metrics.Space.Sm * scale + Typography.LineHeight(TextStyles.BodyEmphasized) +
+               Metrics.Space.Sm * scale + CoinArt.CapsuleHeight * scale + pad;
     }
 
-    private string EffectiveKind(CoinSkuStyle sku)
-    {
-        if (string.Equals(sku.Kind, FlairKind, StringComparison.Ordinal))
-        {
-            return badgeCatalog.Find(sku.Payload) is null ? PlainKind : FlairKind;
-        }
-
-        if (string.Equals(sku.Kind, FrameKind, StringComparison.Ordinal))
-        {
-            return FrameKind;
-        }
-
-        return PlainKind;
-    }
-
-    private void DrawShopItem(CoinSkuStyle sku, in ShopCardSpec spec, Vector2 origin, float cardWidth, float scale)
+    private void DrawItemTile(CoinSkuStyle sku, string categoryId, Vector2 origin, float cellWidth, float cellHeight,
+        float scale)
     {
         var drawList = ImGui.GetWindowDrawList();
         var min = origin;
-        var max = origin + new Vector2(cardWidth, spec.Height * scale);
-        ui.Card(drawList, min, max, (spec.Centered ? 18f : 20f) * scale, false);
-
-        var inset = (spec.Centered ? 10f : 14f) * scale;
-        var left = min.X + inset;
-        var right = max.X - inset;
-        var cursorY = min.Y + inset;
-        var stageWidth = right - left;
-
-        if (spec.StageHeight > 0f)
+        var max = origin + new Vector2(cellWidth, cellHeight);
+        var pad = ItemPad * scale;
+        var buttonRect = new Rect(new Vector2(min.X + pad, max.Y - pad - CoinArt.CapsuleHeight * scale),
+            new Vector2(max.X - pad, max.Y - pad));
+        var overButton = UiInteract.Hover(buttonRect.Min, buttonRect.Max);
+        var hovered = !overButton && UiInteract.Hover(min, max);
+        CoinArt.Card(drawList, ui, min, max, scale);
+        if (hovered)
         {
-            var stage = new Rect(new Vector2(left, cursorY),
-                new Vector2(right, cursorY + spec.StageHeight * scale));
-            DrawItemStage(drawList, stage, sku, scale);
-            cursorY = stage.Max.Y + (spec.Centered ? 8f : 12f) * scale;
-            if (spec.Centered)
-            {
-                DrawLeavingTag(drawList, stage, sku, scale);
-            }
+            Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale, ImGui.GetColorU32(ui.HoverTint));
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
         }
 
-        if (spec.Centered)
+        var stageHeight = (cellWidth - pad * 2f) * ItemStageFraction;
+        var stage = new Rect(new Vector2(min.X + pad, min.Y + pad), new Vector2(max.X - pad, min.Y + pad + stageHeight));
+        DrawItemStage(drawList, stage, sku.Kind, sku.Payload, scale);
+        if (sku.AvailableUntilUnix is { } leaving && !sku.Owned)
         {
-            DrawCenteredLabels(drawList, sku, min, cardWidth, stageWidth, cursorY, scale);
-        }
-        else
-        {
-            DrawRowLabels(drawList, sku, left, right, cursorY, scale);
+            DrawTag(drawList, stage.Min + new Vector2(Metrics.Space.Xs * scale, Metrics.Space.Xs * scale),
+                LeavingText(leaving), stage.Width - Metrics.Space.Xs * scale * 2f, ui.Accent, scale);
         }
 
-        var buttonRect = new Rect(
-            new Vector2(left, max.Y - inset - spec.ButtonHeight * scale),
-            new Vector2(right, max.Y - inset));
-        DrawBuyControl(sku, buttonRect);
+        var nameTop = stage.Max.Y + Metrics.Space.Sm * scale;
+        Typography.Draw(drawList, new Vector2(min.X + pad, nameTop),
+            Typography.FitText(sku.Name, cellWidth - pad * 2f, TextStyles.BodyEmphasized), ui.TitleInk,
+            TextStyles.BodyEmphasized);
+        DrawBuyControl(drawList, sku, buttonRect);
+        if (UiInteract.Click(min, max, hovered))
+        {
+            OpenProduct(categoryId, sku.Id);
+        }
     }
 
-    private void DrawItemStage(ImDrawListPtr drawList, Rect stage, CoinSkuStyle sku, float scale)
+    private void DrawBuyControl(ImDrawListPtr drawList, CoinSkuStyle sku, Rect buttonRect)
     {
-        var rounding = 15f * scale;
-        Squircle.Fill(drawList, stage.Min, stage.Max, rounding, ImGui.GetColorU32(ui.Palette.FieldSurface));
-        Material.EdgeSquircle(drawList, stage.Min, stage.Max, rounding, scale);
-
-        if (string.Equals(sku.Kind, FrameKind, StringComparison.Ordinal))
+        if (sku.Owned)
         {
-            DrawFramePreview(drawList, stage, frameCatalog.Find(sku.Payload), scale);
+            CoinArt.Capsule(drawList, ui, ImGui.GetID(sku.Id), buttonRect, Loc.T(L.Coin.Owned), CapsuleTone.Quiet,
+                false);
             return;
         }
 
-        var badge = badgeCatalog.Find(sku.Payload);
-        if (badge is not null)
+        var enabled = !store.Purchasing && store.Wallet?.FrozenUntilUnix is null;
+        if (CoinArt.PriceCapsule(drawList, ui, ImGui.GetID(sku.Id), buttonRect, NumberText.Group(sku.Price), enabled))
         {
-            DrawFlairPreview(drawList, stage, badge, scale);
+            AskPurchase(sku);
         }
     }
 
-    private void DrawFramePreview(ImDrawListPtr drawList, Rect stage, Core.Social.FrameStyle? frame, float scale)
+    private void OpenProduct(string categoryId, string skuId)
     {
-        DrawBloom(drawList, stage, stage.Center, stage.Width * 0.42f, stage.Height * 0.60f, ui.Palette.Accent);
+        UiFeedback.Play(UiSound.Tap);
+        router.Push(CoinRoute.Product(categoryId, skuId));
+    }
 
-        var outerRadius = MathF.Min(stage.Height * 0.48f, stage.Width * 0.45f);
+    private string LeavingText(long leavingUnix) => texts.Leaving(leavingUnix);
+
+    private void DrawItemStage(ImDrawListPtr drawList, Rect stage, string kind, string payload, float scale)
+    {
+        var rounding = StageRounding * scale;
+        Squircle.Fill(drawList, stage.Min, stage.Max, rounding, ImGui.GetColorU32(ui.Palette.FieldSurface));
+        drawList.PushClipRect(stage.Min, stage.Max, true);
+        if (string.Equals(kind, FrameKind, StringComparison.Ordinal))
+        {
+            DrawFramePreview(drawList, stage, frameCatalog.Find(payload));
+        }
+        else if (string.Equals(kind, FlairKind, StringComparison.Ordinal) && badgeCatalog.Find(payload) is { } badge)
+        {
+            DrawFlairPreview(drawList, stage, badge, scale);
+        }
+        else
+        {
+            DrawBloom(drawList, stage, stage.Center, stage.Width * 0.42f, stage.Height * 0.55f, ui.Accent);
+            ProgressRing.CenterIcon(drawList, stage.Center, KindIcon(kind), ui.Accent,
+                MathF.Min(stage.Width, stage.Height) * PlainGlyphFraction);
+        }
+
+        drawList.PopClipRect();
+    }
+
+    private static FontAwesomeIcon KindIcon(string kind)
+    {
+        if (string.Equals(kind, FrameKind, StringComparison.Ordinal))
+        {
+            return FontAwesomeIcon.UserCircle;
+        }
+
+        return string.Equals(kind, FlairKind, StringComparison.Ordinal) ? FontAwesomeIcon.Star : FontAwesomeIcon.Gift;
+    }
+
+    private void DrawFramePreview(ImDrawListPtr drawList, Rect stage, Core.Social.FrameStyle? frame)
+    {
+        DrawBloom(drawList, stage, stage.Center, stage.Width * 0.42f, stage.Height * 0.60f, ui.Accent);
+        var outerRadius = MathF.Min(stage.Height * 0.44f, stage.Width * 0.44f);
         var avatarRadius = outerRadius / (frame?.Scale ?? 1f);
         var user = session.CurrentUser;
         AvatarView.DrawRemote(drawList, stage.Center, avatarRadius, theme, user?.Name ?? string.Empty,
             user?.World ?? string.Empty, user?.AvatarUrl, images, lodestone, 1.2f, 48, 1f, frame);
-    }
-
-    private void DrawCenteredLabels(ImDrawListPtr drawList, CoinSkuStyle sku, Vector2 min, float cardWidth,
-        float stageWidth, float cursorY, float scale)
-    {
-        var name = Typography.FitText(sku.Name, stageWidth, TextStyles.BodyEmphasized);
-        var nameSize = Typography.Measure(name, TextStyles.BodyEmphasized);
-        Typography.Draw(drawList, new Vector2(min.X + (cardWidth - nameSize.X) * 0.5f, cursorY), name,
-            ui.Palette.TitleInk, TextStyles.BodyEmphasized);
-
-        var priceText = Loc.Plural(L.Coin.Price, (int)sku.Price);
-        var lineHeight = Typography.Measure(priceText, TextStyles.SubheadlineEmphasized).Y;
-        var coinGlyph = lineHeight * GlyphFraction;
-        var coinGap = lineHeight * GlyphGapFraction;
-        var priceFit = Typography.FitText(priceText, stageWidth - coinGlyph - coinGap,
-            TextStyles.SubheadlineEmphasized);
-        var priceSize = Typography.Measure(priceFit, TextStyles.SubheadlineEmphasized);
-        var blockLeft = min.X + (cardWidth - coinGlyph - coinGap - priceSize.X) * 0.5f;
-        var priceY = cursorY + nameSize.Y + 4f * scale;
-        CurrencyGlyph.Draw(drawList, CurrencyKind.Coins,
-            new Vector2(blockLeft + coinGlyph * 0.5f, priceY + priceSize.Y * 0.5f), coinGlyph);
-        Typography.Draw(drawList, new Vector2(blockLeft + coinGlyph + coinGap, priceY), priceFit,
-            ui.Palette.Accent, TextStyles.SubheadlineEmphasized);
-    }
-
-    private void DrawRowLabels(ImDrawListPtr drawList, CoinSkuStyle sku, float left, float right, float cursorY,
-        float scale)
-    {
-        var priceText = Loc.Plural(L.Coin.Price, (int)sku.Price);
-        var priceSize = Typography.Measure(priceText, TextStyles.Title3);
-        var coinGlyph = priceSize.Y * GlyphFraction;
-        var coinGap = priceSize.Y * GlyphGapFraction;
-        var priceLeft = right - priceSize.X - coinGlyph - coinGap;
-
-        var name = Typography.FitText(sku.Name, priceLeft - left - 8f * scale, TextStyles.Title3);
-        Typography.Draw(drawList, new Vector2(left, cursorY), name, ui.Palette.TitleInk, TextStyles.Title3);
-
-        CurrencyGlyph.Draw(drawList, CurrencyKind.Coins,
-            new Vector2(priceLeft + coinGlyph * 0.5f, cursorY + priceSize.Y * 0.5f), coinGlyph);
-        Typography.Draw(drawList, new Vector2(priceLeft + coinGlyph + coinGap, cursorY), priceText,
-            ui.Palette.Accent, TextStyles.Title3);
-
-        if (sku.AvailableUntilUnix is not { } leavingUnix)
-        {
-            return;
-        }
-
-        var leaving = Loc.T(L.Coin.LeavingSoon, TimeText.FutureDayLabel(leavingUnix));
-        var fitted = Typography.FitText(leaving, right - left, TextStyles.Caption1);
-        Typography.Draw(drawList, new Vector2(left, cursorY + 26f * scale), fitted, ui.MutedInk, TextStyles.Caption1);
-    }
-
-    private void DrawLeavingTag(ImDrawListPtr drawList, Rect stage, CoinSkuStyle sku, float scale)
-    {
-        if (sku.AvailableUntilUnix is not { } leavingUnix)
-        {
-            return;
-        }
-
-        var label = Loc.T(L.Coin.LeavingSoon, TimeText.FutureDayLabel(leavingUnix));
-        var paddingX = 8f * scale;
-        var paddingY = 3f * scale;
-        var margin = 6f * scale;
-        var fitted = Typography.FitText(label, stage.Width - margin * 2f - paddingX * 2f, TextStyles.Caption2);
-        var size = Typography.Measure(fitted, TextStyles.Caption2);
-        var min = new Vector2(stage.Min.X + margin, stage.Min.Y + margin);
-        var max = min + new Vector2(size.X + paddingX * 2f, size.Y + paddingY * 2f);
-        Squircle.Fill(drawList, min, max, (max.Y - min.Y) * 0.5f,
-            ImGui.GetColorU32(Palette.WithAlpha(ui.Palette.Accent, 0.22f)));
-        Typography.Draw(drawList, min + new Vector2(paddingX, paddingY), fitted, ui.Palette.TitleInk,
-            TextStyles.Caption2);
-    }
-
-    private void DrawBuyControl(CoinSkuStyle sku, Rect buttonRect)
-    {
-        if (sku.Owned)
-        {
-            AppSkin.Chip(buttonRect, Loc.T(L.Coin.Owned), true, theme);
-            return;
-        }
-
-        if (store.Purchasing)
-        {
-            AppSkin.Chip(buttonRect, Loc.T(L.Coin.Buy), false, theme);
-            return;
-        }
-
-        if (ui.PillButton(buttonRect, Loc.T(L.Coin.Buy), true, "coin.buy." + sku.Id))
-        {
-            AskPurchase(sku);
-        }
     }
 
     private void DrawFlairPreview(ImDrawListPtr drawList, Rect stage, Core.Social.BadgeStyle badge, float scale)
@@ -471,28 +559,23 @@ internal sealed partial class CoinApp
         var tallest = Typography.Measure("M", new TextStyle(PreviewMaxScale, FontWeight.Bold)).Y;
         var reserve = tallest * (GlyphFraction + GlyphGapFraction);
         var available = MathF.Max(1f, maxWidth - reserve);
-
         var source = PreviewName();
         var nameScale = Typography.FitScale(source, available, PreviewMaxScale, PreviewMinScale, FontWeight.Bold);
         var nameStyle = new TextStyle(nameScale, FontWeight.Bold);
         var name = Typography.FitText(source, available, nameStyle);
         var nameSize = Typography.Measure(name, nameStyle);
-
         var glyphSize = nameSize.Y * GlyphFraction;
         var gap = nameSize.Y * GlyphGapFraction;
         var blockWidth = glyphSize + gap + nameSize.X;
         var blockLeft = stage.Center.X - blockWidth * 0.5f;
         var rowCenterY = stage.Center.Y;
-
-        DrawBloom(drawList, stage, new Vector2(stage.Center.X, rowCenterY),
-            blockWidth * 0.72f, nameSize.Y * 1.35f, RoleInk.Highlight(badge.Colors[0], light));
-
+        DrawBloom(drawList, stage, new Vector2(stage.Center.X, rowCenterY), blockWidth * 0.72f, nameSize.Y * 1.35f,
+            RoleInk.Highlight(badge.Colors[0], light));
         BadgeStrip.DrawOne(drawList, new Vector2(blockLeft + glyphSize * 0.5f, rowCenterY), badge, images, light,
             glyphSize);
-
         var ink = RoleInk.For(badge.Colors[0], light);
-        var namePos = new Vector2(blockLeft + glyphSize + gap, rowCenterY - nameSize.Y * 0.5f);
-        Typography.Draw(drawList, namePos, name, ink, nameStyle, NameEffects.For(badge, light));
+        Typography.Draw(drawList, new Vector2(blockLeft + glyphSize + gap, rowCenterY - nameSize.Y * 0.5f), name, ink,
+            nameStyle, NameEffects.For(badge, light));
     }
 
     private static void DrawBloom(ImDrawListPtr drawList, Rect stage, Vector2 center, float radiusX, float radiusY,
@@ -511,12 +594,11 @@ internal sealed partial class CoinApp
         var right = center.X + spanX;
         var top = center.Y - spanY;
         var bottom = center.Y + spanY;
-
         drawList.AddRectFilledMultiColor(new Vector2(left, top), center, edge, edge, core, edge);
-        drawList.AddRectFilledMultiColor(new Vector2(center.X, top), new Vector2(right, center.Y),
-            edge, edge, edge, core);
-        drawList.AddRectFilledMultiColor(new Vector2(left, center.Y), new Vector2(center.X, bottom),
-            edge, core, edge, edge);
+        drawList.AddRectFilledMultiColor(new Vector2(center.X, top), new Vector2(right, center.Y), edge, edge, edge,
+            core);
+        drawList.AddRectFilledMultiColor(new Vector2(left, center.Y), new Vector2(center.X, bottom), edge, core, edge,
+            edge);
         drawList.AddRectFilledMultiColor(center, new Vector2(right, bottom), core, edge, edge, edge);
     }
 
@@ -531,8 +613,23 @@ internal sealed partial class CoinApp
         return user.DisplayName.Length > 0 ? user.DisplayName : user.Name;
     }
 
+    private CoinSkuStyle? FindSku(string categoryId, string skuId)
+    {
+        var items = catalog.Shelf(categoryId);
+        for (var index = 0; index < items.Length; index++)
+        {
+            if (string.Equals(items[index].Id, skuId, StringComparison.Ordinal))
+            {
+                return items[index];
+            }
+        }
+
+        return null;
+    }
+
     private void AskPurchase(CoinSkuStyle sku)
     {
+        UiFeedback.Play(UiSound.Tap);
         var price = sku.Price;
         var skuId = sku.Id;
         confirm.Ask(new ConfirmRequest
@@ -557,6 +654,7 @@ internal sealed partial class CoinApp
         if (result.Purchased)
         {
             UiFeedback.Play(UiSound.Success);
+            ClearGoalFor(result.SkuId);
             RefreshShop();
             RefreshInventory();
             return;
@@ -575,7 +673,7 @@ internal sealed partial class CoinApp
             _ => Loc.T(L.Coin.Unavailable),
         };
         confirm.Alert(null, message, Loc.T(L.Common.Close));
-        if (result.Reason == "price_changed")
+        if (string.Equals(result.Reason, "price_changed", StringComparison.Ordinal))
         {
             catalog.RefreshNow();
         }

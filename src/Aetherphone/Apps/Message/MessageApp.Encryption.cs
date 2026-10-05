@@ -19,7 +19,7 @@ internal sealed partial class MessageApp
     private const float EncryptionMemberGlyph = 18f;
     private const float EncryptionSidePadding = 32f;
 
-    private static readonly TextStyle SecurityCodeStyle = new(1.02f, FontWeight.Medium);
+    private static readonly TextStyle SecurityCodeStyle = TextStyles.BodyEmphasized;
 
     private string? encryptionPeerRequestedFor;
     private string securityCode = string.Empty;
@@ -135,7 +135,7 @@ internal sealed partial class MessageApp
             {
                 if (members[memberIndex].UserId == userIds[index])
                 {
-                    name = DirectMessagesStore.MemberLabel(members[memberIndex]);
+                    name = store.MemberLabel(members[memberIndex]);
                     break;
                 }
             }
@@ -172,7 +172,7 @@ internal sealed partial class MessageApp
         var lineGap = 7f * scale;
         var cardHeight = pad * 2f + lineHeight * 4f + lineGap * 3f;
         var cardMax = new Vector2(origin.X + width, origin.Y + cardHeight);
-        ui.Card(drawList, origin, cardMax, Metrics.Radius.Md * scale);
+        ui.Card(drawList, origin, cardMax, Metrics.Radius.Grouped * scale);
         var centerX = (origin.X + cardMax.X) * 0.5f;
         var lineTop = origin.Y + pad;
         var remaining = code.AsSpan();
@@ -198,7 +198,7 @@ internal sealed partial class MessageApp
         var hintOrigin = ImGui.GetCursorScreenPos();
         var hint = copiedTimer > 0f
             ? Loc.T(L.Friends.Copied)
-            : Loc.T(L.Encryption.SecurityCodeHint, DirectMessagesStore.DisplayTitle(conversation));
+            : Loc.T(L.Encryption.SecurityCodeHint, store.DisplayTitle(conversation));
         var hintHeight = Typography.DrawWrappedCentered(new Vector2(hintOrigin.X + width * 0.5f, hintOrigin.Y), hint,
             copiedTimer > 0f ? ink.AccentLink : ink.MutedInk, TextStyles.Footnote, width - 24f * scale);
         ImGui.SetCursorScreenPos(hintOrigin);
@@ -313,7 +313,7 @@ internal sealed partial class MessageApp
         var titleHeight = Typography.LineHeight(RowTitleStyle);
         var subHeight = Typography.LineHeight(RowSubStyle);
         var top = row.Center.Y - (titleHeight + RowLineGap * scale + subHeight) * 0.5f;
-        UserName.Draw(drawList, "messageapp.encryption.member." + member.UserId, DirectMessagesStore.MemberLabel(member), member.Badges,
+        UserName.Draw(drawList, "messageapp.encryption.member." + member.UserId, store.MemberLabel(member), member.Badges,
             member.BadgeIds, textLeft, top, textMaxWidth, RowTitleStyle, ink.TitleInk, rowHovering, theme);
         Typography.Draw(drawList, new Vector2(textLeft, top + titleHeight + RowLineGap * scale),
             Typography.FitText(Loc.T(hasKey ? L.Encryption.MemberReady : L.Encryption.MemberNoKey), textMaxWidth,

@@ -18,7 +18,7 @@ internal static class SubmitField
         var pillMin = new Vector2(bar.Min.X, bar.Center.Y - PillHalfHeight * scale);
         var pillMax = new Vector2(bar.Max.X, bar.Center.Y + PillHalfHeight * scale);
         var radius = (pillMax.Y - pillMin.Y) * 0.5f;
-        Squircle.Fill(drawList, pillMin, pillMax, radius, ImGui.GetColorU32(theme.GroupedCard));
+        Squircle.Fill(drawList, pillMin, pillMax, radius, ImGui.GetColorU32(Surfaces.Fill(theme.TextStrong, FillLevel.Tertiary)));
         var glyphCenter = new Vector2(pillMin.X + 16f * scale, bar.Center.Y);
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {
@@ -39,12 +39,14 @@ internal static class SubmitField
         ImGui.SetCursorScreenPos(new Vector2(inputLeft, bar.Center.Y - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(inputRight - inputLeft);
         var submitted = false;
-        Plugin.Fonts.NoticeText(hint);
+        var shownHint = Typography.FitText(hint, inputRight - inputLeft - ImGui.GetStyle().FramePadding.X * 2f,
+            TextStyles.Body);
+        Plugin.Fonts.NoticeText(shownHint);
         Plugin.Fonts.NoticeText(text);
         using (ImRaii.PushColor(ImGuiCol.FrameBg, new Vector4(0f, 0f, 0f, 0f)))
         using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
         {
-            submitted = ImGui.InputTextWithHint(imguiId, hint, ref text, maxLength,
+            submitted = ImGui.InputTextWithHint(imguiId, shownHint, ref text, maxLength,
                 ImGuiInputTextFlags.EnterReturnsTrue);
         }
 
@@ -87,7 +89,7 @@ internal static class SubmitField
         var pillMax = new Vector2(bar.Max.X, bar.Center.Y + halfHeight);
         var rowCenterY = pillMax.Y - rowHeight * 0.5f;
         Squircle.Fill(drawList, pillMin, pillMax, MathF.Min(pillMax.Y - pillMin.Y, rowHeight) * 0.5f,
-            ImGui.GetColorU32(theme.GroupedCard));
+            ImGui.GetColorU32(Surfaces.Fill(theme.TextStrong, FillLevel.Tertiary)));
         var glyphCenter = new Vector2(pillMin.X + 16f * scale, rowCenterY);
         using (ImRaii.PushFont(UiBuilder.IconFont))
         {

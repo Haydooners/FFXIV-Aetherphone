@@ -18,6 +18,7 @@ internal sealed partial class MessageApp
     private const float ProfileRowHeight = 84f;
     private const float ProfileAvatarRadius = 30f;
     private const float FieldHeight = 46f;
+    private const float ActionButtonHeight = Button.LargeHeight;
     private const int NumberMaxLength = 16;
     private const int AliasMaxLength = 40;
     private const int ReasonMaxLength = 500;
@@ -97,7 +98,9 @@ internal sealed partial class MessageApp
             if (query.Length == 0)
             {
                 DrawMyProfileRow(drawList);
-                if (DrawActionRow(drawList, PhoneIcons.UserPlus, Loc.T(L.Message.NewContact)))
+                var addTapped = DrawActionRow(drawList, PhoneIcons.UserPlus, Loc.T(L.Message.NewContact));
+                UiAnchors.Report("message.addcontact", new Rect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax()));
+                if (addTapped)
                 {
                     addError = string.Empty;
                     router.Push(MessageRoute.AddContact);
@@ -280,7 +283,7 @@ internal sealed partial class MessageApp
             Loc.T(L.Friends.EmptyHint), ink.MutedInk, TextStyles.Footnote, aliasRect.Width - 8f * scale);
         var buttonTop = afterFields + 22f * scale;
         var buttonRect = new Rect(new Vector2(area.Min.X + sideInset, buttonTop),
-            new Vector2(area.Max.X - sideInset, buttonTop + fieldHeight));
+            new Vector2(area.Max.X - sideInset, buttonTop + ActionButtonHeight * scale));
         var canAdd = !addBusy && numberDraft.Trim().Length > 0;
         if (ui.PillButton(buttonRect, addBusy ? Loc.T(L.Friends.Adding) : Loc.T(L.Friends.Add), true) && canAdd)
         {
@@ -345,14 +348,15 @@ internal sealed partial class MessageApp
         var drawList = ImGui.GetWindowDrawList();
         var fieldMin = new Vector2(area.Min.X + sideInset, afterBody);
         var fieldMax = new Vector2(area.Max.X - sideInset, afterBody + 118f * scale);
-        ui.Card(drawList, fieldMin, fieldMax, Metrics.Radius.Md * scale);
+        Squircle.Fill(drawList, fieldMin, fieldMax, Metrics.Radius.Md * scale,
+            ImGui.GetColorU32(Surfaces.Fill(ui.Ink, FillLevel.Tertiary)));
         var pad = 12f * scale;
         ImGui.SetCursorScreenPos(fieldMin + new Vector2(pad, pad));
         var inputWidth = fieldMax.X - fieldMin.X - pad * 2f;
         var wrapWidth = inputWidth - ImGui.GetStyle().FramePadding.X * 2f - 4f * scale;
         using (ImRaii.PushColor(ImGuiCol.FrameBg, Transparent))
         using (ImRaii.PushColor(ImGuiCol.Text, ui.TitleInk))
-        using (Plugin.Fonts.Push(1.05f))
+        using (Plugin.Fonts.Push(TextStyles.Body.Scale, TextStyles.Body.Weight))
         {
             SoftWrapField.Multiline("##msgNumberReason", ref reasonDraft, ReasonMaxLength,
                 new Vector2(inputWidth, fieldMax.Y - fieldMin.Y - pad * 2f), wrapWidth);
@@ -362,7 +366,7 @@ internal sealed partial class MessageApp
         {
             ImGui.SetCursorScreenPos(fieldMin + new Vector2(pad + 4f * scale, pad + 2f * scale));
             using (ImRaii.PushColor(ImGuiCol.Text, ui.MutedInk))
-            using (Plugin.Fonts.Push(1.05f))
+            using (Plugin.Fonts.Push(TextStyles.Body.Scale, TextStyles.Body.Weight))
             {
                 Typography.Plain(Loc.T(L.Friends.ReasonHint));
             }
@@ -370,7 +374,7 @@ internal sealed partial class MessageApp
 
         var buttonTop = fieldMax.Y + 18f * scale;
         var buttonRect = new Rect(new Vector2(area.Min.X + sideInset, buttonTop),
-            new Vector2(area.Max.X - sideInset, buttonTop + FieldHeight * scale));
+            new Vector2(area.Max.X - sideInset, buttonTop + ActionButtonHeight * scale));
         var canSend = !requestBusy && !string.IsNullOrWhiteSpace(reasonDraft);
         if (ui.PillButton(buttonRect, requestBusy ? Loc.T(L.Friends.Sending) : Loc.T(L.Friends.SendRequest), true)
             && canSend)

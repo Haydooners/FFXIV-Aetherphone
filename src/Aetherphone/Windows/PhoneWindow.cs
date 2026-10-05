@@ -133,6 +133,7 @@ internal sealed class PhoneWindow : Window
     public override void OnClose()
     {
         PersistPositions();
+        Plugin.LiveBackdrop.Release();
         shell.OnClosed();
     }
 
@@ -140,13 +141,16 @@ internal sealed class PhoneWindow : Window
     {
         FrameClock.Advance(ImGui.GetFrameCount(), ImGui.GetIO().DeltaTime);
         shell.PrepareFrame(FrameClock.Delta);
+        Plugin.LiveBackdrop.Prepare();
         var portraitWidth = Components.PhoneBounds.ClampWidth(configuration.PhoneWidth);
         var landscapeWidth = Components.PhoneBounds.LandscapeWidth(configuration);
         var turn = shell.Turn;
         var phase = shell.MinimizePhase;
         var minimized = phase == MinimizePhase.Minimized;
         var landscape = turn.ShowsLandscape;
-        var zoom = minimized ? 1f : PhoneSizeCatalog.ZoomFor(landscape ? landscapeWidth : portraitWidth);
+        var minimizedZoom = shell.MinimizedZoom;
+        UiScale.SetMinimized(minimizedZoom);
+        var zoom = minimized ? minimizedZoom : PhoneSizeCatalog.ZoomFor(landscape ? landscapeWidth : portraitWidth);
         UiScale.SetPhone(zoom);
         Plugin.Fonts.SetPhoneZoom(zoom);
         var dockSize = shell.MinimizedSize;
@@ -349,6 +353,33 @@ internal sealed class PhoneWindow : Window
             Math.Clamp(position.Y, viewport.Pos.Y, MathF.Max(viewport.Pos.Y, maxPosition.Y)));
     }
 
+    private static void PlayKeystrokeSound()
+    {
+        var io = ImGui.GetIO();
+        if (!io.WantTextInput || !ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows))
+        {
+            return;
+        }
+
+        if (ImGui.IsKeyPressed(ImGuiKey.Backspace) || ImGui.IsKeyPressed(ImGuiKey.Delete))
+        {
+            UiFeedback.Play(UiSound.KeystrokeDelete);
+            return;
+        }
+
+        if (ImGui.IsKeyPressed(ImGuiKey.Space) || ImGui.IsKeyPressed(ImGuiKey.Enter, false) ||
+            ImGui.IsKeyPressed(ImGuiKey.KeypadEnter, false))
+        {
+            UiFeedback.Play(UiSound.KeystrokeSpace);
+            return;
+        }
+
+        if (io.InputQueueCharacters.Size > 0)
+        {
+            UiFeedback.Play(UiSound.Keystroke);
+        }
+    }
+
     public override void Draw()
     {
         var device = DeviceRect();
@@ -357,12 +388,7 @@ internal sealed class PhoneWindow : Window
         Components.UiInteract.SetWindowHovered(ImGui.IsWindowHovered(
             ImGuiHoveredFlags.ChildWindows | ImGuiHoveredFlags.AllowWhenBlockedByActiveItem));
         Components.UiInteract.SetWindowFocused(ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows));
-        var io = ImGui.GetIO();
-        if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && io.WantTextInput &&
-            io.InputQueueCharacters.Size > 0)
-        {
-            UiFeedback.Play(UiSound.Keystroke);
-        }
+        PlayKeystrokeSound();
 
         Plugin.Updates.Poll();
         using (Plugin.Fonts.Push(1f))

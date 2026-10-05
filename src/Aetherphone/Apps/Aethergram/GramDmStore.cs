@@ -19,7 +19,6 @@ internal sealed class GramDmStore : ChatThreadStoreBase<GramMessageDto, GramThre
 {
     private readonly GramDmClient client;
     private readonly SocialClient social;
-    private readonly RealtimeSignalBus signals;
     private readonly ConcurrentDictionary<string, PostDto?> sharedPosts = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, byte> sharedPostFetches = new(StringComparer.Ordinal);
     private volatile bool gramKeysHydrated;
@@ -28,25 +27,13 @@ internal sealed class GramDmStore : ChatThreadStoreBase<GramMessageDto, GramThre
         MediaClient media, NotificationService notifications, KeyVault vault, ConversationKeyStore keys,
         DecryptedHistoryStore chatHistory, PhoneVisibility visibility, RealtimeSignalBus signals,
         AppInstaller installer)
-        : base("AethergramDm", session, safety, media, notifications, vault, keys, chatHistory, visibility,
+        : base("AethergramDm", session, safety, media, notifications, vault, keys, chatHistory, visibility, signals,
             installer.Gate("aethergram"))
     {
         this.client = client;
         this.social = social;
-        this.signals = signals;
         signals.GramPinged += OnGramPinged;
-        signals.ConnectedChanged += OnRealtimeConnected;
     }
-
-    private void OnRealtimeConnected(bool active)
-    {
-        if (active)
-        {
-            InboxCadence.RequestImmediate();
-        }
-    }
-
-    public override bool RealtimePushActive => signals.RealtimeActive;
 
     private void OnGramPinged()
     {
@@ -130,6 +117,7 @@ internal sealed class GramDmStore : ChatThreadStoreBase<GramMessageDto, GramThre
     protected override string ImageUploadScope => "gram-dm";
     protected override string VoiceUploadScope => "gram-voice";
     protected override string ReportTargetType => "gram_message";
+    protected override string TypingSignalType => Core.Telephony.Contracts.SignalType.GramTyping;
 
     protected override string ScopeFor(string threadId) =>
         ConversationKeyStore.GramScope(ConversationKeyStore.Pair(MyUserId, threadId));
@@ -178,10 +166,10 @@ internal sealed class GramDmStore : ChatThreadStoreBase<GramMessageDto, GramThre
 
     protected override async Task<GramMessageDto?> SendMessageRequestAsync(string threadId, string body, int kind,
         CancellationToken token, string? mediaKey, int mediaWidth, int mediaHeight, int encVersion,
-        string? commitmentTag, string? replyToId, int durationSecs)
+        string? commitmentTag, string? replyToId, int durationSecs, Action<AepFailure>? onFailure = null)
     {
         var sent = await client.SendMessageAsync(threadId, body, kind, token, mediaKey, mediaWidth, mediaHeight,
-            encVersion, commitmentTag, replyToId, durationSecs).ConfigureAwait(false);
+            encVersion, commitmentTag, replyToId, durationSecs, onFailure: onFailure).ConfigureAwait(false);
         if (sent is not null)
         {
             AcceptThreadIfPending(threadId);
@@ -217,7 +205,7 @@ internal sealed class GramDmStore : ChatThreadStoreBase<GramMessageDto, GramThre
                     EnvelopeCodec.VersionEnvelope, encoded.CommitmentTag, null, 0).ConfigureAwait(false);
                 if (sent is not null)
                 {
-                    cipher.RecordDecrypted(sent.Id, postId, encoded.FrankingKeyBase64);
+                    cipher.RecordDecrypted(sent.Id, encoded.Envelope, postId, encoded.FrankingKeyBase64);
                     sent = sent with { Body = postId };
                 }
             }
@@ -268,7 +256,7 @@ internal sealed class GramDmStore : ChatThreadStoreBase<GramMessageDto, GramThre
                     EnvelopeCodec.VersionEnvelope, encoded.CommitmentTag, null, 0, storyId).ConfigureAwait(false);
                 if (sent is not null)
                 {
-                    cipher.RecordDecrypted(sent.Id, text, encoded.FrankingKeyBase64);
+                    cipher.RecordDecrypted(sent.Id, encoded.Envelope, text, encoded.FrankingKeyBase64);
                     sent = sent with { Body = text };
                 }
             }
@@ -400,6 +388,8 @@ internal sealed class GramDmStore : ChatThreadStoreBase<GramMessageDto, GramThre
 
     protected override int ThreadUnreadCountOf(GramThreadDto thread) => thread.UnreadCount;
 
+    protected override GramThreadDto WithUnreadCleared(GramThreadDto thread) => thread with { UnreadCount = 0 };
+
     protected override PhoneNotification BuildInboxNotification(GramThreadDto thread)
     {
         var name = string.IsNullOrEmpty(thread.OtherDisplayName) ? thread.OtherHandle : thread.OtherDisplayName;
@@ -414,7 +404,7 @@ internal sealed class GramDmStore : ChatThreadStoreBase<GramMessageDto, GramThre
     {
         return thread.LastMessageKind == PostShareKind
             || thread.LastMessageEncVersion != EnvelopeCodec.VersionEnvelope
-            || cipher.IsPreviewResolved(thread.OtherUserId, thread.LastMessageAtUnix);
+            || cipher.IsPreviewResolved(thread.OtherUserId, thread.LastMessagePreview);
     }
 
     protected override GramMessageDto[] DecorateMessages(string threadId, GramMessageDto[] items)
@@ -477,8 +467,8 @@ internal sealed class GramDmStore : ChatThreadStoreBase<GramMessageDto, GramThre
             var scope = ScopeFor(item.OtherUserId);
             decorated[index] = item with
             {
-                LastMessagePreview = cipher.ResolvePreview(item.OtherUserId, scope, item.LastMessageAtUnix,
-                    item.LastMessagePreview, item.LastMessageSenderId),
+                LastMessagePreview = cipher.ResolvePreview(item.OtherUserId, scope, item.LastMessagePreview,
+                    item.LastMessageSenderId),
             };
         }
 
@@ -487,19 +477,17 @@ internal sealed class GramDmStore : ChatThreadStoreBase<GramMessageDto, GramThre
 
     public byte[]? DecryptMedia(GramMessageDto message, byte[] sealedBytes, string threadPartnerId)
     {
-        if (message.EncVersion != EnvelopeCodec.VersionEnvelope
-            || !cipher.TryGetGeneration(message.Id, out var generation))
+        if (message.EncVersion != EnvelopeCodec.VersionEnvelope)
         {
             return null;
         }
 
-        var scope = ScopeFor(threadPartnerId);
-        return cipher.TryDecryptMedia(scope, generation, sealedBytes, message.SenderId, message.Kind);
+        return cipher.TryDecryptMedia(message.Id, ScopeFor(threadPartnerId), sealedBytes, message.SenderId,
+            message.Kind);
     }
 
     protected override void DisposeCore()
     {
         signals.GramPinged -= OnGramPinged;
-        signals.ConnectedChanged -= OnRealtimeConnected;
     }
 }

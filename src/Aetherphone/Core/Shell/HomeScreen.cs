@@ -12,10 +12,12 @@ namespace Aetherphone.Core.Shell;
 
 internal sealed class HomeScreen
 {
+    private const float FolderLabelAlpha = 0.35f;
+
     private readonly HomeLayoutService layout;
     private readonly Pager pager = new();
     private readonly FolderOverlay folder;
-    private readonly WidgetSizeMenu sizeMenu;
+    private readonly WidgetContextMenu widgetMenu;
     private readonly WidgetGallery gallery;
     private readonly TilePoseCache poses = new();
     private readonly HomeInteractionController interaction;
@@ -23,19 +25,23 @@ internal sealed class HomeScreen
     private readonly HomeChrome chrome;
     private readonly SpotlightOverlay spotlight;
     private readonly Configuration configuration;
+    private float sidePaddingUnits = PhoneTheme.Default.SidePadding;
 
-    public HomeScreen(IReadOnlyList<IPhoneApp> apps, WidgetRegistry widgets, ShortcutStore shortcuts,
-        ShortcutRunner runner, Configuration configuration, ConfirmService confirm, SpotlightIndex spotlightIndex)
+    public HomeScreen(IReadOnlyList<IPhoneApp> apps, WidgetRegistry widgets, WidgetActions widgetActions,
+        ShortcutStore shortcuts, ShortcutRunner runner, Configuration configuration, ConfirmService confirm,
+        SpotlightIndex spotlightIndex)
     {
         this.configuration = configuration;
+        var widgetHost = new WidgetHost(widgetActions, configuration);
         layout = new HomeLayoutService(apps, widgets, shortcuts, configuration);
         folder = new FolderOverlay(layout, shortcuts, runner, configuration);
-        sizeMenu = new WidgetSizeMenu(layout);
-        gallery = new WidgetGallery(layout, widgets);
-        spotlight = new SpotlightOverlay(spotlightIndex);
-        interaction = new HomeInteractionController(layout, widgets, pager, folder, sizeMenu, gallery, spotlight,
-            poses, runner);
-        renderer = new HomeGridRenderer(layout, pager, poses, interaction, shortcuts, confirm, configuration);
+        widgetMenu = new WidgetContextMenu(layout, widgetHost);
+        gallery = new WidgetGallery(layout, widgets, widgetHost);
+        spotlight = new SpotlightOverlay(spotlightIndex, configuration);
+        interaction = new HomeInteractionController(layout, pager, folder, widgetMenu, gallery, spotlight, poses,
+            runner, widgetHost);
+        renderer = new HomeGridRenderer(layout, pager, poses, interaction, shortcuts, confirm, configuration,
+            widgetHost);
         chrome = new HomeChrome(pager, interaction, spotlight);
     }
 
@@ -49,13 +55,14 @@ internal sealed class HomeScreen
         var delta = FrameClock.Delta;
         interaction.Advance(delta);
         var editReserve = interaction.Editing && motion.Interactive ? HomeMetrics.EditToolbarBandUnits : 0f;
+        sidePaddingUnits = theme.SidePadding;
         var metrics = HomeMetrics.Compute(content, HomeLayoutService.Columns, layout.Rows, UiScale.Current,
-            motion, editReserve);
+            motion, sidePaddingUnits, editReserve);
         pager.Step(delta, interaction.DisplayPageCount());
         var chromeAlpha = 1f - motion.Recession;
         if (motion.Interactive)
         {
-            interaction.HandleInput(content, metrics, navigation, delta);
+            interaction.HandleInput(content, metrics, navigation, theme, delta);
         }
         else
         {
@@ -63,10 +70,10 @@ internal sealed class HomeScreen
         }
 
         interaction.AdvanceTap(delta);
-        interaction.UpdateMagnify(content, motion, delta);
+        interaction.UpdatePointer(content, metrics, motion, delta);
         if (chromeAlpha > 0.01f)
         {
-            var labelAlpha = folder.Active ? 0.35f : 1f;
+            var labelAlpha = Easing.Lerp(1f, FolderLabelAlpha, folder.Presence);
             var tileDrawList = ImGui.GetWindowDrawList();
             var tileVertexStart = tileDrawList.VtxBuffer.Size;
             renderer.DrawPages(metrics, theme, delta, labelAlpha, configuration.ShowAppNames, motion);
@@ -82,13 +89,21 @@ internal sealed class HomeScreen
 
         var ghostDrawList = ImGui.GetWindowDrawList();
         ghostDrawList.PushClipRect(screen.Min, screen.Max, true);
-        renderer.DrawSettleGhost(metrics, theme, delta);
         renderer.DrawDragGhost(metrics, theme, delta);
         ghostDrawList.PopClipRect();
-        folder.Draw(content, metrics, theme, navigation, interaction.Editing, pager.Page, delta);
-        DrawSizeMenu(content, metrics, theme, delta);
-        gallery.Draw(screen, theme, delta, metrics.Scale);
-        spotlight.Draw(screen, theme, navigation, delta, metrics.Scale);
+        folder.Draw(screen, content, metrics, theme, navigation, interaction.Editing, pager.Page, delta);
+        DrawWidgetMenu(content, metrics, theme, delta);
+        widgetMenu.DrawSheets(screen, theme, delta);
+        gallery.Draw(screen, theme, delta, metrics);
+        if (gallery.TryTakePlacement(out var placed, out var placedCenter, out var placedScale))
+        {
+            interaction.SettleFrom(placed, placedCenter, placedScale, metrics);
+        }
+
+        ghostDrawList.PushClipRect(screen.Min, screen.Max, true);
+        renderer.DrawSettleGhost(metrics, theme, delta);
+        ghostDrawList.PopClipRect();
+        spotlight.Draw(screen, content, theme, navigation, delta, metrics.Scale);
         if (!motion.Interactive)
         {
             spotlight.Close();
@@ -99,7 +114,7 @@ internal sealed class HomeScreen
     {
         gallery.CloseImmediate();
         spotlight.CloseImmediate();
-        sizeMenu.CloseImmediate();
+        widgetMenu.CloseImmediate();
         interaction.ResetForReveal();
         var page = PageContaining(appId);
         if (page >= 0)
@@ -112,7 +127,7 @@ internal sealed class HomeScreen
     {
         kind = LaunchOrigin.Icon;
         var metrics = HomeMetrics.Compute(content, HomeLayoutService.Columns, layout.Rows, UiScale.Current,
-            HomeMotion.Rest);
+            HomeMotion.Rest, sidePaddingUnits);
         var dock = layout.Dock;
         for (var index = 0; index < dock.Count; index++)
         {
@@ -182,21 +197,20 @@ internal sealed class HomeScreen
         return -1;
     }
 
-    private void DrawSizeMenu(Rect content, in HomeMetrics metrics, PhoneTheme theme, float delta)
+    private void DrawWidgetMenu(Rect content, in HomeMetrics metrics, PhoneTheme theme, float delta)
     {
-        if (!sizeMenu.Active)
+        if (widgetMenu.Tile is not { } tile)
         {
             return;
         }
 
-        var tile = sizeMenu.Tile!;
         var anchor = interaction.CommittedRect(metrics, tile);
         if (anchor is not { } rect)
         {
-            sizeMenu.CloseImmediate();
+            widgetMenu.CloseImmediate();
             return;
         }
 
-        sizeMenu.Draw(content, rect, theme, delta, metrics.Scale);
+        widgetMenu.Draw(content, rect, theme, delta, metrics.Scale);
     }
 }

@@ -1,91 +1,114 @@
 using Aetherphone.Core;
-using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Game;
+using Aetherphone.Core.Geography;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Media;
-using Aetherphone.Core.Net;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Onboarding;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Translation;
 using Aetherphone.Core.Venues;
+using Aetherphone.Windows;
 using Aetherphone.Windows.Components;
+using Aetherphone.Windows.Widgets;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
-using Dalamud.Plugin.Services;
 
 namespace Aetherphone.Apps.Venues;
 
-internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
+internal sealed partial class VenuesApp : IResumableApp, ISpotlightVenues
 {
-    private const float SearchHeight = 46f;
-    private const float SegmentHeight = 44f;
-    private const float SegmentTrackHeight = 38f;
-    private const float ChipRowHeight = 44f;
-    private const int MaxCards = 80;
-    private int visibleCards = MaxCards;
+    private const int PageSize = 30;
+    private const int TabCount = 4;
+
+    private static readonly SocialInk Ink = new(AppPalettes.Venues);
+
     public string Id => "venues";
     public string DisplayName => Loc.T(L.Apps.Venues);
     public string Glyph => "V";
     public int BadgeCount => 0;
+
     private readonly VenuesService venues;
-    private readonly MediaCache media;
-    private readonly HttpService http;
+    private readonly RemoteImageCache images;
+    private readonly ArtworkCache artwork;
     private readonly GameData gameData;
     private readonly Configuration configuration;
     private readonly ConfirmService confirm;
     private readonly TranslationService translation;
-    private readonly Dictionary<string, string> venueLanguages = new(StringComparer.Ordinal);
-    private readonly ArtworkCache artwork;
     private readonly AppSkin ui = new(AppPalettes.Venues);
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabItems = new TabItem[TabCount];
+    private readonly NavBarButton[] rootButtons = new NavBarButton[1];
     private readonly ViewRouter<VenueRoute> router;
     private readonly RouterDraw<VenueRoute> drawView;
     private readonly Action back;
-    private readonly List<VenueEvent> filtered = new();
+    private readonly Action refreshAction;
+    private readonly VenueSections sections = new();
+    private readonly VenueQuery listQuery = new();
+    private readonly VenueQuery searchQuery = new();
+    private readonly VenueLabelCache labels = new();
+    private readonly VenueTextList featuredText = new("venues.featured.");
+    private readonly VenueTextList liveText = new("venues.live.");
+    private readonly VenueTextList laterText = new("venues.later.");
+    private readonly VenueTextList nearText = new("venues.near.");
+    private readonly VenueTextList recentText = new("venues.recent.");
+    private readonly VenueTextList eventsText = new("venues.events.", true);
+    private readonly VenueTextList savedText = new("venues.saved.");
+    private readonly VenueTextList listText = new("venues.list.");
+    private readonly VenueTextList searchText = new("venues.search.");
     private readonly List<string> selectedTags = new();
-    private readonly SortedSet<string> tagSet = new(StringComparer.OrdinalIgnoreCase);
-    private readonly List<string> tagList = new();
-    private readonly string[] timeLabels = new string[4];
+    private readonly Dictionary<string, string> venueLanguages = new(StringComparer.Ordinal);
+    private ResolvedScope resolvedScope;
+    private int resolvedScopeFrame = -1;
+    private VenueTab activeTab = VenueTab.Discover;
     private string search = string.Empty;
-    private bool favoritesOnly;
-    private readonly KineticScroller chipsScroller = new();
-    private bool chipsPressed;
-    private bool lifestreamAvailable;
-    private float detailScrollY;
+    private int favoritesStamp;
+    private int recentsStamp;
+    private int tagsStamp;
+    private int visibleCards = PageSize;
     private string pendingVenueId = string.Empty;
+    private bool railOwnsPointer;
     private PhoneTheme theme = PhoneTheme.Default;
     private INavigator navigation = null!;
+    private CachedText filtersLabel;
 
-    public VenuesApp(VenuesService venues, MediaCache media, HttpService http, ArtworkCache artwork,
-        GameData gameData, Configuration configuration, ConfirmService confirm,
-        TranslationService translation)
+    public VenuesApp(VenuesService venues, RemoteImageCache images, ArtworkCache artwork, GameData gameData,
+        Configuration configuration, ConfirmService confirm, TranslationService translation)
     {
-        this.confirm = confirm;
-        this.translation = translation;
         this.venues = venues;
-        this.media = media;
-        this.http = http;
+        this.images = images;
+        this.artwork = artwork;
         this.gameData = gameData;
         this.configuration = configuration;
-        this.artwork = artwork;
-        router = new ViewRouter<VenueRoute>(VenueRoute.List);
+        this.confirm = confirm;
+        this.translation = translation;
+        router = new ViewRouter<VenueRoute>(VenueRoute.Home);
+        MigrateScope();
         drawView = DrawView;
         back = () => router.Pop();
+        refreshAction = () => venues.EnsureFresh(true);
+        scopeScreen = new GeoScopeScreen(Ink, ui, TextStyles.Headline);
     }
+
+    private VenueArt Art => new(images, artwork);
 
     public void OnOpened()
     {
         router.Reset();
+        activeTab = VenueTab.Discover;
         search = string.Empty;
-        lifestreamAvailable = LifestreamBridge.IsAvailable();
+        searchQueryText = string.Empty;
+        ResetScrollState();
         venues.EnsureFresh(false);
     }
 
+    public void OnResumed() => venues.EnsureFresh(false);
+
     public void OnClosed()
     {
-        router.Reset();
-        search = string.Empty;
+        tagSearch = string.Empty;
+        tagQuery = string.Empty;
     }
 
     public void RequestVenue(string venueId) => pendingVenueId = venueId;
@@ -96,10 +119,18 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         navigation = context.Navigation;
         ui.Theme = theme;
         venues.EnsureFresh(false);
+        var scale = UiScale.Current;
+        ui.Backdrop(SceneChrome.ScreenFrom(context.Content, theme, scale));
         ConsumePendingVenue();
-        var screen = SceneChrome.ScreenFrom(context.Content, theme, UiScale.Current);
-        ui.Backdrop(screen);
         router.Draw(context.Content, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+        if (router.Depth == 1 && venues.Events.Count > 0)
+        {
+            TourHolds.Release(Id);
+        }
+        else
+        {
+            TourHolds.Hold(Id);
+        }
     }
 
     private void ConsumePendingVenue()
@@ -109,449 +140,381 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
             return;
         }
 
-        var wanted = pendingVenueId;
-        pendingVenueId = string.Empty;
         var events = venues.Events;
         for (var index = 0; index < events.Count; index++)
         {
-            if (string.Equals(events[index].Id, wanted, StringComparison.Ordinal))
+            if (!string.Equals(events[index].Id, pendingVenueId, StringComparison.Ordinal))
             {
-                detailScrollY = 0f;
-                router.Push(VenueRoute.Detail(events[index]), false);
+                continue;
+            }
+
+            pendingVenueId = string.Empty;
+            var current = router.Current;
+            if (current.Screen == VenueScreen.Detail &&
+                string.Equals(current.Venue?.Id, events[index].Id, StringComparison.Ordinal))
+            {
                 return;
             }
+
+            router.Reset();
+            OpenDetail(events[index], TabTitle(), false);
+            return;
+        }
+
+        if (venues.State == VenueState.Failed || (venues.State == VenueState.Ready && !venues.Busy))
+        {
+            pendingVenueId = string.Empty;
         }
     }
 
     private void DrawView(VenueRoute route, Rect area, int depth)
     {
         ui.Body(area);
+        var context = new PhoneContext(area, theme, navigation);
         switch (route.Screen)
         {
-            case VenueScreen.Tags:
-                DrawTagPicker(area);
+            case VenueScreen.Filters:
+                DrawFilters(context, route);
                 break;
             case VenueScreen.Detail:
-                DrawDetail(area, route.Venue!);
+                DrawDetail(context, route);
+                break;
+            case VenueScreen.Scope:
+                DrawScopeScreen(context, route);
+                break;
+            case VenueScreen.List:
+                DrawList(context, route);
                 break;
             default:
-                DrawRoot(area);
+                DrawHome(context);
                 break;
         }
     }
 
-    private string CurrentDataCenter()
-    {
-        if (configuration.VenueAllDataCenters)
-        {
-            return string.Empty;
-        }
-
-        return gameData.DataCenterName(gameData.LocalCurrentWorldId);
-    }
-
-    private void DrawRoot(Rect area)
+    private void DrawHome(in PhoneContext context)
     {
         var scale = UiScale.Current;
-        DrawRootHeader(area, scale);
-        var pad = Metrics.Space.Lg * scale;
-        var top = area.Min.Y + AppHeader.Height * scale;
-        var searchBar = new Rect(new Vector2(area.Min.X + pad, top),
-            new Vector2(area.Max.X - pad, top + SearchHeight * scale));
-        UiAnchors.Report("venues.search", searchBar);
-        SearchField.Draw(searchBar, "##venueSearch", Loc.T(L.Venues.Search), ref search, AppPalettes.Venues, 80);
-        var segmentBar = new Rect(new Vector2(area.Min.X + pad, searchBar.Max.Y),
-            new Vector2(area.Max.X - pad, searchBar.Max.Y + SegmentHeight * scale));
-        UiAnchors.Report("venues.time", segmentBar);
-        DrawTimeSegments(segmentBar);
-        var chipBar = new Rect(new Vector2(area.Min.X + pad, segmentBar.Max.Y + 2f * scale),
-            new Vector2(area.Max.X - pad, segmentBar.Max.Y + 2f * scale + ChipRowHeight * scale));
-        UiAnchors.Report("venues.chips", chipBar);
-        DrawFilterChips(chipBar);
-        var body = new Rect(new Vector2(area.Min.X, chipBar.Max.Y), area.Max);
-        using (AppSurface.Begin(body))
+        RefreshSections();
+        using (TabBar.ReserveContent(scale))
         {
-            DrawList(body);
+            switch (activeTab)
+            {
+                case VenueTab.Live:
+                    DrawLiveTab(context);
+                    break;
+                case VenueTab.Events:
+                    DrawEventsTab(context);
+                    break;
+                case VenueTab.Saved:
+                    DrawSavedTab(context);
+                    break;
+                default:
+                    DrawDiscoverTab(context);
+                    break;
+            }
         }
+
+        DrawTabBar(context.Content);
     }
 
-    private void DrawRootHeader(Rect area, float scale)
-    {
-        var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
-        Typography.DrawCentered(new Vector2(area.Center.X, rowCenterY), DisplayName, AppPalettes.Venues.TitleInk, 1.3f,
-            FontWeight.Bold);
-        var actionCenter = new Vector2(area.Max.X - 22f * scale, rowCenterY);
-        if (venues.State == VenueState.Loading)
+    private string TabTitle() =>
+        activeTab switch
         {
-            LoadingPulse.Spinner(actionCenter, 8f * scale, ui.Accent);
-            return;
-        }
+            VenueTab.Live => Loc.T(L.Venues.LiveNowLabel),
+            VenueTab.Events => Loc.T(L.Venues.Events),
+            VenueTab.Saved => Loc.T(L.Venues.Favorites),
+            _ => DisplayName,
+        };
 
-        if (ui.IconButton(actionCenter, 14f * scale, IconGlyph.Of(FontAwesomeIcon.Sync), AppPalettes.Venues.BodyInk,
-                AppSkin.Transparent, 0.9f))
-        {
-            venues.EnsureFresh(true);
-        }
-    }
-
-    private void DrawTimeSegments(Rect bar)
+    private void DrawTabBar(Rect area)
     {
-        timeLabels[0] = TimeFilterLabel(VenueTimeFilter.LiveNow);
-        timeLabels[1] = TimeFilterLabel(VenueTimeFilter.Today);
-        timeLabels[2] = TimeFilterLabel(VenueTimeFilter.Upcoming);
-        timeLabels[3] = TimeFilterLabel(VenueTimeFilter.All);
-        var selected = SegmentStrip.Draw("venues.timeFilter", bar, timeLabels, (int)configuration.VenueTimeFilter,
-            AppPalettes.Venues, SegmentTrackHeight, 0.9f);
-        if (selected == (int)configuration.VenueTimeFilter)
+        tabItems[(int)VenueTab.Discover] = new TabItem(Loc.T(L.Venues.Discover), PhoneIcons.Compass,
+            PhoneIcons.CompassFilled);
+        tabItems[(int)VenueTab.Live] = new TabItem(Loc.T(L.Venues.LiveNow), PhoneIcons.Flame, PhoneIcons.FlameFilled,
+            sections.Live.Count, "venues.live");
+        tabItems[(int)VenueTab.Events] = new TabItem(Loc.T(L.Venues.Events), PhoneIcons.Calendar,
+            PhoneIcons.CalendarFilled);
+        tabItems[(int)VenueTab.Saved] = new TabItem(Loc.T(L.Venues.Favorites), PhoneIcons.Star, PhoneIcons.StarFilled);
+        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab);
+        if (result.Tapped < 0)
         {
             return;
         }
 
-        configuration.VenueTimeFilter = (VenueTimeFilter)selected;
+        SelectTab((VenueTab)result.Tapped);
+    }
+
+    private void SelectTab(VenueTab tab)
+    {
+        if (tab == activeTab)
+        {
+            return;
+        }
+
+        activeTab = tab;
+        visibleCards = PageSize;
+        UiFeedback.Play(UiSound.Tap);
+    }
+
+    private void EndRootTitle(in NavBarFrame navBar, in PhoneContext context, string id, string title,
+        bool filters = true)
+    {
+        rootButtons[0] = new NavBarButton(PhoneIcons.AdjustmentsHorizontal, FiltersLabel());
+        var pressed = AppHeader.EndLargeTitle(in navBar, context, id, title, NavBarStyle.From(ui),
+            rootButtons.AsSpan(0, filters ? 1 : 0));
+        if (pressed == 0)
+        {
+            OpenFilters(title);
+        }
+    }
+
+    private string FiltersLabel()
+    {
+        var count = ActiveFilterCount;
+        if (count == 0)
+        {
+            return Loc.T(L.Venues.Filters);
+        }
+
+        return filtersLabel.IsCurrent(count)
+            ? filtersLabel.Value
+            : filtersLabel.Store(count, Loc.T(L.Venues.FiltersCount, count.ToString(Loc.Culture)));
+    }
+
+    private void OpenFilters(string backTitle)
+    {
+        UiFeedback.Play(UiSound.Tap);
+        tagSearch = string.Empty;
+        tagQuery = string.Empty;
+        tagsExpanded = false;
+        router.Push(VenueRoute.Filters(backTitle));
+    }
+
+    private void OpenScope(string backTitle)
+    {
+        UiFeedback.Play(UiSound.Tap);
+        router.Push(VenueRoute.Scope(backTitle));
+    }
+
+    private readonly record struct ResolvedScope(IReadOnlySet<string>? DataCenters, string World, string Label);
+
+    private ResolvedScope ResolveScope()
+    {
+        var frame = ImGui.GetFrameCount();
+        if (frame == resolvedScopeFrame)
+        {
+            return resolvedScope;
+        }
+
+        resolvedScopeFrame = frame;
+        resolvedScope = ComputeScope();
+        return resolvedScope;
+    }
+
+    private ResolvedScope ComputeScope()
+    {
+        var everywhere = new ResolvedScope(null, string.Empty, Loc.T(L.Venues.Everywhere));
+        var value = configuration.VenueScopeValue;
+        switch (configuration.VenueScope)
+        {
+            case GeoScopeKind.Everywhere:
+                return everywhere;
+            case GeoScopeKind.Region:
+                return int.TryParse(value, out var regionId) && WorldGeography.RegionById(regionId) is { } picked
+                    ? new ResolvedScope(picked.Set, string.Empty, Loc.T(picked.Label))
+                    : everywhere;
+            case GeoScopeKind.DataCenter:
+                return WorldGeography.DataCenter(value) is { } dataCenter
+                    ? new ResolvedScope(dataCenter.Set, string.Empty, dataCenter.Name)
+                    : everywhere;
+            case GeoScopeKind.World:
+                return WorldGeography.DataCenterOfWorld(value) is { } worldCenter
+                    ? new ResolvedScope(worldCenter.Set, WorldName(worldCenter, value), WorldName(worldCenter, value))
+                    : everywhere;
+        }
+
+        var homeWorld = CurrentWorld();
+        var home = WorldGeography.DataCenterOfWorld(homeWorld);
+        if (home is null)
+        {
+            return everywhere;
+        }
+
+        return configuration.VenueScope switch
+        {
+            GeoScopeKind.MyWorld => new ResolvedScope(home.Set, homeWorld, homeWorld),
+            GeoScopeKind.MyRegion when WorldGeography.RegionById(home.RegionId) is { } region =>
+                new ResolvedScope(region.Set, string.Empty, Loc.T(region.Label)),
+            _ => new ResolvedScope(home.Set, string.Empty, home.Name),
+        };
+    }
+
+    private static string WorldName(GeoDataCenterInfo dataCenter, string world)
+    {
+        for (var index = 0; index < dataCenter.Worlds.Length; index++)
+        {
+            if (string.Equals(dataCenter.Worlds[index], world, StringComparison.OrdinalIgnoreCase))
+            {
+                return dataCenter.Worlds[index];
+            }
+        }
+
+        return world;
+    }
+
+    private void MigrateScope()
+    {
+        if (!configuration.VenueAllDataCenters)
+        {
+            return;
+        }
+
+        configuration.VenueAllDataCenters = false;
+        configuration.VenueScope = GeoScopeKind.Everywhere;
         configuration.Save();
     }
 
-    private void DrawFilterChips(Rect bar)
+    private void SetScope(GeoScopeKind kind, string value)
     {
-        var scale = UiScale.Current;
-        var gap = Metrics.Space.Sm * scale;
-        var dataCenter = CurrentDataCenter();
-        var dcLabel = dataCenter.Length > 0 ? dataCenter : Loc.T(L.Venues.AllDataCenters);
-        var sourceLabel = SourceFilterLabel(configuration.VenueSourceFilter);
-        var tagsLabel = selectedTags.Count > 0
-            ? $"{Loc.T(L.Venues.Tags)} · {selectedTags.Count}"
-            : Loc.T(L.Venues.Tags);
-        var favoritesLabel = Loc.T(L.Venues.Favorites);
-
-        var content = ChipWidth(dcLabel, scale) + gap + ChipWidth(sourceLabel, scale) + gap +
-            ChipWidth(tagsLabel, scale) + gap + ChipWidth(favoritesLabel, scale) + gap;
-        chipsScroller.Scale = scale;
-        chipsScroller.SetBounds(MathF.Max(0f, content - bar.Width));
-        HandleChipsDrag(bar);
-
-        var drawList = ImGui.GetWindowDrawList();
-        drawList.PushClipRect(bar.Min, bar.Max, true);
-        var cursor = bar.Min.X - chipsScroller.Offset;
-        var centerY = bar.Center.Y;
-        if (ui.FlowChip(ref cursor, centerY, gap, dcLabel,
-                !configuration.VenueAllDataCenters && dataCenter.Length > 0))
-        {
-            configuration.VenueAllDataCenters = !configuration.VenueAllDataCenters;
-            configuration.Save();
-        }
-
-        if (ui.FlowChip(ref cursor, centerY, gap, sourceLabel,
-                configuration.VenueSourceFilter != VenueFilter.SourceAll))
-        {
-            configuration.VenueSourceFilter = (configuration.VenueSourceFilter + 1) % 3;
-            configuration.Save();
-        }
-
-        if (ui.FlowChip(ref cursor, centerY, gap, tagsLabel, selectedTags.Count > 0))
-        {
-            router.Push(VenueRoute.Tags);
-        }
-
-        if (ui.FlowChip(ref cursor, centerY, gap, favoritesLabel, favoritesOnly))
-        {
-            favoritesOnly = !favoritesOnly;
-        }
-
-        drawList.PopClipRect();
+        configuration.VenueScope = kind;
+        configuration.VenueScopeValue = value;
+        configuration.Save();
+        resolvedScopeFrame = -1;
+        ResetScrollState();
     }
 
-    private static float ChipWidth(string label, float scale) =>
-        Typography.Measure(label, 0.85f, FontWeight.Medium).X + 26f * scale;
+    private string CurrentWorld() => gameData.WorldName(gameData.LocalCurrentWorldId);
 
-    private void HandleChipsDrag(Rect bar)
+    private static long CurrentMinute(DateTime nowUtc) => nowUtc.Ticks / TimeSpan.TicksPerMinute;
+
+    private bool CheckLanguage()
     {
-        var io = ImGui.GetIO();
-        var deltaSeconds = io.DeltaTime;
-        var mouseX = io.MousePos.X;
-        var down = ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var hovering = UiInteract.Hover(bar.Min, bar.Max);
-        var shouldBlock = false;
-
-        if (chipsPressed)
+        if (!labels.LanguageChanged())
         {
-            if (down)
-            {
-                var wasDragging = chipsScroller.IsDragging;
-                chipsScroller.Move(mouseX, deltaSeconds);
-                if (!wasDragging && chipsScroller.IsDragging)
-                {
-                    UiInteract.CancelPendingTap();
-                }
-
-                shouldBlock = chipsScroller.IsDragging;
-            }
-            else
-            {
-                shouldBlock = chipsScroller.IsDragging;
-                chipsScroller.Release();
-                chipsPressed = false;
-                chipsScroller.Tick(deltaSeconds);
-            }
-        }
-        else if (down && ImGui.IsMouseClicked(ImGuiMouseButton.Left) && hovering && !UiInteract.InputBlocked)
-        {
-            chipsScroller.Press(mouseX);
-            chipsPressed = true;
-        }
-        else
-        {
-            chipsScroller.Tick(deltaSeconds);
+            return false;
         }
 
-        if (shouldBlock)
-        {
-            UiInteract.BlockThisFrame();
-        }
+        sections.Invalidate();
+        listQuery.Invalidate();
+        searchQuery.Invalidate();
+        detailVersion = -1;
+        filtersLabel.Reset();
+        tagLabelsStale = true;
+        return true;
     }
 
-    private void DrawList(Rect body)
+    private void RefreshSections()
     {
-        var dataCenter = CurrentDataCenter();
-        VenueFilter.Apply(venues.Events, filtered, configuration.VenueTimeFilter, configuration.VenueSourceFilter,
-            dataCenter, favoritesOnly, configuration.VenueFavorites, selectedTags, search, DateTime.UtcNow);
-        DrawSummary(dataCenter);
-        if (filtered.Count == 0)
-        {
-            DrawEmptyState(body);
-            return;
-        }
-
-        var scale = UiScale.Current;
+        CheckLanguage();
         var nowUtc = DateTime.UtcNow;
-        if (filtered.Count <= MaxCards)
+        var scope = ResolveScope();
+        var key = new VenueSectionsKey(venues.Version, configuration.VenueSourceFilter, scope.DataCenters, scope.World,
+            scope.World.Length > 0 ? string.Empty : CurrentWorld(), favoritesStamp, tagsStamp, CurrentMinute(nowUtc),
+            configuration.VenueHideAdult, recentsStamp);
+        if (!sections.Update(key, venues.Events, configuration.VenueFavorites, configuration.VenueRecents,
+                selectedTags, nowUtc))
         {
-            visibleCards = MaxCards;
-        }
-
-        var count = Math.Min(filtered.Count, visibleCards);
-        for (var index = 0; index < count; index++)
-        {
-            var venue = filtered[index];
-            var origin = ImGui.GetCursorScreenPos();
-            var width = ImGui.GetContentRegionAvail().X;
-            var card = new Rect(origin, new Vector2(origin.X + width, origin.Y + VenueCard.Height * scale));
-            if (ImGui.IsRectVisible(card.Min, card.Max))
-            {
-                var action = VenueCard.Draw(card, venue, IsFavorite(venue.Id), media, http, artwork, ui, nowUtc);
-                if (action == VenueCardAction.Open)
-                {
-                    router.Push(VenueRoute.Detail(venue));
-                }
-                else if (action == VenueCardAction.ToggleFavorite)
-                {
-                    ToggleFavorite(venue.Id);
-                }
-            }
-
-            ImGui.SetCursorScreenPos(origin);
-            ImGui.Dummy(new Vector2(width, (VenueCard.Height + VenueCard.Gap) * scale));
-        }
-
-        if (filtered.Count > count)
-        {
-            if (InfiniteScroll.ReachedBottom())
-            {
-                visibleCards += MaxCards;
-            }
-
-            var origin = ImGui.GetCursorScreenPos();
-            var width = ImGui.GetContentRegionAvail().X;
-            Typography.DrawCentered(new Vector2(origin.X + width * 0.5f, origin.Y + 8f * scale),
-                Loc.T(L.Venues.MoreCount, filtered.Count - count), AppPalettes.Venues.MutedInk,
-                TextStyles.Footnote);
-            ImGui.SetCursorScreenPos(origin);
-            ImGui.Dummy(new Vector2(width, 30f * scale));
-        }
-
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Sm * scale));
-    }
-
-    private void DrawSummary(string dataCenter)
-    {
-        var scale = UiScale.Current;
-        var dcLabel = dataCenter.Length > 0 ? dataCenter : Loc.T(L.Venues.AllDataCenters);
-        var summary =
-            $"{dcLabel}  ·  {TimeFilterLabel(configuration.VenueTimeFilter)}  ·  {Loc.T(L.Venues.EventsCount, filtered.Count)}";
-        var origin = ImGui.GetCursorScreenPos();
-        var summaryMaxWidth = MathF.Max(1f, ImGui.GetContentRegionAvail().X - 8f * scale);
-        var summaryFitted = Typography.FitText(summary, summaryMaxWidth, TextStyles.Footnote);
-        Typography.Draw(new Vector2(origin.X + 4f * scale, origin.Y + 8f * scale), summaryFitted,
-            AppPalettes.Venues.MutedInk, TextStyles.Footnote);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(ImGui.GetContentRegionAvail().X, 30f * scale));
-    }
-
-    private void DrawEmptyState(Rect body)
-    {
-        var scale = UiScale.Current;
-        var centerX = body.Center.X;
-        if (venues.State == VenueState.Loading && venues.Events.Count == 0)
-        {
-            Skeleton.Feed(ImGui.GetWindowDrawList(),
-                new Rect(new Vector2(body.Min.X + 14f * scale, body.Min.Y + 16f * scale),
-                    new Vector2(body.Max.X - 14f * scale, body.Max.Y - 12f * scale)), scale);
             return;
         }
 
-        var failed = venues.State == VenueState.Failed && venues.Events.Count == 0;
-        var drawList = ImGui.GetWindowDrawList();
-        var iconCenter = new Vector2(centerX, body.Min.Y + 84f * scale);
-        drawList.AddCircleFilled(iconCenter, 30f * scale, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.14f)), 40);
-        var icon = failed ? FontAwesomeIcon.ExclamationTriangle : FontAwesomeIcon.MapMarkedAlt;
-        AppSkin.Icon(drawList, iconCenter, IconGlyph.Of(icon), Palette.WithAlpha(ui.Accent, 0.95f), 1.15f);
-        var message = failed ? Loc.T(L.Venues.Failed) : Loc.T(L.Venues.NoVenues);
-        Typography.DrawCentered(new Vector2(centerX, iconCenter.Y + 52f * scale), message,
-            AppPalettes.Venues.TitleInk, TextStyles.Headline);
-        if (failed)
-        {
-            var retryWidth = Typography.Measure(Loc.T(L.Venues.Retry), 0.9f, FontWeight.SemiBold).X + 44f * scale;
-            var retryTop = iconCenter.Y + 78f * scale;
-            var retry = new Rect(new Vector2(centerX - retryWidth * 0.5f, retryTop),
-                new Vector2(centerX + retryWidth * 0.5f, retryTop + 34f * scale));
-            if (ui.GhostButton(retry, Loc.T(L.Venues.Retry)))
-            {
-                venues.EnsureFresh(true);
-            }
+        featuredText.Fill(sections.Featured, nowUtc);
+        liveText.Fill(sections.Live, nowUtc);
+        laterText.Fill(sections.LaterRail, nowUtc);
+        nearText.Fill(sections.NearRail, nowUtc);
+        recentText.Fill(sections.Recents, nowUtc);
+        eventsText.Fill(sections.Events, nowUtc);
+        savedText.Fill(sections.Saved, nowUtc);
+        RebuildSectionLabels();
+        RebuildAgenda();
+        RebuildSavedGroups(nowUtc);
+    }
 
+    private void OpenDetail(VenueEvent venue, string backTitle, bool animate = true)
+    {
+        if (animate)
+        {
+            UiFeedback.Play(UiSound.Tap);
+        }
+
+        hoursExpanded = false;
+        RecordRecent(venue.Id);
+        router.Push(VenueRoute.Detail(venue, backTitle), animate);
+    }
+
+    private void OpenList(VenueListKind kind, int category, string backTitle)
+    {
+        UiFeedback.Play(UiSound.Tap);
+        visibleCards = PageSize;
+        router.Push(VenueRoute.ListOf(kind, category, backTitle));
+    }
+
+    private void RecordRecent(string id)
+    {
+        var recents = configuration.VenueRecents;
+        if (recents.Count > 0 && string.Equals(recents[0], id, StringComparison.Ordinal))
+        {
             return;
         }
 
-        Typography.DrawCentered(new Vector2(centerX, iconCenter.Y + 76f * scale), Loc.T(L.Venues.EmptyHint),
-            AppPalettes.Venues.MutedInk, TextStyles.Footnote);
+        for (var index = recents.Count - 1; index >= 0; index--)
+        {
+            if (string.Equals(recents[index], id, StringComparison.Ordinal))
+            {
+                recents.RemoveAt(index);
+            }
+        }
+
+        recents.Insert(0, id);
+        if (recents.Count > VenueSections.MaxRecents)
+        {
+            recents.RemoveRange(VenueSections.MaxRecents, recents.Count - VenueSections.MaxRecents);
+        }
+
+        recentsStamp++;
+        configuration.Save();
     }
 
-    private void DrawTagPicker(Rect area)
+    private void ClearRecents()
     {
-        var scale = UiScale.Current;
-        var context = new PhoneContext(area, theme, navigation);
-        var showClear = selectedTags.Count > 0;
-        var clearLabel = Loc.T(L.Venues.ClearTags);
-        var clearReserve = showClear
-            ? Typography.Measure(clearLabel, 0.9f, FontWeight.SemiBold).X + 34f * scale + 20f * scale
-            : 0f;
-        AppHeader.Draw(context, string.Empty, back);
-        AppHeader.DrawTitleWithReserve(area, "venues.tagpicker.title", Loc.T(L.Venues.Tags), clearReserve,
-            theme.TextStrong, scale);
-        if (showClear && ui.HeaderAction(area, clearLabel, true))
-        {
-            selectedTags.Clear();
-        }
-
-        var top = area.Min.Y + AppHeader.Height * scale;
-        var body = new Rect(new Vector2(area.Min.X, top), area.Max);
-        using (AppSurface.Begin(body))
-        {
-            VenueFilter.CollectTags(venues.Events, configuration.VenueSourceFilter, CurrentDataCenter(), tagSet);
-            tagList.Clear();
-            foreach (var tag in tagSet)
-            {
-                tagList.Add(tag);
-            }
-
-            if (tagList.Count == 0)
-            {
-                Typography.DrawCentered(new Vector2(body.Center.X, body.Min.Y + 90f * scale),
-                    Loc.T(L.Venues.NoVenues), AppPalettes.Venues.MutedInk, TextStyles.Subheadline);
-                return;
-            }
-
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Xs * scale));
-            DrawTagFlow(scale);
-            ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
-        }
+        configuration.VenueRecents.Clear();
+        configuration.Save();
+        recentsStamp++;
+        UiFeedback.Play(UiSound.Tap);
     }
 
-    private void DrawTagFlow(float scale)
+    private void ResetScrollState()
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var origin = ImGui.GetCursorScreenPos();
-        var width = ImGui.GetContentRegionAvail().X;
-        var right = origin.X + width;
-        var gap = Metrics.Space.Sm * scale;
-        var lineHeight = VenueChips.LargeHeight(scale) + gap;
-        var cursorX = origin.X;
-        var cursorY = origin.Y;
-        for (var index = 0; index < tagList.Count; index++)
-        {
-            var tag = tagList[index];
-            var chipWidth = VenueChips.MeasureLarge(tag, scale);
-            if (cursorX + chipWidth > right && cursorX > origin.X)
-            {
-                cursorX = origin.X;
-                cursorY += lineHeight;
-            }
-
-            var min = new Vector2(cursorX, cursorY);
-            var max = new Vector2(cursorX + chipWidth, cursorY + VenueChips.LargeHeight(scale));
-            var hovered = UiInteract.Hover(min, max);
-            VenueChips.DrawLarge(drawList, min, tag, IsTagSelected(tag), hovered, scale);
-            if (hovered)
-            {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-            }
-
-            if (UiInteract.Click(min, max, hovered))
-            {
-                ToggleTag(tag);
-            }
-
-            cursorX += chipWidth + gap;
-        }
-
-        var totalHeight = cursorY - origin.Y + lineHeight;
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, totalHeight));
+        visibleCards = PageSize;
+        ResetDiscover();
     }
 
-    private string TimeFilterLabel(VenueTimeFilter filter) =>
-        filter switch
-        {
-            VenueTimeFilter.LiveNow => Loc.T(L.Venues.LiveNow),
-            VenueTimeFilter.Today => Loc.T(L.Venues.Today),
-            VenueTimeFilter.Upcoming => Loc.T(L.Venues.Upcoming),
-            _ => Loc.T(L.Venues.All),
-        };
+    private bool FiltersActive => selectedTags.Count > 0 || configuration.VenueSourceFilter != VenueFilter.SourceAll;
 
-    private string SourceFilterLabel(int source) =>
-        source switch
-        {
-            VenueFilter.SourceFfxiv => Loc.T(L.Venues.SourceFfxiv),
-            VenueFilter.SourcePartake => Loc.T(L.Venues.SourcePartake),
-            _ => Loc.T(L.Venues.AllSources),
-        };
+    private int ActiveFilterCount =>
+        selectedTags.Count + (configuration.VenueSourceFilter != VenueFilter.SourceAll ? 1 : 0);
 
-    private bool IsFavorite(string id) => configuration.VenueFavorites.Contains(id);
+    private bool IsFavorite(string id) => VenueFilter.Contains(configuration.VenueFavorites, id);
 
     private void ToggleFavorite(string id)
     {
-        if (!configuration.VenueFavorites.Remove(id))
+        var removed = configuration.VenueFavorites.Remove(id);
+        if (!removed)
         {
             configuration.VenueFavorites.Add(id);
         }
 
+        UiFeedback.Play(removed ? UiSound.ToggleOff : UiSound.ToggleOn);
+        favoritesStamp++;
         configuration.Save();
     }
 
-    private bool IsTagSelected(string tag)
-    {
-        for (var index = 0; index < selectedTags.Count; index++)
-        {
-            if (string.Equals(selectedTags[index], tag, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private bool IsTagSelected(string tag) => VenueFilter.Contains(selectedTags, tag);
 
     private void ToggleTag(string tag)
     {
+        tagsStamp++;
+        visibleCards = PageSize;
+        UiFeedback.Play(UiSound.Tap);
         for (var index = 0; index < selectedTags.Count; index++)
         {
             if (string.Equals(selectedTags[index], tag, StringComparison.OrdinalIgnoreCase))
@@ -562,6 +525,48 @@ internal sealed partial class VenuesApp : IPhoneApp, ISpotlightVenues
         }
 
         selectedTags.Add(tag);
+    }
+
+    private void ResetFilters()
+    {
+        selectedTags.Clear();
+        tagsStamp++;
+        configuration.VenueSourceFilter = VenueFilter.SourceAll;
+        configuration.VenueHideAdult = false;
+        configuration.Save();
+        visibleCards = PageSize;
+        UiFeedback.Play(UiSound.Refresh);
+    }
+
+    private void HandleCardAction(VenueCardAction action, VenueEvent venue, string backTitle)
+    {
+        switch (action)
+        {
+            case VenueCardAction.Open:
+                OpenDetail(venue, backTitle);
+                break;
+            case VenueCardAction.ToggleFavorite:
+                ToggleFavorite(venue.Id);
+                break;
+            case VenueCardAction.Teleport:
+                Teleport(venue);
+                break;
+            case VenueCardAction.Twitch:
+                UrlActions.AskThenOpen(venue.TwitchUrl!);
+                break;
+        }
+    }
+
+    private void Teleport(VenueEvent venue)
+    {
+        if (!venue.CanTeleport)
+        {
+            return;
+        }
+
+        UiFeedback.Play(UiSound.Tap);
+        TeleportActions.AskThenTravel(confirm, VenueDisplayText.Clean(venue.Title), venue.PlaceLine,
+            venue.TeleportCode!);
     }
 
     public void Dispose()

@@ -6,6 +6,7 @@ internal enum AethergramTab
 {
     Home,
     Search,
+    Messages,
     Profile,
 }
 
@@ -16,6 +17,8 @@ internal enum PostSource
     Saved,
     Hashtag,
     Explore,
+    Archive,
+    PendingTags,
 }
 
 internal enum AethergramScreen
@@ -26,7 +29,7 @@ internal enum AethergramScreen
     Posts,
     Profile,
     EditProfile,
-    EditCaption,
+    EditPost,
     UserList,
     Inbox,
     Thread,
@@ -41,6 +44,9 @@ internal enum AethergramScreen
     Hashtag,
     Activity,
     NewMessage,
+    BadgeProgress,
+    Archive,
+    InboxArchived,
 }
 
 internal readonly record struct AethergramRoute(
@@ -53,14 +59,17 @@ internal readonly record struct AethergramRoute(
     public static readonly AethergramRoute Compose = new(AethergramScreen.Compose);
     public static readonly AethergramRoute EditProfile = new(AethergramScreen.EditProfile);
     public static readonly AethergramRoute Inbox = new(AethergramScreen.Inbox);
+    public static readonly AethergramRoute InboxArchived = new(AethergramScreen.InboxArchived);
     public static readonly AethergramRoute NewMessage = new(AethergramScreen.NewMessage);
     public static readonly AethergramRoute Settings = new(AethergramScreen.Settings);
     public static readonly AethergramRoute FollowRequests = new(AethergramScreen.FollowRequests);
     public static readonly AethergramRoute Saved = new(AethergramScreen.Saved);
     public static readonly AethergramRoute Encryption = new(AethergramScreen.Encryption);
     public static readonly AethergramRoute Activity = new(AethergramScreen.Activity);
+    public static readonly AethergramRoute BadgeProgress = new(AethergramScreen.BadgeProgress);
+    public static readonly AethergramRoute Archive = new(AethergramScreen.Archive);
     public static AethergramRoute Detail(string postId) => new(AethergramScreen.Detail, postId);
-    public static AethergramRoute EditCaption(string postId) => new(AethergramScreen.EditCaption, postId);
+    public static AethergramRoute EditPost(string postId) => new(AethergramScreen.EditPost, postId);
 
     public static AethergramRoute Posts(string postId, PostSource source) =>
         new(AethergramScreen.Posts, postId, UserListKind.Followers, source);

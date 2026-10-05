@@ -1,10 +1,37 @@
 using System.Text;
+using System.Text.Unicode;
 using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Windows.Components;
 
 internal static class SoftWrap
 {
+    private const int CompareChunkBytes = 256;
+
+    public static bool MatchesUtf8(string text, ReadOnlySpan<byte> utf8)
+    {
+        Span<byte> chunk = stackalloc byte[CompareChunkBytes];
+        var remaining = text.AsSpan();
+        while (remaining.Length > 0)
+        {
+            Utf8.FromUtf16(remaining, chunk, out var charsRead, out var bytesWritten);
+            if (charsRead == 0 || bytesWritten > utf8.Length)
+            {
+                return false;
+            }
+
+            if (!chunk[..bytesWritten].SequenceEqual(utf8[..bytesWritten]))
+            {
+                return false;
+            }
+
+            remaining = remaining[charsRead..];
+            utf8 = utf8[bytesWritten..];
+        }
+
+        return utf8.Length == 0;
+    }
+
     public static string WrapText(string text, float wrapWidth)
     {
         if (text.Length == 0 || wrapWidth <= 0f)

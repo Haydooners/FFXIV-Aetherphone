@@ -1,5 +1,6 @@
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Social;
@@ -8,6 +9,7 @@ using Aetherphone.Core.Telephony.Contracts;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 
 namespace Aetherphone.Apps.Message;
 
@@ -23,10 +25,16 @@ internal sealed partial class MessageApp
     private const float CallFavoriteGlyph = 20f;
     private const float CallFavoriteRadius = 17f;
     private const int MicSilentWarningSeconds = 30;
+    private const float ControlRowGap = 96f;
+    private const float CallAudioHeaderHeight = 40f;
+    private const float PeerMutedBadgeFraction = 0.3f;
+    private const float PeerMutedBadgeMinimum = 10f;
 
     private readonly PullToRefresh contactsRefresh = new();
     private readonly List<ContactDto> favoriteContacts = new();
     private readonly List<ContactDto> callableContacts = new();
+    private readonly Sheet callAudioSheet = new();
+    private readonly CallAudioPanel callAudioPanel;
 
     private float DrawReturnToCallBanner(Rect rect)
     {
@@ -393,7 +401,7 @@ internal sealed partial class MessageApp
         var buttonWidth = 190f * scale;
         var buttonTop = baseY + 128f * scale;
         var buttonRect = new Rect(new Vector2(centerX - buttonWidth * 0.5f, buttonTop),
-            new Vector2(centerX + buttonWidth * 0.5f, buttonTop + 46f * scale));
+            new Vector2(centerX + buttonWidth * 0.5f, buttonTop + Button.LargeHeight * scale));
         if (ui.PillButton(buttonRect, Loc.T(L.Phone.Enable), true))
         {
             calls.SetEnabled(true);
@@ -440,6 +448,7 @@ internal sealed partial class MessageApp
 
                 AvatarView.Draw(drawList, avatarCenter, radius, ui.Accent, Initial(view.PeerLabel), 2.6f,
                     lodestone.Avatar(others[0].Name, others[0].World, radius * 2f), 64);
+                DrawPeerAudioAffordance(drawList, avatarCenter, radius, others[0], screenTheme, scale);
             }
             else
             {
@@ -520,10 +529,12 @@ internal sealed partial class MessageApp
             var cellCenterY = top + radius + row * (radius * 2f + 22f * scale);
             var center = new Vector2(cellCenterX, cellCenterY);
             DrawSpeakingHalo(drawList, center, radius, calls.LevelOf(others[index]), scale);
-            AvatarView.Draw(drawList, center, radius, ui.Accent, Initial(others[index].DisplayName), 1.2f,
+            var participantName = contacts.NameFor(others[index].UserId, others[index].DisplayName);
+            AvatarView.Draw(drawList, center, radius, ui.Accent, Initial(participantName), 1.2f,
                 lodestone.Avatar(others[index].Name, others[index].World, radius * 2f), 48);
+            DrawPeerAudioAffordance(drawList, center, radius, others[index], screenTheme, scale);
             Typography.DrawCentered(new Vector2(cellCenterX, cellCenterY + radius + 12f * scale),
-                UiText.Truncate(others[index].DisplayName, 10), ui.TitleInk, 0.78f);
+                UiText.Truncate(participantName, 10), ui.TitleInk, 0.78f);
         }
     }
 
@@ -532,16 +543,24 @@ internal sealed partial class MessageApp
         var content = context.Content;
         var centerX = content.Center.X;
         var controlsY = content.Max.Y - 74f * scale;
+        var topRowY = controlsY - ControlRowGap * scale;
         var spacing = 84f * scale;
         var frost = Palette.WithAlpha(ui.TitleInk, 0.16f);
         var labelColor = Palette.WithAlpha(ui.TitleInk, 0.72f);
         var muteFill = view.Muted ? White : frost;
-        var muteInk = view.Muted ? MessageThemes.Body : ui.TitleInk;
-        if (ControlButton(new Vector2(centerX - spacing, controlsY), 27f * scale,
+        var muteInk = view.Muted ? ChatThemes.Body : ui.TitleInk;
+        if (ControlButton(new Vector2(centerX - spacing, topRowY), 27f * scale,
                 view.Muted ? PhoneIcons.MicrophoneOff : PhoneIcons.Microphone, muteFill, muteInk,
                 Loc.T(L.Message.MuteAction), labelColor, 24f, true))
         {
             calls.ToggleMute();
+        }
+
+        var audioOpen = callAudioSheet.IsOpen;
+        if (ControlButton(new Vector2(centerX, topRowY), 27f * scale, PhoneIcons.Volume, audioOpen ? White : frost,
+                audioOpen ? ChatThemes.Body : ui.TitleInk, Loc.T(L.Phone.Audio), labelColor, 24f, true))
+        {
+            callAudioSheet.Open();
         }
 
         if (ControlButton(new Vector2(centerX, controlsY), 33f * scale, PhoneIcons.PhoneX, screenTheme.Danger,
@@ -551,11 +570,67 @@ internal sealed partial class MessageApp
         }
 
         var canAdd = view.State == CallState.Active;
-        if (ControlButton(new Vector2(centerX + spacing, controlsY), 27f * scale, PhoneIcons.UserPlus, frost,
+        if (ControlButton(new Vector2(centerX + spacing, topRowY), 27f * scale, PhoneIcons.UserPlus, frost,
                 ui.TitleInk, Loc.T(L.Friends.Add), labelColor, 24f, canAdd) && canAdd)
         {
             router.Push(MessageRoute.AddToCall);
         }
+    }
+
+    private void DrawPeerAudioAffordance(ImDrawListPtr drawList, Vector2 center, float radius,
+        ParticipantInfo participant, PhoneTheme screenTheme, float scale)
+    {
+        if (calls.PeerMuted(participant.UserId))
+        {
+            var badgeRadius = MathF.Max(PeerMutedBadgeMinimum * scale, radius * PeerMutedBadgeFraction);
+            var badgeCenter = center + new Vector2(radius, radius) * 0.7f;
+            drawList.AddCircleFilled(badgeCenter, badgeRadius, ImGui.GetColorU32(screenTheme.Danger), 24);
+            ProgressRing.CenterIcon(drawList, badgeCenter, FontAwesomeIcon.VolumeMute, White, badgeRadius * 1.1f);
+        }
+
+        if (UiInteract.HoverClickCircle(center, radius))
+        {
+            callAudioSheet.Open();
+        }
+    }
+
+    private void DrawCallAudioSheet(Rect screen)
+    {
+        if (callAudioSheet.IsOpen && router.Current.Screen != MessageScreen.Call)
+        {
+            callAudioSheet.Close();
+        }
+
+        if (!callAudioSheet.CapturesPointer)
+        {
+            return;
+        }
+
+        using var layer = ScreenLayer.Begin("message.callAudio", screen, false);
+        var frame = callAudioSheet.Begin(ImGui.GetWindowDrawList(), screen, theme,
+            SheetDetents.Standard(screen.Height), SheetMetrics.AppVeil);
+        if (!frame.Visible)
+        {
+            return;
+        }
+
+        var scale = UiScale.Current;
+        var content = frame.Content;
+        var headerHeight = CallAudioHeaderHeight * scale;
+        Typography.DrawCentered(frame.DrawList, new Vector2(content.Center.X, content.Min.Y + headerHeight * 0.5f),
+            Loc.T(L.Phone.AudioTitle), frame.Ink with { W = frame.Ink.W * frame.Opacity }, TextStyles.Headline);
+        var rows = new Rect(new Vector2(content.Min.X, content.Min.Y + headerHeight),
+            new Vector2(content.Max.X, content.Max.Y - Metrics.Size.HomeIndicatorInset * scale));
+        using (var surface = AppSurface.Begin(rows))
+        {
+            if (callAudioPanel.Draw(theme, currentCall))
+            {
+                surface.CancelDrag();
+                callAudioSheet.YieldPointer();
+            }
+        }
+
+        callAudioSheet.End(in frame);
     }
 
     private static bool ControlButton(Vector2 center, float radius, string glyph, Vector4 fill, Vector4 glyphInk,

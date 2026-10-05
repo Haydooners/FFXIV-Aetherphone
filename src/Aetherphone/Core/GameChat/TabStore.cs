@@ -54,7 +54,9 @@ internal sealed class TabStore
             Name = name,
             Channels = new List<string>(channels),
             Alerts = AlertPolicy.Mentions,
-            Density = ChatDensity.Bubbles,
+            Density = configuration.LinkpearlDefaultDensity == (int)ChatDensity.Bubbles
+                ? ChatDensity.Bubbles
+                : ChatDensity.Log,
         };
         for (var index = 0; index < tab.Channels.Count; index++)
         {
@@ -176,10 +178,22 @@ internal sealed class TabStore
             return tab;
         }
 
+        tab.Tint = PresetTintIndex(preset);
         tab.Alerts = AlertPolicy.Off;
         Commit();
         return tab;
     }
+
+    public static Vector4 PresetTint(TabPreset preset) => preset switch
+    {
+        TabPreset.FreeCompany => ChannelTints.FreeCompany,
+        TabPreset.Linkshells => ChannelTints.Linkshell,
+        TabPreset.Local => ChannelTints.Shout,
+        _ => ChannelTints.Party,
+    };
+
+    public static int PresetTintIndex(TabPreset preset) =>
+        Math.Max(0, Array.IndexOf(ChannelTints.TabPalette, PresetTint(preset)));
 
     public static LocString PresetLabel(TabPreset preset) => preset switch
     {
@@ -237,6 +251,11 @@ internal sealed class TabStore
             {
                 tab.MutedChannels.RemoveAt(index);
             }
+        }
+
+        if (string.Equals(tab.SendChannel, GameChannels.FollowGameKey, StringComparison.Ordinal))
+        {
+            return;
         }
 
         if (tab.SendChannel.Length > 0 && tab.Channels.Contains(tab.SendChannel) &&

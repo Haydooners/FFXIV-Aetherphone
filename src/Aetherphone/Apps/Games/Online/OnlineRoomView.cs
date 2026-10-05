@@ -18,11 +18,35 @@ namespace Aetherphone.Apps.Games.Online;
 // truth.
 internal sealed class OnlineRoomView
 {
+    private const string NavId = "games.room.nav";
     private const float HeaderHeight = 42f;
-    private const float RosterRowHeight = 56f;
+    private const float RosterRowHeight = 60f;
+    private const float AvatarRadius = 18f;
+    private const float RowTextGap = 12f;
+    private const float CodeCardHeight = 112f;
+    private const float CodeCardPadding = 16f;
+    private const float CopyPillHeight = Button.SmallHeight;
+    private const float RulesRowHeight = 52f;
+    private const float PrimaryHeight = 44f;
+    private const float SecondaryHeight = Button.RegularHeight;
+    private const float KickPillHeight = 28f;
+    private const float BannerHeight = 58f;
+    private const float BannerIconSize = 20f;
+    private const float WaitingSpinnerRadius = 7f;
+    private const float ChevronSize = 12f;
     private const long NoticeMilliseconds = 4_000;
+    private const long CopiedMilliseconds = 1_500;
+    private const int MaxSeats = 8;
+
+    private static readonly Vector4 StreakGold = new(0.98f, 0.78f, 0.30f, 1f);
 
     private static readonly LocString[] RuleSetLabels = [L.Games.OnlineRuleDefault, L.Games.OnlineRuleHouse];
+
+    private static readonly string[] KickIds =
+    [
+        "games.room.kick.0", "games.room.kick.1", "games.room.kick.2", "games.room.kick.3", "games.room.kick.4",
+        "games.room.kick.5", "games.room.kick.6", "games.room.kick.7",
+    ];
 
     private readonly GameRoomsStore store;
     private readonly DropdownMenu rulesMenu = new();
@@ -30,11 +54,22 @@ internal sealed class OnlineRoomView
     private readonly OnlineUnoTable unoTable;
     private readonly OnlineChessTable chessTable;
     private readonly OnlinePoolTable poolTable;
+    private readonly OnlineConnectFourTable connectFourTable;
+    private readonly OnlineFinishHold finishHold = new();
+    private readonly string[] rosterNames = new string[MaxSeats];
+    private readonly string[] rosterWins = new string[MaxSeats];
+    private readonly string[] rosterInitials = new string[MaxSeats];
 
     private string inlineReason = string.Empty;
     private int selectedRuleSet;
     private long noticeAtTick;
     private long copiedAtTick;
+    private int lastSeenPhase = -1;
+    private string spacedCode = string.Empty;
+    private string spacedSource = string.Empty;
+    private string finishedLabel = string.Empty;
+    private GameRoomRoster? labeledRoster;
+    private LanguageInfo? labelLanguage;
 
     public OnlineRoomView(GameRoomsStore store)
     {
@@ -42,6 +77,7 @@ internal sealed class OnlineRoomView
         unoTable = new OnlineUnoTable(store);
         chessTable = new OnlineChessTable(store);
         poolTable = new OnlinePoolTable(store);
+        connectFourTable = new OnlineConnectFourTable(store);
     }
 
     public void Enter()
@@ -53,14 +89,49 @@ internal sealed class OnlineRoomView
         unoTable.Reset();
         chessTable.Reset();
         poolTable.Reset();
+        connectFourTable.Reset();
+        finishHold.Clear();
+        lastSeenPhase = -1;
+        labeledRoster = null;
+        finishedLabel = string.Empty;
     }
 
-    public bool WantsLandscape => LivePool(store.Room.State) && store.Room.RoomId.Length > 0;
+    public bool WantsLandscape => ShowsPool(store.Room.State) && store.Room.RoomId.Length > 0;
 
-    public void Draw(in PhoneContext context, Action back, AppSkin ui, bool landscape)
+    public void Draw(in PhoneContext context, Action back, AppSkin ui, bool landscape, string backTitle)
     {
         var held = store.Room.State;
+        TrackPhase(held);
         var scale = UiScale.Current;
+        if (store.Room.RoomId.Length > 0 && ShowsTable(held))
+        {
+            DrawTable(context, back, ui, landscape, held!, scale);
+            return;
+        }
+
+        var navBar = AppHeader.BeginLargeTitle(context);
+        Consume(back);
+        var session = store.Room;
+        if (session.RoomId.Length == 0)
+        {
+            DrawClosed(navBar.Body, ui, session.ClosedReason, back);
+        }
+        else if (held is null || held.Roster is null)
+        {
+            LoadingPulse.Draw(navBar.Body.Center, 16f * scale, ui.Accent, ui.MutedInk, Loc.T(L.Games.OnlineLoading));
+        }
+        else
+        {
+            DrawLobby(navBar.Body, ui, scale, held);
+        }
+
+        AppHeader.EndLargeTitle(in navBar, context, NavId, Loc.T(GamesOnlineText.GameName(held?.Snapshot.GameKind)),
+            NavBarStyle.From(ui), ReadOnlySpan<NavBarButton>.Empty, backTitle, back);
+    }
+
+    private void DrawTable(in PhoneContext context, Action back, AppSkin ui, bool landscape, GameRoomState held,
+        float scale)
+    {
         var content = context.Content;
         var theme = context.Theme;
         var fullScreenTable = landscape && WantsLandscape;
@@ -76,55 +147,35 @@ internal sealed class OnlineRoomView
         }
 
         Consume(back);
-
-        var session = store.Room;
-        if (session.RoomId.Length == 0)
+        if (held.Uno is not null)
         {
-            DrawClosed(body, theme, scale, session.ClosedReason, back);
+            unoTable.Draw(body, theme, scale, held.Snapshot, held.Uno, FreshNotice(), finishHold);
             return;
         }
 
-        if (held is null || held.Roster is null)
+        if (held.Chess is not null)
         {
-            DrawCenteredNotice(body, theme, Loc.T(L.Games.OnlineLoading));
+            chessTable.Draw(body, theme, scale, held.Snapshot, held.Chess, FreshNotice(), finishHold);
             return;
         }
 
-        if (held.Snapshot.Phase == GameRoomWire.PhasePlaying)
+        if (held.Pool is not null)
         {
-            if (held.Uno is not null)
-            {
-                unoTable.Draw(body, theme, scale, held.Snapshot, held.Uno, FreshNotice());
-                return;
-            }
-
-            if (held.Chess is not null)
-            {
-                chessTable.Draw(body, theme, scale, held.Snapshot, held.Chess, FreshNotice());
-                return;
-            }
-
-            if (held.Pool is not null)
-            {
-                poolTable.Draw(body, theme, scale, held.Snapshot, held.Pool, FreshNotice(),
-                    fullScreenTable ? back : null);
-                return;
-            }
+            poolTable.Draw(body, theme, scale, held.Snapshot, held.Pool, FreshNotice(),
+                fullScreenTable ? back : null, finishHold);
+            return;
         }
 
-        DrawLobby(body, theme, scale, held);
+        if (held.ConnectFour is not null)
+        {
+            connectFourTable.Draw(body, theme, scale, held.Snapshot, held.ConnectFour, FreshNotice(), finishHold);
+        }
     }
 
-    private void DrawHeader(in PhoneContext context, Action back, AppSkin ui, GameRoomState? held, float scale)
+    private void DrawHeader(in PhoneContext context, Action back, AppSkin ui, GameRoomState held, float scale)
     {
-        var title = Loc.T(GamesOnlineText.GameName(held?.Snapshot.GameKind));
-        if (!LiveTable(held) || store.Room.RoomId.Length == 0)
-        {
-            AppHeader.Draw(context, title, back);
-            return;
-        }
-
-        var isHost = IsHost(held!.Roster!);
+        var title = Loc.T(GamesOnlineText.GameName(held.Snapshot.GameKind));
+        var isHost = IsHost(held.Roster!);
         var leaveLabel = LeaveLabel(isHost);
         AppHeader.Draw(context, "games.room.header", title, AppSkin.HeaderActionWidth(leaveLabel) + 18f * scale,
             back);
@@ -134,12 +185,52 @@ internal sealed class OnlineRoomView
         }
     }
 
-    private static bool LivePool(GameRoomState? held) =>
-        held is { Pool: not null, Roster: not null } && held.Snapshot.Phase == GameRoomWire.PhasePlaying;
+    private bool ShowsPool(GameRoomState? held) => held is { Pool: not null } && ShowsTable(held);
 
-    private static bool LiveTable(GameRoomState? held) =>
-        held is { Roster: not null } && held.Snapshot.Phase == GameRoomWire.PhasePlaying
-        && (held.Uno is not null || held.Chess is not null || held.Pool is not null);
+    private bool ShowsTable(GameRoomState? held)
+    {
+        if (held is null || held.Roster is null
+            || (held.Uno is null && held.Chess is null && held.Pool is null && held.ConnectFour is null))
+        {
+            return false;
+        }
+
+        var phase = held.Snapshot.Phase;
+        return phase == GameRoomWire.PhasePlaying || (phase == GameRoomWire.PhaseFinished && finishHold.Holding);
+    }
+
+    private void TrackPhase(GameRoomState? held)
+    {
+        if (held is null || held.Roster is null)
+        {
+            finishHold.Clear();
+            lastSeenPhase = -1;
+            return;
+        }
+
+        var phase = held.Snapshot.Phase;
+        if (phase == lastSeenPhase && ReferenceEquals(labelLanguage, Loc.Current))
+        {
+            return;
+        }
+
+        if (phase != lastSeenPhase)
+        {
+            if (phase == GameRoomWire.PhaseFinished && lastSeenPhase == GameRoomWire.PhasePlaying)
+            {
+                finishHold.Begin(FinishedText(held));
+            }
+            else
+            {
+                finishHold.Clear();
+            }
+        }
+
+        finishedLabel = phase == GameRoomWire.PhaseFinished ? FinishedText(held) : string.Empty;
+        labelLanguage = Loc.Current;
+        labeledRoster = null;
+        lastSeenPhase = phase;
+    }
 
     private bool IsHost(GameRoomRoster roster) =>
         string.Equals(roster.HostUserId, store.AccountId, StringComparison.Ordinal);
@@ -197,7 +288,7 @@ internal sealed class OnlineRoomView
         }
     }
 
-    private void DrawClosed(Rect body, PhoneTheme theme, float scale, string reason, Action back)
+    private static void DrawClosed(Rect body, AppSkin ui, string reason, Action back)
     {
         var message = reason switch
         {
@@ -205,71 +296,65 @@ internal sealed class OnlineRoomView
             GameRoomWire.ReasonRestarting => Loc.T(L.Games.OnlineRestarting),
             _ => Loc.T(L.Games.OnlineRoomEnded),
         };
-        DrawCenteredNotice(body, theme, message);
-        var accent = Core.Apps.AppAccents.For("games");
-        if (GameHud.Button(new Vector2(body.Center.X, body.Center.Y + 48f * scale),
-                new Vector2(140f * scale, 36f * scale), Loc.T(L.Common.Cancel), accent, theme))
+        if (GamesHubArt.StateScreen(ImGui.GetWindowDrawList(), ui, body, FontAwesomeIcon.DoorClosed, message,
+                string.Empty, Loc.T(L.Common.Close), "games.room.closed"))
         {
             back();
         }
     }
 
-    private static void DrawCenteredNotice(Rect body, PhoneTheme theme, string message)
-    {
-        Typography.DrawWrappedCentered(ImGui.GetWindowDrawList(), body.Center, message, theme.TextMuted,
-            TextStyles.Subheadline, MathF.Min(body.Width - 48f, 280f * UiScale.Current));
-    }
-
     // The lobby and the finished screen are the same room at rest: the roster, the code, and one
     // primary button whose label is the only thing the phase changes.
-    private void DrawLobby(Rect body, PhoneTheme theme, float scale, GameRoomState held)
+    private void DrawLobby(Rect body, AppSkin ui, float scale, GameRoomState held)
     {
         using var surface = AppSurface.Begin(body);
-        var accent = Core.Apps.AppAccents.For("games");
+        var theme = ui.Theme;
         var phase = held.Snapshot.Phase;
         var roster = held.Roster!;
         var players = roster.Players;
         var isHost = IsHost(roster);
+        var accent = OnlineGameArt.Accent(held.Snapshot.GameKind);
+        RefreshRosterLabels(roster);
         rulesMenu.Gate();
         var picked = DrawRulesMenu(body, theme);
-
-        if (phase == GameRoomWire.PhaseFinished)
+        if (picked >= 0)
         {
-            DrawFinishedBanner(theme, scale, held);
+            selectedRuleSet = picked;
         }
 
-        DrawCodeCard(theme, scale, accent);
+        var drawList = ImGui.GetWindowDrawList();
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ScrollLayout.StableContentWidth();
+        var left = origin.X;
+        var y = origin.Y;
+        if (phase == GameRoomWire.PhaseFinished && finishedLabel.Length > 0)
+        {
+            y = DrawFinishedBanner(drawList, ui, left, y, width, scale, accent) + Metrics.Space.Md * scale;
+        }
+
+        y = DrawCodeCard(drawList, ui, left, y, width, scale, accent);
         if (inlineReason.Length > 0 && Environment.TickCount64 - noticeAtTick < NoticeMilliseconds)
         {
-            DrawInlineNotice(theme, scale);
+            var message = Loc.T(GamesOnlineText.ReasonMessage(inlineReason));
+            y += Metrics.Space.Sm * scale;
+            y += Typography.DrawWrappedLeft(new Vector2(left, y), message, theme.Danger, TextStyles.Footnote, width);
         }
 
         if (isHost && held.Snapshot.GameKind == GameRoomWire.UnoKind)
         {
-            var pickOrigin = ImGui.GetCursorScreenPos();
-            var pickWidth = ScrollLayout.StableContentWidth();
-            var dropdownRect = new Rect(pickOrigin, new Vector2(pickOrigin.X + pickWidth, pickOrigin.Y + 36f * scale));
-
-            var label = Loc.T(RuleSetLabels[selectedRuleSet]);
-            if (GameHud.Button(new Vector2(dropdownRect.Center.X, dropdownRect.Center.Y),
-                new Vector2(pickWidth, 36f * scale), label, accent, theme))
-            {
-                OpenRulesMenu(dropdownRect);
-            }
-
-            if (picked >= 0)
-            {
-                selectedRuleSet = picked;
-            }
-
-            ImGui.Dummy(new Vector2(pickWidth, 40f * scale));
+            y = DrawRulesRow(drawList, ui, left, y + Metrics.Space.Md * scale, width, scale);
         }
 
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Md * scale));
-        var card = GroupCard.Begin(theme, players.Length == 0 ? 1 : players.Length, RosterRowHeight);
-        for (var index = 0; index < players.Length; index++)
+        y += GamesHubArt.SectionGap * scale;
+        GamesHubArt.Section(drawList, ui, left, y, width, Loc.T(L.GamesHub.Players), string.Empty, string.Empty);
+        y += GamesHubArt.SectionHeight * scale;
+        ImGui.SetCursorScreenPos(new Vector2(left, y));
+        var rowCount = Math.Max(1, Math.Min(players.Length, MaxSeats));
+        var card = GroupCard.Begin(ui, rowCount, RosterRowHeight);
+        card.SeparatorInset = AvatarRadius * 2f + RowTextGap;
+        for (var index = 0; index < players.Length && index < MaxSeats; index++)
         {
-            DrawRosterRow(card.NextRow(), theme, scale, roster, players[index], isHost);
+            DrawRosterRow(drawList, card.NextRow(), ui, scale, roster, players[index], index, isHost, accent);
         }
 
         if (players.Length == 0)
@@ -278,50 +363,97 @@ internal sealed class OnlineRoomView
         }
 
         card.End();
-        ImGui.Dummy(new Vector2(0f, Metrics.Space.Lg * scale));
-
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var buttonSize = new Vector2(width * 0.62f, 40f * scale);
-        var primaryCenter = new Vector2(origin.X + width * 0.5f, origin.Y + buttonSize.Y * 0.5f);
-        if (isHost)
-        {
-            var enough = players.Length >= 2;
-            var label = phase == GameRoomWire.PhaseFinished
-                ? Loc.T(L.Games.OnlineRematch)
-                : Loc.T(L.Games.OnlineStart);
-            if (GameHud.Button(primaryCenter, buttonSize, label, enough ? accent : theme.TextMuted, theme)
-                && enough && !store.ActInFlight)
-            {
-                store.SendStart(selectedRuleSet);
-            }
-
-            if (!enough)
-            {
-                Typography.DrawCentered(ImGui.GetWindowDrawList(),
-                    new Vector2(primaryCenter.X, primaryCenter.Y + 32f * scale),
-                    Loc.T(L.Games.OnlineNeedPlayers), theme.TextMuted, TextStyles.Footnote);
-            }
-        }
-        else
-        {
-            Typography.DrawCentered(ImGui.GetWindowDrawList(), primaryCenter,
-                Loc.T(L.Games.OnlineWaitingHost), theme.TextMuted, TextStyles.Subheadline);
-        }
-
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, buttonSize.Y + 44f * scale));
-
-        var leaveOrigin = ImGui.GetCursorScreenPos();
-        var leaveCenter = new Vector2(leaveOrigin.X + width * 0.5f, leaveOrigin.Y + 18f * scale);
-        if (GameHud.Button(leaveCenter, new Vector2(width * 0.5f, 34f * scale), LeaveLabel(isHost),
-                new Vector4(0.85f, 0.35f, 0.32f, 1f), theme) && !store.IntentInFlight)
+        y = card.Bounds.Max.Y + GamesHubArt.SectionGap * scale;
+        y = DrawPrimary(drawList, ui, left, y, width, scale, isHost, phase, players.Length, accent);
+        y += Metrics.Space.Lg * scale;
+        var leaveLabel = LeaveLabel(isHost);
+        var leaveWidth = MathF.Min(width, GamesHubArt.ButtonWidth(leaveLabel, SecondaryHeight * scale) +
+            Metrics.Space.Xxl * scale);
+        var leaveRect = new Rect(new Vector2(left + (width - leaveWidth) * 0.5f, y),
+            new Vector2(left + (width + leaveWidth) * 0.5f, y + SecondaryHeight * scale));
+        if (Button.Draw(drawList, leaveRect, leaveLabel, ui.Ink, ButtonStyle.Tinted, ButtonRole.Destructive,
+                !store.IntentInFlight, id: "games.room.leave"))
         {
             LeaveOrClose(isHost);
         }
 
-        ImGui.SetCursorScreenPos(leaveOrigin);
-        ImGui.Dummy(new Vector2(width, 40f * scale + Metrics.Space.Lg * scale));
+        y = leaveRect.Max.Y;
+        ImGui.SetCursorScreenPos(new Vector2(left, y));
+        ImGui.Dummy(new Vector2(width, Metrics.Space.Xl * scale));
+    }
+
+    private float DrawPrimary(ImDrawListPtr drawList, AppSkin ui, float left, float top, float width, float scale,
+        bool isHost, int phase, int playerCount, Vector4 accent)
+    {
+        var height = PrimaryHeight * scale;
+        if (!isHost)
+        {
+            var label = Loc.T(L.Games.OnlineWaitingHost);
+            var labelSize = Typography.Measure(label, TextStyles.Subheadline);
+            var spinner = WaitingSpinnerRadius * scale;
+            var total = MathF.Min(width, labelSize.X + spinner * 2f + Metrics.Space.Sm * scale);
+            var startX = left + (width - total) * 0.5f;
+            LoadingPulse.Spinner(new Vector2(startX + spinner, top + height * 0.5f), spinner, accent);
+            Typography.Draw(drawList, new Vector2(startX + spinner * 2f + Metrics.Space.Sm * scale,
+                    top + (height - labelSize.Y) * 0.5f),
+                Typography.FitText(label, MathF.Max(1f, width - spinner * 2f - Metrics.Space.Sm * scale),
+                    TextStyles.Subheadline), ui.MutedInk, TextStyles.Subheadline);
+            return top + height;
+        }
+
+        var enough = playerCount >= 2;
+        var startLabel = phase == GameRoomWire.PhaseFinished
+            ? Loc.T(L.Games.OnlineRematch)
+            : Loc.T(L.Games.OnlineStart);
+        var rect = new Rect(new Vector2(left, top), new Vector2(left + width, top + height));
+        if (Button.Draw(drawList, rect, startLabel, ui.Ink.WithAccent(accent), enabled: enough && !store.ActInFlight,
+                id: "games.room.start"))
+        {
+            store.SendStart(selectedRuleSet);
+        }
+
+        if (enough)
+        {
+            return rect.Max.Y;
+        }
+
+        var hint = Loc.T(L.Games.OnlineNeedPlayers);
+        var hintTop = rect.Max.Y + Metrics.Space.Sm * scale;
+        return Typography.DrawWrappedCentered(drawList, hint, TextStyles.Footnote, ui.MutedInk,
+            new Vector2(left + width * 0.5f, hintTop), width);
+    }
+
+    private float DrawRulesRow(ImDrawListPtr drawList, AppSkin ui, float left, float top, float width, float scale)
+    {
+        var height = RulesRowHeight * scale;
+        var rect = new Rect(new Vector2(left, top), new Vector2(left + width, top + height));
+        var rounding = Metrics.Radius.Widget * scale;
+        var hovered = UiInteract.Hover(rect.Min, rect.Max);
+        ui.Card(drawList, rect.Min, rect.Max, rounding);
+        if (hovered)
+        {
+            Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(ui.HoverTint));
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        var pad = Metrics.Space.Lg * scale;
+        var labelHeight = Typography.LineHeight(TextStyles.Headline);
+        Typography.Draw(drawList, new Vector2(rect.Min.X + pad, rect.Center.Y - labelHeight * 0.5f),
+            Loc.T(L.GamesHub.Rules), ui.TitleInk, TextStyles.Headline);
+        var chevron = ChevronSize * scale;
+        PhoneIcon.Draw(drawList, new Vector2(rect.Max.X - pad - chevron * 0.5f, rect.Center.Y),
+            PhoneIcons.ChevronDown, ui.MutedInk, chevron);
+        var value = Loc.T(RuleSetLabels[selectedRuleSet]);
+        var valueSize = Typography.Measure(value, TextStyles.Body);
+        Typography.Draw(drawList,
+            new Vector2(rect.Max.X - pad - chevron - Metrics.Space.Sm * scale - valueSize.X,
+                rect.Center.Y - valueSize.Y * 0.5f), value, ui.MutedInk, TextStyles.Body);
+        if (UiInteract.Click(rect.Min, rect.Max, hovered))
+        {
+            OpenRulesMenu(rect);
+        }
+
+        return rect.Max.Y;
     }
 
     private int DrawRulesMenu(Rect body, PhoneTheme theme)
@@ -352,23 +484,25 @@ internal sealed class OnlineRoomView
         rulesMenu.Toggle("uno.ruleset", anchor);
     }
 
-    private void DrawFinishedBanner(PhoneTheme theme, float scale, GameRoomState held)
+    private float DrawFinishedBanner(ImDrawListPtr drawList, AppSkin ui, float left, float top, float width,
+        float scale, Vector4 accent)
     {
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        var height = 54f * scale;
-        var max = new Vector2(origin.X + width, origin.Y + height);
-        var accent = Core.Apps.AppAccents.For("games");
-        Squircle.Fill(drawList, origin, max, Metrics.Radius.Card * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(accent, 0.14f)));
-        Squircle.Stroke(drawList, origin, max, Metrics.Radius.Card * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(accent, 0.4f)), 1f * scale);
-        Typography.DrawCentered(drawList, new Vector2(origin.X + width * 0.5f, origin.Y + height * 0.5f),
-            Typography.FitText(FinishedText(held), width - 24f * scale, TextStyles.SubheadlineEmphasized),
-            theme.TextStrong, TextStyles.SubheadlineEmphasized);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Md * scale));
+        var height = BannerHeight * scale;
+        var min = new Vector2(left, top);
+        var max = new Vector2(left + width, top + height);
+        var rounding = Metrics.Radius.Widget * scale;
+        Material.AccentGlass(drawList, min, max, rounding, scale, Palette.WithAlpha(accent, 0.22f), 1f);
+        var pad = Metrics.Space.Lg * scale;
+        var iconSize = BannerIconSize * scale;
+        ProgressRing.CenterIcon(drawList, new Vector2(min.X + pad + iconSize * 0.5f, min.Y + height * 0.5f),
+            FontAwesomeIcon.Trophy, accent, iconSize);
+        var textLeft = min.X + pad + iconSize + Metrics.Space.Md * scale;
+        var fitted = Typography.FitText(finishedLabel, MathF.Max(1f, max.X - pad - textLeft),
+            TextStyles.SubheadlineEmphasized);
+        var textHeight = Typography.LineHeight(TextStyles.SubheadlineEmphasized);
+        Typography.Draw(drawList, new Vector2(textLeft, min.Y + (height - textHeight) * 0.5f), fitted,
+            ui.TitleInk, TextStyles.SubheadlineEmphasized);
+        return max.Y;
     }
 
     private static string FinishedText(GameRoomState held)
@@ -410,40 +544,76 @@ internal sealed class OnlineRoomView
             };
         }
 
+        if (held.ConnectFour is not null)
+        {
+            return held.ConnectFour.EndKind switch
+            {
+                GameRoomWire.ConnectFourEndConnect => Loc.T(L.Games.OnlineConnectFourWin, winnerName),
+                GameRoomWire.ConnectFourEndDraw => Loc.T(L.Games.OnlineConnectFourDraw),
+                GameRoomWire.ConnectFourEndTimeout => Loc.T(L.Games.OnlineTimeoutWin, winnerName),
+                GameRoomWire.ConnectFourEndResign => Loc.T(L.Games.OnlineResignWin, winnerName),
+                GameRoomWire.ConnectFourEndDesertion => Loc.T(L.Games.OnlineDesertWin, winnerName),
+                _ => winnerName.Length > 0
+                    ? Loc.T(L.Games.OnlineWinner, winnerName)
+                    : Loc.T(L.Games.OnlineRoundVoid),
+            };
+        }
+
         return winnerName.Length > 0
             ? Loc.T(L.Games.OnlineWinner, winnerName)
             : Loc.T(L.Games.OnlineRoundVoid);
     }
 
-    private void DrawCodeCard(PhoneTheme theme, float scale, Vector4 accent)
+    private float DrawCodeCard(ImDrawListPtr drawList, AppSkin ui, float left, float top, float width, float scale,
+        Vector4 accent)
     {
         var code = RoomCode();
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var drawList = ImGui.GetWindowDrawList();
-        var height = 64f * scale;
-        var max = new Vector2(origin.X + width, origin.Y + height);
-        Squircle.Fill(drawList, origin, max, Metrics.Radius.Card * scale,
-            ImGui.GetColorU32(theme.GroupedCard));
-
-        Typography.Draw(drawList, new Vector2(origin.X + 14f * scale, origin.Y + 10f * scale),
-            Loc.T(L.Games.OnlineRoomCode), theme.TextMuted, TextStyles.Caption1);
-        var spaced = code.Length == 0 ? "······" : string.Join(' ', code.ToCharArray());
-        Typography.Draw(drawList, new Vector2(origin.X + 14f * scale, origin.Y + 28f * scale), spaced,
-            theme.TextStrong, TextStyles.Title2);
-
-        var copied = Environment.TickCount64 - copiedAtTick < 1500;
-        var pillCenter = new Vector2(max.X - 52f * scale, origin.Y + height * 0.5f);
-        if (GameHud.Button(pillCenter, new Vector2(80f * scale, 32f * scale),
-                Loc.T(copied ? L.Games.OnlineCodeCopied : L.Games.OnlineCopyCode), accent, theme)
-            && code.Length > 0)
+        var height = CodeCardHeight * scale;
+        var min = new Vector2(left, top);
+        var max = new Vector2(left + width, top + height);
+        var rounding = Metrics.Radius.Widget * scale;
+        ui.Card(drawList, min, max, rounding);
+        var pad = CodeCardPadding * scale;
+        var copied = Environment.TickCount64 - copiedAtTick < CopiedMilliseconds;
+        var copyLabel = Loc.T(copied ? L.Games.OnlineCodeCopied : L.Games.OnlineCopyCode);
+        var pillHeight = CopyPillHeight * scale;
+        var pillWidth = GamesHubArt.ButtonWidth(copyLabel, pillHeight);
+        var pillRect = new Rect(new Vector2(max.X - pad - pillWidth, min.Y + pad),
+            new Vector2(max.X - pad, min.Y + pad + pillHeight));
+        Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), Loc.T(L.Games.OnlineRoomCode), ui.MutedInk,
+            TextStyles.FootnoteEmphasized);
+        var codeTop = min.Y + pad + Typography.LineHeight(TextStyles.FootnoteEmphasized) + Metrics.Space.Xxs * scale;
+        var codeWidth = MathF.Max(1f, pillRect.Min.X - Metrics.Space.Md * scale - min.X - pad);
+        Typography.Draw(drawList, new Vector2(min.X + pad, codeTop),
+            Typography.FitText(SpacedCode(code), codeWidth, TextStyles.Title1), ui.TitleInk, TextStyles.Title1);
+        var hintHeight = Typography.LineHeight(TextStyles.Footnote);
+        Typography.Draw(drawList, new Vector2(min.X + pad, max.Y - pad - hintHeight),
+            Typography.FitText(Loc.T(L.GamesHub.CodeHint), MathF.Max(1f, width - pad * 2f), TextStyles.Footnote),
+            ui.MutedInk, TextStyles.Footnote);
+        if (Button.Draw(drawList, pillRect, copyLabel, ui.Ink.WithAccent(accent),
+                copied ? ButtonStyle.Gray : ButtonStyle.Prominent, enabled: code.Length > 0, id: "games.room.copy"))
         {
             ImGui.SetClipboardText(code);
             copiedAtTick = Environment.TickCount64;
         }
 
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, height + Metrics.Space.Sm * scale));
+        return max.Y;
+    }
+
+    private string SpacedCode(string code)
+    {
+        if (code.Length == 0)
+        {
+            return "······";
+        }
+
+        if (!ReferenceEquals(code, spacedSource))
+        {
+            spacedSource = code;
+            spacedCode = string.Join(' ', code.ToCharArray());
+        }
+
+        return spacedCode;
     }
 
     private string RoomCode()
@@ -461,48 +631,82 @@ internal sealed class OnlineRoomView
         return string.Empty;
     }
 
-    private void DrawRosterRow(Rect row, PhoneTheme theme, float scale, GameRoomRoster roster,
-        GameRoomMemberView player, bool viewerIsHost)
+    private void RefreshRosterLabels(GameRoomRoster roster)
     {
-        var drawList = ImGui.GetWindowDrawList();
-        var isRoomHost = string.Equals(player.UserId, roster.HostUserId, StringComparison.Ordinal);
-        var name = player.DisplayName;
-        if (isRoomHost)
+        if (ReferenceEquals(roster, labeledRoster))
         {
-            name = name + " · " + Loc.T(L.Games.OnlineHostBadge);
+            return;
         }
 
-        if (player.Away)
+        labeledRoster = roster;
+        var players = roster.Players;
+        for (var index = 0; index < players.Length && index < MaxSeats; index++)
         {
-            name = name + " · " + Loc.T(L.Games.OnlineAway);
-        }
+            var player = players[index];
+            var name = player.DisplayName;
+            if (string.Equals(player.UserId, roster.HostUserId, StringComparison.Ordinal))
+            {
+                name = name + " · " + Loc.T(L.Games.OnlineHostBadge);
+            }
 
-        var kickReserve = viewerIsHost && !isRoomHost ? 86f * scale : 0f;
-        var textWidth = row.Width - kickReserve - 8f * scale;
-        Typography.Draw(drawList, new Vector2(row.Min.X, row.Center.Y - 16f * scale),
-            Typography.FitText(name, textWidth, TextStyles.SubheadlineEmphasized),
-            player.Away ? theme.TextMuted : theme.TextStrong, TextStyles.SubheadlineEmphasized);
-        Typography.Draw(drawList, new Vector2(row.Min.X, row.Center.Y + 4f * scale),
-            Loc.T(L.Games.OnlineWins, player.Wins.ToString(Loc.Culture)), theme.TextMuted,
-            TextStyles.Footnote);
+            if (player.Away)
+            {
+                name = name + " · " + Loc.T(L.Games.OnlineAway);
+            }
 
-        if (kickReserve > 0f && GameHud.Button(
-                new Vector2(row.Max.X - 40f * scale, row.Center.Y),
-                new Vector2(76f * scale, 28f * scale), Loc.T(L.Games.OnlineKick),
-                new Vector4(0.85f, 0.35f, 0.32f, 1f), theme) && !store.IntentInFlight)
-        {
-            store.Kick(player.UserId);
+            rosterNames[index] = name;
+            rosterWins[index] = Loc.T(L.Games.OnlineWins, player.Wins.ToString(Loc.Culture));
+            rosterInitials[index] = player.DisplayName.Length > 0
+                ? char.IsSurrogate(player.DisplayName[0])
+                    ? player.DisplayName[..Math.Min(2, player.DisplayName.Length)]
+                    : player.DisplayName[..1].ToUpper(Loc.Culture)
+                : "?";
         }
     }
 
-    private void DrawInlineNotice(PhoneTheme theme, float scale)
+    private void DrawRosterRow(ImDrawListPtr drawList, Rect row, AppSkin ui, float scale, GameRoomRoster roster,
+        GameRoomMemberView player, int index, bool viewerIsHost, Vector4 accent)
     {
-        var width = ScrollLayout.StableContentWidth();
-        var origin = ImGui.GetCursorScreenPos();
-        var message = Loc.T(GamesOnlineText.ReasonMessage(inlineReason));
-        Typography.DrawWrappedLeft(new Vector2(origin.X, origin.Y + 4f * scale), message, theme.TextMuted,
-            TextStyles.Footnote, width);
-        ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(width, 22f * scale));
+        var theme = ui.Theme;
+        var isRoomHost = string.Equals(player.UserId, roster.HostUserId, StringComparison.Ordinal);
+        var radius = AvatarRadius * scale;
+        var avatar = new Vector2(row.Min.X + radius, row.Center.Y);
+        var avatarTint = player.Away ? ui.MutedInk : accent;
+        drawList.AddCircleFilled(avatar, radius, ImGui.GetColorU32(Palette.WithAlpha(avatarTint, 0.20f)), 32);
+        Typography.DrawCentered(drawList, avatar, rosterInitials[index], avatarTint, TextStyles.Headline);
+        if (isRoomHost)
+        {
+            ProgressRing.CenterIcon(drawList, avatar + new Vector2(radius * 0.72f, -radius * 0.72f),
+                FontAwesomeIcon.Crown, StreakGold, radius * 0.6f);
+        }
+
+        var kickLabel = Loc.T(L.Games.OnlineKick);
+        var kickHeight = KickPillHeight * scale;
+        var kickWidth = viewerIsHost && !isRoomHost
+            ? GamesHubArt.ButtonWidth(kickLabel, kickHeight)
+            : 0f;
+        var textLeft = avatar.X + radius + RowTextGap * scale;
+        var textWidth = MathF.Max(1f, row.Max.X - kickWidth - (kickWidth > 0f ? Metrics.Space.Sm * scale : 0f)
+                                      - textLeft);
+        var titleHeight = Typography.LineHeight(TextStyles.Headline);
+        var subtitleHeight = Typography.LineHeight(TextStyles.Footnote);
+        var textTop = row.Center.Y - (titleHeight + subtitleHeight) * 0.5f;
+        Typography.Draw(drawList, new Vector2(textLeft, textTop),
+            Typography.FitText(rosterNames[index], textWidth, TextStyles.Headline),
+            player.Away ? theme.TextMuted : ui.TitleInk, TextStyles.Headline);
+        Typography.Draw(drawList, new Vector2(textLeft, textTop + titleHeight),
+            Typography.FitText(rosterWins[index], textWidth, TextStyles.Footnote), ui.MutedInk, TextStyles.Footnote);
+        if (kickWidth <= 0f)
+        {
+            return;
+        }
+
+        var kickRect = new Rect(new Vector2(row.Max.X - kickWidth, row.Center.Y - kickHeight * 0.5f),
+            new Vector2(row.Max.X, row.Center.Y + kickHeight * 0.5f));
+        if (Button.Draw(drawList, kickRect, kickLabel, ui.Ink, ButtonStyle.Tinted, ButtonRole.Destructive,
+                !store.IntentInFlight, id: KickIds[index]))
+        {
+            store.Kick(player.UserId);
+        }
     }
 }

@@ -1,31 +1,18 @@
 using Aetherphone.Core;
-using Aetherphone.Core.Theme;
-using Dalamud.Bindings.ImGui;
 
 namespace Aetherphone.Windows.Components;
 
 internal static class TextButton
 {
-    private const float PadX = 12f;
-    private const float PadY = 6f;
+    private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
+
+    public static float Width(string label, float scale) => Button.WidthFor(label, ButtonSize.Small);
 
     public static bool Draw(Vector2 center, string label, Vector4 color, float scale)
     {
-        var size = Typography.Measure(label, 0.9f, FontWeight.SemiBold);
-        var min = new Vector2(center.X - size.X * 0.5f - PadX * scale, center.Y - size.Y * 0.5f - PadY * scale);
-        var max = new Vector2(center.X + size.X * 0.5f + PadX * scale, center.Y + size.Y * 0.5f + PadY * scale);
-        var hovered = UiInteract.Hover(min, max);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(label, pressed);
-        var half = (max - min) * 0.5f * press;
-        Squircle.Fill(ImGui.GetWindowDrawList(), center - half, center + half, half.Y,
-            ImGui.GetColorU32(Palette.WithAlpha(color, hovered ? 0.22f : 0.14f)));
-        Typography.DrawCentered(center, label, color, 0.9f * press, FontWeight.SemiBold);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(min, max, hovered);
+        var size = new Vector2(Width(label, scale), Button.SmallHeight * UiScale.Current);
+        var rect = new Rect(center - size * 0.5f, center + size * 0.5f);
+        var ink = new ControlInk(color with { W = 1f }, White, color, color);
+        return Button.Draw(rect, label, ink, ButtonStyle.Tinted);
     }
 }

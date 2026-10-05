@@ -2,6 +2,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Aethernet.Clients;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Localization;
 using Aetherphone.Core.Media;
 using Aetherphone.Core.Net;
 using Aetherphone.Core.Social;
@@ -15,6 +16,23 @@ internal sealed class AethergramStore : SocialFeedStore
     private const int GramSize = 1080;
 
     private readonly GramClient grams;
+    private readonly FeedLane<PostDto> archivedLane = new(PostOrder.NewestFirst);
+    private readonly FeedLane<PostDto> pendingTagsLane = new(PostOrder.NewestFirst);
+    private volatile bool pendingTagsLoaded;
+
+    public PostDto[] ArchivedPosts => archivedLane.Items;
+    public bool ArchivedLoading => archivedLane.Loading;
+    public bool ArchivedLoadingMore => archivedLane.LoadingMore;
+    public bool HasMoreArchived => archivedLane.HasMore;
+    public PostDto[] PendingTagPosts => pendingTagsLane.Items;
+    public bool PendingTagsLoading => pendingTagsLane.Loading;
+    public bool PendingTagsLoadingMore => pendingTagsLane.LoadingMore;
+    public bool HasMorePendingTags => pendingTagsLane.HasMore;
+
+    public int PendingTagCount =>
+        pendingTagsLoaded && !pendingTagsLane.HasMore
+            ? pendingTagsLane.Items.Length
+            : Math.Max(pendingTagsLane.Items.Length, Me?.PendingPhotoTags ?? 0);
 
     public AethergramStore(AethernetSession session, AccountClient account, SocialClient client, GramClient grams,
         SafetyClient safety, MediaClient media, RealtimeSignalBus signals)
@@ -23,9 +41,16 @@ internal sealed class AethergramStore : SocialFeedStore
         this.grams = grams;
     }
 
-    protected override Task<FeedPage?> FetchFeedAsync(string feedKey, string? cursor, string? regions,
+    protected override void OnAccountReset()
+    {
+        archivedLane.Clear();
+        pendingTagsLane.Clear();
+        pendingTagsLoaded = false;
+    }
+
+    protected override Task<FeedPage?> FetchFeedAsync(string feedKey, string? cursor, string? regions, bool includeSensitive,
         CancellationToken token, Action<AepFailure>? onFailure = null) =>
-        grams.FeedAsync(feedKey, cursor, regions, token, onFailure);
+        grams.FeedAsync(feedKey, cursor, regions, includeSensitive, token, onFailure);
 
     protected override Task<FeedPage?> FetchProfilePostsAsync(string userId, string? cursor, CancellationToken token) =>
         grams.UserGramsAsync(userId, cursor, token);
@@ -40,8 +65,8 @@ internal sealed class AethergramStore : SocialFeedStore
     // real baked size (GIFs already send theirs), so the feed frame matches that photo's shape;
     // the other carousel photos are baked to their own boxes and cover-fit into the frame at
     // draw time.
-    public void CreateGram(string[] sourcePaths, WallpaperCrop[] crops, PostAspect[] aspects, string caption,
-        PhotoTagInput[]? photoTags, bool sensitive, Action<bool> onComplete)
+    public void CreateGram(string[] sourcePaths, WallpaperCrop[] crops, PostAspect[] aspects, PhotoEdit[] edits,
+        string caption, PhotoTagInput[]? photoTags, bool sensitive, Action<bool> onComplete)
     {
         if (posting || sourcePaths.Length == 0)
         {
@@ -78,7 +103,7 @@ internal sealed class AethergramStore : SocialFeedStore
                 {
                     var (bakedWidth, bakedHeight) = PostAspects.Size(aspects[index], GramSize);
                     var baked = ImageProcessor.BakeCroppedJpeg(sourcePaths[index], crops[index], bakedWidth,
-                        bakedHeight, PostAspects.RevealsWholeImage(aspects[index]));
+                        bakedHeight, PostAspects.RevealsWholeImage(aspects[index]), edits[index]);
                     bytes = baked.Bytes;
                     contentType = "image/jpeg";
                     if (index == 0)
@@ -128,17 +153,240 @@ internal sealed class AethergramStore : SocialFeedStore
             () => posting = false);
     }
 
-    public void EditCaption(string postId, string caption, Action<bool> onComplete)
+    public void EditPost(string postId, string caption, PhotoTagInput[] photoTags, bool sensitive,
+        Action<bool> onComplete)
     {
-        work.Run("edit caption", async token =>
+        work.Run("edit post", async token =>
         {
-            var result = await client.EditCaptionAsync(postId, caption, token).ConfigureAwait(false);
+            var result = await grams.EditAsync(postId, caption, photoTags, sensitive, token).ConfigureAwait(false);
             if (result is null)
             {
                 return false;
             }
 
             ReplacePost(result);
+            return true;
+        }, onComplete);
+    }
+
+    public void ApproveTag(string postId, PhotoTagDto tag, Action<bool> onComplete)
+    {
+        work.Run("tag approve", async token =>
+        {
+            if (!await grams.ApproveTagAsync(tag.Id, token).ConfigureAwait(false))
+            {
+                return false;
+            }
+
+            MapPostEverywhere(postId,
+                post => post with { PhotoTags = PhotoTagStates.WithState(post.PhotoTags, tag.Id, PhotoTagStates.Approved) });
+            SettlePendingTag(postId, tag);
+            ClearTagged();
+            return true;
+        }, onComplete);
+    }
+
+    public void RemoveTag(string postId, PhotoTagDto tag, Action<bool> onComplete)
+    {
+        work.Run("tag remove", async token =>
+        {
+            if (!await grams.RemoveTagAsync(tag.Id, token).ConfigureAwait(false))
+            {
+                return false;
+            }
+
+            MapPostEverywhere(postId, post => post with { PhotoTags = PhotoTagStates.Without(post.PhotoTags, tag.Id) });
+            SettlePendingTag(postId, tag);
+            return true;
+        }, onComplete);
+    }
+
+    private void SettlePendingTag(string postId, PhotoTagDto tag)
+    {
+        if (tag.State != PhotoTagStates.Pending)
+        {
+            return;
+        }
+
+        pendingTagsLane.Items = CopyOnWrite.RemoveById(pendingTagsLane.Items, postId);
+        AdjustPendingPhotoTags(-1);
+    }
+
+    public void EnsurePendingTags()
+    {
+        if (pendingTagsLoaded)
+        {
+            return;
+        }
+
+        RefreshPendingTags();
+    }
+
+    public void RefreshPendingTags()
+    {
+        if (!IsSignedIn || pendingTagsLane.Loading)
+        {
+            return;
+        }
+
+        pendingTagsLane.Loading = true;
+        work.Run("pending tags", async token =>
+        {
+            var page = await grams.PendingTaggedAsync(null, token).ConfigureAwait(false);
+            if (page is null)
+            {
+                return;
+            }
+
+            pendingTagsLane.ApplyRefresh(page.Items, page.NextCursor);
+            pendingTagsLoaded = true;
+            if (page.NextCursor is null)
+            {
+                SyncPendingPhotoTags(page.Items.Length);
+            }
+        }, () => pendingTagsLane.Loading = false);
+    }
+
+    public void LoadMorePendingTags()
+    {
+        var cursor = pendingTagsLane.Cursor;
+        if (!IsSignedIn || cursor is null || pendingTagsLane.LoadingMore || pendingTagsLane.Loading)
+        {
+            return;
+        }
+
+        pendingTagsLane.LoadingMore = true;
+        work.Run("pending tags more", async token =>
+        {
+            var page = await grams.PendingTaggedAsync(cursor, token).ConfigureAwait(false);
+            if (page is null)
+            {
+                return;
+            }
+
+            pendingTagsLane.ApplyMore(page.Items, page.NextCursor);
+            if (page.NextCursor is null)
+            {
+                SyncPendingPhotoTags(pendingTagsLane.Items.Length);
+            }
+        }, () => pendingTagsLane.LoadingMore = false);
+    }
+
+    public void PinPost(string postId, bool replace, Action<PinOutcome> onComplete)
+    {
+        var outcome = PinOutcome.Failed;
+        work.Run("pin post", async token =>
+        {
+            var result = await grams.PinAsync(postId, replace, token, failure =>
+            {
+                if (failure.Code == FailureCodes.PostPinLimit)
+                {
+                    outcome = PinOutcome.LimitReached;
+                }
+            }).ConfigureAwait(false);
+            if (result is null)
+            {
+                return false;
+            }
+
+            if (result.ReplacedPostId is { } replacedPostId)
+            {
+                ApplyPinnedEverywhere(replacedPostId, null);
+            }
+
+            ApplyPinnedEverywhere(postId, result.Post.PinnedAtUnix);
+            outcome = PinOutcome.Pinned;
+            return true;
+        }, _ => onComplete(outcome));
+    }
+
+    public void UnpinPost(string postId, Action<bool> onComplete)
+    {
+        work.Run("unpin post", async token =>
+        {
+            var updated = await grams.UnpinAsync(postId, token).ConfigureAwait(false);
+            if (updated is null)
+            {
+                return false;
+            }
+
+            ApplyPinnedEverywhere(postId, null);
+            return true;
+        }, onComplete);
+    }
+
+    public void RefreshArchived()
+    {
+        if (!IsSignedIn || archivedLane.Loading)
+        {
+            return;
+        }
+
+        archivedLane.Loading = true;
+        work.Run("archive refresh", async token =>
+        {
+            var page = await grams.ArchivedAsync(null, token).ConfigureAwait(false);
+            if (page is not null)
+            {
+                archivedLane.ApplyRefresh(page.Items, page.NextCursor);
+            }
+        }, () => archivedLane.Loading = false);
+    }
+
+    public void LoadMoreArchived()
+    {
+        var cursor = archivedLane.Cursor;
+        if (!IsSignedIn || cursor is null || archivedLane.LoadingMore || archivedLane.Loading)
+        {
+            return;
+        }
+
+        archivedLane.LoadingMore = true;
+        work.Run("archive more", async token =>
+        {
+            var page = await grams.ArchivedAsync(cursor, token).ConfigureAwait(false);
+            if (page is not null)
+            {
+                archivedLane.ApplyMore(page.Items, page.NextCursor);
+            }
+        }, () => archivedLane.LoadingMore = false);
+    }
+
+    public void ArchivePost(string postId, Action<bool> onComplete)
+    {
+        work.Run("archive post", async token =>
+        {
+            var archived = await grams.ArchiveAsync(postId, token).ConfigureAwait(false);
+            if (archived is null)
+            {
+                return false;
+            }
+
+            RemovePost(postId);
+            var current = archivedLane.Items;
+            var items = CopyOnWrite.Prepend(current, archived);
+            if (!ReferenceEquals(items, current))
+            {
+                Array.Sort(items, PostOrder.NewestFirst);
+            }
+
+            archivedLane.Items = items;
+            return true;
+        }, onComplete);
+    }
+
+    public void UnarchivePost(string postId, Action<bool> onComplete)
+    {
+        work.Run("restore post", async token =>
+        {
+            var restored = await grams.UnarchiveAsync(postId, token).ConfigureAwait(false);
+            if (restored is null)
+            {
+                return false;
+            }
+
+            archivedLane.Items = CopyOnWrite.RemoveById(archivedLane.Items, postId);
+            AcceptRestoredPost(restored);
             return true;
         }, onComplete);
     }

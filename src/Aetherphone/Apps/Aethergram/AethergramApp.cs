@@ -9,6 +9,7 @@ using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Crypto;
 using Aetherphone.Core.Game;
 using Aetherphone.Core.Home;
+using Aetherphone.Core.Honorific;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Lodestone;
 using Aetherphone.Core.Media;
@@ -31,36 +32,52 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Aethergram;
 
-internal sealed partial class AethergramApp : IResumableApp
+internal sealed partial class AethergramApp : IResumableApp, ITabIconDrawer, INameplateHandleSource
 {
     private enum PostSheetAction
     {
         View,
         Edit,
+        Pin,
+        Unpin,
+        Archive,
+        Restore,
         Delete,
         Follow,
+        RemoveTag,
         Report,
         Block,
+    }
+
+    private enum PostNotice
+    {
+        None,
+        Replace,
+        PinFailed,
+        UnpinFailed,
+        Pinned,
+        Unpinned,
+        Archived,
+        Unarchived,
+        ArchiveFailed,
+        UnarchiveFailed,
+        TagApproved,
+        TagRemoved,
+        TagApproveFailed,
+        TagRemoveFailed,
     }
 
     private const int MaxCaptionLength = 500;
     private const int MaxPhotoTags = 20;
     private const int MaxCommentLength = 500;
-    private const float BottomNavHeight = 52f;
-    private const int NavSlotCount = 4;
-    private const int FilterToggleCount = 2;
-    private const float NavIconSize = 26f;
-    private const float NavHoverRadius = 20f;
-    private const float NavAvatarRadius = 13f;
-    private const float NavAvatarRingGap = 2.5f;
-    private const float NavAnchorHalf = 20f;
+    private const int NavTabCount = 4;
+    private const int FilterToggleCount = 3;
     private const float TopBarIconSize = 26f;
     private const float LogoSize = 30f;
     private const float LogoGap = 10f;
     private const float FeedTabRowHeight = 44f;
     private const float FeedTabUnderline = 2f;
     private const float FabRadius = 27f;
-    private const float SegmentSmoothTime = 0.09f;
     private const float CardPadTop = 10f;
     private const float CardPadBottom = 12f;
     private const float CardAvatarRadius = 16f;
@@ -68,8 +85,6 @@ internal sealed partial class AethergramApp : IResumableApp
     private const float CardHeaderBlock = 36f;
     private const float CardBannerGap = 6f;
     private const float LatestScopeRowHeight = 40f;
-    private const float LatestScopePillHeight = 28f;
-    private const float LatestScopePillPadX = 14f;
     private const float LatestScopePillGap = 8f;
     private const float CardNameGap = 10f;
     private const float CardMediaGap = 8f;
@@ -83,27 +98,45 @@ internal sealed partial class AethergramApp : IResumableApp
     private const float CardLineGap = 4f;
     private const float CardCaptionScale = 0.95f;
     private const int GridColumns = 3;
-    private const int PostSheetMaxItems = 4;
+    private const int PostSheetMaxItems = 5;
+    private const int MaxPinnedPosts = 3;
+    private const float CardPinGlyphSize = 12f;
+    private const float CardPinGlyphGap = 3f;
+    private const float TagPromptPad = 12f;
+    private const float TagPromptIconSize = 18f;
+    private const float TagPromptIconGap = 8f;
+    private const float TagPromptTitleGap = 2f;
+    private const float TagPromptRowGap = 10f;
+    private const float TagPromptPillHeight = Button.SmallHeight;
+    private const float TagPromptPillWidth = 88f;
+    private const float TagPromptPillGap = 8f;
 
     public string Id => "aethergram";
     public Vector4 Accent => AppAccents.For(Id);
     public string DisplayName => Loc.T(L.Apps.Aethergram);
+
+    public NameplateStatus TagStatus => NameplateStatus.Aethergram;
+
+    public string ResolveNameplateHandle()
+    {
+        store.EnsureMe();
+        return store.Me?.Handle ?? string.Empty;
+    }
     public string Glyph => "Ag";
     public int BadgeCount => dmStore.UnreadCount + social.UnseenCount(Id);
     public bool HasBadge => true;
     public ShareKindSet AcceptedShares => store.IsSignedIn ? ShareKindSet.Photo : ShareKindSet.None;
-    private static readonly TextStyle CardNameStyle = new(0.97f, FontWeight.SemiBold);
-    private static readonly TextStyle CardMetaStyle = new(0.85f, FontWeight.Regular);
-    private static readonly TextStyle LatestScopeStyle = new(0.86f, FontWeight.SemiBold);
+    private static readonly TextStyle CardNameStyle = TextStyles.Headline;
+    private static readonly TextStyle CardMetaStyle = TextStyles.Subheadline;
     private static readonly TextStyle CardCountStyle = TextStyles.SubheadlineEmphasized;
-    private static readonly TextStyle CardLinkStyle = new(0.88f, FontWeight.Regular);
+    private static readonly TextStyle CardLinkStyle = TextStyles.Subheadline;
     private static readonly TextStyle CardTimeStyle = TextStyles.Footnote;
-    private static readonly TextStyle WordmarkStyle = new(1.4f, FontWeight.Bold);
-    private static readonly TextStyle FeedTabStyle = new(1.07f, FontWeight.SemiBold);
-    private static readonly TextStyle FeedTabIdleStyle = new(1.07f, FontWeight.Medium);
+    private static readonly TextStyle WordmarkStyle = TextStyles.Title2;
+    private static readonly TextStyle FeedTabStyle = TextStyles.Headline;
+    private static readonly TextStyle FeedTabIdleStyle = TextStyles.BodyEmphasized;
     private static readonly UnderlineTabStyle FeedTabsStyle = new(FeedTabStyle, FeedTabIdleStyle,
         AethergramInk.Shared.TitleInk, AethergramInk.Shared.SegmentIdleInk, AethergramInk.Shared.TitleInk,
-        FeedTabUnderline, CellPadX, SegmentSmoothTime);
+        FeedTabUnderline, CellPadX, Motion.Release);
 
     private readonly Dictionary<SocialFeedScope, PullToRefresh> pullToRefresh = new()
     {
@@ -142,6 +175,10 @@ internal sealed partial class AethergramApp : IResumableApp
     private readonly PostSheetAction[] postSheetActions = new PostSheetAction[PostSheetMaxItems];
     private int postSheetCount;
     private string postSheetTitle = string.Empty;
+    private volatile PostNotice pendingPostNotice;
+    private string pendingNoticePostId = string.Empty;
+    private bool pendingNoticeLeavesDetail;
+    private readonly ScreenToast toast = new();
     private readonly Action<NotificationDto> openActivityActor;
     private readonly Action<NotificationDto> openActivityPost;
     private readonly SocialActivityFeed activityFeed;
@@ -154,6 +191,8 @@ internal sealed partial class AethergramApp : IResumableApp
     private readonly DoubleTapLike doubleTapLike = new();
     private readonly DeferredTap pendingPhotoTap = new();
     private readonly AppSkin ui = new(AppPalettes.Aethergram);
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabItems = new TabItem[NavTabCount];
     private readonly SocialProfilePages profile;
     private readonly RichTextCache bodyLayouts = new(scanHashtags: true);
     private readonly FeedVirtualizer feedVirtualizer = new(400f);
@@ -172,6 +211,7 @@ internal sealed partial class AethergramApp : IResumableApp
     private SocialFeedScope activeScope = SocialFeedScope.ForYou;
     private SocialFeedScope latestScope = SocialFeedScope.Latest;
     private bool feedScrollTopPending;
+    private bool feedActionsAnchorPending;
     private bool commentFocusPending;
     private readonly PhotoComposeSession composeSession;
     private bool composeAvatarMode;
@@ -183,6 +223,7 @@ internal sealed partial class AethergramApp : IResumableApp
     private Vector2 composeTagPoint;
     private readonly List<PhotoTagDto> composeTags = new();
     private readonly PhotoTagOverlay tagOverlay = new();
+    private volatile string? tagDecisionPostId;
     private readonly PersonPicker personPicker;
     private string caption = string.Empty;
     private bool composeSensitive;
@@ -216,12 +257,14 @@ internal sealed partial class AethergramApp : IResumableApp
         this.translation = translation;
         store = new AethergramStore(session, net.Account, net.Social, net.Grams, net.Safety, net.Media, realtimeSignals);
         store.SetFeedRegions(SocialRegion.FilterCsv(configuration.AethergramFeedRegionMask));
+        store.SetFeedSensitive(configuration.AethergramShowSensitivePosts, activeScope);
         account = net.Account;
         dmStore = new GramDmStore(session, net.GramDm, net.Social, net.Safety, net.Media, notifications, keyVault,
             conversationKeys, chatHistory, visibility, realtimeSignals, installer);
         composeMentions = new MentionAutocomplete(store.NewMentionSuggestions());
         commentMentions = new MentionAutocomplete(store.NewMentionSuggestions());
-        editCaptionMentions = new MentionAutocomplete(store.NewMentionSuggestions());
+        editPostMentions = new MentionAutocomplete(store.NewMentionSuggestions());
+        editPostPreviewPage = DrawEditPostPreviewPage;
         personPicker = new PersonPicker(store.NewMentionSuggestions());
         stories = new StoryPresenter(session, net.Grams, net.Media, images, lodestone, AethergramArt.StoryRing,
             AppPalettes.Aethergram, new StoryConfirmLabels(L.Aethergram.DeleteConfirm, L.Aethergram.DeleteCancel,
@@ -234,6 +277,9 @@ internal sealed partial class AethergramApp : IResumableApp
         this.lodestone = lodestone;
         this.library = library;
         composeSession = new PhotoComposeSession(library, wallpaperImages);
+        composeEditBack = composeSession.EditBack;
+        composeCaptionBack = composeSession.CaptionBack;
+        composeExitTagMode = ExitTagMode;
         this.images = images;
         this.http = http;
         this.social = social;
@@ -294,7 +340,7 @@ internal sealed partial class AethergramApp : IResumableApp
 
         if (store.IsSignedIn && dmLauncher.TryConsume(out var threadUserId, out var threadDraft))
         {
-            router.Push(AethergramRoute.Thread(threadUserId), false);
+            ShowLaunchedThread(threadUserId);
             if (!string.IsNullOrEmpty(threadDraft))
             {
                 threadView.PrefillDraft(threadDraft);
@@ -321,6 +367,20 @@ internal sealed partial class AethergramApp : IResumableApp
         }
     }
 
+    private void ShowLaunchedThread(string userId)
+    {
+        var target = AethergramRoute.Thread(userId);
+        if (router.Current == target)
+        {
+            return;
+        }
+
+        router.Reset();
+        ResetInboxState();
+        router.Push(AethergramRoute.Inbox, false);
+        router.Push(target, false);
+    }
+
     public void OnClosed()
     {
         store.FlushFeedSignals();
@@ -330,6 +390,7 @@ internal sealed partial class AethergramApp : IResumableApp
 
     public void Draw(in PhoneContext context)
     {
+        dmStore.NoteInboxWatched();
         theme = context.Theme;
         navigation = context.Navigation;
         ui.Theme = theme;
@@ -365,18 +426,21 @@ internal sealed partial class AethergramApp : IResumableApp
                 ImGui.GetIO().DeltaTime, drawView);
         }
 
+        UpdateTourHold();
         if (avatarLightbox.Active)
         {
             avatarLightbox.Draw(screen, theme);
         }
 
         DrawFilterSheet(screen);
+        DrainPostNotices();
         DrawPostSheet(screen);
         DrawFeedExplainer(screen);
         DrawCommentSheet(screen);
         DrawProfileMenu(screen);
         DrawProfileActionSheet(screen);
         DrawInboxRowSheet(screen);
+        toast.Draw(screen, ScreenToastStyle.From(ui));
     }
 
     private void DrawView(AethergramRoute route, Rect area, int depth)
@@ -399,8 +463,8 @@ internal sealed partial class AethergramApp : IResumableApp
             case AethergramScreen.EditProfile:
                 DrawEditProfile(area);
                 break;
-            case AethergramScreen.EditCaption:
-                DrawEditCaption(area);
+            case AethergramScreen.EditPost:
+                DrawEditPost(area);
                 break;
             case AethergramScreen.UserList:
                 DrawUserList(area, route.Id!, route.Kind);
@@ -408,11 +472,14 @@ internal sealed partial class AethergramApp : IResumableApp
             case AethergramScreen.Inbox:
                 DrawInbox(area);
                 break;
+            case AethergramScreen.InboxArchived:
+                DrawInboxArchived(area);
+                break;
             case AethergramScreen.NewMessage:
                 DrawNewMessage(area);
                 break;
             case AethergramScreen.Thread:
-                threadView.Draw(ChatArea(area), route.Id!);
+                threadView.Draw(ChatArea(area), route.Id!, depth == router.Depth);
                 break;
             case AethergramScreen.ChatImage:
                 threadView.DrawImagePicker(ChatArea(area), route.Id!);
@@ -438,11 +505,17 @@ internal sealed partial class AethergramApp : IResumableApp
             case AethergramScreen.Encryption:
                 threadView.DrawEncryptionScreen(ChatArea(area));
                 break;
+            case AethergramScreen.Archive:
+                DrawArchive(area);
+                break;
             case AethergramScreen.Hashtag:
                 DrawHashtag(area, route.Id!);
                 break;
             case AethergramScreen.Activity:
                 DrawActivity(area);
+                break;
+            case AethergramScreen.BadgeProgress:
+                DrawBadgeProgress(area);
                 break;
             default:
                 DrawRoot(area);
@@ -463,50 +536,50 @@ internal sealed partial class AethergramApp : IResumableApp
         if (!store.IsSignedIn)
         {
             DrawHomeTopBar(area);
-            TourHolds.Hold(Id);
             var body = new Rect(new Vector2(area.Min.X, area.Min.Y + AppHeader.Height * scale), area.Max);
             Typography.DrawCentered(body.Center, Loc.T(L.Aethergram.SetUpAccount), AethergramInk.MutedInk);
             return;
         }
 
-        TourHolds.Release(Id);
-        if (GuideIntents.Consume("aethergram.tab.search"))
-        {
-            SelectTab(AethergramTab.Search);
-        }
-
-        if (GuideIntents.Consume("aethergram.tab.profile"))
-        {
-            SelectTab(AethergramTab.Profile);
-        }
-
-        var navRect = new Rect(new Vector2(area.Min.X, area.Max.Y - BottomNavHeight * scale), area.Max);
-        var tabArea = new Rect(area.Min, new Vector2(area.Max.X, navRect.Min.Y));
+        using (TabBar.ReserveContent(scale))
         using (ImRaii.PushId((int)activeTab))
         {
             switch (activeTab)
             {
                 case AethergramTab.Search:
-                    DrawSearchTab(tabArea);
+                    DrawSearchTab(area);
                     break;
                 case AethergramTab.Profile:
-                    DrawProfileTab(tabArea);
+                    DrawProfileTab(area);
                     break;
                 default:
-                    DrawFeedTab(tabArea);
+                    DrawFeedTab(area);
                     break;
             }
         }
 
-        DrawBottomNav(navRect);
+        DrawBottomNav(area);
+    }
+
+    private void UpdateTourHold()
+    {
+        if (store.IsSignedIn && router.Depth == 1 && activeTab == AethergramTab.Home)
+        {
+            TourHolds.Release(Id);
+            return;
+        }
+
+        TourHolds.Hold(Id);
     }
 
     private void DrawFeedTab(Rect area)
     {
         var scale = UiScale.Current;
+        store.EnsureMe();
         DrawHomeTopBar(area);
         var top = area.Min.Y + AppHeader.Height * scale;
         var rowRect = new Rect(new Vector2(area.Min.X, top), new Vector2(area.Max.X, top + FeedTabRowHeight * scale));
+        UiAnchors.Report("aethergram.feeds", rowRect);
         var picked = UnderlineTabs.Draw(rowRect, Loc.T(L.Aethergram.ForYou), Loc.T(L.Social.FeedLatest),
             activeScope != SocialFeedScope.ForYou, ref tabSegment, Ink, FeedTabsStyle);
         if (picked >= 0)
@@ -517,7 +590,7 @@ internal sealed partial class AethergramApp : IResumableApp
         var listTop = activeScope == SocialFeedScope.ForYou ? rowRect.Max.Y : DrawLatestScopeRow(area, rowRect.Max.Y);
         var listRect = new Rect(new Vector2(area.Min.X, listTop), area.Max);
         DrawFeedList(listRect, activeScope);
-        if (ComposeFab.Draw(listRect, "##aethergramComposeFab", Ink.Accent, PhoneIcons.Plus,
+        if (ComposeFab.Draw(TabBar.ContentArea(listRect, scale), "##aethergramComposeFab", Ink.Accent, PhoneIcons.Plus,
                 Loc.T(L.Aethergram.NewPost), "aethergram.compose", Ink.AccentDeep, FabRadius, true))
         {
             StartCompose(false);
@@ -567,6 +640,11 @@ internal sealed partial class AethergramApp : IResumableApp
 
     private bool HiddenByMediaPreference(PostDto post)
     {
+        if (post.Sensitive && !configuration.AethergramShowSensitivePosts && !IsOwnPost(post))
+        {
+            return true;
+        }
+
         if (configuration.AethergramShowGifPosts)
         {
             return false;
@@ -575,6 +653,8 @@ internal sealed partial class AethergramApp : IResumableApp
         var photos = PostMedia.Photos(post.MediaUrls, post.MediaUrl);
         return photos.Length > 0 && GifMedia.IsGif(photos[0]);
     }
+
+    private bool IsOwnPost(PostDto post) => store.Me is { } me && me.Id == post.AuthorId;
 
     private bool HiddenByMediaPreference(CommentDto comment)
     {
@@ -596,15 +676,38 @@ internal sealed partial class AethergramApp : IResumableApp
             AddPostSheetItem(PostSheetAction.View, Loc.T(L.Aethergram.ViewPost), false);
         }
 
-        if (store.Me is { } me && me.Id == post.AuthorId)
+        if (IsOwnPost(post))
         {
-            AddPostSheetItem(PostSheetAction.Edit, Loc.T(L.Aethergram.EditCaption), false);
+            AddPostSheetItem(PostSheetAction.Edit, Loc.T(L.Aethergram.EditPost), false);
+            if (post.ArchivedAtUnix is not null)
+            {
+                AddPostSheetItem(PostSheetAction.Restore, Loc.T(L.Social.UnarchiveAction), false);
+            }
+            else
+            {
+                if (post.PinnedAtUnix is null)
+                {
+                    AddPostSheetItem(PostSheetAction.Pin, Loc.T(L.Social.PinToProfile), false);
+                }
+                else
+                {
+                    AddPostSheetItem(PostSheetAction.Unpin, Loc.T(L.Social.UnpinFromProfile), false);
+                }
+
+                AddPostSheetItem(PostSheetAction.Archive, Loc.T(L.Social.ArchiveAction), false);
+            }
+
             AddPostSheetItem(PostSheetAction.Delete, Loc.T(L.Aethergram.DeleteConfirm), true);
         }
         else
         {
             AddPostSheetItem(PostSheetAction.Follow,
                 Loc.T(post.IsFollowing ? L.Aethergram.Unfollow : L.Aethergram.Follow), false);
+            if (PhotoTagStates.MineFor(post.PhotoTags, store.Me?.Id) is not null)
+            {
+                AddPostSheetItem(PostSheetAction.RemoveTag, Loc.T(L.PhotoTag.RemoveMe), true);
+            }
+
             AddPostSheetItem(PostSheetAction.Report, Loc.T(L.Report.Action), true);
             AddPostSheetItem(PostSheetAction.Block, Loc.T(L.Social.BlockAction), true);
         }
@@ -639,13 +742,32 @@ internal sealed partial class AethergramApp : IResumableApp
                 OpenDetail(post);
                 break;
             case PostSheetAction.Edit:
-                OpenEditCaption(post);
+                OpenEditPost(post);
+                break;
+            case PostSheetAction.Pin:
+                PinPost(post.Id);
+                break;
+            case PostSheetAction.Unpin:
+                UnpinPost(post.Id);
+                break;
+            case PostSheetAction.Archive:
+                ArchivePost(post.Id);
+                break;
+            case PostSheetAction.Restore:
+                RestorePost(post.Id);
                 break;
             case PostSheetAction.Delete:
                 profile.AskDeletePost(post.Id, router.Current.Screen == AethergramScreen.Detail ? back : null);
                 break;
             case PostSheetAction.Follow:
                 store.SetFollow(post.AuthorId, !post.IsFollowing);
+                break;
+            case PostSheetAction.RemoveTag:
+                if (PhotoTagStates.MineFor(post.PhotoTags, store.Me?.Id) is { } mine)
+                {
+                    AskRemoveTag(post, mine);
+                }
+
                 break;
             case PostSheetAction.Report:
                 profile.OpenReport("post", post.Id, Loc.T(L.Report.PostTitle));
@@ -654,6 +776,182 @@ internal sealed partial class AethergramApp : IResumableApp
                 profile.AskBlock(post.AuthorDisplayName, post.AuthorHandle, post.AuthorId);
                 break;
         }
+    }
+
+    private void AskRemoveTag(PostDto post, PhotoTagDto tag)
+    {
+        confirm.Ask(new ConfirmRequest
+        {
+            Title = Loc.T(L.PhotoTag.RemoveMeTitle),
+            Message = Loc.T(L.PhotoTag.RemoveMeMessage),
+            ConfirmLabel = Loc.T(L.PhotoTag.Remove),
+            CancelLabel = Loc.T(L.Common.Cancel),
+            Sheet = true,
+            BusyLabel = Loc.T(L.Aethergram.Saving),
+            FailedMessage = Loc.T(L.PhotoTag.RemoveFailed),
+            ConfirmAsync = done => store.RemoveTag(post.Id, tag, removed =>
+            {
+                if (removed)
+                {
+                    QueuePostNotice(PostNotice.TagRemoved, post.Id, false);
+                }
+
+                done(removed);
+            }),
+        });
+    }
+
+    private void PinPost(string postId)
+    {
+        store.PinPost(postId, false, outcome => QueuePostNotice(outcome switch
+        {
+            PinOutcome.Pinned => PostNotice.Pinned,
+            PinOutcome.LimitReached => PostNotice.Replace,
+            _ => PostNotice.PinFailed,
+        }, postId, false));
+    }
+
+    private void UnpinPost(string postId)
+    {
+        store.UnpinPost(postId, ok => QueuePostNotice(ok ? PostNotice.Unpinned : PostNotice.UnpinFailed, postId, false));
+    }
+
+    private void ArchivePost(string postId)
+    {
+        var fromDetail = router.Current.Screen == AethergramScreen.Detail;
+        store.ArchivePost(postId,
+            ok => QueuePostNotice(ok ? PostNotice.Archived : PostNotice.ArchiveFailed, postId, fromDetail));
+    }
+
+    private void RestorePost(string postId)
+    {
+        var fromDetail = router.Current.Screen == AethergramScreen.Detail;
+        store.UnarchivePost(postId,
+            ok => QueuePostNotice(ok ? PostNotice.Unarchived : PostNotice.UnarchiveFailed, postId, fromDetail));
+    }
+
+    private void QueuePostNotice(PostNotice notice, string postId, bool leavesDetail)
+    {
+        pendingNoticePostId = postId;
+        pendingNoticeLeavesDetail = leavesDetail;
+        pendingPostNotice = notice;
+    }
+
+    private void DrainPostNotices()
+    {
+        var notice = pendingPostNotice;
+        if (notice == PostNotice.None)
+        {
+            return;
+        }
+
+        pendingPostNotice = PostNotice.None;
+        switch (notice)
+        {
+            case PostNotice.Replace:
+                AskReplacePinnedPost(pendingNoticePostId);
+                break;
+            case PostNotice.PinFailed:
+                confirm.Alert(null, Loc.T(L.Social.PinFailed), Loc.T(L.Common.Close));
+                break;
+            case PostNotice.UnpinFailed:
+                confirm.Alert(null, Loc.T(L.Social.UnpinFailed), Loc.T(L.Common.Close));
+                break;
+            case PostNotice.Pinned:
+                toast.Show(Loc.T(L.Social.PinnedToast));
+                break;
+            case PostNotice.Unpinned:
+                toast.Show(Loc.T(L.Social.UnpinnedToast));
+                break;
+            case PostNotice.Archived:
+                toast.Show(Loc.T(L.Social.ArchivedToast));
+                LeaveDetailAfterNotice();
+                break;
+            case PostNotice.Unarchived:
+                toast.Show(Loc.T(L.Social.UnarchivedToast));
+                LeaveDetailAfterNotice();
+                break;
+            case PostNotice.ArchiveFailed:
+                confirm.Alert(null, Loc.T(L.Social.ArchiveFailed), Loc.T(L.Common.Close));
+                break;
+            case PostNotice.UnarchiveFailed:
+                confirm.Alert(null, Loc.T(L.Social.UnarchiveFailed), Loc.T(L.Common.Close));
+                break;
+            case PostNotice.TagApproved:
+                toast.Show(Loc.T(L.PhotoTag.ApprovedToast));
+                break;
+            case PostNotice.TagRemoved:
+                toast.Show(Loc.T(L.PhotoTag.RemovedToast));
+                break;
+            case PostNotice.TagApproveFailed:
+                confirm.Alert(null, Loc.T(L.PhotoTag.ApproveFailed), Loc.T(L.Common.Close));
+                break;
+            case PostNotice.TagRemoveFailed:
+                confirm.Alert(null, Loc.T(L.PhotoTag.RemoveFailed), Loc.T(L.Common.Close));
+                break;
+        }
+    }
+
+    private void DecideTag(PostDto post, PhotoTagDto tag, bool approve)
+    {
+        tagDecisionPostId = post.Id;
+        if (approve)
+        {
+            store.ApproveTag(post.Id, tag, succeeded =>
+            {
+                tagDecisionPostId = null;
+                QueuePostNotice(succeeded ? PostNotice.TagApproved : PostNotice.TagApproveFailed, post.Id, false);
+            });
+            return;
+        }
+
+        store.RemoveTag(post.Id, tag, succeeded =>
+        {
+            tagDecisionPostId = null;
+            QueuePostNotice(succeeded ? PostNotice.TagRemoved : PostNotice.TagRemoveFailed, post.Id, false);
+        });
+    }
+
+    private void LeaveDetailAfterNotice()
+    {
+        if (pendingNoticeLeavesDetail && router.Current.Screen == AethergramScreen.Detail)
+        {
+            back();
+        }
+    }
+
+    private void AskReplacePinnedPost(string postId)
+    {
+        confirm.Ask(new ConfirmRequest
+        {
+            Title = Loc.T(L.Social.PinReplaceTitle),
+            Message = Loc.T(L.Social.PinReplaceMessage, MaxPinnedPosts),
+            ConfirmLabel = Loc.T(L.Social.PinReplaceConfirm),
+            CancelLabel = Loc.T(L.Common.Cancel),
+            Danger = false,
+            Sheet = true,
+            BusyLabel = Loc.T(L.Aethergram.Saving),
+            FailedMessage = Loc.T(L.Social.PinFailed),
+            ConfirmAsync = done => store.PinPost(postId, true, outcome =>
+            {
+                var pinned = outcome == PinOutcome.Pinned;
+                if (pinned)
+                {
+                    QueuePostNotice(PostNotice.Pinned, postId, false);
+                }
+
+                done(pinned);
+            }),
+        });
+    }
+
+    private float DrawPinnedGlyph(ImDrawListPtr drawList, float left, float top, float lineHeight)
+    {
+        var scale = UiScale.Current;
+        var glyphSize = CardPinGlyphSize * scale;
+        PhoneIcon.Draw(drawList, new Vector2(left + glyphSize * 0.5f, top + lineHeight * 0.5f), PhoneIcons.PinFilled,
+            Ink.MutedInk, glyphSize);
+        return glyphSize + CardPinGlyphGap * scale;
     }
 
     private void DrawFeedList(Rect listRect, SocialFeedScope scope)
@@ -669,8 +967,10 @@ internal sealed partial class AethergramApp : IResumableApp
 
             pullToRefresh[scope].Draw(listRect, surface.Pull, surface.Dragging,
                 store.IsLoading(scope), Ink.MutedInk, () => RefreshFeed(scope));
+            var trayTop = ImGui.GetCursorScreenPos().Y;
             stories.DrawTray(theme, store.Me?.AvatarUrl, store.Me is { } me ? me.Name : string.Empty,
                 store.Me?.FrameId);
+            ReportStoryTray(listRect, trayTop, ImGui.GetCursorScreenPos().Y);
             if (snapshot.Length == 0)
             {
                 var failed = !store.IsLoading(scope) && store.FeedFailed(scope);
@@ -711,6 +1011,7 @@ internal sealed partial class AethergramApp : IResumableApp
                 }
 
                 var caughtUpAfterId = ranked ? store.CaughtUpAfterId : null;
+                feedActionsAnchorPending = UiAnchors.Recording;
                 for (var index = 0; index < snapshot.Length; index++)
                 {
                     var post = snapshot[index];
@@ -745,6 +1046,7 @@ internal sealed partial class AethergramApp : IResumableApp
                     }
                 }
 
+                feedActionsAnchorPending = false;
                 if (store.LoadingMore(scope))
                 {
                     InfiniteScroll.DrawLoadingRow(listRect.Center.X, Ink.MutedInk);
@@ -759,6 +1061,30 @@ internal sealed partial class AethergramApp : IResumableApp
         }
     }
 
+    private static void ReportStoryTray(Rect listRect, float trayTop, float trayBottom)
+    {
+        if (!UiAnchors.Recording || trayBottom <= trayTop || trayTop < listRect.Min.Y)
+        {
+            return;
+        }
+
+        UiAnchors.Report("aethergram.stories",
+            new Rect(new Vector2(listRect.Min.X, trayTop), new Vector2(listRect.Max.X, trayBottom)));
+    }
+
+    private void ReportFeedActions(float left, float right, float top, float bottom)
+    {
+        var visibleTop = ImGui.GetWindowPos().Y;
+        var visibleBottom = visibleTop + ImGui.GetWindowSize().Y - TabBar.ContentInset(UiScale.Current);
+        if (top < visibleTop || bottom > visibleBottom)
+        {
+            return;
+        }
+
+        feedActionsAnchorPending = false;
+        UiAnchors.Report("aethergram.card.actions", new Rect(new Vector2(left, top), new Vector2(right, bottom)));
+    }
+
     private static void DrawSuggestionBanner(ImDrawListPtr drawList, float left, float top, float width, string label)
     {
         var scale = UiScale.Current;
@@ -771,7 +1097,61 @@ internal sealed partial class AethergramApp : IResumableApp
             Typography.FitText(label, MathF.Max(1f, width - iconSize - 6f * scale), CardMetaStyle), Ink.MutedInk, CardMetaStyle);
     }
 
-    private void DrawGramCard(PostDto post, bool detail = false, string? suggestion = null)
+    private static float TagPromptTextWidth(float innerWidth, float scale) =>
+        MathF.Max(1f, innerWidth - (TagPromptPad * 2f + TagPromptIconSize + TagPromptIconGap) * scale);
+
+    private static float TagPromptHeight(float innerWidth, float scale)
+    {
+        var hintHeight = Typography.MeasureWrapped(Loc.T(L.PhotoTag.PendingHint), TagPromptTextWidth(innerWidth, scale),
+            CardMetaStyle.Scale, CardMetaStyle.Weight);
+        return (TagPromptPad * 2f + TagPromptRowGap + TagPromptPillHeight + CardBannerGap) * scale
+            + Typography.LineHeight(CardNameStyle) + TagPromptTitleGap * scale + hintHeight;
+    }
+
+    private void DrawTagPrompt(ImDrawListPtr drawList, PostDto post, PhotoTagDto tag, Rect panel)
+    {
+        var scale = UiScale.Current;
+        ui.Card(drawList, panel.Min, panel.Max, Metrics.Radius.Grouped * scale);
+        var pad = TagPromptPad * scale;
+        var iconSize = TagPromptIconSize * scale;
+        var titleHeight = Typography.LineHeight(CardNameStyle);
+        var titleTop = panel.Min.Y + pad;
+        PhoneIcon.Draw(drawList, new Vector2(panel.Min.X + pad + iconSize * 0.5f, titleTop + titleHeight * 0.5f),
+            PhoneIcons.UserSquareRounded, Ink.AccentLink, iconSize);
+        var textLeft = panel.Min.X + pad + iconSize + TagPromptIconGap * scale;
+        var textWidth = TagPromptTextWidth(panel.Width, scale);
+        Typography.Draw(drawList, new Vector2(textLeft, titleTop),
+            Typography.FitText(Loc.T(L.PhotoTag.PendingTitle), textWidth, CardNameStyle), Ink.TitleInk, CardNameStyle);
+        ImGui.SetCursorScreenPos(new Vector2(textLeft, titleTop + titleHeight + TagPromptTitleGap * scale));
+        using (Typography.WrapAt(textLeft + textWidth))
+        using (ImRaii.PushColor(ImGuiCol.Text, Ink.MutedInk))
+        using (Plugin.Fonts.Push(CardMetaStyle.Scale, CardMetaStyle.Weight))
+        {
+            Typography.Wrapped(Loc.T(L.PhotoTag.PendingHint));
+        }
+
+        var pillHeight = TagPromptPillHeight * scale;
+        var pillWidth = TagPromptPillWidth * scale;
+        var pillTop = panel.Max.Y - pad - pillHeight;
+        var approveRect = new Rect(new Vector2(textLeft, pillTop), new Vector2(textLeft + pillWidth, pillTop + pillHeight));
+        var removeLeft = approveRect.Max.X + TagPromptPillGap * scale;
+        var removeRect = new Rect(new Vector2(removeLeft, pillTop), new Vector2(removeLeft + pillWidth, pillTop + pillHeight));
+        var busy = string.Equals(tagDecisionPostId, post.Id, StringComparison.Ordinal);
+        ImGui.PushID(post.Id);
+        if (DrawAccentPill(approveRect, Loc.T(L.PhotoTag.Approve), !busy))
+        {
+            DecideTag(post, tag, true);
+        }
+
+        if (DrawGrayPill(removeRect, Loc.T(L.PhotoTag.Remove)) && !busy)
+        {
+            DecideTag(post, tag, false);
+        }
+
+        ImGui.PopID();
+    }
+
+    private void DrawGramCard(PostDto post, bool detail = false, string? suggestion = null, bool showPinned = false)
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
@@ -806,8 +1186,11 @@ internal sealed partial class AethergramApp : IResumableApp
         var commentsHeight = showCommentsLink ? Typography.LineHeight(CardLinkStyle) + lineGap : 0f;
         var timeHeight = Typography.LineHeight(CardTimeStyle);
         var bannerHeight = suggestion is null ? 0f : Typography.LineHeight(CardMetaStyle) + CardBannerGap * scale;
-        var cellHeight = CardPadTop * scale + bannerHeight + headerBlock + CardMediaGap * scale + mediaHeight + actionsHeight
-            + CardTextGap * scale + captionHeight + commentsHeight + timeHeight + CardPadBottom * scale;
+        var pendingTag = PhotoTagStates.PendingFor(post.PhotoTags, store.Me?.Id);
+        var tagPromptHeight = pendingTag is null ? 0f : TagPromptHeight(innerWidth, scale);
+        var cellHeight = CardPadTop * scale + bannerHeight + tagPromptHeight + headerBlock + CardMediaGap * scale
+            + mediaHeight + actionsHeight + CardTextGap * scale + captionHeight + commentsHeight + timeHeight
+            + CardPadBottom * scale;
         var cell = FeedCell.Begin(drawList, cellHeight, Ink.HoverTint, false);
         var origin = cell.Bounds.Min;
         var innerX = origin.X + inset;
@@ -816,7 +1199,15 @@ internal sealed partial class AethergramApp : IResumableApp
             DrawSuggestionBanner(drawList, innerX, origin.Y + CardPadTop * scale, innerWidth, suggestion);
         }
 
-        var headerTop = origin.Y + CardPadTop * scale + bannerHeight;
+        if (pendingTag is not null)
+        {
+            DrawTagPrompt(drawList, post, pendingTag,
+                new Rect(new Vector2(innerX, origin.Y + CardPadTop * scale + bannerHeight),
+                    new Vector2(innerX + innerWidth, origin.Y + CardPadTop * scale + bannerHeight + tagPromptHeight
+                        - CardBannerGap * scale)));
+        }
+
+        var headerTop = origin.Y + CardPadTop * scale + bannerHeight + tagPromptHeight;
         var imageTop = headerTop + headerBlock + CardMediaGap * scale;
         var imageBottom = imageTop + mediaHeight;
         var actionsTop = imageBottom;
@@ -856,8 +1247,17 @@ internal sealed partial class AethergramApp : IResumableApp
             meta = $"{meta} · {Loc.T(L.Moderation.InReview)}";
         }
 
-        Typography.Draw(drawList, new Vector2(nameLeft, nameTop + nameHeight + 1f * scale),
-            Typography.FitText(meta, headerTextMaxWidth, CardMetaStyle), Ink.MutedInk, CardMetaStyle);
+        var metaTop = nameTop + nameHeight + 1f * scale;
+        var metaLeft = nameLeft;
+        if (showPinned && post.PinnedAtUnix is not null)
+        {
+            metaLeft += DrawPinnedGlyph(drawList, nameLeft, metaTop, metaHeight);
+            meta = $"{Loc.T(L.Social.PinnedLabel)} · {meta}";
+        }
+
+        Typography.Draw(drawList, new Vector2(metaLeft, metaTop),
+            Typography.FitText(meta, MathF.Max(1f, headerTextRight - metaLeft), CardMetaStyle), Ink.MutedInk,
+            CardMetaStyle);
         var ringExtent = new Vector2(ringRadius, ringRadius);
         var overRing = hasStory && UiInteract.Hover(avatarCenter - ringExtent, avatarCenter + ringExtent);
         if (hasStory && UiInteract.HoverClickCircle(avatarCenter, ringRadius))
@@ -920,6 +1320,11 @@ internal sealed partial class AethergramApp : IResumableApp
         var bookmarkMin = new Vector2(bookmarkCenter.X - iconSize, actionsTop);
         var bookmarkMax = new Vector2(bookmarkCenter.X + iconSize * 0.5f + 6f * scale, actionsTop + actionsHeight);
         var bookmarkHovered = UiInteract.Hover(bookmarkMin, bookmarkMax);
+        if (feedActionsAnchorPending && !detail)
+        {
+            ReportFeedActions(innerX, bookmarkMax.X, actionsTop, actionsTop + actionsHeight);
+        }
+
         if (bookmarkHovered)
         {
             ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
@@ -1169,7 +1574,9 @@ internal sealed partial class AethergramApp : IResumableApp
         {
             Squircle.Fill(drawList, rect.Min, rect.Max, rounding, ImGui.GetColorU32(Ink.FieldFill));
             Typography.DrawCentered(rect.Center,
-                Loc.T(images.Failed(url) ? L.Common.ImageFailed : L.Common.Loading), Ink.MutedInk, 0.85f);
+                Loc.T(images.Failed(url) ? L.Common.ImageFailed : L.Common.Loading), Ink.MutedInk,
+                TextStyles.Subheadline);
+
         }
         else
         {
@@ -1186,106 +1593,53 @@ internal sealed partial class AethergramApp : IResumableApp
         ModerationOverlay.Draw(drawList, rect.Min, rect.Max, rounding, scanStatus);
     }
 
-    private void DrawBottomNav(Rect bar)
+    private void DrawBottomNav(Rect area)
     {
-        var scale = UiScale.Current;
-        var drawList = ImGui.GetWindowDrawList();
-        PaintBarBackdrop(drawList, bar);
-        DrawHairline(drawList, bar.Min.X, bar.Max.X, bar.Min.Y + 1f);
-        var slot = bar.Width / NavSlotCount;
-        var anchorHalf = new Vector2(NavAnchorHalf * scale, NavAnchorHalf * scale);
-        for (var index = 0; index < NavSlotCount; index++)
-        {
-            var cell = new Rect(new Vector2(bar.Min.X + slot * index, bar.Min.Y),
-                new Vector2(bar.Min.X + slot * (index + 1), bar.Max.Y));
-            var center = new Vector2(cell.Center.X, bar.Center.Y);
-            switch (index)
-            {
-                case 0:
-                    if (DrawNavSlot(drawList, cell, center, activeTab == AethergramTab.Home ? PhoneIcons.HomeFilled
-                            : PhoneIcons.Home, activeTab == AethergramTab.Home, Loc.T(L.Aethergram.Home), 0))
-                    {
-                        SelectTab(AethergramTab.Home);
-                    }
-
-                    break;
-                case 1:
-                    UiAnchors.Report("aethergram.tab.search", new Rect(center - anchorHalf, center + anchorHalf));
-                    if (DrawNavSlot(drawList, cell, center, PhoneIcons.Search, activeTab == AethergramTab.Search,
-                            Loc.T(L.Aethergram.Search), 0))
-                    {
-                        SelectTab(AethergramTab.Search);
-                    }
-
-                    break;
-                case 2:
-                    if (DrawNavSlot(drawList, cell, center, PhoneIcons.Send, false, Loc.T(L.Aethergram.InboxTitle),
-                            dmStore.UnreadCount))
-                    {
-                        OpenInbox();
-                    }
-
-                    break;
-                default:
-                    UiAnchors.Report("aethergram.tab.profile", new Rect(center - anchorHalf, center + anchorHalf));
-                    if (DrawNavProfile(drawList, cell, center))
-                    {
-                        SelectTab(AethergramTab.Profile);
-                    }
-
-                    break;
-            }
-        }
-    }
-
-    private static bool DrawNavSlot(ImDrawListPtr drawList, Rect cell, Vector2 center, string glyph, bool active,
-        string label, int badge)
-    {
-        var scale = UiScale.Current;
-        var hovered = DrawNavHover(drawList, cell, center);
-        var ink = active ? Ink.TitleInk : hovered ? Ink.BodyInk : Ink.MutedInk;
-        PhoneIcon.Draw(drawList, center, glyph, ink, NavIconSize * scale);
-        SocialChrome.DrawCountBadge(drawList, center + new Vector2(11f * scale, -10f * scale), badge, Ink);
-        HoverTooltip.Show(cell, label, HoverLabelSide.Above);
-        return UiInteract.Click(cell.Min, cell.Max, hovered);
-    }
-
-    private static bool DrawNavHover(ImDrawListPtr drawList, Rect cell, Vector2 center)
-    {
-        var hovered = UiInteract.Hover(cell.Min, cell.Max);
-        if (!hovered)
-        {
-            return false;
-        }
-
-        drawList.AddCircleFilled(center, NavHoverRadius * UiScale.Current, ImGui.GetColorU32(Ink.FieldFill), 32);
-        ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        return true;
-    }
-
-    private bool DrawNavProfile(ImDrawListPtr drawList, Rect cell, Vector2 center)
-    {
-        var scale = UiScale.Current;
-        var active = activeTab == AethergramTab.Profile;
-        var label = Loc.T(L.Aethergram.Profile);
-        if (store.Me is not { } me)
+        var hasAvatar = store.Me is not null;
+        if (!hasAvatar)
         {
             store.EnsureMe();
-            return DrawNavSlot(drawList, cell, center, active ? PhoneIcons.UserFilled : PhoneIcons.User, active, label,
-                0);
         }
 
-        var hovered = DrawNavHover(drawList, cell, center);
-        var radius = NavAvatarRadius * scale;
-        DrawAvatar(center, radius, me.Name, me.World, me.AvatarUrl, 0.85f, 28, Frames.Of(me.FrameId));
-        if (active)
+        tabItems[(int)AethergramTab.Home] = new TabItem(Loc.T(L.Aethergram.Home), PhoneIcons.Home,
+            PhoneIcons.HomeFilled);
+        tabItems[(int)AethergramTab.Search] = new TabItem(Loc.T(L.Aethergram.Search), PhoneIcons.Search);
+        tabItems[(int)AethergramTab.Messages] = new TabItem(Loc.T(L.Aethergram.InboxTitle), PhoneIcons.Send,
+            PhoneIcons.SendFilled, dmStore.UnreadCount, "aethergram.inbox");
+        tabItems[(int)AethergramTab.Profile] = new TabItem(Loc.T(L.Aethergram.Profile), PhoneIcons.User,
+            PhoneIcons.UserFilled, CustomIcon: hasAvatar);
+        var result = tabBar.Draw(area, ui, tabItems, (int)activeTab, null, this);
+        UiAnchors.Report("aethergram.tabbar", tabBar.Bounds);
+        if (result.Tapped < 0)
         {
-            drawList.AddCircle(center, radius + NavAvatarRingGap * scale, ImGui.GetColorU32(Ink.TitleInk), 32,
-                1.6f * scale);
+            return;
         }
 
-        HoverTooltip.Show(cell, label, HoverLabelSide.Above);
-        return UiInteract.Click(cell.Min, cell.Max, hovered);
+        if (result.Tapped == (int)AethergramTab.Messages)
+        {
+            OpenInbox();
+            return;
+        }
+
+        SelectTab((AethergramTab)result.Tapped);
+    }
+
+    void ITabIconDrawer.DrawTabIcon(ImDrawListPtr drawList, int index, TabItemPose pose, bool active)
+    {
+        if (store.Me is not { } me)
+        {
+            return;
+        }
+
+        var scale = UiScale.Current;
+        DrawAvatar(pose.IconCenter, pose.AvatarRadius(scale), me.Name, me.World, me.AvatarUrl, 0.85f, 28, Frames.Of(me.FrameId));
+        if (!active)
+        {
+            return;
+        }
+
+        drawList.AddCircle(pose.IconCenter, pose.AvatarRingRadius(scale), ImGui.GetColorU32(ui.Accent), 32,
+            1.6f * scale);
     }
 
     private void DrawAvatar(Vector2 center, float radius, string name, string world, string? avatarUrl,
@@ -1355,6 +1709,7 @@ internal sealed partial class AethergramApp : IResumableApp
     {
         settingsCancellation.Cancel();
         settingsCancellation.Dispose();
+        composeSession.Dispose();
         threadView.Dispose();
         dmStore.Dispose();
         store.Dispose();
@@ -1368,7 +1723,7 @@ internal sealed partial class AethergramApp : IResumableApp
         var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
         var logoSize = LogoSize * scale;
         var logoCenter = new Vector2(area.Min.X + CellPadX * scale + logoSize * 0.5f, rowCenterY);
-        if (!AppIconTextures.TryDrawArtwork(drawList, Id, logoCenter, logoSize, Ink.AccentLink))
+        if (!AppIconTile.TryDrawGlyph(drawList, Id, logoCenter, logoSize, Ink.AccentLink))
         {
             PhoneIcon.Draw(drawList, logoCenter, PhoneIcons.Camera, Ink.AccentLink, logoSize);
         }
@@ -1417,7 +1772,7 @@ internal sealed partial class AethergramApp : IResumableApp
 
     private bool FeedFiltersActive() =>
         !configuration.AethergramShowGifPosts || !configuration.AethergramShowCommentMedia
-        || configuration.AethergramFeedRegionMask != 0;
+        || !configuration.AethergramShowSensitivePosts || configuration.AethergramFeedRegionMask != 0;
 
     private void DrawFilterSheet(Rect screen)
     {
@@ -1428,9 +1783,11 @@ internal sealed partial class AethergramApp : IResumableApp
 
         filterLabels[0] = Loc.T(L.Settings.AethergramShowGifs);
         filterLabels[1] = Loc.T(L.Settings.AethergramShowCommentMedia);
+        filterLabels[2] = Loc.T(L.Settings.AethergramShowSensitive);
         Span<bool> values = stackalloc bool[FilterToggleCount];
         values[0] = configuration.AethergramShowGifPosts;
         values[1] = configuration.AethergramShowCommentMedia;
+        values[2] = configuration.AethergramShowSensitivePosts;
         var picked = filterSheet.Draw(screen, Ink, Loc.T(L.Aethergram.FeedFilters), filterLabels, values,
             configuration.AethergramFeedRegionMask, Loc.T(L.Aethergram.Regions), Loc.T(L.Aethergram.Done));
         switch (picked)
@@ -1440,6 +1797,10 @@ internal sealed partial class AethergramApp : IResumableApp
                 break;
             case 1:
                 configuration.AethergramShowCommentMedia = !configuration.AethergramShowCommentMedia;
+                break;
+            case 2:
+                configuration.AethergramShowSensitivePosts = !configuration.AethergramShowSensitivePosts;
+                store.SetFeedSensitive(configuration.AethergramShowSensitivePosts, activeScope);
                 break;
             case >= FilterToggleCount:
                 configuration.AethergramFeedRegionMask =
@@ -1484,23 +1845,23 @@ internal sealed partial class AethergramApp : IResumableApp
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
         var rowHeight = LatestScopeRowHeight * scale;
-        var pillHeight = LatestScopePillHeight * scale;
+        var pillHeight = ChipRail.ChipHeight * scale;
         var pillTop = top + (rowHeight - pillHeight) * 0.5f;
         var left = area.Min.X + CellPadX * scale;
         var everyoneLabel = Loc.T(L.Social.FeedEveryone);
         var followingLabel = Loc.T(L.Aethergram.Following);
-        var everyoneWidth = Typography.Measure(everyoneLabel, LatestScopeStyle).X + LatestScopePillPadX * 2f * scale;
-        var followingWidth = Typography.Measure(followingLabel, LatestScopeStyle).X + LatestScopePillPadX * 2f * scale;
+        var everyoneWidth = Typography.Measure(everyoneLabel, ChipRail.LabelStyle).X + ChipRail.ChipPadX * 2f * scale;
+        var followingWidth = Typography.Measure(followingLabel, ChipRail.LabelStyle).X + ChipRail.ChipPadX * 2f * scale;
         var everyoneRect = new Rect(new Vector2(left, pillTop), new Vector2(left + everyoneWidth, pillTop + pillHeight));
         var followingLeft = everyoneRect.Max.X + LatestScopePillGap * scale;
         var followingRect = new Rect(new Vector2(followingLeft, pillTop),
             new Vector2(followingLeft + followingWidth, pillTop + pillHeight));
-        if (DrawLatestScopePill(drawList, everyoneRect, everyoneLabel, activeScope == SocialFeedScope.Latest, pillHeight))
+        if (DrawLatestScopePill(drawList, everyoneRect, everyoneLabel, activeScope == SocialFeedScope.Latest))
         {
             SelectScope(SocialFeedScope.Latest);
         }
 
-        if (DrawLatestScopePill(drawList, followingRect, followingLabel, activeScope == SocialFeedScope.Following, pillHeight))
+        if (DrawLatestScopePill(drawList, followingRect, followingLabel, activeScope == SocialFeedScope.Following))
         {
             SelectScope(SocialFeedScope.Following);
         }
@@ -1508,13 +1869,11 @@ internal sealed partial class AethergramApp : IResumableApp
         return top + rowHeight;
     }
 
-    private static bool DrawLatestScopePill(ImDrawListPtr drawList, Rect rect, string label, bool active, float pillHeight)
+    private bool DrawLatestScopePill(ImDrawListPtr drawList, Rect rect, string label, bool active)
     {
-        return active
-            ? SocialPill.Flat(drawList, rect, label, Ink.AccentWash, Ink.AccentWash, Palette.WithAlpha(Ink.Accent, 0.5f),
-                Ink.AccentLink, LatestScopeStyle, pillHeight * 0.5f)
-            : SocialPill.Flat(drawList, rect, label, Ink.ChipHover, Ink.HoverTint, Ink.Hairline, Ink.MutedInk,
-                LatestScopeStyle, pillHeight * 0.5f);
+        var hovered = UiInteract.Hover(rect.Min, rect.Max);
+        ChipRail.PaintChip(drawList, rect, label, active, hovered, ui.Ink);
+        return UiInteract.Click(rect.Min, rect.Max, hovered);
     }
 
     private void DrawFeedExplainer(Rect screen)

@@ -16,13 +16,12 @@ internal sealed class PersonPicker
 {
     private const float RowHeight = 46f;
     private const float DebounceSeconds = 0.20f;
-    private const double RevealSeconds = 0.16;
 
     private readonly MentionSuggestions suggestions;
     private string query = string.Empty;
     private string applied = string.Empty;
     private float debounce;
-    private double openedAt = -1d;
+    private Spring revealSpring;
     private int openedFrame = -1;
 
     public PersonPicker(MentionSuggestions suggestions)
@@ -38,7 +37,7 @@ internal sealed class PersonPicker
         query = string.Empty;
         applied = string.Empty;
         debounce = 0f;
-        openedAt = ImGui.GetTime();
+        revealSpring.SnapTo(0f);
         openedFrame = ImGui.GetFrameCount();
         suggestions.Clear();
     }
@@ -46,7 +45,6 @@ internal sealed class PersonPicker
     public void Close()
     {
         IsOpen = false;
-        openedAt = -1d;
         query = string.Empty;
         applied = string.Empty;
         suggestions.Clear();
@@ -68,8 +66,9 @@ internal sealed class PersonPicker
         }
 
         var scale = UiScale.Current;
-        var reveal = Easing.EaseOutQuint(Math.Clamp((float)((ImGui.GetTime() - openedAt) / RevealSeconds), 0f, 1f));
-        var alpha = Easing.SmoothStep(Math.Clamp(reveal / 0.7f, 0f, 1f));
+        var revealDelta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
+        var reveal = Math.Clamp(revealSpring.Step(1f, Motion.Sheet, revealDelta), 0f, 1f);
+        var alpha = Math.Clamp(reveal / 0.7f, 0f, 1f);
 
         var drawList = ImGui.GetWindowDrawList();
         drawList.AddRectFilled(screen.Min, screen.Max,
@@ -143,18 +142,18 @@ internal sealed class PersonPicker
             var textMaxWidth = rowMax.X - textLeft;
             var name = SocialIdentity.Name(row.DisplayName, row.Handle);
             var nameY = rowMin.Y + 6f * scale;
-            var nameSize = Typography.Measure(name, 0.95f, FontWeight.SemiBold);
+            var nameSize = Typography.Measure(name, TextStyles.Headline);
             var nameHovering = UiInteract.HoverWindowOnly(new Vector2(textLeft, nameY),
                 new Vector2(textLeft + textMaxWidth, nameY + nameSize.Y));
             Marquee.DrawLeft(new MarqueeId("personpicker.name.", row.Handle), name, textLeft, nameY, textMaxWidth,
-                new TextStyle(0.95f, FontWeight.SemiBold), theme.TextStrong, nameHovering);
+                TextStyles.Headline, theme.TextStrong, nameHovering);
             var handleText = "@" + row.Handle;
             var handleY = nameY + nameSize.Y;
-            var handleSize = Typography.Measure(handleText, 0.82f, FontWeight.Regular);
+            var handleSize = Typography.Measure(handleText, TextStyles.Footnote);
             var handleHovering = UiInteract.HoverWindowOnly(new Vector2(textLeft, handleY),
                 new Vector2(textLeft + textMaxWidth, handleY + handleSize.Y));
             Marquee.DrawLeft(new MarqueeId("personpicker.handle.", row.Handle), handleText,
-                textLeft, handleY, textMaxWidth, new TextStyle(0.82f, FontWeight.Regular),
+                textLeft, handleY, textMaxWidth, TextStyles.Footnote,
                 theme.TextMuted, handleHovering);
         }
 

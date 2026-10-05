@@ -51,13 +51,6 @@ internal sealed class SafetyNoticePage : ISettingsPage
         }
     }
 
-    private static void Paragraph(string text, PhoneTheme theme)
-    {
-        using (ImRaii.PushColor(ImGuiCol.Text, theme.TextStrong))
-        {
-            ImGui.PushTextWrapPos(0f);
-            Typography.Wrapped(text);
-            ImGui.PopTextWrapPos();
-        }
-    }
+    private static void Paragraph(string text, PhoneTheme theme) =>
+        SettingsForm.Text(text, theme.TextStrong, TextStyles.Body);
 }

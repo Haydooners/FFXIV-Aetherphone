@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using Aetherphone.Core;
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Confirm;
 using Aetherphone.Core.Localization;
@@ -16,63 +17,53 @@ namespace Aetherphone.Apps.Photos;
 
 internal sealed partial class PhotosApp : IPhoneApp
 {
-    private const int Columns = 3;
-    private const int ThumbnailMaxDimension = 256;
+    private const int DefaultColumns = 3;
+    private const int MinColumns = 2;
+    private const int MaxColumns = 5;
     private const long ThumbnailBudgetBytes = 48L * 1024 * 1024;
     private const long FullImageBudgetBytes = 96L * 1024 * 1024;
-    private const float SegmentHeight = 34f;
-    private const int FirstCustomAlbumId = 2;
 
     public string Id => "photos";
     public Vector4 Accent => AppAccents.For(Id);
     public string DisplayName => Loc.T(L.Apps.Photos);
     public string Glyph => "P";
     public int BadgeCount => 0;
+    public bool WantsSystemTheme => true;
 
     private readonly PhotoLibrary library;
     private readonly ConfirmService confirm;
     private readonly ShareService share;
     private readonly Configuration configuration;
-    private readonly AppSkin ui = new(AppPalettes.Photos);
+    private readonly AppSkin ui = new(AppPalettes.PhotosThemed(PhoneTheme.Default));
     private readonly TextureLedger thumbnails = new(ThumbnailBudgetBytes);
     private readonly TextureLedger fullImages = new(FullImageBudgetBytes);
     private readonly ConcurrentDictionary<string, byte> loading = new();
     private readonly ConcurrentDictionary<string, byte> failed = new();
     private readonly CancellationTokenSource cancellation = new();
-    private readonly PhotoZoomView zoomView = new();
     private readonly ViewRouter<PhotoView> router;
     private readonly RouterDraw<PhotoView> drawView;
     private readonly Action back;
-    private readonly List<MonthAlbum> albums = new();
-    private readonly List<GridBand> bands = new();
-    private readonly string[] segmentLabels = new string[2];
-    private readonly List<CustomAlbum> customAlbums = new();
-    private readonly List<string> customAlbumOrder = new();
-    private readonly Dictionary<string, List<string>> customAlbumPhotos = new(StringComparer.OrdinalIgnoreCase);
-    private readonly DropdownMenu albumMenu = new();
-    private readonly Dictionary<string, int> customAlbumIds = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<int, string[]> cachedCustomAlbumPaths = new();
-    private int nextCustomAlbumId = FirstCustomAlbumId;
-    private string newAlbumDraft = string.Empty;
-    private string renameAlbumDraft = string.Empty;
-    private readonly List<string> pickerSelection = new();
-    private DropdownMenu.Item[]? customAlbumMenuItemsCache;
-    private string? customAlbumMenuItemsLocale;
-    private int? pickerMembershipAlbumKey;
-    private readonly HashSet<string> pickerMembership = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, int> pickerSelectionOrder = new(StringComparer.OrdinalIgnoreCase);
-    private DropdownMenu.Item[]? photoMenuItemsCache;
-    private string? photoMenuItemsLocale;
-    private string? photoMenuKey;
-
+    private readonly Action popOnly;
+    private readonly Dictionary<string, long> sizeCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, long> pixelCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Comparison<PhotoEntry> compareEntries;
+    private readonly Comparison<string> comparePaths;
+    private readonly List<PhotoRun> monthRuns = new();
+    private readonly List<PhotoRun> yearRuns = new();
+    private readonly List<int> runKeys = new();
+    private MonthAlbum[] monthAlbums = Array.Empty<MonthAlbum>();
     private PhotoEntry[] entries = Array.Empty<PhotoEntry>();
-    private string[] viewerPaths = Array.Empty<string>();
-    private int viewerIndex;
-    private int segment;
-    private bool resetScroll;
-    private bool focusAlbumName;
+    private PhotoEntry[] filteredEntries = Array.Empty<PhotoEntry>();
+    private string[] filteredPaths = Array.Empty<string>();
+    private string[] recentPaths = Array.Empty<string>();
+    private bool scanningDimensions;
+    private int seenLibraryVersion;
+    private string pendingLaunch = string.Empty;
+    private int launchCheckedVersion = -1;
+    private PhotosTab activeTab;
     private PhoneTheme frameTheme = PhoneTheme.Default;
     private INavigator frameNavigation = null!;
+    private Rect frameScreen;
 
     public PhotosApp(PhotoLibrary library, ConfirmService confirm, ShareService share, Configuration configuration)
     {
@@ -82,24 +73,53 @@ internal sealed partial class PhotosApp : IPhoneApp
         this.configuration = configuration;
         router = new ViewRouter<PhotoView>(PhotoView.Grid());
         drawView = DrawView;
-        back = () => router.Pop();
+        drawNameSheet = DrawNameSheetContent;
+        compareEntries = CompareEntries;
+        comparePaths = ComparePaths;
+        popOnly = () => router.Pop();
+        back = () =>
+        {
+            EndSelect();
+            router.Pop();
+        };
         LoadCustomAlbums();
+        LoadFavorites();
     }
 
     public void OnOpened()
     {
         router.Reset();
-        segment = Math.Clamp(configuration.PhotosSegment, 0, 1);
+        activeTab = (PhotosTab)Math.Clamp(configuration.PhotosSegment, 0, (int)PhotosTab.Collections);
         viewerPaths = Array.Empty<string>();
         viewerIndex = 0;
-        resetScroll = true;
+        viewerInTrash = false;
+        addTargets = Array.Empty<string>();
+        pendingJump = JumpTarget.None;
+        monthsRail.Reset();
+        placesRail.Reset();
+        EndSelect();
+        CloseSheets();
         LoadCustomAlbums();
+        LoadFavorites();
         Refresh();
     }
 
     public void OnClosed()
     {
+        editSession.Close();
+        CloseSheets();
         router.Reset();
+    }
+
+    private void CloseSheets()
+    {
+        albumSheet.Close();
+        photoSheet.Close();
+        nameSheet.Close();
+        sortMenu.Close();
+        trashSheet.Close();
+        viewerMenu.Close();
+        infoSheet.CloseImmediately();
     }
 
     public void Draw(in PhoneContext context)
@@ -107,17 +127,43 @@ internal sealed partial class PhotosApp : IPhoneApp
         frameTheme = context.Theme;
         frameNavigation = context.Navigation;
         ui.Theme = context.Theme;
+        ui.Palette = AppPalettes.PhotosThemed(context.Theme);
+        SyncLabels();
+        if (library.Version != seenLibraryVersion)
+        {
+            failed.Clear();
+            Refresh();
+        }
+
+        ConsumeLaunch();
         if (router.Current.Route == PhotoRoute.Viewer && viewerPaths.Length == 0)
         {
             router.Pop(false);
         }
 
-        albumMenu.Gate();
+        albumSheet.Gate();
+        photoSheet.Gate();
+        sortMenu.Gate();
+        trashSheet.Gate();
+        viewerMenu.Gate();
 
         var scale = UiScale.Current;
         var screen = SceneChrome.ScreenFrom(context.Content, context.Theme, scale);
+        frameScreen = screen;
         ui.Backdrop(screen);
-        router.Draw(screen, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+        using (InputShield.Engage(nameSheet.CapturesPointer || infoSheet.CapturesPointer))
+        {
+            router.Draw(screen, AppSkin.Transparent, ImGui.GetIO().DeltaTime, drawView);
+        }
+
+        DrawSortMenu(screen);
+        DrawViewerMenu(screen);
+        DrawAlbumSheet(screen);
+        DrawPhotoSheet(screen);
+        DrawTrashSheet(screen);
+        var sheetArea = AppAreaWithin(screen);
+        DrawNameSheet(sheetArea);
+        DrawInfoSheet(screen);
     }
 
     private void DrawView(PhotoView view, Rect area, int depth)
@@ -128,39 +174,29 @@ internal sealed partial class PhotosApp : IPhoneApp
             return;
         }
 
-        var content = ContentWithin(area);
-        ui.Body(content);
-        if (view.Route == PhotoRoute.CreateAlbum)
+        if (view.Route == PhotoRoute.Editor)
         {
-            DrawCreateAlbumPage(content);
+            DrawEditor(area);
             return;
         }
 
-        if (view.Route == PhotoRoute.RenameAlbum)
+        ui.Body(area);
+        var context = new PhoneContext(ContentWithin(area), frameTheme, frameNavigation);
+        switch (view.Route)
         {
-            DrawRenameAlbumPage(content, view.AlbumKey);
-            return;
+            case PhotoRoute.AlbumPicker:
+                DrawAlbumPicker(context, area, view.AlbumKey);
+                return;
+            case PhotoRoute.AddToAlbum:
+                DrawAddToAlbumPage(context);
+                return;
+            case PhotoRoute.Album:
+                DrawAlbum(context, area, view.AlbumKey);
+                return;
+            default:
+                DrawRoot(context, area);
+                return;
         }
-
-        if (view.Route == PhotoRoute.AlbumPicker)
-        {
-            DrawAlbumPicker(content, view.AlbumKey);
-            return;
-        }
-
-        if (view.Route == PhotoRoute.AddToAlbum)
-        {
-            DrawAddToAlbumPage(content);
-            return;
-        }
-
-        if (view.Route == PhotoRoute.Album)
-        {
-            DrawAlbum(content, view.AlbumKey);
-            return;
-        }
-
-        DrawRoot(content);
     }
 
     private Rect ContentWithin(Rect screen)
@@ -173,396 +209,343 @@ internal sealed partial class PhotosApp : IPhoneApp
         return new Rect(min, max);
     }
 
-    private void DrawNavBar(Rect area, string title, Action? onBack, float rightReserve = 0f) =>
-        AppHeader.DrawNavBar(area, "photos.back", title, ui.TitleInk, onBack, rightReserve);
+    private Rect AppAreaWithin(Rect screen)
+    {
+        var scale = UiScale.Current;
+        return new Rect(new Vector2(screen.Min.X, screen.Min.Y + frameTheme.TopZoneHeight * scale),
+            new Vector2(screen.Max.X, screen.Max.Y - frameTheme.BottomZoneHeight * scale));
+    }
+
+    private void ConsumeLaunch()
+    {
+        if (library.TryConsumeOpen(out var requested))
+        {
+            pendingLaunch = requested;
+            launchCheckedVersion = -1;
+        }
+
+        if (pendingLaunch.Length == 0 || launchCheckedVersion == seenLibraryVersion)
+        {
+            return;
+        }
+
+        launchCheckedVersion = seenLibraryVersion;
+
+        var index = IndexOf(filteredPaths, pendingLaunch);
+        var source = filteredPaths;
+        if (index < 0)
+        {
+            index = IndexOf(recentPaths, pendingLaunch);
+            source = recentPaths;
+        }
+
+        if (index < 0)
+        {
+            return;
+        }
+
+        var target = pendingLaunch;
+        pendingLaunch = string.Empty;
+        if (router.Current.Route == PhotoRoute.Viewer && viewerIndex < viewerPaths.Length &&
+            string.Equals(viewerPaths[viewerIndex], target, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        EndSelect();
+        router.Reset();
+        activeTab = PhotosTab.Library;
+        ShowViewer(source, index, false, false);
+    }
+
+    private static int IndexOf(string[] paths, string path)
+    {
+        for (var index = 0; index < paths.Length; index++)
+        {
+            if (string.Equals(paths[index], path, StringComparison.OrdinalIgnoreCase))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
 
     private void Refresh()
     {
+        seenLibraryVersion = library.Version;
         var paths = library.List();
         var pathSet = new HashSet<string>(paths, StringComparer.OrdinalIgnoreCase);
         var built = new PhotoEntry[paths.Length];
         for (var index = 0; index < paths.Length; index++)
         {
-            built[index] = new PhotoEntry(paths[index], ResolveTaken(paths[index]));
+            built[index] = MetadataFor(paths[index]);
         }
 
-        Array.Sort(built, static (left, right) => right.Taken.CompareTo(left.Taken));
+        Array.Sort(built, compareEntries);
         entries = built;
-        BuildAlbums();
+        recentPaths = SlicePaths(built, 0, built.Length);
+        if (SortKey == PhotoSortKey.Dimensions)
+        {
+            ScanMissingDimensions(paths);
+        }
+
         var pruned = PruneCustomAlbumPaths(pathSet);
         BuildCustomAlbums();
         if (pruned)
         {
             SaveCustomAlbums();
         }
-    }
-    
-    private bool PruneCustomAlbumPaths(HashSet<string> validPaths)
-    {
-        var removedAny = false;
-        foreach (var name in customAlbumOrder)
+
+        if (PruneFavorites(pathSet))
         {
-            if (!customAlbumPhotos.TryGetValue(name, out var photos))
+            SaveFavorites();
+        }
+
+        BuildFavorites();
+        BuildMonthAlbums();
+        ApplyFilter();
+        library.PurgeExpired();
+        RefreshTrash();
+        PrunePlaces(paths);
+        BuildPlaces();
+        InvalidateLayouts();
+    }
+
+    private PhotoSortKey SortKey =>
+        (PhotoSortKey)Math.Clamp(configuration.PhotosSortKey, 0, (int)PhotoSortKey.Dimensions);
+
+    private PhotoFilter Filter => (PhotoFilter)Math.Clamp(configuration.PhotosFilter, 0, (int)PhotoFilter.NotInAlbum);
+
+    private int Columns => Math.Clamp(configuration.PhotosGridColumns == 0 ? DefaultColumns : configuration.PhotosGridColumns,
+        MinColumns, MaxColumns);
+
+    private bool SortedByDate => SortKey == PhotoSortKey.Date;
+
+    private void ApplyFilter()
+    {
+        var filter = Filter;
+        if (filter == PhotoFilter.All)
+        {
+            filteredEntries = entries;
+        }
+        else if (filter == PhotoFilter.Favorites)
+        {
+            var kept = new List<PhotoEntry>(entries.Length);
+            for (var index = 0; index < entries.Length; index++)
             {
-                continue;
-            }
-            for (var index = photos.Count - 1; index >= 0; index--)
-            {
-                if (validPaths.Contains(photos[index]))
+                if (favorites.Contains(entries[index].Path))
                 {
-                    continue;
+                    kept.Add(entries[index]);
                 }
-                photos.RemoveAt(index);
-                removedAny = true;
             }
+
+            filteredEntries = kept.ToArray();
         }
-
-        return removedAny;
-    }
-
-    private void LoadCustomAlbums()
-    {
-        customAlbumOrder.Clear();
-        customAlbumOrder.AddRange(configuration.CustomAlbumOrder);
-        customAlbumPhotos.Clear();
-        foreach (var entry in configuration.CustomAlbumPhotos)
+        else
         {
-            customAlbumPhotos[entry.Key] = new List<string>(entry.Value);
-        }
-
-        customAlbumIds.Clear();
-        nextCustomAlbumId = FirstCustomAlbumId;
-    }
-
-    private void SaveCustomAlbums()
-    {
-        configuration.CustomAlbumOrder = new List<string>(customAlbumOrder);
-        configuration.CustomAlbumPhotos = new Dictionary<string, List<string>>(customAlbumPhotos,
-            StringComparer.OrdinalIgnoreCase);
-        configuration.SaveNow();
-    }
-
-    private void BuildAlbums()
-    {
-        albums.Clear();
-        var index = 0;
-        while (index < entries.Length)
-        {
-            var taken = entries[index].Taken;
-            var key = taken.Year * 100 + taken.Month;
-            var start = index;
-            while (index < entries.Length)
+            var inAlbums = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var photos in customAlbumPhotos.Values)
             {
-                var next = entries[index].Taken;
-                if (next.Year * 100 + next.Month != key)
+                inAlbums.UnionWith(photos);
+            }
+
+            var kept = new List<PhotoEntry>(entries.Length);
+            for (var index = 0; index < entries.Length; index++)
+            {
+                if (!inAlbums.Contains(entries[index].Path))
                 {
-                    break;
+                    kept.Add(entries[index]);
                 }
-
-                index++;
             }
 
-            albums.Add(new MonthAlbum(key, start, index - start, new DateTime(taken.Year, taken.Month, 1)));
+            filteredEntries = kept.ToArray();
         }
+
+        filteredPaths = SlicePaths(filteredEntries, 0, filteredEntries.Length);
+        BuildRuns();
+        InvalidateLayouts();
     }
-    
-    private void BuildCustomAlbums()
+
+    private void BuildMonthAlbums()
     {
-        customAlbums.Clear();
-        foreach (var name in customAlbumOrder)
+        var keys = new uint[entries.Length];
+        for (var index = 0; index < entries.Length; index++)
         {
-            if (!customAlbumPhotos.TryGetValue(name, out var photos))
+            keys[index] = (uint)PhotoGrouping.MonthKey(entries[index].Taken);
+        }
+
+        var buckets = PhotoGrouping.Buckets(keys);
+        var built = new MonthAlbum[buckets.Length];
+        for (var bucketIndex = 0; bucketIndex < buckets.Length; bucketIndex++)
+        {
+            var indices = buckets[bucketIndex].Indices;
+            var paths = new string[indices.Length];
+            for (var index = 0; index < indices.Length; index++)
             {
-                continue;
+                paths[index] = entries[indices[index]].Path;
             }
-            var key = -GetOrAssignCustomAlbumId(name);
-            customAlbums.Add(new CustomAlbum(key, 0, photos.Count, name));
-            var paths = SortedCustomAlbumPaths(key);
-            cachedCustomAlbumPaths[key] = paths;
+
+            built[bucketIndex] = new MonthAlbum((int)buckets[bucketIndex].Key, paths);
         }
+
+        Array.Sort(built, static (left, right) => right.Key.CompareTo(left.Key));
+        monthAlbums = built;
     }
-    
-    private bool TryFindCustomAlbum(int key, out CustomAlbum result)
+
+    private void BuildRuns()
     {
-        for (var index = 0; index < customAlbums.Count; index++)
+        runKeys.Clear();
+        for (var index = 0; index < filteredEntries.Length; index++)
         {
-            if (customAlbums[index].Key == key)
+            runKeys.Add(PhotoGrouping.MonthKey(filteredEntries[index].Taken));
+        }
+
+        PhotoGrouping.Runs(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(runKeys), monthRuns);
+        for (var index = 0; index < runKeys.Count; index++)
+        {
+            runKeys[index] = filteredEntries[index].Taken.Year;
+        }
+
+        PhotoGrouping.Runs(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(runKeys), yearRuns);
+    }
+
+    private PhotoEntry MetadataFor(string path) =>
+        new(path, ResolveTaken(path), SizeOf(path), pixelCache.TryGetValue(path, out var pixels) ? pixels : 0L);
+
+    private long SizeOf(string path)
+    {
+        if (sizeCache.TryGetValue(path, out var cached))
+        {
+            return cached;
+        }
+
+        if (SortKey != PhotoSortKey.Size)
+        {
+            return 0L;
+        }
+
+        long size;
+        try
+        {
+            size = new FileInfo(path).Length;
+        }
+        catch (Exception exception)
+        {
+            AepLog.Warning(exception, $"[Photos] could not read the size of {Path.GetFileName(path)}");
+            size = 0L;
+        }
+
+        sizeCache[path] = size;
+        return size;
+    }
+
+    private void ScanMissingDimensions(string[] paths)
+    {
+        if (scanningDimensions)
+        {
+            return;
+        }
+
+        var missing = new List<string>();
+        for (var index = 0; index < paths.Length; index++)
+        {
+            if (!pixelCache.ContainsKey(paths[index]))
             {
-                result = customAlbums[index];
-                return true;
+                missing.Add(paths[index]);
             }
         }
-        result = default;
-        return false;
-    }
-    
-    private void CreateCustomAlbumInternal(string name)
-    {
-        name = name.Trim();
-        if (name.Length == 0)
+
+        if (missing.Count == 0)
         {
             return;
         }
-        if (ContainsOrdinalIgnoreCase(customAlbumOrder, name))
-        {
-            return;
-        }
-        customAlbumOrder.Add(name);
-        customAlbumPhotos[name] = new List<string>();
-        BuildCustomAlbums();
-        SaveCustomAlbums();
+
+        scanningDimensions = true;
+        _ = ScanDimensionsAsync(missing);
     }
 
-    private void DeleteCustomAlbumInternal(int key)
+    private async Task ScanDimensionsAsync(List<string> paths)
     {
-        
-        if (!TryFindCustomAlbum(key, out var found))
+        try
         {
-            return;
-        }
-        customAlbumOrder.Remove(found.Name);
-        customAlbumPhotos.Remove(found.Name);
-        customAlbumIds.Remove(found.Name);
-        BuildCustomAlbums();
-        SaveCustomAlbums();
-    }
-    
-    private void RenameCustomAlbumInternal(int key, string newName)
-    {
-        newName = newName.Trim();
-        if (newName.Length == 0)
-        {
-            return;
-        }
-        if (!TryFindCustomAlbum(key, out var found))
-        {
-            return;
-        }
-        if (string.Equals(found.Name, newName, StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-        if (ContainsOrdinalIgnoreCase(customAlbumOrder, newName))
-        {
-            return;
-        }
-        if (!customAlbumPhotos.TryGetValue(found.Name, out var photos))
-        {
-            return;
-        }
-        if (customAlbumIds.TryGetValue(found.Name, out var id))
-        {
-            customAlbumIds.Remove(found.Name);
-            customAlbumIds[newName] = id;
-        }
-        customAlbumOrder[customAlbumOrder.IndexOf(found.Name)] = newName;
-        customAlbumPhotos.Remove(found.Name);
-        customAlbumPhotos[newName] = photos;
-        BuildCustomAlbums();
-        SaveCustomAlbums();
-    }
-
-    private void AddPhotosToCustomAlbum(int key, string[] paths)
-    {
-        if (!TryFindCustomAlbum(key, out var found))
-        {
-            return;
-        }
-        if (!customAlbumPhotos.TryGetValue(found.Name, out var photos))
-        {
-            return;
-        }
-        foreach (var path in paths)
-        {
-            if (!ContainsOrdinalIgnoreCase(photos, path))
+            await Task.Run(() =>
             {
-                photos.Add(path);
+                for (var index = 0; index < paths.Count; index++)
+                {
+                    if (cancellation.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    try
+                    {
+                        var (width, height) = ImageProcessor.IdentifyDimensions(paths[index]);
+                        pixelCache[paths[index]] = (long)width * height;
+                    }
+                    catch (Exception exception)
+                    {
+                        pixelCache[paths[index]] = 0L;
+                        AepLog.Warning(exception,
+                            $"[Photos] could not read the dimensions of {Path.GetFileName(paths[index])}");
+                    }
+                }
+            }, cancellation.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await Plugin.Framework.RunOnFrameworkThread(() =>
+        {
+            scanningDimensions = false;
+            if (SortKey == PhotoSortKey.Dimensions)
+            {
+                Refresh();
             }
-        }
-        BuildCustomAlbums();
-        SaveCustomAlbums();
-        InvalidatePickerMembership();
+        }).ConfigureAwait(false);
     }
-    
-    private void RemovePhotoFromCustomAlbum(int key, string path)
+
+    private int CompareEntries(PhotoEntry left, PhotoEntry right)
     {
-        if (!TryFindCustomAlbum(key, out var found))
+        var result = SortKey switch
         {
-            return;
-        }
-        if (!customAlbumPhotos.TryGetValue(found.Name, out var photos))
+            PhotoSortKey.Name => Path.GetFileName(left.Path.AsSpan())
+                .CompareTo(Path.GetFileName(right.Path.AsSpan()), StringComparison.OrdinalIgnoreCase),
+            PhotoSortKey.Size => left.Size.CompareTo(right.Size),
+            PhotoSortKey.Dimensions => left.Pixels.CompareTo(right.Pixels),
+            _ => 0,
+        };
+        if (result == 0)
         {
-            return;
+            result = left.Taken.CompareTo(right.Taken);
         }
-        photos.Remove(path);
-        BuildCustomAlbums();
-        SaveCustomAlbums();
-        InvalidatePickerMembership();
+
+        return configuration.PhotosSortAscending ? result : -result;
     }
 
-    private string[] SortedCustomAlbumPaths(int key)
-    {
-        if (!TryFindCustomAlbum(key, out var album))
-        {
-            return Array.Empty<string>();
-        }
-        if (!customAlbumPhotos.TryGetValue(album.Name, out var unordered))
-        {
-            return Array.Empty<string>();
-        }
-        var sorted = unordered.ToArray();
-        Array.Sort(sorted, static (left, right) =>
-        {
-            var takenLeft = ResolveTaken(left);
-            var takenRight = ResolveTaken(right);
-            return takenRight.CompareTo(takenLeft);
-        });
-        return sorted;
-    }
-    
-    private void EnsurePickerMembership(int albumKey)
-    {
-        if (pickerMembershipAlbumKey == albumKey)
-        {
-            return;
-        }
+    private int ComparePaths(string left, string right) => CompareEntries(MetadataFor(left), MetadataFor(right));
 
-        pickerMembership.Clear();
+    private static bool DefaultAscending(PhotoSortKey key) => key == PhotoSortKey.Name;
 
-        if (pickerMembershipAlbumKey == albumKey)
-        {
-            return;
-        }
-
-        if (TryFindCustomAlbum(albumKey, out var album) && customAlbumPhotos.TryGetValue(album.Name, out var existing))
-        {
-            pickerMembership.UnionWith(existing);
-        }
-
-        pickerMembershipAlbumKey = albumKey;
-    }
-    
-    private void InvalidatePickerMembership()
-    {
-        pickerMembershipAlbumKey = null;
-    }
-    
-    private void AddToPickerSelection(string path)
-    {
-        pickerSelection.Add(path);
-        pickerSelectionOrder[path] = pickerSelection.Count;
-    }
-    
-    private int GetOrAssignCustomAlbumId(string name)
-    {
-        if (customAlbumIds.TryGetValue(name, out var id))
-        {
-            return id;
-        }
-
-        id = nextCustomAlbumId++;
-        customAlbumIds[name] = id;
-        return id;
-    }
-    
-    private void RemoveFromPickerSelection(string path)
-    {
-        if (!pickerSelection.Remove(path))
-        {
-            return;
-        }
-
-        pickerSelectionOrder.Remove(path);
-        for (var index = 0; index < pickerSelection.Count; index++)
-        {
-            pickerSelectionOrder[pickerSelection[index]] = index + 1;
-        }
-    }
-
-    private string[] SlicePaths(int start, int count)
+    private static string[] SlicePaths(PhotoEntry[] source, int start, int count)
     {
         var slice = new string[count];
         for (var index = 0; index < count; index++)
         {
-            slice[index] = entries[start + index].Path;
+            slice[index] = source[start + index].Path;
         }
 
         return slice;
     }
 
-    private void OpenViewer(int sliceStart, int sliceCount, int absoluteIndex)
-    {
-        viewerPaths = SlicePaths(sliceStart, sliceCount);
-        viewerIndex = Math.Clamp(absoluteIndex - sliceStart, 0, viewerPaths.Length - 1);
-        zoomView.Reset();
-        router.Push(PhotoView.Viewer());
-    }
-    
-    private void OpenViewerFromPaths(string[] paths, int index)
-    {
-        viewerPaths = paths;
-        viewerIndex = Math.Clamp(index, 0, paths.Length - 1);
-        zoomView.Reset();
-        router.Push(PhotoView.Viewer());
-    }
-
-    private void AskDelete(string path)
-    {
-        confirm.Ask(new ConfirmRequest
-        {
-            Message = Loc.T(L.Photos.DeleteConfirmMessage),
-            ConfirmLabel = Loc.T(L.Photos.DeleteConfirm),
-            CancelLabel = Loc.T(L.Photos.DeleteCancel),
-            Sheet = true,
-            Confirm = () => DeletePhoto(path),
-        });
-    }
-
-    private void DeletePhoto(string path)
-    {
-        library.Delete(path);
-        if (thumbnails.TryRemove(path, out var thumbWrap))
-        {
-            DisposeLater(thumbWrap);
-        }
-
-        if (fullImages.TryRemove(path, out var fullWrap))
-        {
-            DisposeLater(fullWrap);
-        }
-
-        var removedAt = Array.IndexOf(viewerPaths, path);
-        if (removedAt >= 0)
-        {
-            var trimmed = new string[viewerPaths.Length - 1];
-            for (var index = 0; index < removedAt; index++)
-            {
-                trimmed[index] = viewerPaths[index];
-            }
-
-            for (var index = removedAt + 1; index < viewerPaths.Length; index++)
-            {
-                trimmed[index - 1] = viewerPaths[index];
-            }
-
-            viewerPaths = trimmed;
-        }
-
-        Refresh();
-        if (viewerPaths.Length == 0)
-        {
-            router.Pop(false);
-            return;
-        }
-
-        viewerIndex = Math.Clamp(removedAt >= 0 ? removedAt : viewerIndex, 0, viewerPaths.Length - 1);
-    }
-
     private static DateTime ResolveTaken(string path)
     {
         var name = Path.GetFileNameWithoutExtension(path);
-        if (name.StartsWith("AEP_", StringComparison.Ordinal) && DateTime.TryParseExact(name.AsSpan(4),
-                "yyyyMMdd_HHmmss_fff", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+        if (name.StartsWith("AEP_", StringComparison.Ordinal) && name.Length >= 23 &&
+            DateTime.TryParseExact(name.AsSpan(4, 19), "yyyyMMdd_HHmmss_fff", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var parsed))
         {
             return parsed;
         }
@@ -576,23 +559,6 @@ internal sealed partial class PhotosApp : IPhoneApp
             AepLog.Warning(exception, $"[Photos] could not read the timestamp of {Path.GetFileName(path)}");
             return DateTime.Now;
         }
-    }
-
-    private static string DayLabel(DateTime taken)
-    {
-        var day = taken.Date;
-        var today = DateTime.Today;
-        if (day == today)
-        {
-            return Loc.T(L.Photos.Today);
-        }
-
-        if (day == today.AddDays(-1))
-        {
-            return Loc.T(L.Photos.Yesterday);
-        }
-
-        return taken.ToString("dddd, d MMMM", Loc.Culture);
     }
 
     private IDalamudTextureWrap? GetThumbnail(string path)
@@ -632,19 +598,7 @@ internal sealed partial class PhotosApp : IPhoneApp
         try
         {
             var token = cancellation.Token;
-            var thumbnailPath = library.ThumbnailPathFor(path);
-            byte[] bytes;
-            if (File.Exists(thumbnailPath) && File.GetLastWriteTimeUtc(thumbnailPath) >= File.GetLastWriteTimeUtc(path))
-            {
-                bytes = await File.ReadAllBytesAsync(thumbnailPath, token).ConfigureAwait(false);
-            }
-            else
-            {
-                bytes = ImageProcessor.BakeJpeg(path, ThumbnailMaxDimension).Bytes;
-                Directory.CreateDirectory(Path.GetDirectoryName(thumbnailPath)!);
-                await File.WriteAllBytesAsync(thumbnailPath, bytes, token).ConfigureAwait(false);
-            }
-
+            var bytes = await library.ThumbnailBytesAsync(path, token).ConfigureAwait(false);
             var wrap = await ImageProcessor.DecodeToTextureAsync(Plugin.TextureProvider, bytes, "thumb:" + path,
                 ImageProcessor.MaxDecodePixels, token).ConfigureAwait(false);
             if (!thumbnails.TryAdd(path, wrap))
@@ -693,72 +647,56 @@ internal sealed partial class PhotosApp : IPhoneApp
         }
     }
 
-    private static void DisposeLater(IDisposable disposable)
-    {
-        _ = Task.Delay(TimeSpan.FromSeconds(1))
-            .ContinueWith(_ => Plugin.Framework.RunOnFrameworkThread(disposable.Dispose), TaskScheduler.Default);
-    }
-
     public void Dispose()
     {
         cancellation.Cancel();
+        editSession.Dispose();
         thumbnails.DisposeAll();
         fullImages.DisposeAll();
+        covers.DisposeAll();
         cancellation.Dispose();
+    }
+
+    private enum PhotoSortKey : byte
+    {
+        Date,
+        Name,
+        Size,
+        Dimensions,
+    }
+
+    private enum PhotoFilter : byte
+    {
+        All,
+        Favorites,
+        NotInAlbum,
+    }
+
+    private readonly struct MonthAlbum
+    {
+        public readonly int Key;
+        public readonly string[] Paths;
+
+        public MonthAlbum(int key, string[] paths)
+        {
+            Key = key;
+            Paths = paths;
+        }
     }
 
     private readonly struct PhotoEntry
     {
         public readonly string Path;
         public readonly DateTime Taken;
+        public readonly long Size;
+        public readonly long Pixels;
 
-        public PhotoEntry(string path, DateTime taken)
+        public PhotoEntry(string path, DateTime taken, long size, long pixels)
         {
             Path = path;
             Taken = taken;
+            Size = size;
+            Pixels = pixels;
         }
-    }
-
-    private readonly struct MonthAlbum
-    {
-        public readonly int Key;
-        public readonly int Start;
-        public readonly int Count;
-        public readonly DateTime Month;
-
-        public MonthAlbum(int key, int start, int count, DateTime month)
-        {
-            Key = key;
-            Start = start;
-            Count = count;
-            Month = month;
-        }
-    }
-
-    private readonly struct CustomAlbum
-    {
-        public readonly int Key;
-        public readonly int Start;
-        public readonly int Count;
-        public readonly string Name;
-
-        public CustomAlbum(int key, int start, int count, string name)
-        {
-            Key = key;
-            Start = start;
-            Count = count;
-            Name = name;
-        }
-    }
-
-    private struct GridBand
-    {
-        public bool Header;
-        public DateTime Day;
-        public int DayCount;
-        public int PhotoStart;
-        public int PhotoCount;
-        public float Top;
-        public float Height;
     }
 }

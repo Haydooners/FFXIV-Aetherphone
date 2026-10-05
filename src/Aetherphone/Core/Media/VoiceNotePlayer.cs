@@ -4,7 +4,14 @@ using NAudio.Wave;
 
 namespace Aetherphone.Core.Media;
 
-internal readonly record struct VoiceNoteState(bool Current, bool Playing, float Progress);
+internal enum VoiceNoteFailure : byte
+{
+    None = 0,
+    NoKey = 1,
+    Unavailable = 2,
+}
+
+internal readonly record struct VoiceNoteState(bool Current, bool Playing, float Progress, VoiceNoteFailure Failure);
 
 internal sealed class VoiceNotePlayer : IDisposable
 {
@@ -21,7 +28,7 @@ internal sealed class VoiceNotePlayer : IDisposable
 
         var total = reader.TotalTime.TotalSeconds;
         var progress = total <= 0 ? 0f : (float)Math.Clamp(reader.CurrentTime.TotalSeconds / total, 0d, 1d);
-        return new VoiceNoteState(true, output.PlaybackState == PlaybackState.Playing, progress);
+        return new VoiceNoteState(true, output.PlaybackState == PlaybackState.Playing, progress, VoiceNoteFailure.None);
     }
 
     public void Toggle(string messageId, byte[] wavBytes)

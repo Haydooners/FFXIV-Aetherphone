@@ -1,3 +1,4 @@
+using Aetherphone.Core.Report;
 using Aetherphone.Core;
 using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Aethernet.Clients;
@@ -50,6 +51,14 @@ internal sealed partial class VelvetStore
     public bool TagPostsLoadingMore => tagLane.LoadingMore;
     public bool HasMoreTagPosts => tagLane.HasMore;
     public ITrimmable TagPostsSource => tagLane;
+
+    private readonly FeedLane<VelvetPostDto> archivedLane = new(ByNewestFirst);
+    private volatile bool archivedLoaded;
+
+    public VelvetPostDto[] ArchivedPosts => archivedLane.Items;
+    public bool ArchivedLoaded => archivedLoaded;
+    public bool ArchivedLoadingMore => archivedLane.LoadingMore;
+    public bool HasMoreArchived => archivedLane.HasMore;
 
     public void EnsureUserPosts(string userId)
     {
@@ -326,11 +335,17 @@ internal sealed partial class VelvetStore
         return byTime != 0 ? byTime : string.CompareOrdinal(right.Id, left.Id);
     }
 
+    private static int ByPinnedThenNewest(VelvetPostDto left, VelvetPostDto right)
+    {
+        var byPin = (right.PinnedAtUnix ?? long.MinValue).CompareTo(left.PinnedAtUnix ?? long.MinValue);
+        return byPin != 0 ? byPin : ByNewestFirst(left, right);
+    }
+
     private static long ByCreatedAtUnix(VelvetPostDto post) => post.CreatedAtUnix;
 
     // aspects holds one choice per photo, framed exactly as AethergramStore.CreateGram does.
-    public void CreatePost(string[] sourcePaths, WallpaperCrop[] crops, PostAspect[] aspects, string caption,
-        string[] tags, int audience, Action<bool> onComplete)
+    public void CreatePost(string[] sourcePaths, WallpaperCrop[] crops, PostAspect[] aspects, PhotoEdit[] edits,
+        string caption, string[] tags, int audience, Action<bool> onComplete)
     {
         if (posting || sourcePaths.Length == 0)
         {
@@ -346,7 +361,7 @@ internal sealed partial class VelvetStore
             {
                 var (bakedWidth, bakedHeight) = PostAspects.Size(aspects[index], PostSize);
                 var baked = ImageProcessor.BakeCroppedJpeg(sourcePaths[index], crops[index], bakedWidth, bakedHeight,
-                    PostAspects.RevealsWholeImage(aspects[index]));
+                    PostAspects.RevealsWholeImage(aspects[index]), edits[index]);
                 var upload = await media.UploadUrlAsync("image/jpeg", "velvet", token).ConfigureAwait(false);
                 if (upload is null)
                 {
@@ -575,11 +590,11 @@ internal sealed partial class VelvetStore
             async token => await client.DeletePostAsync(postId, token).ConfigureAwait(false));
     }
 
-    public void EditCaption(string postId, string caption, Action<bool> onComplete)
+    public void EditPost(string postId, string caption, string[] tags, int audience, Action<bool> onComplete)
     {
-        work.Run("edit caption", async token =>
+        work.Run("edit post", async token =>
         {
-            var result = await client.EditCaptionAsync(postId, caption, token).ConfigureAwait(false);
+            var result = await client.EditPostAsync(postId, caption, tags, audience, token).ConfigureAwait(false);
             if (result is null)
             {
                 return false;
@@ -640,7 +655,7 @@ internal sealed partial class VelvetStore
         return post with { ReactionCounts = counts, TotalReactions = total, MyReaction = nextKind };
     }
 
-    public void Report(string targetType, string targetId, string? reason, Action<bool> onComplete)
+    public void Report(string targetType, string targetId, ReportReason reason, Action<bool> onComplete)
     {
         work.Run("report",
             async token => await safety.ReportAsync(targetType, targetId, reason, token).ConfigureAwait(false),
@@ -660,6 +675,178 @@ internal sealed partial class VelvetStore
             return succeeded;
         }, onComplete);
     }
+
+    public void RefreshArchived()
+    {
+        if (!session.IsSignedIn || archivedLane.Loading)
+        {
+            return;
+        }
+
+        archivedLane.Loading = true;
+        work.Run("archive refresh", async token =>
+        {
+            var page = await client.ArchivedPostsAsync(null, token).ConfigureAwait(false);
+            if (page is null)
+            {
+                return;
+            }
+
+            archivedLane.ApplyRefresh(page.Items, page.NextCursor);
+            archivedLoaded = true;
+        }, () => archivedLane.Loading = false);
+    }
+
+    public void LoadMoreArchived()
+    {
+        var cursor = archivedLane.Cursor;
+        if (!session.IsSignedIn || cursor is null || archivedLane.LoadingMore || archivedLane.Loading)
+        {
+            return;
+        }
+
+        archivedLane.LoadingMore = true;
+        work.Run("archive more", async token =>
+        {
+            var page = await client.ArchivedPostsAsync(cursor, token).ConfigureAwait(false);
+            if (page is not null)
+            {
+                archivedLane.ApplyMore(page.Items, page.NextCursor);
+            }
+        }, () => archivedLane.LoadingMore = false);
+    }
+
+    private void ResetArchived()
+    {
+        archivedLane.Clear();
+        archivedLoaded = false;
+    }
+
+    public void PinPost(string postId, bool replace, Action<PinOutcome> onComplete)
+    {
+        var outcome = PinOutcome.Failed;
+        work.Run("pin post", async token =>
+        {
+            var result = await client.PinPostAsync(postId, replace, token, failure =>
+            {
+                if (failure.Code == FailureCodes.PostPinLimit)
+                {
+                    outcome = PinOutcome.LimitReached;
+                }
+            }).ConfigureAwait(false);
+            if (result is null)
+            {
+                return false;
+            }
+
+            if (result.ReplacedPostId is { } replacedPostId)
+            {
+                ApplyPinEverywhere(replacedPostId, null);
+            }
+
+            ApplyPinEverywhere(postId, result.Post.PinnedAtUnix);
+            outcome = PinOutcome.Pinned;
+            return true;
+        }, _ => onComplete(outcome));
+    }
+
+    public void UnpinPost(string postId, Action<bool> onComplete)
+    {
+        work.Run("unpin post", async token =>
+        {
+            var updated = await client.UnpinPostAsync(postId, token).ConfigureAwait(false);
+            if (updated is null)
+            {
+                return false;
+            }
+
+            ApplyPinEverywhere(postId, null);
+            return true;
+        }, onComplete);
+    }
+
+    public void ArchivePost(string postId, Action<bool> onComplete)
+    {
+        work.Run("archive post", async token =>
+        {
+            var archived = await client.ArchivePostAsync(postId, token).ConfigureAwait(false);
+            if (archived is null)
+            {
+                return false;
+            }
+
+            RemovePost(postId);
+            var current = archivedLane.Items;
+            var items = CopyOnWrite.Prepend(current, archived);
+            if (!ReferenceEquals(items, current))
+            {
+                Array.Sort(items, ByNewestFirst);
+            }
+
+            archivedLane.Items = items;
+            return true;
+        }, onComplete);
+    }
+
+    public void UnarchivePost(string postId, Action<bool> onComplete)
+    {
+        work.Run("restore post", async token =>
+        {
+            var restored = await client.UnarchivePostAsync(postId, token).ConfigureAwait(false);
+            if (restored is null)
+            {
+                return false;
+            }
+
+            archivedLane.Items = CopyOnWrite.RemoveById(archivedLane.Items, postId);
+            if (userPostsUserId == restored.OwnerId)
+            {
+                var current = userPosts;
+                var items = CopyOnWrite.Prepend(current, restored);
+                if (!ReferenceEquals(items, current))
+                {
+                    Array.Sort(items, ByPinnedThenNewest);
+                    userPosts = items;
+                    userPostsTotal++;
+                }
+            }
+
+            for (var laneIndex = 0; laneIndex < feedLanes.Length; laneIndex++)
+            {
+                feedLanes[laneIndex].Restore(restored);
+            }
+
+            AcceptPostEverywhere(restored);
+            return true;
+        }, onComplete);
+    }
+
+    private void ApplyPinEverywhere(string postId, long? pinnedAtUnix)
+    {
+        for (var laneIndex = 0; laneIndex < feedLanes.Length; laneIndex++)
+        {
+            feedLanes[laneIndex].Items = MapPinned(feedLanes[laneIndex].Items, postId, pinnedAtUnix);
+        }
+
+        tagLane.Items = MapPinned(tagLane.Items, postId, pinnedAtUnix);
+        var current = userPosts;
+        var mapped = MapPinned(current, postId, pinnedAtUnix);
+        if (!ReferenceEquals(mapped, current))
+        {
+            Array.Sort(mapped, ByPinnedThenNewest);
+            userPosts = mapped;
+        }
+
+        if (fetchedPost is { } fetched && fetched.Id == postId)
+        {
+            fetchedPost = fetched with { PinnedAtUnix = pinnedAtUnix };
+        }
+    }
+
+    private static VelvetPostDto[] MapPinned(VelvetPostDto[] source, string postId, long? pinnedAtUnix) =>
+        CopyOnWrite.Map(source,
+            post => post.Id == postId && post.PinnedAtUnix != pinnedAtUnix,
+            post => post with { PinnedAtUnix = pinnedAtUnix });
 
     public void DeleteComment(string postId, string commentId)
     {

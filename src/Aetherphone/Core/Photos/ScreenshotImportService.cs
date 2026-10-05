@@ -71,6 +71,7 @@ internal sealed class ScreenshotImportService : IDisposable
     {
         try
         {
+            var territory = await Plugin.Framework.RunOnFrameworkThread(CurrentTerritory).ConfigureAwait(false);
             for (var attempt = 0; attempt < SettleAttempts && !disposed; attempt++)
             {
                 await Task.Delay(SettleDelayMilliseconds).ConfigureAwait(false);
@@ -84,7 +85,13 @@ internal sealed class ScreenshotImportService : IDisposable
                     return;
                 }
 
-                library.Import(path, File.GetLastWriteTime(path));
+                var imported = library.Import(path, File.GetLastWriteTime(path));
+                if (imported is not null && territory != 0)
+                {
+                    await Plugin.Framework.RunOnFrameworkThread(() => StampPlace(imported, territory))
+                        .ConfigureAwait(false);
+                }
+
                 return;
             }
 
@@ -94,6 +101,19 @@ internal sealed class ScreenshotImportService : IDisposable
         {
             AepLog.Warning(exception, $"[Screenshots] import failed for '{Path.GetFileName(path)}'");
         }
+    }
+
+    private static uint CurrentTerritory() => Plugin.ClientState.TerritoryType;
+
+    private void StampPlace(string imported, uint territory)
+    {
+        if (!PhotoPlaces.Stamp(configuration.PhotoPlaces, imported, territory))
+        {
+            return;
+        }
+
+        configuration.Save();
+        library.MarkChanged();
     }
 
     private static bool IsReadable(string path)

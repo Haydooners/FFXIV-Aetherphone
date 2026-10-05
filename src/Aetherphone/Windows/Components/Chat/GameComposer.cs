@@ -5,7 +5,6 @@ using Aetherphone.Core.GameChat;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Windows.Components;
@@ -25,26 +24,48 @@ internal readonly struct GameComposerResult
     public readonly bool IsCommand;
     public readonly string Text;
     public readonly string ChannelKey;
+    public readonly bool ChannelFromCommand;
 
-    public GameComposerResult(bool submitted, bool isCommand, string text, string channelKey)
+    public GameComposerResult(bool submitted, bool isCommand, string text, string channelKey,
+        bool channelFromCommand)
     {
         Submitted = submitted;
         IsCommand = isCommand;
         Text = text;
         ChannelKey = channelKey;
+        ChannelFromCommand = channelFromCommand;
     }
 }
 
 internal sealed class GameComposer
 {
-    private const float ChipMaxWidth = 58f;
+    private const float ChipMaxWidth = 64f;
+    private const float ChipHeight = 34f;
+    private const float ChipPadLeft = 12f;
+    private const float ChipPadRight = 8f;
+    private const float ChipCaret = 14f;
+    private const float ChipCaretGap = 3f;
+    private const float ChipFillAlpha = 0.18f;
     private const float RingThreshold = 0.55f;
-    private const float RowHeight = 38f;
-    private const float PillInset = 7f;
-    private const float EmojiRadius = 12f;
+    private const float RowHeight = 40f;
+    private const float PillInset = 10f;
+    private const float EdgePad = 12f;
+    private const float PillGap = 8f;
+    private const float TextPad = 14f;
+    private const float EmojiRadius = 15f;
+    private const float EmojiInset = 6f;
+    private const float SendRadius = 20f;
+    private const float SendGlyph = 20f;
+    private const float SendGlyphNudge = 1f;
+    private const float PartBadgeRadius = 8f;
     private const int MinimumLines = 1;
     private const int MaximumLines = 10;
     private const long DoubleEnterWindowMilliseconds = 700;
+
+    private static readonly Vector4 FieldFill = new(1f, 1f, 1f, 0.08f);
+    private static readonly Vector4 White = new(1f, 1f, 1f, 1f);
+    private static readonly Vector4 BudgetWarning = new(0.88f, 0.65f, 0.38f, 1f);
+    private static readonly TextStyle ChipStyle = new(0.72f, FontWeight.SemiBold);
 
     private readonly DropdownMenu channelMenu = new();
     private readonly GameEmojiComposer emoji = new();
@@ -61,6 +82,10 @@ internal sealed class GameComposer
     private long lastEnterMilliseconds;
     private bool enterPressed;
     private bool focus;
+    private bool fieldActive;
+    private bool channelFromCommand;
+    private int recallIndex = -1;
+    private string recallStash = string.Empty;
 
     public string Draft => editor.Text;
 
@@ -84,6 +109,7 @@ internal sealed class GameComposer
         editor.Adopt(ChatDrafts.Load(nextConversationKey));
         focus = false;
         channelMenu.Close();
+        ResetRecall();
     }
 
     public void Unbind()
@@ -94,6 +120,7 @@ internal sealed class GameComposer
         editor.Adopt(string.Empty);
         focus = false;
         channelMenu.Close();
+        ResetRecall();
     }
 
     public void Reset()
@@ -102,18 +129,64 @@ internal sealed class GameComposer
         focus = false;
         channelMenu.Close();
         emoji.Close();
+        ResetRecall();
     }
 
     public void Refill(string text)
     {
         editor.Adopt(text);
         focus = true;
+        ResetRecall();
     }
 
     public void Clear()
     {
         editor.Adopt(string.Empty);
         ChatDrafts.Store(conversationKey, string.Empty);
+        channelFromCommand = false;
+        ResetRecall();
+    }
+
+    private void ResetRecall()
+    {
+        recallIndex = -1;
+        recallStash = string.Empty;
+    }
+
+    private void RecallHistory()
+    {
+        var recent = Plugin.Cfg?.LinkpearlRecentSent;
+        if (!fieldActive || recent is null || recent.Count == 0)
+        {
+            return;
+        }
+
+        var text = editor.Text;
+        var atRecalled = recallIndex >= 0 && recallIndex < recent.Count &&
+                         string.Equals(text, recent[recallIndex].Text, StringComparison.Ordinal);
+        if (ImGui.IsKeyPressed(ImGuiKey.UpArrow) && (text.Length == 0 || atRecalled))
+        {
+            if (recallIndex < 0)
+            {
+                recallStash = text;
+            }
+
+            if (recallIndex + 1 < recent.Count)
+            {
+                recallIndex++;
+                editor.Adopt(recent[recallIndex].Text);
+            }
+
+            return;
+        }
+
+        if (!ImGui.IsKeyPressed(ImGuiKey.DownArrow) || recallIndex < 0 || !atRecalled)
+        {
+            return;
+        }
+
+        recallIndex--;
+        editor.Adopt(recallIndex < 0 ? recallStash : recent[recallIndex].Text);
     }
 
     public float Measure(float barWidth, in GameComposerModel model)
@@ -139,36 +212,36 @@ internal sealed class GameComposer
         if (!Sendable(model, out var channel))
         {
             DrawReadOnly(bar, theme);
-            return new GameComposerResult(false, false, string.Empty, channelKey);
+            return new GameComposerResult(false, false, string.Empty, channelKey, channelFromCommand);
         }
 
         var indicator = Indicator;
         var budget = ChatSend.Budget(channel, model.SendTarget);
         capacityBytes = Splitting ? MessageSplitter.Capacity(budget, indicator) : budget;
-        var pillMin = new Vector2(bar.Min.X + Metrics.Space.Md * scale, bar.Min.Y + PillInset * scale);
-        var pillMax = new Vector2(bar.Max.X - Metrics.Space.Md * scale, bar.Max.Y - PillInset * scale);
+        var pillMin = new Vector2(bar.Min.X + EdgePad * scale, bar.Min.Y + PillInset * scale);
+        var pillMax = new Vector2(bar.Max.X - EdgePad * scale, bar.Max.Y - PillInset * scale);
         var rowHeight = RowHeight * scale;
+        var rowCenterY = pillMax.Y - rowHeight * 0.5f;
         var chipWidth = MathF.Min(ChipMaxWidth * scale, ChipWidthOf(channel, scale));
-        var chipMin = new Vector2(pillMin.X, pillMax.Y - rowHeight + 3f * scale);
-        var chipMax = new Vector2(chipMin.X + chipWidth, pillMax.Y - 3f * scale);
-        var sendDiameter = rowHeight - 6f * scale;
-        var sendCenter = new Vector2(pillMax.X - sendDiameter * 0.5f, pillMax.Y - rowHeight * 0.5f);
+        var chipMin = new Vector2(pillMin.X, rowCenterY - ChipHeight * 0.5f * scale);
+        var chipMax = new Vector2(chipMin.X + chipWidth, rowCenterY + ChipHeight * 0.5f * scale);
+        var sendRadius = SendRadius * scale;
+        var sendCenter = new Vector2(pillMax.X - sendRadius, rowCenterY);
         var emojiRadius = GameEmojiComposer.PickerEnabled ? EmojiRadius * scale : 0f;
-        var emojiCenter = new Vector2(chipMax.X + Metrics.Space.Xs * scale + emojiRadius,
-            (pillMin.Y + pillMax.Y) * 0.5f);
-        var fieldMin = new Vector2(emojiCenter.X + emojiRadius + Metrics.Space.Xs * scale, pillMin.Y);
-        var fieldMax = new Vector2(sendCenter.X - sendDiameter * 0.5f - Metrics.Space.Xs * scale, pillMax.Y);
+        var fieldMin = new Vector2(chipMax.X + PillGap * scale, pillMin.Y);
+        var fieldMax = new Vector2(sendCenter.X - sendRadius - PillGap * scale, pillMax.Y);
         Squircle.Fill(drawList, fieldMin, fieldMax, MathF.Min(fieldMax.Y - fieldMin.Y, rowHeight) * 0.5f,
-            ImGui.GetColorU32(theme.GroupedCard));
+            ImGui.GetColorU32(FieldFill));
         DrawChip(drawList, chipMin, chipMax, channel, scale);
         if (UiInteract.HoverClick(chipMin, chipMax))
         {
             channelMenu.Toggle("linkpearl.composer.channel", new Rect(chipMin, chipMax));
         }
 
+        var emojiCenter = new Vector2(fieldMax.X - EmojiInset * scale - emojiRadius, rowCenterY);
         emoji.DrawToggle(emojiCenter, emojiRadius, theme);
 
-        var innerWidth = MathF.Max(1f, fieldMax.X - fieldMin.X - Metrics.Space.Md * scale);
+        var innerWidth = MathF.Max(1f, InnerWidth(bar.Width, channel, scale));
         enterPressed = false;
         if (Multiline)
         {
@@ -198,15 +271,17 @@ internal sealed class GameComposer
         {
             editor.Adopt(remainder);
             channelKey = absorbed.Key;
+            channelFromCommand = true;
         }
 
+        RecallHistory();
         ChatDrafts.Store(conversationKey, editor.Text);
         var used = Encoding.UTF8.GetByteCount(editor.Text);
         var hasText = editor.HasContent;
         var parts = hasText && Splitting ? PartCount(budget, indicator) : 1;
-        DrawSend(drawList, sendCenter, sendDiameter, hasText, used, capacityBytes, parts, theme, scale);
+        DrawSend(drawList, sendCenter, sendRadius, hasText, used, capacityBytes, parts, theme, scale);
         var submitted = ConsumeEnter();
-        if (hasText && UiInteract.HoverClickCircle(sendCenter, sendDiameter * 0.5f))
+        if (hasText && UiInteract.HoverClickCircle(sendCenter, sendRadius))
         {
             submitted = true;
         }
@@ -215,16 +290,17 @@ internal sealed class GameComposer
         if (picked.Length > 0)
         {
             channelKey = picked;
+            channelFromCommand = false;
         }
 
         if (!submitted || !hasText)
         {
-            return new GameComposerResult(false, false, string.Empty, channelKey);
+            return new GameComposerResult(false, false, string.Empty, channelKey, channelFromCommand);
         }
 
         var text = editor.Text.Trim();
         focus = true;
-        return new GameComposerResult(true, text[0] == '/', text, channelKey);
+        return new GameComposerResult(true, text[0] == '/', text, channelKey, channelFromCommand);
     }
 
     private static bool Multiline => Plugin.Cfg?.LinkpearlComposerMultiline ?? true;
@@ -244,7 +320,7 @@ internal sealed class GameComposer
 
     private void DrawSingleLine(Vector2 fieldMin, Vector2 fieldMax, float innerWidth, PhoneTheme theme, float scale)
     {
-        ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + Metrics.Space.Sm * scale,
+        ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + TextPad * scale,
             (fieldMin.Y + fieldMax.Y) * 0.5f - ImGui.GetFrameHeight() * 0.5f));
         ImGui.SetNextItemWidth(innerWidth);
         if (focus)
@@ -265,6 +341,7 @@ internal sealed class GameComposer
             }
         }
 
+        fieldActive = ImGui.IsItemActive();
         if (!string.Equals(line, editor.Text, StringComparison.Ordinal))
         {
             editor.Adopt(line);
@@ -276,7 +353,7 @@ internal sealed class GameComposer
         editor.Rewrap(WrapWidthOf(innerWidth, scale));
         var visible = Math.Clamp(editor.LineCount, MinimumLines, MaxLines);
         var boxHeight = visible * ImGui.GetTextLineHeight() + ImGui.GetStyle().FramePadding.Y * 2f;
-        ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + Metrics.Space.Sm * scale,
+        ImGui.SetCursorScreenPos(new Vector2(fieldMin.X + TextPad * scale,
             (fieldMin.Y + fieldMax.Y) * 0.5f - boxHeight * 0.5f));
         if (focus)
         {
@@ -293,6 +370,7 @@ internal sealed class GameComposer
             }
         }
 
+        fieldActive = ImGui.IsItemActive();
         if (editor.Text.Length > 0)
         {
             return;
@@ -300,7 +378,7 @@ internal sealed class GameComposer
 
         var padding = ImGui.GetStyle().FramePadding;
         Typography.Draw(ImGui.GetWindowDrawList(),
-            new Vector2(fieldMin.X + Metrics.Space.Sm * scale + padding.X,
+            new Vector2(fieldMin.X + TextPad * scale + padding.X,
                 (fieldMin.Y + fieldMax.Y) * 0.5f - boxHeight * 0.5f + padding.Y),
             Loc.T(L.Messages.Placeholder), theme.TextMuted, TextStyles.Body);
     }
@@ -394,41 +472,42 @@ internal sealed class GameComposer
     private static float InnerWidth(float barWidth, GameChannel channel, float scale)
     {
         var chipWidth = MathF.Min(ChipMaxWidth * scale, ChipWidthOf(channel, scale));
-        var sendDiameter = (RowHeight - 6f) * scale;
         var emojiWidth = GameEmojiComposer.PickerEnabled
-            ? EmojiRadius * 2f * scale + Metrics.Space.Xs * scale
+            ? (EmojiRadius * 2f + EmojiInset + PillGap) * scale
             : 0f;
-        var fieldWidth = barWidth - Metrics.Space.Md * 2f * scale - chipWidth - sendDiameter - emojiWidth -
-                         Metrics.Space.Xs * 2f * scale;
-        return MathF.Max(1f, fieldWidth - Metrics.Space.Md * scale);
+        var fieldWidth = barWidth - (EdgePad * 2f + PillGap * 2f + SendRadius * 2f) * scale - chipWidth - emojiWidth;
+        return MathF.Max(1f, fieldWidth - TextPad * scale);
     }
 
     private static float WrapWidthOf(float innerWidth, float scale) =>
         MathF.Max(1f, innerWidth - ImGui.GetStyle().FramePadding.X * 2f - 4f * scale);
 
     private static float ChipWidthOf(GameChannel channel, float scale) =>
-        Typography.Measure(ShortName(channel), TextStyles.Caption1).X + 18f * scale;
+        Typography.Measure(ShortName(channel), ChipStyle).X +
+        (ChipPadLeft + ChipCaretGap + ChipCaret + ChipPadRight) * scale;
 
     private static void DrawChip(ImDrawListPtr drawList, Vector2 min, Vector2 max, GameChannel channel,
         float scale)
     {
         var tint = channel.Tint;
         Squircle.Fill(drawList, min, max, (max.Y - min.Y) * 0.5f,
-            ImGui.GetColorU32(Palette.WithAlpha(tint, 0.18f)));
-        var label = Typography.FitText(ShortName(channel), max.X - min.X - 14f * scale, TextStyles.Caption1);
-        var center = new Vector2((min.X + max.X) * 0.5f - 3f * scale, (min.Y + max.Y) * 0.5f);
-        Typography.DrawCentered(drawList, center, label, tint, TextStyles.Caption1);
-        AppSkin.Icon(drawList, new Vector2(max.X - 6f * scale, center.Y + 1f * scale),
-            IconGlyph.Of(FontAwesomeIcon.CaretDown), Palette.WithAlpha(tint, 0.8f), 0.6f);
+            ImGui.GetColorU32(Palette.WithAlpha(tint, ChipFillAlpha)));
+        var labelWidth = max.X - min.X - (ChipPadLeft + ChipCaretGap + ChipCaret + ChipPadRight) * scale;
+        var label = Typography.FitText(ShortName(channel), labelWidth, ChipStyle);
+        var labelSize = Typography.Measure(label, ChipStyle);
+        var centerY = (min.Y + max.Y) * 0.5f;
+        Typography.Draw(drawList, new Vector2(min.X + ChipPadLeft * scale, centerY - labelSize.Y * 0.5f), label, tint,
+            ChipStyle);
+        PhoneIcon.Draw(drawList, new Vector2(max.X - ChipPadRight * scale - ChipCaret * 0.5f * scale, centerY),
+            PhoneIcons.ChevronDown, Palette.WithAlpha(tint, 0.8f), ChipCaret * scale);
     }
 
-    private static void DrawSend(ImDrawListPtr drawList, Vector2 center, float diameter, bool hasText, int used,
+    private static void DrawSend(ImDrawListPtr drawList, Vector2 center, float radius, bool hasText, int used,
         int budget, int parts, PhoneTheme theme, float scale)
     {
-        var radius = diameter * 0.5f;
-        drawList.AddCircleFilled(center, radius,
-            ImGui.GetColorU32(hasText ? theme.Accent : theme.SurfaceMuted), 24);
-        AppSkin.Icon(drawList, center, IconGlyph.Of(FontAwesomeIcon.ArrowUp), new Vector4(1f, 1f, 1f, 1f), 0.88f);
+        drawList.AddCircleFilled(center, radius, ImGui.GetColorU32(hasText ? theme.Accent : FieldFill), 32);
+        PhoneIcon.Draw(drawList, new Vector2(center.X - SendGlyphNudge * scale, center.Y), PhoneIcons.Send,
+            hasText ? White : theme.TextMuted, SendGlyph * scale);
         if (parts > 1)
         {
             DrawPartBadge(drawList, center, radius, parts, theme, scale);
@@ -446,7 +525,7 @@ internal sealed class GameComposer
             return;
         }
 
-        var ringColor = fraction >= 0.95f ? theme.Danger : new Vector4(0.88f, 0.65f, 0.38f, 1f);
+        var ringColor = fraction >= 0.95f ? theme.Danger : BudgetWarning;
         ProgressRing.Fill(center, radius + 2.5f * scale, 2f * scale, fraction, ringColor);
     }
 
@@ -454,11 +533,10 @@ internal sealed class GameComposer
         PhoneTheme theme, float scale)
     {
         var badgeCenter = new Vector2(center.X + radius - 1f * scale, center.Y - radius + 1f * scale);
-        var badgeRadius = 7f * scale;
+        var badgeRadius = PartBadgeRadius * scale;
         drawList.AddCircleFilled(badgeCenter, badgeRadius, ImGui.GetColorU32(theme.AppBackground), 16);
         drawList.AddCircleFilled(badgeCenter, badgeRadius - 1f * scale, ImGui.GetColorU32(theme.Accent), 16);
-        Typography.DrawCentered(drawList, badgeCenter, parts.ToString(Loc.Culture), new Vector4(1f, 1f, 1f, 1f),
-            TextStyles.Caption2);
+        Typography.DrawCentered(drawList, badgeCenter, parts.ToString(Loc.Culture), White, TextStyles.Caption2);
     }
 
     private static void DrawReadOnly(Rect bar, PhoneTheme theme) =>

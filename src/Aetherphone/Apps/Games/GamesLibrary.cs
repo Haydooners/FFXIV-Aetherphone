@@ -1,5 +1,7 @@
 using Aetherphone.Apps.Games.Framework;
+using Aetherphone.Apps.Games.GemSwap;
 using Aetherphone.Apps.Games.Online;
+using Aetherphone.Apps.Games.Tetris;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Games;
 using Aetherphone.Core.Localization;
@@ -26,21 +28,17 @@ internal readonly struct GameEntry
     public bool Online => GameIndex < 0;
 }
 
-internal enum LibraryFilter : byte
+internal enum RecordKind : byte
 {
-    All,
-    New,
-    Arcade,
-    Action,
-    Puzzle,
-    Brain,
-    Tabletop,
-    Friends,
+    None,
+    Score,
+    Time,
+    Level,
+    Streak,
 }
 
 internal sealed class GamesLibrary
 {
-    public const int FilterCount = 8;
     private const int NewBadgeDays = 30;
     private const int LatestWaveDays = 7;
     private const int LatestCap = 10;
@@ -74,28 +72,43 @@ internal sealed class GamesLibrary
         new("invaders", 2026, 8, 24), new("skyfall", 2026, 8, 24), new("squadron", 2026, 8, 24),
         new("wordrun", 2026, 8, 24),
         new("online.uno", 2026, 8, 25), new("online.chess", 2026, 8, 25), new("online.pool", 2026, 8, 25),
+        new("coil", 2026, 10, 3), new("updraft", 2026, 10, 3), new("swoop", 2026, 10, 3),
+        new("online.connectfour", 2026, 10, 3),
     };
+
+    private static readonly int GenreCount = GameGenres.Shelves.Length;
 
     private readonly IMiniGame[] games;
     private readonly GameStatsStore stats;
     private readonly int[] ordered;
     private readonly int[] latest;
     private readonly int[] recent;
-    private readonly int[] filtered;
+    private readonly int[] searched;
+    private readonly int[] records;
+    private readonly int[] byGenre;
+    private readonly int[] genreStart;
+    private readonly int[] genreLength;
     private readonly long[] lastPlayed;
     private readonly string[] bestLabels;
+    private readonly string[] bestValues;
+    private readonly RecordKind[] bestKinds;
     private int latestCount;
     private int recentCount;
-    private int filteredCount;
-    private LibraryFilter filteredKind;
-    private string filteredQuery = string.Empty;
-    private bool filterDirty = true;
+    private int searchedCount;
+    private int recordCount;
+    private int playedCount;
+    private string searchedQuery = string.Empty;
+    private bool searchDirty = true;
+    private LanguageInfo? labelLanguage;
+    private int labelFormatVersion = -1;
 
     public readonly GameEntry[] Entries;
     public readonly Spring[] Lift;
     public readonly string[] MarqueeIds;
 
     public int Today { get; private set; }
+
+    public int Version { get; private set; }
 
     public GamesLibrary(IMiniGame[] games, GameStatsStore stats)
     {
@@ -119,9 +132,15 @@ internal sealed class GamesLibrary
         ordered = new int[count];
         latest = new int[count];
         recent = new int[count];
-        filtered = new int[count];
+        searched = new int[count];
+        records = new int[count];
+        byGenre = new int[count];
+        genreStart = new int[GenreCount];
+        genreLength = new int[GenreCount];
         lastPlayed = new long[count];
         bestLabels = new string[count];
+        bestValues = new string[count];
+        bestKinds = new RecordKind[count];
         Lift = new Spring[count];
         MarqueeIds = new string[count];
         for (var index = 0; index < count; index++)
@@ -129,9 +148,11 @@ internal sealed class GamesLibrary
             Lift[index] = new Spring(1f);
             MarqueeIds[index] = "games.tile." + Entries[index].Id;
             bestLabels[index] = string.Empty;
+            bestValues[index] = string.Empty;
         }
 
         BuildOrder();
+        BuildGenres();
         Rebuild();
     }
 
@@ -141,19 +162,14 @@ internal sealed class GamesLibrary
 
     public ReadOnlySpan<int> Recent => recent.AsSpan(0, recentCount);
 
-    public static LocString FilterLabel(LibraryFilter filter)
+    public ReadOnlySpan<int> Records => records.AsSpan(0, recordCount);
+
+    public int PlayedCount => playedCount;
+
+    public ReadOnlySpan<int> Genre(GameGenre genre)
     {
-        return filter switch
-        {
-            LibraryFilter.New => L.Games.FilterNew,
-            LibraryFilter.Arcade => L.Games.GenreArcade,
-            LibraryFilter.Action => L.Games.GenreAction,
-            LibraryFilter.Puzzle => L.Games.GenrePuzzle,
-            LibraryFilter.Brain => L.Games.GenreBrain,
-            LibraryFilter.Tabletop => L.Games.GenreTabletop,
-            LibraryFilter.Friends => L.Games.GenreFriends,
-            _ => L.Games.FilterAll,
-        };
+        var slot = (int)genre;
+        return slot < GenreCount ? byGenre.AsSpan(genreStart[slot], genreLength[slot]) : ReadOnlySpan<int>.Empty;
     }
 
     public void Rebuild()
@@ -162,29 +178,51 @@ internal sealed class GamesLibrary
         BuildLatest();
         BuildRecent();
         BuildBestLabels();
-        filterDirty = true;
+        BuildRecords();
+        searchDirty = true;
+        Version++;
     }
 
-    public ReadOnlySpan<int> Filter(LibraryFilter kind, string query)
+    public void EnsureLanguage()
     {
-        if (filterDirty || kind != filteredKind || !string.Equals(query, filteredQuery, StringComparison.Ordinal))
+        if (ReferenceEquals(labelLanguage, Loc.Current) && labelFormatVersion == TimeText.FormatVersion)
         {
-            filteredKind = kind;
-            filteredQuery = query;
-            filterDirty = false;
-            filteredCount = 0;
-            var needle = query.AsSpan().Trim();
-            for (var position = 0; position < ordered.Length; position++)
+            return;
+        }
+
+        BuildBestLabels();
+        searchDirty = true;
+        Version++;
+    }
+
+    public ReadOnlySpan<int> Search(string query)
+    {
+        if (!searchDirty && string.Equals(query, searchedQuery, StringComparison.Ordinal))
+        {
+            return searched.AsSpan(0, searchedCount);
+        }
+
+        searchedQuery = query;
+        searchDirty = false;
+        searchedCount = 0;
+        var needle = query.AsSpan().Trim();
+        if (needle.Length == 0)
+        {
+            return ReadOnlySpan<int>.Empty;
+        }
+
+        for (var position = 0; position < ordered.Length; position++)
+        {
+            var entryIndex = ordered[position];
+            if (Title(entryIndex).AsSpan().Contains(needle, StringComparison.OrdinalIgnoreCase)
+                || Loc.T(GameGenres.Label(Entries[entryIndex].Genre)).AsSpan()
+                    .Contains(needle, StringComparison.OrdinalIgnoreCase))
             {
-                var entryIndex = ordered[position];
-                if (Matches(entryIndex, kind, needle))
-                {
-                    filtered[filteredCount++] = entryIndex;
-                }
+                searched[searchedCount++] = entryIndex;
             }
         }
 
-        return filtered.AsSpan(0, filteredCount);
+        return searched.AsSpan(0, searchedCount);
     }
 
     public string Title(int entryIndex)
@@ -203,58 +241,29 @@ internal sealed class GamesLibrary
 
     public string Best(int entryIndex) => bestLabels[entryIndex];
 
+    public string BestValue(int entryIndex) => bestValues[entryIndex];
+
+    public RecordKind BestKind(int entryIndex) => bestKinds[entryIndex];
+
+    public int IndexOf(string id)
+    {
+        for (var index = 0; index < Entries.Length; index++)
+        {
+            if (string.Equals(Entries[index].Id, id, StringComparison.Ordinal))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
     public static string OnlineEntryId(string gameKind) => OnlineIdPrefix + OnlineGameArt.AccentId(gameKind);
 
     public string Subtitle(int entryIndex)
     {
         var best = bestLabels[entryIndex];
         return best.Length > 0 ? best : Loc.T(GameGenres.Label(Entries[entryIndex].Genre));
-    }
-
-    private bool Matches(int entryIndex, LibraryFilter kind, ReadOnlySpan<char> needle)
-    {
-        if (needle.Length > 0)
-        {
-            return Title(entryIndex).AsSpan().Contains(needle, StringComparison.OrdinalIgnoreCase);
-        }
-
-        switch (kind)
-        {
-            case LibraryFilter.All:
-                return true;
-            case LibraryFilter.New:
-                return IsInLatest(entryIndex);
-            case LibraryFilter.Friends:
-                return Entries[entryIndex].Genre == GameGenre.Friends;
-            default:
-                return Entries[entryIndex].Genre == GenreOf(kind);
-        }
-    }
-
-    private static GameGenre GenreOf(LibraryFilter kind)
-    {
-        return kind switch
-        {
-            LibraryFilter.Action => GameGenre.Action,
-            LibraryFilter.Puzzle => GameGenre.Puzzle,
-            LibraryFilter.Brain => GameGenre.Brain,
-            LibraryFilter.Tabletop => GameGenre.Tabletop,
-            LibraryFilter.Friends => GameGenre.Friends,
-            _ => GameGenre.Arcade,
-        };
-    }
-
-    private bool IsInLatest(int entryIndex)
-    {
-        for (var index = 0; index < latestCount; index++)
-        {
-            if (latest[index] == entryIndex)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private void BuildOrder()
@@ -275,6 +284,25 @@ internal sealed class GamesLibrary
             }
 
             ordered[slot + 1] = candidate;
+        }
+    }
+
+    private void BuildGenres()
+    {
+        var cursor = 0;
+        for (var genre = 0; genre < GenreCount; genre++)
+        {
+            genreStart[genre] = cursor;
+            for (var position = 0; position < ordered.Length; position++)
+            {
+                var entryIndex = ordered[position];
+                if ((int)Entries[entryIndex].Genre == genre)
+                {
+                    byGenre[cursor++] = entryIndex;
+                }
+            }
+
+            genreLength[genre] = cursor - genreStart[genre];
         }
     }
 
@@ -302,6 +330,7 @@ internal sealed class GamesLibrary
     private void BuildRecent()
     {
         recentCount = 0;
+        playedCount = 0;
         for (var index = 0; index < Entries.Length; index++)
         {
             var played = stats.LastPlayed(Entries[index].Id);
@@ -311,48 +340,71 @@ internal sealed class GamesLibrary
                 continue;
             }
 
-            var slot = recentCount - 1;
-            while (slot >= 0 && lastPlayed[recent[slot]] < played)
-            {
-                if (slot + 1 < recent.Length)
-                {
-                    recent[slot + 1] = recent[slot];
-                }
-
-                slot--;
-            }
-
-            if (slot + 1 < recent.Length)
-            {
-                recent[slot + 1] = index;
-                recentCount = Math.Min(recentCount + 1, recent.Length);
-            }
+            playedCount++;
+            InsertByRecency(recent, ref recentCount, index);
         }
 
         recentCount = Math.Min(recentCount, RecentCap);
     }
 
-    private void BuildBestLabels()
+    private void BuildRecords()
     {
+        recordCount = 0;
         for (var index = 0; index < Entries.Length; index++)
         {
-            bestLabels[index] = Entries[index].Online ? string.Empty : BestLabel(Entries[index].Id);
+            if (bestKinds[index] != RecordKind.None)
+            {
+                InsertByRecency(records, ref recordCount, index);
+            }
         }
     }
 
-    private string BestLabel(string gameId)
+    private void InsertByRecency(int[] target, ref int count, int entryIndex)
     {
+        var played = lastPlayed[entryIndex];
+        var slot = count - 1;
+        while (slot >= 0 && lastPlayed[target[slot]] < played)
+        {
+            target[slot + 1] = target[slot];
+            slot--;
+        }
+
+        target[slot + 1] = entryIndex;
+        count++;
+    }
+
+    private void BuildBestLabels()
+    {
+        labelLanguage = Loc.Current;
+        labelFormatVersion = TimeText.FormatVersion;
+        for (var index = 0; index < Entries.Length; index++)
+        {
+            var value = string.Empty;
+            var kind = Entries[index].Online ? RecordKind.None : BestRecord(Entries[index].Id, out value);
+            bestKinds[index] = kind;
+            bestValues[index] = kind == RecordKind.None ? string.Empty : value;
+            bestLabels[index] = kind switch
+            {
+                RecordKind.None => string.Empty,
+                RecordKind.Streak => Loc.T(L.Games.Streak) + " · " + value,
+                RecordKind.Level => Loc.T(L.Games.Best) + " · " + Loc.T(L.Games.Level) + " " + value,
+                _ => Loc.T(L.Games.Best) + " · " + value,
+            };
+        }
+    }
+
+    private RecordKind BestRecord(string gameId, out string value)
+    {
+        value = string.Empty;
         switch (gameId)
         {
             case "2048":
-            case "match3":
             case "breakout":
             case "bubbles":
             case "simon":
             case "flap":
             case "whack":
             case "snake":
-            case "tetris":
             case "stack":
             case "crystaldrop":
             case "beat":
@@ -364,43 +416,63 @@ internal sealed class GamesLibrary
             case "hop":
             case "squadron":
             case "wordrun":
-            {
-                var best = stats.Get(gameId).BestScore;
-                return best > 0 ? BestPrefix(GameNumber.Label(best)) : string.Empty;
-            }
+            case "coil":
+            case "updraft":
+            case "swoop":
+                return Score(stats.Get(gameId).BestScore, out value);
+            case "match3":
+                return Score(Math.Max(stats.Get(gameId).BestScore, stats.Get(GemSwapApp.BlitzStatId).BestScore),
+                    out value);
+            case "tetris":
+                return Score(Math.Max(stats.Get(gameId).BestScore, stats.Get(TetrisApp.ModernStatId).BestScore),
+                    out value);
             case "watersort":
             case "flow":
             {
                 var bestLevel = stats.Get(gameId).BestScore;
-                return bestLevel > 0
-                    ? BestPrefix(Loc.T(L.Games.Level) + " " + GameNumber.Label(bestLevel))
-                    : string.Empty;
+                if (bestLevel <= 0)
+                {
+                    return RecordKind.None;
+                }
+
+                value = GameNumber.Label(bestLevel);
+                return RecordKind.Level;
             }
             case "memory":
             case "solitaire":
-            {
-                var bestSeconds = stats.Get(gameId).BestTimeSeconds;
-                return bestSeconds > 0 ? BestPrefix(TimeText.MinutesSeconds(bestSeconds)) : string.Empty;
-            }
+                return Time(stats.Get(gameId).BestTimeSeconds, out value);
             case "minesweeper":
             case "nonogram":
             case "sudoku":
-            {
-                var bestSeconds = stats.Get(gameId + ".easy").BestTimeSeconds;
-                return bestSeconds > 0 ? BestPrefix(TimeText.MinutesSeconds(bestSeconds)) : string.Empty;
-            }
+                return Time(stats.Get(gameId + ".easy").BestTimeSeconds, out value);
             case "reversi":
             case "chess":
             {
                 var wins = stats.Get(gameId).Streak;
-                return wins > 0 ? Loc.T(L.Games.Streak) + " · " + GameNumber.Label(wins) : string.Empty;
+                if (wins <= 0)
+                {
+                    return RecordKind.None;
+                }
+
+                value = GameNumber.Label(wins);
+                return RecordKind.Streak;
             }
             default:
-                return string.Empty;
+                return RecordKind.None;
         }
     }
 
-    private static string BestPrefix(string value) => Loc.T(L.Games.Best) + " · " + value;
+    private static RecordKind Score(int best, out string value)
+    {
+        value = best > 0 ? GameNumber.Label(best) : string.Empty;
+        return best > 0 ? RecordKind.Score : RecordKind.None;
+    }
+
+    private static RecordKind Time(int seconds, out string value)
+    {
+        value = seconds > 0 ? TimeText.MinutesSeconds(seconds) : string.Empty;
+        return seconds > 0 ? RecordKind.Time : RecordKind.None;
+    }
 
     private static int AddedDay(string id)
     {

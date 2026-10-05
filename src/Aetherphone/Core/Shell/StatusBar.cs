@@ -1,3 +1,4 @@
+using Aetherphone.Core.Animation;
 using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
@@ -12,8 +13,8 @@ internal static class StatusBar
     private const FontWeight TimeWeight = FontWeight.SemiBold;
     private const float TimePadding = 24f;
     private const float EarGap = 10f;
-    private const float MoonGap = 6f;
-    private const float MoonHeight = 11f;
+    private const float IndicatorGap = 6f;
+    private const float IndicatorHeight = 11f;
     internal static readonly Vector4 DndTone = new(0.58f, 0.55f, 0.96f, 1f);
     private const float IslandSidePadding = 14f;
     private const float MinIslandHalfWidth = 30f;
@@ -38,7 +39,7 @@ internal static class StatusBar
         return cachedTime;
     }
 
-    public static void Draw(Rect screen, PhoneTheme theme, bool landscape)
+    public static void Draw(Rect screen, PhoneTheme theme, bool landscape, float alpha = 1f)
     {
         var scale = UiScale.Current;
         var rowCenterY = screen.Min.Y + 22f * scale;
@@ -50,33 +51,66 @@ internal static class StatusBar
         {
             DeviceChrome.DrawIsland(island, theme);
         }
+
+        var drawList = ImGui.GetWindowDrawList();
+        var vertexStart = drawList.VtxBuffer.Size;
         var earGap = EarGap * scale;
         var timeLeft = MathF.Min(screen.Min.X + TimePadding * scale,
-            island.Min.X - earGap - timeSize.X - DndWidth(scale));
+            island.Min.X - earGap - timeSize.X - IndicatorsWidth(scale));
         Typography.Draw(new Vector2(timeLeft, rowCenterY - timeSize.Y * 0.5f), localTime, theme.TextStrong, TimeScale,
             TimeWeight);
-        DrawDndIndicator(timeLeft + timeSize.X, rowCenterY, scale);
+        DrawIndicators(drawList, timeLeft + timeSize.X, rowCenterY, scale, theme);
         StatusIcons.Draw(screen, theme, rowCenterY, island.Max.X + earGap);
+        LayerCompositor.Fade(drawList, vertexStart, Math.Clamp(alpha, 0f, 1f));
     }
 
-    private static float DndWidth(float scale) =>
-        Plugin.Cfg.DoNotDisturb ? (MoonGap + MoonHeight) * scale : 0f;
-
-    private static void DrawDndIndicator(float timeRight, float rowCenterY, float scale)
+    private static int IndicatorCount()
     {
-        if (!Plugin.Cfg.DoNotDisturb)
+        var configuration = Plugin.Cfg;
+        var count = 0;
+        if (configuration.DoNotDisturb)
         {
-            return;
+            count++;
         }
 
-        var center = new Vector2(timeRight + (MoonGap + MoonHeight * 0.5f) * scale, rowCenterY);
-        ProgressRing.CenterIcon(ImGui.GetWindowDrawList(), center, FontAwesomeIcon.Moon, DndTone, MoonHeight * scale);
+        if (configuration.LockPosition)
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    private static float IndicatorsWidth(float scale) => IndicatorCount() * (IndicatorGap + IndicatorHeight) * scale;
+
+    private static void DrawIndicators(ImDrawListPtr drawList, float timeRight, float rowCenterY, float scale,
+        PhoneTheme theme)
+    {
+        var configuration = Plugin.Cfg;
+        var cursor = timeRight;
+        if (configuration.DoNotDisturb)
+        {
+            cursor = DrawIndicator(drawList, cursor, rowCenterY, scale, FontAwesomeIcon.Moon, DndTone);
+        }
+
+        if (configuration.LockPosition)
+        {
+            DrawIndicator(drawList, cursor, rowCenterY, scale, FontAwesomeIcon.Lock, theme.TextStrong);
+        }
+    }
+
+    private static float DrawIndicator(ImDrawListPtr drawList, float left, float rowCenterY, float scale,
+        FontAwesomeIcon icon, Vector4 tone)
+    {
+        var center = new Vector2(left + (IndicatorGap + IndicatorHeight * 0.5f) * scale, rowCenterY);
+        ProgressRing.CenterIcon(drawList, center, icon, tone, IndicatorHeight * scale);
+        return left + (IndicatorGap + IndicatorHeight) * scale;
     }
 
     internal static Rect BaseIsland(Rect screen)
     {
         var scale = UiScale.Current;
-        var timeWidth = Typography.Measure(CurrentTime(), TimeScale, TimeWeight).X + DndWidth(scale);
+        var timeWidth = Typography.Measure(CurrentTime(), TimeScale, TimeWeight).X + IndicatorsWidth(scale);
         var clusterWidth = StatusIcons.MeasureWidth(scale, Plugin.Device.BatteryPercent);
         return ComputeIsland(screen, scale, timeWidth, clusterWidth);
     }

@@ -8,7 +8,12 @@ using Dalamud.Interface;
 namespace Aetherphone.Windows.Components;
 
 internal readonly record struct NavTab(FontAwesomeIcon Icon, string Label, int Badge = 0, bool Raised = false,
-    string? AnchorKey = null, bool Disabled = false);
+    string? AnchorKey = null, bool Disabled = false, string Glyph = "", string ActiveGlyph = "")
+{
+    public bool UsesPhoneGlyph => Glyph.Length > 0;
+
+    public string GlyphFor(bool active) => active && ActiveGlyph.Length > 0 ? ActiveGlyph : Glyph;
+}
 
 internal sealed class BottomTabBar
 {
@@ -26,15 +31,16 @@ internal sealed class BottomTabBar
     private const float PillWidth = 40f;
     private const float PillHeight = 34f;
     private const float PillAlpha = 0.10f;
-    private const float HoverSmoothTime = 0.12f;
     private const float MaxFrameSeconds = 0.1f;
     private const float IconScale = 1.2f;
     private const float ActiveIconScale = 1.3f;
+    private const float PhoneGlyphSize = 26f;
+    private const float LabelledPhoneGlyphSize = 24f;
 
     private Spring[] hover = Array.Empty<Spring>();
 
     public int Draw(Rect bar, AppSkin ui, PhoneTheme theme, ReadOnlySpan<NavTab> tabs, int active,
-        bool showLabels = false)
+        bool showLabels = false, Vector4? activeInk = null)
     {
         if (tabs.Length == 0)
         {
@@ -65,7 +71,7 @@ internal sealed class BottomTabBar
                 ? DrawRaised(drawList, ui, tabs[index], center, index, scale)
                 : showLabels
                     ? DrawLabelledTab(drawList, ui, theme, tabs[index], bar, slot, index, index == active, scale)
-                    : DrawTab(ui, theme, tabs[index], center, index, index == active, scale);
+                    : DrawTab(ui, theme, tabs[index], center, index, index == active, scale, activeInk);
             if (picked)
             {
                 tapped = index;
@@ -96,15 +102,23 @@ internal sealed class BottomTabBar
 
         var hovered = UiInteract.Hover(cellMin, cellMax);
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, MaxFrameSeconds);
-        hover[index].Step(hovered ? 1f : 0f, HoverSmoothTime, delta);
+        hover[index].Step(hovered ? 1f : 0f, Motion.HoverLift, delta);
         var iconCenter = new Vector2((cellMin.X + cellMax.X) * 0.5f, cellMin.Y + LabelIconOffset * scale);
         DrawLabelPill(drawList, ui, iconCenter, Math.Clamp(hover[index].Value, 0f, 1f), scale);
 
         var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var press = PressFx.Scale(tab.Label, pressed, 0.90f);
+        var press = PressFx.Scale(tab.Label, pressed, PressFx.ControlPressedScale);
         var ink = active ? ui.Accent : hovered ? ui.TitleInk : ui.MutedInk;
-        AppSkin.Icon(drawList, iconCenter, IconGlyph.Of(tab.Icon), ink,
-            (active ? LabelActiveIconScale : LabelIconScale) * press);
+        if (tab.UsesPhoneGlyph)
+        {
+            PhoneIcon.Draw(drawList, iconCenter, tab.GlyphFor(active), ink, LabelledPhoneGlyphSize * scale * press);
+        }
+        else
+        {
+            AppSkin.Icon(drawList, iconCenter, IconGlyph.Of(tab.Icon), ink,
+                (active ? LabelActiveIconScale : LabelIconScale) * press);
+        }
+
         var style = active ? TextStyles.FootnoteEmphasized : TextStyles.Footnote;
         var label = Typography.FitText(tab.Label, slot - 6f * scale, style);
         Typography.DrawCentered(drawList, new Vector2(iconCenter.X, iconCenter.Y + LabelBaseline * scale), label, ink,
@@ -133,7 +147,7 @@ internal sealed class BottomTabBar
     }
 
     private bool DrawTab(AppSkin ui, PhoneTheme theme, in NavTab tab, Vector2 center, int slot, bool active,
-        float scale)
+        float scale, Vector4? activeInk)
     {
         if (tab.Disabled)
         {
@@ -144,11 +158,27 @@ internal sealed class BottomTabBar
         }
 
         DrawHoverPill(ui, center, StepHover(slot, center, HitRadius * scale), scale);
-        var ink = active ? ui.TitleInk : ui.MutedInk;
-        var picked = ui.IconButton(center, HitRadius * scale, IconGlyph.Of(tab.Icon), ink, AppSkin.Transparent,
-            active ? ActiveIconScale : IconScale, tab.Label);
+        var ink = active ? activeInk ?? ui.TitleInk : ui.MutedInk;
+        var picked = tab.UsesPhoneGlyph
+            ? DrawPhoneGlyphTab(tab, center, ink, active, scale)
+            : ui.IconButton(center, HitRadius * scale, IconGlyph.Of(tab.Icon), ink, AppSkin.Transparent,
+                active ? ActiveIconScale : IconScale, tab.Label);
         ActivityBadge.Draw(center + new Vector2(11f * scale, -10f * scale), tab.Badge, theme, scale);
         return picked;
+    }
+
+    private static bool DrawPhoneGlyphTab(in NavTab tab, Vector2 center, Vector4 ink, bool active, float scale)
+    {
+        var hit = new Vector2(HitRadius * scale, HitRadius * scale);
+        var hovered = UiInteract.Hover(center - hit, center + hit);
+        PhoneIcon.Draw(ImGui.GetWindowDrawList(), center, tab.GlyphFor(active), ink, PhoneGlyphSize * scale);
+        HoverTooltip.Show(new Rect(center - hit, center + hit), tab.Label, HoverLabelSide.Above);
+        if (hovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        return UiInteract.Click(center - hit, center + hit, hovered);
     }
 
     private bool DrawRaised(ImDrawListPtr drawList, AppSkin ui, in NavTab tab, Vector2 center, int slot, float scale)
@@ -175,7 +205,7 @@ internal sealed class BottomTabBar
         var half = new Vector2(radius, radius);
         var hovered = UiInteract.Hover(center - half, center + half);
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, MaxFrameSeconds);
-        hover[slot].Step(hovered ? 1f : 0f, HoverSmoothTime, delta);
+        hover[slot].Step(hovered ? 1f : 0f, Motion.HoverLift, delta);
         return Math.Clamp(hover[slot].Value, 0f, 1f);
     }
 

@@ -18,15 +18,12 @@ internal sealed partial class VelvetShell
     private const float GridCardAspect = 0.82f;
     private const float GridCoverFocus = 0.2f;
     private const float GridDetailGlyphGap = 6f;
-    private const float GridActionRadius = 22f;
+    private const float GridActionRadius = RoundButton.RegularRadius;
     private const float GridActionTextGap = 12f;
     private const float GridRequestedWidth = 98f;
     private const float GridRequestedHeight = 28f;
     private const float GridRequestedGlyphGap = 6f;
     private const float GridHoverLift = 4f;
-    private const float GridHoverSmoothTime = 0.11f;
-    private const float GridPressShrink = 0.97f;
-    private const float GridShadowOpacity = 0.35f;
     private const float GridBottomPad = 28f;
 
     private readonly List<GridLabel> gridLabels = new();
@@ -69,15 +66,17 @@ internal sealed partial class VelvetShell
             {
                 var min = new Vector2(origin.X + inset, origin.Y + inset + index * (cardHeight + gap));
                 var card = new Rect(min, new Vector2(min.X + cardWidth, min.Y + cardHeight));
+                if (!ImGui.IsRectVisible(card.Min, card.Max))
+                {
+                    continue;
+                }
+
                 if (index == 0)
                 {
                     UiAnchors.Report("velvet.discover.card", card);
                 }
 
-                if (ImGui.IsRectVisible(card.Min, card.Max))
-                {
-                    DrawGridCard(drawList, index, card, scale);
-                }
+                DrawGridCard(drawList, index, card, scale);
             }
 
             ImGui.SetCursorScreenPos(origin);
@@ -102,12 +101,11 @@ internal sealed partial class VelvetShell
         var overActions = hovered && UiInteract.Hover(actionStrip.Min, actionStrip.Max);
         var pressed = hovered && !overActions && ImGui.IsMouseDown(ImGuiMouseButton.Left);
         var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        var eased = VAnim.Toggle(label.NameId, hovered, delta, GridHoverSmoothTime);
+        var eased = VAnim.Toggle(label.NameId, hovered, delta, Motion.HoverLift);
         var grow = GridHoverLift * scale * eased
-            - card.Width * 0.5f * (1f - PressFx.Scale(label.NameId, pressed, GridPressShrink));
+            - card.Width * 0.5f * (1f - PressFx.Scale(label.NameId, pressed, PressFx.CardPressedScale));
         var body = new Rect(card.Min - new Vector2(grow, grow), card.Max + new Vector2(grow, grow));
         var radius = CardCoverRadius * scale;
-        Elevation.Card(drawList, body.Min, body.Max, radius, scale, GridShadowOpacity * (1f + eased));
         var coverUrl = photos.Length > 0 ? photos[0].Url : profile.AvatarUrl ?? string.Empty;
         DrawCoverImage(drawList, body.Min, body.Max, coverUrl, radius, name, GridCoverFocus);
         Squircle.FillVerticalGradient(drawList, new Vector2(body.Min.X, body.Max.Y - body.Height * CardScrimShare),
@@ -188,9 +186,8 @@ internal sealed partial class VelvetShell
 
         var radius = GridActionRadius * scale;
         var connectCenter = new Vector2(body.Max.X - pad - radius, body.Max.Y - pad - radius);
-        if (DrawGridAction(drawList, label.ConnectId, connectCenter, radius, PhoneIcons.HeartFilled, VelvetTheme.Rose,
-                VelvetTheme.RoseDeep, VelvetTheme.OnAccent, CardGlowReach, Loc.T(L.Velvet.Connect), scale,
-                out var connectHovered))
+        if (DrawGridAction(drawList, label.ConnectId, connectCenter, radius, PhoneIcons.HeartFilled,
+                Loc.T(L.Velvet.Connect), scale, out var connectHovered))
         {
             RequestIntro(profile.UserId, profile.DisplayName, profile.Handle, profile.AvatarUrl);
         }
@@ -199,31 +196,16 @@ internal sealed partial class VelvetShell
     }
 
     private static bool DrawGridAction(ImDrawListPtr drawList, string id, Vector2 center, float radius, string glyph,
-        Vector4 fill, Vector4 deep, Vector4 ink, float glowReach, string tooltip, float scale, out bool hovered)
+        string tooltip, float scale, out bool hovered)
     {
         var extent = new Vector2(radius, radius);
-        hovered = UiInteract.Hover(center - extent, center + extent);
-        var pressed = hovered && ImGui.IsMouseDown(ImGuiMouseButton.Left);
-        var delta = MathF.Min(ImGui.GetIO().DeltaTime, TransitionTiming.MaxFrameSeconds);
-        var eased = Math.Clamp(VAnim.Toggle(id, hovered, delta, GridHoverSmoothTime), 0f, 1f);
-        var drawRadius = radius * (1f + CardHoverGrow * eased) * PressFx.Scale(id, pressed, CardPressShrink);
-        drawList.AddCircleFilled(center + new Vector2(0f, 2f * scale), drawRadius, CardShadow.Packed(), 32);
-        AccentGloss.Circle(drawList, center, drawRadius, CardBodyTone(fill, CardHoverTopLift * eased, 1f),
-            CardBodyTone(deep, CardHoverBottomLift * eased, 1f), scale, eased, glowReach);
-        if (eased > 0.001f)
-        {
-            drawList.AddCircle(center, drawRadius,
-                VelvetTheme.Alpha(VelvetTheme.OnAccent, CardRimAlpha * eased).Packed(), 40, CardRimWeight * scale);
-        }
-
-        PhoneIcon.Draw(drawList, center, glyph, ink, VIcon.Overflow * scale * drawRadius / radius);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
+        var clicked = RoundButton.Draw(drawList, ImGui.GetID(id), center, radius, VelvetTheme.Ink,
+            ButtonStyle.Prominent, true, false, out var face);
+        hovered = face.Hovered;
+        PhoneIcon.Draw(drawList, center, glyph, face.LabelInk,
+            VIcon.Overflow * scale * face.Face.Width / MathF.Max(radius * 2f, 0.0001f));
         HoverTooltip.Show(id, new Rect(center - extent, center + extent), tooltip, HoverLabelSide.Above);
-        return UiInteract.Click(center - extent, center + extent, hovered);
+        return clicked;
     }
 
     private static void DrawGridRequested(ImDrawListPtr drawList, Rect body, float pad, float actionsWidth,

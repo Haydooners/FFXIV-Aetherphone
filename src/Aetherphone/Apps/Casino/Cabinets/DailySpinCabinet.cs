@@ -3,6 +3,7 @@ using Aetherphone.Core;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Casino;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -12,7 +13,7 @@ namespace Aetherphone.Apps.Casino.Cabinets;
 internal sealed class DailySpinCabinet
 {
     private const float MaxRingRadius = 104f;
-    private const float PillHeight = 48f;
+    private const float PillHeight = Button.LargeHeight;
     private const int SpinTurns = 5;
 
     private static readonly Vector4 Gold = new(1f, 0.84f, 0.42f, 1f);
@@ -36,6 +37,7 @@ internal sealed class DailySpinCabinet
     private float sweep;
     private float spinElapsedSeconds = WheelChoreography.SpinSeconds;
     private int landedSegment = -1;
+    private int peg;
     private long landedAmount;
     private bool spinning;
     private bool celebrated;
@@ -170,6 +172,7 @@ internal sealed class DailySpinCabinet
         sweep = WheelChoreography.SweepFor(spinFromAngle, segment, DailySpinRules.SegmentCount, SpinTurns);
         spinElapsedSeconds = 0f;
         spinning = true;
+        peg = WheelChoreography.PegOf(angle, DailySpinRules.SegmentCount);
         coinRoll.Snap(0);
     }
 
@@ -189,6 +192,12 @@ internal sealed class DailySpinCabinet
         }
 
         angle = WheelChoreography.AngleAt(spinFromAngle, sweep, spinElapsedSeconds);
+        var nextPeg = WheelChoreography.PegOf(angle, DailySpinRules.SegmentCount);
+        if (nextPeg != peg)
+        {
+            peg = nextPeg;
+            UiFeedback.Play(UiSound.GameTick);
+        }
     }
 
     private void Celebrate(float scale)
@@ -201,11 +210,13 @@ internal sealed class DailySpinCabinet
         celebrated = true;
         if (DailySpinRules.IsTopAward(landedSegment))
         {
+            UiFeedback.Play(UiSound.GamePowerUp);
             particles.Confetti(ringCenter, 110, ConfettiPalette, 340f * scale, 5f, 1.7f);
             particles.Sparkle(ringCenter, 28, Gold, 200f * scale, 4f, 1.1f);
             return;
         }
 
+        UiFeedback.Play(UiSound.GameWin);
         particles.Confetti(ringCenter, 48, ConfettiPalette, 250f * scale, 4f, 1.2f);
     }
 
@@ -276,7 +287,7 @@ internal sealed class DailySpinCabinet
             var enabled = DailySpinStatus.CanClaim(answer, spin.Busy);
             var pillRect = new Rect(new Vector2(left + width * 0.18f, y),
                 new Vector2(left + width * 0.82f, y + PillHeight * scale));
-            if (AppSkin.PillButton(pillRect, Loc.T(L.Casino.SpinAction), true, enabled, ui.Theme))
+            if (ui.PillButton(pillRect, Loc.T(L.Casino.SpinAction), true, enabled))
             {
                 inlineReason = string.Empty;
                 spin.Claim();
@@ -300,8 +311,9 @@ internal sealed class DailySpinCabinet
         var height = block.Y + pad * 2f;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
-        Squircle.Stroke(drawList, min, max, 16f * scale,
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.10f)));
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
             ImGui.GetColorU32(Palette.WithAlpha(ui.Accent, 0.35f)), 1f * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), message, ui.TitleInk,
             TextStyles.Footnote, width - pad * 2f);

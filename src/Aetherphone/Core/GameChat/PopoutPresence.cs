@@ -1,3 +1,4 @@
+using Aetherphone.Core.Game;
 using Aetherphone.Windows;
 using Dalamud.Game.ClientState.Conditions;
 using Lumina.Excel.Sheets;
@@ -8,9 +9,6 @@ internal sealed class PopoutPresence : IDisposable
 {
     private const float SuppressDelaySeconds = 0.35f;
     private const float RestoreDelaySeconds = 1f;
-    private const uint EurekaIntendedUse = 41;
-    private const uint BozjaIntendedUse = 48;
-    private const uint OccultCrescentIntendedUse = 61;
 
     private readonly Configuration configuration;
     private readonly LinkpearlPopouts popouts;
@@ -33,7 +31,8 @@ internal sealed class PopoutPresence : IDisposable
     public void Tick(float deltaSeconds)
     {
         var settings = new PresenceSettings(configuration.LinkpearlPopoutHideInCombat,
-            configuration.LinkpearlPopoutHideInDuty, configuration.LinkpearlPopoutFieldOperationsExempt);
+            configuration.LinkpearlPopoutHideInDuty, configuration.LinkpearlPopoutFieldOperationsExempt,
+            configuration.LinkpearlPopoutHideInCutscene, configuration.LinkpearlPopoutHideWhenUiHidden);
         var target = PopoutPresenceGate.ShouldSuppress(ReadState(), settings);
         if (!debounce.Step(target, deltaSeconds, DelayFor(target)))
         {
@@ -82,7 +81,10 @@ internal sealed class PopoutPresence : IDisposable
         var condition = Plugin.Condition;
         var boundByDuty = condition[ConditionFlag.BoundByDuty] || condition[ConditionFlag.BoundByDuty56] ||
                           condition[ConditionFlag.BoundByDuty95];
-        return new PresenceState(condition[ConditionFlag.InCombat], boundByDuty, InFieldOperation());
+        var inCutscene = condition[ConditionFlag.OccupiedInCutSceneEvent] || condition[ConditionFlag.WatchingCutscene]
+                         || condition[ConditionFlag.WatchingCutscene78];
+        return new PresenceState(condition[ConditionFlag.InCombat], boundByDuty, InFieldOperation(), inCutscene,
+            Plugin.GameGui.GameUiHidden);
     }
 
     private bool InFieldOperation()
@@ -106,8 +108,7 @@ internal sealed class PopoutPresence : IDisposable
             return false;
         }
 
-        var intendedUse = territory.TerritoryIntendedUse.RowId;
-        return intendedUse is EurekaIntendedUse or BozjaIntendedUse or OccultCrescentIntendedUse;
+        return FieldOperations.IsFieldOperation(territory.TerritoryIntendedUse.RowId);
     }
 
     private void OnAppended(ChatEntry entry)

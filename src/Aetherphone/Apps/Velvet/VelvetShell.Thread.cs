@@ -111,11 +111,14 @@ internal sealed partial class VelvetShell
 
         protected override void DrawHeader(Rect area, string threadId)
         {
-            var context = new PhoneContext(area, Theme, Navigation);
-            AppHeader.Draw(context, string.Empty, BackAction);
+            if (VHeader.Push(area, string.Empty))
+            {
+                BackAction();
+            }
+
             var scale = UiScale.Current;
             var drawList = ImGui.GetWindowDrawList();
-            var rowCenterY = area.Min.Y + AppHeader.Height * scale * 0.5f;
+            var rowCenterY = area.Min.Y + VHeader.Height * scale * 0.5f;
             ChatHeaderControls.DrawLock(ui, area, rowCenterY, store.EncryptingCurrent, store.VaultState,
                 () => OpenEncryptionInfo(threadId));
             ChatHeaderControls.DrawSearchToggle(ui, area, rowCenterY, searchController.Open, searchController.Toggle);
@@ -128,14 +131,14 @@ internal sealed partial class VelvetShell
             var gap = 9f * scale;
             var nameCap = MathF.Max(40f * scale,
                 MathF.Min(area.Width * 0.42f, rightLimit - leftLimit - avatarRadius * 2f - gap));
-            var nameSize = Typography.Measure(name, 1f, FontWeight.SemiBold);
+            var nameSize = Typography.Measure(name, TextStyles.Headline);
             nameSize.X = MathF.Min(nameSize.X, nameCap);
             var offset = app.ThreadOffset(threadId);
             var subWidth = 0f;
             if (offset is { } subMinutes)
             {
                 var subText = Aetherphone.Core.Social.SocialTimeZone.Describe(subMinutes);
-                subWidth = MathF.Min(Typography.Measure(subText, 0.72f, FontWeight.Regular).X, nameCap);
+                subWidth = MathF.Min(Typography.Measure(subText, TextStyles.Caption1).X, nameCap);
             }
 
             var groupWidth = avatarRadius * 2f + gap + MathF.Max(nameSize.X, subWidth);
@@ -150,19 +153,19 @@ internal sealed partial class VelvetShell
             if (offset is { } minutes)
             {
                 var timeText = Aetherphone.Core.Social.SocialTimeZone.Describe(minutes);
-                var subSize = Typography.Measure(timeText, 0.72f, FontWeight.Regular);
+                var subSize = Typography.Measure(timeText, TextStyles.Caption1);
                 subSize.X = MathF.Min(subSize.X, nameCap);
                 var gapY = 1f * scale;
                 var stackTop = rowCenterY - (nameSize.Y + gapY + subSize.Y) * 0.5f;
                 var titleHovering = UiInteract.Hover(new Vector2(nameLeft, stackTop),
                     new Vector2(nameLeft + nameCap, stackTop + nameSize.Y));
                 Marquee.DrawLeft(new MarqueeId("velvet.thread.title.", threadId), name, nameLeft, stackTop, nameCap,
-                    new TextStyle(1f, FontWeight.SemiBold), Theme.TextStrong, titleHovering);
+                    TextStyles.Headline, Theme.TextStrong, titleHovering);
                 var subTop = stackTop + nameSize.Y + gapY;
                 var subHovering = UiInteract.Hover(new Vector2(nameLeft, subTop),
                     new Vector2(nameLeft + nameCap, subTop + subSize.Y));
                 Marquee.DrawLeft(new MarqueeId("velvet.thread.subtitle.", threadId), timeText, nameLeft, subTop, nameCap,
-                    new TextStyle(0.72f, FontWeight.Regular), VelvetTheme.MutedInk, subHovering);
+                    TextStyles.Caption1, VelvetTheme.MutedInk, subHovering);
                 textWidth = MathF.Max(nameSize.X, subSize.X);
             }
             else
@@ -171,11 +174,11 @@ internal sealed partial class VelvetShell
                 var titleHovering = UiInteract.Hover(new Vector2(nameLeft, soloTop),
                     new Vector2(nameLeft + nameCap, soloTop + nameSize.Y));
                 Marquee.DrawLeft(new MarqueeId("velvet.thread.title.", threadId), name, nameLeft, soloTop,
-                    nameCap, new TextStyle(1f, FontWeight.SemiBold), Theme.TextStrong, titleHovering);
+                    nameCap, TextStyles.Headline, Theme.TextStrong, titleHovering);
             }
 
             var hitMin = new Vector2(avatarCenter.X - avatarRadius, area.Min.Y);
-            var hitMax = new Vector2(nameLeft + textWidth, area.Min.Y + AppHeader.Height * scale);
+            var hitMax = new Vector2(nameLeft + textWidth, area.Min.Y + VHeader.Height * scale);
             if (UiInteract.HoverClick(hitMin, hitMax))
             {
                 app.OpenProfile(threadId);

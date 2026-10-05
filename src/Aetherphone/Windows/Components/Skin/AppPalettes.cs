@@ -59,7 +59,7 @@ internal static class AppPalettes
 
     private static AppPalette For(string id) => Tinted(AppAccents.For(id));
 
-    public static readonly AppPalette Health = For("health");
+    public static readonly AppPalette Health = Neutral(AppAccents.For("health"));
     public static readonly AppPalette Chirper = For("chirper");
     public static readonly AppPalette Market = For("market");
     public static readonly AppPalette Aethergram = For("aethergram");
@@ -73,20 +73,19 @@ internal static class AppPalettes
     public static readonly AppPalette YellowPages = For("yellowpages");
     public static readonly AppPalette Feedback = For("feedback");
     public static readonly AppPalette Polls = For("polls");
-    public static readonly AppPalette Announcements = For("announcements");
-    public static readonly AppPalette Activity = For("character");
+    public static readonly AppPalette Activity = Neutral(AppAccents.For("character"));
     public static readonly AppPalette Dailies = For("dailies");
     public static readonly AppPalette Collections = For("collections");
     public static readonly AppPalette Coin = For("coin");
     public static readonly AppPalette Wallet = For("wallet");
     public static readonly AppPalette Inventory = For("inventory");
     public static readonly AppPalette AppStore = For("appstore");
-    public static readonly AppPalette Photos = For("photos");
     public static readonly AppPalette Shortcuts = For("shortcuts");
     public static readonly AppPalette Timers = For("timers");
     public static readonly AppPalette Fishing = For("fishing");
     public static readonly AppPalette AetherStream = For("aetherstream");
     public static readonly AppPalette Hunts = For("hunts");
+    public static readonly AppPalette Notifications = For("notifications");
 
     private static AppPalette MessageChrome(Vector4 accent) => new()
     {
@@ -158,7 +157,27 @@ internal static class AppPalettes
         BloomBottom = default,
         CardFill = theme.GroupedCard,
         CardStroke = theme.Separator,
-        FieldSurface = GlassField,
+        FieldSurface = Surfaces.Fill(theme.TextStrong, FillLevel.Tertiary),
+        HoverTint = Palette.WithAlpha(theme.TextStrong, 0.06f),
+        Hairline = theme.Hairline,
+        HoverWash = theme.HoverWash,
+    };
+
+    public static AppPalette PhotosThemed(PhoneTheme theme) => new()
+    {
+        Accent = AppAccents.For("photos"),
+        TitleInk = theme.TextStrong,
+        BodyInk = theme.TextStrong,
+        MutedInk = theme.TextMuted,
+        HeaderInk = theme.TextMuted,
+        HeadingInk = theme.TextStrong,
+        BackdropTop = theme.AppBackground,
+        BackdropBottom = theme.AppBackground,
+        BloomTop = default,
+        BloomBottom = default,
+        CardFill = theme.GroupedCard,
+        CardStroke = theme.Separator,
+        FieldSurface = Surfaces.Fill(theme.TextStrong, FillLevel.Tertiary),
         HoverTint = Palette.WithAlpha(theme.TextStrong, 0.06f),
         Hairline = theme.Hairline,
         HoverWash = theme.HoverWash,
@@ -198,9 +217,29 @@ internal static class AppPalettes
         BloomBottom = default,
         CardFill = theme.GroupedCard,
         CardStroke = theme.Separator,
-        FieldSurface = GlassField,
+        FieldSurface = Surfaces.Fill(theme.TextStrong, FillLevel.Tertiary),
         HoverTint = Palette.WithAlpha(theme.TextStrong, 0.06f),
         Hairline = theme.Hairline,
+        HoverWash = theme.HoverWash,
+    };
+
+    public static AppPalette Announcements(PhoneTheme theme) => new()
+    {
+        Accent = AppAccents.For("announcements"),
+        TitleInk = theme.TextStrong,
+        BodyInk = theme.TextStrong,
+        MutedInk = theme.TextMuted,
+        HeaderInk = theme.TextMuted,
+        HeadingInk = theme.TextStrong,
+        BackdropTop = theme.AppBackground,
+        BackdropBottom = theme.AppBackground,
+        BloomTop = default,
+        BloomBottom = default,
+        CardFill = theme.GroupedCard,
+        CardStroke = theme.Separator,
+        FieldSurface = Surfaces.Fill(theme.TextStrong, FillLevel.Tertiary),
+        HoverTint = Palette.WithAlpha(theme.TextStrong, 0.06f),
+        Hairline = theme.Separator,
         HoverWash = theme.HoverWash,
     };
 }

@@ -14,6 +14,7 @@ internal sealed class DecryptedHistoryStore : IDisposable
     private readonly object fileGate = new();
     private string? accountId;
     private long sequence;
+    private long clearGeneration;
     private volatile bool dirty;
     private volatile bool writing;
     private float sinceFlush;
@@ -49,11 +50,14 @@ internal sealed class DecryptedHistoryStore : IDisposable
             return;
         }
 
-        var entry = new RememberedBody(Interlocked.Increment(ref sequence), text);
-        if (bodies.TryAdd(messageId, entry))
+        if (bodies.TryGetValue(messageId, out var existing)
+            && string.Equals(existing.Text, text, StringComparison.Ordinal))
         {
-            dirty = true;
+            return;
         }
+
+        bodies[messageId] = new RememberedBody(Interlocked.Increment(ref sequence), text);
+        dirty = true;
     }
 
     public void Tick(float deltaSeconds)
@@ -83,12 +87,13 @@ internal sealed class DecryptedHistoryStore : IDisposable
 
         writing = true;
         dirty = false;
+        var generation = Interlocked.Read(ref clearGeneration);
         var snapshot = Snapshot();
         _ = Task.Run(() =>
         {
             try
             {
-                Write(owner, snapshot);
+                Write(owner, snapshot, generation);
             }
             catch (Exception exception)
             {
@@ -212,7 +217,7 @@ internal sealed class DecryptedHistoryStore : IDisposable
         AepLog.Info($"[Encryption] {bodies.Count} previously read messages stay readable on this device.");
     }
 
-    private void Write(string owner, Dictionary<string, string> snapshot)
+    private void Write(string owner, Dictionary<string, string> snapshot, long generation)
     {
         var json = JsonConvert.SerializeObject(snapshot);
         var plain = Encoding.UTF8.GetBytes(json);
@@ -220,6 +225,11 @@ internal sealed class DecryptedHistoryStore : IDisposable
         CryptographicOperations.ZeroMemory(plain);
         lock (fileGate)
         {
+            if (Interlocked.Read(ref clearGeneration) != generation)
+            {
+                return;
+            }
+
             baseDir.Refresh();
             if (!baseDir.Exists)
             {
@@ -244,13 +254,14 @@ internal sealed class DecryptedHistoryStore : IDisposable
         var owner = accountId;
         bodies.Clear();
         dirty = false;
-        if (owner is null)
-        {
-            return;
-        }
-
         lock (fileGate)
         {
+            Interlocked.Increment(ref clearGeneration);
+            if (owner is null)
+            {
+                return;
+            }
+
             var path = PathFor(owner);
             if (File.Exists(path))
             {

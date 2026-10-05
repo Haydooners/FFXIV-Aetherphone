@@ -6,8 +6,8 @@ This page explains how the Games app hosts its mini-games and how to build a new
 
 | Path | Role |
 | --- | --- |
-| src/Aetherphone/Apps/Games/GamesApp.cs | The Games hub: routing, the running game, the coin chip (launcher pages live in the .Launcher and .Tiles partials) |
-| src/Aetherphone/Apps/Games/GamesLibrary.cs | The catalog behind the launcher: release order, latest wave, recents, filters and search |
+| src/Aetherphone/Apps/Games/GamesApp.cs | The Games hub: routing, tabs, the running game, the coin chip (pages live in the .Home, .Tiles, .Shelf, .Records and .Together partials) |
+| src/Aetherphone/Apps/Games/GamesLibrary.cs | The catalog behind the launcher: release order, latest wave, recents, genres, records and search |
 | src/Aetherphone/Apps/Games/Framework/GameGenre.cs | The genre shelves a game can declare |
 | src/Aetherphone/Apps/Games/Online/OnlineHub.cs | The friends lobby: host cards, join by code, open rooms |
 | src/Aetherphone/Apps/Games/Framework/IMiniGame.cs | Contract every mini-game implements |
@@ -69,7 +69,7 @@ internal interface IMiniGame : IDisposable
 
 ### The launcher
 
-The launcher is split across three partials: `GamesApp.cs` (routing, the running game, the coin chip), `GamesApp.Launcher.cs` (page layout) and `GamesApp.Tiles.cs` (the hero, tiles, shelf headings and the friends card). It draws on the neutral `AppPalettes.Games` skin with the featured game's accent washed over it by `GameScene.Ambient`.
+The hub is a tabbed app split across partials: `GamesApp.cs` (routing, tabs, the running game, the coin chip, widget deep links), `GamesApp.Home.cs` (the Home tab and the shelves), `GamesApp.Tiles.cs` (the hero, tiles and the Play with friends card), `GamesApp.Shelf.cs` (a shelf's full grid and the Search tab), `GamesApp.Records.cs` (the Records tab) and `GamesApp.Together.cs` (the online tab, drawn by `OnlineHub`). Shared pieces (section headings with See All, pills, designed empty states, medallions) live in `GamesHubArt`. It draws on the neutral `AppPalettes.Games` skin with the featured game's accent washed over it by `GameScene.Ambient`.
 
 `GamesLibrary` (src/Aetherphone/Apps/Games/GamesLibrary.cs) is the catalog behind the launcher. It wraps the `IMiniGame[]` plus one `GameEntry` per online game (Uno, Chess, 8-Ball Pool, ids `online.uno`, `online.chess`, `online.pool`) and keeps every list the pages draw from as reusable `int[]` index arrays, so the draw code never allocates:
 
@@ -78,23 +78,28 @@ The launcher is split across three partials: `GamesApp.cs` (routing, the running
 | `Ordered` | Every entry, newest release first (the `Releases` table in the same file; add a row when you add a game) |
 | `Latest` | The newest wave: entries released within a week of the newest one, capped at ten |
 | `Recent` | Entries with a `LastPlayedUnixSeconds` on their `GameStatRecord`, most recent first, capped at eight |
-| `Filter(kind, query)` | One chip's view, or a title search across every shelf when the query is not blank |
+| `Genre(genre)` | One genre's entries, newest first, built once |
+| `Records` | Entries with a personal best, most recently played first |
+| `Search(query)` | Entries whose title or genre name contains the query; empty for a blank query |
 
-`IsNew` marks an entry for thirty days after its release; `Best` and `Subtitle` carry the cached best-score line ("Best · 1,240", "Best · 1:05", "Streak · 3") or fall back to the genre label. `Rebuild` refreshes the recents and best labels; the hub calls it when it opens, when a game closes, and when the player leaves an online room.
+`IsNew` marks an entry for thirty days after its release; `Best` and `Subtitle` carry the cached best-score line ("Best · 1,240", "Best · 1:05", "Streak · 3") or fall back to the genre label, while `BestValue` and `BestKind` give the Records tab the bare value and what it measures. `Rebuild` refreshes the recents, records and best labels; the hub calls it when it opens, when a game closes, and when the player leaves an online room. `EnsureLanguage` rebuilds the labels when the language or the clock format changes.
 
-The page itself is a pinned header (title plus a search toggle that slides a `SearchField` in under it), a pannable `ChipRail` of filters (`All`, `New`, the five genre shelves, `With friends`), and an `AppSurface` body:
+The root has four tabs on the floating `TabBar`, each a large-title page:
 
-- `All` stacks the daily hero, a `Latest additions` shelf, a `Jump back in` shelf (only once something has been played), the `Play with friends` card, and an `All games` grid newest-first.
-- A genre chip shows that shelf's grid with a count; `New` shows the latest wave; `With friends` shows the friends card and the three online tiles.
-- A non-blank search shows matching tiles from every shelf, or an `EmptyState` when nothing matches.
+- **Home**: the daily hero, `Continue Playing` (only once something has been played), the `Play with friends` card, then `Latest additions` and one shelf per genre, each with See All pushing that shelf's full grid.
+- **Play with friends**: `OnlineHub`, see below.
+- **Records**: a summary card (games played, daily streak, records), the daily challenge row, and every personal best.
+- **Search**: a search field over `Browse` cards for each genre, the online games and the whole library.
 
-Shelves pan sideways through `TileRail` (drag with slop, clipped to the phone edge); grids pick three to six columns from the content width. Tiles are accent-gradient squircles with the game's `AppIconArt` (or `OnlineGameArt` for the online three), a `NEW` pill inside the thirty-day window, a people badge on online entries, and a hover lift on a per-entry `Spring`. Tapping a local tile opens the game; tapping an online tile opens the friends lobby with that game's card highlighted.
+Shelves pan sideways through `TileRail`, which claims the press with an `InvisibleButton` so a swipe never drags the phone window, locks to the first axis the pointer travels along, flings on release and shows paging arrows on hover; grids pick three to six columns from the content width. Tiles are accent-gradient squircles with the game's `AppIconArt` (or `OnlineGameArt` for the online three), a `NEW` pill inside the thirty-day window, a people badge on online entries, and a hover lift on a per-entry `Spring`. Tapping a local tile opens the game; tapping an online tile switches to the online tab with that game's card highlighted.
+
+The app is an `ITabRouteTarget`: `games.tab.home`, `games.tab.together`, `games.tab.records` and `games.tab.search` open a tab, and `GamesApp.PlayRoute(id)` (`games.play.<id>`) opens a game directly, which the medium Daily Game widget uses for its recent games.
 
 The server picks the featured game when it can: `RebuildLayout` first computes the daily-rotation fallback `featuredIndex = GameStatsStore.TodayIndex * FeaturedStep % games.Length`, then overrides it when `coins.Wallet?.FeaturedGameId` (a field on the coin wallet DTO in src/Aetherphone/Core/Aethernet/Contracts/CoinDtos.cs) names a game in the array. Whichever wins, its id lands in `stats.DailyGameId`, which makes it the daily challenge.
 
 ### Routes and the running game
 
-Navigation uses a four-route `ViewRouter<GameRoute>` (`Launcher`, `Playing`, `OnlineHub`, `OnlineRoom`). Tapping a tile calls `OpenGame`, which sets `currentGame`, calls `game.Open()`, stamps the game as played, and pushes `Playing`. The back button pops the route, and `GamesApp.Draw` calls `CloseCurrentGame` (which calls `game.Close()`) once the transition lands back on the launcher. `OnlineHub` (src/Aetherphone/Apps/Games/Online/OnlineHub.cs) is the friends lobby: one host card per online game, the join-by-code field, and the player's open rooms; `OnlineRoomView` is the room itself.
+Navigation uses a `ViewRouter<GamesRoute>` over four screens (`Root`, `Shelf`, `Playing`, `OnlineRoom`). Tapping a tile calls `OpenGame`, which sets `currentGame`, calls `game.Open()`, stamps the game as played, and pushes `Playing`. The back button pops the route, and `GamesApp.Draw` calls `CloseCurrentGame` (which calls `game.Close()`) once the transition lands back on the launcher. `OnlineHub` (src/Aetherphone/Apps/Games/Online/OnlineHub.cs) is the friends lobby on its own tab: one host card per online game, the join-by-code field, and the player's open rooms, with pull to refresh and a manual retry when the room list fails; `OnlineRoomView` is the room itself. When a round ends, `OnlineFinishHold` (src/Aetherphone/Apps/Games/Online/OnlineFinishHold.cs) keeps the finished table on screen until its last card flight or shot replay has settled, then shows a five-second countdown card (tap to skip) before the room shows the lobby again.
 
 The hub also owns the coin plumbing that wraps every game. `OpenGame` and `CloseCurrentGame` report the play session to the backend through `CoinGameSessionTracker` (`GameOpened` and `GameClosed`), a chip in the in-game header counts the open session toward the server's earning thresholds, and `GamesApp.Draw` polls `coinSessions.TakeAward` to spawn a floating coin reward when the server grants one. None of this reaches the games: an `IMiniGame` only ever sees its `GameContext`.
 
@@ -118,7 +123,7 @@ game.Draw(new GameContext(body, context.Theme, stats, attentive ? frameSeconds :
 4. Add a row for your id to `GamesLibrary.Releases` with the release date, so the game sorts newest-first, joins the `Latest additions` shelf and wears the `NEW` pill for its first month.
 5. Add an accent color keyed by your game id in src/Aetherphone/Core/Apps/AppAccents.cs; `IMiniGame.Accent` defaults to `AppAccents.For(Id)`.
 6. Optionally add icon art for your id in src/Aetherphone/Windows/Components/AppIconArt.cs; the launcher falls back to drawing your title text on the tile.
-7. If the launcher should show a best-score line for your game, add a case to `GamesLibrary.BestLabel`.
+7. If the launcher should show a best-score line for your game, add a case to `GamesLibrary.BestRecord`.
 
 ## The juice framework
 

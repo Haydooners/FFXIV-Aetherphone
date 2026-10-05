@@ -99,6 +99,11 @@ internal sealed class AccountClient
         return net.GetAsync("/me/badges/awarded", AethernetJsonContext.Default.AwardedBadgesDto, token, null, onFailure);
     }
 
+    public Task<BadgeProgressDto?> BadgeProgressAsync(CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return net.GetAsync("/me/badges/progress", AethernetJsonContext.Default.BadgeProgressDto, token, null, onFailure);
+    }
+
     public Task<FrameCatalogDto?> FrameCatalogAsync(CancellationToken token, Action<AepFailure>? onFailure = null)
     {
         return net.GetAsync("/frames/catalog", AethernetJsonContext.Default.FrameCatalogDto, token, null, onFailure);

@@ -17,7 +17,7 @@ internal sealed partial class MessageApp
     private const int InfoBubbleMaxChars = 220;
 
     private static readonly Vector4 ReadTickColor = new(0.45f, 0.83f, 1f, 1f);
-    private static readonly TextStyle InfoStampStyle = new(0.70f, FontWeight.Regular);
+    private static readonly TextStyle InfoStampStyle = TextStyles.Caption1;
 
     private float sinceInfoPoll;
 
@@ -106,9 +106,9 @@ internal sealed partial class MessageApp
         Squircle.Fill(drawList, bubbleMin, bubbleMax, MessageThreadViewBase.BubbleRounding * scale,
             ImGui.GetColorU32(activeTheme.OutgoingBubble));
         Typography.DrawWrappedLeft(new Vector2(bubbleMin.X + paddingX, bubbleMin.Y + paddingY), text,
-            MessageThemes.OutgoingInk, TextStyles.Body, wrap);
+            ChatThemes.OutgoingInk, TextStyles.Body, wrap);
         Typography.Draw(drawList, new Vector2(bubbleMax.X - paddingX - timeSize.X, bubbleMax.Y - paddingY - timeSize.Y),
-            time, Core.Theme.Palette.WithAlpha(MessageThemes.OutgoingInk, 0.72f), InfoStampStyle);
+            time, Core.Theme.Palette.WithAlpha(ChatThemes.OutgoingInk, 0.72f), InfoStampStyle);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, bubbleHeight + 18f * scale));
     }
@@ -264,7 +264,7 @@ internal sealed partial class MessageApp
         var band = RowBand(row, scale);
         var rowHovering = UiInteract.Hover(band.Min, band.Max);
         var labelHeight = Typography.LineHeight(RowTitleStyle);
-        Marquee.DrawLeft(drawList, new MarqueeId("messageapp.messageinfo.member.", member.UserId), DirectMessagesStore.MemberLabel(member),
+        Marquee.DrawLeft(drawList, new MarqueeId("messageapp.messageinfo.member.", member.UserId), store.MemberLabel(member),
             textLeft, row.Center.Y - labelHeight * 0.5f, MathF.Max(1f, right - textLeft), RowTitleStyle, ink.TitleInk,
             rowHovering);
     }

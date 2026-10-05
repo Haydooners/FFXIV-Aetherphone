@@ -4,6 +4,7 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 
 namespace Aetherphone.Apps.Casino;
@@ -12,13 +13,13 @@ internal sealed class BetComposer
 {
     public const float FieldHeight = 40f;
 
-    public const float QuickHeight = 32f;
+    public const float QuickHeight = Button.RegularHeight;
 
-    public const float ConfirmHeight = 46f;
+    public const float ConfirmHeight = Button.LargeHeight;
 
     private const int BufferLength = 8;
     private const float RowGap = 8f;
-    private const float StepperWidth = 40f;
+    private const float StepperRadius = RoundButton.RegularRadius;
     private const float FlashSeconds = 0.5f;
 
     private readonly string fieldId;
@@ -96,7 +97,7 @@ internal sealed class BetComposer
         var confirmRect = new Rect(new Vector2(bounds.Min.X, quickBottom + RowGap * scale),
             new Vector2(bounds.Max.X, quickBottom + (RowGap + ConfirmHeight) * scale));
         var confirmEnabled = enabled && amount >= minimumBet && amount <= Ceiling(maximumBet, stack);
-        return AppSkin.PillButton(confirmRect, confirmLabel, true, confirmEnabled, skin.Theme);
+        return Button.Draw(confirmRect, confirmLabel, skin.Ink, ButtonStyle.Prominent, enabled: confirmEnabled);
     }
 
     public float DrawAmount(AppSkin skin, in Rect bounds, long minimumBet, long maximumBet, long stack, long step,
@@ -114,19 +115,21 @@ internal sealed class BetComposer
         var ceiling = Ceiling(maximumBet, stack);
         var y = bounds.Min.Y;
 
-        var stepperWidth = StepperWidth * scale;
+        var stepperRadius = StepperRadius * scale;
+        var stepperWidth = stepperRadius * 2f;
         var fieldMin = new Vector2(bounds.Min.X + stepperWidth + RowGap * scale, y);
         var fieldMax = new Vector2(bounds.Max.X - stepperWidth - RowGap * scale, y + FieldHeight * scale);
-        if (DrawStepper(skin, new Rect(new Vector2(bounds.Min.X, y), new Vector2(bounds.Min.X + stepperWidth,
-                fieldMax.Y)), "-", enabled))
+        var rowCenterY = (fieldMin.Y + fieldMax.Y) * 0.5f;
+        if (DrawStepper(drawList, skin, new Vector2(bounds.Min.X + stepperRadius, rowCenterY), stepperRadius,
+                IconGlyph.Of(FontAwesomeIcon.Minus), enabled))
         {
             Reset(Clamp(amount - step, minimumBet, maximumBet, stack));
         }
 
         DrawField(drawList, skin, fieldMin, fieldMax, scale, enabled);
 
-        if (DrawStepper(skin, new Rect(new Vector2(bounds.Max.X - stepperWidth, y), new Vector2(bounds.Max.X,
-                fieldMax.Y)), "+", enabled))
+        if (DrawStepper(drawList, skin, new Vector2(bounds.Max.X - stepperRadius, rowCenterY), stepperRadius,
+                IconGlyph.Of(FontAwesomeIcon.Plus), enabled))
         {
             Reset(Clamp(amount + step, minimumBet, maximumBet, stack));
         }
@@ -163,12 +166,13 @@ internal sealed class BetComposer
 
     private void DrawField(ImDrawListPtr drawList, AppSkin skin, Vector2 min, Vector2 max, float scale, bool enabled)
     {
-        var rounding = Metrics.Radius.Field * scale;
-        Squircle.Fill(drawList, min, max, rounding, ImGui.GetColorU32(skin.FieldSurface));
+        var field = new Rect(min, max);
+        SearchBar.Surface(drawList, field, skin.Ink);
         if (clampFlash > 0f)
         {
             var strength = clampFlash / FlashSeconds;
-            Squircle.Stroke(drawList, min, max, rounding,
+            var capsule = SearchBar.Capsule(field);
+            Squircle.Stroke(drawList, capsule.Min, capsule.Max, capsule.Height * 0.5f,
                 ImGui.GetColorU32(Palette.WithAlpha(skin.Accent, strength)), Metrics.Stroke.Ring * scale);
         }
 
@@ -190,17 +194,12 @@ internal sealed class BetComposer
         }
     }
 
-    private static bool DrawStepper(AppSkin skin, in Rect rect, string label, bool enabled)
-    {
-        var pressed = skin.GhostButton(rect, label);
-        return enabled && pressed;
-    }
+    private static bool DrawStepper(ImDrawListPtr drawList, AppSkin skin, Vector2 center, float radius, string glyph,
+        bool enabled) =>
+        RoundButton.Icon(drawList, center, radius, glyph, skin.Ink, ButtonStyle.Gray, enabled: enabled);
 
-    private static bool DrawQuick(AppSkin skin, in Rect rect, string label, bool enabled)
-    {
-        var pressed = skin.GhostButton(rect, label);
-        return enabled && pressed;
-    }
+    private static bool DrawQuick(AppSkin skin, in Rect rect, string label, bool enabled) =>
+        Button.Draw(rect, label, skin.Ink, ButtonStyle.Gray, enabled: enabled);
 
     private long Parse()
     {

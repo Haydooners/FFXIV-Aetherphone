@@ -137,13 +137,14 @@ internal sealed class ProfilePage : ISettingsPage, IDisposable
     {
         var scale = UiScale.Current;
         var drawList = ImGui.GetWindowDrawList();
-        var buttonSize = 26f * scale;
+        var buttonSize = RoundButton.SmallRadius * 2f * scale;
         var plusMin = new Vector2(row.Max.X - buttonSize, row.Center.Y - buttonSize * 0.5f);
         var minusMin = new Vector2(plusMin.X - 96f * scale, row.Center.Y - buttonSize * 0.5f);
-        var label = Typography.FitText(Loc.T(L.Profile.UtcOffsetLabel), minusMin.X - 12f * scale - row.Min.X, 1f,
-            FontWeight.Regular);
-        var labelSize = Typography.Measure(label);
-        Typography.Draw(new Vector2(row.Min.X, row.Center.Y - labelSize.Y * 0.5f), label, theme.TextStrong);
+        var label = Typography.FitText(Loc.T(L.Profile.UtcOffsetLabel), minusMin.X - 12f * scale - row.Min.X,
+            TextStyles.Body);
+        var labelSize = Typography.Measure(label, TextStyles.Body);
+        Typography.Draw(new Vector2(row.Min.X, row.Center.Y - labelSize.Y * 0.5f), label, theme.TextStrong,
+            TextStyles.Body);
         if (StepperButton(drawList, minusMin, buttonSize, "-", theme))
         {
             AdjustOffset(-SocialTimeZone.StepMinutes);
@@ -156,26 +157,19 @@ internal sealed class ProfilePage : ISettingsPage, IDisposable
 
         var value = SocialTimeZone.FormatOffset(SocialTimeZone.EffectiveOffsetMinutes(configuration));
         Typography.DrawCentered(new Vector2((minusMin.X + buttonSize + plusMin.X) * 0.5f, row.Center.Y), value,
-            theme.TextStrong, 1f, FontWeight.SemiBold);
+            theme.TextStrong, TextStyles.Headline);
     }
 
     private static bool StepperButton(ImDrawListPtr drawList, Vector2 min, float size, string glyph, PhoneTheme theme)
     {
-        var max = min + new Vector2(size, size);
-        var hovered = UiInteract.Hover(min, max);
-        var fill = hovered
-            ? Palette.Mix(theme.GroupedCard, theme.Accent, 0.35f)
-            : Palette.WithAlpha(theme.TextStrong, 0.10f);
-        Squircle.Fill(drawList, min, max, size * 0.32f, ImGui.GetColorU32(fill));
-        Typography.DrawCentered(new Vector2((min.X + max.X) * 0.5f, (min.Y + max.Y) * 0.5f), glyph, theme.TextStrong,
-            1.1f, FontWeight.SemiBold);
-        if (hovered)
-        {
-            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-        }
-
-        return UiInteract.Click(min, max, hovered);
+        var half = size * 0.5f;
+        var center = min + new Vector2(half, half);
+        var clicked = RoundButton.Draw(drawList, ImGui.GetID(glyph), center, half, ControlInk.From(theme),
+            ButtonStyle.Gray, true, false, out var face);
+        Typography.DrawCentered(drawList, center, glyph, face.LabelInk, TextStyles.Headline);
+        return clicked;
     }
+
 
     private void AdjustOffset(int deltaMinutes)
     {

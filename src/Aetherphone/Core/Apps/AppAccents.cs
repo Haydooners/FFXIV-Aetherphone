@@ -69,6 +69,7 @@ internal static class AppAccents
         ["chess"] = AccentRing.Gold,
         ["uno"] = AccentRing.Rose,
         ["pool"] = AccentRing.Green,
+        ["connectfour"] = AccentRing.Cyan,
         ["stack"] = AccentRing.Indigo,
         ["crystaldrop"] = AccentRing.Violet,
         ["beat"] = AccentRing.Rose,
@@ -81,6 +82,9 @@ internal static class AppAccents
         ["squadron"] = AccentRing.Azure,
         ["doom"] = AccentRing.Red,
         ["wordrun"] = AccentRing.Emerald,
+        ["coil"] = AccentRing.Orchid,
+        ["updraft"] = AccentRing.Cyan,
+        ["swoop"] = AccentRing.Lime,
         ["rolladeck"] = AccentRing.Violet,
         ["hunts"] = AccentRing.Indigo
     }.ToFrozenDictionary();

@@ -5,6 +5,7 @@ using Aetherphone.Core.Animation;
 using Aetherphone.Core.Casino;
 using Aetherphone.Core.Games;
 using Aetherphone.Core.Localization;
+using Aetherphone.Core.Notifications;
 using Aetherphone.Core.Theme;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
@@ -287,7 +288,7 @@ internal sealed class BarkeepCabinet
 
         var canvasHeight = Math.Clamp(body.Max.Y - y - 96f * scale, 140f * scale, 230f * scale);
         var canvas = new Rect(new Vector2(left, y), new Vector2(left + width, y + canvasHeight));
-        ui.Card(drawList, canvas.Min, canvas.Max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, canvas.Min, canvas.Max, Metrics.Radius.Grouped * scale);
         DrawOrderCanvas(drawList, ui, current, elapsed, canvas, scale, delta);
         DrawTapFlash(drawList, ui, scale, delta);
         y = canvas.Max.Y + Metrics.Space.Md * scale;
@@ -306,7 +307,7 @@ internal sealed class BarkeepCabinet
 
         var canEnd = current.CanFinish(elapsed);
         var endRect = new Rect(new Vector2(left + width * 0.2f, y), new Vector2(left + width * 0.8f, y + 44f * scale));
-        if (AppSkin.PillButton(endRect, Loc.T(L.Casino.BarkeepEndShift), true, canEnd, ui.Theme))
+        if (ui.PillButton(endRect, Loc.T(L.Casino.BarkeepEndShift), true, canEnd))
         {
             SendFinish();
         }
@@ -428,6 +429,11 @@ internal sealed class BarkeepCabinet
         tapFlashLeft = TapFlashSecondsTotal;
         tapFlashCenter = Vector2.Clamp(ImGui.GetIO().MousePos, stage.Min, stage.Max);
         var tint = BarkeepArt.GradeTint(grade, ui.Accent);
+        if (grade != BarkeepGrading.MissGrade)
+        {
+            UiFeedback.Play(UiSound.GameTick);
+        }
+
         switch (grade)
         {
             case BarkeepGrading.PerfectGrade:
@@ -450,15 +456,18 @@ internal sealed class BarkeepCabinet
         switch (grade)
         {
             case BarkeepGrading.PerfectGrade:
+                UiFeedback.Play(UiSound.GameMatch);
                 particles.Sparkle(origin, 16, Gold, 150f * scale, 3f, 0.75f);
                 break;
             case BarkeepGrading.GoodGrade:
+                UiFeedback.Play(UiSound.GameCollect);
                 particles.Burst(origin, 12, ui.Accent, 130f * scale, 2.6f, 0.6f);
                 break;
             case BarkeepGrading.RoughGrade:
                 particles.Burst(origin, 6, BarkeepArt.RoughAmber, 90f * scale, 2.2f, 0.5f);
                 break;
             default:
+                UiFeedback.Play(UiSound.GameWrong);
                 particles.Streaks(origin, 10, BarkeepArt.MissRed, 150f * scale, 2.6f, 0.55f, 1.1f,
                     MathF.PI * 0.5f);
                 break;
@@ -572,6 +581,7 @@ internal sealed class BarkeepCabinet
             if (!settleCelebrated)
             {
                 settleCelebrated = true;
+                UiFeedback.Play(UiSound.GameWin);
                 particles.Confetti(new Vector2(left + width * 0.5f, y), 60, ConfettiPalette, 300f * scale, 5f, 1.4f);
             }
 
@@ -612,7 +622,7 @@ internal sealed class BarkeepCabinet
         y += Metrics.Space.Lg * scale;
 
         var doneRect = new Rect(new Vector2(left + width * 0.25f, y), new Vector2(left + width * 0.75f, y + 44f * scale));
-        if (AppSkin.PillButton(doneRect, Loc.T(L.Casino.BarkeepDone), true, true, ui.Theme))
+        if (ui.PillButton(doneRect, Loc.T(L.Casino.BarkeepDone), true, true))
         {
             settle = null;
             shift = null;
@@ -649,7 +659,7 @@ internal sealed class BarkeepCabinet
 
         y += Metrics.Space.Lg * scale;
         var againRect = new Rect(new Vector2(left + width * 0.2f, y), new Vector2(left + width * 0.8f, y + 44f * scale));
-        if (AppSkin.PillButton(againRect, Loc.T(L.Casino.BarkeepPracticeAgain), true, true, ui.Theme))
+        if (ui.PillButton(againRect, Loc.T(L.Casino.BarkeepPracticeAgain), true, true))
         {
             StartPractice();
         }
@@ -696,7 +706,7 @@ internal sealed class BarkeepCabinet
         var wagerCardHeight = 24f * scale + hintBlock.Y + ladderHeight + 74f * scale + pad * 2f;
         var wagerMin = new Vector2(left, y);
         var wagerMax = new Vector2(left + width, y + wagerCardHeight);
-        ui.Card(drawList, wagerMin, wagerMax, Metrics.Radius.Card * scale);
+        ui.Card(drawList, wagerMin, wagerMax, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(wagerMin.X + pad, wagerMin.Y + pad), wagerTitle, ui.TitleInk,
             TextStyles.SubheadlineEmphasized);
         Typography.DrawWrappedLeft(new Vector2(wagerMin.X + pad, wagerMin.Y + pad + 24f * scale), wagerHint,
@@ -723,11 +733,11 @@ internal sealed class BarkeepCabinet
             var canStart = !blocked && !lowStack && !play.RoundInFlight && !startRequested;
             var startRect = new Rect(new Vector2(left + width * 0.15f, actionY),
                 new Vector2(left + width * 0.85f, actionY + 52f * scale));
-            if (AppSkin.StackedPillButton(startRect, Loc.T(L.Casino.BarkeepStart), entryText, true, canStart,
-                    ui.Theme))
+            if (AppSkin.StackedPillButton(startRect, Loc.T(L.Casino.BarkeepStart), entryText, true, canStart, ui.Ink))
             {
                 inlineReason = string.Empty;
                 StartWager();
+                UiFeedback.Play(UiSound.CasinoChips);
             }
 
             if (blocked)
@@ -753,7 +763,7 @@ internal sealed class BarkeepCabinet
         var practiceCardHeight = 24f * scale + practiceHintBlock.Y + 88f * scale + pad;
         var practiceMin = new Vector2(left, y);
         var practiceMax = new Vector2(left + width, y + practiceCardHeight);
-        ui.Card(drawList, practiceMin, practiceMax, Metrics.Radius.Card * scale);
+        ui.Card(drawList, practiceMin, practiceMax, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(practiceMin.X + pad, practiceMin.Y + pad), practiceTitle, ui.TitleInk,
             TextStyles.SubheadlineEmphasized);
         Typography.DrawWrappedLeft(new Vector2(practiceMin.X + pad, practiceMin.Y + pad + 24f * scale), practiceHint,
@@ -763,7 +773,7 @@ internal sealed class BarkeepCabinet
         Typography.Draw(drawList, new Vector2(practiceMin.X + pad, bestY), best, ui.MutedInk, TextStyles.Caption1);
         var practiceRect = new Rect(new Vector2(left + width * 0.2f, bestY + 22f * scale),
             new Vector2(left + width * 0.8f, bestY + 66f * scale));
-        if (AppSkin.PillButton(practiceRect, practiceTitle, false, true, ui.Theme))
+        if (ui.PillButton(practiceRect, practiceTitle, false, true))
         {
             StartPractice();
         }
@@ -777,7 +787,7 @@ internal sealed class BarkeepCabinet
         var height = 24f * scale + rowsHeight + pad * 2f;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        ui.Card(drawList, min, max, Metrics.Radius.Card * scale);
+        ui.Card(drawList, min, max, Metrics.Radius.Grouped * scale);
         Typography.Draw(drawList, new Vector2(min.X + pad, min.Y + pad), Loc.T(L.Casino.BarkeepLadderTitle),
             ui.TitleInk, TextStyles.FootnoteEmphasized);
         DrawLadderRows(drawList, ui, min.X + pad, min.Y + pad + 24f * scale, width - pad * 2f, scale, reachedBand);
@@ -807,9 +817,10 @@ internal sealed class BarkeepCabinet
         var height = block.Y + pad * 2f;
         var min = new Vector2(left, y);
         var max = new Vector2(left + width, y + height);
-        Squircle.Fill(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(tint, 0.10f)));
-        Squircle.Stroke(drawList, min, max, 16f * scale, ImGui.GetColorU32(Palette.WithAlpha(tint, 0.35f)),
-            1f * scale);
+        Squircle.Fill(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(tint, 0.10f)));
+        Squircle.Stroke(drawList, min, max, Metrics.Radius.Grouped * scale,
+            ImGui.GetColorU32(Palette.WithAlpha(tint, 0.35f)), 1f * scale);
         Typography.DrawWrappedLeft(new Vector2(min.X + pad, min.Y + pad), message, ui.TitleInk,
             TextStyles.Footnote, width - pad * 2f);
         return max.Y;
