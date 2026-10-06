@@ -42,6 +42,8 @@ internal static class WidgetText
     private const string LineProbe = "Ag";
     private const string Ellipsis = "…";
 
+    private static readonly string[] DigitStrings = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+
     private struct DigitAdvance
     {
         public float Scale;
@@ -324,6 +326,11 @@ internal static class WidgetText
         using (Plugin.Fonts.Push(style.Scale, style.Weight))
         {
             Plugin.Fonts.NoticeText(text);
+            if (advance <= 0f)
+            {
+                advance = ImGui.CalcTextSize("0").X;
+            }
+
             var font = ImGui.GetFont();
             var fontSize = ImGui.GetFontSize();
             var packed = ImGui.GetColorU32(color);
@@ -334,12 +341,12 @@ internal static class WidgetText
                 var width = ImGui.CalcTextSize(glyph).X;
                 if (char.IsAsciiDigit(text[index]))
                 {
-                    drawList.AddText(font, fontSize, cursor with { X = cursor.X + (advance - width) * 0.5f }, packed,
+                    var step = advance > 0f ? MathF.Max(advance, width) : width;
+                    drawList.AddText(font, fontSize, cursor with { X = cursor.X + (step - width) * 0.5f }, packed,
                         glyph);
-                    cursor.X += advance;
+                    cursor.X += step;
                     continue;
                 }
-
                 drawList.AddText(font, fontSize, cursor, packed, glyph);
                 cursor.X += width;
             }
@@ -355,15 +362,22 @@ internal static class WidgetText
             return 0f;
         }
 
-        var advance = DigitAdvanceFor(style);
         using (Plugin.Fonts.Push(style.Scale, style.Weight))
         {
+            var advance = DigitAdvanceFor(style);
+            if (advance <= 0f)
+            {
+                advance = ImGui.CalcTextSize("0").X;
+            }
+
             var width = 0f;
             for (var index = 0; index < text.Length; index++)
             {
-                width += char.IsAsciiDigit(text[index]) ? advance : ImGui.CalcTextSize(text.AsSpan(index, 1)).X;
+                var glyphWidth = ImGui.CalcTextSize(text.AsSpan(index, 1)).X;
+                width += char.IsAsciiDigit(text[index])
+                    ? (advance > 0f ? MathF.Max(advance, glyphWidth) : glyphWidth)
+                    : glyphWidth;
             }
-
             return width;
         }
     }
@@ -416,7 +430,7 @@ internal static class WidgetText
         for (var index = 0; index < digitCount; index++)
         {
             var entry = DigitAdvances[index];
-            if (entry.Scale == style.Scale && entry.Weight == style.Weight)
+            if (entry.Scale == style.Scale && entry.Weight == style.Weight && entry.Advance > 0f)
             {
                 return entry.Advance;
             }
@@ -425,20 +439,21 @@ internal static class WidgetText
         var advance = 0f;
         using (Plugin.Fonts.Push(style.Scale, style.Weight))
         {
-            Span<char> digit = stackalloc char[1];
             for (var value = 0; value < 10; value++)
             {
-                digit[0] = (char)('0' + value);
-                advance = MathF.Max(advance, ImGui.CalcTextSize((ReadOnlySpan<char>)digit).X);
+                advance = MathF.Max(advance, ImGui.CalcTextSize(DigitStrings[value]).X);
             }
         }
 
-        if (digitCount == DigitCacheCapacity)
+        if (advance > 0f)
         {
-            digitCount = 0;
+            if (digitCount >= DigitCacheCapacity)
+            {
+                digitCount = 0;
+            }
+            DigitAdvances[digitCount++] = new DigitAdvance { Scale = style.Scale, Weight = style.Weight, Advance = advance };
         }
 
-        DigitAdvances[digitCount++] = new DigitAdvance { Scale = style.Scale, Weight = style.Weight, Advance = advance };
         return advance;
     }
 }

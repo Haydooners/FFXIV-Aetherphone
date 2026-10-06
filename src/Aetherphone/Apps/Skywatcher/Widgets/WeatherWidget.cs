@@ -170,7 +170,8 @@ internal sealed class WeatherWidget : IHomeWidget
         var suffix = Loc.T(L.WidgetsLife.EorzeaShort);
         var suffixWidth = Typography.Measure(suffix, WidgetType.Caption).X + WidgetMetrics.RowGap * context.Scale;
         var available = MathF.Max(1f, maxWidth - suffixWidth);
-        var heroStyle = style;
+        var heroStyle = WidgetText.FitStyle(clock, style, available, true);
+        var drawn = WidgetText.Tabular(context.DrawList, position, clock, ink.Primary, heroStyle);
         var width = WidgetText.TabularWidth(clock, heroStyle);
         if (width > available)
         {
@@ -178,7 +179,6 @@ internal sealed class WeatherWidget : IHomeWidget
                 style.Weight);
         }
 
-        var drawn = WidgetText.Tabular(context.DrawList, position, clock, ink.Primary, heroStyle);
         var heroHeight = Typography.Measure(clock, heroStyle).Y;
         var captionHeight = WidgetText.LineHeight(WidgetType.Caption);
         Typography.Draw(context.DrawList,
