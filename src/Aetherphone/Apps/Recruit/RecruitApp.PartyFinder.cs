@@ -59,10 +59,7 @@ internal sealed partial class RecruitApp
         {
             return;
         }
-        using (InputShield.Engage(pfFilterDutyTypeMenu.Open || pfFilterDutyMenu.Open))
-        {
-            pfFilterSheet.Draw(screen, theme, "Search Criteria", 0.78f, DrawPartyFinderFilterModal);
-        }
+        pfFilterSheet.Draw(screen, theme, "Search Criteria", 0.78f, DrawPartyFinderFilterModal);
         var pickedDutyType = pfFilterDutyTypeMenu.Draw(
             screen,
             theme,
@@ -440,7 +437,9 @@ internal sealed partial class RecruitApp
             pfFilterCriteria.Reset();
         }
 
-        using (AppSurface.Begin(new Rect(content.Min, new Vector2(content.Max.X, content.Max.Y - 46f * scale))))
+        var btnHeight = 36f * scale;
+        var bottomGap = 16f * scale;
+        using (AppSurface.Begin(new Rect(content.Min, new Vector2(content.Max.X, content.Max.Y - (btnHeight + bottomGap + 10f * scale)))))
         {
             var toggleWidth = ScrollLayout.StableContentWidth();
             var gap = 6f * scale;
@@ -605,10 +604,10 @@ internal sealed partial class RecruitApp
                 pfFilterCriteria.SameWorldOnly = !pfFilterCriteria.SameWorldOnly;
             }
             ImGui.Dummy(new Vector2(toggleWidth, 34f * scale));
-        }       
-        var btnHeight = 36f * scale;
-        var btnMin = new Vector2(content.Min.X, content.Max.Y - btnHeight);
-        var btnMax = new Vector2(content.Max.X, content.Max.Y);
+        }     
+          
+        var btnMin = new Vector2(content.Min.X, content.Max.Y - btnHeight - bottomGap);
+        var btnMax = new Vector2(content.Max.X, content.Max.Y - bottomGap);
         var btnHovered = UiInteract.Hover(btnMin, btnMax);
         if (btnHovered)
         {
