@@ -128,9 +128,6 @@ internal sealed partial class RecruitApp : IPhoneApp
             case RecruitScreen.Detail:
                 DrawDetailScreen(currentContext, area);
                 break;
-            case RecruitScreen.PfDetail:
-                DrawPartyFinderDetailScreen(currentContext, area);
-                break;
             case RecruitScreen.Create:
                 DrawCreateScreen(currentContext, area);
                 break;
