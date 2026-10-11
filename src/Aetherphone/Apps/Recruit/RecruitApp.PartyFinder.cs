@@ -879,17 +879,13 @@ internal sealed partial class RecruitApp
             {
                 modifiers.Add(("Unrestricted Party", FontAwesomeIcon.Unlock, new Vector4(0.98f, 0.65f, 0.22f, 1f)));
             }
-            if (listing.DutySettings.HasFlag(DutyFinderSettingsFlags.MinimumItemLevel))
+            if (listing.ItemLevel > 0)
             {
-                modifiers.Add(("Minimum Item Level", FontAwesomeIcon.ShieldAlt, new Vector4(0.24f, 0.74f, 0.98f, 1f)));
+                modifiers.Add(($"Item Level {listing.ItemLevel}+", FontAwesomeIcon.ShieldAlt, new Vector4(0.24f, 0.74f, 0.98f, 1f)));
             }
             if (listing.DutySettings.HasFlag(DutyFinderSettingsFlags.SilenceEcho))
             {
                 modifiers.Add(("Silence Echo", FontAwesomeIcon.VolumeMute, new Vector4(0.85f, 0.42f, 0.92f, 1f)));
-            }
-            if (listing.DutySettings.HasFlag(DutyFinderSettingsFlags.LevelSync))
-            {
-                modifiers.Add(("Level Sync", FontAwesomeIcon.SyncAlt, new Vector4(0.38f, 0.82f, 0.42f, 1f)));
             }
             if (modifiers.Count < 4 && listing.Conditions.HasFlag(ConditionFlags.DutyComplete))
             {

@@ -355,7 +355,7 @@ internal sealed partial class RecruitApp : IPhoneApp
         var kindLabel = listing.Kind switch
         {
             ListingKind.StaticLfm => "LFM",
-            ListingKind.PlayerLfg => "PLAYER",
+            ListingKind.PlayerLfg => "LFG",
             ListingKind.SingleNightFill => "FILL",
             _ => "STATIC",
         };
