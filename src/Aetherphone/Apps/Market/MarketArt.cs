@@ -97,6 +97,7 @@ internal static class MarketArt
     public static void Labels(ImDrawListPtr drawList, float left, float right, float centerY, string title,
         string subtitle, Vector4 titleInk, Vector4 subtitleInk, float scale) =>
         Labels(drawList, title, left, right, centerY, title, subtitle, titleInk, subtitleInk, false, scale);
+
     public static void Labels(ImDrawListPtr drawList, MarqueeId id, float left, float right, float centerY, string title,
         string subtitle, Vector4 titleInk, Vector4 subtitleInk, bool hovering, float scale)
     {
