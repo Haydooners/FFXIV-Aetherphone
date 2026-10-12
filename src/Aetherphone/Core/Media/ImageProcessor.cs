@@ -187,8 +187,20 @@ internal static class ImageProcessor
         try
         {
             image.CopyPixelDataTo(pixels.AsSpan(0, length));
-            return ScalarJpegEncoder.Encode(pixels.AsSpan(0, length), image.Width, image.Height, JpegQuality,
-                JpegSubsampling);
+            var span = pixels.AsSpan(0, length);
+            for (var i = 0; i < length; i += 4)
+            {
+                var alpha = span[i + 3];
+                if (alpha < 255)
+                {
+                    var a = alpha / 255f;
+                    span[i]     = (byte)MathF.Round(span[i] * a);
+                    span[i + 1] = (byte)MathF.Round(span[i + 1] * a);
+                    span[i + 2] = (byte)MathF.Round(span[i + 2] * a);
+                    span[i + 3] = 255;
+                }
+            }
+            return ScalarJpegEncoder.Encode(span, image.Width, image.Height, JpegQuality, JpegSubsampling);
         }
         finally
         {
