@@ -26,6 +26,8 @@ internal enum RecruitTab
 {
     PartyFinder,
     Statics,
+    YourListings,
+    Profile,
 };
 
 internal sealed partial class RecruitApp : IPhoneApp
@@ -81,8 +83,8 @@ internal sealed partial class RecruitApp : IPhoneApp
     private PhoneContext currentContext;
 
     private RecruitTab activeTab = RecruitTab.Statics;
-    private readonly BottomTabBar bottomNav = new();
-    private readonly NavTab[] navTabs = new NavTab[3];
+    private readonly TabBar tabBar = new();
+    private readonly TabItem[] tabItems = new TabItem[4];
 
     public RecruitApp(RecruitStore store)
     {
@@ -138,27 +140,33 @@ internal sealed partial class RecruitApp : IPhoneApp
     {
         var scale = UiScale.Current;
         var theme = ui.Theme;
-        var barHeight = BottomTabBar.LabelledHeight * scale;
-        var navRect = new Rect(new Vector2(area.Min.X, area.Max.Y - barHeight), area.Max);
-        var tabArea = new Rect(area.Min, new Vector2(area.Max.X, navRect.Min.Y));
-
-        switch (activeTab)
+        using (TabBar.ReserveContent(scale))
         {
-            case RecruitTab.PartyFinder:
-                DrawPartyFinderTab(tabArea, scale, theme);
-                break;
-            case RecruitTab.Statics:
-            default:
-                DrawStaticsTab(tabArea, scale, theme);
-                break;
+            switch (activeTab)
+            {
+                case RecruitTab.PartyFinder:
+                    DrawPartyFinderTab(area, scale, theme);
+                    break;
+                case RecruitTab.Statics:
+                default:
+                    DrawStaticsTab(area, scale, theme);
+                    break;
+               // case RecruitTab.Profile:
+               //     DrawProfileTab(area, scale, theme);
+               //     break;
+               // case RecruitTab.YourListings:
+               //     DrawUserListingsTab(area,scale,theme);
+               //     break;
+            }
         }
 
-        DrawBottomNav(navRect);
+        DrawTabBar(area);
         var pickedCategory = categoryFilterMenu.Draw(
             area,
             theme,
             System.Runtime.InteropServices.CollectionsMarshal.AsSpan(categoryFilterItems));
-        if (pickedCategory >= 0){
+        if (pickedCategory >= 0)
+        {
             selectedCategory = pickedCategory == 0 ? null : AllCategories[pickedCategory - 1];
         }
 
@@ -178,30 +186,38 @@ internal sealed partial class RecruitApp : IPhoneApp
         }
     }
 
-    private void DrawBottomNav(Rect bar)
+    private void DrawTabBar(Rect area)
     {
         var pfCount = store.PartyFinderListings.Count;
-        navTabs[0] = new NavTab(FontAwesomeIcon.Search, "Statics");
-        navTabs[1] = new NavTab(FontAwesomeIcon.Plus, "New Listing", Raised: true);
-        navTabs[2] = new NavTab(FontAwesomeIcon.Users, "Party Finder", Badge: pfCount);
-        var activeSlot = activeTab == RecruitTab.PartyFinder ? 2 : 0;
-        var tapped = bottomNav.Draw(bar, ui, currentContext.Theme, navTabs, activeSlot, showLabels: true);
-        if (tapped >= 0){
-            if (tapped == 1){
-                router.Push(RecruitScreen.Create);
+        tabItems[0] = new TabItem("Statics", PhoneIcons.Search);
+        tabItems[1] = new TabItem("Party Finder", PhoneIcons.Users, Badge: pfCount);
+        tabItems[2] = new TabItem("Profile", PhoneIcons.User);
+        tabItems[3] = new TabItem("Your Listings", PhoneIcons.Pin);
+        var post = new TabBarAction(PhoneIcons.Plus, "New Listing", AnchorKey: "recruit.tab.post");
+        var activeIndex = activeTab == RecruitTab.PartyFinder ? 1 : 0;
+        var result = tabBar.Draw(area, ui, tabItems, activeIndex, post);
+        if (result.ActionTapped)
+        {
+            router.Push(RecruitScreen.Create);
+            return;
+        }
+        if (result.Tapped < 0)
+        {
+            return;
+        }
+
+        var nextTab = result.Tapped == 1 ? RecruitTab.PartyFinder : RecruitTab.Statics;
+        if (nextTab != activeTab)
+        {
+            activeTab = nextTab;
+            if (activeTab == RecruitTab.PartyFinder)
+            {
+                OnPartyFinderOpened();
             }
-            else{
-                var nextTab = tapped == 2 ? RecruitTab.PartyFinder : RecruitTab.Statics;
-                if (nextTab != activeTab){
-                    activeTab = nextTab;
-                    if (activeTab == RecruitTab.PartyFinder){
-                        OnPartyFinderOpened();
-                    }
-                }
-                else if (activeTab == RecruitTab.PartyFinder){
-                    OnPartyFinderOpened();
-                }
-            }
+        }
+        else if (activeTab == RecruitTab.PartyFinder)
+        {
+            OnPartyFinderOpened();
         }
     }
 
