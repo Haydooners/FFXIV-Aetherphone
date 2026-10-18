@@ -4,6 +4,7 @@ using System.Numerics;
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Theme;
+using Aetherphone.Core.Social;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -247,24 +248,83 @@ internal sealed partial class RecruitApp
         var cardMin = ImGui.GetCursorScreenPos();
         var cardHeight = 62f * scale;
         var cardMax = cardMin + new Vector2(width, cardHeight);
+
+        var cardHovered = UiInteract.Hover(cardMin, cardMax);
+        if (cardHovered)
+        {
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        }
+
+        var bgAlpha = cardHovered ? 1.0f : 0.85f;
         Squircle.Fill(drawList, cardMin, cardMax, 12f * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.GroupedCard, 0.85f)));
-        Squircle.Stroke(drawList, cardMin, cardMax, 12f * scale,
-            ImGui.GetColorU32(Palette.WithAlpha(theme.Separator, 0.35f)), 1f * scale);
+            ImGui.GetColorU32(Palette.WithAlpha(theme.GroupedCard, bgAlpha)));
+        var borderColor = cardHovered ? theme.Accent : Palette.WithAlpha(theme.Separator, 0.35f);
+        Squircle.Stroke(drawList, cardMin, cardMax, 12f * scale, ImGui.GetColorU32(borderColor), 1f * scale);
+
+        var cleanWorld = ExtractCleanWorld(listing.WorldDc);
+        if (!string.IsNullOrWhiteSpace(cleanWorld))
+        {
+            posterClient.LoadCharacter(listing.AuthorName, cleanWorld);
+        }
         var avatarRadius = 18f * scale;
         var avatarCenter = new Vector2(cardMin.X + 16f * scale + avatarRadius, (cardMin.Y + cardMax.Y) * 0.5f);
-        drawList.AddCircleFilled(avatarCenter, avatarRadius, ImGui.GetColorU32(Palette.WithAlpha(theme.Accent, 0.25f)));
-        drawList.AddCircle(avatarCenter, avatarRadius, ImGui.GetColorU32(Palette.WithAlpha(theme.Accent, 0.60f)), 32, 1.5f * scale);
-        Typography.DrawCentered(drawList, avatarCenter, Initials.Of(listing.AuthorName), theme.TextStrong, TextStyles.Subheadline.Scale, FontWeight.Bold);
+        var currentUser = store.CurrentUser;
+        var localPlayerName = Plugin.ObjectTable.LocalPlayer?.Name.TextValue;
+        var isSelf = string.Equals(listing.AuthorName, currentUser?.Name, StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(listing.AuthorName, localPlayerName, StringComparison.OrdinalIgnoreCase);
+        var aetherphoneAvatar = isSelf ? currentUser?.AvatarUrl : null;
+
+        var tomestoneAvatar = string.Equals(posterClient.Profile.CharacterName, listing.AuthorName, StringComparison.OrdinalIgnoreCase)
+            ? posterClient.Profile.AvatarUrl
+            : null;
+        var avatarUrl = !string.IsNullOrWhiteSpace(aetherphoneAvatar)
+            ? aetherphoneAvatar
+            : tomestoneAvatar;
+        var frame = isSelf ? Frames.Of(currentUser?.FrameId) : null;
+        if (images is not null && lodestone is not null)
+        {
+            AvatarView.DrawRemote(drawList, avatarCenter, avatarRadius, theme, listing.AuthorName,
+                cleanWorld, avatarUrl, images, lodestone, 0.85f, 32, 1f, frame);
+        }
+        else
+        {
+            drawList.AddCircleFilled(avatarCenter, avatarRadius, ImGui.GetColorU32(Palette.WithAlpha(theme.Accent, 0.25f)));
+            drawList.AddCircle(avatarCenter, avatarRadius, ImGui.GetColorU32(Palette.WithAlpha(theme.Accent, 0.60f)), 32, 1.5f * scale);
+            Typography.DrawCentered(drawList, avatarCenter, Initials.Of(listing.AuthorName), theme.TextStrong, TextStyles.Subheadline.Scale, FontWeight.Bold);
+        }
+
         var textLeft = avatarCenter.X + avatarRadius + 12f * scale;
         var nameY = cardMin.Y + 12f * scale;
         Typography.Draw(drawList, new Vector2(textLeft, nameY), listing.AuthorName, theme.TextStrong, TextStyles.Headline.Scale, FontWeight.Bold);
         var handleY = nameY + 20f * scale;
+
         var handleText = !string.IsNullOrWhiteSpace(listing.WorldDc)
             ? $"@{listing.WorldDc.ToLowerInvariant().Replace(" ", "")}"
             : "@username";
         Typography.Draw(drawList, new Vector2(textLeft, handleY), handleText, theme.TextMuted, TextStyles.Caption1);
+
+        if (UiInteract.Click(cardMin, cardMax, cardHovered)){
+           // var cleanWorld = ExtractCleanWorld(listing.WorldDc);
+
+            posterClient.LoadCharacter(listing.AuthorName, cleanWorld);
+            router.Push(RecruitScreen.PosterProfile);
+        }
         ImGui.Dummy(new Vector2(width, cardHeight));
+    }
+
+    private static string ExtractCleanWorld(string? worldDc)
+    {
+        if (string.IsNullOrWhiteSpace(worldDc)){
+            return string.Empty;
+        }
+
+        var parts = worldDc.Trim().TrimStart('@').Split(['/', ' ', '['], StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0){
+            return string.Empty;
+        }
+
+        var world = parts[0];
+        return char.ToUpperInvariant(world[0]) + world[1..].ToLowerInvariant();
     }
 
     private void DrawDetailBottomActions(ImDrawListPtr drawList, float width, float scale, PhoneTheme theme, RecruitListing listing)

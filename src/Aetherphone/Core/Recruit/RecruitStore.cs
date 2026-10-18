@@ -3,6 +3,8 @@ using Aetherphone.Core.Aethernet;
 using Aetherphone.Core.Runtime;
 using Aetherphone.Core.Aethernet.Clients;
 using Aetherphone.Core.Aethernet.Contracts;
+using Aetherphone.Core.Media;
+using Aetherphone.Core.Lodestone;
 
 namespace Aetherphone.Core.Recruit;
 
@@ -15,6 +17,7 @@ internal sealed class RecruitStore : IDisposable
     private readonly RecruitClient client;
     private readonly object lockObj = new();
     public bool IsSignedIn => session.IsSignedIn;
+    public UserDto? CurrentUser => session.CurrentUser;
     public IReadOnlyList<PartyFinderListing> PartyFinderListings => pfListings;
     public event Action? OnPartyFinderUpdated;
 
@@ -23,9 +26,9 @@ internal sealed class RecruitStore : IDisposable
         this.session = session;
         this.client = client;
         this.signals = signals;
+
         listings.AddRange(RecruitListing.CreateSampleListings());
         PartyFinderReader.Initialize();
-
         PartyFinderReader.OnListingsUpdate += HandlePartyFinderUpdated;
     }
 

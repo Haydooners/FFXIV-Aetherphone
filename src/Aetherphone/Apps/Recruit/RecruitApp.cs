@@ -7,6 +7,8 @@ using Aetherphone.Core.Localization;
 using Aetherphone.Core.Theme;
 using Aetherphone.Core.Animation;
 using Aetherphone.Core.Recruit;
+using Aetherphone.Core.Media;
+using Aetherphone.Core.Lodestone;
 using Aetherphone.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -20,6 +22,7 @@ internal enum RecruitScreen
     Detail,
     PfDetail,
     Create,
+    PosterProfile,
 };
 
 internal enum RecruitTab
@@ -37,6 +40,9 @@ internal sealed partial class RecruitApp : IPhoneApp
     public string Glyph => "R";
     public Vector4 Accent => AppAccents.For("recruit");
     public int BadgeCount => 0;
+
+    private readonly TomestoneProfileClient tomestoneClient = new();
+    private readonly TomestoneProfileClient posterClient = new();
 
     private readonly RecruitStore store;
 
@@ -85,10 +91,14 @@ internal sealed partial class RecruitApp : IPhoneApp
     private RecruitTab activeTab = RecruitTab.Statics;
     private readonly TabBar tabBar = new();
     private readonly TabItem[] tabItems = new TabItem[4];
+    private readonly RemoteImageCache? images;
+    private readonly LodestoneService? lodestone;
 
-    public RecruitApp(RecruitStore store)
+    public RecruitApp(RecruitStore store, RemoteImageCache? images = null, LodestoneService? lodestone = null)
     {
         this.store = store;
+        this.images = images;
+        this.lodestone = lodestone;
         router = new ViewRouter<RecruitScreen>(RecruitScreen.Browse);
         drawView = DrawView;
     }
@@ -133,6 +143,9 @@ internal sealed partial class RecruitApp : IPhoneApp
             case RecruitScreen.Create:
                 DrawCreateScreen(currentContext, area);
                 break;
+            case RecruitScreen.PosterProfile:
+                DrawPosterProfile(currentContext, area);
+                break;
         }
     }
 
@@ -151,9 +164,9 @@ internal sealed partial class RecruitApp : IPhoneApp
                 default:
                     DrawStaticsTab(area, scale, theme);
                     break;
-               // case RecruitTab.Profile:
-               //     DrawProfileTab(area, scale, theme);
-               //     break;
+                case RecruitTab.Profile:
+                    DrawProfileTab(area, scale, theme);
+                    break;
                // case RecruitTab.YourListings:
                //     DrawUserListingsTab(area,scale,theme);
                //     break;
@@ -194,7 +207,14 @@ internal sealed partial class RecruitApp : IPhoneApp
         tabItems[2] = new TabItem("Profile", PhoneIcons.User);
         tabItems[3] = new TabItem("Your Listings", PhoneIcons.Pin);
         var post = new TabBarAction(PhoneIcons.Plus, "New Listing", AnchorKey: "recruit.tab.post");
-        var activeIndex = activeTab == RecruitTab.PartyFinder ? 1 : 0;
+        var activeIndex = activeTab switch
+        {
+            RecruitTab.PartyFinder => 1,
+            RecruitTab.Profile => 2,
+            RecruitTab.YourListings => 3,
+            _ => 0,
+        };
+
         var result = tabBar.Draw(area, ui, tabItems, activeIndex, post);
         if (result.ActionTapped)
         {
@@ -206,7 +226,14 @@ internal sealed partial class RecruitApp : IPhoneApp
             return;
         }
 
-        var nextTab = result.Tapped == 1 ? RecruitTab.PartyFinder : RecruitTab.Statics;
+        var nextTab = result.Tapped switch
+        {
+            1 => RecruitTab.PartyFinder,
+            2 => RecruitTab.Profile,
+            3 => RecruitTab.YourListings,
+            _ => RecruitTab.Statics,
+        };
+        
         if (nextTab != activeTab)
         {
             activeTab = nextTab;

@@ -401,8 +401,8 @@ internal sealed record RecruitListing(
                 Timezone: RaidTimezone.EST,
                 RolesNeeded: new List<RaidRole> { RaidRole.BarrierHealer, RaidRole.Caster },
                 Tags: new List<string> { "Midcore", "Voice Req" },
-                AuthorName: "Haydoon Dragoon",
-                WorldDc: "Cactuar / Aether",
+                AuthorName: "Michiru Chiru",
+                WorldDc: "Sargatanas / Aether",
                 PostedAt: DateTime.Now.AddHours(-2)
             ),
             new(

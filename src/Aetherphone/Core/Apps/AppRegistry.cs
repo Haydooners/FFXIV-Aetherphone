@@ -121,7 +121,7 @@ internal static class AppRegistry
         apps.Add(new ClockApp(services.Configuration, services.Confirm));
         apps.Add(new NotesApp(services.Configuration, services.Confirm));
         apps.Add(new CalculatorApp(services.Configuration, services.Confirm));
-        apps.Add(new RecruitApp(services.Recruit));
+        apps.Add(new RecruitApp(services.Recruit, services.RemoteImages, services.Lodestone));
         apps.Add(new AetherStreamApp(videoSuite, services.Configuration, services.Confirm, services.RemoteImages,
             services.Http, services.AethernetSession, services.Lodestone, services.AetherStreamLauncher,
             screenWindow));
