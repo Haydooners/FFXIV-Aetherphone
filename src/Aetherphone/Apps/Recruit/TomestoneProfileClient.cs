@@ -99,10 +99,8 @@ internal sealed class TomestoneProfileClient
             var server = Uri.EscapeDataString(Profile.World.Trim());
             var name = Uri.EscapeDataString(Profile.CharacterName.Trim());
             var profileUrl = $"{BaseApiUrl}/character/profile/{server}/{name}";
-            AepLog.Info($"[Tomestone] Requesting profile: {profileUrl}");
             using var req = CreateRequest(profileUrl);
             using var res = await http.SendAsync(req);
-            AepLog.Info($"[Tomestone] Profile response status: {(int)res.StatusCode} {res.ReasonPhrase}");
             if (res.IsSuccessStatusCode)
             {
                 var content = await res.Content.ReadAsStringAsync();
@@ -115,7 +113,6 @@ internal sealed class TomestoneProfileClient
                         rootKeys.Add(prop.Name);
                     }
                 }
-                AepLog.Info($"[Tomestone] Profile root keys: {string.Join(", ", rootKeys)}");
                 ParseProfileResponse(doc.RootElement);
             }
             else
@@ -144,7 +141,6 @@ internal sealed class TomestoneProfileClient
             var badge = Profile.Extremes.Find(b => string.Equals(b.Code, code, StringComparison.OrdinalIgnoreCase));
             if (badge != null && badge.IsCleared)
             {
-                AepLog.Info($"[Tomestone] [{code}] Already marked cleared from profile scan; skipping activity query.");
                 continue;
             }
             tasks.Add(Task.Run(async () =>
@@ -153,10 +149,8 @@ internal sealed class TomestoneProfileClient
                 try
                 {
                     var url = $"{BaseApiUrl}/character/activity/{server}/{name}?expansion=dawntrail&zone=trials-extreme&encounter={slug}";
-                    AepLog.Info($"[Tomestone] [{code}] Querying activity: {url}");
                     using var req = CreateRequest(url);
                     using var res = await http.SendAsync(req);
-                    AepLog.Info($"[Tomestone] [{code}] Response status: {(int)res.StatusCode} {res.ReasonPhrase}");
                     if (!res.IsSuccessStatusCode)
                     {
                         var err = await res.Content.ReadAsStringAsync();
@@ -165,16 +159,13 @@ internal sealed class TomestoneProfileClient
                     }
                     var json = await res.Content.ReadAsStringAsync();
                     var preview = json.Length > 200 ? json[..200] + "..." : json;
-                    AepLog.Info($"[Tomestone] [{code}] Body preview: {preview}");
                     using var doc = JsonDocument.Parse(json);
                     var cleared = HasActivityOrClears(doc.RootElement);
-                    AepLog.Info($"[Tomestone] [{code}] HasActivityOrClears result: {cleared}");
                     if (cleared)
                     {
                         if (badge != null)
                         {
                             badge.IsCleared = true;
-                            AepLog.Info($"[Tomestone] [{code}] Successfully marked as CLEARED!");
                         }
                     }
                 }
@@ -494,7 +485,6 @@ internal sealed class TomestoneProfileClient
         {
             var isCleared = IsEncounterCleared(enc);
             var snippet = text.Length > 100 ? text[..100] + "..." : text;
-            AepLog.Info($"[Tomestone] CheckUltimate matched '{code}' | IsCleared: {isCleared} | Source: {snippet}");
             if (isCleared)
             {
                 clearedUlts.Add(code);
@@ -507,7 +497,6 @@ internal sealed class TomestoneProfileClient
         var code = MatchRaidCode(ExtractSearchableText(enc), ExtremeMatches);
         if (code != null && IsEncounterCleared(enc))
         {
-            AepLog.Info($"[Tomestone] CheckExtreme matched '{code}'");
             clearedEx.Add(code);
         }
     }

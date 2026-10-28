@@ -33,3 +33,20 @@ internal sealed record CreateRecruitRequest(
     string AuthorName,
     string WorldName
 );
+
+internal sealed record PfExtrasDto(
+    string ContentId,
+    string? StratUrl,
+    string? Notes,
+    long UpdatedAtUnix
+);
+
+internal sealed record PublishPfExtrasRequest(
+    string ContentId,
+    uint DutyId,
+    string? StratUrl,
+    string? Notes
+);
+
+internal sealed record PfExtrasLookupRequest(string[] ContentIds);
+

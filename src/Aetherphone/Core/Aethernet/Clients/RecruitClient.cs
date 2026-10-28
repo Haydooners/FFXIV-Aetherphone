@@ -24,4 +24,27 @@ internal sealed class RecruitClient
         return net.PostAsync("/recruit/listings", request, AethernetJsonContext.Default.CreateRecruitRequest,
         AethernetJsonContext.Default.RecruitListingDto, token, null, onFailure);
     }
+
+    public Task<PfExtrasDto?> PublishPfExtrasAsync(PublishPfExtrasRequest request,
+        CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return net.SendJsonAsync(HttpMethod.Put, "/recruit/pf-extras", request,
+            AethernetJsonContext.Default.PublishPfExtrasRequest, AethernetJsonContext.Default.PfExtrasDto,
+            token, null, onFailure);
+    }
+
+    public Task<bool> ClearPfExtrasAsync(string contentId, CancellationToken token,
+        Action<AepFailure>? onFailure = null)
+    {
+        return net.SendAsync(HttpMethod.Delete, "/recruit/pf-extras/" + Uri.EscapeDataString(contentId),
+            token, null, onFailure);
+    }
+
+    public Task<PfExtrasDto[]?> LookupPfExtrasAsync(PfExtrasLookupRequest request,
+        CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return net.PostAsync("/recruit/pf-extras/lookup", request,
+            AethernetJsonContext.Default.PfExtrasLookupRequest, AethernetJsonContext.Default.PfExtrasDtoArray,
+            token, null, onFailure);
+    }
 }

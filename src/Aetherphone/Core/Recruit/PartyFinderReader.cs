@@ -57,12 +57,14 @@ internal static unsafe class PartyFinderReader
         Plugin.PartyFinderGui.ReceiveListing -= OnReceiveListing;
 
         initialized = false;
+        PartyFinderWriter.Cancel();
 
         Plugin.AddonLifecycle.UnregisterListener(OnPostUpdate, OnPostClose);
     }
 
     private static void OnReceiveListing(IPartyFinderListing listing, IPartyFinderListingEventArgs args)
     {
+        PartyFinderWriter.NoticeListing(listing.ContentId);
         lastListingReceivedTime = DateTime.UtcNow;
 
         var dutyName = listing.Duty.ValueNullable?.Name.ExtractText();
@@ -93,7 +95,8 @@ internal static unsafe class PartyFinderReader
             listing.Objective,
             listing.Conditions,
             listing.DutyFinderSettings,
-            BuildOpenAcceptedJobs(listing)
+            BuildOpenAcceptedJobs(listing),
+            listing.ContentId
         );
 
         lock (cachedListings)
@@ -300,6 +303,12 @@ internal static unsafe class PartyFinderReader
             TotalListingsCount = Math.Max(TotalListingsCount, cachedListings.Count);
         }
         OnListingsUpdate?.Invoke();
+        if (PartyFinderWriter.IsPending)
+        {
+            openedForSync = false;
+            return;
+        }
+        
         if (!openedForSync || closeScheduled || syncInProgress)
         {
             return;
@@ -330,7 +339,6 @@ internal static unsafe class PartyFinderReader
             return;
         }
         var newlyAdded = currentCount - lastListingCount;
-        AepLog.Info($"[PF Sync] Page {syncedPagesCount} evaluated: newlyAdded={newlyAdded}, totalCached={currentCount}");
         if (newlyAdded < 50 || syncedPagesCount >= 5)
         {
             ScheduleClose();
@@ -376,7 +384,6 @@ internal static unsafe class PartyFinderReader
             return;
         }
         var buttonParam = direction > 0 ? 9 : 8;
-        AepLog.Info($"[PF PageTurn] Turning page using native ButtonClick Param={buttonParam}...");
         var atkEvent = stackalloc AtkEvent[1];
         var atkEventData = stackalloc AtkEventData[1];
         addon->ReceiveEvent(AtkEventType.ButtonClick, buttonParam, atkEvent, atkEventData);
@@ -391,7 +398,7 @@ internal static unsafe class PartyFinderReader
         syncedPagesCount = 1;
         OnListingsUpdate?.Invoke();
         var currentAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
-        if (currentAddon != null && currentAddon->IsVisible)
+        if (IsWindowOpen())
         {
             ChatSender.TrySend("/partyfinder");
         }
@@ -399,15 +406,22 @@ internal static unsafe class PartyFinderReader
 
     public static bool TriggerSilentRefresh(bool force = false)
     {
+        if (PartyFinderWriter.IsPending)
+        {
+            return false;
+        }
+
         if (!Plugin.ClientState.IsLoggedIn){
             return false;
         }
+
         if (Plugin.Condition[ConditionFlag.InCombat] ||
             Plugin.Condition[ConditionFlag.BoundByDuty] ||
             Plugin.Condition[ConditionFlag.OccupiedInCutSceneEvent])
         {
             return false;
         }
+
         var gameMain = GameMain.Instance();
         if (gameMain == null || gameMain->CurrentContentFinderConditionId != 0){
             return false;
@@ -418,7 +432,8 @@ internal static unsafe class PartyFinderReader
 
         lastRefreshRequest = DateTime.UtcNow;
         var existingAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
-        if (existingAddon != null && existingAddon->IsVisible){
+        if (IsWindowOpen())
+        {
             openedForSync = false;
             var agent = AgentLookingForGroup.Instance();
             return agent != null && agent->RequestListingsUpdate();
@@ -451,7 +466,7 @@ internal static unsafe class PartyFinderReader
                         lastListingCount = 0;
                         OnListingsUpdate?.Invoke();
                         var currentAddon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
-                        if (currentAddon != null && currentAddon->IsVisible)
+                        if (IsWindowOpen())
                         {
                             ChatSender.TrySend("/partyfinder");
                         }
@@ -472,6 +487,12 @@ internal static unsafe class PartyFinderReader
             destination.Clear();
             destination.AddRange(cachedListings);
         }
+    }
+
+    public static bool IsWindowOpen()
+    {
+        var addon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
+        return addon != null && addon->IsVisible;
     }
 
     public static bool OpenListing(ulong listingId)

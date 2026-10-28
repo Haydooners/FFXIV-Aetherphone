@@ -101,6 +101,10 @@ internal sealed partial class RecruitApp : IPhoneApp
         this.lodestone = lodestone;
         router = new ViewRouter<RecruitScreen>(RecruitScreen.Browse);
         drawView = DrawView;
+        if (createUnselectClasses)
+        {
+            RemoveClassesFromSlots();
+        }
     }
 
     public void OnOpened()

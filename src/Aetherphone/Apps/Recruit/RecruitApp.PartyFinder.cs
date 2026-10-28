@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Aetherphone.Windows;
 using Aetherphone.Core;
 using Aetherphone.Core.Apps;
 using Aetherphone.Core.Game;
@@ -947,6 +948,26 @@ internal sealed partial class RecruitApp
             Typography.Draw(new Vector2(metaOrigin.X, ilvlY), "Item Level", theme.TextMuted, TextStyles.Subheadline);
             Typography.Draw(new Vector2(metaColX, ilvlY), ilvlText, theme.TextStrong, TextStyles.Subheadline);
             ImGui.Dummy(new Vector2(0f, 22f * scale));
+
+            var extras = store.PfExtrasFor(listing.HostContentId);
+            if (extras?.StratUrl is { } stratUrl)
+            {
+                var buttonOrigin = ImGui.GetCursorScreenPos();
+                var buttonHeight = Button.Height(ButtonSize.Regular) * scale;
+                var stratButtonRect = new Rect(buttonOrigin, buttonOrigin + new Vector2(width, buttonHeight));
+                if (Button.Draw(stratButtonRect, "Open Strats", ControlInk.From(ui), ButtonStyle.Tinted))
+                {
+                    UrlActions.AskThenOpen(stratUrl);
+                }
+
+                ImGui.Dummy(new Vector2(width, buttonHeight + Metrics.Space.Md * scale));
+            }
+
+            if (extras?.Notes is { } notes)
+            {
+                var notesHeight = Typography.DrawWrappedLeft(ImGui.GetCursorScreenPos(), notes, theme.TextStrong, TextStyles.Body, width);
+                ImGui.Dummy(new Vector2(width, notesHeight + Metrics.Space.Md * scale));
+            }
 
             var commentText = !string.IsNullOrWhiteSpace(listing.Comment) ? listing.Comment : "No comment.";
             var commentPadding = 12f * scale;

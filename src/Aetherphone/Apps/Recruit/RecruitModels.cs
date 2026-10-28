@@ -332,7 +332,8 @@ internal sealed record PartyFinderListing(
     ObjectiveFlags Objective = ObjectiveFlags.None,
     ConditionFlags Conditions = ConditionFlags.None,
     DutyFinderSettingsFlags DutySettings = DutyFinderSettingsFlags.None,
-    IReadOnlyList<JobFlags>? OpenAcceptedJobs = null
+    IReadOnlyList<JobFlags>? OpenAcceptedJobs = null,
+    ulong HostContentId = 0
 )
 {
     public bool HasOpenRole(PfSlotRole role)
@@ -362,6 +363,57 @@ internal sealed record PartyFinderListing(
         return false;
     }
 }
+
+internal sealed record PfExtras(string? StratUrl, string? Notes);
+
+internal enum PfPartyType : byte 
+{
+    Normal = 0,
+    Alliance = 1,
+    CustomMatch = 2,
+}
+
+internal enum PfLootRule : byte
+{
+    Normal = 0,
+    GreedOnly = 1,
+    Lootmaster = 2,
+}
+
+[Flags]
+internal enum PfLanguageFlags : byte
+{
+    None = 0,
+    Japanese = 1 << 0,
+    English  = 1 << 1,
+    German   = 1 << 2,
+    French   = 1 << 3,
+}
+
+internal enum PfCompletionStatus : byte
+{
+    None = 0,
+    DutyComplete = 1,
+    DutyIncomplete = 2,
+}
+
+internal sealed record PfDraft(
+    PfDutyCategory Category,
+    uint DutyId,
+    ObjectiveFlags Objective,
+    PfCompletionStatus CompletionStatus,
+    PfLootRule LootRule,
+    PfLanguageFlags Languages,
+    ushort MinItemLevel,
+    bool OnePlayerPerJob,
+    bool LimitToWorldServer,
+    bool UnrestrictedParty,
+    bool MinimumIl,
+    bool SilenceEcho,
+    ushort? Passcode,
+    string Comment,
+    ulong[] SlotJobMasks
+);
 
 internal sealed record RecruitListing(
     string Id,

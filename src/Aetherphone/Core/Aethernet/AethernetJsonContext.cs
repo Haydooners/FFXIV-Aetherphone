@@ -326,6 +326,10 @@ namespace Aetherphone.Core.Aethernet;
 [JsonSerializable(typeof(RecruitListingDto))]
 [JsonSerializable(typeof(RecruitListingDto[]))]
 [JsonSerializable(typeof(CreateRecruitRequest))]
+[JsonSerializable(typeof(PfExtrasDto))]
+[JsonSerializable(typeof(PfExtrasDto[]))]
+[JsonSerializable(typeof(PublishPfExtrasRequest))]
+[JsonSerializable(typeof(PfExtrasLookupRequest))]
 internal sealed partial class AethernetJsonContext : JsonSerializerContext
 {
 }

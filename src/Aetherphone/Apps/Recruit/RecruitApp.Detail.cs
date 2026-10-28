@@ -304,8 +304,6 @@ internal sealed partial class RecruitApp
         Typography.Draw(drawList, new Vector2(textLeft, handleY), handleText, theme.TextMuted, TextStyles.Caption1);
 
         if (UiInteract.Click(cardMin, cardMax, cardHovered)){
-           // var cleanWorld = ExtractCleanWorld(listing.WorldDc);
-
             posterClient.LoadCharacter(listing.AuthorName, cleanWorld);
             router.Push(RecruitScreen.PosterProfile);
         }
