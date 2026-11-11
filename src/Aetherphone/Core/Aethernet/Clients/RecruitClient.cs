@@ -57,4 +57,16 @@ internal sealed class RecruitClient
             AethernetJsonContext.Default.PfExtrasLookupRequest, AethernetJsonContext.Default.PfExtrasDtoArray,
             Bearer, token, null, "recruit", onFailure);
     }
+
+    public Task<bool> SyncPfListingsAsync(SyncPfListingsRequest body, CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return http.SendJsonForStatusAsync(HttpMethod.Post, Url("/recruit/pf-listings"), body,
+            AethernetJsonContext.Default.SyncPfListingsRequest, Bearer, token, null, "recruit", onFailure);
+    }
+
+    public Task<PfRefreshStatusDto?> CheckPfRefreshAsync(CancellationToken token, Action<AepFailure>? onFailure = null)
+    {
+        return http.GetJsonAsync(Url("/recruit/pf-refresh"),
+            AethernetJsonContext.Default.PfRefreshStatusDto, Bearer, token, null, "recruit", onFailure);
+    }
 }

@@ -50,3 +50,31 @@ internal sealed record PublishPfExtrasRequest(
 
 internal sealed record PfExtrasLookupRequest(string[] ContentIds);
 
+internal sealed record PfSlotDto(
+    byte Role,
+    bool IsFilled,
+    string Label,
+    byte JobId
+);
+
+internal sealed record PfListingSyncDto(
+    string ListingId,
+    string DutyName,
+    string CategoryName,
+    string Comment,
+    string AuthorName,
+    string WorldName,
+    byte SlotsFilled,
+    byte TotalSlots,
+    ushort ItemLevel,
+    long ReadAtUnix,
+    PfSlotDto[] Slots,
+    string HostContentId
+);
+
+internal sealed record SyncPfListingsRequest(
+    PfListingSyncDto[] Listings);
+
+internal sealed record PfRefreshStatusDto(
+    bool RefreshRequested);
+

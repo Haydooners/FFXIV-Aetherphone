@@ -19,10 +19,17 @@ internal sealed class RecruitStore : IDisposable
     private readonly object lockObj = new();
     private const int PfExtrasLookupBatchLimit = 100;
     private const long PfExtrasRecheckMilliseconds = 5 * 60 * 1000;
+    private const long PfSyncMinIntervalMilliseconds = 3000;
+    private const int PfRefreshPollIntervalMilliseconds = 3000;
     private const bool PfExtrasBackendEnabled = false;
+    private readonly CancellationTokenSource pollCancellation = new();
     private readonly Dictionary<ulong, long> pfExtrasCheckedAt = new();
     private volatile Dictionary<ulong, PfExtras> pfExtras = new();
     private volatile bool pfExtrasLookupInFlight;
+    private volatile bool pfSyncInFlight;
+    private volatile bool pfSyncPending;
+    private int lastSyncedPfCount;
+    private long lastPfSyncTick;
     private string? lastAccountId;
     public bool IsSignedIn => session.IsSignedIn;
     public UserDto? CurrentUser => session.CurrentUser;
@@ -40,6 +47,7 @@ internal sealed class RecruitStore : IDisposable
         PartyFinderReader.OnListingsUpdate += HandlePartyFinderUpdated;
         session.Changed += OnSessionChanged;
         Refresh();
+        _ = PollRemotePfRefreshLoopAsync(pollCancellation.Token);
     }
 
     public IReadOnlyList<RecruitListing> Listings
@@ -58,8 +66,92 @@ internal sealed class RecruitStore : IDisposable
         lock (lockObj){
             PartyFinderReader.Read(pfListings);
         }
+        PushPartyFinderToBackend();
         RequestMissingPfExtras();
         OnPartyFinderUpdated?.Invoke();
+    }
+
+    private void PushPartyFinderToBackend()
+    {
+        if (pfSyncInFlight)
+        {
+            pfSyncPending = true;
+            return;
+        }
+
+        PartyFinderListing[] snapshot;
+        lock (lockObj)
+        {
+            if (pfListings.Count == 0)
+            {
+                return;
+            }
+
+            var now = Environment.TickCount64;
+            if (pfListings.Count == lastSyncedPfCount && now - lastPfSyncTick < PfSyncMinIntervalMilliseconds)
+            {
+                return;
+            }
+
+            snapshot = pfListings.ToArray();
+            lastSyncedPfCount = snapshot.Length;
+            lastPfSyncTick = now;
+        }
+
+        pfSyncInFlight = true;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var dtos = new PfListingSyncDto[snapshot.Length];
+                for (var listingIndex = 0; listingIndex < snapshot.Length; listingIndex++)
+                {
+                    var item = snapshot[listingIndex];
+                    var slotDtos = new PfSlotDto[item.Slots.Count];
+                    for (var slotIndex = 0; slotIndex < item.Slots.Count; slotIndex++)
+                    {
+                        var slot = item.Slots[slotIndex];
+                        slotDtos[slotIndex] = new PfSlotDto(
+                            (byte)slot.Role,
+                            slot.IsFilled,
+                            slot.Label,
+                            slot.JobId
+                        );
+                    }
+
+                    var readAtUnix = new DateTimeOffset(DateTime.SpecifyKind(item.ReadAt, DateTimeKind.Utc)).ToUnixTimeSeconds();
+                    dtos[listingIndex] = new PfListingSyncDto(
+                        item.ListingId.ToString(CultureInfo.InvariantCulture),
+                        item.DutyName,
+                        item.CategoryName,
+                        item.Comment,
+                        item.AuthorName,
+                        item.WorldName,
+                        item.SlotsFilled,
+                        item.TotalSlots,
+                        item.ItemLevel,
+                        readAtUnix,
+                        slotDtos,
+                        item.HostContentId.ToString(CultureInfo.InvariantCulture)
+                    );
+                }
+
+                await client.SyncPfListingsAsync(new SyncPfListingsRequest(dtos), CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                AepLog.Warning($"[RecruitStore] Failed to sync PF listings to backend: {exception.Message}");
+            }
+            finally
+            {
+                pfSyncInFlight = false;
+                if (pfSyncPending)
+                {
+                    pfSyncPending = false;
+                    PushPartyFinderToBackend();
+                }
+            }
+        });
     }
 
     public void RefreshPartyFinder(bool force = false)
@@ -343,9 +435,37 @@ internal sealed class RecruitStore : IDisposable
         }
     }
 
+    private async Task PollRemotePfRefreshLoopAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(PfRefreshPollIntervalMilliseconds, cancellationToken).ConfigureAwait(false);
+                var status = await client.CheckPfRefreshAsync(cancellationToken).ConfigureAwait(false);
+                if (status is not null && status.RefreshRequested)
+                {
+                    _ = Plugin.Framework.RunOnFrameworkThread(() =>
+                    {
+                        RefreshPartyFinder(force: true);
+                    });
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception exception)
+            {
+                AepLog.Warning($"[RecruitStore] Failed to poll PF refresh status: {exception.Message}");
+            }
+        }
+    }
 
     public void Dispose()
     {
+        pollCancellation.Cancel();
+        pollCancellation.Dispose();
         PartyFinderReader.OnListingsUpdate -= HandlePartyFinderUpdated;
         session.Changed -= OnSessionChanged;
         PartyFinderReader.Dispose();
