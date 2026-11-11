@@ -39,7 +39,7 @@ internal sealed class RecruitStore : IDisposable
         PartyFinderReader.Initialize();
         PartyFinderReader.OnListingsUpdate += HandlePartyFinderUpdated;
         session.Changed += OnSessionChanged;
-
+        Refresh();
     }
 
     public IReadOnlyList<RecruitListing> Listings
@@ -83,25 +83,23 @@ internal sealed class RecruitStore : IDisposable
             listings.Insert(0, listing);
         }
 
-        if (!session.IsSignedIn)
-        {
-            return;
-        }
-
         _ = Task.Run(async () =>
         {
-            try{
+            try
+            {
                 var roleIds = new int[listing.RolesNeeded.Count];
-                for (var i = 0; i < listing.RolesNeeded.Count; i++){
-                    roleIds[i] = (int)listing.RolesNeeded[i];
+                for (var roleIndex = 0; roleIndex < listing.RolesNeeded.Count; roleIndex++)
+                {
+                    roleIds[roleIndex] = (int)listing.RolesNeeded[roleIndex];
                 }
+
                 var request = new CreateRecruitRequest(
                     listing.Title,
                     listing.Description,
                     listing.FormattedSchedule,
                     (int)listing.Kind,
                     listing.Duty.Name,
-                    (int)listing.Duty.Category,
+                    (int)listing.Playstyle,
                     (int)listing.SelectedDays,
                     listing.StartMinuteOfDay,
                     listing.EndMinuteOfDay,
@@ -111,43 +109,50 @@ internal sealed class RecruitStore : IDisposable
                     listing.WorldDc
                 );
 
-                await client.CreateAsync(request, CancellationToken.None);
+                await client.CreateAsync(request, CancellationToken.None).ConfigureAwait(false);
+                Refresh();
             }
-            catch (Exception ex){
-                AepLog.Warning($"[RecruitStore] Failed to post listing to backend: {ex.Message}");
+            catch (Exception exception)
+            {
+                AepLog.Warning($"[RecruitStore] Failed to post listing to backend: {exception.Message}");
             }
         });
     }
 
     public void Refresh(bool force = false)
     {
-        if (!session.IsSignedIn)
+        _ = Task.Run(async () =>
         {
-            return;
-        }
-
-        _ = Task.Run(async () =>{
-            try {
-                var remote = await client.ListAsync(CancellationToken.None);
-                if (remote is not null){
-                    lock (lockObj){
+            try
+            {
+                var remote = await client.ListAsync(CancellationToken.None).ConfigureAwait(false);
+                if (remote is not null)
+                {
+                    lock (lockObj)
+                    {
                         listings.Clear();
-                        for (var index = 0; index < remote.Length; index++){
+                        for (var index = 0; index < remote.Length; index++)
+                        {
                             var dto = remote[index];
 
                             DutyInfo? duty = null;
-                            for (var dutyIndex = 0; dutyIndex < RecruitCatalog.Duties.Count; dutyIndex++){
-                                if (RecruitCatalog.Duties[dutyIndex].Name == dto.DutyName){
+                            for (var dutyIndex = 0; dutyIndex < RecruitCatalog.Duties.Count; dutyIndex++)
+                            {
+                                if (RecruitCatalog.Duties[dutyIndex].Name == dto.DutyName)
+                                {
                                     duty = RecruitCatalog.Duties[dutyIndex];
                                     break;
                                 }
                             }
+
                             duty ??= new DutyInfo(dto.DutyName, (ContentCategory)dto.Category);
 
                             var roles = new List<RaidRole>();
-                            for (var roleIndex = 0; roleIndex < dto.RolesNeeded.Length; roleIndex++){
+                            for (var roleIndex = 0; roleIndex < dto.RolesNeeded.Length; roleIndex++)
+                            {
                                 roles.Add((RaidRole)dto.RolesNeeded[roleIndex]);
                             }
+
                             listings.Add(new RecruitListing(
                                 dto.Id,
                                 dto.Title,
@@ -169,8 +174,9 @@ internal sealed class RecruitStore : IDisposable
                     }
                 }
             }
-            catch (Exception ex) {
-                AepLog.Warning($"[RecruitStore] Failed to sync listings: {ex.Message}");
+            catch (Exception exception)
+            {
+                AepLog.Warning($"[RecruitStore] Failed to sync listings: {exception.Message}");
             }
         });
     }

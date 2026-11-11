@@ -109,6 +109,7 @@ internal sealed partial class RecruitApp : IPhoneApp
 
     public void OnOpened()
     {
+        store.Refresh();
     }
 
     public void OnClosed()

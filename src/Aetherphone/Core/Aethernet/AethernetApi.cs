@@ -30,7 +30,7 @@ internal sealed class AethernetApi
         Coins = new CoinsClient(net);
         Casino = new CasinoClient(net);
         Games = new GamesClient(net);
-        Recruit = new RecruitClient(net);
+        Recruit = new RecruitClient(http, session);
     }
 
     public AuthClient Auth { get; }
