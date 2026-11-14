@@ -321,6 +321,30 @@ internal sealed class HttpService : IDisposable
         }
     }
 
+    public async Task StreamSseAsync(string url, Action<string> onEventData, CancellationToken token)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        using var stream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
+        using var reader = new StreamReader(stream);
+        while (!token.IsCancellationRequested)
+        {
+            var line = await reader.ReadLineAsync(token).ConfigureAwait(false);
+            if (line is null)
+            {
+                break;
+            }
+
+            if (line.StartsWith("data: ", StringComparison.Ordinal))
+            {
+                onEventData(line[6..]);
+            }
+        }
+    }
+
     private const int MaxErrorBodyChars = 500;
 
     private static async Task<string> ReadErrorBodyAsync(HttpResponseMessage response, CancellationToken token)

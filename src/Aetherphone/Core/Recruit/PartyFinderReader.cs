@@ -339,7 +339,7 @@ internal static unsafe class PartyFinderReader
             return;
         }
         var newlyAdded = currentCount - lastListingCount;
-        if (newlyAdded < 50 || syncedPagesCount >= 5)
+        if (newlyAdded < 50 || syncedPagesCount >= 10)
         {
             ScheduleClose();
             return;
@@ -452,7 +452,7 @@ internal static unsafe class PartyFinderReader
         {
             ChatSender.TrySend("/partyfinder");
         });
-        _ = Task.Delay(6000).ContinueWith(_ =>
+        _ = Task.Delay(12000).ContinueWith(_ =>
         {
             if (openedForSync)
             {

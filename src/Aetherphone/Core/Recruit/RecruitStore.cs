@@ -20,7 +20,7 @@ internal sealed class RecruitStore : IDisposable
     private const int PfExtrasLookupBatchLimit = 100;
     private const long PfExtrasRecheckMilliseconds = 5 * 60 * 1000;
     private const long PfSyncMinIntervalMilliseconds = 3000;
-    private const int PfRefreshPollIntervalMilliseconds = 3000;
+    private const int PfRefreshReconnectDelayMilliseconds = 5000;
     private const bool PfExtrasBackendEnabled = false;
     private readonly CancellationTokenSource pollCancellation = new();
     private readonly Dictionary<ulong, long> pfExtrasCheckedAt = new();
@@ -47,7 +47,7 @@ internal sealed class RecruitStore : IDisposable
         PartyFinderReader.OnListingsUpdate += HandlePartyFinderUpdated;
         session.Changed += OnSessionChanged;
         Refresh();
-        _ = PollRemotePfRefreshLoopAsync(pollCancellation.Token);
+        _ = ListenRemotePfRefreshLoopAsync(pollCancellation.Token);
     }
 
     public IReadOnlyList<RecruitListing> Listings
@@ -63,9 +63,13 @@ internal sealed class RecruitStore : IDisposable
 
     private void HandlePartyFinderUpdated()
     {
-        lock (lockObj){
+        lock (lockObj)
+        {
             PartyFinderReader.Read(pfListings);
+            pfListings.RemoveAll(listing =>
+                string.Equals(listing.CategoryName, "None", StringComparison.OrdinalIgnoreCase));
         }
+
         PushPartyFinderToBackend();
         RequestMissingPfExtras();
         OnPartyFinderUpdated?.Invoke();
@@ -435,21 +439,19 @@ internal sealed class RecruitStore : IDisposable
         }
     }
 
-    private async Task PollRemotePfRefreshLoopAsync(CancellationToken cancellationToken)
+    private async Task ListenRemotePfRefreshLoopAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                await Task.Delay(PfRefreshPollIntervalMilliseconds, cancellationToken).ConfigureAwait(false);
-                var status = await client.CheckPfRefreshAsync(cancellationToken).ConfigureAwait(false);
-                if (status is not null && status.RefreshRequested)
+                await client.ListenPfRefreshAsync(eventData =>
                 {
                     _ = Plugin.Framework.RunOnFrameworkThread(() =>
                     {
                         RefreshPartyFinder(force: true);
                     });
-                }
+                }, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -457,7 +459,16 @@ internal sealed class RecruitStore : IDisposable
             }
             catch (Exception exception)
             {
-                AepLog.Warning($"[RecruitStore] Failed to poll PF refresh status: {exception.Message}");
+                AepLog.Warning($"[RecruitStore] PF refresh stream disconnected: {exception.Message}");
+            }
+
+            try
+            {
+                await Task.Delay(PfRefreshReconnectDelayMilliseconds, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
             }
         }
     }

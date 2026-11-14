@@ -64,9 +64,8 @@ internal sealed class RecruitClient
             AethernetJsonContext.Default.SyncPfListingsRequest, Bearer, token, null, "recruit", onFailure);
     }
 
-    public Task<PfRefreshStatusDto?> CheckPfRefreshAsync(CancellationToken token, Action<AepFailure>? onFailure = null)
+    public Task ListenPfRefreshAsync(Action<string> onEventData, CancellationToken token)
     {
-        return http.GetJsonAsync(Url("/recruit/pf-refresh"),
-            AethernetJsonContext.Default.PfRefreshStatusDto, Bearer, token, null, "recruit", onFailure);
+        return http.StreamSseAsync(Url("/recruit/pf-refresh/stream"), onEventData, token);
     }
 }
